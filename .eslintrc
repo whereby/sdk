@@ -1,0 +1,28 @@
+{
+    "parser": "@babel/eslint-parser",
+    "env": {
+        "browser": true,
+        "es6": true,
+        "mocha": true
+    },
+    "extends": [
+        "prettier"
+    ],
+    "parserOptions": {
+        "sourceType": "module",
+        "requireConfigFile": false,
+        "babelOptions": {
+            "babelrc": false,
+            "configFile": false,
+            "presets": ["@babel/preset-env"]
+        }
+    },
+    "plugins": [
+        "mocha-no-only",
+        "prettier"
+    ],
+    "rules": {
+        "no-console": ["error", { "allow": ["warn", "error"] }],
+        "prettier/prettier": "error"
+    }
+}
