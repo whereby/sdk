@@ -31,7 +31,7 @@ const VIDEO_SETTINGS_VP9 = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
-    encodings: [{ scalabilityMode: "S3T3_KEY", networkPriority: "high" }],
+    encodings: [{ scalabilityMode: "L3T2_KEY", networkPriority: "high" }],
 };
 
 const SCREEN_SHARE_SETTINGS = {
@@ -40,13 +40,13 @@ const SCREEN_SHARE_SETTINGS = {
 
 const SCREEN_SHARE_SIMULCAST_SETTINGS = {
     encodings: [
-        { dtx: true, maxBitrate: 500000 },
-        { dtx: true, maxBitrate: 1500000 },
+        { scaleResolutionDownBy: 2, dtx: true, maxBitrate: 500000 },
+        { scaleResolutionDownBy: 1, dtx: true, maxBitrate: 1500000 },
     ],
 };
 
 const SCREEN_SHARE_SETTINGS_VP9 = {
-    encodings: [{ scalabilityMode: "S3T3", dtx: true, networkPriority: "high" }],
+    encodings: [{ scalabilityMode: "L1T1", dtx: true, networkPriority: "high" }],
 };
 
 export const getMediaSettings = (kind, isScreenShare, features) => {
@@ -62,8 +62,8 @@ export const getMediaSettings = (kind, isScreenShare, features) => {
 
         return SCREEN_SHARE_SETTINGS;
     } else {
-        if (lowDataModeEnabled) return VIDEO_SETTINGS_SD;
         if (vp9On) return VIDEO_SETTINGS_VP9;
+        if (lowDataModeEnabled) return VIDEO_SETTINGS_SD;
 
         return VIDEO_SETTINGS_HD;
     }

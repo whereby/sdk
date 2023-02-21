@@ -2,10 +2,11 @@ import VegaParser from "./VegaParser";
 import { EventEmitter } from "events";
 
 export default class VegaConnection extends EventEmitter {
-    constructor(wsUrl, logger) {
+    constructor(wsUrl, logger, protocol = "whereby-sfu#v4") {
         super();
 
         this.wsUrl = wsUrl;
+        this.protocol = protocol;
         this.logger = logger;
 
         // This is the map of sent requests that are waiting for a response
@@ -14,7 +15,7 @@ export default class VegaConnection extends EventEmitter {
     }
 
     _setupSocket() {
-        this.socket = new WebSocket(this.wsUrl, "whereby-sfu#v4");
+        this.socket = new WebSocket(this.wsUrl, this.protocol);
         this.socket.onopen = this._onOpen.bind(this);
         this.socket.onmessage = this._onMessage.bind(this);
         this.socket.onclose = this._onClose.bind(this);
@@ -34,7 +35,9 @@ export default class VegaConnection extends EventEmitter {
     }
 
     close() {
-        this.socket?.close();
+        if (!this.socket) return;
+
+        this.socket.close();
     }
 
     _onOpen() {
@@ -46,11 +49,15 @@ export default class VegaConnection extends EventEmitter {
     _onMessage(event) {
         const socketMessage = VegaParser.parse(event.data);
 
+        if (!socketMessage) {
+            return this.logger.log("VegaConnectionManager: Received invalid message", event.data);
+        }
+
         this.logger.log("VegaConnectionManager: Received message", socketMessage);
 
-        if (socketMessage?.response) {
+        if (socketMessage.response) {
             this._handleResponse(socketMessage);
-        } else if (socketMessage?.message) {
+        } else if (socketMessage.message) {
             this.emit("message", socketMessage);
         }
     }

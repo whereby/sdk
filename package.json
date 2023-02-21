@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "assert": "^2.0.0",
-    "mediasoup-client": "^3.6.75",
+    "mediasoup-client": "^3.6.80",
     "sdp": "^3.1.0",
     "socket.io-client": "1.7.4",
     "uuid": "^9.0.0",
