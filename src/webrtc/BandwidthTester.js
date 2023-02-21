@@ -372,16 +372,16 @@ export default class BandwidthTester extends EventEmitter {
         let localBytesSent = 0;
 
         localSendStats.forEach((stat) => {
-            if (stat.type === "candidate-pair" && stat.state === "succeeded") {
-                localBytesSent = stat.bytesSent;
+            if (stat.type === "candidate-pair") {
+                localBytesSent += stat.bytesSent;
             }
         });
 
         let localBytesReceived = 0;
 
         localRecvStats.forEach((stat) => {
-            if (stat.type === "candidate-pair" && stat.state === "succeeded") {
-                localBytesReceived = stat.bytesReceived;
+            if (stat.type === "candidate-pair") {
+                localBytesReceived += stat.bytesReceived;
             }
         });
 
