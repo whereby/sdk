@@ -1,17 +1,10 @@
 import EventEmitter from "events";
 import { Device } from "mediasoup-client";
 import VegaConnection from "./VegaConnection";
-import { modifyMediaCapabilities } from "../utils/mediaSettings";
+import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import { getHandler } from "../utils/getHandler";
-import { generateByteString, createWorker } from "../utils/bandwidthTestUtils";
 
-const logger = console;
-
-const MSG_SIZE = 1024;
-const BUFFER_LIMIT = 4 * 1024 * 1024;
-const LOOP_LIMIT = 1000;
-const RETRY_LIMIT = 5;
-const START_DELAY = 1;
+const logger = { debug: () => {}, log: () => {}, warn: () => {}, error: () => {} };
 
 export default class BandwidthTester extends EventEmitter {
     constructor({ features } = {}) {
@@ -29,52 +22,42 @@ export default class BandwidthTester extends EventEmitter {
         this._sendTransport = null;
         this._receiveTransport = null;
 
-        this._dataProducer = null;
-        this._dataConsumer = null;
+        this._producer = null;
+        this._consumers = new Map();
 
-        this._rawData = generateByteString(MSG_SIZE);
-
-        this._scheduler = createWorker((e) => {
-            if (e.data.sleep > 0) {
-                setTimeout(() => {
-                    postMessage(e.data);
-                }, e.data.sleep);
-            } else {
-                postMessage(e.data);
-            }
-        });
+        this._startTime = null;
+        this._connectTime = null;
+        this._mediaEstablishedTime = null;
+        this._runTime = null;
+        this._endTime = null;
 
         this._timeout = null;
 
-        this._runTime = 10; // Seconds
+        this._canvas = null;
+        this._drawInterval = null;
 
-        this._testStartTime = null;
-        this._testEndTime = null;
-        this._testRunning = false;
-        this._loopLimit = LOOP_LIMIT;
-        this._loopCount = 0;
-
-        this._messagesSent = 0;
-        this._messagesReceived = 0;
-
-        this._dataProducerReady = new Promise((resolve) => {
-            this._resolveDataProducerReady = resolve;
-        });
-
-        this._dataConsumerReady = new Promise((resolve) => {
-            this._resolveDataConsumerReady = resolve;
-        });
-
-        this._dataReady = Promise.all([this._dataProducerReady, this._dataConsumerReady]);
+        this._resultTimeout = null;
     }
 
     // This is the public API for this class
-    start(runTime = 21) {
+    start(runTime = 15) {
         if (this.closed) {
             return;
         }
 
-        this._runTime = runTime - RETRY_LIMIT - START_DELAY;
+        if (runTime < 10) {
+            this.emit("result", {
+                error: true,
+                details: {
+                    timeout: true,
+                },
+            });
+
+            return this.close();
+        }
+
+        this._runTime = runTime;
+        this._startTime = Date.now();
 
         const host = this._features.sfuServerOverrideHost || "any.sfu.whereby.com";
         const wsUrl = `wss://${host}`;
@@ -84,17 +67,8 @@ export default class BandwidthTester extends EventEmitter {
         this._vegaConnection.on("close", () => this.close());
         this._vegaConnection.on("message", (message) => this._onMessage(message));
 
-        // If we don't get a response within 10 seconds, we close the test
-        this._timeout = setTimeout(() => {
-            this.emit("result", {
-                error: true,
-                details: {
-                    timeout: true,
-                },
-            });
-
-            this.close();
-        }, this._runTime * 1000);
+        // If we don't get a response within 5 seconds, we close the test
+        this._startTimeout();
     }
 
     close() {
@@ -102,28 +76,10 @@ export default class BandwidthTester extends EventEmitter {
 
         this.closed = true;
 
-        clearTimeout(this._timeout);
-        this._timeout = null;
+        this._clearTimeouts();
 
-        if (this._scheduler) {
-            this._scheduler.terminate();
-        }
-
-        this._scheduler = null;
-
-        if (this._dataConsumer) {
-            this._dataConsumer.removeAllListeners();
-            this._dataConsumer.close();
-        }
-
-        this._dataConsumer = null;
-
-        if (this._dataProducer) {
-            this._dataProducer.removeAllListeners();
-            this._dataProducer.close();
-        }
-
-        this._dataProducer = null;
+        clearInterval(this._drawInterval);
+        this._drawInterval = null;
 
         if (this._sendTransport) {
             this._sendTransport.removeAllListeners();
@@ -138,7 +94,6 @@ export default class BandwidthTester extends EventEmitter {
         }
 
         this._receiveTransport = null;
-
         this._mediasoupDevice = null;
 
         if (this._vegaConnection) {
@@ -153,6 +108,23 @@ export default class BandwidthTester extends EventEmitter {
 
     async _start() {
         logger.debug("_start()");
+
+        // Calculate how long it took to connect and maybe close the test
+        this._connectTime = Date.now() - this._startTime;
+
+        if (this._connectTime > 5000) {
+            this.emit("result", {
+                error: true,
+                details: {
+                    timeout: true,
+                },
+            });
+
+            return this.close();
+        }
+
+        // Successful connection to SFU, so we can clear the timeout
+        this._clearTimeouts();
 
         try {
             // We need to always do this, as this triggers the start logic on the SFU
@@ -170,10 +142,26 @@ export default class BandwidthTester extends EventEmitter {
             });
 
             await Promise.all([this._createTransport(true), this._createTransport(false)]);
+            await this._createProducer();
 
-            if (!this._dataProducer) await this._createDataProducer();
+            // Calculate how long it took to establish media and maybe close the test
+            this._mediaEstablishedTime = Date.now() - this._startTime;
 
-            await this._runTest();
+            if (this._mediaEstablishedTime > 5000) {
+                this.emit("result", {
+                    error: true,
+                    details: {
+                        timeout: true,
+                    },
+                });
+
+                return this.close();
+            }
+
+            // We have established media, start timer to report results and close the test
+            this._resultTimeout = setTimeout(() => {
+                this._reportResults();
+            }, this._runTime * 1000 - this._mediaEstablishedTime);
         } catch (error) {
             logger.error("_start() [error:%o]", error);
 
@@ -197,15 +185,6 @@ export default class BandwidthTester extends EventEmitter {
             enableTcp: true,
             enableUdp: true,
             preferUdp: true,
-            sctpParameters: {
-                enableSctp: true,
-                numSctpStreams: {
-                    OS: 1024,
-                    MIS: 1024,
-                },
-                maxSctpMessageSize: 262144,
-                sctpSendBufferSize: 262144,
-            },
         });
 
         transportOptions.iceServers = [{ urls: "stun:any.turn.whereby.com" }];
@@ -239,18 +218,6 @@ export default class BandwidthTester extends EventEmitter {
                     errback(error);
                 }
             });
-            transport.on("producedata", async ({ appData, sctpStreamParameters }, callback, errback) => {
-                try {
-                    const { id } = await this._vegaConnection.request("produceData", {
-                        transportId: transport.id,
-                        sctpStreamParameters,
-                        appData,
-                    });
-                    callback({ id });
-                } catch (error) {
-                    errback(error);
-                }
-            });
 
             this._sendTransport = transport;
         } else {
@@ -258,35 +225,109 @@ export default class BandwidthTester extends EventEmitter {
         }
     }
 
-    async _createDataProducer() {
-        if (this._dataProducer) return;
+    _getTestTrack() {
+        this._canvas = document.createElement("canvas");
+        this._canvas.width = 1280;
+        this._canvas.height = 720;
 
-        const dataProducer = await this._sendTransport.produceData({
-            ordered: false,
-            maxPacketLifeTime: 1000,
-            priority: "high",
-            label: "tester",
-            protocol: "tester",
+        document.body.appendChild(this._canvas);
+
+        // Set location to bottom right corner 1 pixel large and transparent
+        this._canvas.style.position = "absolute";
+        this._canvas.style.right = "0";
+        this._canvas.style.bottom = "0";
+        this._canvas.style.width = "1px";
+        this._canvas.style.height = "1px";
+        this._canvas.style.opacity = "0";
+
+        const context = this._canvas.getContext("2d");
+
+        const ball = {
+            x: 150,
+            y: 150,
+        };
+
+        const velocity = 50;
+        const startingAngle = 70;
+        const rad = 100;
+
+        let moveX = Math.cos((Math.PI / 180) * startingAngle) * velocity;
+        let moveY = Math.sin((Math.PI / 180) * startingAngle) * velocity;
+
+        const draw = () => {
+            if (this.closed) {
+                return;
+            }
+
+            const now = Date.now();
+
+            context.fillStyle = `rgb(
+                ${Math.floor(255 - 0.35 * ball.y)},
+                ${Math.floor(255 - 0.18 * ball.x)},
+                0)`;
+            context.fillRect(0, 0, this._canvas.width, this._canvas.height);
+            context.fillStyle = "white";
+
+            context.font = "30px Arial";
+            context.fillText("Whereby", 10, 50);
+
+            context.font = "20px Arial";
+            context.fillText("Test", 10, 80);
+
+            context.font = "20px Arial";
+            context.fillText(`Time: ${now - this._startTime}ms`, 10, 110);
+
+            context.font = "20px Arial";
+
+            if (this._connectTime) {
+                context.fillText(`Connect: ${this._connectTime}ms`, 10, 140);
+            }
+
+            if (this._mediaEstablishedTime) {
+                context.fillText(`Media: ${this._mediaEstablishedTime}ms`, 10, 170);
+            }
+
+            if (ball.x > this._canvas.width - rad || ball.x < rad) moveX = -moveX;
+            if (ball.y > this._canvas.height - rad || ball.y < rad) moveY = -moveY;
+
+            ball.x += moveX;
+            ball.y += moveY;
+            context.beginPath();
+            context.fillStyle = `rgb(
+                ${Math.floor(255 - 0.18 * ball.x)},
+                ${Math.floor(255 - 0.35 * ball.y)},
+                0)`;
+            context.arc(ball.x, ball.y, rad, 0, Math.PI * 2);
+            context.fill();
+            context.closePath();
+        };
+
+        this._drawInterval = setInterval(draw, 33);
+
+        const fakeStream = this._canvas.captureStream(30);
+        const [fakeVideoTrack] = fakeStream.getVideoTracks();
+
+        return fakeVideoTrack;
+    }
+
+    async _createProducer() {
+        const track = this._getTestTrack();
+
+        const producer = await this._sendTransport.produce({
+            track,
+            ...getMediaSettings("video", false, this._features),
+            appData: {
+                paused: false,
+            },
         });
 
-        this._dataProducer = dataProducer;
+        this._producer = producer;
 
-        dataProducer.bufferedAmountLowThreshold = 1024;
+        producer.observer.once("close", () => {
+            logger.debug('producer "close" event');
 
-        dataProducer.once("close", () => {
-            this._dataProducer = null;
+            this._producer = null;
         });
-
-        if (dataProducer.readyState === "open") {
-            logger.debug("dataProducer open");
-            this._resolveDataProducerReady();
-        } else {
-            dataProducer.once("open", () => {
-                logger.debug("dataProducer open");
-
-                this._resolveDataProducerReady();
-            });
-        }
     }
 
     async _onMessage(message) {
@@ -294,10 +335,10 @@ export default class BandwidthTester extends EventEmitter {
         return Promise.resolve()
             .then(() => {
                 switch (method) {
-                    case "dataConsumerReady":
-                        return this._onDataConsumerReady(data);
-                    case "dataConsumerClosed":
-                        return this._onDataConsumerClosed(data);
+                    case "consumerReady":
+                        return this._onConsumerReady(data);
+                    case "consumerClosed":
+                        return this._onConsumerClosed(data);
                     default:
                         logger.debug(`unknown message method "${method}"`);
                         return;
@@ -308,99 +349,76 @@ export default class BandwidthTester extends EventEmitter {
             });
     }
 
-    async _onDataConsumerReady(options) {
-        logger.debug("_onDataConsumerReady()", { id: options.id, dataProducerId: options.dataProducerId });
-
-        const consumer = await this._receiveTransport.consumeData(options);
-
-        this._dataConsumer = consumer;
+    async _onConsumerReady(options) {
+        const consumer = await this._receiveTransport.consume(options);
 
         consumer.once("close", () => {
-            this._dataConsumer = null;
+            this._consumers.delete(consumer.id);
         });
 
-        if (consumer.readyState === "open") {
-            logger.debug("dataConsumer open");
-            this._resolveDataConsumerReady();
-        } else {
-            consumer.on("open", () => {
-                logger.debug("dataConsumer open");
-                this._resolveDataConsumerReady();
-            });
-        }
+        this._consumers.set(consumer.id, consumer);
 
-        consumer.on("message", (message) => {
-            this._messagesReceived++;
+        this._vegaConnection.message("resumeConsumers", {
+            consumerIds: [consumer.id],
         });
     }
 
-    async _onDataConsumerClosed({ reason }) {
-        logger.debug("_onDataConsumerClosed()", { reason });
+    _onConsumerClosed({ consumerId }) {
+        logger.debug("_onConsumerClosed()");
 
-        this._dataConsumer.close();
+        const consumer = this._consumers.get(consumerId);
+
+        if (consumer) {
+            consumer.close();
+        }
     }
 
-    async _reportResults(retries = 0) {
-        clearTimeout(this._timeout);
-
-        if (retries >= RETRY_LIMIT) {
-            this.emit("result", {
-                error: true,
-                details: {
-                    retryLimit: true,
-                },
-            });
-
-            return this.close();
-        }
-
-        if (this._dataProducer.bufferedAmount > 1024) {
-            this._timeout = setTimeout(() => {
-                this._reportResults(retries + 1);
-            }, 1000);
-
-            return;
-        }
-
-        const testTime = this._testEndTime - this._testStartTime;
-
+    async _reportResults() {
         const [localSendStats, localRecvStats] = await Promise.all([
             this._sendTransport.getStats(),
             this._receiveTransport.getStats(),
         ]);
 
-        let localBytesSent = 0;
-
-        localSendStats.forEach((stat) => {
-            if (stat.type === "candidate-pair") {
-                localBytesSent += stat.bytesSent;
-            }
-        });
-
-        let localBytesReceived = 0;
-
-        localRecvStats.forEach((stat) => {
-            if (stat.type === "candidate-pair") {
-                localBytesReceived += stat.bytesReceived;
-            }
-        });
-
         const { sendStats: [remoteSendStats = null] = [], recvStats: [remoteRecvStats = null] = [] } =
             await this._vegaConnection.request("getTransportStats");
 
-        const { bytesReceived: remoteBytesReceived } = remoteSendStats || {};
-        const { bytesSent: remoteBytesSent } = remoteRecvStats || {};
+        const { availableOutgoingBitrate = 5000000 } = remoteRecvStats || {};
 
-        const sendBitrate = (localBytesSent * 8) / 1000000 / (testTime / 1000);
-        const recvBitrate = (localBytesReceived * 8) / 1000000 / (testTime / 1000);
-        const lowSendBitrate = sendBitrate < 1.5; // 1.5 Mbps
-        const lowRecvBitrate = recvBitrate < 1.5; // 1.5 Mbps
-        const sendLoss = (localBytesSent - remoteBytesReceived) / localBytesSent;
-        const recvLoss = (remoteBytesSent - localBytesReceived) / remoteBytesSent;
+        let outboundPackets = 0;
+        let remotePacketsLost = 0;
+
+        localSendStats.forEach((localSendStat) => {
+            if (localSendStat.type === "outbound-rtp" && typeof localSendStat.packetsSent === "number") {
+                outboundPackets += localSendStat.packetsSent;
+            } else if (localSendStat.type === "remote-inbound-rtp" && typeof localSendStat.packetsLost === "number") {
+                remotePacketsLost += localSendStat.packetsLost;
+            }
+        });
+
+        let inboundPackets = 0;
+        let packetsLost = 0;
+
+        localRecvStats.forEach((localRecvStat) => {
+            if (
+                localRecvStat.type === "inbound-rtp" &&
+                typeof localRecvStat.packetsReceived === "number" &&
+                typeof localRecvStat.packetsLost === "number"
+            ) {
+                inboundPackets += localRecvStat.packetsReceived;
+                packetsLost += localRecvStat.packetsLost;
+            }
+        });
+
+        const recvAvailableBitrate = availableOutgoingBitrate / 1000000.0;
+        const lowRecvAvailableBitrate = recvAvailableBitrate < 1.5; // 1.5 Mbps
+        const sendLoss = remotePacketsLost / outboundPackets;
+        const recvLoss = packetsLost / inboundPackets;
         const highSendLoss = sendLoss > 0.03; // 3%
         const highRecvLoss = recvLoss > 0.03; // 3%
 
-        const warning = lowRecvBitrate || lowSendBitrate || highRecvLoss || highSendLoss;
+        const testTime = Date.now() - this._startTime;
+
+        const warning = lowRecvAvailableBitrate || highRecvLoss || highSendLoss;
         const success = !warning;
 
         this.emit("result", {
@@ -408,12 +426,10 @@ export default class BandwidthTester extends EventEmitter {
             success,
             details: {
                 testTime,
-                lowSendBitrate,
-                lowRecvBitrate,
+                recvAvailableBitrate,
+                lowRecvAvailableBitrate,
                 highSendLoss,
                 highRecvLoss,
-                sendBitrate,
-                recvBitrate,
                 sendLoss,
                 recvLoss,
             },
@@ -422,56 +438,23 @@ export default class BandwidthTester extends EventEmitter {
         this.close();
     }
 
-    async _runTest() {
-        // Will not proceed until both data consumer and producer are ready
-        await this._dataReady;
+    _startTimeout(seconds = 5) {
+        this._timeout = setTimeout(() => {
+            this.emit("result", {
+                error: true,
+                details: {
+                    timeout: true,
+                },
+            });
 
-        if (this.closed) return;
-
-        clearTimeout(this._timeout);
-
-        this._scheduler.onmessage = () => {
-            this._testLoop();
-        };
-
-        setTimeout(() => {
-            if (this.closed) return;
-
-            this._testStartTime = Date.now();
-            this._testRunning = true;
-
-            this._testLoop();
-        }, START_DELAY * 1000);
-
-        setTimeout(() => {
-            if (this.closed) return;
-
-            this._testEndTime = Date.now();
-            this._testRunning = false;
-
-            this._reportResults();
-        }, this._runTime * 1000 + START_DELAY * 1000);
+            this.close();
+        }, seconds * 1000);
     }
 
-    _testLoop() {
-        if (this.closed) return;
-
-        this._loopCount = 0;
-
-        if (this._testRunning) {
-            if (this._dataProducer.bufferedAmount === 0) {
-                this._loopLimit = this._loopLimit * 2;
-            } else if (this._dataProducer.bufferedAmount > BUFFER_LIMIT) {
-                this._loopLimit = this._loopLimit * 0.25;
-            }
-
-            while (this._dataProducer.bufferedAmount < BUFFER_LIMIT && this._loopCount < this._loopLimit) {
-                this._dataProducer.send(this._rawData);
-                this._messagesSent++;
-                this._loopCount++;
-            }
-
-            this._scheduler.postMessage({ sleep: 10 });
-        }
+    _clearTimeouts() {
+        clearTimeout(this._timeout);
+        this._timeout = null;
+        clearTimeout(this._reportTimeout);
+        this._reportTimeout = null;
     }
 }
