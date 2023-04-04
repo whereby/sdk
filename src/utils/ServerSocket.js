@@ -15,10 +15,10 @@ export default class ServerSocket {
         }
 
         this._socket = io(hostName, options);
-        this._socket.on("reconnect", () => {
+        this._socket.io.on("reconnect", () => {
             this._socket.sendBuffer = [];
         });
-        this._socket.on("reconnect_attempt", () => {
+        this._socket.io.on("reconnect_attempt", () => {
             if (this._wasConnectedUsingWebsocket) {
                 this._socket.io.opts.transports = ["websocket"];
                 // only fallback to polling if not safari
@@ -74,6 +74,10 @@ export default class ServerSocket {
             this._socket.io.engine.transport &&
             this._socket.io.engine.transport.name
         );
+    }
+
+    getManager() {
+        return this._socket.io;
     }
 
     isConnecting() {
