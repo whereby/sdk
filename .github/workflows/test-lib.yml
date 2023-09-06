@@ -1,0 +1,42 @@
+name: Test
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+        types: [opened, synchronize, reopened]
+jobs:
+    test:
+        name: Format, Lint, and Test on Node ${{ matrix.node }} and ${{ matrix.platform }}
+        strategy:
+            matrix:
+                node: ["16.x"]
+                platform: [ubuntu-latest]
+        runs-on: ${{ matrix.platform }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.WHEREBY_PUBLISH_GITHUB_PACKAGES }}
+        steps:
+            - uses: actions/checkout@v2
+
+            - name: Prepare repository
+              run: git fetch --unshallow --tags
+
+            - name: Setup npmrc
+              run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> ~/.npmrc
+
+            - name: Use Node.js ${{ matrix.node }}
+              uses: actions/setup-node@v2
+              with:
+                  node-version: ${{ matrix.node }}
+
+            - name: Install
+              run: yarn
+
+            - name: Format
+              run: yarn format:check
+
+            - name: Lint
+              run: yarn lint
+
+            - name: Unit Test
+              run: yarn test:unit
