@@ -1264,6 +1264,7 @@ export default class VegaRtcManager {
                 clientId,
                 stream: webcamStream,
                 streamId: camStreamId,
+                streamType: "webcam",
             });
 
             clientState.hasEmittedWebcamStream = true;
@@ -1275,6 +1276,7 @@ export default class VegaRtcManager {
                 clientId,
                 stream: screenStream,
                 streamId: screenShareStreamId,
+                streamType: "screenshare",
             });
 
             clientState.hasEmittedScreenStream = true;
