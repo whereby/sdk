@@ -1,8 +1,8 @@
 export function isRelayed(pc) {
-    return pc.getStats(null).then((result) => {
+    return pc.getStats(null).then(result => {
         let localCandidateType;
         let remoteCandidateType;
-        result.forEach((report) => {
+        result.forEach(report => {
             // Chrome 58+ / spec
             if (report.type === "transport" && report.selectedCandidatePairId) {
                 const transport = result.get(report.selectedCandidatePairId);

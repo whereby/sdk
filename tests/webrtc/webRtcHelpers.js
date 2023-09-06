@@ -12,14 +12,14 @@ export function createServerSocketStub() {
         listeners[eventName].push(handler);
 
         return () => {
-            listeners[eventName] = listeners[eventName].filter((existingHandler) => {
+            listeners[eventName] = listeners[eventName].filter(existingHandler => {
                 return existingHandler !== handler;
             });
         };
     });
 
     socket.once = sinon.spy((eventName, handler) => {
-        const cleanUp = socket.on(eventName, function () {
+        const cleanUp = socket.on(eventName, function() {
             cleanUp();
             handler.apply(null, arguments);
         });
@@ -33,7 +33,7 @@ export function createServerSocketStub() {
         socket,
 
         emitFromServer(eventName, data) {
-            listeners[eventName].forEach((func) => {
+            listeners[eventName].forEach(func => {
                 func(data);
             });
         },
@@ -92,7 +92,7 @@ export function randomString(prefix = "") {
 
 export function createIceServersConfig({ iceServerUrls } = {}) {
     const urls = iceServerUrls || [`turn:server-${randomString()}:443?transport=udp`];
-    return urls.map((url) => ({
+    return urls.map(url => ({
         url,
         urls: [url],
         username: randomString("user-"),
@@ -167,8 +167,8 @@ export function createMockedMediaStream() {
                 ...result,
             };
         },
-        getTrackById: (trackId) => {
-            const foundTracks = result.getTracks().filter((track) => track.id === trackId);
+        getTrackById: trackId => {
+            const foundTracks = result.getTracks().filter(track => track.id === trackId);
             if (foundTracks.length < 1) {
                 return null;
             }

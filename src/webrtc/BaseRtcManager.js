@@ -50,7 +50,7 @@ export default class BaseRtcManager {
     }
 
     numberOfRemotePeers() {
-        return Object.values(this.peerConnections).filter((session) => session.clientId !== this._selfId).length;
+        return Object.values(this.peerConnections).filter(session => session.clientId !== this._selfId).length;
     }
 
     _setConnectionStatus(session, newStatus, clientId) {
@@ -143,7 +143,7 @@ export default class BaseRtcManager {
     }
 
     _getNonLocalCameraStreamIds() {
-        return Object.keys(this.localStreams).filter((streamId) => streamId !== CAMERA_STREAM_ID);
+        return Object.keys(this.localStreams).filter(streamId => streamId !== CAMERA_STREAM_ID);
     }
 
     _isScreensharingLocally() {
@@ -185,13 +185,13 @@ export default class BaseRtcManager {
             const host = this._features.turnServerOverrideHost;
             const port = host.indexOf(":") > 0 ? "" : ":443";
             const override = ":" + host + port;
-            peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.map((original) => {
+            peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.map(original => {
                 const entry = Object.assign({}, original);
                 if (entry.url) {
                     entry.url = entry.url.replace(/:[^?]*/, override);
                 }
                 if (entry.urls) {
-                    entry.urls = entry.urls.map((url) => url.replace(/:[^?]*/, override));
+                    entry.urls = entry.urls.map(url => url.replace(/:[^?]*/, override));
                 }
                 return entry;
             });
@@ -205,7 +205,7 @@ export default class BaseRtcManager {
             }[this._features.useOnlyTURN];
             if (filter) {
                 peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.filter(
-                    (entry) => entry.url && entry.url.match(filter)
+                    entry => entry.url && entry.url.match(filter)
                 );
             }
         }
@@ -221,7 +221,7 @@ export default class BaseRtcManager {
             clientId,
         });
 
-        pc.ontrack = (event) => {
+        pc.ontrack = event => {
             const stream = event.streams[0];
             if (stream.id === "default" && stream.getAudioTracks().length === 0) {
                 // due to our PlanB / UnifiedPlan conversion we can run into this:
@@ -263,7 +263,7 @@ export default class BaseRtcManager {
                 case "completed":
                     newStatus = CONNECTION_STATUS.TYPES.CONNECTION_SUCCESSFUL;
                     if (!session.wasEverConnected) {
-                        this._pendingActionsForConnectedPeerConnections.forEach((action) => {
+                        this._pendingActionsForConnectedPeerConnections.forEach(action => {
                             if (typeof action === "function") {
                                 action();
                             }
@@ -346,7 +346,7 @@ export default class BaseRtcManager {
         // Don't add existing screenshare-streams when using SFU as those will be
         // added in a separate session/peerConnection
         if (shouldAddLocalVideo) {
-            Object.keys(this.localStreams).forEach((id) => {
+            Object.keys(this.localStreams).forEach(id => {
                 if (id === CAMERA_STREAM_ID) {
                     return;
                 }
@@ -383,27 +383,27 @@ export default class BaseRtcManager {
     }
 
     _forEachPeerConnection(func) {
-        Object.keys(this.peerConnections).forEach((peerConnectionId) => {
+        Object.keys(this.peerConnections).forEach(peerConnectionId => {
             const peerConnection = this.peerConnections[peerConnectionId];
             func(peerConnection);
         });
     }
 
     _addStreamToPeerConnections(stream) {
-        this._forEachPeerConnection((session) => {
+        this._forEachPeerConnection(session => {
             this._withForcedRenegotiation(session, () => session.addStream(stream));
         });
     }
 
     _addTrackToPeerConnections(track, stream) {
-        this._forEachPeerConnection((session) => {
+        this._forEachPeerConnection(session => {
             this._withForcedRenegotiation(session, () => session.addTrack(track, stream));
         });
     }
 
     _replaceTrackToPeerConnections(oldTrack, newTrack) {
         const promises = [];
-        this._forEachPeerConnection((session) => {
+        this._forEachPeerConnection(session => {
             if (!session.hasConnectedPeerConnection()) {
                 logger.log("Session doesn't have a connected PeerConnection, adding pending action!");
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
@@ -421,7 +421,7 @@ export default class BaseRtcManager {
                             reject(`ReplaceTrack returned false`);
                             return;
                         }
-                        replacedTrackPromise.then((track) => resolve(track)).catch((error) => reject(error));
+                        replacedTrackPromise.then(track => resolve(track)).catch(error => reject(error));
                     };
                     pendingActions.push(action);
                 });
@@ -439,13 +439,13 @@ export default class BaseRtcManager {
     }
 
     _removeStreamFromPeerConnections(stream) {
-        this._forEachPeerConnection((session) => {
+        this._forEachPeerConnection(session => {
             this._withForcedRenegotiation(session, () => session.removeStream(stream));
         });
     }
 
     _removeTrackFromPeerConnections(track) {
-        this._forEachPeerConnection((session) => {
+        this._forEachPeerConnection(session => {
             this._withForcedRenegotiation(session, () => session.removeTrack(track));
         });
     }
@@ -498,11 +498,11 @@ export default class BaseRtcManager {
     }
 
     disconnectAll() {
-        Object.keys(this.peerConnections).forEach((peerConnectionId) => {
+        Object.keys(this.peerConnections).forEach(peerConnectionId => {
             this.disconnect(peerConnectionId);
         });
         this.peerConnections = {};
-        this._socketListenerDeregisterFunctions.forEach((func) => {
+        this._socketListenerDeregisterFunctions.forEach(func => {
             func();
         });
         this._socketListenerDeregisterFunctions = [];
@@ -527,7 +527,7 @@ export default class BaseRtcManager {
         if (!audioTrack || audioTrack.readyState !== "ended") {
             return;
         }
-        return navigator.mediaDevices.getUserMedia({ audio: constraints }).then((stream) => {
+        return navigator.mediaDevices.getUserMedia({ audio: constraints }).then(stream => {
             const track = stream.getAudioTracks()[0];
             track.enabled = audioTrack.enabled; // retain mute state and don't accidentally unmute.
             localStream.removeTrack(audioTrack); // remove the old track.
@@ -561,7 +561,7 @@ export default class BaseRtcManager {
         this._socketListenerDeregisterFunctions = [
             () => this._clearMediaServersRefresh(),
 
-            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data) => {
+            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, data => {
                 if (data.error) {
                     logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
                     return;
@@ -569,11 +569,11 @@ export default class BaseRtcManager {
                 this._updateAndScheduleMediaServersRefresh(data);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data) => {
+            this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, data => {
                 this._connect(data.clientId);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data) => {
+            this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, data => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
@@ -582,7 +582,7 @@ export default class BaseRtcManager {
                 session.addIceCandidate(data.message);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, (data) => {
+            this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, data => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
@@ -592,14 +592,14 @@ export default class BaseRtcManager {
             }),
 
             // when a new SDP offer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, data => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
                     return;
                 }
                 const offer = this._transformIncomingSdp(data.message, session.pc);
-                session.handleOffer(offer).then((answer) => {
+                session.handleOffer(offer).then(answer => {
                     this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
                         receiverId: data.clientId,
                         message: this._transformOutgoingSdp(answer),
@@ -608,7 +608,7 @@ export default class BaseRtcManager {
             }),
 
             // when a new SDP answer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, data => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);

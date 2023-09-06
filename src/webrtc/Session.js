@@ -23,7 +23,7 @@ export default class Session {
         this.streamIds = [];
         this.streams = [];
         this.earlyIceCandidates = [];
-        this.afterConnected = new Promise((resolve) => {
+        this.afterConnected = new Promise(resolve => {
             this.registerConnected = resolve;
         });
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
@@ -60,10 +60,10 @@ export default class Session {
         this.streamIds.push(stream.id);
         this.streams.push(stream);
         if (RTCPeerConnection.prototype.addTrack) {
-            stream.getAudioTracks().forEach((track) => {
+            stream.getAudioTracks().forEach(track => {
                 this.pc.addTrack(track, stream);
             });
-            stream.getVideoTracks().forEach((track) => {
+            stream.getVideoTracks().forEach(track => {
                 this.pc.addTrack(track, stream);
             });
         } else {
@@ -83,7 +83,7 @@ export default class Session {
     removeTrack(track) {
         const stream = this.streams[0];
         stream.removeTrack(track);
-        const sender = this.pc.getSenders().find((sender) => sender.track === track);
+        const sender = this.pc.getSenders().find(sender => sender.track === track);
         if (sender) {
             this.pc.removeTrack(sender);
         }
@@ -99,8 +99,8 @@ export default class Session {
 
         if (this.pc) {
             if (this.pc.removeTrack) {
-                stream.getTracks().forEach((track) => {
-                    const sender = this.pc.getSenders().find((sender) => sender.track === track);
+                stream.getTracks().forEach(track => {
+                    const sender = this.pc.getSenders().find(sender => sender.track === track);
                     if (sender) {
                         this.pc.removeTrack(sender);
                     }
@@ -118,14 +118,14 @@ export default class Session {
         // wrapper around SRD which stores a promise
         this.srdComplete = this.pc.setRemoteDescription(desc);
         return this.srdComplete.then(() => {
-            this.earlyIceCandidates.forEach((candidate) => this.pc.addIceCandidate(candidate));
+            this.earlyIceCandidates.forEach(candidate => this.pc.addIceCandidate(candidate));
             this.earlyIceCandidates = [];
         });
     }
 
     handleOffer(message) {
         if (!this.canModifyPeerConnection()) {
-            return new Promise((resolve) => {
+            return new Promise(resolve => {
                 this.pending.push(() => this.handleOffer(message).then(resolve));
             });
         }
@@ -143,7 +143,7 @@ export default class Session {
             .then(() => {
                 return this.pc.createAnswer();
             })
-            .then((answer) => {
+            .then(answer => {
                 answerToSignal = answer;
                 return this.pc.setLocalDescription(answer);
             })
@@ -171,7 +171,7 @@ export default class Session {
             () => {
                 return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
             },
-            (e) => {
+            e => {
                 logger.warn("Could not set remote description from remote answer: ", e);
             }
         );
@@ -192,7 +192,7 @@ export default class Session {
                 // filter due to https://github.com/webrtcHacks/adapter/issues/863
                 return;
             }
-            this.pc.addIceCandidate(candidate).catch((e) => {
+            this.pc.addIceCandidate(candidate).catch(e => {
                 logger.warn("Failed to add ICE candidate ('%s'): %s", candidate ? candidate.candidate : null, e);
             });
         });
@@ -230,11 +230,11 @@ export default class Session {
         if (!pc) return false;
         const senders = pc.getSenders();
         function dbg(msg) {
-            const tr = (t) => t && `id:${t.id},kind:${t.kind},state:${t.readyState}`;
+            const tr = t => t && `id:${t.id},kind:${t.kind},state:${t.readyState}`;
             logger.warn(
                 `${msg}. newTrack:${tr(newTrack)}, oldTrack:${tr(oldTrack)}, sender tracks: ${JSON.stringify(
-                    senders.map((s) => `s ${tr(s.track)}`)
-                )}, sender first codecs: ${JSON.stringify(senders.map((s) => (s.getParameters().codecs || [])[0]))}`
+                    senders.map(s => `s ${tr(s.track)}`)
+                )}, sender first codecs: ${JSON.stringify(senders.map(s => (s.getParameters().codecs || [])[0]))}`
             );
         }
         if (!senders.length) {
@@ -242,7 +242,7 @@ export default class Session {
         }
         // If we didn't specify oldTrack, replace with first of its kind
         if (!oldTrack) {
-            oldTrack = (senders.find((s) => s.track && s.track.kind === newTrack.kind) || {}).track;
+            oldTrack = (senders.find(s => s.track && s.track.kind === newTrack.kind) || {}).track;
             if (!oldTrack) {
                 // odin: Temporary debug data, remove if you see after 2020-12-01
                 dbg("No sender with same kind! Add new track then.");
@@ -299,7 +299,7 @@ export default class Session {
                 // we already know that the track has been added at least to the mediastream
                 return result;
             }
-            const stream = this.streams.find((s) => s.getTracks().find((t) => t.id === newTrack.id)) || this.streams[0];
+            const stream = this.streams.find(s => s.getTracks().find(t => t.id === newTrack.id)) || this.streams[0];
             if (!stream) {
                 dbg("No stream?");
                 return Promise.reject(new Error("replaceTrack: No stream?"));
@@ -328,7 +328,7 @@ export default class Session {
         if (pc.localDescription.type === "offer") {
             return pc
                 .createOffer()
-                .then((offer) => {
+                .then(offer => {
                     offer.sdp = sdpModifier.replaceSSRCs(pc.localDescription.sdp, offer.sdp);
                     return pc.setLocalDescription(offer);
                 })
@@ -340,7 +340,7 @@ export default class Session {
                 .then(() => {
                     return pc.createAnswer();
                 })
-                .then((answer) => {
+                .then(answer => {
                     answer.sdp = sdpModifier.replaceSSRCs(pc.localDescription.sdp, answer.sdp);
                     return pc.setLocalDescription(answer);
                 });
@@ -355,7 +355,7 @@ export default class Session {
         if (!this.pc.getStats) {
             return;
         }
-        statsHelper.isRelayed(this.pc).then((isRelayed) => {
+        statsHelper.isRelayed(this.pc).then(isRelayed => {
             if (isRelayed && this.bandwidth === 0) {
                 this.changeBandwidth(this.maximumTurnBandwidth);
             }

@@ -29,7 +29,7 @@ export default class VegaConnection extends EventEmitter {
         this.socket.onerror = null;
         this.socket = null;
 
-        this.sents.forEach((sent) => sent.close());
+        this.sents.forEach(sent => sent.close());
 
         this.emit("close");
     }
@@ -103,13 +103,13 @@ export default class VegaConnection extends EventEmitter {
             const sent = {
                 id: request.id,
                 method: request.method,
-                resolve: (data2) => {
+                resolve: data2 => {
                     if (!this.sents.delete(request.id)) return;
 
                     clearTimeout(sent.timer);
                     pResolve(data2);
                 },
-                reject: (error) => {
+                reject: error => {
                     if (!this.sents.delete(request.id)) return;
 
                     clearTimeout(sent.timer);

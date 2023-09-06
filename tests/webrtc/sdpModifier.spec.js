@@ -1,22 +1,6 @@
 import * as sdpModifier from "../../src/webrtc/sdpModifier";
 
 describe("sdpModifier", () => {
-    const videoSdpLines = [
-        "v=0",
-        "o=jdoe 2890844526 2890842807 IN IP4 10.0.1.1",
-        "s=",
-        "t=0 0",
-        "a=ice-pwd:asd88fgpdd777uzjYhagZg",
-        "a=ice-ufrag:8hhY",
-        "m=video 45664 RTP/AVP 100",
-        "c=IN IP4 192.0.2.3",
-        "a=rtpmap:100 VP8/90000",
-    ];
-
-    function getVideoSdpString() {
-        return videoSdpLines.join("\r\n") + "\r\n";
-    }
-
     describe("deprioritizeH264", () => {
         const sdp =
             "v=0\r\n" +
