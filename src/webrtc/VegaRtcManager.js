@@ -109,7 +109,7 @@ export default class VegaRtcManager {
         this._socketListenerDeregisterFunctions.push(
             () => this._clearMediaServersRefresh(),
 
-            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data) => {
+            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, data => {
                 if (data.error) {
                     logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
                     return;
@@ -146,7 +146,7 @@ export default class VegaRtcManager {
         this._vegaConnection = new VegaConnection(wsUrl, logger);
         this._vegaConnection.on("open", () => this._join());
         this._vegaConnection.on("close", () => this._onClose());
-        this._vegaConnection.on("message", (message) => this._onMessage(message));
+        this._vegaConnection.on("message", message => this._onMessage(message));
     }
 
     _onClose() {
@@ -227,7 +227,7 @@ export default class VegaRtcManager {
         maybeTurnOnly(transportOptions, this._features);
 
         const transport = this._mediasoupDevice[creator](transportOptions);
-        const onConnectionStateListener = async (connectionState) => {
+        const onConnectionStateListener = async connectionState => {
             logger.debug(`Transport ConnectionStateChanged ${connectionState}`);
             if (connectionState !== "disconnected" && connectionState !== "failed") {
                 return;
@@ -339,7 +339,7 @@ export default class VegaRtcManager {
         const error = await transport
             .restartIce({ iceParameters })
             .then(() => null)
-            .catch((err) => err);
+            .catch(err => err);
 
         if (error) {
             logger.error(`_restartIce: ICE restart failed: ${error}`);
@@ -350,7 +350,7 @@ export default class VegaRtcManager {
                     break;
                 default:
                     // exponential backoff
-                    await new Promise((resolve) => {
+                    await new Promise(resolve => {
                         setTimeout(() => {
                             resolve();
                         }, Math.min(RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS * 2 ** retried, 60000));
@@ -360,7 +360,7 @@ export default class VegaRtcManager {
             }
             return;
         }
-        await new Promise((resolve) => {
+        await new Promise(resolve => {
             setTimeout(() => {
                 resolve();
             }, 60000 * Math.min(8, retried + 1));
@@ -935,7 +935,7 @@ export default class VegaRtcManager {
 
         this._pauseResumeWebcam();
 
-        if (browserName === "chrome") {
+        if ("browserName" === "chrome") {
             // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
 
             if (!enable) {
@@ -943,7 +943,7 @@ export default class VegaRtcManager {
 
                 // try to stop the local camera so the camera light goes off.
                 this._stopCameraTimeout = setTimeout(() => {
-                    localStream.getVideoTracks().forEach((track) => {
+                    localStream.getVideoTracks().forEach(track => {
                         if (track.enabled === false) {
                             track.stop();
                             localStream.removeTrack(track);
@@ -968,7 +968,7 @@ export default class VegaRtcManager {
             } else if (localStream.getVideoTracks().length === 0) {
                 // re-enable the stream
                 const constraints = this._webrtcProvider.getMediaConstraints().video;
-                navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
+                navigator.mediaDevices.getUserMedia({ video: constraints }).then(stream => {
                     const track = stream.getVideoTracks()[0];
                     localStream.addTrack(track);
 
@@ -1048,7 +1048,7 @@ export default class VegaRtcManager {
     }
 
     disconnectAll() {
-        this._socketListenerDeregisterFunctions.forEach((func) => {
+        this._socketListenerDeregisterFunctions.forEach(func => {
             func();
         });
 
@@ -1091,7 +1091,7 @@ export default class VegaRtcManager {
                         return;
                 }
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error('"message" failed [error:%o]', error);
             });
     }
@@ -1226,7 +1226,7 @@ export default class VegaRtcManager {
         const toPauseConsumers = [];
         const toResumeConsumers = [];
 
-        this._consumers.forEach((consumer) => {
+        this._consumers.forEach(consumer => {
             if (consumer.appData.sourceClientId !== clientId) return;
 
             const hasAccepted = consumer.appData.screenShare ? hasAcceptedScreenStream : hasAcceptedWebcamStream;

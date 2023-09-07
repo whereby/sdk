@@ -65,7 +65,7 @@ export default class BandwidthTester extends EventEmitter {
         this._vegaConnection = new VegaConnection(wsUrl, logger, "whereby-sfu#bw-test-v1");
         this._vegaConnection.on("open", () => this._start());
         this._vegaConnection.on("close", () => this.close());
-        this._vegaConnection.on("message", (message) => this._onMessage(message));
+        this._vegaConnection.on("message", message => this._onMessage(message));
 
         // If we don't get a response within 5 seconds, we close the test
         this._startTimeout();
@@ -344,7 +344,7 @@ export default class BandwidthTester extends EventEmitter {
                         return;
                 }
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error('"message" failed [error:%o]', error);
             });
     }
@@ -379,15 +379,14 @@ export default class BandwidthTester extends EventEmitter {
             this._receiveTransport.getStats(),
         ]);
 
-        const { sendStats: [remoteSendStats = null] = [], recvStats: [remoteRecvStats = null] = [] } =
-            await this._vegaConnection.request("getTransportStats");
+        const { recvStats: [remoteRecvStats = null] = [] } = await this._vegaConnection.request("getTransportStats");
 
         const { availableOutgoingBitrate = 5000000 } = remoteRecvStats || {};
 
         let outboundPackets = 0;
         let remotePacketsLost = 0;
 
-        localSendStats.forEach((localSendStat) => {
+        localSendStats.forEach(localSendStat => {
             if (localSendStat.type === "outbound-rtp" && typeof localSendStat.packetsSent === "number") {
                 outboundPackets += localSendStat.packetsSent;
             } else if (localSendStat.type === "remote-inbound-rtp" && typeof localSendStat.packetsLost === "number") {
@@ -398,7 +397,7 @@ export default class BandwidthTester extends EventEmitter {
         let inboundPackets = 0;
         let packetsLost = 0;
 
-        localRecvStats.forEach((localRecvStat) => {
+        localRecvStats.forEach(localRecvStat => {
             if (
                 localRecvStat.type === "inbound-rtp" &&
                 typeof localRecvStat.packetsReceived === "number" &&

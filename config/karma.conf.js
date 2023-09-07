@@ -64,12 +64,10 @@ module.exports = function(config) {
                     {
                         test: /\.js$/,
                         include: path.resolve(__dirname, "../src/"),
+                        loader: "istanbul-instrumenter-loader",
                         enforce: "post",
-                        use: {
-                            loader: 'babel-loader',
-                            options: {
-                                plugins: ['babel-plugin-istanbul']
-                            }
+                        options: {
+                            esModules: true,
                         },
                     },
                 ],

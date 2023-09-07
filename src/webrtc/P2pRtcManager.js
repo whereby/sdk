@@ -58,7 +58,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         session.isOperationPending = true;
 
         pc.createOffer(constraints || this.offerOptions)
-            .then((offer) => {
+            .then(offer => {
                 this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                     receiverId: clientId,
                     message: this._transformOutgoingSdp(offer),
@@ -68,16 +68,16 @@ export default class P2pRtcManager extends BaseRtcManager {
                 // make Chrome send media later when there are two (more more?) video tracks.
                 if (
                     browserName === "chrome" &&
-                    pc.getSenders().filter((sender) => sender.track && sender.track.kind === "video").length >= 2
+                    pc.getSenders().filter(sender => sender.track && sender.track.kind === "video").length >= 2
                 ) {
                     session.pendingOffer = offer;
                     return;
                 }
-                pc.setLocalDescription(offer).catch((e) => {
+                pc.setLocalDescription(offer).catch(e => {
                     logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
                 });
             })
-            .catch((e) => {
+            .catch(e => {
                 logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
             });
     }
@@ -127,7 +127,7 @@ export default class P2pRtcManager extends BaseRtcManager {
             return 0;
         }
 
-        this._forEachPeerConnection((session) => {
+        this._forEachPeerConnection(session => {
             session.changeBandwidth(bandwidth);
         });
 
@@ -158,7 +158,7 @@ export default class P2pRtcManager extends BaseRtcManager {
             pc.addTrack(this._stoppedVideoTrack, localCameraStream);
         }
 
-        pc.onicecandidate = (event) => {
+        pc.onicecandidate = event => {
             if (event.candidate) {
                 session.relayCandidateSeen = session.relayCandidateSeen || event.candidate.type === "relay";
                 this._emitServerEvent(RELAY_MESSAGES.ICE_CANDIDATE, {
@@ -215,7 +215,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         const numPeers = this.numberOfPeerconnections();
         if (numPeers === 0) {
             setTimeout(() => {
-                const numPeers = this.numberOfPeerconnections();
+                //const numPeers = this.numberOfPeerconnections();
             }, 60 * 1000);
         }
     }
@@ -235,7 +235,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         if (enable === false) {
             // try to stop the local camera so the camera light goes off.
             setTimeout(() => {
-                localStream.getVideoTracks().forEach((track) => {
+                localStream.getVideoTracks().forEach(track => {
                     if (track.enabled === false) {
                         track.stop();
                         localStream.removeTrack(track);
@@ -274,7 +274,7 @@ export default class P2pRtcManager extends BaseRtcManager {
                         // device has been plugged out or similar
                         return;
                     }
-                    navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
+                    navigator.mediaDevices.getUserMedia({ video: constraints }).then(stream => {
                         const track = stream.getVideoTracks()[0];
                         localStream.addTrack(track);
                         this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
