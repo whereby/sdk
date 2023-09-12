@@ -108,6 +108,10 @@ export default class VegaRtcManager {
         });
 
         this._socketListenerDeregisterFunctions = [];
+
+        // Retry if connection closed until disconnectAll called;
+        this._reconnect = true;
+        this._reconnectTimeOut = null;
     }
 
     _updateAndScheduleMediaServersRefresh({ iceServers, sfuServer, mediaserverConfigTtlSeconds }) {
@@ -189,7 +193,9 @@ export default class VegaRtcManager {
 
         // Clear all mappings we have
         this._streamIdToVideoConsumerId.clear();
-        setTimeout(() => this._connect(), 1000);
+        if (this._reconnect) {
+            this._reconnectTimeOut = setTimeout(() => this._connect(), 1000);
+        }
     }
 
     async _join() {
@@ -1237,6 +1243,11 @@ export default class VegaRtcManager {
     }
 
     disconnectAll() {
+        this._reconnect = false;
+        if (this._reconnectTimeOut) {
+            clearTimeout(this._reconnectTimeOut);
+            this._reconnectTimeOut = null;
+        }
         this._socketListenerDeregisterFunctions.forEach(func => {
             func();
         });
