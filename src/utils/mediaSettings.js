@@ -3,7 +3,7 @@ const AUDIO_SETTINGS = {
         opusDtx: true,
         opusFec: true,
     },
-    encodings: [{ dtx: true, networkPriority: "high" }],
+    encodings: [{ dtx: true }],
 };
 
 const VIDEO_SETTINGS_HD = {
@@ -11,7 +11,7 @@ const VIDEO_SETTINGS_HD = {
         videoGoogleStartBitrate: 500,
     },
     encodings: [
-        { scaleResolutionDownBy: 4, maxBitrate: 150000, networkPriority: "high" },
+        { scaleResolutionDownBy: 4, maxBitrate: 150000 },
         { scaleResolutionDownBy: 2, maxBitrate: 500000 },
         { scaleResolutionDownBy: 1, maxBitrate: 1000000 },
     ],
@@ -22,7 +22,7 @@ const VIDEO_SETTINGS_SD = {
         videoGoogleStartBitrate: 500,
     },
     encodings: [
-        { scaleResolutionDownBy: 2, maxBitrate: 150000, networkPriority: "high" },
+        { scaleResolutionDownBy: 2, maxBitrate: 150000 },
         { scaleResolutionDownBy: 1, maxBitrate: 500000 },
     ],
 };
@@ -31,11 +31,11 @@ const VIDEO_SETTINGS_VP9 = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
-    encodings: [{ scalabilityMode: "L3T2_KEY", networkPriority: "high" }],
+    encodings: [{ scalabilityMode: "L3T2_KEY" }],
 };
 
 const SCREEN_SHARE_SETTINGS = {
-    encodings: [{ networkPriority: "medium" }],
+    encodings: [{}],
 };
 
 const SCREEN_SHARE_SIMULCAST_SETTINGS = {
@@ -46,7 +46,7 @@ const SCREEN_SHARE_SIMULCAST_SETTINGS = {
 };
 
 const SCREEN_SHARE_SETTINGS_VP9 = {
-    encodings: [{ scalabilityMode: "L1T1", dtx: true, networkPriority: "high" }],
+    encodings: [{ dtx: true }],
 };
 
 export const getMediaSettings = (kind, isScreenShare, features) => {

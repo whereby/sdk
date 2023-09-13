@@ -32,4 +32,11 @@ export default class RtcManagerDispatcher {
             this.currentManager = rtcManager;
         });
     }
+
+    stopRtcManager() {
+        if (this.currentManager) {
+            this.currentManager.disconnectAll();
+            this.emitter.emit(CONNECTION_STATUS.EVENTS.RTC_MANAGER_DESTROYED);
+        }
+    }
 }

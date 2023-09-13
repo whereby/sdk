@@ -1,5 +1,5 @@
 export const maybeTurnOnly = (transportConfig, features) => {
-    if (!features.useOnlyTURN || ["off", "false", "0"].includes(features.useOnlyTURN)) {
+    if (!features.useOnlyTURN) {
         return;
     }
 

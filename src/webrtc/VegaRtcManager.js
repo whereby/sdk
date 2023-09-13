@@ -2,25 +2,38 @@ import assert from "assert";
 import { Device } from "mediasoup-client";
 import { PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
+import LegacyServerSocket from "../utils/LegacyServerSocket";
+import ServerSocket from "../utils/ServerSocket";
 import rtcManagerEvents from "./rtcManagerEvents";
+import rtcStats from "./rtcStatsService";
+import adapter from "webrtc-adapter";
 import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import { getHandler } from "../utils/getHandler";
 import { v4 as uuidv4 } from "uuid";
+import createMicAnalyser from "./VegaMicAnalyser";
 import { maybeTurnOnly } from "../utils/transportSettings";
 
 const logger = console;
+const browserName = adapter.browserDetails.browser;
+let unloading = false;
 
 const RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS = 3500;
 const RESTARTICE_ERROR_MAX_RETRY_COUNT = 5;
 const OUTBOUND_CAM_OUTBOUND_STREAM_ID = uuidv4();
 const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 
+if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
+
 export default class VegaRtcManager {
     constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim }) {
         assert.ok(selfId, "selfId is required");
         assert.ok(room, "room is required");
         assert.ok(emitter && emitter.emit, "emitter is required");
+        assert.ok(
+            serverSocket instanceof LegacyServerSocket || serverSocket instanceof ServerSocket,
+            "serverSocket is required"
+        );
         assert.ok(webrtcProvider, "webrtcProvider is required");
 
         const { session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
@@ -36,6 +49,9 @@ export default class VegaRtcManager {
 
         this._vegaConnection = null;
 
+        this._micAnalyser = null;
+        this._micAnalyserDebugger = null;
+
         this._mediasoupDevice = new Device({ handlerName: getHandler() });
         this._routerRtpCapabilities = null;
 
@@ -50,6 +66,7 @@ export default class VegaRtcManager {
 
         // All consumers we have from the SFU
         this._consumers = new Map();
+        this._dataConsumers = new Map();
 
         this._micTrack = null;
         this._webcamTrack = null;
@@ -59,6 +76,8 @@ export default class VegaRtcManager {
         this._micProducer = null;
         this._micProducerPromise = null;
         this._micPaused = false;
+        this._micScoreProducer = null;
+        this._micScoreProducerPromise = null;
         this._webcamProducer = null;
         this._webcamProducerPromise = null;
         this._webcamPaused = false;
@@ -70,7 +89,17 @@ export default class VegaRtcManager {
         this._sndTransportIceRestartPromise = null;
         this._rcvTransportIceRestartPromise = null;
 
+        this._colocation = null;
+
         this._stopCameraTimeout = null;
+        this._audioTrackOnEnded = () => {
+            // There are a couple of reasons the microphone could stop working.
+            // One of them is getting unplugged. The other is the Chrome audio
+            // process crashing. The third is the tab being closed.
+            // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
+            rtcStats.sendEvent("audio_ended", { unloading });
+            this._emitToPWA(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
+        };
 
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
@@ -181,6 +210,8 @@ export default class VegaRtcManager {
                 rtpCapabilities: this._mediasoupDevice.rtpCapabilities,
             });
 
+            if (this._colocation) this._vegaConnection.message("setColocation", { colocation: this._colocation });
+
             await Promise.all([this._createTransport(true), this._createTransport(false)]);
 
             const mediaPromises = [];
@@ -197,8 +228,7 @@ export default class VegaRtcManager {
             await Promise.all(mediaPromises);
         } catch (error) {
             logger.error("_join() [error:%o]", error);
-
-            this._onClose();
+            // TODO: handle this error, rejoin?
         }
     }
 
@@ -428,6 +458,56 @@ export default class VegaRtcManager {
         })();
     }
 
+    async _internalSetupMicScore() {
+        logger.debug("_internalSetupMicScore()");
+
+        this._micScoreProducerPromise = (async () => {
+            try {
+                // Have any of our resources disappeared while we were waiting to be executed?
+                if (!this._micProducer || !this._colocation || this._micScoreProducer) {
+                    this._micScoreProducerPromise = null;
+                    return;
+                }
+
+                const producer = await this._sendTransport.produceData({
+                    ordered: false,
+                    maxPacketLifeTime: 3000,
+                    label: "micscore",
+                    appData: {
+                        producerId: this._micProducer.id,
+                        clientId: this._selfId,
+                    },
+                });
+
+                this._micScoreProducer = producer;
+
+                producer.observer.once("close", () => {
+                    logger.debug('micScoreProducer "close" event');
+                    if (producer.appData.localClosed) {
+                        this._vegaConnection?.message("closeDataProducers", { dataProducerIds: [producer.id] });
+                    }
+
+                    this._micScoreProducer = null;
+                    this._micScoreProducerPromise = null;
+                });
+            } catch (error) {
+                logger.error("micScoreProducer failed:%o", error);
+            } finally {
+                this._micScoreProducerPromise = null;
+
+                // Has the mic producer disappeared or colocation turned off while we were waiting?
+                if (!this._micProducer || !this._colocation) {
+                    this._stopMicScoreProducer();
+                }
+            }
+        })();
+    }
+
+    _stopMicScoreProducer() {
+        this._stopProducer(this._micScoreProducer);
+        this._micScoreProducer = null;
+    }
+
     async _replaceMicTrack() {
         logger.debug("_replaceMicTrack()");
 
@@ -435,6 +515,7 @@ export default class VegaRtcManager {
 
         if (this._micProducer.track !== this._micTrack) {
             await this._micProducer.replaceTrack({ track: this._micTrack });
+            this._micAnalyser?.setTrack(this._micTrack);
 
             // Recursively call replaceMicTrack() until the new track is used.
             // This is needed because someone could have called sendXXX() while we
@@ -486,6 +567,32 @@ export default class VegaRtcManager {
         // We don't do anything if we don't have a sendTransport yet.
         // The join logic will call _internalSendMic() again once the sendTransport is ready.
         if (this._sendTransport) return await this._internalSendMic();
+    }
+
+    _sendMicScore(score) {
+        // drop invalid scores
+        if (isNaN(score)) return;
+        if (!isFinite(score)) return;
+
+        if (this._micScoreProducer) {
+            // bug in mediasoup? seems once("close") is not always fired, so we need another check here
+            if (this._micScoreProducer.closed) {
+                this._stopMicScoreProducer();
+                return;
+            }
+
+            try {
+                this._micScoreProducer.send(JSON.stringify({ score }));
+            } catch (ex) {
+                console.error("_sendMicScore failed [error:%o]", ex);
+            }
+            return;
+        }
+        // create producer on first non-zero score when it doesn't exist
+        // it needs the _micProducer.id. we don't care about dropping a few intial scores while this is set up
+        if (!this._micScoreProducerPromise && this._micProducer && this._colocation && score !== 0) {
+            this._internalSetupMicScore();
+        }
     }
 
     async _internalSendWebcam() {
@@ -784,6 +891,27 @@ export default class VegaRtcManager {
     }
 
     /**
+     * This gets called when the user joins a colocation group, where the group is
+     * the string identified for the group that is shared between the users.
+     *
+     * @param {string} colocation
+     */
+    setColocation(colocation) {
+        this._colocation = colocation;
+        this._vegaConnection?.message("setColocation", { colocation });
+
+        // stop mic score producer when leaving colocation
+        // (it will start on demand when score is attempted sent and mic track is ready)
+        if (!colocation && this._micScoreProducer && !this._micScoreProducerPromise) {
+            this._stopMicScoreProducer();
+        }
+
+        this._syncMicAnalyser();
+
+        rtcStats.sendEvent("colocation_changed", { colocation });
+    }
+
+    /**
      * The unique identifier for this room session.
      *
      * @param {string} roomSessionId
@@ -833,7 +961,12 @@ export default class VegaRtcManager {
      * @param {MediaStreamTrack} track
      */
     replaceTrack(oldTrack, track) {
+        if (oldTrack && oldTrack.kind === "audio") {
+            this._stopMonitoringAudioTrack(oldTrack);
+        }
+
         if (track.kind === "audio") {
+            this._startMonitoringAudioTrack(track);
             this._micTrack = track;
             this._replaceMicTrack();
         }
@@ -870,6 +1003,11 @@ export default class VegaRtcManager {
         this._screenAudioTrack = null;
     }
 
+    _onMicAnalyserScoreUpdated(data) {
+        this._micAnalyserDebugger?.onScoreUpdated?.(data);
+        this._sendMicScore(this._micPaused ? 0 : data.out);
+    }
+
     /**
      * streamId is "0" if this is the webcam/mic stream, and a proper streamId
      * if this is a screen share.
@@ -893,7 +1031,11 @@ export default class VegaRtcManager {
             const audioTrack = stream.getAudioTracks()[0];
 
             if (videoTrack) this._sendWebcam(videoTrack);
-            if (audioTrack) this._sendMic(audioTrack);
+            if (audioTrack) {
+                this._sendMic(audioTrack);
+                this._syncMicAnalyser();
+                this._startMonitoringAudioTrack(audioTrack);
+            }
         } else {
             const videoTrack = stream.getVideoTracks()[0];
             const audioTrack = stream.getAudioTracks()[0];
@@ -902,6 +1044,21 @@ export default class VegaRtcManager {
             if (audioTrack) this._sendScreenAudio(audioTrack);
 
             this._emitScreenshareStarted();
+        }
+    }
+
+    _syncMicAnalyser() {
+        if (this._micTrack && this._colocation && !this._micAnalyser) {
+            this._micAnalyser = createMicAnalyser({
+                micTrack: this._micTrack,
+                onScoreUpdated: this._onMicAnalyserScoreUpdated.bind(this),
+            });
+            return;
+        }
+        if (this._micAnalyser && !this._colocation) {
+            this._micAnalyser.close();
+            this._micAnalyser = null;
+            return;
         }
     }
 
@@ -935,7 +1092,7 @@ export default class VegaRtcManager {
 
         this._pauseResumeWebcam();
 
-        if ("browserName" === "chrome") {
+        if (browserName === "chrome") {
             // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
 
             if (!enable) {
@@ -1000,6 +1157,9 @@ export default class VegaRtcManager {
     acceptNewStream({ streamId, clientId }) {
         logger.debug("acceptNewStream()", { streamId, clientId });
 
+        // make sure we have rtcStats connection
+        this.rtcStatsReconnect();
+
         const clientState = this._getOrCreateClientState(clientId);
         const isScreenShare = streamId !== clientId;
 
@@ -1033,16 +1193,45 @@ export default class VegaRtcManager {
 
         if (!consumer) return;
 
-        const maxSide = Math.max(width, height);
-        const spatialLayer = maxSide >= 480 ? (maxSide >= 960 ? 2 : 1) : 0;
+        let numberOfActiveVideos = 0;
+        this._consumers.forEach(c => {
+            if (c._closed || c._paused) return;
+            if (c._appData?.source === "webcam" || c._appData?.source === "screenvideo") numberOfActiveVideos++;
+        });
 
-        if (consumer.appData.spatialLayer !== spatialLayer) {
+        // assume it is using T2 mode unless we detect otherwise
+        let numberOfTemporalLayers = 2;
+        if (/T3/.test(consumer._rtpParameters?.encodings?.[0]?.scalabilityMode || "")) numberOfTemporalLayers = 3;
+
+        const maxSide = Math.max(width, height);
+        let spatialLayer = maxSide >= 480 ? (maxSide >= 960 ? 2 : 1) : 0;
+        let temporalLayer = numberOfTemporalLayers - 1; // default to full framerate
+
+        // if we are rendering tile-like sizes we reduce framerate by 50%
+        if (maxSide < 100) {
+            temporalLayer = Math.max(numberOfTemporalLayers - 2, 0);
+        }
+
+        // if we are rendering many videos, we reduce framerate by 50% for all videos with lowest spatial layer
+        if (numberOfActiveVideos > 8 && spatialLayer === 0) {
+            temporalLayer = Math.max(numberOfTemporalLayers - 2, 0);
+        }
+
+        // increase resolution if few videos (like 1:1 on phones)
+        // todo: consider spatialLayer 1 for maxSide > 200. 4 in a room is considerable higher quality on phones this way
+        // ... but might conflict with our intent of mobile-mode
+        if (numberOfActiveVideos < 4 && maxSide > 300 && spatialLayer === 0) {
+            spatialLayer = 1;
+        }
+
+        if (consumer.appData.spatialLayer !== spatialLayer || consumer.appData.temporalLayer !== temporalLayer) {
             consumer.appData.spatialLayer = spatialLayer;
+            consumer.appData.temporalLayer = temporalLayer;
 
             this._vegaConnection?.message("setConsumersPreferredLayers", {
                 consumerIds: [consumerId],
                 spatialLayer,
-                temporalLayer: spatialLayer,
+                temporalLayer,
             });
         }
     }
@@ -1071,6 +1260,36 @@ export default class VegaRtcManager {
         this._mediasoupDevice = null;
     }
 
+    sendAudioMutedStats(muted) {
+        rtcStats.sendEvent("audio_muted", { muted });
+    }
+
+    sendVideoMutedStats(muted) {
+        rtcStats.sendEvent("video_muted", { muted });
+    }
+
+    sendStatsCustomEvent(eventName, data) {
+        rtcStats.sendEvent(eventName, data);
+    }
+
+    rtcStatsDisconnect() {
+        rtcStats.server.close();
+    }
+
+    rtcStatsReconnect() {
+        if (!rtcStats.server.connected) {
+            rtcStats.server.connect();
+        }
+    }
+
+    _startMonitoringAudioTrack(track) {
+        track.addEventListener("ended", this._audioTrackOnEnded);
+    }
+
+    _stopMonitoringAudioTrack(track) {
+        track.removeEventListener("ended", this._audioTrackOnEnded);
+    }
+
     async _onMessage(message) {
         const { method, data } = message;
         return Promise.resolve()
@@ -1084,6 +1303,10 @@ export default class VegaRtcManager {
                         return this._onConsumerPaused(data);
                     case "consumerResumed":
                         return this._onConsumerResumed(data);
+                    case "dataConsumerReady":
+                        return this._onDataConsumerReady(data);
+                    case "dataConsumerClosed":
+                        return this._onDataConsumerClosed(data);
                     case "dominantSpeaker":
                         return this._onDominantSpeaker(data);
                     default:
@@ -1169,6 +1392,38 @@ export default class VegaRtcManager {
         if (!consumer.appData.localPaused) {
             consumer.resume();
         }
+    }
+
+    async _onDataConsumerReady(options) {
+        logger.debug("_onDataConsumerReady()", { id: options.id, producerId: options.producerId });
+        const consumer = await this._receiveTransport.consumeData(options);
+
+        this._dataConsumers.set(consumer.id, consumer);
+        consumer.once("close", () => {
+            this._dataConsumers.delete(consumer.id);
+        });
+
+        const { clientId } = consumer.appData;
+
+        consumer.on("message", message => {
+            // for now we only use this for score, so ignore messages when no debugger is attached
+            if (!this._micAnalyserDebugger) return;
+
+            if (typeof message !== "string") return;
+
+            const { score } = JSON.parse(message);
+            if (score) {
+                this._micAnalyserDebugger?.onConsumerScore(consumer.appData.clientId, score);
+            }
+        });
+
+        this._syncIncomingStreamsWithPWA(clientId);
+    }
+
+    async _onDataConsumerClosed({ dataConsumerId, reason }) {
+        logger.debug("_onDataConsumerClosed()", { dataConsumerId, reason });
+        const consumer = this._dataConsumers.get(dataConsumerId);
+        consumer?.close();
     }
 
     _onDominantSpeaker({ consumerId }) {
@@ -1315,5 +1570,13 @@ export default class VegaRtcManager {
     // this tells PWA that clients/streams should be accepted from both sides (in contrast with current P2P manager)
     shouldAcceptStreamsFromBothSides() {
         return true;
+    }
+
+    setMicAnalyserDebugger(analyserDebugger) {
+        this._micAnalyserDebugger = analyserDebugger;
+    }
+
+    setMicAnalyserParams(params) {
+        this._micAnalyser?.setParams(params);
     }
 }

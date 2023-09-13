@@ -1,4 +1,4 @@
-export default class VegaParser {
+export default class SfuV2Parser {
     static parse(raw) {
         let object;
 
@@ -14,13 +14,13 @@ export default class VegaParser {
         // Will return message if valid, null if invalid
         if (object.request) {
             // Request
-            return VegaParser._handleRequest(object);
+            return SfuV2Parser._handleRequest(object);
         } else if (object.response) {
             // Response
-            return VegaParser._handleResponse(object);
+            return SfuV2Parser._handleResponse(object);
         } else if (object.message) {
             // Message
-            return VegaParser._handleMessage(object);
+            return SfuV2Parser._handleMessage(object);
         } else {
             // Invalid.
             return;

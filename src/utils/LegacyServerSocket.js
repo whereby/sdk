@@ -1,10 +1,10 @@
-import io from "socket.io-client";
+import io from "socket.io-client-legacy";
 import adapter from "webrtc-adapter";
 
 /**
- * Wrapper class that extends the Socket.IO client library.
+ * *LEGACY* Wrapper class that extends the Socket.IO client library.
  */
-export default class ServerSocket {
+export default class LegacyServerSocket {
     constructor(hostName, options) {
         // Prefer websockets but fallback to polling as recommended on
         // https://socket.io/docs/client-api/
@@ -15,10 +15,10 @@ export default class ServerSocket {
         }
 
         this._socket = io(hostName, options);
-        this._socket.io.on("reconnect", () => {
+        this._socket.on("reconnect", () => {
             this._socket.sendBuffer = [];
         });
-        this._socket.io.on("reconnect_attempt", () => {
+        this._socket.on("reconnect_attempt", () => {
             if (this._wasConnectedUsingWebsocket) {
                 this._socket.io.opts.transports = ["websocket"];
                 // only fallback to polling if not safari
@@ -27,7 +27,7 @@ export default class ServerSocket {
                 // remove if we move signal to a whereby.com subdomain
                 if (adapter.browserDetails.browser !== "safari") delete this._wasConnectedUsingWebsocket;
             } else {
-                this._socket.io.opts.transports = ["websocket", "polling"];
+                this._socket.io.opts.transports = ["polling", "websocket"];
             }
         });
         this._socket.on("connect", () => {
@@ -74,10 +74,6 @@ export default class ServerSocket {
             this._socket.io.engine.transport &&
             this._socket.io.engine.transport.name
         );
-    }
-
-    getManager() {
-        return this._socket.io;
     }
 
     isConnecting() {
