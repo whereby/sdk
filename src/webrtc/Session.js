@@ -2,6 +2,7 @@ import * as sdpModifier from "./sdpModifier";
 import * as statsHelper from "./statsHelper";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapter from "webrtc-adapter";
+import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./turnConstants";
 
 const logger = console;
 
@@ -52,7 +53,6 @@ export default class Session {
                 }
             }
         });
-
         return this.pc;
     }
 
@@ -352,6 +352,9 @@ export default class Session {
     // Only applies to unrestricted connections, not affecting the bandwidth tables
     // that depend on the number of participants.
     maybeRestrictRelayBandwidth() {
+        if (this.maximumTurnBandwidth === MAXIMUM_TURN_BANDWIDTH_UNLIMITED) {
+            return;
+        }
         if (!this.pc.getStats) {
             return;
         }

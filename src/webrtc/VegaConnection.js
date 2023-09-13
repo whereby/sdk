@@ -1,4 +1,4 @@
-import VegaParser from "./VegaParser";
+import SfuV2Parser from "./SfuV2Parser";
 import { EventEmitter } from "events";
 
 export default class VegaConnection extends EventEmitter {
@@ -6,8 +6,8 @@ export default class VegaConnection extends EventEmitter {
         super();
 
         this.wsUrl = wsUrl;
-        this.protocol = protocol;
         this.logger = logger;
+        this.protocol = protocol;
 
         // This is the map of sent requests that are waiting for a response
         this.sents = new Map();
@@ -35,9 +35,7 @@ export default class VegaConnection extends EventEmitter {
     }
 
     close() {
-        if (!this.socket) return;
-
-        this.socket.close();
+        this.socket?.close();
     }
 
     _onOpen() {
@@ -47,17 +45,13 @@ export default class VegaConnection extends EventEmitter {
     }
 
     _onMessage(event) {
-        const socketMessage = VegaParser.parse(event.data);
-
-        if (!socketMessage) {
-            return this.logger.log("VegaConnectionManager: Received invalid message", event.data);
-        }
+        const socketMessage = SfuV2Parser.parse(event.data);
 
         this.logger.log("VegaConnectionManager: Received message", socketMessage);
 
-        if (socketMessage.response) {
+        if (socketMessage?.response) {
             this._handleResponse(socketMessage);
-        } else if (socketMessage.message) {
+        } else if (socketMessage?.message) {
             this.emit("message", socketMessage);
         }
     }
@@ -90,12 +84,12 @@ export default class VegaConnection extends EventEmitter {
     }
 
     message(method, data = {}) {
-        const message = VegaParser.createMessage(method, data);
+        const message = SfuV2Parser.createMessage(method, data);
         this.send(message);
     }
 
     request(method, data = {}, timeout = 1500 * (15 + 0.1 * this.sents.size)) {
-        const request = VegaParser.createRequest(method, data);
+        const request = SfuV2Parser.createRequest(method, data);
 
         this.send(request);
 

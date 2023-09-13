@@ -1,8 +1,67 @@
 import SDPUtils from "sdp";
 import adapter from "webrtc-adapter";
+import * as sdpTransform from "sdp-transform";
 
 const browserName = adapter.browserDetails.browser;
 const browserVersion = adapter.browserDetails.version;
+
+export function setCodecPreferenceSDP(sdp, vp9On) {
+    try {
+        const sdpObject = sdpTransform.parse(sdp);
+        if (Array.isArray(sdpObject?.media)) {
+            const mediaVideo = sdpObject.media.find(m => m.type === "video");
+            if (Array.isArray(mediaVideo?.rtp)) {
+                const rtp = mediaVideo.rtp;
+                for (let i = 0; i < rtp.length; i++) {
+                    if (vp9On && rtp[i].codec === "VP9") {
+                        const payloads = mediaVideo.payloads.split(" ");
+                        const pt = payloads.indexOf("" + rtp[i].payload);
+                        if (pt && pt !== -1 && pt >= 0) {
+                            payloads.unshift(payloads.splice(pt, 1)[0]);
+                            mediaVideo.payloads = payloads.join(" ");
+                        }
+                    }
+                }
+            }
+        }
+        const newSdp = sdpTransform.write(sdpObject);
+        return newSdp;
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.log("setCodecPreferenceSDP error:", error);
+    }
+}
+// Safari does not like VP8-only offers
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=4957
+// This sets the m-line as rejected.
+export function maybeRejectNoH264(sdp) {
+    if (browserName !== "safari") {
+        return sdp;
+    }
+    const sections = SDPUtils.splitSections(sdp);
+    for (let i = 1; i < sections.length; i++) {
+        if (SDPUtils.getKind(sections[i]) !== "video") {
+            continue;
+        }
+        const codecs = SDPUtils.matchPrefix(sections[i], "a=rtpmap:")
+            .map(line => {
+                return SDPUtils.parseRtpMap(line);
+            })
+            .map(codec => {
+                return codec.name.toUpperCase();
+            });
+
+        // this m-line has...
+        if (
+            codecs.indexOf("H264") === -1 && // no H264
+            sections[i][8] === "9"
+        ) {
+            // and is not rejected
+            sections[i] = sections[i].replace("m=video 9 ", "m=video 0 "); // reject it.
+        }
+    }
+    return sections.join("");
+}
 
 // SDP mangling for deprioritizing H264
 export function deprioritizeH264(sdp) {
@@ -81,5 +140,18 @@ export function filterMsidSemantic(sdp) {
         SDPUtils.splitLines(sdp.trim())
             .map(line => (line.startsWith("a=msid-semantic:") ? "a=msid-semantic: WMS *" : line))
             .join("\r\n") + "\r\n"
+    );
+}
+
+export function changeMediaDirection(sdp, active) {
+    const sections = SDPUtils.splitSections(sdp);
+    return (
+        sections.shift() +
+        sections
+            .map(section => {
+                const currentDirection = SDPUtils.getDirection(section);
+                return section.replace("a=" + currentDirection, "a=" + (active ? "recvonly" : "inactive"));
+            })
+            .join("")
     );
 }

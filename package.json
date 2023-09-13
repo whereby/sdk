@@ -1,7 +1,7 @@
 {
   "name": "@whereby/jslib-media",
   "description": "Media library for Whereby",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "private": false,
   "license": "MIT",
   "homepage": "https://github.com/whereby/jslib-media",
@@ -21,11 +21,14 @@
   },
   "dependencies": {
     "assert": "^2.0.0",
-    "mediasoup-client": "^3.6.82",
-    "sdp": "^3.1.0",
+    "mediasoup-client": "^3.6.80",
+    "rtcstats": "github:lifeonairteam/rtcstats#v3.1.0",
+    "sdp": "^2.2.0",
+    "sdp-transform": "^2.14.1",
     "socket.io-client": "^4.6.1",
-    "uuid": "^9.0.0",
-    "webrtc-adapter": "^8.2.0"
+    "socket.io-client-legacy": "npm:socket.io-client@1.7.4",
+    "uuid": "^8.3.2",
+    "webrtc-adapter": "^7.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.17.5",
@@ -44,6 +47,7 @@
     "eslint-config-prettier": "^4.0.0",
     "eslint-plugin-mocha-no-only": "^0.0.5",
     "eslint-plugin-prettier": "^3.0.1",
+    "i18n-iso-countries": "^6.4.0",
     "istanbul-instrumenter-loader": "^3.0.1",
     "karma": "^6.1.0",
     "karma-babel-preprocessor": "^8.0.1",
@@ -51,6 +55,7 @@
     "karma-coverage-istanbul-reporter": "^3.0.3",
     "karma-mocha": "^2.0.1",
     "karma-webpack": "^5.0.0",
+    "libphonenumber-js": "^1.9.7",
     "mocha": "^8.2.1",
     "prettier": "^1.16.4",
     "process": "^0.11.10",

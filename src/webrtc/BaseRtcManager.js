@@ -1,24 +1,41 @@
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
-import adapter from "webrtc-adapter";
+import RtcStream from "../model/RtcStream";
+import LegacyServerSocket from "../utils/LegacyServerSocket";
 import ServerSocket from "../utils/ServerSocket";
+import * as webrtcBugDetector from "./bugDetector";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Session from "./Session";
 import assert from "assert";
-import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_PREMIUM } from "../utils/turnConstants";
-import { CAMERA_STREAM_ID } from "../utils/constants";
+import rtcStats from "./rtcStatsService";
+import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./turnConstants";
+import adapter from "webrtc-adapter";
 
+const CAMERA_STREAM_ID = RtcStream.getCameraId();
 const logger = console;
-
 const browserName = adapter.browserDetails.browser;
 const browserVersion = adapter.browserDetails.version;
+
+if (browserName === "firefox") {
+    adapter.browserShim.shimGetDisplayMedia(window, "screen");
+}
+
+let unloading = false;
+if (browserName === "chrome") {
+    window.document.addEventListener("beforeunload", () => {
+        unloading = true;
+    });
+}
 
 export default class BaseRtcManager {
     constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }) {
         assert.ok(selfId, "selfId is required");
         assert.ok(room, "room is required");
         assert.ok(emitter && emitter.emit, "emitter is required");
-        assert.ok(serverSocket instanceof ServerSocket, "serverSocket is required");
+        assert.ok(
+            serverSocket instanceof LegacyServerSocket || serverSocket instanceof ServerSocket,
+            "serverSocket is required"
+        );
         assert.ok(webrtcProvider, "webrtcProvider is required");
 
         const { name, session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
@@ -37,6 +54,15 @@ export default class BaseRtcManager {
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
+
+        this._audioTrackOnEnded = () => {
+            // There are a couple of reasons the microphone could stop working.
+            // One of them is getting unplugged. The other is the Chrome audio
+            // process crashing. The third is the tab being closed.
+            // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
+            rtcStats.sendEvent("audio_ended", { unloading });
+            this._emit(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
+        };
 
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
@@ -129,9 +155,9 @@ export default class BaseRtcManager {
             this.peerConnections[peerConnectionId] = session = new Session({
                 peerConnectionId,
                 bandwidth: initialBandwidth,
-                maximumTurnBandwidth: this._features.restrictBandwidthWhenUsingRelay
-                    ? MAXIMUM_TURN_BANDWIDTH
-                    : MAXIMUM_TURN_BANDWIDTH_PREMIUM,
+                maximumTurnBandwidth: this._features.unlimitedBandwidthWhenUsingRelayP2POn
+                    ? MAXIMUM_TURN_BANDWIDTH_UNLIMITED
+                    : MAXIMUM_TURN_BANDWIDTH,
                 deprioritizeH264Encoding,
             });
         }
@@ -177,6 +203,12 @@ export default class BaseRtcManager {
                 googCpuOveruseDetection: true,
             });
         }
+
+        // rtcstats integration
+        constraints.optional.push({ rtcStatsRoomSessionId: this._roomSessionId });
+        constraints.optional.push({ rtcStatsClientId: this._selfId });
+        constraints.optional.push({ rtcStatsPeerId: peerConnectionId });
+        constraints.optional.push({ rtcStatsConferenceId: this._roomName });
 
         const peerConnectionConfig = {
             iceServers: this._iceServers,
@@ -322,6 +354,16 @@ export default class BaseRtcManager {
                     // try to detect audio problems.
                     // this waits 3 seconds after the connection is up
                     // to be sure the DTLS handshake is done even in Firefox.
+                    setTimeout(() => {
+                        webrtcBugDetector.detectMicrophoneNotWorking(session.pc).then(failureDirection => {
+                            if (failureDirection !== false) {
+                                this._emit(rtcManagerEvents.MICROPHONE_NOT_WORKING, {
+                                    failureDirection,
+                                    clientId,
+                                });
+                            }
+                        });
+                    }, 3000);
                     session.registerConnected();
                     break;
                 case "failed":
@@ -344,7 +386,7 @@ export default class BaseRtcManager {
         }
 
         // Don't add existing screenshare-streams when using SFU as those will be
-        // added in a separate session/peerConnection
+        // added in a separate session/peerConnection by SfuV2RtcManager
         if (shouldAddLocalVideo) {
             Object.keys(this.localStreams).forEach(id => {
                 if (id === CAMERA_STREAM_ID) {
@@ -475,6 +517,10 @@ export default class BaseRtcManager {
 
         if (streamId === CAMERA_STREAM_ID) {
             this._addStreamToPeerConnections(stream);
+            const [audioTrack] = stream.getAudioTracks();
+            if (audioTrack) {
+                this._startMonitoringAudioTrack(audioTrack);
+            }
             return;
         }
 
@@ -490,6 +536,12 @@ export default class BaseRtcManager {
     }
 
     replaceTrack(oldTrack, newTrack) {
+        if (oldTrack && oldTrack.kind === "audio") {
+            this._stopMonitoringAudioTrack(oldTrack);
+        }
+        if (newTrack && newTrack.kind === "audio") {
+            this._startMonitoringAudioTrack(newTrack);
+        }
         return this._replaceTrackToPeerConnections(oldTrack, newTrack);
     }
 
@@ -618,6 +670,36 @@ export default class BaseRtcManager {
                 session.handleAnswer(answer);
             }),
         ];
+    }
+
+    sendAudioMutedStats(muted) {
+        rtcStats.sendEvent("audio_muted", { muted });
+    }
+
+    sendVideoMutedStats(muted) {
+        rtcStats.sendEvent("video_muted", { muted });
+    }
+
+    sendStatsCustomEvent(eventName, data) {
+        rtcStats.sendEvent(eventName, data);
+    }
+
+    rtcStatsDisconnect() {
+        rtcStats.server.close();
+    }
+
+    rtcStatsReconnect() {
+        if (!rtcStats.server.connected) {
+            rtcStats.server.connect();
+        }
+    }
+
+    _startMonitoringAudioTrack(track) {
+        track.addEventListener("ended", this._audioTrackOnEnded);
+    }
+
+    _stopMonitoringAudioTrack(track) {
+        track.removeEventListener("ended", this._audioTrackOnEnded);
     }
 
     setRoomSessionId(roomSessionId) {

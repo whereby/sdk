@@ -1,14 +1,17 @@
 import BaseRtcManager from "./BaseRtcManager";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
-
+import RtcStream from "../model/RtcStream";
+import { getOptimalBitrate } from "../utils/optimalBitrate";
+import { setCodecPreferenceSDP } from "./sdpModifier";
 import adapter from "webrtc-adapter";
-import { CAMERA_STREAM_ID } from "../utils/constants";
 
 const logger = console;
+const CAMERA_STREAM_ID = RtcStream.getCameraId();
 const browserName = adapter.browserDetails.browser;
 export default class P2pRtcManager extends BaseRtcManager {
     _connect(clientId) {
+        this.rtcStatsReconnect();
         const shouldAddLocalVideo = true;
         let session = this._getSession(clientId);
         let bandwidth = (session && session.bandwidth) || 0;
@@ -43,6 +46,35 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
     }
 
+    _setCodecPreferences(pc, vp9On, av1On) {
+        try {
+            const videoTransceivers = pc
+                .getTransceivers()
+                .filter(transceiver => transceiver?.sender?.track?.kind === "video");
+
+            videoTransceivers.forEach(videoTransceiver => {
+                // If not implemented return
+                if (typeof RTCRtpSender.getCapabilities === undefined) return;
+                const capabilities = RTCRtpSender.getCapabilities("video");
+                for (let i = 0; i < capabilities.codecs.length; i++) {
+                    if (vp9On && capabilities.codecs[i].mimeType.toLowerCase() === "video/vp9") {
+                        capabilities.codecs.unshift(capabilities.codecs.splice(i, 1)[0]);
+                        break;
+                    }
+                    if (av1On && capabilities.codecs[i].mimeType.toLowerCase() === "video/av1") {
+                        capabilities.codecs.unshift(capabilities.codecs.splice(i, 1)[0]);
+                        break;
+                    }
+                }
+                // If not implemented return
+                if (typeof videoTransceiver.setCodecPreferences === undefined) return;
+                videoTransceiver.setCodecPreferences(capabilities.codecs);
+            });
+        } catch (error) {
+            logger.error("Error during setting setCodecPreferences:", error);
+        }
+    }
+
     _negotiatePeerConnection(clientId, session, constraints) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
@@ -57,8 +89,21 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
         session.isOperationPending = true;
 
+        const { vp9On, av1On } = this._features;
+
+        // Set codec preferences to video transceivers
+        if (vp9On || av1On) {
+            this._setCodecPreferences(pc, vp9On, av1On);
+        }
+
         pc.createOffer(constraints || this.offerOptions)
             .then(offer => {
+                // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
+                // Only vp9 because FF does not support AV1 yet
+                if (vp9On && browserName === "firefox") {
+                    offer.sdp = setCodecPreferenceSDP(offer.sdp, vp9On);
+                }
+
                 this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                     receiverId: clientId,
                     message: this._transformOutgoingSdp(offer),
@@ -111,10 +156,10 @@ export default class P2pRtcManager extends BaseRtcManager {
 
         // We use a slightly different curve in premium to give better quality when
         // there are few participants.
-        const bandwidth = this._features.bandwidth
+        let bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
-                  1: 0,
+                  1: this._features.cap2pBitrate ? 1000 : 0,
                   2: this._features.highP2PBandwidth ? 768 : 384,
                   3: this._features.highP2PBandwidth ? 512 : 256,
                   4: 192,
@@ -125,6 +170,24 @@ export default class P2pRtcManager extends BaseRtcManager {
 
         if (bandwidth === undefined) {
             return 0;
+        }
+
+        if (this._features.adjustBitratesFromResolution) {
+            const cameraStream = this._getLocalCameraStream();
+            if (cameraStream) {
+                const cameraTrack = cameraStream && cameraStream.getVideoTracks()[0];
+                if (cameraTrack) {
+                    const { width, height, frameRate } = cameraTrack.getSettings();
+                    if (width && height && frameRate) {
+                        const optimalBandwidth = Math.round(getOptimalBitrate(width, height, frameRate) / 1000);
+                        bandwidth = Math.min(optimalBandwidth, bandwidth || optimalBandwidth);
+                    }
+                }
+            }
+        }
+
+        if (this._features.higherP2PBitrates) {
+            bandwidth = bandwidth * 1.5;
         }
 
         this._forEachPeerConnection(session => {
@@ -215,7 +278,10 @@ export default class P2pRtcManager extends BaseRtcManager {
         const numPeers = this.numberOfPeerconnections();
         if (numPeers === 0) {
             setTimeout(() => {
-                //const numPeers = this.numberOfPeerconnections();
+                const numPeers = this.numberOfPeerconnections();
+                if (numPeers === 0) {
+                    this.rtcStatsDisconnect();
+                }
             }, 60 * 1000);
         }
     }

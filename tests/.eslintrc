@@ -9,7 +9,7 @@
     },
     "plugins": ["eslint-plugin-mocha-no-only"],
     "parserOptions": {
-         "ecmaVersion": 2018
+        "ecmaVersion": 2018
     },
     "rules": {
         "mocha-no-only/mocha-no-only": 2
