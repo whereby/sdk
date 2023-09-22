@@ -16,11 +16,11 @@ export function detectMicrophoneNotWorking(pc) {
     ) {
         return Promise.resolve(false);
     }
-    const sendingAudio = pc.getSenders().some(sender => sender.track && sender.track.kind === "audio");
-    const receivingAudio = pc.getReceivers().some(receiver => receiver.track && receiver.track.kind === "audio");
-    return pc.getStats(null).then(result => {
+    const sendingAudio = pc.getSenders().some((sender) => sender.track && sender.track.kind === "audio");
+    const receivingAudio = pc.getReceivers().some((receiver) => receiver.track && receiver.track.kind === "audio");
+    return pc.getStats(null).then((result) => {
         let microphoneFailed = false;
-        result.forEach(report => {
+        result.forEach((report) => {
             if (
                 report.type === "outbound-rtp" &&
                 (report.kind === "audio" || report.mediaType === "audio") &&

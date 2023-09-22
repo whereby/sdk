@@ -360,7 +360,7 @@ describe("P2pRtcManager", () => {
             };
 
             describe("broadcasts when ice connection state becomes", () => {
-                Object.keys(iceStateToConnectionStatus).forEach(iceState => {
+                Object.keys(iceStateToConnectionStatus).forEach((iceState) => {
                     const expectedStatus = iceStateToConnectionStatus[iceState];
 
                     it("broadcasts when ice connection state becomes " + iceState, async () => {

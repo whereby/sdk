@@ -50,11 +50,11 @@ export default class P2pRtcManager extends BaseRtcManager {
         try {
             const videoTransceivers = pc
                 .getTransceivers()
-                .filter(transceiver => transceiver?.sender?.track?.kind === "video");
+                .filter((transceiver) => transceiver?.sender?.track?.kind === "video");
 
-            videoTransceivers.forEach(videoTransceiver => {
+            videoTransceivers.forEach((videoTransceiver) => {
                 // If not implemented return
-                if (typeof RTCRtpSender.getCapabilities === undefined) return;
+                if (RTCRtpSender.getCapabilities === undefined) return;
                 const capabilities = RTCRtpSender.getCapabilities("video");
                 for (let i = 0; i < capabilities.codecs.length; i++) {
                     if (vp9On && capabilities.codecs[i].mimeType.toLowerCase() === "video/vp9") {
@@ -67,7 +67,7 @@ export default class P2pRtcManager extends BaseRtcManager {
                     }
                 }
                 // If not implemented return
-                if (typeof videoTransceiver.setCodecPreferences === undefined) return;
+                if (videoTransceiver.setCodecPreferences === undefined) return;
                 videoTransceiver.setCodecPreferences(capabilities.codecs);
             });
         } catch (error) {
@@ -97,7 +97,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
 
         pc.createOffer(constraints || this.offerOptions)
-            .then(offer => {
+            .then((offer) => {
                 // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
                 // Only vp9 because FF does not support AV1 yet
                 if (vp9On && browserName === "firefox") {
@@ -113,16 +113,16 @@ export default class P2pRtcManager extends BaseRtcManager {
                 // make Chrome send media later when there are two (more more?) video tracks.
                 if (
                     browserName === "chrome" &&
-                    pc.getSenders().filter(sender => sender.track && sender.track.kind === "video").length >= 2
+                    pc.getSenders().filter((sender) => sender.track && sender.track.kind === "video").length >= 2
                 ) {
                     session.pendingOffer = offer;
                     return;
                 }
-                pc.setLocalDescription(offer).catch(e => {
+                pc.setLocalDescription(offer).catch((e) => {
                     logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
                 });
             })
-            .catch(e => {
+            .catch((e) => {
                 logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
             });
     }
@@ -190,7 +190,7 @@ export default class P2pRtcManager extends BaseRtcManager {
             bandwidth = bandwidth * 1.5;
         }
 
-        this._forEachPeerConnection(session => {
+        this._forEachPeerConnection((session) => {
             session.changeBandwidth(bandwidth);
         });
 
@@ -221,7 +221,7 @@ export default class P2pRtcManager extends BaseRtcManager {
             pc.addTrack(this._stoppedVideoTrack, localCameraStream);
         }
 
-        pc.onicecandidate = event => {
+        pc.onicecandidate = (event) => {
             if (event.candidate) {
                 session.relayCandidateSeen = session.relayCandidateSeen || event.candidate.type === "relay";
                 this._emitServerEvent(RELAY_MESSAGES.ICE_CANDIDATE, {
@@ -301,7 +301,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         if (enable === false) {
             // try to stop the local camera so the camera light goes off.
             setTimeout(() => {
-                localStream.getVideoTracks().forEach(track => {
+                localStream.getVideoTracks().forEach((track) => {
                     if (track.enabled === false) {
                         track.stop();
                         localStream.removeTrack(track);
@@ -340,7 +340,7 @@ export default class P2pRtcManager extends BaseRtcManager {
                         // device has been plugged out or similar
                         return;
                     }
-                    navigator.mediaDevices.getUserMedia({ video: constraints }).then(stream => {
+                    navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
                         const track = stream.getVideoTracks()[0];
                         localStream.addTrack(track);
                         this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {

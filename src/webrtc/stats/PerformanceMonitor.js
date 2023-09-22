@@ -36,8 +36,8 @@ export function startPerformanceMonitor({ onMetricsUpdated, onTerminated, isHidd
         }
 
         buckets
-            .filter(bucket => bucket.test(currentMetrics))
-            .forEach(bucket => {
+            .filter((bucket) => bucket.test(currentMetrics))
+            .forEach((bucket) => {
                 const bucketData = (aggregatedMetrics[bucket.name] = aggregatedMetrics[bucket.name] || {});
                 Object.entries(currentMetrics).forEach(([metric, value]) => {
                     if (!bucketData[metric])
@@ -78,7 +78,7 @@ export function startPerformanceMonitor({ onMetricsUpdated, onTerminated, isHidd
             if (window.requestIdleCallback) {
                 const beforeRic = performance.now();
                 ricHandle = requestIdleCallback(
-                    idleDeadline => {
+                    (idleDeadline) => {
                         if (idleDeadline.didTimeout) {
                             currentMetrics = { ...currentMetrics, ricLag: RIC_TIMEOUT };
                         } else {
@@ -97,7 +97,7 @@ export function startPerformanceMonitor({ onMetricsUpdated, onTerminated, isHidd
     measureScheduling();
 
     return {
-        registerDecodedFps: fpsData => {
+        registerDecodedFps: (fpsData) => {
             if (wasHidden) return;
 
             const volatilityScores = fpsData.map(({ trackId, fps }) => {

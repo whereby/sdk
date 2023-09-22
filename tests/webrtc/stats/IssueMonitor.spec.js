@@ -7,12 +7,12 @@ function createMockPeerConnection(clients) {
         getStats() {
             return new Map(
                 clients
-                    .flatMap(client => [
+                    .flatMap((client) => [
                         client.audio.enabled && { ...client.audio.stats, timestamp: Date.now() },
                         client.video.enabled && { ...client.video.stats, timestamp: Date.now() },
                     ])
                     .filter(Boolean)
-                    .map(stats => [stats.id, { ...stats }])
+                    .map((stats) => [stats.id, { ...stats }])
             );
         },
     };

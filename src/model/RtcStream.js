@@ -41,7 +41,7 @@ export default class RtcStream {
         if (!this.stream) {
             return;
         }
-        this.stream.getVideoTracks().forEach(track => {
+        this.stream.getVideoTracks().forEach((track) => {
             track.enabled = isEnabled;
         });
     }
@@ -51,7 +51,7 @@ export default class RtcStream {
         if (!this.stream) {
             return;
         }
-        this.stream.getAudioTracks().forEach(track => {
+        this.stream.getAudioTracks().forEach((track) => {
             track.enabled = isEnabled;
         });
     }

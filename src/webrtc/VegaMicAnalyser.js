@@ -44,7 +44,7 @@ export default function createMicAnalyser({ micTrack, params, onScoreUpdated }) 
     let source = null;
     let lastTrack = null;
     let lastTrackWasOurs = false;
-    const setTrack = async track => {
+    const setTrack = async (track) => {
         // stop last track if get by us
         if (lastTrack && lastTrackWasOurs) {
             lastTrack.stop();
@@ -77,7 +77,7 @@ export default function createMicAnalyser({ micTrack, params, onScoreUpdated }) 
 
     // updates analyzer params and restarts sampler
     let samplerInterval;
-    const setParams = newParams => {
+    const setParams = (newParams) => {
         clearInterval(samplerInterval);
 
         params = { ...defaultParams, ...newParams };
@@ -128,8 +128,8 @@ export default function createMicAnalyser({ micTrack, params, onScoreUpdated }) 
 
             let score = 0;
             if (calcScore) {
-                const processedBands = params.bands.map(range => {
-                    const bands = range.map(index => binMap(bins[index] / 255, index));
+                const processedBands = params.bands.map((range) => {
+                    const bands = range.map((index) => binMap(bins[index] / 255, index));
                     return {
                         avg: bands.reduce((sum, current) => sum + current, 0) / range.length,
                         min: bands.reduce((min, current) => Math.min(min, current / 255), Number.MAX_VALUE),

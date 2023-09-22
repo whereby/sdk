@@ -110,7 +110,7 @@ describe("PerformanceMonitor", () => {
 
         expect(onMetricsUpdated).to.have.been.calledWith(
             sinon.match({
-                "1": { rrVol: { cur: 0, count: 1 } },
+                1: { rrVol: { cur: 0, count: 1 } },
                 "2to4": { rrVol: { cur: 0.5, count: 1 } },
                 all: { rrVol: { cur: 0.5, count: 2 } },
             })

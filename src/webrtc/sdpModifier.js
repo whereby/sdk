@@ -9,7 +9,7 @@ export function setCodecPreferenceSDP(sdp, vp9On) {
     try {
         const sdpObject = sdpTransform.parse(sdp);
         if (Array.isArray(sdpObject?.media)) {
-            const mediaVideo = sdpObject.media.find(m => m.type === "video");
+            const mediaVideo = sdpObject.media.find((m) => m.type === "video");
             if (Array.isArray(mediaVideo?.rtp)) {
                 const rtp = mediaVideo.rtp;
                 for (let i = 0; i < rtp.length; i++) {
@@ -44,10 +44,10 @@ export function maybeRejectNoH264(sdp) {
             continue;
         }
         const codecs = SDPUtils.matchPrefix(sections[i], "a=rtpmap:")
-            .map(line => {
+            .map((line) => {
                 return SDPUtils.parseRtpMap(line);
             })
-            .map(codec => {
+            .map((codec) => {
                 return codec.name.toUpperCase();
             });
 
@@ -66,15 +66,15 @@ export function maybeRejectNoH264(sdp) {
 // SDP mangling for deprioritizing H264
 export function deprioritizeH264(sdp) {
     return SDPUtils.splitSections(sdp)
-        .map(section => {
+        .map((section) => {
             // only modify video sections
             if (SDPUtils.getKind(section) !== "video") return section;
 
             // list of payloadTypes used in this sdp/section
             const h264payloadTypes = SDPUtils.matchPrefix(section, "a=rtpmap:")
-                .map(line => SDPUtils.parseRtpMap(line))
-                .filter(codec => /h264/i.test(codec.name))
-                .map(codec => "" + codec.payloadType);
+                .map((line) => SDPUtils.parseRtpMap(line))
+                .filter((codec) => /h264/i.test(codec.name))
+                .map((codec) => "" + codec.payloadType);
 
             // return as is if no h264 found
             if (!h264payloadTypes.length) return section;
@@ -84,7 +84,7 @@ export function deprioritizeH264(sdp) {
             const mlinePayloadsSection = /(\s\d+)+$/i.exec(mline)[0];
             const mlinePayloadsNonH264 = mlinePayloadsSection
                 .split(" ")
-                .filter(payloadType => payloadType && !h264payloadTypes.includes(payloadType));
+                .filter((payloadType) => payloadType && !h264payloadTypes.includes(payloadType));
             const reorderedPayloads = [...mlinePayloadsNonH264, ...h264payloadTypes].join(" ");
             const newmline = mline.replace(mlinePayloadsSection, " " + reorderedPayloads);
             return section.replace(mline, newmline);
@@ -117,7 +117,7 @@ export function filterMidExtension(sdp) {
     }
     return (
         SDPUtils.splitLines(sdp.trim())
-            .filter(line => {
+            .filter((line) => {
                 if (!line.startsWith("a=extmap:")) {
                     return true;
                 }
@@ -138,7 +138,7 @@ export function filterMsidSemantic(sdp) {
     }
     return (
         SDPUtils.splitLines(sdp.trim())
-            .map(line => (line.startsWith("a=msid-semantic:") ? "a=msid-semantic: WMS *" : line))
+            .map((line) => (line.startsWith("a=msid-semantic:") ? "a=msid-semantic: WMS *" : line))
             .join("\r\n") + "\r\n"
     );
 }
@@ -148,7 +148,7 @@ export function changeMediaDirection(sdp, active) {
     return (
         sections.shift() +
         sections
-            .map(section => {
+            .map((section) => {
                 const currentDirection = SDPUtils.getDirection(section);
                 return section.replace("a=" + currentDirection, "a=" + (active ? "recvonly" : "inactive"));
             })

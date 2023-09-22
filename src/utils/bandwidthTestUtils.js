@@ -1,8 +1,8 @@
-export const createWorker = fn => {
+export const createWorker = (fn) => {
     return new Worker(URL.createObjectURL(new Blob(["self.onmessage = ", fn.toString()], { type: "text/javascript" })));
 };
 
-export const generateByteString = count => {
+export const generateByteString = (count) => {
     if (count === 0) {
         return "";
     }
