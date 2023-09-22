@@ -45,7 +45,7 @@ module.exports = function(config) {
                     "process.env.AWF_API_BASE_URL": "'AWF_API_BASE_URL/'",
                     "process.env.AP_ROOM_BASE_URL": "'AP_ROOM_BASE_URL/'",
                 }),
-                new webpack.ProvidePlugin({ process: "process/browser" }),
+                new webpack.ProvidePlugin({ process: "process/browser.js" }),
             ],
             resolve: { fallback: { assert: require.resolve("assert") } },
             module: {

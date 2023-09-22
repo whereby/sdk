@@ -21,6 +21,9 @@ describe("PerformanceMonitor", () => {
     beforeEach(() => {
         hidden = false;
         clock = sinon.useFakeTimers();
+        // requestIdleCallback is not implemented fully in sinon fake timers yet
+        // https://github.com/sinonjs/fake-timers/issues/358
+        clock.requestIdleCallback = (cb) => cb({ didTimeout: false });
         onMetricsUpdated = sinon.spy();
         onTerminated = sinon.spy();
         isHidden = () => hidden;
