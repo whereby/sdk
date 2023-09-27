@@ -13,6 +13,6 @@ export const maybeTurnOnly = (transportConfig, features) => {
     }[features.useOnlyTURN];
 
     if (filter) {
-        transportConfig.iceServers = transportConfig.iceServers.filter(entry => entry.url && entry.url.match(filter));
+        transportConfig.iceServers = transportConfig.iceServers.filter((entry) => entry.url && entry.url.match(filter));
     }
 };

@@ -94,11 +94,11 @@ function rtcStatsConnection(wsURL) {
             connection.connected = true;
             ws = new WebSocket(wsURL + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
 
-            ws.onerror = e => {
+            ws.onerror = (e) => {
                 connection.connected = false;
                 logger.warn(`[RTCSTATS] WebSocket error`, e);
             };
-            ws.onclose = e => {
+            ws.onclose = (e) => {
                 connection.connected = false;
                 logger.info(`[RTCSTATS] Closed ${e.code}`);
             };
@@ -150,10 +150,10 @@ const rtcStats = {
             value,
         });
     },
-    sendAudioMuted: muted => {
+    sendAudioMuted: (muted) => {
         rtcStats.sendEvent("audio_muted", { muted });
     },
-    sendVideoMuted: muted => {
+    sendVideoMuted: (muted) => {
         rtcStats.sendEvent("video_muted", { muted });
     },
     server,

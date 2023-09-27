@@ -72,7 +72,7 @@ export function test(createRtcManager) {
 
                 rtcManager.disconnectAll();
 
-                deregisterFunctions.forEach(deregisterFunction => {
+                deregisterFunctions.forEach((deregisterFunction) => {
                     expect(deregisterFunction).to.have.be.calledWithExactly();
                 });
             });
@@ -274,7 +274,7 @@ export function test(createRtcManager) {
                 };
 
                 describe("broadcasts when ice connection state becomes", () => {
-                    Object.keys(iceStateToConnectionStatus).forEach(iceState => {
+                    Object.keys(iceStateToConnectionStatus).forEach((iceState) => {
                         const expectedStatus = iceStateToConnectionStatus[iceState];
 
                         it("broadcasts when ice connection state becomes " + iceState, async () => {

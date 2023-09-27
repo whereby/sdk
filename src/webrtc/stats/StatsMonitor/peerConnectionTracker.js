@@ -2,8 +2,8 @@ let peerConnections = [];
 let peerConnectionCounter = 0;
 const peerConnectionData = new WeakMap();
 
-export const removePeerConnection = pc => {
-    peerConnections = peerConnections.filter(old => old !== pc);
+export const removePeerConnection = (pc) => {
+    peerConnections = peerConnections.filter((old) => old !== pc);
 };
 
 if (window.RTCPeerConnection) {
@@ -27,6 +27,6 @@ if (window.RTCPeerConnection) {
 
 export const getCurrentPeerConnections = () => peerConnections;
 
-export const getPeerConnectionIndex = pc => peerConnectionData.get(pc)?.index;
+export const getPeerConnectionIndex = (pc) => peerConnectionData.get(pc)?.index;
 
-export const setPeerConnectionsForTests = pcs => (peerConnections = pcs);
+export const setPeerConnectionsForTests = (pcs) => (peerConnections = pcs);

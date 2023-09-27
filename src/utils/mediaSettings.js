@@ -74,30 +74,30 @@ export const modifyMediaCapabilities = (routerRtpCapabilities, features) => {
 
     if (vp9On) {
         const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            codec => codec.mimeType.toLowerCase() === "video/vp9"
+            (codec) => codec.mimeType.toLowerCase() === "video/vp9"
         );
 
         const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
-            codec => codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType
+            (codec) => codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType
         );
 
         routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
-            codec =>
+            (codec) =>
                 codec.kind === "audio" ||
                 codec.preferredPayloadType === preferredPayloadType ||
                 codec.preferredPayloadType === aptPreferredPayloadType
         );
     } else if (h264On) {
         const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            codec => codec.mimeType.toLowerCase() === "video/h264"
+            (codec) => codec.mimeType.toLowerCase() === "video/h264"
         );
 
         const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
-            codec => codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType
+            (codec) => codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType
         );
 
         routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
-            codec =>
+            (codec) =>
                 codec.kind === "audio" ||
                 codec.preferredPayloadType === preferredPayloadType ||
                 codec.preferredPayloadType === aptPreferredPayloadType

@@ -34,8 +34,8 @@ const issueDetectors = [
         enabled: ({ hasLiveTrack, stats, client, kind }) =>
             hasLiveTrack && client.isLocalClient && kind === "video" && stats,
         check: ({ stats }) =>
-            Object.values(stats.tracks).find(track =>
-                Object.values(track.ssrcs).find(ssrc => ssrc.qualityLimitationReason === "bandwidth")
+            Object.values(stats.tracks).find((track) =>
+                Object.values(track.ssrcs).find((ssrc) => ssrc.qualityLimitationReason === "bandwidth")
             ),
     },
     {
@@ -43,8 +43,8 @@ const issueDetectors = [
         enabled: ({ hasLiveTrack, stats, client, kind }) =>
             hasLiveTrack && client.isLocalClient && kind === "video" && stats,
         check: ({ stats }) =>
-            Object.values(stats.tracks).find(track =>
-                Object.values(track.ssrcs).find(ssrc => ssrc.qualityLimitationReason === "cpu")
+            Object.values(stats.tracks).find((track) =>
+                Object.values(track.ssrcs).find((ssrc) => ssrc.qualityLimitationReason === "cpu")
             ),
     },
     {
@@ -98,7 +98,7 @@ const issueDetectors = [
             (ssrc0.fractionLost || 0) > 0.03 ||
             (!client.isPresentation && kind === "video" && ssrc0.bitrate < 30000) ||
             (ssrc0.direction === "in" && ssrc0.pliRate > 2) ||
-            ssrcs.find(ssrc => ssrc.qualityLimitationReason === "bandwidth"),
+            ssrcs.find((ssrc) => ssrc.qualityLimitationReason === "bandwidth"),
     },
     {
         id: "cpu-pressure-serious",
@@ -195,7 +195,7 @@ const metrics = [
         id: "cpu-pressure",
         global: true,
         enabled: ({ stats }) => stats?.pressure?.source === "cpu",
-        value: ({ stats }) => ({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }[stats.pressure.state] || 0),
+        value: ({ stats }) => ({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 })[stats.pressure.state] || 0,
     },
 ];
 
@@ -222,7 +222,7 @@ export const getIssuesAndMetrics = () => {
 
 function onUpdatedStats(statsByView, clients) {
     // reset aggreated current metrics
-    Object.values(aggregatedMetrics).forEach(metricData => {
+    Object.values(aggregatedMetrics).forEach((metricData) => {
         metricData.curTicks = 0;
         metricData.curSum = 0;
         metricData.curMax = 0;
@@ -231,19 +231,19 @@ function onUpdatedStats(statsByView, clients) {
     });
 
     // reset aggreated current issues
-    Object.values(aggregatedIssues).forEach(issueData => {
+    Object.values(aggregatedIssues).forEach((issueData) => {
         issueData.curTicks = 0;
         issueData.curRegistered = 0;
         issueData.active = false;
     });
 
     // skip detection and aggregation when alone in room
-    if (!clients.find(client => !client.isLocalClient)) return;
+    if (!clients.find((client) => !client.isLocalClient)) return;
 
-    clients.forEach(client => {
+    clients.forEach((client) => {
         const stats = statsByView[client.id];
 
-        ["video", "audio", "global"].forEach(kind => {
+        ["video", "audio", "global"].forEach((kind) => {
             // skip checking muted/disabled tracks if not global
             if (!(kind === "global" && !client.isPresentation) && !client[kind]?.enabled) return;
 
@@ -282,7 +282,7 @@ function onUpdatedStats(statsByView, clients) {
                     ? "global"
                     : `${client.isLocalClient ? "loc" : "rem"}-${client.isPresentation ? "pres" : "cam"}-${kind}`;
 
-            metrics.forEach(metric => {
+            metrics.forEach((metric) => {
                 if (metric.global && kind !== "global") return;
                 if (!metric.global && kind === "global") return;
 
@@ -350,7 +350,7 @@ function onUpdatedStats(statsByView, clients) {
                 }
             });
 
-            issueDetectors.forEach(isssueDetector => {
+            issueDetectors.forEach((isssueDetector) => {
                 if (isssueDetector.global && kind !== "global") return;
                 if (!isssueDetector.global && kind === "global") return;
 
@@ -424,7 +424,7 @@ function onUpdatedStats(statsByView, clients) {
         });
     });
 
-    Object.values(aggregatedMetrics).forEach(aggregatedMetricData => {
+    Object.values(aggregatedMetrics).forEach((aggregatedMetricData) => {
         if (aggregatedMetricData.curTicks) {
             aggregatedMetricData.curAvg = aggregatedMetricData.curSum / aggregatedMetricData.curTicks;
 
@@ -440,13 +440,15 @@ function onUpdatedStats(statsByView, clients) {
         }
     });
 
-    Object.values(aggregatedIssues).forEach(aggregateIssueData => {
+    Object.values(aggregatedIssues).forEach((aggregateIssueData) => {
         if (aggregateIssueData.curTicks) {
             // todo: maybe calculate some concurrent info for this issue
         }
     });
 
-    subscriptions.forEach(subscription => subscription.onUpdatedIssues?.(issuesAndMetricsByView, statsByView, clients));
+    subscriptions.forEach((subscription) =>
+        subscription.onUpdatedIssues?.(issuesAndMetricsByView, statsByView, clients)
+    );
 }
 
 export function subscribeIssues(subscription) {
@@ -457,7 +459,7 @@ export function subscribeIssues(subscription) {
 
     return {
         stop() {
-            subscriptions = subscriptions.filter(s => s !== subscription);
+            subscriptions = subscriptions.filter((s) => s !== subscription);
             if (!subscriptions.length) {
                 // stop stats subscription when last is stopped/removed
                 stopStats?.();

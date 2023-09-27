@@ -10,7 +10,7 @@ import {
 const STATS_INTERVAL = 2000;
 
 let getClients = () => [];
-export const setClientProvider = provider => (getClients = provider);
+export const setClientProvider = (provider) => (getClients = provider);
 
 const statsByView = {};
 export const getStats = () => {
@@ -46,7 +46,7 @@ const getOrCreateSsrcMetricsContainer = (time, pcIndex, clientId, trackId, ssrc)
     return ssrcStats;
 };
 
-const removeNonUpdatedStats = time => {
+const removeNonUpdatedStats = (time) => {
     Object.entries(statsByView).forEach(([viewId, viewStats]) => {
         if (viewStats.updated < time) {
             delete statsByView[viewId];
@@ -71,7 +71,7 @@ const pcDataByPc = new WeakMap();
 
 const getPeerConnectionsWithStatsReports = () =>
     Promise.all(
-        getCurrentPeerConnections().map(async pc => {
+        getCurrentPeerConnections().map(async (pc) => {
             let pcData = pcDataByPc.get(pc);
             if (!pcData) {
                 pcData = { ssrcToTrackId: {} };
@@ -83,7 +83,7 @@ const getPeerConnectionsWithStatsReports = () =>
 
                 let missingSsrcs = null;
 
-                report.forEach(stats => {
+                report.forEach((stats) => {
                     if (stats.type === "inbound-rtp" || stats.type === "outbound-rtp") {
                         if (!stats.trackIdentifier && !pcData.ssrcToTrackId[stats.ssrc]) {
                             // try to lookup by media-source
@@ -117,9 +117,9 @@ const getPeerConnectionsWithStatsReports = () =>
                 if (missingSsrcs) {
                     // call getStats() on all senders and receivers to map missing ssrcs
                     const sendersAndReceivers = [...pc.getSenders(), ...pc.getReceivers()];
-                    const reports = await Promise.all(sendersAndReceivers.map(o => o.getStats()));
+                    const reports = await Promise.all(sendersAndReceivers.map((o) => o.getStats()));
                     reports.forEach((tReport, index) => {
-                        tReport.forEach(stats => {
+                        tReport.forEach((stats) => {
                             if (stats.type === "inbound-rtp" || stats.type === "outbound-rtp") {
                                 pcData.ssrcToTrackId[stats.ssrc] = sendersAndReceivers[index].track.id;
                             }
@@ -127,7 +127,7 @@ const getPeerConnectionsWithStatsReports = () =>
                     });
 
                     // create fake track ids for anything not found
-                    missingSsrcs.forEach(ssrc => {
+                    missingSsrcs.forEach((ssrc) => {
                         if (!pcData.ssrcToTrackId[ssrc]) {
                             pcData.ssrcToTrackId[ssrc] = "?" + ssrc;
                         }
@@ -171,7 +171,7 @@ function startStatsMonitor({ interval }) {
 
     try {
         if ("PressureObserver" in window) {
-            pressureObserver = new window.PressureObserver(records => (lastPressureObserverRecord = records.pop()), {
+            pressureObserver = new window.PressureObserver((records) => (lastPressureObserverRecord = records.pop()), {
                 sampleRate: 1,
             });
             pressureObserver.observe("cpu");
@@ -185,7 +185,7 @@ function startStatsMonitor({ interval }) {
             // refresh provided clients before each run
             const clients = getClients();
             // general stats, and stats that cannot be matched to any client will be added to "selfview" / unknown
-            const defaultClient = clients.find(c => c.isLocalClient && !c.isPresentation) || { id: "unknown" };
+            const defaultClient = clients.find((c) => c.isLocalClient && !c.isPresentation) || { id: "unknown" };
 
             // default stats need to be initialized
             let defaultViewStats = statsByView[defaultClient.id];
@@ -216,7 +216,7 @@ function startStatsMonitor({ interval }) {
                 pcData.currentSSRCs = {};
 
                 // loop though each stats dictionary in report
-                report.forEach(currentRtcStats => {
+                report.forEach((currentRtcStats) => {
                     if (
                         currentRtcStats.type === "candidate-pair" &&
                         /inprogress|succeeded/.test(currentRtcStats.state)
@@ -254,7 +254,7 @@ function startStatsMonitor({ interval }) {
                         }
 
                         // find the current client using this trackId, or default
-                        const client = clients.find(c => c[kind].track?.id === trackId) || defaultClient;
+                        const client = clients.find((c) => c[kind].track?.id === trackId) || defaultClient;
 
                         pcData.currentSSRCs[ssrc] = client.id;
                         // we need to stats reset when selected candidate pair changes
@@ -304,14 +304,14 @@ function startStatsMonitor({ interval }) {
 
                 // clean up old stats/metrics
                 Object.keys(pcData.previousSSRCs)
-                    .filter(ssrc => !pcData.currentSSRCs[ssrc])
-                    .forEach(ssrc => {
+                    .filter((ssrc) => !pcData.currentSSRCs[ssrc])
+                    .forEach((ssrc) => {
                         const clientId = pcData.previousSSRCs[ssrc];
                         if (clientId) {
                             // remove
                             const clientView = statsByView[clientId];
                             if (clientView) {
-                                Object.values(clientView.tracks).forEach(trackStats => {
+                                Object.values(clientView.tracks).forEach((trackStats) => {
                                     if (trackStats.ssrcs[ssrc]) {
                                         delete trackStats.ssrcs[ssrc];
                                     }
@@ -339,7 +339,7 @@ function startStatsMonitor({ interval }) {
                 }
             });
 
-            subscriptions.forEach(subscription => subscription.onUpdatedStats?.(statsByView, clients));
+            subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(statsByView, clients));
         } catch (ex) {
             console.warn(ex);
         }
@@ -366,7 +366,7 @@ export function subscribeStats(subscription) {
 
     return {
         stop() {
-            subscriptions = subscriptions.filter(s => s !== subscription);
+            subscriptions = subscriptions.filter((s) => s !== subscription);
             if (!subscriptions.length) {
                 // stop monitor when last subscription is stopped/removed
                 stopMonitor?.();

@@ -1,13 +1,14 @@
 {
-    "parser": "babel-eslint",
+    "parser": "@babel/eslint-parser",
     "env": {
         "browser": true,
         "es6": true,
         "mocha": true
     },
-    "extends": ["@whereby/eslint-config/browser", "prettier", "prettier/standard"],
+    "extends": ["@whereby/eslint-config/browser", "prettier"],
     "parserOptions": {
-        "sourceType": "module"
+        "sourceType": "module",
+        "requireConfigFile": false
     },
     "plugins": ["mocha-no-only", "prettier"],
     "rules": {

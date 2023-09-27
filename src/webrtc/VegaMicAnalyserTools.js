@@ -91,7 +91,7 @@ export const createACFCalculator = () => {
     let ewma = -1;
     let lastMax = 0;
     let counter = 0;
-    return arr => {
+    return (arr) => {
         const max = arr.reduce((acc, val) => acc + val, 0) / arr.length;
         // const max = Math.max(...arr);
         if (ewma < 0) {
@@ -110,7 +110,7 @@ export const createACFCalculator = () => {
     };
 };
 
-export const calculateStd = arr => {
+export const calculateStd = (arr) => {
     const mean = arr.reduce((acc, val) => acc + val, 0) / arr.length;
     return arr.reduce((acc, val) => acc.concat((val - mean) ** 2), []).reduce((acc, val) => acc + val, 0) / arr.length;
 };
