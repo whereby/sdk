@@ -1,7 +1,7 @@
 {
   "name": "@whereby/jslib-media",
   "description": "Media library for Whereby",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "license": "MIT",
   "homepage": "https://github.com/whereby/jslib-media",
@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "assert": "^2.0.0",
+    "events": "^3.3.0",
     "mediasoup-client": "^3.6.80",
     "rtcstats": "github:lifeonairteam/rtcstats#v3.1.0",
     "sdp": "^2.2.0",
