@@ -131,10 +131,10 @@ export function createMockedMediaStreamTrack({ kind }) {
         getSettings: () => {
             raiseNotImplementedException();
         },
-        stop: () => {
+        stop: sinon.spy(() => {
             result.enabled = false;
             result.readyState = "ended";
-        },
+        }),
     };
     return result;
 }
@@ -146,17 +146,19 @@ export function createMockedMediaStream() {
     const mockedVideoTrack = createMockedMediaStreamTrack({
         kind: "video",
     });
-    const raiseNotImplementedException = () => {
-        throw new Error("Not Implemented function in mock");
-    };
+
+    let tracks = [mockedAudioTrack, mockedVideoTrack];
+
     const result = {
         active: true,
         ended: false,
         id: randomString(),
-        addTrack: () => raiseNotImplementedException(),
-        removeTrack: () => raiseNotImplementedException(),
-        getAudioTracks: () => [mockedAudioTrack],
-        getVideoTracks: () => [mockedVideoTrack],
+        addTrack: sinon.spy((track) => tracks.push(track)),
+        removeTrack: sinon.spy((track) => {
+            tracks = tracks.filter((t) => t !== track);
+        }),
+        getAudioTracks: () => tracks.filter((t) => t.kind === "audio"),
+        getVideoTracks: () => tracks.filter((t) => t.kind === "video"),
         getTracks: () => [].concat(result.getAudioTracks(), result.getVideoTracks()),
         close: () => {
             result.active = false;
