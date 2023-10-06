@@ -1104,7 +1104,7 @@ export default class VegaRtcManager {
 
         this._pauseResumeWebcam();
 
-        if (browserName === "chrome") {
+        if (["chrome", "safari"].includes(browserName)) {
             // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
 
             if (!enable) {

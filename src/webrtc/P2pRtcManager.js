@@ -295,7 +295,7 @@ export default class P2pRtcManager extends BaseRtcManager {
 
     stopOrResumeVideo(localStream, enable) {
         // actually turn off the camera. Chrome-only (Firefox has different plans)
-        if (browserName !== "chrome") {
+        if (!["chrome", "safari"].includes(browserName)) {
             return;
         }
         if (enable === false) {
