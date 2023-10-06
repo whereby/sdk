@@ -5,10 +5,26 @@ import * as sdpTransform from "sdp-transform";
 const browserName = adapter.browserDetails.browser;
 const browserVersion = adapter.browserDetails.version;
 
-export function setCodecPreferenceSDP(sdp, vp9On) {
+export function setCodecPreferenceSDP(sdp, vp9On, redOn) {
     try {
         const sdpObject = sdpTransform.parse(sdp);
         if (Array.isArray(sdpObject?.media)) {
+            //audio
+            const mediaAudio = sdpObject.media.find((m) => m.type === "audio");
+            if (Array.isArray(mediaAudio?.rtp)) {
+                const rtp = mediaAudio.rtp;
+                for (let i = 0; i < rtp.length; i++) {
+                    if (redOn && rtp[i].codec === "red") {
+                        const payloads = mediaAudio.payloads.split(" ");
+                        const pt = payloads.indexOf("" + rtp[i].payload);
+                        if (pt && pt !== -1 && pt >= 0) {
+                            payloads.unshift(payloads.splice(pt, 1)[0]);
+                            mediaAudio.payloads = payloads.join(" ");
+                        }
+                    }
+                }
+            }
+            //video
             const mediaVideo = sdpObject.media.find((m) => m.type === "video");
             if (Array.isArray(mediaVideo?.rtp)) {
                 const rtp = mediaVideo.rtp;

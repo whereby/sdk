@@ -46,8 +46,28 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
     }
 
-    _setCodecPreferences(pc, vp9On, av1On) {
+    _setCodecPreferences(pc, vp9On, av1On, redOn) {
         try {
+            // audio
+            const audioTransceivers = pc
+                .getTransceivers()
+                .filter((transceiver) => transceiver?.sender?.track?.kind === "audio");
+
+            audioTransceivers.forEach((audioTransceiver) => {
+                // If not implemented return
+                if (typeof RTCRtpSender.getCapabilities === "undefined") return;
+                const capabilities = RTCRtpSender.getCapabilities("audio");
+                for (let i = 0; i < capabilities.codecs.length; i++) {
+                    if (redOn && capabilities.codecs[i].mimeType.toLowerCase() === "audio/red") {
+                        capabilities.codecs.unshift(capabilities.codecs.splice(i, 1)[0]);
+                        break;
+                    }
+                }
+                // If not implemented return
+                if (typeof audioTransceiver.setCodecPreferences === "undefined") return;
+                audioTransceiver.setCodecPreferences(capabilities.codecs);
+            });
+            // video
             const videoTransceivers = pc
                 .getTransceivers()
                 .filter((transceiver) => transceiver?.sender?.track?.kind === "video");
@@ -89,19 +109,19 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
         session.isOperationPending = true;
 
-        const { vp9On, av1On } = this._features;
+        const { vp9On, av1On, redOn } = this._features;
 
         // Set codec preferences to video transceivers
-        if (vp9On || av1On) {
-            this._setCodecPreferences(pc, vp9On, av1On);
+        if (vp9On || av1On || redOn) {
+            this._setCodecPreferences(pc, vp9On, av1On, redOn);
         }
 
         pc.createOffer(constraints || this.offerOptions)
             .then((offer) => {
                 // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
                 // Only vp9 because FF does not support AV1 yet
-                if (vp9On && browserName === "firefox") {
-                    offer.sdp = setCodecPreferenceSDP(offer.sdp, vp9On);
+                if ((vp9On || redOn) && browserName === "firefox") {
+                    offer.sdp = setCodecPreferenceSDP(offer.sdp, vp9On, redOn);
                 }
 
                 this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
