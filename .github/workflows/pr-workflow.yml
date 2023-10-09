@@ -1,0 +1,67 @@
+name: Pull request
+on:
+    pull_request:
+        branches: [main]
+        types: [opened, synchronize, reopened]
+jobs:
+    check_version:
+        name: "Check package.json version"
+        uses: whereby/github-actions/.github/workflows/check_if_version_is_incremented.yml@main
+        with:
+            source_dir: src
+    test:
+        name: Format, Lint, and Test
+        runs-on: ${{ vars.PLATFORM }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.WHEREBY_PUBLISH_GITHUB_PACKAGES }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Prepare repository
+              run: git fetch --unshallow --tags
+
+            - name: Setup npmrc
+              run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> ~/.npmrc
+
+            - name: Use Node.js ${{ vars.NODE_VERSION }}
+              uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ vars.NODE_VERSION }}
+
+            - name: Install
+              run: yarn
+
+            - name: Format
+              run: yarn format:check
+
+            - name: Lint
+              run: yarn lint
+
+            - name: Unit Test
+              run: yarn test:unit
+    canary_release:
+        name: Create canary release
+        needs: [check_version, test]
+        runs-on: ${{ vars.PLATFORM }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.WHEREBY_PUBLISH_GITHUB_PACKAGES }}
+            NPM_TOKEN: ${{ secrets.WHEREBY_PUBLISH_GITHUB_PACKAGES }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Prepare repository
+              run: git fetch --unshallow --tags
+
+            - name: Setup npmrc
+              run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> ~/.npmrc
+
+            - name: Use Node.js ${{ vars.NODE_VERSION }}
+              uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ vars.NODE_VERSION }}
+
+            - name: Install
+              run: yarn
+
+            - name: Create Release
+              run: yarn run auto shipit
