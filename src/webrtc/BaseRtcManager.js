@@ -8,7 +8,7 @@ import rtcManagerEvents from "./rtcManagerEvents";
 import Session from "./Session";
 import assert from "assert";
 import rtcStats from "./rtcStatsService";
-import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./turnConstants";
+import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED, MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import adapter from "webrtc-adapter";
 
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
@@ -107,6 +107,20 @@ export default class BaseRtcManager {
                 previous: previousStatus,
             });
         }, 0);
+    }
+
+    _setJitterBufferTarget(pc) {
+        try {
+            const receivers = pc.getReceivers();
+
+            receivers.forEach((receiver) => {
+                receiver.jitterBufferTarget = MEDIA_JITTER_BUFFER_TARGET;
+                // Legacy Chrome API
+                receiver.playoutDelayHint = MEDIA_JITTER_BUFFER_TARGET / 1000; // seconds
+            });
+        } catch (error) {
+            logger.error("Error during setting jitter buffer target:", error);
+        }
     }
 
     _emitServerEvent(eventName, data, callback) {

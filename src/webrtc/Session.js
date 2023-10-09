@@ -2,7 +2,7 @@ import * as sdpModifier from "./sdpModifier";
 import * as statsHelper from "./statsHelper";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapter from "webrtc-adapter";
-import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./turnConstants";
+import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./constants";
 
 const logger = console;
 

@@ -9,6 +9,7 @@ import adapter from "webrtc-adapter";
 const logger = console;
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
 const browserName = adapter.browserDetails.browser;
+
 export default class P2pRtcManager extends BaseRtcManager {
     _connect(clientId) {
         this.rtcStatsReconnect();
@@ -226,6 +227,10 @@ export default class P2pRtcManager extends BaseRtcManager {
             isOfferer,
         });
         const pc = session.pc;
+
+        if (this._features.increaseIncomingMediaBufferOn) {
+            this._setJitterBufferTarget(pc);
+        }
 
         /*
          * Explicitly add the video track so that stopOrResumeVideo() can
