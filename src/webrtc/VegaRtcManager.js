@@ -9,6 +9,7 @@ import rtcStats from "./rtcStatsService";
 import adapter from "webrtc-adapter";
 import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
+import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import { getHandler } from "../utils/getHandler";
 import { v4 as uuidv4 } from "uuid";
 import createMicAnalyser from "./VegaMicAnalyser";
@@ -1351,6 +1352,16 @@ export default class VegaRtcManager {
 
             this._consumerClosedCleanup(consumer);
         });
+
+        if (this._features.increaseIncomingMediaBufferOn && consumer.rtpReceiver) {
+            try {
+                consumer.rtpReceiver.jitterBufferTarget = MEDIA_JITTER_BUFFER_TARGET;
+                // Legacy Chrome API
+                consumer.rtpReceiver.playoutDelayHint = MEDIA_JITTER_BUFFER_TARGET / 1000; // seconds
+            } catch (error) {
+                logger.error("Error during setting jitter buffer target:", error);
+            }
+        }
 
         const { sourceClientId: clientId, screenShare, streamId } = consumer.appData;
         const clientState = this._getOrCreateClientState(clientId);
