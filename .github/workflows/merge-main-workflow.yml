@@ -1,0 +1,19 @@
+name: Merge to main
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    get_version:
+        name: "Get package.json version"
+        uses: whereby/github-actions/.github/workflows/check_if_version_is_incremented.yml@main
+        with:
+            source_dir: src
+    draft_release:
+        if: needs.get_version.outputs.new_version
+        needs: get_version
+        name: "Draft release"
+        uses: whereby/github-actions/.github/workflows/draft_release.yml@main
+        with:
+            tag_name: "${{ needs.get_version.outputs.new_version }}"
