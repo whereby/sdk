@@ -75,6 +75,11 @@ export function captureCommonSsrcMetrics(ssrcMetrics, currentSsrcStats, prevSsrc
         ssrcMetrics.bitrate = (8000 * totalBytesDiff) / timeDiff;
         ssrcMetrics.mediaRatio = byteCountDiff / totalBytesDiff;
 
+        if (currentSsrcStats.kind === "audio") {
+            const fecBytesDiff = (currentSsrcStats.fecBytesReceived || 0) - (prevSsrcStats?.fecBytesReceived || 0);
+            ssrcMetrics.fecRatio = fecBytesDiff / byteCountDiff;
+        }
+
         const jitterBufferDelayDiff =
             (currentSsrcStats.jitterBufferDelay || 0) - (prevSsrcStats?.jitterBufferDelay || 0);
         const jitterBufferEmittedDiff =
@@ -120,6 +125,27 @@ export function captureAudioSsrcMetrics(ssrcMetrics, currentSsrcStats, prevSsrcS
         const totalSamplesDurationDiff =
             currentSsrcStats.totalSamplesDuration - (prevSsrcStats?.totalSamplesDuration || 0);
         ssrcMetrics.audioLevel = Math.sqrt(totalAudioEnergyDiff / totalSamplesDurationDiff);
+
+        const samples = currentSsrcStats.totalSamplesReceived || 0;
+        const concealmentEvents = currentSsrcStats.concealmentEvents || 0;
+        const samplesDiff = samples - (prevSsrcStats?.totalSamplesReceived || 0);
+        const concealedSamples = currentSsrcStats.concealedSamples || 0;
+        const concealedDiff = concealedSamples - (prevSsrcStats?.concealedSamples || 0);
+        const silentConcealedDiff =
+            (currentSsrcStats.silentConcealedSamples || 0) - (prevSsrcStats?.silentConcealedSamples || 0);
+        const insDiff =
+            (currentSsrcStats.insertedSamplesForDeceleration || 0) -
+            (prevSsrcStats?.insertedSamplesForDeceleration || 0);
+        const remDiff =
+            (currentSsrcStats.removedSamplesForAcceleration || 0) - (prevSsrcStats?.removedSamplesForAcceleration || 0);
+
+        ssrcMetrics.audioSamples = samples;
+        ssrcMetrics.audioConcealmentEvents = concealmentEvents;
+        ssrcMetrics.audioConcealedSamples = concealedSamples;
+        ssrcMetrics.audioConcealment = concealedDiff ? concealedDiff / samplesDiff : 0;
+        ssrcMetrics.audioSilentConcealment = silentConcealedDiff ? silentConcealedDiff / samplesDiff : 0;
+        ssrcMetrics.audioAcceleration = remDiff ? remDiff / samplesDiff : 0;
+        ssrcMetrics.audioDeceleration = insDiff ? insDiff / samplesDiff : 0;
     }
 }
 
