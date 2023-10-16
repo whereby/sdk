@@ -1,20 +1,23 @@
-import io from "socket.io-client";
+import { io } from "socket.io-client";
 import adapter from "webrtc-adapter";
+
+const DEFAULT_SOCKET_PATH = "protocol/socket.io/v4";
 
 /**
  * Wrapper class that extends the Socket.IO client library.
  */
 export default class ServerSocket {
-    constructor(hostName, options) {
-        // Prefer websockets but fallback to polling as recommended on
-        // https://socket.io/docs/client-api/
-        // with modifications to reconnect using WebSocket if we ever
-        // connected with Websockets.
-        if (options && !options.transports) {
-            options.transports = ["websocket"];
-        }
-
-        this._socket = io(hostName, options);
+    constructor(hostName, optionsOverrides) {
+        this._socket = io(hostName, {
+            path: DEFAULT_SOCKET_PATH,
+            randomizationFactor: 0.5,
+            reconnectionDelay: 250,
+            reconnectionDelayMax: 5000,
+            timeout: 5000,
+            transports: ["websocket"],
+            withCredentials: true,
+            ...optionsOverrides,
+        });
         this._socket.io.on("reconnect", () => {
             this._socket.sendBuffer = [];
         });
