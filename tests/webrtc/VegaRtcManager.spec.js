@@ -181,4 +181,61 @@ describe("VegaRtcManager", () => {
             });
         });
     });
+
+    describe("handling localStream `stopresumevideo` event", () => {
+        let localStream;
+
+        beforeEach(() => {
+            localStream = helpers.createMockedMediaStream();
+            rtcManager.addNewStream("0", localStream);
+        });
+
+        describe("when enable", () => {
+            it("should _sendWebcam with the new track", () => {
+                sinon.spy(rtcManager, "_sendWebcam");
+                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+                localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
+
+                expect(rtcManager._sendWebcam).to.have.been.calledWithExactly(track);
+            });
+        });
+
+        describe("when disable", () => {
+            describe("when there is already a webcam producer for the track", () => {
+                let track;
+                let webcamProducer;
+
+                beforeEach(() => {
+                    track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                    webcamProducer = {
+                        closed: false,
+                        track,
+                        pause: () => {
+                            webcamProducer.paused = true;
+                        },
+                        resume: () => {
+                            webcamProducer.paused = false;
+                        },
+                        paused: false,
+                    };
+                    rtcManager._webcamProducer = webcamProducer;
+                    rtcManager._webcamPaused = false;
+                    sinon.stub(rtcManager, "_stopProducer");
+                });
+
+                it("should stop the webcam producer", () => {
+                    localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
+
+                    expect(rtcManager._stopProducer).to.have.been.calledWithExactly(webcamProducer);
+                });
+
+                it("should not keep track of the old producer", () => {
+                    localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
+
+                    expect(rtcManager._webcamProducer).to.equal(null);
+                });
+            });
+        });
+    });
 });

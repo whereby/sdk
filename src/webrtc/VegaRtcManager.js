@@ -69,6 +69,9 @@ export default class VegaRtcManager {
         this._consumers = new Map();
         this._dataConsumers = new Map();
 
+        // Function to clean up event listeners on the local stream
+        this._localStreamDeregisterFunction = null;
+
         this._micTrack = null;
         this._webcamTrack = null;
         this._screenVideoTrack = null;
@@ -1049,6 +1052,27 @@ export default class VegaRtcManager {
                 this._syncMicAnalyser();
                 this._startMonitoringAudioTrack(audioTrack);
             }
+
+            // This should not be needed, but checking nonetheless
+            if (this._localStreamDeregisterFunction) {
+                this._localStreamDeregisterFunction();
+                this._localStreamDeregisterFunction = null;
+            }
+
+            const localStreamHandler = (e) => {
+                const { enable, track } = e.detail;
+
+                // This is a hack
+                this._webcamPaused = !enable;
+                this._pauseResumeWebcam();
+
+                this._handleStopOrResumeVideo({ enable, track });
+            };
+
+            stream.addEventListener("stopresumevideo", localStreamHandler);
+            this._localStreamDeregisterFunction = () => {
+                stream.removeEventListener("stopresumevideo", localStreamHandler);
+            };
         } else {
             const videoTrack = stream.getVideoTracks()[0];
             const audioTrack = stream.getAudioTracks()[0];
@@ -1091,6 +1115,17 @@ export default class VegaRtcManager {
         this._pauseResumeMic();
     }
 
+    _handleStopOrResumeVideo({ enable, track }) {
+        if (!enable) {
+            if (this._webcamProducer && !this._webcamProducer.closed && this._webcamProducer.track === track) {
+                this._stopProducer(this._webcamProducer);
+                this._webcamProducer = null;
+                this._webcamTrack = null;
+            }
+        } else {
+            this._sendWebcam(track);
+        }
+    }
     /**
      * Only for webcam.
      *
@@ -1105,52 +1140,46 @@ export default class VegaRtcManager {
 
         this._pauseResumeWebcam();
 
-        if (["chrome", "safari"].includes(browserName)) {
-            // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
+        if (!["chrome", "safari"].includes(browserName)) {
+            return;
+        }
 
-            if (!enable) {
-                clearTimeout(this._stopCameraTimeout);
+        // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
 
-                // try to stop the local camera so the camera light goes off.
-                this._stopCameraTimeout = setTimeout(() => {
-                    localStream.getVideoTracks().forEach((track) => {
-                        if (track.enabled === false) {
-                            track.stop();
-                            localStream.removeTrack(track);
+        if (!enable) {
+            clearTimeout(this._stopCameraTimeout);
 
-                            this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
-                                stream: localStream,
-                                track,
-                            });
+            // try to stop the local camera so the camera light goes off.
+            this._stopCameraTimeout = setTimeout(() => {
+                localStream.getVideoTracks().forEach((track) => {
+                    if (track.enabled === false) {
+                        track.stop();
+                        localStream.removeTrack(track);
 
-                            if (
-                                this._webcamProducer &&
-                                !this._webcamProducer.closed &&
-                                this._webcamProducer.track === track
-                            ) {
-                                this._stopProducer(this._webcamProducer);
-                                this._webcamProducer = null;
-                                this._webcamTrack = null;
-                            }
-                        }
-                    });
-                }, 5000);
-            } else if (localStream.getVideoTracks().length === 0) {
-                // re-enable the stream
-                const constraints = this._webrtcProvider.getMediaConstraints().video;
-                navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
-                    const track = stream.getVideoTracks()[0];
-                    localStream.addTrack(track);
+                        this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
+                            stream: localStream,
+                            track,
+                        });
 
-                    this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
-                        streamId: localStream.id,
-                        tracks: [track],
-                        screenShare: false,
-                    });
-
-                    this._sendWebcam(track);
+                        this._handleStopOrResumeVideo({ enable, track });
+                    }
                 });
-            }
+            }, 5000);
+        } else if (localStream.getVideoTracks().length === 0) {
+            // re-enable the stream
+            const constraints = this._webrtcProvider.getMediaConstraints().video;
+            navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
+                const track = stream.getVideoTracks()[0];
+                localStream.addTrack(track);
+
+                this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
+                    streamId: localStream.id,
+                    tracks: [track],
+                    screenShare: false,
+                });
+
+                this._handleStopOrResumeVideo({ enable, track });
+            });
         }
     }
 
@@ -1258,6 +1287,11 @@ export default class VegaRtcManager {
         this._socketListenerDeregisterFunctions.forEach((func) => {
             func();
         });
+
+        if (this._localStreamDeregisterFunction) {
+            this._localStreamDeregisterFunction();
+            this._localStreamDeregisterFunction = null;
+        }
 
         this._socketListenerDeregisterFunctions = [];
 

@@ -570,4 +570,52 @@ describe("P2pRtcManager", () => {
             });
         });
     });
+
+    describe("handling localStream `stopresumevideo` event", () => {
+        let localStream;
+        let rtcManager;
+
+        beforeEach(() => {
+            localStream = helpers.createMockedMediaStream();
+            rtcManager = createRtcManager();
+            rtcManager.addNewStream("0", localStream);
+        });
+
+        describe("when enable", () => {
+            it("should add track to peer connections", () => {
+                sinon.spy(rtcManager, "_addTrackToPeerConnections");
+                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+                localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
+
+                expect(rtcManager._addTrackToPeerConnections).to.have.been.calledWithExactly(track);
+            });
+
+            it("should replace track in peer connection(s) when stopped track exists", () => {
+                const stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                rtcManager._stoppedVideoTrack = stoppedTrack;
+                sinon.spy(rtcManager, "_replaceTrackToPeerConnections");
+                const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+                localStream.dispatchEvent(
+                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } })
+                );
+
+                expect(rtcManager._replaceTrackToPeerConnections).to.have.been.calledWithExactly(
+                    stoppedTrack,
+                    newTrack
+                );
+            });
+        });
+
+        describe("when disable", () => {
+            it("should store disabled track", () => {
+                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+                localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
+
+                expect(rtcManager._stoppedVideoTrack).to.equal(track);
+            });
+        });
+    });
 });
