@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import adapter from "webrtc-adapter";
 
-const DEFAULT_SOCKET_PATH = "protocol/socket.io/v4";
+const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 
 /**
  * Wrapper class that extends the Socket.IO client library.
