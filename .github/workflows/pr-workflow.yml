@@ -29,7 +29,7 @@ jobs:
                   node-version: ${{ vars.NODE_VERSION }}
 
             - name: Install
-              run: yarn
+              run: yarn install --frozen-lockfile
 
             - name: Format
               run: yarn format:check
@@ -61,7 +61,7 @@ jobs:
                   node-version: ${{ vars.NODE_VERSION }}
 
             - name: Install
-              run: yarn
+              run: yarn install --frozen-lockfile
 
             - name: Create Release
               run: yarn run auto shipit

@@ -37,7 +37,7 @@ jobs:
                   SLACK_BOT_TOKEN: ${{ secrets.WHEREBY_DEPLOYMENT_SLACK_BOT_TOKEN }}
 
             - name: Install
-              run: yarn
+              run: yarn install --frozen-lockfile
 
             - name: Create Release
               run: npm publish
