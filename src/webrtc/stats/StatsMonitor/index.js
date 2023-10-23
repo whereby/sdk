@@ -18,7 +18,9 @@ export const getStats = () => {
 };
 
 let subscriptions = [];
-let stopMonitor = null;
+let currentMonitor = null;
+
+export const getUpdatedStats = () => currentMonitor?.getUpdatedStats();
 
 const getOrCreateSsrcMetricsContainer = (time, pcIndex, clientId, trackId, ssrc) => {
     let viewStats = statsByView[clientId];
@@ -180,7 +182,9 @@ function startStatsMonitor({ interval }) {
         console.warn("Failed to observe CPU pressure", ex);
     }
 
-    const collectStats = async () => {
+    let lastUpdateTime = 0;
+
+    const collectStats = async (immediate) => {
         try {
             // refresh provided clients before each run
             const clients = getClients();
@@ -197,8 +201,17 @@ function startStatsMonitor({ interval }) {
             // set pressure to last record received
             defaultViewStats.pressure = lastPressureObserverRecord;
 
+            // throttle calls to ensure we get a diff from previous stats
+            const timeSinceLastUpdate = Date.now() - lastUpdateTime;
+            if (timeSinceLastUpdate < 400) {
+                if (immediate) return statsByView;
+                subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(statsByView, clients));
+                nextTimeout = setTimeout(collectStats, interval || STATS_INTERVAL);
+                return;
+            }
+
             // keep track of what has been updated this run
-            const thisUpdateTime = Date.now();
+            lastUpdateTime = Date.now();
 
             // loop through current peer connections
             (await getPeerConnectionsWithStatsReports()).forEach(([pc, report, pcData]) => {
@@ -229,11 +242,11 @@ function startStatsMonitor({ interval }) {
                         const cpId = pcIndex + ":" + currentRtcStats.id;
                         let cpMetrics = defaultViewStats.candidatePairs[cpId];
                         if (!cpMetrics) {
-                            cpMetrics = { startTime: thisUpdateTime, id: cpId };
+                            cpMetrics = { startTime: lastUpdateTime, id: cpId };
                             defaultViewStats.candidatePairs[cpId] = cpMetrics;
                         }
                         captureCandidatePairInfoMetrics(cpMetrics, currentRtcStats, prevRtcStats, timeDiff, report);
-                        cpMetrics.lastRtcStatsTime = thisUpdateTime;
+                        cpMetrics.lastRtcStatsTime = lastUpdateTime;
                     }
 
                     if (currentRtcStats.type === "inbound-rtp" || currentRtcStats.type === "outbound-rtp") {
@@ -281,7 +294,7 @@ function startStatsMonitor({ interval }) {
                             ? currentRtcStats.timestamp - prevRtcStats.timestamp
                             : STATS_INTERVAL;
                         const ssrcMetrics = getOrCreateSsrcMetricsContainer(
-                            thisUpdateTime,
+                            lastUpdateTime,
                             pcIndex,
                             client.id,
                             trackId,
@@ -321,25 +334,29 @@ function startStatsMonitor({ interval }) {
                     });
             });
 
-            removeNonUpdatedStats(thisUpdateTime);
+            removeNonUpdatedStats(lastUpdateTime);
 
             // mark candidatepairs as active/inactive
             Object.entries(defaultViewStats.candidatePairs).forEach(([cpKey, cp]) => {
-                const active = cp.lastRtcStatsTime === thisUpdateTime;
+                const active = cp.lastRtcStatsTime === lastUpdateTime;
                 cp.active = active;
                 if (!active) {
                     cp.state = "old/inactive";
-                    if (!cp.inactiveFromTime) cp.inactiveFromTime = thisUpdateTime;
+                    if (!cp.inactiveFromTime) cp.inactiveFromTime = lastUpdateTime;
                     else {
                         // delete candidate pair after a few secs
-                        if (thisUpdateTime - cp.inactiveFromTime > 4000) {
+                        if (lastUpdateTime - cp.inactiveFromTime > 4000) {
                             delete defaultViewStats.candidatePairs[cpKey];
                         }
                     }
                 }
             });
 
-            subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(statsByView, clients));
+            if (immediate) {
+                return statsByView;
+            } else {
+                subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(statsByView, clients));
+            }
         } catch (ex) {
             console.warn(ex);
         }
@@ -355,6 +372,9 @@ function startStatsMonitor({ interval }) {
             clearTimeout(nextTimeout);
             if (pressureObserver) pressureObserver.unobserve("cpu");
         },
+        getUpdatedStats: () => {
+            return collectStats(true);
+        },
     };
 }
 
@@ -362,15 +382,15 @@ export function subscribeStats(subscription) {
     subscriptions.push(subscription);
 
     // start the monitor on first subscription
-    if (!stopMonitor) stopMonitor = startStatsMonitor({}).stop;
+    if (!currentMonitor) currentMonitor = startStatsMonitor({});
 
     return {
         stop() {
             subscriptions = subscriptions.filter((s) => s !== subscription);
             if (!subscriptions.length) {
                 // stop monitor when last subscription is stopped/removed
-                stopMonitor?.();
-                stopMonitor = null;
+                currentMonitor?.stop();
+                currentMonitor = null;
             }
         },
     };
