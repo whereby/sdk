@@ -318,6 +318,19 @@ export default class P2pRtcManager extends BaseRtcManager {
         // detaches the audio from the peerconnection. No-op in P2P mode.
     }
 
+    _handleStopOrResumeVideo({ enable, track }) {
+        if (!enable) {
+            this._stoppedVideoTrack = track;
+        } else {
+            if (this._stoppedVideoTrack) {
+                this._replaceTrackToPeerConnections(this._stoppedVideoTrack, track);
+                delete this._stoppedVideoTrack;
+            } else {
+                this._addTrackToPeerConnections(track);
+            }
+        }
+    }
+
     stopOrResumeVideo(localStream, enable) {
         // actually turn off the camera. Chrome-only (Firefox has different plans)
         if (!["chrome", "safari"].includes(browserName)) {
@@ -335,53 +348,30 @@ export default class P2pRtcManager extends BaseRtcManager {
                             track,
                         });
 
-                        this._stoppedVideoTrack = track;
+                        this._handleStopOrResumeVideo({ enable, track });
                     }
                 });
             }, 5000);
         } else {
-            if (this._features.simplifiedVegaClientOn) {
-                const track = localStream.getVideoTracks()?.[0];
-
-                if (this._stoppedVideoTrack) {
-                    this._replaceTrackToPeerConnections(this._stoppedVideoTrack, track);
-                    delete this._stoppedVideoTrack;
+            if (localStream.getVideoTracks().length === 0) {
+                // re-enable the stream
+                const constraints = this._webrtcProvider.getMediaConstraints().video;
+                if (!constraints) {
+                    // user was screensharing with no-devices, the video
+                    // device has been plugged out or similar
+                    return;
+                }
+                navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
+                    const track = stream.getVideoTracks()[0];
+                    localStream.addTrack(track);
                     this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                         streamId: localStream.id,
                         tracks: [track],
                         screenShare: false,
                     });
-                } else {
-                    if (!track) {
-                        this._addTrackToPeerConnections(track);
-                    }
-                }
-            } else {
-                if (localStream.getVideoTracks().length === 0) {
-                    // re-enable the stream
-                    const constraints = this._webrtcProvider.getMediaConstraints().video;
-                    if (!constraints) {
-                        // user was screensharing with no-devices, the video
-                        // device has been plugged out or similar
-                        return;
-                    }
-                    navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
-                        const track = stream.getVideoTracks()[0];
-                        localStream.addTrack(track);
-                        this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
-                            streamId: localStream.id,
-                            tracks: [track],
-                            screenShare: false,
-                        });
 
-                        if (this._stoppedVideoTrack) {
-                            this._replaceTrackToPeerConnections(this._stoppedVideoTrack, track);
-                            delete this._stoppedVideoTrack;
-                        } else {
-                            this._addTrackToPeerConnections(track);
-                        }
-                    });
-                }
+                    this._handleStopOrResumeVideo({ enable, track });
+                });
             }
         }
     }

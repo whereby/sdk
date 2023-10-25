@@ -136,7 +136,7 @@ export function createMockedMediaStreamTrack({ kind }) {
             result.readyState = "ended";
         }),
     };
-    return result;
+    return Object.assign(new EventTarget(), result);
 }
 
 export function createMockedMediaStream() {
@@ -177,5 +177,5 @@ export function createMockedMediaStream() {
             return foundTracks[0];
         },
     };
-    return result;
+    return Object.assign(new EventTarget(), result);
 }

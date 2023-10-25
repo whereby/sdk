@@ -47,6 +47,7 @@ export default class BaseRtcManager {
         this.localStreams = {};
         this.enabledLocalStreamIds = [];
         this._socketListenerDeregisterFunctions = [];
+        this._localStreamDeregisterFunction = null;
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
@@ -535,6 +536,23 @@ export default class BaseRtcManager {
             if (audioTrack) {
                 this._startMonitoringAudioTrack(audioTrack);
             }
+
+            // This should not be needed, but checking nonetheless
+            if (this._localStreamDeregisterFunction) {
+                this._localStreamDeregisterFunction();
+                this._localStreamDeregisterFunction = null;
+            }
+
+            const localStreamHandler = (e) => {
+                const { enable, track } = e.detail;
+                this._handleStopOrResumeVideo({ enable, track });
+            };
+
+            stream.addEventListener("stopresumevideo", localStreamHandler);
+            this._localStreamDeregisterFunction = () => {
+                stream.removeEventListener("stopresumevideo", localStreamHandler);
+            };
+
             return;
         }
 
@@ -572,6 +590,11 @@ export default class BaseRtcManager {
             func();
         });
         this._socketListenerDeregisterFunctions = [];
+
+        if (this._localStreamDeregisterFunction) {
+            this._localStreamDeregisterFunction();
+            this._localStreamDeregisterFunction = null;
+        }
     }
 
     // the user has muted/unmuted the audio track on the local stream.
@@ -579,6 +602,9 @@ export default class BaseRtcManager {
 
     // the user has muted/unmuted the video track on the local stream.
     stopOrResumeVideo(/*localStream, enable*/) {}
+
+    // handle the rtc side-effects of ^
+    _handleStopOrResumeVideo(/* { localStream, enable, track } */) {}
 
     /* the Chrome audio process crashed (probably?)
      * try to fix it. Constraints are the audio device constraints
