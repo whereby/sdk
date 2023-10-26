@@ -4888,9 +4888,9 @@ rtcpeerconnection-shim@^1.2.15:
   dependencies:
     sdp "^2.6.0"
 
-"rtcstats@github:lifeonairteam/rtcstats#v3.1.0":
-  version "3.0.3"
-  resolved "https://codeload.github.com/lifeonairteam/rtcstats/tar.gz/8d46fedd3031ccdc52e7ec8525207e11dbb3115f"
+"rtcstats@github:whereby/rtcstats#v5.3.0":
+  version "5.3.0"
+  resolved "https://codeload.github.com/whereby/rtcstats/tar.gz/f696794035acc18a0d42229217a9a3b7630d524e"
 
 run-applescript@^5.0.0:
   version "5.0.0"
