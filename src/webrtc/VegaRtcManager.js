@@ -2,7 +2,6 @@ import assert from "assert";
 import { Device } from "mediasoup-client";
 import { PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
-import LegacyServerSocket from "../utils/LegacyServerSocket";
 import ServerSocket from "../utils/ServerSocket";
 import rtcManagerEvents from "./rtcManagerEvents";
 import rtcStats from "./rtcStatsService";
@@ -31,10 +30,7 @@ export default class VegaRtcManager {
         assert.ok(selfId, "selfId is required");
         assert.ok(room, "room is required");
         assert.ok(emitter && emitter.emit, "emitter is required");
-        assert.ok(
-            serverSocket instanceof LegacyServerSocket || serverSocket instanceof ServerSocket,
-            "serverSocket is required"
-        );
+        assert.ok(serverSocket instanceof ServerSocket, "serverSocket is required");
         assert.ok(webrtcProvider, "webrtcProvider is required");
 
         const { session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;

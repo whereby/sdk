@@ -1,7 +1,6 @@
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
 import RtcStream from "../model/RtcStream";
-import LegacyServerSocket from "../utils/LegacyServerSocket";
 import ServerSocket from "../utils/ServerSocket";
 import * as webrtcBugDetector from "./bugDetector";
 import rtcManagerEvents from "./rtcManagerEvents";
@@ -32,10 +31,7 @@ export default class BaseRtcManager {
         assert.ok(selfId, "selfId is required");
         assert.ok(room, "room is required");
         assert.ok(emitter && emitter.emit, "emitter is required");
-        assert.ok(
-            serverSocket instanceof LegacyServerSocket || serverSocket instanceof ServerSocket,
-            "serverSocket is required"
-        );
+        assert.ok(serverSocket instanceof ServerSocket, "serverSocket is required");
         assert.ok(webrtcProvider, "webrtcProvider is required");
 
         const { name, session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
