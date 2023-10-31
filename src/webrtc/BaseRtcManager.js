@@ -11,7 +11,6 @@ import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED, MEDIA_JITTER_
 import adapter from "webrtc-adapter";
 
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
-const logger = console;
 const browserName = adapter.browserDetails.browser;
 const browserVersion = adapter.browserDetails.version;
 
@@ -27,7 +26,7 @@ if (browserName === "chrome") {
 }
 
 export default class BaseRtcManager {
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, logger = console }) {
         assert.ok(selfId, "selfId is required");
         assert.ok(room, "room is required");
         assert.ok(emitter && emitter.emit, "emitter is required");
@@ -48,6 +47,7 @@ export default class BaseRtcManager {
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
         this._features = features || {};
+        this._logger = logger;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
@@ -116,7 +116,7 @@ export default class BaseRtcManager {
                 receiver.playoutDelayHint = MEDIA_JITTER_BUFFER_TARGET / 1000; // seconds
             });
         } catch (error) {
-            logger.error("Error during setting jitter buffer target:", error);
+            this._logger.error("Error during setting jitter buffer target:", error);
         }
     }
 
@@ -428,7 +428,7 @@ export default class BaseRtcManager {
     _cleanup(peerConnectionId) {
         const session = this._getSession(peerConnectionId);
         if (!session) {
-            logger.warn("No RTCPeerConnection in RTCManager.disconnect()", peerConnectionId);
+            this._logger.warn("No RTCPeerConnection in RTCManager.disconnect()", peerConnectionId);
             return;
         }
         session.close();
@@ -458,10 +458,10 @@ export default class BaseRtcManager {
         const promises = [];
         this._forEachPeerConnection((session) => {
             if (!session.hasConnectedPeerConnection()) {
-                logger.log("Session doesn't have a connected PeerConnection, adding pending action!");
+                this._logger.log("Session doesn't have a connected PeerConnection, adding pending action!");
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
                 if (!pendingActions) {
-                    logger.warn(
+                    this._logger.warn(
                         `No pending action is created to repalce track, because the pending actions array is null`
                     );
                     return;
@@ -470,7 +470,7 @@ export default class BaseRtcManager {
                     const action = () => {
                         const replacedTrackPromise = session.replaceTrack(oldTrack, newTrack);
                         if (!replacedTrackPromise) {
-                            logger.error("replaceTrack returned false!");
+                            this._logger.error("replaceTrack returned false!");
                             reject(`ReplaceTrack returned false`);
                             return;
                         }
@@ -483,7 +483,7 @@ export default class BaseRtcManager {
             }
             const replacedTrackResult = session.replaceTrack(oldTrack, newTrack);
             if (!replacedTrackResult) {
-                logger.error("replaceTrack returned false!");
+                this._logger.error("replaceTrack returned false!");
                 return;
             }
             promises.push(replacedTrackResult);
@@ -651,7 +651,7 @@ export default class BaseRtcManager {
 
             this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data) => {
                 if (data.error) {
-                    logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
+                    this._logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
                     return;
                 }
                 this._updateAndScheduleMediaServersRefresh(data);
@@ -664,7 +664,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
+                    this._logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
                     return;
                 }
                 session.addIceCandidate(data.message);
@@ -673,7 +673,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
+                    this._logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
                     return;
                 }
                 session.addIceCandidate(null);
@@ -683,7 +683,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    logger.warn("No RTCPeerConnection on SDP_OFFER", data);
+                    this._logger.warn("No RTCPeerConnection on SDP_OFFER", data);
                     return;
                 }
                 const offer = this._transformIncomingSdp(data.message, session.pc);
@@ -699,7 +699,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
+                    this._logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
                     return;
                 }
                 const answer = this._transformIncomingSdp(data.message, session.pc);

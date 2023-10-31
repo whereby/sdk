@@ -3,14 +3,15 @@
     "env": {
         "browser": true,
         "es6": true,
-        "mocha": true
+        "jest/globals": true,
+        "node": true
     },
     "extends": ["@whereby/eslint-config/browser", "prettier"],
     "parserOptions": {
         "sourceType": "module",
         "requireConfigFile": false
     },
-    "plugins": ["mocha-no-only", "prettier"],
+    "plugins": ["prettier", "jest"],
     "rules": {
         "no-console": ["error", { "allow": ["warn", "error"] }],
         "prettier/prettier": "error"

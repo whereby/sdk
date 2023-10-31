@@ -12,7 +12,7 @@ export function itShouldThrowIfMissing(missingPropertyName, fn) {
     it(`should throw if ${scenario}`, () => {
         expect(() => {
             fn();
-        }).to.throw(expectedException);
+        }).toThrow(expectedException);
     });
 }
 

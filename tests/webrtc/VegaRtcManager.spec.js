@@ -1,6 +1,12 @@
 import * as helpers from "./webRtcHelpers";
 import * as mediasoupClient from "mediasoup-client";
 
+jest.mock("webrtc-adapter", () => {
+    return {
+        browserDetails: { browser: "chrome" },
+    };
+});
+
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import VegaRtcManager from "../../src/webrtc/VegaRtcManager";
 
@@ -41,7 +47,7 @@ describe("VegaRtcManager", () => {
         });
 
         Object.defineProperty(mediasoupClient, "Device", {
-            value: sinon.stub(),
+            value: jest.fn(),
         });
 
         rtcManager = new VegaRtcManager({
@@ -52,6 +58,13 @@ describe("VegaRtcManager", () => {
             webrtcProvider,
             features: {},
             eventClaim: helpers.randomString("/claim-"),
+            logger: {
+                debug: () => {},
+                error: () => {},
+                info: () => {},
+                log: () => {},
+                warn: () => {},
+            },
         });
     });
 
@@ -65,16 +78,15 @@ describe("VegaRtcManager", () => {
     });
 
     describe("stopOrResumeVideo", () => {
-        let clock;
         let localStream;
 
         beforeEach(() => {
-            clock = sinon.useFakeTimers();
+            jest.useFakeTimers();
             localStream = helpers.createMockedMediaStream();
         });
 
         afterEach(() => {
-            clock.restore();
+            jest.useRealTimers();
         });
 
         describe("when disabling", () => {
@@ -84,9 +96,9 @@ describe("VegaRtcManager", () => {
 
                 rtcManager.stopOrResumeVideo(localStream, false);
 
-                expect(videoTrack.stop).not.to.have.been.called();
-                clock.tick(5000);
-                expect(videoTrack.stop).to.have.been.called();
+                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
+                jest.advanceTimersByTime(5000);
+                expect(videoTrack.stop).toHaveBeenCalledTimes(1);
             });
 
             it("should NOT stop track if it is still enabled", () => {
@@ -95,9 +107,9 @@ describe("VegaRtcManager", () => {
 
                 rtcManager.stopOrResumeVideo(localStream, false);
 
-                expect(videoTrack.stop).not.to.have.been.called();
-                clock.tick(5000);
-                expect(videoTrack.stop).not.to.have.been.called();
+                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
+                jest.advanceTimersByTime(5000);
+                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
             });
 
             it("should remove the track from local stream", () => {
@@ -105,9 +117,9 @@ describe("VegaRtcManager", () => {
                 videoTrack.enabled = false;
 
                 rtcManager.stopOrResumeVideo(localStream, false);
-                clock.tick(5000);
+                jest.advanceTimersByTime(5000);
 
-                expect(localStream.removeTrack).to.have.been.calledWithExactly(videoTrack);
+                expect(localStream.removeTrack).toHaveBeenCalledWith(videoTrack);
             });
 
             it("should emit event", () => {
@@ -115,30 +127,23 @@ describe("VegaRtcManager", () => {
                 videoTrack.enabled = false;
 
                 rtcManager.stopOrResumeVideo(localStream, false);
-                clock.tick(5000);
+                jest.advanceTimersByTime(5000);
 
-                expect(emitter.emit).to.have.been.calledWithExactly(
-                    CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED,
-                    {
-                        stream: localStream,
-                        track: videoTrack,
-                    }
-                );
+                expect(emitter.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
+                    stream: localStream,
+                    track: videoTrack,
+                });
             });
         });
 
         describe("when enabling", () => {
             let gumStream;
-            let gumStub;
 
             beforeEach(() => {
                 gumStream = helpers.createMockedMediaStream();
-                gumStub = sinon.stub(navigator.mediaDevices, "getUserMedia").resolves(gumStream);
-                localStream.removeTrack(localStream.getVideoTracks()[0]);
-            });
+                global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(gumStream));
 
-            afterEach(() => {
-                gumStub.restore();
+                localStream.removeTrack(localStream.getVideoTracks()[0]);
             });
 
             it("should obtain new video track with existing constraints", () => {
@@ -146,25 +151,27 @@ describe("VegaRtcManager", () => {
 
                 rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(navigator.mediaDevices.getUserMedia).to.have.been.calledWithExactly({
+                expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
                     video: mediaContstraints.video,
                 });
             });
 
             it("should add video track to local stream", async () => {
                 const expectedTrack = gumStream.getVideoTracks()[0];
+                mediaContstraints = { video: { some: "constraint" } };
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(localStream.addTrack).to.have.been.calledWithExactly(expectedTrack);
+                expect(localStream.addTrack).toHaveBeenCalledWith(expectedTrack);
             });
 
             it("should emit event", async () => {
                 const expectedTrack = gumStream.getVideoTracks()[0];
+                mediaContstraints = { video: { some: "constraint" } };
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(emitter.emit).to.have.been.calledWithExactly(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
+                expect(emitter.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                     streamId: localStream.id,
                     tracks: [expectedTrack],
                     screenShare: false,
@@ -173,11 +180,12 @@ describe("VegaRtcManager", () => {
 
             it("should sendWebcam(track)", async () => {
                 const expectedTrack = gumStream.getVideoTracks()[0];
-                sinon.spy(rtcManager, "_sendWebcam");
+                mediaContstraints = { video: { some: "constraint" } };
+                jest.spyOn(rtcManager, "_sendWebcam");
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(rtcManager._sendWebcam).to.have.been.calledWithExactly(expectedTrack);
+                expect(rtcManager._sendWebcam).toHaveBeenCalledWith(expectedTrack);
             });
         });
     });
@@ -192,12 +200,12 @@ describe("VegaRtcManager", () => {
 
         describe("when enable", () => {
             it("should _sendWebcam with the new track", () => {
-                sinon.spy(rtcManager, "_sendWebcam");
+                jest.spyOn(rtcManager, "_sendWebcam");
                 const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
                 localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
 
-                expect(rtcManager._sendWebcam).to.have.been.calledWithExactly(track);
+                expect(rtcManager._sendWebcam).toHaveBeenCalledWith(track);
             });
         });
 
@@ -221,19 +229,19 @@ describe("VegaRtcManager", () => {
                     };
                     rtcManager._webcamProducer = webcamProducer;
                     rtcManager._webcamPaused = false;
-                    sinon.stub(rtcManager, "_stopProducer");
+                    rtcManager._stopProducer = jest.fn();
                 });
 
                 it("should stop the webcam producer", () => {
                     localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
 
-                    expect(rtcManager._stopProducer).to.have.been.calledWithExactly(webcamProducer);
+                    expect(rtcManager._stopProducer).toHaveBeenCalledWith(webcamProducer);
                 });
 
                 it("should not keep track of the old producer", () => {
                     localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
 
-                    expect(rtcManager._webcamProducer).to.equal(null);
+                    expect(rtcManager._webcamProducer).toEqual(null);
                 });
             });
         });

@@ -57,32 +57,41 @@ function createMockClient(id, isLocal) {
 }
 
 describe("IssueMonitor", () => {
-    let clock;
     let stopSubscription;
     let localCam;
     let remoteCam1;
     let remoteCam2;
 
+    beforeAll(() => {
+        jest.useFakeTimers();
+    });
+
+    afterAll(() => {
+        jest.useRealTimers();
+    });
+
     let onUpdatedIssues;
 
     const statsIntervalTick = async () => {
-        clock.tick(2000);
+        jest.advanceTimersByTime(2000);
         await Promise.resolve(true);
         await Promise.all([Promise.resolve(true)]);
     };
 
-    const expectAggregatedMetrics = (metrics, call) => {
-        expect(onUpdatedIssues.getCall(call || 0)).calledWith(sinon.match({ aggregated: { metrics } }));
+    const expectAggregatedMetrics = (metrics, callNumber) => {
+        const call = onUpdatedIssues.mock.calls[callNumber || 0];
+        const arg = call[0];
+        expect(arg).toMatchObject({ aggregated: { metrics } });
     };
 
-    const expectAggregatedIssues = (issues, call) => {
-        expect(onUpdatedIssues.getCall(call || 0)).calledWith(sinon.match({ aggregated: { issues } }));
+    const expectAggregatedIssues = (issues, callNumber) => {
+        const call = onUpdatedIssues.mock.calls[callNumber || 0];
+        const arg = call[0];
+        expect(arg).toMatchObject({ aggregated: { issues } });
     };
 
     beforeEach(() => {
-        clock = sinon.useFakeTimers();
-
-        onUpdatedIssues = sinon.spy();
+        onUpdatedIssues = jest.fn();
 
         localCam = createMockClient("localcam", true);
         remoteCam1 = createMockClient("remotecam1", false);
@@ -100,7 +109,6 @@ describe("IssueMonitor", () => {
 
     afterEach(async () => {
         stopSubscription();
-        clock.restore();
         await statsIntervalTick();
     });
 
@@ -158,7 +166,7 @@ describe("IssueMonitor", () => {
             "rem-cam-video-bitrate": { avg: 150000, totAvg: 300000, ticks: 2, totTicks: 1 },
         });
 
-        expect(onUpdatedIssues).to.have.callCount(1);
+        expect(onUpdatedIssues).toHaveBeenCalledTimes(1);
 
         localCam.video.stats.bytesSent += 0;
         remoteCam1.video.stats.bytesReceived += (300000 / 8) * 2;
@@ -166,7 +174,7 @@ describe("IssueMonitor", () => {
 
         await statsIntervalTick();
 
-        expect(onUpdatedIssues).to.have.callCount(2);
+        expect(onUpdatedIssues).toHaveBeenCalledTimes(2);
 
         expectAggregatedIssues(
             {

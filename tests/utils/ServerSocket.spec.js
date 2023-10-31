@@ -6,38 +6,37 @@ describe("ServerSocket", () => {
 
         beforeEach(() => {
             serverSocket = new ServerSocket("https://localhost");
-            sinon.stub(serverSocket._socket, "on");
-            sinon.stub(serverSocket._socket, "off");
+            jest.spyOn(serverSocket._socket, "on");
+            jest.spyOn(serverSocket._socket, "off");
         });
 
         afterEach(() => {
-            serverSocket._socket.on.restore();
-            serverSocket._socket.off.restore();
+            jest.clearAllMocks();
         });
 
         it("should attach an event listener to the internal socket", () => {
             const eventName = "some event";
-            const handler = sinon.stub();
+            const handler = jest.fn();
 
             serverSocket.on(eventName, handler);
 
-            expect(serverSocket._socket.on).to.be.calledWithExactly(eventName, handler);
+            expect(serverSocket._socket.on).toHaveBeenCalledWith(eventName, handler);
         });
 
         it("should return a deregistering function", () => {
             const deregisterHandler = serverSocket.on("event", () => {});
 
-            expect(deregisterHandler).to.be.instanceOf(Function);
+            expect(deregisterHandler).toBeInstanceOf(Function);
         });
 
         it("should return a deregistering function which will remove the listener", () => {
             const eventName = "some event";
-            const handler = sinon.stub();
+            const handler = jest.fn();
 
             const deregisterHandler = serverSocket.on(eventName, handler);
             deregisterHandler();
 
-            expect(serverSocket._socket.off).to.be.calledWithExactly(eventName, handler);
+            expect(serverSocket._socket.off).toHaveBeenCalledWith(eventName, handler);
         });
     });
 });
