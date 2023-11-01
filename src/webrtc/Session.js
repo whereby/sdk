@@ -4,10 +4,8 @@ import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapter from "webrtc-adapter";
 import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./constants";
 
-const logger = console;
-
 export default class Session {
-    constructor({ peerConnectionId, bandwidth, maximumTurnBandwidth, deprioritizeH264Encoding }) {
+    constructor({ peerConnectionId, bandwidth, maximumTurnBandwidth, deprioritizeH264Encoding, logger = console }) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
         this.pc = null;
@@ -29,6 +27,7 @@ export default class Session {
         });
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._deprioritizeH264Encoding = deprioritizeH264Encoding;
+        this._logger = logger;
     }
 
     setAndGetPeerConnection({ clientId, constraints, peerConnectionConfig, shouldAddLocalVideo }) {
@@ -172,7 +171,7 @@ export default class Session {
                 return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
             },
             (e) => {
-                logger.warn("Could not set remote description from remote answer: ", e);
+                this._logger.warn("Could not set remote description from remote answer: ", e);
             }
         );
     }
@@ -193,7 +192,7 @@ export default class Session {
                 return;
             }
             this.pc.addIceCandidate(candidate).catch((e) => {
-                logger.warn("Failed to add ICE candidate ('%s'): %s", candidate ? candidate.candidate : null, e);
+                this._logger.warn("Failed to add ICE candidate ('%s'): %s", candidate ? candidate.candidate : null, e);
             });
         });
     }
@@ -231,7 +230,7 @@ export default class Session {
         const senders = pc.getSenders();
         function dbg(msg) {
             const tr = (t) => t && `id:${t.id},kind:${t.kind},state:${t.readyState}`;
-            logger.warn(
+            this._logger.warn(
                 `${msg}. newTrack:${tr(newTrack)}, oldTrack:${tr(oldTrack)}, sender tracks: ${JSON.stringify(
                     senders.map((s) => `s ${tr(s.track)}`)
                 )}, sender first codecs: ${JSON.stringify(senders.map((s) => (s.getParameters().codecs || [])[0]))}`

@@ -6,7 +6,6 @@ import { getOptimalBitrate } from "../utils/optimalBitrate";
 import { setCodecPreferenceSDP } from "./sdpModifier";
 import adapter from "webrtc-adapter";
 
-const logger = console;
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
 const browserName = adapter.browserDetails.browser;
 
@@ -17,7 +16,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         let session = this._getSession(clientId);
         let bandwidth = (session && session.bandwidth) || 0;
         if (session) {
-            logger.warn("Replacing peer session", clientId);
+            this._logger.warn("Replacing peer session", clientId);
             this._cleanup(clientId);
         } else {
             bandwidth = this._changeBandwidthForAllClients(true);
@@ -92,13 +91,13 @@ export default class P2pRtcManager extends BaseRtcManager {
                 videoTransceiver.setCodecPreferences(capabilities.codecs);
             });
         } catch (error) {
-            logger.error("Error during setting setCodecPreferences:", error);
+            this._logger.error("Error during setting setCodecPreferences:", error);
         }
     }
 
     _negotiatePeerConnection(clientId, session, constraints) {
         if (!session) {
-            logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
+            this._logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;
         }
         const pc = session.pc;
@@ -140,11 +139,11 @@ export default class P2pRtcManager extends BaseRtcManager {
                     return;
                 }
                 pc.setLocalDescription(offer).catch((e) => {
-                    logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
+                    this._logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
                 });
             })
             .catch((e) => {
-                logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
+                this._logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
             });
     }
 
@@ -283,7 +282,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         if (session) {
             // this will happen on a signal-server reconnect
             // before we tried an ice-restart here, now we recreate the session/pc
-            logger.warn("Replacing peer session", clientId);
+            this._logger.warn("Replacing peer session", clientId);
             this._cleanup(clientId); // will cleanup and delete session/pc
         } else {
             // we adjust bandwidth based on number of sessions/pcs

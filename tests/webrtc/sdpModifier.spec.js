@@ -21,12 +21,12 @@ describe("sdpModifier", () => {
         it("changes the direction to inactive when active is set to false", () => {
             const initialSdp = getVideoSdpString() + "a=recvonly\r\n";
             const modifiedSdp = sdpModifier.changeMediaDirection(initialSdp, false);
-            expect(modifiedSdp).to.equal(initialSdp.replace("recvonly", "inactive"));
+            expect(modifiedSdp).toEqual(initialSdp.replace("recvonly", "inactive"));
         });
         it("changes the direction to recvonly when active is set to true", () => {
             const initialSdp = getVideoSdpString() + "a=inactive\r\n";
             const modifiedSdp = sdpModifier.changeMediaDirection(initialSdp, true);
-            expect(modifiedSdp).to.equal(initialSdp.replace("inactive", "recvonly"));
+            expect(modifiedSdp).toEqual(initialSdp.replace("inactive", "recvonly"));
         });
     });
 
@@ -56,12 +56,12 @@ describe("sdpModifier", () => {
 
         it("moves h264 payloads to end of m-line", () => {
             const modifedSdp = sdpModifier.deprioritizeH264(sdp);
-            expect(modifedSdp).to.contain("m=video 9 UDP/TLS/RTP/SAVPF 91 93 90 92\r\n");
+            expect(modifedSdp).toContain("m=video 9 UDP/TLS/RTP/SAVPF 91 93 90 92\r\n");
         });
 
         it("ignores m-lines without h264 payloads", () => {
             const modifedSdp = sdpModifier.deprioritizeH264(sdp);
-            expect(modifedSdp).to.contain("m=video 9 UDP/TLS/RTP/SAVPF 111\r\n");
+            expect(modifedSdp).toContain("m=video 9 UDP/TLS/RTP/SAVPF 111\r\n");
         });
     });
 });

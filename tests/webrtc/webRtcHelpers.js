@@ -1,10 +1,12 @@
 import ServerSocket from "../../src/utils/ServerSocket";
+jest.mock("../../src/utils/ServerSocket");
 
 export function createServerSocketStub() {
     const listeners = {};
-    const socket = sinon.createStubInstance(ServerSocket);
 
-    socket.on = sinon.spy((eventName, handler) => {
+    const socket = new ServerSocket();
+
+    socket.on = jest.fn((eventName, handler) => {
         if (!listeners[eventName]) {
             listeners[eventName] = [];
         }
@@ -18,16 +20,16 @@ export function createServerSocketStub() {
         };
     });
 
-    socket.once = sinon.spy((eventName, handler) => {
+    socket.once = jest.fn((eventName, handler) => {
         const cleanUp = socket.on(eventName, function () {
             cleanUp();
             handler.apply(null, arguments);
         });
     });
 
-    socket.isConnected = sinon.stub().returns(true);
+    socket.isConnected = jest.fn(() => true);
 
-    socket.emit = sinon.stub();
+    socket.emit = jest.fn();
 
     return {
         socket,
@@ -49,19 +51,19 @@ export function createServerSocketStub() {
 }
 
 export function createRTCPeerConnectionStub() {
-    return sinon.spy(() => {
+    return jest.fn(() => {
         return {
-            addIceCandidate: sinon.stub().returns(Promise.resolve()),
-            createOffer: sinon.stub().returns(Promise.resolve({ type: "offer", sdp: "blob" })),
-            createAnswer: sinon.stub().returns(Promise.resolve({ type: "answer", sdp: "blob" })),
-            addStream: sinon.stub(),
-            removeStream: sinon.stub(),
-            setRemoteDescription: sinon.stub().returns(Promise.resolve()),
-            setLocalDescription: sinon.stub().returns(Promise.resolve()),
+            addIceCandidate: jest.fn(() => Promise.resolve()),
+            createOffer: jest.fn(() => Promise.resolve({ type: "offer", sdp: "blob" })),
+            createAnswer: jest.fn(() => Promise.resolve({ type: "answer", sdp: "blob" })),
+            addStream: jest.fn(),
+            removeStream: jest.fn(),
+            setRemoteDescription: jest.fn(() => Promise.resolve()),
+            setLocalDescription: jest.fn(() => Promise.resolve()),
             signalingState: "stable",
-            addEventListener: sinon.stub(),
-            close: sinon.stub(),
-            getSenders: sinon.stub().returns([]),
+            addEventListener: jest.fn(),
+            close: jest.fn(),
+            getSenders: jest.fn(() => []),
         };
     });
 }
@@ -82,7 +84,7 @@ export function getValidRelayCandidatePackage() {
 
 export function createEmitterStub() {
     return {
-        emit: sinon.stub(),
+        emit: jest.fn(),
     };
 }
 
@@ -131,7 +133,7 @@ export function createMockedMediaStreamTrack({ kind }) {
         getSettings: () => {
             raiseNotImplementedException();
         },
-        stop: sinon.spy(() => {
+        stop: jest.fn(() => {
             result.enabled = false;
             result.readyState = "ended";
         }),
@@ -153,8 +155,8 @@ export function createMockedMediaStream() {
         active: true,
         ended: false,
         id: randomString(),
-        addTrack: sinon.spy((track) => tracks.push(track)),
-        removeTrack: sinon.spy((track) => {
+        addTrack: jest.fn((track) => tracks.push(track)),
+        removeTrack: jest.fn((track) => {
             tracks = tracks.filter((t) => t !== track);
         }),
         getAudioTracks: () => tracks.filter((t) => t.kind === "audio"),

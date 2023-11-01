@@ -1,4 +1,11 @@
 import * as baseRtcManagerSpec from "./baseRtcManagerSpec";
+
+jest.mock("webrtc-adapter", () => {
+    return {
+        browserDetails: { browser: "chrome" },
+    };
+});
+
 import * as helpers from "./webRtcHelpers";
 import { itShouldThrowIfMissing } from "../helpers";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
@@ -67,6 +74,13 @@ describe("P2pRtcManager", () => {
             serverSocket: _serverSocket,
             webrtcProvider,
             features,
+            logger: {
+                debug: () => {},
+                error: () => {},
+                info: () => {},
+                log: () => {},
+                warn: () => {},
+            },
         });
     }
 
@@ -153,7 +167,7 @@ describe("P2pRtcManager", () => {
                 isSfu: false,
             });
 
-            expect(actual).to.equal(true);
+            expect(actual).toEqual(true);
         });
 
         it("should return false if the provided selfId is different from the current one", () => {
@@ -163,7 +177,7 @@ describe("P2pRtcManager", () => {
                 isSfu: false,
             });
 
-            expect(actual).to.equal(false);
+            expect(actual).toEqual(false);
         });
 
         it("should return false if the provided roomName is different from the current one", () => {
@@ -173,7 +187,7 @@ describe("P2pRtcManager", () => {
                 isSfu: false,
             });
 
-            expect(actual).to.equal(false);
+            expect(actual).toEqual(false);
         });
 
         it("should return false if isSfu is set", () => {
@@ -183,7 +197,7 @@ describe("P2pRtcManager", () => {
                 isSfu: true,
             });
 
-            expect(actual).to.equal(false);
+            expect(actual).toEqual(false);
         });
     });
 
@@ -194,12 +208,12 @@ describe("P2pRtcManager", () => {
             createRtcManager({ iceServers })._connect(clientId);
 
             // The object should be constructed with the given peer connection config.
-            expect(window.RTCPeerConnection).to.have.been.calledWithExactly(
+            expect(window.RTCPeerConnection).toHaveBeenCalledWith(
                 {
                     iceServers,
                     sdpSemantics: "unified-plan",
                 },
-                sinon.match.object
+                expect.anything()
             );
         });
 
@@ -211,21 +225,21 @@ describe("P2pRtcManager", () => {
 
             rtcManager._connect(clientId);
 
-            expect(window.RTCPeerConnection).to.have.been.calledWithExactly(
+            expect(window.RTCPeerConnection).toHaveBeenCalledWith(
                 {
                     iceServers: updatedIceServers,
                     sdpSemantics: "unified-plan",
                 },
-                sinon.match.object
+                expect.anything()
             );
         });
 
         it("defaults to creating a new peer connection with unified semantics", () => {
             createRtcManager({ iceServers })._connect(clientId, {});
 
-            expect(window.RTCPeerConnection).to.have.been.calledWithExactly(
+            expect(window.RTCPeerConnection).toHaveBeenCalledWith(
                 { sdpSemantics: "unified-plan", iceServers },
-                sinon.match.object
+                expect.anything()
             );
         });
 
@@ -233,9 +247,13 @@ describe("P2pRtcManager", () => {
             createRtcManager({ iceServers, features: { useOnlyTURN: true } })._connect(clientId, {});
 
             // The object should be constructed some TURN servers and iceTransportPolicy set to 'relay'.
-            expect(window.RTCPeerConnection).to.have.been.calledWithExactly(
-                { iceTransportPolicy: "relay", sdpSemantics: "unified-plan", iceServers },
-                sinon.match.object
+            expect(window.RTCPeerConnection).toHaveBeenCalledWith(
+                {
+                    iceTransportPolicy: "relay",
+                    sdpSemantics: "unified-plan",
+                    iceServers,
+                },
+                expect.anything()
             );
         });
 
@@ -244,30 +262,30 @@ describe("P2pRtcManager", () => {
             const { pc } = await rtcManager._connect(clientId);
 
             // The pc should be added to list of peer connections.
-            expect(rtcManager.peerConnections[clientId].pc).to.equal(pc);
+            expect(rtcManager.peerConnections[clientId].pc).toEqual(pc);
         });
 
         it("registers callbacks on the peer connection", async () => {
             const { pc } = await createRtcManager()._connect(clientId);
 
             // Callback functions should have been attached.
-            expect(pc.onnegotiationneeded).to.be.a("function");
-            expect(pc.onicecandidate).to.be.a("function");
-            expect(pc.ontrack).to.be.a("function");
-            expect(pc.oniceconnectionstatechange).to.be.a("function");
+            expect(pc.onnegotiationneeded).toEqual(expect.any(Function));
+            expect(pc.onicecandidate).toEqual(expect.any(Function));
+            expect(pc.ontrack).toEqual(expect.any(Function));
+            expect(pc.oniceconnectionstatechange).toEqual(expect.any(Function));
         });
 
         it("creates an offer", async () => {
             const { pc } = await createRtcManager()._connect(clientId);
 
             // An offer was created.
-            expect(pc.createOffer).to.have.been.called();
+            expect(pc.createOffer).toHaveBeenCalled();
         });
 
         it("does not emit a response on the server socket", () => {
             createRtcManager()._connect(clientId);
 
-            expect(serverSocket.emit).not.to.have.been.called();
+            expect(serverSocket.emit).toHaveBeenCalledTimes(0);
         });
     });
 
@@ -275,25 +293,25 @@ describe("P2pRtcManager", () => {
         it("registers a callback for oniceconnectionstatechange on the peer connection", async () => {
             const { pc } = await createRtcManager().accept({ clientId });
 
-            expect(pc.oniceconnectionstatechange).to.be.a("function");
+            expect(pc.oniceconnectionstatechange).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onnegotiationneeded on the peer connection", async () => {
             const { pc } = await createRtcManager().accept({ clientId });
 
-            expect(pc.onnegotiationneeded).to.be.a("function");
+            expect(pc.onnegotiationneeded).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onicecandidate on the peer connection", async () => {
             const { pc } = await createRtcManager().accept({ clientId });
 
-            expect(pc.onicecandidate).to.be.a("function");
+            expect(pc.onicecandidate).toEqual(expect.any(Function));
         });
 
         it("registers a callback for ontrack on the peer connection", async () => {
             const { pc } = await createRtcManager().accept({ clientId });
 
-            expect(pc.ontrack).to.be.a("function");
+            expect(pc.ontrack).toEqual(expect.any(Function));
         });
     });
 
@@ -306,7 +324,7 @@ describe("P2pRtcManager", () => {
 
                 pc.onnegotiationneeded();
 
-                expect(pc.createOffer).to.have.been.calledWithExactly(sinon.match.object);
+                expect(pc.createOffer).toHaveBeenCalledWith(expect.anything());
             });
 
             it('does not negotiate peer connection when iceConnectionState is "new"', async () => {
@@ -315,7 +333,7 @@ describe("P2pRtcManager", () => {
                 pc.iceConnectionState = "new";
                 pc.onnegotiationneeded();
 
-                expect(pc.createOffer).not.to.have.been.called();
+                expect(pc.createOffer).toHaveBeenCalledTimes(0);
             });
 
             it("does not re-negotiate peer connection during initial negotiation", async () => {
@@ -326,7 +344,7 @@ describe("P2pRtcManager", () => {
                 pc.iceConnectionState = "checking";
                 pc.onnegotiationneeded();
 
-                expect(pc.createOffer).not.to.have.been.called();
+                expect(pc.createOffer).toHaveBeenCalledTimes(0);
             });
         });
 
@@ -337,7 +355,7 @@ describe("P2pRtcManager", () => {
                 const candidatePackage = helpers.getValidCandidatePackage();
                 pc.onicecandidate({ candidate: candidatePackage });
 
-                expect(serverSocket.emit).to.have.been.calledWithExactly(
+                expect(serverSocket.emit).toHaveBeenCalledWith(
                     RELAY_MESSAGES.ICE_CANDIDATE,
                     {
                         receiverId: clientId,
@@ -355,7 +373,7 @@ describe("P2pRtcManager", () => {
                 const candidatePackage = helpers.getValidRelayCandidatePackage();
                 pc.onicecandidate({ candidate: candidatePackage });
 
-                expect(serverSocket.emit).to.have.been.calledWithExactly(
+                expect(serverSocket.emit).toHaveBeenCalledWith(
                     RELAY_MESSAGES.ICE_CANDIDATE,
                     {
                         receiverId: clientId,
@@ -368,15 +386,14 @@ describe("P2pRtcManager", () => {
 
         describe("oniceconnectionstatechange", () => {
             let rtcManager;
-            let clock;
 
             beforeEach(() => {
                 rtcManager = createRtcManager();
-                clock = sinon.useFakeTimers();
+                jest.useFakeTimers();
             });
 
             afterEach(() => {
-                clock.restore();
+                jest.useRealTimers();
             });
 
             const iceStateToConnectionStatus = {
@@ -396,60 +413,58 @@ describe("P2pRtcManager", () => {
                         pc.iceConnectionState = iceState;
                         pc.localDescription = { type: "offer" };
                         pc.oniceconnectionstatechange();
-                        clock.tick(0);
+                        jest.advanceTimersByTime(0);
 
-                        expect(emitter.emit).to.have.been.calledWithExactly(
+                        expect(emitter.emit).toHaveBeenCalledWith(
                             CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
-                            {
+                            expect.objectContaining({
                                 clientId,
                                 streamIds: [],
                                 status: CONNECTION_STATUS.TYPES[expectedStatus],
-                                previous: sinon.match.any,
-                            }
+                            })
                         );
                     });
                 });
             });
 
             it("should call rtcManager._maybeRestartIce with the client id if the client sent the offer on disconnect", async () => {
-                sinon.spy(rtcManager, "_maybeRestartIce");
+                jest.spyOn(rtcManager, "_maybeRestartIce");
                 const { pc } = await rtcManager._connect(clientId);
 
                 pc.iceConnectionState = "disconnected";
                 pc.localDescription = { type: "offer" };
                 pc.oniceconnectionstatechange();
 
-                clock.tick(5000);
-                expect(rtcManager._maybeRestartIce).to.have.been.calledWithExactly(clientId, sinon.match.object);
+                jest.advanceTimersByTime(5000);
+                expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
             });
 
             it("should call rtcManager.maybeRestartIce with the client id if the client sent the offer on failed", async () => {
-                sinon.spy(rtcManager, "_maybeRestartIce");
+                jest.spyOn(rtcManager, "_maybeRestartIce");
                 const { pc } = await rtcManager._connect(clientId);
 
                 pc.iceConnectionState = "disconnected";
                 pc.localDescription = { type: "offer" };
                 pc.oniceconnectionstatechange();
 
-                clock.tick(5000);
-                expect(rtcManager._maybeRestartIce).to.have.been.calledWithExactly(clientId, sinon.match.object);
+                jest.advanceTimersByTime(5000);
+                expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
             });
         });
     });
 
     describe("stopOrResumeVideo", () => {
-        let clock;
         let localStream;
         let rtcManager;
 
         beforeEach(() => {
-            clock = sinon.useFakeTimers();
+            jest.useFakeTimers();
             localStream = helpers.createMockedMediaStream();
             rtcManager = createRtcManager();
         });
 
         afterEach(() => {
-            clock.restore();
+            jest.useRealTimers();
         });
 
         describe("when disabling", () => {
@@ -459,9 +474,9 @@ describe("P2pRtcManager", () => {
 
                 rtcManager.stopOrResumeVideo(localStream, false);
 
-                expect(videoTrack.stop).not.to.have.been.called();
-                clock.tick(5000);
-                expect(videoTrack.stop).to.have.been.called();
+                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
+                jest.advanceTimersByTime(5000);
+                expect(videoTrack.stop).toHaveBeenCalledTimes(1);
             });
 
             it("should NOT stop track if it is still enabled", () => {
@@ -470,9 +485,9 @@ describe("P2pRtcManager", () => {
 
                 rtcManager.stopOrResumeVideo(localStream, false);
 
-                expect(videoTrack.stop).not.to.have.been.called();
-                clock.tick(5000);
-                expect(videoTrack.stop).not.to.have.been.called();
+                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
+                jest.advanceTimersByTime(5000);
+                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
             });
 
             it("should remove the track from local stream", () => {
@@ -480,9 +495,9 @@ describe("P2pRtcManager", () => {
                 videoTrack.enabled = false;
 
                 rtcManager.stopOrResumeVideo(localStream, false);
-                clock.tick(5000);
+                jest.advanceTimersByTime(5000);
 
-                expect(localStream.removeTrack).to.have.been.calledWithExactly(videoTrack);
+                expect(localStream.removeTrack).toHaveBeenCalledWith(videoTrack);
             });
 
             it("should emit event", () => {
@@ -490,30 +505,22 @@ describe("P2pRtcManager", () => {
                 videoTrack.enabled = false;
 
                 rtcManager.stopOrResumeVideo(localStream, false);
-                clock.tick(5000);
+                jest.advanceTimersByTime(5000);
 
-                expect(emitter.emit).to.have.been.calledWithExactly(
-                    CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED,
-                    {
-                        stream: localStream,
-                        track: videoTrack,
-                    }
-                );
+                expect(emitter.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
+                    stream: localStream,
+                    track: videoTrack,
+                });
             });
         });
 
         describe("when enabling", () => {
             let gumStream;
-            let gumStub;
 
             beforeEach(() => {
                 gumStream = helpers.createMockedMediaStream();
-                gumStub = sinon.stub(navigator.mediaDevices, "getUserMedia").resolves(gumStream);
+                global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(gumStream));
                 localStream.removeTrack(localStream.getVideoTracks()[0]);
-            });
-
-            afterEach(() => {
-                gumStub.restore();
             });
 
             it("should obtain new video track with existing constraints", () => {
@@ -521,7 +528,7 @@ describe("P2pRtcManager", () => {
 
                 rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(navigator.mediaDevices.getUserMedia).to.have.been.calledWithExactly({
+                expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
                     video: mediaContstraints.video,
                 });
             });
@@ -531,7 +538,7 @@ describe("P2pRtcManager", () => {
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(localStream.addTrack).to.have.been.calledWithExactly(expectedTrack);
+                expect(localStream.addTrack).toHaveBeenCalledWith(expectedTrack);
             });
 
             it("should emit event", async () => {
@@ -539,7 +546,7 @@ describe("P2pRtcManager", () => {
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(emitter.emit).to.have.been.calledWithExactly(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
+                expect(emitter.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                     streamId: localStream.id,
                     tracks: [expectedTrack],
                     screenShare: false,
@@ -548,25 +555,22 @@ describe("P2pRtcManager", () => {
 
             it("should add track to peer connection(s)", async () => {
                 const expectedTrack = gumStream.getVideoTracks()[0];
-                sinon.spy(rtcManager, "_addTrackToPeerConnections");
+                jest.spyOn(rtcManager, "_addTrackToPeerConnections");
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(rtcManager._addTrackToPeerConnections).to.have.been.calledWithExactly(expectedTrack);
+                expect(rtcManager._addTrackToPeerConnections).toHaveBeenCalledWith(expectedTrack);
             });
 
             it("should replace track in peer connection(s) when stopped track exists", async () => {
                 const expectedTrack = gumStream.getVideoTracks()[0];
                 const stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
                 rtcManager._stoppedVideoTrack = stoppedTrack;
-                sinon.spy(rtcManager, "_replaceTrackToPeerConnections");
+                jest.spyOn(rtcManager, "_replaceTrackToPeerConnections");
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(rtcManager._replaceTrackToPeerConnections).to.have.been.calledWithExactly(
-                    stoppedTrack,
-                    expectedTrack
-                );
+                expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, expectedTrack);
             });
         });
     });
@@ -583,28 +587,25 @@ describe("P2pRtcManager", () => {
 
         describe("when enable", () => {
             it("should add track to peer connections", () => {
-                sinon.spy(rtcManager, "_addTrackToPeerConnections");
+                jest.spyOn(rtcManager, "_addTrackToPeerConnections");
                 const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
                 localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
 
-                expect(rtcManager._addTrackToPeerConnections).to.have.been.calledWithExactly(track);
+                expect(rtcManager._addTrackToPeerConnections).toHaveBeenCalledWith(track);
             });
 
             it("should replace track in peer connection(s) when stopped track exists", () => {
                 const stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
                 rtcManager._stoppedVideoTrack = stoppedTrack;
-                sinon.spy(rtcManager, "_replaceTrackToPeerConnections");
+                jest.spyOn(rtcManager, "_replaceTrackToPeerConnections");
                 const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
                 localStream.dispatchEvent(
                     new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } })
                 );
 
-                expect(rtcManager._replaceTrackToPeerConnections).to.have.been.calledWithExactly(
-                    stoppedTrack,
-                    newTrack
-                );
+                expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, newTrack);
             });
         });
 
@@ -614,7 +615,7 @@ describe("P2pRtcManager", () => {
 
                 localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
 
-                expect(rtcManager._stoppedVideoTrack).to.equal(track);
+                expect(rtcManager._stoppedVideoTrack).toEqual(track);
             });
         });
     });

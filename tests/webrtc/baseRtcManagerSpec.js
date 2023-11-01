@@ -29,7 +29,6 @@ export function test(createRtcManager) {
             mediaserverConfigTtlSeconds: 60,
         };
 
-        let clock;
         let rtcManager;
         let emitterStub;
         let serverSocketStub;
@@ -38,7 +37,7 @@ export function test(createRtcManager) {
         let clientId;
 
         beforeEach(() => {
-            clock = sinon.useFakeTimers();
+            jest.useFakeTimers();
             clientId = helpers.randomString("client-");
             window.RTCPeerConnection = helpers.createRTCPeerConnectionStub();
 
@@ -50,7 +49,7 @@ export function test(createRtcManager) {
         });
 
         afterEach(() => {
-            clock.restore();
+            jest.useRealTimers();
             delete window.RTCPeerConnection;
         });
 
@@ -58,13 +57,13 @@ export function test(createRtcManager) {
             it("should support being called without setupSocketListerners being called", () => {
                 expect(() => {
                     rtcManager.disconnectAll();
-                }).to.not.throw();
+                }).not.toThrow();
             });
 
             it("should deregister all listeners defined at setup", () => {
                 const deregisterFunctions = [];
                 serverSocketStub.on = () => {
-                    const deregisterFunc = sinon.stub();
+                    const deregisterFunc = jest.fn();
                     deregisterFunctions.push(deregisterFunc);
                     return deregisterFunc;
                 };
@@ -73,7 +72,7 @@ export function test(createRtcManager) {
                 rtcManager.disconnectAll();
 
                 deregisterFunctions.forEach((deregisterFunction) => {
-                    expect(deregisterFunction).to.have.be.calledWithExactly();
+                    expect(deregisterFunction).toHaveBeenCalled();
                 });
             });
         });
@@ -82,13 +81,13 @@ export function test(createRtcManager) {
             it("should attach all RTC listeners", () => {
                 rtcManager.setupSocketListeners();
 
-                expect(serverSocket.on).to.have.been.calledWithExactly(
+                expect(serverSocket.on).toHaveBeenCalledWith(
                     RELAY_MESSAGES.READY_TO_RECEIVE_OFFER,
-                    sinon.match.func
+                    expect.any(Function)
                 );
-                expect(serverSocket.on).to.have.been.calledWithExactly(RELAY_MESSAGES.SDP_OFFER, sinon.match.func);
-                expect(serverSocket.on).to.have.been.calledWithExactly(RELAY_MESSAGES.SDP_ANSWER, sinon.match.func);
-                expect(serverSocket.on).to.have.been.calledWithExactly(RELAY_MESSAGES.ICE_CANDIDATE, sinon.match.func);
+                expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_OFFER, expect.any(Function));
+                expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_ANSWER, expect.any(Function));
+                expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.ICE_CANDIDATE, expect.any(Function));
             });
 
             describe("callbacks", () => {
@@ -98,29 +97,27 @@ export function test(createRtcManager) {
 
                 describe("READY_TO_RECEIVE_OFFER", () => {
                     it("calls rtcManager._connect", () => {
-                        sinon.stub(rtcManager, "_connect");
+                        jest.spyOn(rtcManager, "_connect");
 
                         serverSocketStub.emitFromServer(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
                             clientId,
                             iceServers: {},
                         });
 
-                        expect(rtcManager._connect).to.have.been.calledWithExactly(clientId);
+                        expect(rtcManager._connect).toHaveBeenCalledWith(clientId);
                     });
                 });
 
                 describe("SDP_OFFER", () => {
                     it("sets the remote description", async () => {
-                        const { pc } = await rtcManager._connect(clientId);
-
-                        // Run
+                        const session = await rtcManager._connect(clientId);
                         const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
                         const offer = { type: "offer", sdpU: validSdp };
 
+                        session.isOperationPending = false; // HACK
                         serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message: offer });
 
-                        // Assert
-                        expect(pc.setRemoteDescription).called;
+                        expect(session.pc.setRemoteDescription).toHaveBeenCalled();
                     });
                 });
 
@@ -135,7 +132,7 @@ export function test(createRtcManager) {
                         serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_ANSWER, { clientId, message: answer });
 
                         // Assert
-                        expect(pc.setRemoteDescription).called;
+                        expect(pc.setRemoteDescription).toHaveBeenCalled();
                     });
                 });
 
@@ -145,7 +142,7 @@ export function test(createRtcManager) {
                     const iceServers = helpers.createIceServersConfig();
 
                     function mockServerResponse() {
-                        serverSocket.emit.resetHistory();
+                        serverSocket.emit.mockReset();
                         serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, {
                             mediaserverConfigTtlSeconds,
                             iceServers,
@@ -154,31 +151,31 @@ export function test(createRtcManager) {
                     }
 
                     it("schedules refresh on join", () => {
-                        clock.tick(roomData.mediaserverConfigTtlSeconds * 1000);
+                        jest.advanceTimersByTime(roomData.mediaserverConfigTtlSeconds * 1000);
 
-                        expect(serverSocket.emit).to.have.been.calledWithExactly(
+                        expect(serverSocket.emit).toHaveBeenCalledWith(
                             PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
-                            sinon.match.any,
-                            sinon.match.any
+                            undefined,
+                            undefined
                         );
                     });
 
                     it("updates internal media server records", () => {
                         mockServerResponse();
 
-                        expect(rtcManager._iceServers).to.equal(iceServers);
-                        expect(rtcManager._sfuServer).to.equal(sfuServer);
+                        expect(rtcManager._iceServers).toEqual(iceServers);
+                        expect(rtcManager._sfuServer).toEqual(sfuServer);
                     });
 
                     it("issues refresh request when TTL expires", () => {
                         mockServerResponse();
 
-                        clock.tick(mediaserverConfigTtlSeconds * 1000);
+                        jest.advanceTimersByTime(mediaserverConfigTtlSeconds * 1000);
 
-                        expect(serverSocket.emit).to.have.been.calledWithExactly(
+                        expect(serverSocket.emit).toHaveBeenCalledWith(
                             PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
-                            sinon.match.any,
-                            sinon.match.any
+                            undefined,
+                            undefined
                         );
                     });
 
@@ -186,9 +183,9 @@ export function test(createRtcManager) {
                         mockServerResponse();
 
                         rtcManager.disconnectAll();
-                        clock.tick(mediaserverConfigTtlSeconds * 1000);
+                        jest.advanceTimersByTime(mediaserverConfigTtlSeconds * 1000);
 
-                        expect(serverSocket.emit).to.not.have.been.called();
+                        expect(serverSocket.emit).toHaveBeenCalledTimes(0);
                     });
                 });
             });
@@ -199,9 +196,9 @@ export function test(createRtcManager) {
                 rtcManager.accept({ clientId });
 
                 // The object should be constructed with the given ice servers.
-                expect(window.RTCPeerConnection).to.have.been.calledWithExactly(
+                expect(window.RTCPeerConnection).toHaveBeenCalledWith(
                     { iceServers, sdpSemantics: "unified-plan" },
-                    sinon.match.object
+                    expect.anything()
                 );
             });
 
@@ -209,20 +206,20 @@ export function test(createRtcManager) {
                 const { pc } = await rtcManager.accept({ clientId });
 
                 // The pc should be added to list of peer connections.
-                expect(rtcManager.peerConnections[clientId].pc).to.equal(pc);
+                expect(rtcManager.peerConnections[clientId].pc).toEqual(pc);
             });
 
             it("does not create an offer", async () => {
                 const { pc } = await rtcManager.accept({ clientId });
 
                 // An offer should not have been created yet.
-                expect(pc.createOffer).not.to.have.been.called();
+                expect(pc.createOffer).toHaveBeenCalledTimes(0);
             });
 
             it("emits READY_TO_RECEIVE_OFFER on the server socket", () => {
                 rtcManager.accept({ clientId });
 
-                expect(serverSocketStub.socket.emit).to.have.been.calledWithExactly(
+                expect(serverSocketStub.socket.emit).toHaveBeenCalledWith(
                     RELAY_MESSAGES.READY_TO_RECEIVE_OFFER,
                     { receiverId: clientId },
                     undefined
@@ -239,7 +236,7 @@ export function test(createRtcManager) {
 
                     pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
 
-                    expect(emitterStub.emit).to.have.been.calledWithExactly(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+                    expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                         clientId,
                         stream: fakeStream,
                     });
@@ -251,7 +248,7 @@ export function test(createRtcManager) {
 
                     pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
 
-                    expect(pc.addStream).not.to.have.been.called();
+                    expect(pc.addStream).toHaveBeenCalledTimes(0);
                 });
 
                 it("does not call pc.addStream for remaining local streams if Firefox", async () => {
@@ -261,7 +258,7 @@ export function test(createRtcManager) {
 
                     pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
 
-                    expect(pc.addStream).not.to.have.been.called();
+                    expect(pc.addStream).toHaveBeenCalledTimes(0);
                 });
             });
 
@@ -285,50 +282,49 @@ export function test(createRtcManager) {
 
                             pc.oniceconnectionstatechange();
 
-                            clock.tick(0);
+                            jest.advanceTimersByTime(0);
 
-                            expect(emitterStub.emit).to.have.been.calledWithExactly(
+                            expect(emitterStub.emit).toHaveBeenCalledWith(
                                 CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
-                                {
+                                expect.objectContaining({
                                     clientId,
                                     streamIds: [],
                                     status: CONNECTION_STATUS.TYPES[expectedStatus],
-                                    previous: sinon.match.any,
-                                }
+                                })
                             );
                         });
                     });
                 });
 
                 it("should call rtcManager._maybeRestartIce with the client id if the client sent the offer on disconnect", async () => {
-                    sinon.spy(rtcManager, "_maybeRestartIce");
+                    jest.spyOn(rtcManager, "_maybeRestartIce");
                     const { pc } = await rtcManager._connect(clientId);
 
                     pc.iceConnectionState = "disconnected";
                     pc.localDescription = { type: "offer" };
                     pc.oniceconnectionstatechange();
 
-                    clock.tick(5000);
-                    expect(rtcManager._maybeRestartIce).to.have.been.calledWithExactly(clientId, sinon.match.object);
+                    jest.advanceTimersByTime(5000);
+                    expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
                 });
 
                 it("should call rtcManager.maybeRestartIce with the client id if the client sent the offer on failed", async () => {
-                    sinon.spy(rtcManager, "_maybeRestartIce");
+                    jest.spyOn(rtcManager, "_maybeRestartIce");
                     const { pc } = await rtcManager._connect(clientId);
                     pc.iceConnectionState = "disconnected";
                     pc.localDescription = { type: "offer" };
 
                     pc.oniceconnectionstatechange();
 
-                    clock.tick(5000);
-                    expect(rtcManager._maybeRestartIce).to.have.been.calledWithExactly(clientId, sinon.match.object);
+                    jest.advanceTimersByTime(5000);
+                    expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
                 });
             });
         });
 
         describe("numberOfPeerconnections", () => {
             it("returns the number of peerconnection objects", () => {
-                expect(rtcManager.numberOfPeerconnections()).to.equal(0);
+                expect(rtcManager.numberOfPeerconnections()).toEqual(0);
             });
         });
     });

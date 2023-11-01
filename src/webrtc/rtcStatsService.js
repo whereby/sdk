@@ -1,15 +1,9 @@
-/* globals process */
-/*
- * wrapper around https://github.com/fippo/rtcstats
- */
-
 // ensure adapter is loaded first.
 import adapter from "webrtc-adapter"; // eslint-disable-line no-unused-vars
 import rtcstats from "rtcstats";
 import { v4 as uuidv4 } from "uuid";
 
 const RTCSTATS_PROTOCOL_VERSION = "1.0";
-const logger = console;
 
 const clientInfo = {
     id: uuidv4(), // shared id across rtcstats reconnects
@@ -17,7 +11,7 @@ const clientInfo = {
 };
 
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
-function rtcStatsConnection(wsURL) {
+function rtcStatsConnection(wsURL, logger = console) {
     const buffer = [];
     let ws;
     let organizationId;
