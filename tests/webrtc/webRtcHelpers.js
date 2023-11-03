@@ -102,15 +102,15 @@ export function createIceServersConfig({ iceServerUrls } = {}) {
     }));
 }
 
-export function createMockedMediaStreamTrack({ kind }) {
+export function createMockedMediaStreamTrack({ id = randomString("track"), kind }) {
     const raiseNotImplementedException = () => {
         throw new Error("Not Implemented function in mock");
     };
     const result = {
         enabled: true,
-        id: randomString(),
+        id,
         kind,
-        label: null,
+        label: undefined,
         muted: false,
         onended: null,
         onmute: null,
@@ -124,15 +124,8 @@ export function createMockedMediaStreamTrack({ kind }) {
                 ...result,
             };
         },
-        getCapabilities: () => {
-            raiseNotImplementedException();
-        },
-        getConstraints: () => {
-            raiseNotImplementedException();
-        },
-        getSettings: () => {
-            raiseNotImplementedException();
-        },
+        getConstraints: () => ({ deviceId: { exact: id } }), // not really correct
+        getSettings: () => ({ deviceId: id }),
         stop: jest.fn(() => {
             result.enabled = false;
             result.readyState = "ended";
@@ -141,15 +134,15 @@ export function createMockedMediaStreamTrack({ kind }) {
     return Object.assign(new EventTarget(), result);
 }
 
-export function createMockedMediaStream() {
-    const mockedAudioTrack = createMockedMediaStreamTrack({
-        kind: "audio",
-    });
-    const mockedVideoTrack = createMockedMediaStreamTrack({
-        kind: "video",
-    });
-
-    let tracks = [mockedAudioTrack, mockedVideoTrack];
+export function createMockedMediaStream(existingTracks) {
+    let tracks = existingTracks || [
+        createMockedMediaStreamTrack({
+            kind: "audio",
+        }),
+        createMockedMediaStreamTrack({
+            kind: "video",
+        }),
+    ];
 
     const result = {
         active: true,
@@ -161,7 +154,7 @@ export function createMockedMediaStream() {
         }),
         getAudioTracks: () => tracks.filter((t) => t.kind === "audio"),
         getVideoTracks: () => tracks.filter((t) => t.kind === "video"),
-        getTracks: () => [].concat(result.getAudioTracks(), result.getVideoTracks()),
+        getTracks: () => tracks,
         close: () => {
             result.active = false;
             result.ended = true;
@@ -172,7 +165,7 @@ export function createMockedMediaStream() {
             };
         },
         getTrackById: (trackId) => {
-            const foundTracks = result.getTracks().filter((track) => track.id === trackId);
+            const foundTracks = tracks.filter((track) => track.id === trackId);
             if (foundTracks.length < 1) {
                 return null;
             }
