@@ -1,6 +1,5 @@
-import assert from "assert";
-
 import getConstraints from "./mediaConstraints";
+import assert from "../utils/assert";
 
 export const isMobile = /mobi/i.test(navigator.userAgent);
 

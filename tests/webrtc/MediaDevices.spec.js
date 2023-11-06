@@ -50,6 +50,10 @@ describe("stopStreamTracks", () => {
         stream = helpers.createMockedMediaStream([videoTrack, audioTrack]);
     });
 
+    it("should throw when only is not audio or video", () => {
+        expect(() => MediaDevices.stopStreamTracks(stream, "random-string")).toThrow();
+    });
+
     it("should stop all tracks in the stream", () => {
         MediaDevices.stopStreamTracks(stream);
 
