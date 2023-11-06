@@ -5,7 +5,7 @@ import ServerSocket from "../utils/ServerSocket";
 import * as webrtcBugDetector from "./bugDetector";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Session from "./Session";
-import assert from "assert";
+import assert from "../utils/assert";
 import rtcStats from "./rtcStatsService";
 import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED, MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import adapter from "webrtc-adapter";

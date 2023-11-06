@@ -1,6 +1,5 @@
-import assert from "assert";
-
 import { TYPES as CONNECTION_STATUS_TYPES } from "./connectionStatusConstants";
+import assert from "../utils/assert";
 const CAMERA_STREAM_ID = "0";
 
 export const STREAM_TYPES = {

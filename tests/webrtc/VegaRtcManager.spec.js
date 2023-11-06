@@ -9,6 +9,7 @@ jest.mock("webrtc-adapter", () => {
 
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import VegaRtcManager from "../../src/webrtc/VegaRtcManager";
+import { itShouldThrowIfMissing } from "../helpers";
 
 const originalNavigator = global.navigator;
 const originalMediasoupDevice = mediasoupClient.Device;
@@ -74,6 +75,61 @@ describe("VegaRtcManager", () => {
         });
         Object.defineProperty(mediasoupClient, "Device", {
             value: originalMediasoupDevice,
+        });
+    });
+
+    describe("constructor", () => {
+        const selfId = helpers.randomString("client-");
+        const room = { name: helpers.randomString("/room-"), iceServers: {} };
+
+        itShouldThrowIfMissing("selfId", () => {
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                room,
+                emitter,
+                serverSocket,
+                webrtcProvider,
+            });
+        });
+
+        itShouldThrowIfMissing("room", () => {
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                selfId,
+                emitter,
+                serverSocket,
+                webrtcProvider,
+            });
+        });
+
+        itShouldThrowIfMissing("emitter", () => {
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                selfId,
+                room,
+                serverSocket,
+                webrtcProvider,
+            });
+        });
+
+        itShouldThrowIfMissing("serverSocket", () => {
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                selfId,
+                room,
+                emitter,
+                webrtcProvider,
+            });
+        });
+
+        itShouldThrowIfMissing("webrtcProvider", () => {
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                selfId,
+                room,
+                emitter,
+                serverSocket,
+            });
         });
     });
 

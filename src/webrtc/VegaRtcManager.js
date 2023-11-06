@@ -1,4 +1,3 @@
-import assert from "assert";
 import { Device } from "mediasoup-client";
 import { PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
@@ -10,6 +9,7 @@ import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import { getHandler } from "../utils/getHandler";
+import assert from "../utils/assert";
 import { v4 as uuidv4 } from "uuid";
 import createMicAnalyser from "./VegaMicAnalyser";
 import { maybeTurnOnly } from "../utils/transportSettings";
