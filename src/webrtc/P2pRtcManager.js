@@ -179,7 +179,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         let bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
-                  1: this._features.cap2pBitrate ? 1000 : 0,
+                  1: 0,
                   2: this._features.highP2PBandwidth ? 768 : 384,
                   3: this._features.highP2PBandwidth ? 512 : 256,
                   4: 192,
