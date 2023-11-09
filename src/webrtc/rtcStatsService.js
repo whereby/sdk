@@ -5,6 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 
 const RTCSTATS_PROTOCOL_VERSION = "1.0";
 
+// when not connected we need to buffer at least a few getstats reports
+// as they are delta compressed and we need the initial properties
+const GETSTATS_BUFFER_SIZE = 20;
+
 const clientInfo = {
     id: uuidv4(), // shared id across rtcstats reconnects
     connectionNumber: 0,
@@ -22,6 +26,7 @@ function rtcStatsConnection(wsURL, logger = console) {
     let connectionShouldBeOpen;
     let connectionAttempt = 0;
     let hasPassedOnRoomSessionId = false;
+    let getStatsBufferUsed = 0;
 
     const connection = {
         connected: false,
@@ -59,8 +64,17 @@ function rtcStatsConnection(wsURL, logger = console) {
             if (ws.readyState === WebSocket.OPEN) {
                 connectionAttempt = 0;
                 ws.send(JSON.stringify(args));
-            } else if (args[0] !== "getstats" && !(args[0] === "customEvent" && args[2].type === "insightsStats")) {
-                // buffer all but stats when not connected
+            } else if (args[0] === "getstats") {
+                // only buffer getStats for a while
+                // we don't want this to pile up, but we need at least the initial reports
+                if (getStatsBufferUsed < GETSTATS_BUFFER_SIZE) {
+                    getStatsBufferUsed++;
+                    buffer.push(args);
+                }
+            } else if (args[0] === "customEvent" && args[2].type === "insightsStats") {
+                // don't buffer insightStats
+            } else {
+                // buffer everything else
                 buffer.push(args);
             }
 
@@ -119,10 +133,11 @@ function rtcStatsConnection(wsURL, logger = console) {
                     ws.send(JSON.stringify(userRole));
                 }
 
-                // send buffered events (non-getStats)
+                // send buffered events
                 while (buffer.length) {
                     ws.send(JSON.stringify(buffer.shift()));
                 }
+                getStatsBufferUsed = 0;
             };
         },
     };
