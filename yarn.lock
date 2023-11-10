@@ -4583,9 +4583,9 @@ rtcpeerconnection-shim@^1.2.15:
   dependencies:
     sdp "^2.6.0"
 
-"rtcstats@github:whereby/rtcstats#v5.3.0":
-  version "5.3.0"
-  resolved "https://codeload.github.com/whereby/rtcstats/tar.gz/f696794035acc18a0d42229217a9a3b7630d524e"
+"rtcstats@github:whereby/rtcstats#5.4.0":
+  version "5.4.0"
+  resolved "https://codeload.github.com/whereby/rtcstats/tar.gz/6f6623b4b53e9f6b41f530339793de227f34ea51"
 
 run-applescript@^5.0.0:
   version "5.0.0"
