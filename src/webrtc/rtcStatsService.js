@@ -14,6 +14,8 @@ const clientInfo = {
     connectionNumber: 0,
 };
 
+let resetDelta = () => {};
+
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
 function rtcStatsConnection(wsURL, logger = console) {
     const buffer = [];
@@ -109,6 +111,7 @@ function rtcStatsConnection(wsURL, logger = console) {
             ws.onclose = (e) => {
                 connection.connected = false;
                 logger.info(`[RTCSTATS] Closed ${e.code}`);
+                resetDelta();
             };
             ws.onopen = () => {
                 // send client info after each connection, so analysis tools can handle reconnections
@@ -146,11 +149,11 @@ function rtcStatsConnection(wsURL, logger = console) {
 }
 
 const server = rtcStatsConnection(process.env.RTCSTATS_URL || "wss://rtcstats.srv.whereby.com");
-rtcstats(
+resetDelta = rtcstats(
     server.trace,
     10000, // query once every 10 seconds.
     [""] // only shim unprefixed RTCPeerConnecion.
-);
+).resetDelta;
 
 const rtcStats = {
     sendEvent: (type, value) => {
