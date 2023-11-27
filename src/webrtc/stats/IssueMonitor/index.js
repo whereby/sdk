@@ -123,7 +123,6 @@ const issueDetectors = [
     },
     // todo:
     // jitter/congestion - increasing jitter for several "ticks"
-    // qpSum / qpf?
     // encodeTime?
     // low audio (energy)?
     // keyframe rate?
@@ -216,6 +215,12 @@ const metrics = [
             kind === "audio" &&
             ssrc0.audioLevel >= 0.001,
         value: ({ ssrc0 }) => Math.max(ssrc0.audioConcealment, ssrc0.audioAcceleration, ssrc0.audioDeceleration),
+    },
+    {
+        id: "qpf",
+        enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
+            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
+        value: ({ trackStats }) => Object.values(trackStats.ssrcs).reduce((sum, ssrc) => sum + (ssrc.qpf || 0), 0),
     },
 ];
 
