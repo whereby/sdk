@@ -1,5 +1,7 @@
 import { io } from "socket.io-client";
 import adapter from "webrtc-adapter";
+import { ReconnectManager } from "./ReconnectManager";
+import { PROTOCOL_RESPONSES } from "../model/protocol";
 
 const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 
@@ -7,7 +9,7 @@ const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
  * Wrapper class that extends the Socket.IO client library.
  */
 export default class ServerSocket {
-    constructor(hostName, optionsOverrides) {
+    constructor(hostName, optionsOverrides, glitchFree) {
         this._socket = io(hostName, {
             path: DEFAULT_SOCKET_PATH,
             randomizationFactor: 0.5,
@@ -33,12 +35,21 @@ export default class ServerSocket {
                 this._socket.io.opts.transports = ["websocket", "polling"];
             }
         });
+
+        if (glitchFree) this._reconnectManager = new ReconnectManager(this._socket);
+
         this._socket.on("connect", () => {
             const transport = this.getTransport();
             if (transport === "websocket") {
                 this._wasConnectedUsingWebsocket = true;
             }
         });
+    }
+
+    setRtcManager(rtcManager) {
+        if (this._reconnectManager) {
+            this._reconnectManager.rtcManager = rtcManager;
+        }
     }
 
     connect() {
@@ -99,6 +110,17 @@ export default class ServerSocket {
      * @returns {function} Function to deregister the listener.
      */
     on(eventName, handler) {
+        const relayableEvents = [
+            PROTOCOL_RESPONSES.ROOM_JOINED,
+            PROTOCOL_RESPONSES.CLIENT_LEFT,
+            PROTOCOL_RESPONSES.NEW_CLIENT,
+        ];
+
+        // Intercept certain events if glitch-free is enabled.
+        if (this._reconnectManager && relayableEvents.includes(eventName)) {
+            return this._interceptEvent(eventName, handler);
+        }
+
         this._socket.on(eventName, handler);
 
         return () => {
@@ -124,5 +146,18 @@ export default class ServerSocket {
      */
     off(eventName, handler) {
         this._socket.off(eventName, handler);
+    }
+
+    /**
+     * Intercept event and let ReconnectManager handle them.
+     */
+    _interceptEvent(eventName, handler) {
+        if (this._reconnectManager) {
+            this._reconnectManager.on(eventName, handler);
+        }
+
+        return () => {
+            if (this._reconnectManager) this._reconnectManager.removeListener(eventName, handler);
+        };
     }
 }

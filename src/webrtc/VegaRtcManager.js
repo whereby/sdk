@@ -1535,7 +1535,7 @@ export default class VegaRtcManager {
         } = clientState;
 
         // Need to pause/resume any consumers that are part of a stream that has been
-        // accepted or dosconnected by the PWA
+        // accepted or disconnected by the PWA
         const toPauseConsumers = [];
         const toResumeConsumers = [];
 
@@ -1636,5 +1636,9 @@ export default class VegaRtcManager {
 
     setMicAnalyserParams(params) {
         this._micAnalyser?.setParams(params);
+    }
+
+    hasClient(clientId) {
+        return this._clientStates.has(clientId);
     }
 }

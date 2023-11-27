@@ -1,7 +1,7 @@
 {
   "name": "@whereby/jslib-media",
   "description": "Media library for Whereby",
-  "version": "1.4.5",
+  "version": "1.5.0",
   "private": false,
   "license": "MIT",
   "homepage": "https://github.com/whereby/jslib-media",
@@ -16,6 +16,7 @@
     "lint": "eslint src tests",
     "test": "npm run lint && npm run test:unit",
     "test:unit": "jest",
+    "test:unit:coverage": "jest --collectCoverage",
     "format:fix": "prettier --write './**/*.{js,ts,yml,json}'",
     "format:check": "prettier --check './**/*.{js,ts,yml,json}'"
   },

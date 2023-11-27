@@ -30,6 +30,7 @@ export default class RtcManagerDispatcher {
             rtcManager.setupSocketListeners();
             emitter.emit(CONNECTION_STATUS.EVENTS.RTC_MANAGER_CREATED, { rtcManager });
             this.currentManager = rtcManager;
+            serverSocket.setRtcManager(rtcManager);
         });
     }
 

@@ -388,4 +388,8 @@ export default class P2pRtcManager extends BaseRtcManager {
         this._removeStreamFromPeerConnections(stream);
         this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId, requestedByClientId });
     }
+
+    hasClient(clientId) {
+        return Object.keys(this.peerConnections).includes(clientId);
+    }
 }
