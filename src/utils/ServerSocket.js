@@ -5,6 +5,8 @@ import { PROTOCOL_RESPONSES } from "../model/protocol";
 
 const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 
+const NOOP_KEEPALIVE_INTERVAL = 2000;
+
 /**
  * Wrapper class that extends the Socket.IO client library.
  */
@@ -42,6 +44,24 @@ export default class ServerSocket {
             const transport = this.getTransport();
             if (transport === "websocket") {
                 this._wasConnectedUsingWebsocket = true;
+
+                // start noop keepalive loop to detect client side disconnects fast
+                if (!this.noopKeepaliveInterval)
+                    this.noopKeepaliveInterval = setInterval(() => {
+                        try {
+                            // send a noop message if it thinks it is connected (might not be)
+                            if (this._socket.connected) {
+                                this._socket.io.engine.sendPacket("noop");
+                            }
+                        } catch (ex) {}
+                    }, NOOP_KEEPALIVE_INTERVAL);
+            }
+        });
+
+        this._socket.on("disconnect", () => {
+            if (this.noopKeepaliveInterval) {
+                clearInterval(this.noopKeepaliveInterval);
+                this.noopKeepaliveInterval = null;
             }
         });
     }
