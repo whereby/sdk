@@ -60,14 +60,14 @@ describe("ReconnectManager", () => {
             streams: ["0", "screenshareStreamid"],
         };
         client1[clientAttribute] = initialValue;
-        sut._clients.set(client1.id, client1);
+        sut._clients[client1.id] = client1;
 
         const payload = { clientId: client1.id };
         payload[clientAttribute] = valueInMessage;
 
         await socket.emit(socketMessage, payload);
 
-        expect(sut._clients.get(client1.id)[clientAttribute]).toBe(valueInMessage);
+        expect(sut._clients[client1.id][clientAttribute]).toBe(valueInMessage);
     });
 
     it.each([
@@ -81,11 +81,11 @@ describe("ReconnectManager", () => {
             streams: ["0", "screenshareStreamid"],
             isScreenshareEnabled: initialValue,
         };
-        sut._clients.set(client1.id, client1);
+        sut._clients[client1.id] = client1;
 
         await socket.emit(socketMessage, { clientId: client1.id, isScreenshareEnabled: valueInMessage });
 
-        expect(sut._clients.get(client1.id).isScreenshareEnabled).toBe(valueInMessage);
+        expect(sut._clients[client1.id].isScreenshareEnabled).toBe(valueInMessage);
     });
 
     describe("events", () => {
@@ -148,14 +148,36 @@ describe("ReconnectManager", () => {
                 expect(forwardEvent.mock.calls[0][1].room.clients).toEqual([client1]);
             });
 
+            it("should add clients to reconnectmanager state on first connect", async () => {
+                const socket = createMockSocket();
+                const sut = new ReconnectManager(socket);
+                const forwardEvent = jest.spyOn(sut, "emit");
+                const client1 = { id: "id", streams: [] };
+                getUpdatedStats.mockResolvedValue({});
+                expect(sut._clients).toEqual({});
+
+                // A clean room_joined, not following a disconnect
+                await socket.emit(PROTOCOL_RESPONSES.ROOM_JOINED, {
+                    room: {
+                        clients: [client1],
+                    },
+                });
+
+                expect(Object.keys(sut._clients).length).toBe(1);
+                expect(sut._clients[client1.id]).toBeTruthy();
+                expect(forwardEvent).toHaveBeenCalledTimes(1);
+                expect(forwardEvent.mock.calls[0][0]).toBe(PROTOCOL_RESPONSES.ROOM_JOINED);
+                expect(forwardEvent.mock.calls[0][1].room.clients).toEqual([client1]);
+            });
+
             it("should add new clients to reconnectmanager state", async () => {
                 const socket = createMockSocket();
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", streams: [] };
                 getUpdatedStats.mockResolvedValue({});
-                expect(sut._clients.size).toBe(0);
-                expect(sut._clients.has(client1.id)).toBeFalsy();
+                expect(Object.keys(sut._clients).length).toBe(0);
+                expect(sut._clients[client1.id]).toBeFalsy();
 
                 socket.emit("disconnect");
                 await socket.emit(PROTOCOL_RESPONSES.ROOM_JOINED, {
@@ -164,8 +186,8 @@ describe("ReconnectManager", () => {
                     },
                 });
 
-                expect(sut._clients.size).toBe(1);
-                expect(sut._clients.has(client1.id)).toBeTruthy();
+                expect(Object.keys(sut._clients).length).toBe(1);
+                expect(sut._clients[client1.id]).toBeTruthy();
                 expect(forwardEvent).toHaveBeenCalledTimes(1);
                 expect(forwardEvent.mock.calls[0][0]).toBe(PROTOCOL_RESPONSES.ROOM_JOINED);
                 expect(forwardEvent.mock.calls[0][1].room.clients).toEqual([client1]);
@@ -177,7 +199,7 @@ describe("ReconnectManager", () => {
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", streams: ["0"] };
                 getUpdatedStats.mockResolvedValue({});
-                sut._clients.set(client1.id, client1);
+                sut._clients[client1.id] = client1;
                 const mockRtcManager = {
                     hasClient: () => true,
                 };
@@ -190,8 +212,8 @@ describe("ReconnectManager", () => {
                     },
                 });
 
-                expect(sut._clients.size).toBe(1);
-                expect(sut._clients.has(client1.id)).toBeTruthy();
+                expect(Object.keys(sut._clients).length).toBe(1);
+                expect(sut._clients[client1.id]).toBeTruthy();
                 expect(forwardEvent).toHaveBeenCalledTimes(1);
                 expect(forwardEvent.mock.calls[0][0]).toBe(PROTOCOL_RESPONSES.ROOM_JOINED);
                 expect(forwardEvent.mock.calls[0][1].room.clients).toEqual([client1]);
@@ -203,7 +225,7 @@ describe("ReconnectManager", () => {
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", streams: ["0"] };
                 getUpdatedStats.mockResolvedValue({});
-                sut._clients.set(client1.id, client1);
+                sut._clients[client1.id] = client1;
                 const mockRtcManager = {
                     hasClient: () => false,
                 };
@@ -216,8 +238,8 @@ describe("ReconnectManager", () => {
                     },
                 });
 
-                expect(sut._clients.size).toBe(1);
-                expect(sut._clients.has(client1.id)).toBeTruthy();
+                expect(Object.keys(sut._clients).length).toBe(1);
+                expect(sut._clients[client1.id]).toBeTruthy();
                 expect(forwardEvent).toHaveBeenCalledTimes(1);
                 expect(forwardEvent.mock.calls[0][0]).toBe(PROTOCOL_RESPONSES.ROOM_JOINED);
                 expect(forwardEvent.mock.calls[0][1].room.clients).toEqual([client1]);
@@ -255,7 +277,7 @@ describe("ReconnectManager", () => {
                         isScreenshareEnabled,
                     };
                     getUpdatedStats.mockResolvedValue({ id: mockStatsMediaActive });
-                    sut._clients.set(client1.id, client1);
+                    sut._clients[client1.id] = client1;
                     const mockRtcManager = {
                         hasClient: () => true,
                     };
@@ -298,7 +320,7 @@ describe("ReconnectManager", () => {
                     isScreenshareEnabled: true,
                 };
                 getUpdatedStats.mockResolvedValue(mockStats);
-                sut._clients.set(client1.id, client1);
+                sut._clients[client1.id] = client1;
                 const mockRtcManager = {
                     hasClient: () => true,
                 };
@@ -329,7 +351,7 @@ describe("ReconnectManager", () => {
                     isVideoEnabled: false,
                     isScreenshareEnabled: false,
                 };
-                sut._clients.set(client1.id, client1);
+                sut._clients[client1.id] = client1;
                 const mockRtcManager = {
                     hasClient: () => {
                         throw new Error();
@@ -370,11 +392,11 @@ describe("ReconnectManager", () => {
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", deviceId: "id", streams: ["0"] };
-                sut._clients.set(
-                    client1.id,
-                    { ...client1, isPendingToLeave: true, timeoutHandler: setTimeout(() => {}) },
-                    3000
-                );
+                sut._clients[client1.id] = {
+                    ...client1,
+                    isPendingToLeave: true,
+                    timeoutHandler: setTimeout(() => {}, 3000),
+                };
 
                 await socket.emit(PROTOCOL_RESPONSES.NEW_CLIENT, { client: client1 });
 
@@ -386,15 +408,15 @@ describe("ReconnectManager", () => {
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", deviceId: "id", streams: ["0"] };
-                sut._clients.set(
-                    client1.id,
-                    { ...client1, isPendingToLeave: true, timeoutHandler: setTimeout(() => {}) },
-                    3000
-                );
+                sut._clients[client1.id] = {
+                    ...client1,
+                    isPendingToLeave: true,
+                    timeoutHandler: setTimeout(() => {}, 3000),
+                };
 
                 await socket.emit(PROTOCOL_RESPONSES.NEW_CLIENT, { client: { ...client1, id: "different" } });
 
-                expect(sut._clients.get(client1.id).isPendingToLeave).toBeUndefined();
+                expect(sut._clients[client1.id].isPendingToLeave).toBeUndefined();
                 expect(forwardEvent).toHaveBeenCalledTimes(2);
                 expect(forwardEvent.mock.calls[0][0]).toBe(PROTOCOL_RESPONSES.CLIENT_LEFT);
                 expect(forwardEvent.mock.calls[1][0]).toBe(PROTOCOL_RESPONSES.NEW_CLIENT);
@@ -422,11 +444,11 @@ describe("ReconnectManager", () => {
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", deviceId: "id", streams: ["0"] };
-                sut._clients.set(client1.id, {
+                sut._clients[client1.id] = {
                     ...client1,
                     timeout: setTimeout(() => {}, 3000),
                     isPendingToLeave: true,
-                });
+                };
                 const mockRtcManager = {
                     disconnect: jest.fn(),
                 };
@@ -437,7 +459,7 @@ describe("ReconnectManager", () => {
                 expect(mockRtcManager.disconnect).toHaveBeenCalledWith(client1.id, null, "claim");
                 expect(forwardEvent).toHaveBeenCalledTimes(1);
                 expect(forwardEvent.mock.calls[0][0]).toBe(PROTOCOL_RESPONSES.CLIENT_LEFT);
-                expect(sut._clients.size).toBe(0);
+                expect(Object.keys(sut._clients).length).toBe(0);
             });
         });
 
@@ -457,7 +479,7 @@ describe("ReconnectManager", () => {
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", deviceId: "id", streams: ["0"], isVideoEnabled: true };
-                sut._clients.set(client1.id, client1);
+                sut._clients[client1.id] = client1;
                 const mockRtcManager = { disconnect: jest.fn() };
                 sut.rtcManager = mockRtcManager;
                 getUpdatedStats.mockResolvedValue({ id: mockStatsMediaNotActive });
@@ -473,7 +495,7 @@ describe("ReconnectManager", () => {
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", deviceId: "id", streams: ["0"] };
-                sut._clients.set(client1.id, client1);
+                sut._clients[client1.id] = client1;
                 const mockRtcManager = { disconnect: jest.fn() };
                 sut.rtcManager = mockRtcManager;
                 getUpdatedStats.mockResolvedValue({ id: mockStatsMediaNotActive });
@@ -489,7 +511,7 @@ describe("ReconnectManager", () => {
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const client1 = { id: "id", deviceId: "id", streams: ["0"], isVideoEnabled: true };
-                sut._clients.set(client1.id, client1);
+                sut._clients[client1.id] = client1;
                 const mockRtcManager = { disconnect: jest.fn() };
                 sut.rtcManager = mockRtcManager;
                 getUpdatedStats.mockResolvedValue({ id: mockStatsMediaActive });
@@ -498,7 +520,7 @@ describe("ReconnectManager", () => {
                 await sleep(1501);
 
                 expect(forwardEvent).not.toHaveBeenCalled();
-                expect(sut._clients.has(client1.id)).toBeTruthy();
+                expect(sut._clients[client1.id]).toBeTruthy();
             });
         });
     });
