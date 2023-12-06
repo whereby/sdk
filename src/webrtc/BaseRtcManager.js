@@ -763,6 +763,21 @@ export default class BaseRtcManager {
         track.removeEventListener("ended", this._audioTrackOnEnded);
     }
 
+    setAudioOnly(audioOnly) {
+        this._forEachPeerConnection((session) => {
+            if (session.hasConnectedPeerConnection()) {
+                this.stopOrResumeRemoteVideo(session, !audioOnly);
+
+                setTimeout(() => {
+                    this._emit(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
+                        clientId: session.clientId,
+                        isVideoEnabled: !audioOnly,
+                    });
+                }, 0);
+            }
+        });
+    }
+
     setRoomSessionId(roomSessionId) {
         this._roomSessionId = roomSessionId;
     }

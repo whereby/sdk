@@ -469,6 +469,24 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
     }
 
+    stopOrResumeRemoteVideo(session, enable) {
+        // Only apply changes to camera streams (screenshares should continue to flow)
+        const transceiverCameraStreamId = "1";
+        const pc = session.pc;
+        const videoTransceivers = pc
+            .getTransceivers()
+            .filter((s) => s?.receiver?.track?.kind === "video" && s?.mid === transceiverCameraStreamId);
+
+        if (!videoTransceivers) {
+            return;
+        }
+
+        videoTransceivers.forEach((videoTransceiver) => {
+            // this change will automatically renegotiate the peer connection
+            videoTransceiver.direction = enable ? "sendrecv" : "sendonly";
+        });
+    }
+
     _shareScreen(streamId, stream) {
         this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
             streamId,
