@@ -705,6 +705,29 @@ export default class BaseRtcManager {
                 const answer = this._transformIncomingSdp(data.message, session.pc);
                 session.handleAnswer(answer);
             }),
+
+            // if this is a reconnect to signal-server during screen-share we must let signal-server know
+            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, ({ room: { sfuServer: isSfu } }) => {
+                if (isSfu || !this._wasScreenSharing) return;
+
+                const screenShareStreamId = Object.keys(this.localStreams).find((id) => id !== CAMERA_STREAM_ID);
+                if (!screenShareStreamId) {
+                    return;
+                }
+
+                const screenshareStream = this.localStreams[screenShareStreamId];
+                if (!screenshareStream) {
+                    this._logger.warn(`screenshare stream ${screenShareStreamId} not found`);
+                    return;
+                }
+
+                const hasAudioTrack = screenshareStream.getAudioTracks().length > 0;
+
+                this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
+                    streamId: screenShareStreamId,
+                    hasAudioTrack,
+                });
+            }),
         ];
     }
 

@@ -95,6 +95,57 @@ export function test(createRtcManager) {
                     rtcManager.setupSocketListeners();
                 });
 
+                describe(PROTOCOL_RESPONSES.ROOM_JOINED, () => {
+                    it("ignores sfu mode", () => {
+                        jest.spyOn(rtcManager, "_emitServerEvent");
+
+                        serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.ROOM_JOINED, {
+                            room: {
+                                sfuServer: "bogus-sfu.whereby.com",
+                            },
+                        });
+
+                        expect(rtcManager._emitServerEvent).not.toHaveBeenCalled();
+                    });
+
+                    it("is noop if client was not screensharing", () => {
+                        jest.spyOn(rtcManager, "_emitServerEvent");
+                        const mockStream = {
+                            getAudioTracks: jest.fn(),
+                        };
+                        jest.spyOn(mockStream, "getAudioTracks").mockReturnValue([]);
+                        rtcManager._wasScreenSharing = false;
+                        rtcManager.enabledLocalStreamIds = ["0", "screenShareStreamId"];
+                        rtcManager.localStreams = { 0: {}, screenShareStreamId: mockStream };
+
+                        serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.ROOM_JOINED, {
+                            room: {},
+                        });
+
+                        expect(rtcManager._emitServerEvent).not.toHaveBeenCalled();
+                    });
+
+                    it(`sends ${PROTOCOL_REQUESTS.START_SCREENSHARE} if reconnecting during screenshare`, () => {
+                        jest.spyOn(rtcManager, "_emitServerEvent");
+                        const mockStream = {
+                            getAudioTracks: jest.fn(),
+                        };
+                        jest.spyOn(mockStream, "getAudioTracks").mockReturnValue([]);
+                        rtcManager._wasScreenSharing = true;
+                        rtcManager.enabledLocalStreamIds = ["0", "screenShareStreamId"];
+                        rtcManager.localStreams = { 0: {}, screenShareStreamId: mockStream };
+
+                        serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.ROOM_JOINED, {
+                            room: {},
+                        });
+
+                        expect(rtcManager._emitServerEvent).toHaveBeenCalledWith(PROTOCOL_REQUESTS.START_SCREENSHARE, {
+                            hasAudioTrack: false,
+                            streamId: "screenShareStreamId",
+                        });
+                    });
+                });
+
                 describe("READY_TO_RECEIVE_OFFER", () => {
                     it("calls rtcManager._connect", () => {
                         jest.spyOn(rtcManager, "_connect");

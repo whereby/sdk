@@ -380,12 +380,14 @@ export default class P2pRtcManager extends BaseRtcManager {
             streamId,
             hasAudioTrack: !!stream.getAudioTracks().length,
         });
+        this._wasScreenSharing = true;
         this._addStreamToPeerConnections(stream);
     }
 
     removeStream(streamId, stream, requestedByClientId) {
         super.removeStream(streamId, stream);
         this._removeStreamFromPeerConnections(stream);
+        this._wasScreenSharing = false;
         this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId, requestedByClientId });
     }
 
