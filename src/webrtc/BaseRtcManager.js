@@ -48,6 +48,7 @@ export default class BaseRtcManager {
         this._webrtcProvider = webrtcProvider;
         this._features = features || {};
         this._logger = logger;
+        this._isAudioOnlyMode = false;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
@@ -327,6 +328,32 @@ export default class BaseRtcManager {
                             this.maybeRestrictRelayBandwidth(session);
                         }
                     }
+
+                    if (this._isAudioOnlyMode) {
+                        const transceiverCameraStreamId = "1";
+                        const videoTransceivers = pc
+                            .getTransceivers()
+                            .filter(
+                                (s) => s?.receiver?.track?.kind === "video" && s?.mid === transceiverCameraStreamId
+                            );
+
+                        if (!videoTransceivers) {
+                            return;
+                        }
+
+                        videoTransceivers.forEach((videoTransceiver) => {
+                            // this change will automatically renegotiate the peer connection
+                            videoTransceiver.direction = "sendonly";
+                        });
+
+                        setTimeout(() => {
+                            this._emit(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
+                                clientId: session.clientId,
+                                isVideoEnabled: !this._isAudioOnlyMode,
+                            });
+                        }, 0);
+                    }
+
                     session.registerConnected();
                     break;
                 case "disconnected":
@@ -764,14 +791,17 @@ export default class BaseRtcManager {
     }
 
     setAudioOnly(audioOnly) {
+        this._isAudioOnlyMode = audioOnly;
+        const isVideoEnabled = !this._isAudioOnlyMode;
+
         this._forEachPeerConnection((session) => {
             if (session.hasConnectedPeerConnection()) {
-                this.stopOrResumeRemoteVideo(session, !audioOnly);
+                this.stopOrResumeRemoteVideo(session, isVideoEnabled);
 
                 setTimeout(() => {
                     this._emit(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
                         clientId: session.clientId,
-                        isVideoEnabled: !audioOnly,
+                        isVideoEnabled,
                     });
                 }, 0);
             }
