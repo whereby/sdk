@@ -1427,13 +1427,13 @@ export default class VegaRtcManager {
 
         if (consumer.kind === "video") {
             this._streamIdToVideoConsumerId.set(stream.id, consumer.id);
-        }
 
-        if (!this._isAudioOnlyMode) {
-            this._emitToPWA(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
-                clientId: consumer.appData.sourceClientId,
-                isVideoEnabled: true,
-            });
+            if (!this._isAudioOnlyMode) {
+                this._emitToPWA(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
+                    clientId: consumer.appData.sourceClientId,
+                    isVideoEnabled: true,
+                });
+            }
         }
 
         stream.addTrack(consumer.track);
@@ -1447,11 +1447,13 @@ export default class VegaRtcManager {
 
         if (!consumer) return;
 
-        if (this._isAudioOnlyMode) {
-            this._emitToPWA(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
-                clientId: consumer._appData?.sourceClientId,
-                isVideoEnabled: false,
-            });
+        if (consumer.kind === "video") {
+            if (this._isAudioOnlyMode) {
+                this._emitToPWA(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
+                    clientId: consumer._appData?.sourceClientId,
+                    isVideoEnabled: false,
+                });
+            }
         }
 
         consumer.close();
