@@ -112,8 +112,6 @@ export default class VegaRtcManager {
         // Retry if connection closed until disconnectAll called;
         this._reconnect = true;
         this._reconnectTimeOut = null;
-
-        this._isAudioOnlyMode = false;
     }
 
     _updateAndScheduleMediaServersRefresh({ iceServers, sfuServer, mediaserverConfigTtlSeconds }) {
@@ -931,7 +929,6 @@ export default class VegaRtcManager {
      * @param {boolean} audioOnly
      */
     setAudioOnly(audioOnly) {
-        this._isAudioOnlyMode = audioOnly;
         this._vegaConnection?.message(audioOnly ? "enableAudioOnly" : "disableAudioOnly");
     }
 
@@ -1427,13 +1424,6 @@ export default class VegaRtcManager {
 
         if (consumer.kind === "video") {
             this._streamIdToVideoConsumerId.set(stream.id, consumer.id);
-
-            if (!this._isAudioOnlyMode) {
-                this._emitToPWA(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
-                    clientId: consumer.appData.sourceClientId,
-                    isVideoEnabled: true,
-                });
-            }
         }
 
         stream.addTrack(consumer.track);
@@ -1443,20 +1433,7 @@ export default class VegaRtcManager {
     async _onConsumerClosed({ consumerId, reason }) {
         this._logger.debug("_onConsumerClosed()", { consumerId, reason });
 
-        const consumer = this._consumers.get(consumerId);
-
-        if (!consumer) return;
-
-        if (consumer.kind === "video") {
-            if (this._isAudioOnlyMode) {
-                this._emitToPWA(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
-                    clientId: consumer._appData?.sourceClientId,
-                    isVideoEnabled: false,
-                });
-            }
-        }
-
-        consumer.close();
+        this._consumers.get(consumerId)?.close();
     }
 
     _onConsumerPaused({ consumerId }) {

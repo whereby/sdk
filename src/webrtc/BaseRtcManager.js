@@ -345,13 +345,6 @@ export default class BaseRtcManager {
                             // this change will automatically renegotiate the peer connection
                             videoTransceiver.direction = "sendonly";
                         });
-
-                        setTimeout(() => {
-                            this._emit(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
-                                clientId: session.clientId,
-                                isVideoEnabled: !this._isAudioOnlyMode,
-                            });
-                        }, 0);
                     }
 
                     session.registerConnected();
@@ -792,18 +785,10 @@ export default class BaseRtcManager {
 
     setAudioOnly(audioOnly) {
         this._isAudioOnlyMode = audioOnly;
-        const isVideoEnabled = !this._isAudioOnlyMode;
 
         this._forEachPeerConnection((session) => {
             if (session.hasConnectedPeerConnection()) {
-                this.stopOrResumeRemoteVideo(session, isVideoEnabled);
-
-                setTimeout(() => {
-                    this._emit(CONNECTION_STATUS.EVENTS.VIDEO_ENABLED, {
-                        clientId: session.clientId,
-                        isVideoEnabled,
-                    });
-                }, 0);
+                this.stopOrResumeRemoteVideo(session, !this._isAudioOnlyMode);
             }
         });
     }

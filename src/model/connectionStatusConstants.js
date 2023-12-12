@@ -7,7 +7,6 @@ export const EVENTS = {
     LOCAL_STREAM_TRACK_REMOVED: "local_stream_track_removed",
     REMOTE_STREAM_TRACK_ADDED: "remote_stream_track_added",
     REMOTE_STREAM_TRACK_REMOVED: "remote_stream_track_removed",
-    VIDEO_ENABLED: "video_enabled",
 };
 
 export const TYPES = {
