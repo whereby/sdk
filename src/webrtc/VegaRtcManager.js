@@ -932,6 +932,9 @@ export default class VegaRtcManager {
         this._vegaConnection?.message(audioOnly ? "enableAudioOnly" : "disableAudioOnly");
     }
 
+    // the track ids send by signal server for remote-initiated screenshares
+    setRemoteScreenshareVideoTrackIds(/*remoteScreenshareVideoTrackIds*/) {}
+
     /**
      * The unique identifier for this room session.
      *

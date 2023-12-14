@@ -41,6 +41,7 @@ export default class BaseRtcManager {
         this.peerConnections = {};
         this.localStreams = {};
         this.enabledLocalStreamIds = [];
+        this._screenshareVideoTrackIds = [];
         this._socketListenerDeregisterFunctions = [];
         this._localStreamDeregisterFunction = null;
         this._emitter = emitter;
@@ -330,11 +331,12 @@ export default class BaseRtcManager {
                     }
 
                     if (this._isAudioOnlyMode) {
-                        const transceiverCameraStreamId = "1";
                         const videoTransceivers = pc
                             .getTransceivers()
                             .filter(
-                                (s) => s?.receiver?.track?.kind === "video" && s?.mid === transceiverCameraStreamId
+                                (s) =>
+                                    s?.receiver?.track?.kind === "video" &&
+                                    !this._screenshareVideoTrackIds.includes(s?.receiver?.track?.id)
                             );
 
                         if (!videoTransceivers) {
@@ -575,6 +577,7 @@ export default class BaseRtcManager {
         }
 
         // at this point it is clearly a screensharing stream.
+        this._screenshareVideoTrackIds.push(stream.getVideoTracks()[0].id);
         this._shareScreen(streamId, stream);
         return;
     }
@@ -791,6 +794,15 @@ export default class BaseRtcManager {
                 this.stopOrResumeRemoteVideo(session, !this._isAudioOnlyMode);
             }
         });
+    }
+
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
+        const localScreenshareStream = this._getFirstLocalNonCameraStream();
+
+        this._screenshareVideoTrackIds = [
+            ...(localScreenshareStream?.track ? [localScreenshareStream.track.id] : []),
+            ...remoteScreenshareVideoTrackIds,
+        ];
     }
 
     setRoomSessionId(roomSessionId) {
