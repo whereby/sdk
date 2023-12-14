@@ -8,6 +8,13 @@ export default class Session {
     constructor({ peerConnectionId, bandwidth, maximumTurnBandwidth, deprioritizeH264Encoding, logger = console }) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
+        this.serverReflexiveCandidateSeen = false;
+        this.publicHostCandidateSeen = false;
+        this.ipv6HostCandidateSeen = false;
+        this.ipv6HostCandidateTeredoSeen = false;
+        this.ipv6HostCandidate6to4Seen = false;
+        this.mdnsHostCandidateSeen = false;
+
         this.pc = null;
         this.wasEverConnected = false;
         this.connectionStatus = null;
