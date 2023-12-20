@@ -26,7 +26,17 @@ const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
 export default class VegaRtcManager {
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim, logger = console }) {
+    constructor({
+        selfId,
+        room,
+        emitter,
+        serverSocket,
+        webrtcProvider,
+        features,
+        eventClaim,
+        logger = console,
+        deviceHandlerFactory,
+    }) {
         assert.ok(selfId, "selfId is required");
         assert.ok(room, "room is required");
         assert.ok(emitter && emitter.emit, "emitter is required");
@@ -50,7 +60,12 @@ export default class VegaRtcManager {
         this._micAnalyser = null;
         this._micAnalyserDebugger = null;
 
-        this._mediasoupDevice = new Device({ handlerName: getHandler() });
+        if (deviceHandlerFactory) {
+            this._mediasoupDevice = new Device({ handlerFactory: deviceHandlerFactory });
+        } else {
+            this._mediasoupDevice = new Device({ handlerName: getHandler() });
+        }
+
         this._routerRtpCapabilities = null;
 
         this._sendTransport = null;

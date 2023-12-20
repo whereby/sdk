@@ -14,7 +14,8 @@ const clientInfo = {
     connectionNumber: 0,
 };
 
-let resetDelta = () => {};
+const noop = () => {};
+let resetDelta = noop;
 
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
 function rtcStatsConnection(wsURL, logger = console) {
@@ -149,11 +150,13 @@ function rtcStatsConnection(wsURL, logger = console) {
 }
 
 const server = rtcStatsConnection(process.env.RTCSTATS_URL || "wss://rtcstats.srv.whereby.com");
-resetDelta = rtcstats(
+const stats = rtcstats(
     server.trace,
     10000, // query once every 10 seconds.
     [""] // only shim unprefixed RTCPeerConnecion.
-).resetDelta;
+);
+// on node clients this function can be undefined
+resetDelta = stats?.resetDelta || noop;
 
 const rtcStats = {
     sendEvent: (type, value) => {

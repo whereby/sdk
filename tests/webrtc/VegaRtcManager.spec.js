@@ -131,6 +131,27 @@ describe("VegaRtcManager", () => {
                 serverSocket,
             });
         });
+
+        it("handles custom device handler factories", () => {
+            const deviceHandlerFactory = function () {};
+            jest.mock("mediasoup-client", () => {
+                return {
+                    Device: jest.fn().mockImplementation(() => {
+                        return {};
+                    }),
+                };
+            });
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                selfId,
+                room,
+                emitter,
+                serverSocket,
+                webrtcProvider,
+                deviceHandlerFactory,
+            });
+            expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: deviceHandlerFactory });
+        });
     });
 
     describe("stopOrResumeVideo", () => {
