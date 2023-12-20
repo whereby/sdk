@@ -485,7 +485,6 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
 
         videoTransceivers.forEach((videoTransceiver) => {
-            // this change will automatically renegotiate the peer connection
             videoTransceiver.direction = enable ? "sendrecv" : "sendonly";
         });
     }

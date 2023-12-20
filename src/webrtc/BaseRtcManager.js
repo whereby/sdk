@@ -344,7 +344,6 @@ export default class BaseRtcManager {
                         }
 
                         videoTransceivers.forEach((videoTransceiver) => {
-                            // this change will automatically renegotiate the peer connection
                             videoTransceiver.direction = "sendonly";
                         });
                     }
@@ -791,7 +790,9 @@ export default class BaseRtcManager {
 
         this._forEachPeerConnection((session) => {
             if (session.hasConnectedPeerConnection()) {
-                this.stopOrResumeRemoteVideo(session, !this._isAudioOnlyMode);
+                this._withForcedRenegotiation(session, () =>
+                    this.stopOrResumeRemoteVideo(session, !this._isAudioOnlyMode)
+                );
             }
         });
     }
