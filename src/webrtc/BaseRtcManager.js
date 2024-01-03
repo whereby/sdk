@@ -331,21 +331,7 @@ export default class BaseRtcManager {
                     }
 
                     if (this._isAudioOnlyMode) {
-                        const videoTransceivers = pc
-                            .getTransceivers()
-                            .filter(
-                                (s) =>
-                                    s?.receiver?.track?.kind === "video" &&
-                                    !this._screenshareVideoTrackIds.includes(s?.receiver?.track?.id)
-                            );
-
-                        if (!videoTransceivers) {
-                            return;
-                        }
-
-                        videoTransceivers.forEach((videoTransceiver) => {
-                            videoTransceiver.direction = "sendonly";
-                        });
+                        session.setAudioOnly(true, this._screenshareVideoTrackIds);
                     }
 
                     session.registerConnected();
@@ -791,7 +777,7 @@ export default class BaseRtcManager {
         this._forEachPeerConnection((session) => {
             if (session.hasConnectedPeerConnection()) {
                 this._withForcedRenegotiation(session, () =>
-                    this.stopOrResumeRemoteVideo(session, !this._isAudioOnlyMode)
+                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds)
                 );
             }
         });
