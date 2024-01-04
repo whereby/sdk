@@ -10,6 +10,8 @@ import * as helpers from "./webRtcHelpers";
 import { itShouldThrowIfMissing } from "../helpers";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
+import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
+
 import { RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../../src/model/protocol";
 
 const originalNavigator = global.navigator;
@@ -381,6 +383,109 @@ describe("P2pRtcManager", () => {
                     },
                     undefined
                 );
+            });
+        });
+
+        describe("icerestart", () => {
+            it("P2pRtcManager emits ICE restart event", async () => {
+                const p2pRtcManager = createRtcManager();
+                const { pc } = await p2pRtcManager._connect(clientId);
+                pc.iceConnectionState = "disconnected";
+                pc.localDescription = { type: "offer" };
+                const session = { pc };
+                session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
+                p2pRtcManager._maybeRestartIce(clientId, session);
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_RESTART, undefined);
+            });
+        });
+
+        describe("onicecandidate", () => {
+            it("P2pRtcManager emits new PC and no public IP gathered in 3sec events", async () => {
+                const { pc } = await createRtcManager()._connect(clientId);
+
+                const address = "192.168.1.1"; // ipv4 private rfc1918
+                pc.onicegatheringstatechange({ target: { iceGatheringState: "gathering" } });
+                pc.onicecandidate({ candidate: { address, type: "host" } });
+                await new Promise((r) => setTimeout(r, 3001));
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.NEW_PC, undefined);
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED_3SEC, undefined);
+            });
+        });
+
+        describe("onicecandidate", () => {
+            it("P2pRtcManager emits no public IP gathered event", async () => {
+                const { pc } = await createRtcManager()._connect(clientId);
+
+                pc.onicegatheringstatechange({ target: { iceGatheringState: "gathering" } });
+                const address = "192.168.1.1"; // ipv4 private rfc1918
+                pc.onicecandidate({ candidate: { address, type: "host" } });
+                pc.onicegatheringstatechange({ target: { iceGatheringState: "complete" } });
+                // gathering finished
+                pc.onicecandidate({ candidate: null });
+
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED, undefined);
+            });
+        });
+
+        describe("onicecandidate", () => {
+            it("P2pRtcManager emits mDNS seen event", async () => {
+                const { pc } = await createRtcManager()._connect(clientId);
+
+                const address = "31703155-6932-43d7-9d9b-44dda8daea28.local"; // mDNS
+
+                pc.onicecandidate({ candidate: { address, type: "host" } });
+
+                // gathering finished
+                pc.onicecandidate({ candidate: null });
+
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_MDNS_SEEN, undefined);
+            });
+        });
+
+        describe("onicecandidate", () => {
+            it("P2pRtcManager emits IPv6 seen event", async () => {
+                const { pc } = await createRtcManager()._connect(clientId);
+
+                const address = "[2001:738::1]"; // ipv6 unicast global in brackets
+
+                pc.onicecandidate({ candidate: { address, type: "host" } });
+
+                // gathering finished
+                pc.onicecandidate({ candidate: null });
+
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_IPV6_SEEN, {
+                    sixtofourSeen: false,
+                    teredoSeen: false,
+                });
+            });
+        });
+
+        describe("onicecandidate", () => {
+            it("P2pRtcManager emits IPv6 and mDNS seen events", async () => {
+                const { pc } = await createRtcManager()._connect(clientId);
+
+                const CANDIDATE_ADDRESSES = [
+                    "31703155-6932-43d7-9d9b-44dda8daea28.local", // mDNS
+                    "Invalid-UUIDv4.local", //mDNS invalid uuidv4
+                    "192.168.1.1", // ipv4 private rfc1918
+                    "193.6.222.1", // ipv4 public
+                    "[2001:738::1]", // ipv6 unicast global in brackets
+                    "2001:0000:4136:e378:8000:63bf:3fff:fdd2", //ipv6 Teredo
+                    "2002:c000:0204::1", // ipv6 6to4
+                    "veryverylonglineveryverylonglineveryverylonglineveryverylonglineveryverylonglineveryverylonglineveryverylonglineveryverylonglineveryverylongline", // long long invalid address
+                    "", // empty address
+                ];
+                CANDIDATE_ADDRESSES.forEach((address) => {
+                    pc.onicecandidate({ candidate: { address, type: "host" } });
+                });
+
+                // gathering finished
+                pc.onicecandidate({ candidate: null });
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_IPV6_SEEN, {
+                    sixtofourSeen: true,
+                    teredoSeen: true,
+                });
+                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_MDNS_SEEN, undefined);
             });
         });
 

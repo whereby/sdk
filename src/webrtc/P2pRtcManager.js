@@ -5,7 +5,13 @@ import RtcStream from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
 import { setCodecPreferenceSDP } from "./sdpModifier";
 import adapter from "webrtc-adapter";
+import ipRegex from "ip-regex";
+import { Address6 } from "ip-address";
+import checkIp from "check-ip";
+import validate from "uuid-validate";
+import rtcManagerEvents from "./rtcManagerEvents";
 
+const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
 const browserName = adapter.browserDetails.browser;
 
@@ -37,6 +43,14 @@ export default class P2pRtcManager extends BaseRtcManager {
             // clean up some helpers.
             session.wasEverConnected = false;
             session.relayCandidateSeen = false;
+            session.serverReflexiveCandidateSeen = false;
+            session.publicHostCandidateSeen = false;
+            session.ipv6HostCandidateSeen = false;
+            this.ipv6HostCandidateTeredoSeen = false;
+            this.ipv6HostCandidate6to4Seen = false;
+            this.mdnsHostCandidateSeen = false;
+
+            this._emit(rtcManagerEvents.ICE_RESTART);
 
             this._negotiatePeerConnection(
                 clientId,
@@ -245,9 +259,75 @@ export default class P2pRtcManager extends BaseRtcManager {
             pc.addTrack(this._stoppedVideoTrack, localCameraStream);
         }
 
+        pc.onicegatheringstatechange = (event) => {
+            const connection = event.target;
+
+            switch (connection.iceGatheringState) {
+                case "gathering":
+                    if (this.icePublicIPGatheringTimeoutID) clearTimeout(this.icePublicIPGatheringTimeoutID);
+                    this.icePublicIPGatheringTimeoutID = setTimeout(() => {
+                        if (
+                            !session.publicHostCandidateSeen &&
+                            !session.relayCandidateSeen &&
+                            !session.serverReflexiveCandidateSeen
+                        ) {
+                            this._emit(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED_3SEC);
+                        }
+                    }, ICE_PUBLIC_IP_GATHERING_TIMEOUT);
+                    break;
+                case "complete":
+                    if (this.icePublicIPGatheringTimeoutID) clearTimeout(this.icePublicIPGatheringTimeoutID);
+                    this.icePublicIPGatheringTimeoutID = undefined;
+                    break;
+            }
+        };
+
         pc.onicecandidate = (event) => {
             if (event.candidate) {
-                session.relayCandidateSeen = session.relayCandidateSeen || event.candidate.type === "relay";
+                switch (event.candidate?.type) {
+                    case "host":
+                        const address = event?.candidate?.address;
+                        try {
+                            if (ipRegex.v4({ exact: true }).test(address)) {
+                                const ipv4 = checkIp(address);
+                                if (ipv4.isPublicIp) session.publicHostCandidateSeen = true;
+                            } else if (ipRegex.v6({ exact: true }).test(address.replace(/^\[(.*)\]/, "$1"))) {
+                                const ipv6 = new Address6(address.replace(/^\[(.*)\]/, "$1"));
+                                session.ipv6HostCandidateSeen = true;
+
+                                if (ipv6.getScope() === "Global") {
+                                    session.publicHostCandidateSeen = true;
+                                }
+                                if (ipv6.isTeredo()) {
+                                    session.ipv6HostCandidateTeredoSeen = true;
+                                }
+                                if (ipv6.is6to4()) {
+                                    session.ipv6HostCandidate6to4Seen = true;
+                                }
+                            } else {
+                                const uuidv4 = address.replace(/.local/, "");
+                                if (uuidv4 && validate(uuidv4, 4)) {
+                                    session.mdnsHostCandidateSeen = true;
+                                }
+                            }
+                        } catch (error) {
+                            this._logger.debug("Error during parsing candidates! Error: ", { error });
+                        }
+                        break;
+                    case "srflx":
+                        if (!session.serverReflexiveCandidateSeen) {
+                            session.serverReflexiveCandidateSeen = true;
+                        }
+                        break;
+                    case "relay":
+                    case "relayed":
+                        if (!session.relayCandidateSeen) {
+                            session.relayCandidateSeen = true;
+                        }
+                        break;
+                    default:
+                        break;
+                }
                 this._emitServerEvent(RELAY_MESSAGES.ICE_CANDIDATE, {
                     receiverId: clientId,
                     message: event.candidate,
@@ -256,6 +336,20 @@ export default class P2pRtcManager extends BaseRtcManager {
                 this._emitServerEvent(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, {
                     receiverId: clientId,
                 });
+                if (
+                    !session.publicHostCandidateSeen &&
+                    !session.relayCandidateSeen &&
+                    !session.serverReflexiveCandidateSeen
+                ) {
+                    this._emit(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED);
+                }
+                if (session.ipv6HostCandidateSeen) {
+                    this._emit(rtcManagerEvents.ICE_IPV6_SEEN, {
+                        teredoSeen: session.ipv6HostCandidateTeredoSeen,
+                        sixtofourSeen: session.ipv6HostCandidate6to4Seen,
+                    });
+                }
+                if (session.mdnsHostCandidateSeen) this._emit(rtcManagerEvents.ICE_MDNS_SEEN);
             }
         };
 

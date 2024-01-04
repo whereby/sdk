@@ -264,6 +264,8 @@ export default class BaseRtcManager {
             clientId,
         });
 
+        setTimeout(() => this._emit(rtcManagerEvents.NEW_PC), 0);
+
         pc.ontrack = (event) => {
             const stream = event.streams[0];
             if (stream.id === "default" && stream.getAudioTracks().length === 0) {
