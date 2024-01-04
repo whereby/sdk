@@ -149,15 +149,15 @@ function activateComputePressureOriginTrial() {
     const otMeta = document.createElement("meta");
     otMeta.httpEquiv = "origin-trial";
 
-    // these tokens expire Jan 5th 2024
+    // these tokens expire Feb 15th 2024
     if (/hereby\.dev/.test(document.location.hostname)) {
         // *.hereby.dev
         otMeta.content =
-            "ApWMXjNr6uvBNQJAhrktVA/N5io3cGw+GLR2ClINA4jJbFlNMfpGia9HQXuI1R6rGi/z4V05q940Z3/tcyMiPwwAAABqeyJvcmlnaW4iOiJodHRwczovL2hlcmVieS5kZXY6NDQ0MyIsImZlYXR1cmUiOiJDb21wdXRlUHJlc3N1cmVfdjIiLCJleHBpcnkiOjE3MDQ0MTI3OTksImlzU3ViZG9tYWluIjp0cnVlfQ==";
+            "AkSNPHJw6EK08X0QU7kORnK9NABzRLAC7dqfXOwk5JwFAQG4Ey7WxLXxsnhieCgC1QHUdevE2EFICy7uBGDANwUAAABqeyJvcmlnaW4iOiJodHRwczovL2hlcmVieS5kZXY6NDQ0MyIsImZlYXR1cmUiOiJDb21wdXRlUHJlc3N1cmVfdjIiLCJleHBpcnkiOjE3MTY5NDA3OTksImlzU3ViZG9tYWluIjp0cnVlfQ==";
     } else {
         // *.whereby.com
         otMeta.content =
-            "AjQ6hQPVYmfGx4JP0af6khnP0mPPdvhuMO1rilNlyIHHvu7MUsZ0DUkv6XbXEGX2+HiV3ZnA0/Ue1EEzNPbXnQMAAABqeyJvcmlnaW4iOiJodHRwczovL3doZXJlYnkuY29tOjQ0MyIsImZlYXR1cmUiOiJDb21wdXRlUHJlc3N1cmVfdjIiLCJleHBpcnkiOjE3MDQ0MTI3OTksImlzU3ViZG9tYWluIjp0cnVlfQ==";
+            "Asc2wu8KpSx648i932NICteQDFcB05yl2QUUSHD7AQo8JGP2Fp6FF91TvYVJBsKGzLMH349rysPw5q9tqPC/PAUAAABqeyJvcmlnaW4iOiJodHRwczovL3doZXJlYnkuY29tOjQ0MyIsImZlYXR1cmUiOiJDb21wdXRlUHJlc3N1cmVfdjIiLCJleHBpcnkiOjE3MTY5NDA3OTksImlzU3ViZG9tYWluIjp0cnVlfQ==";
     }
     document.head.append(otMeta);
     originTrialActivated = true;
