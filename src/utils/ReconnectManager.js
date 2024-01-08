@@ -31,6 +31,12 @@ export class ReconnectManager extends EventEmitter {
     }
 
     async _onRoomJoined(payload) {
+        // We might have gotten an error
+        if (!payload.room?.clients) {
+            this.emit(PROTOCOL_RESPONSES.ROOM_JOINED, payload);
+            return;
+        }
+
         // The threshold for trying glitch-free reconnect should be less than server-side configuration
         const RECONNECT_THRESHOLD = payload.disconnectTimeout * 0.8;
         if (Date.now() - (this._signalDisconnectTime || 0) > RECONNECT_THRESHOLD) {
@@ -178,7 +184,7 @@ export class ReconnectManager extends EventEmitter {
         }
 
         client = this._clients[clientId];
-        if (client.isPendingToLeave) {
+        if (client?.isPendingToLeave) {
             clearTimeout(client.timeoutHandler);
             delete this._clients[clientId];
             this.emit(PROTOCOL_RESPONSES.CLIENT_LEFT, payload);
