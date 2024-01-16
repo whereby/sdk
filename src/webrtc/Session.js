@@ -391,4 +391,19 @@ export default class Session {
 
         setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
     }
+
+    setAudioOnly(enable, excludedTrackIds = []) {
+        this.pc
+            .getTransceivers()
+            .filter(
+                (videoTransceiver) =>
+                    videoTransceiver?.direction !== "recvonly" &&
+                    videoTransceiver?.receiver?.track?.kind === "video" &&
+                    !excludedTrackIds.includes(videoTransceiver?.receiver?.track?.id) &&
+                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id)
+            )
+            .forEach((videoTransceiver) => {
+                videoTransceiver.direction = enable ? "sendonly" : "sendrecv";
+            });
+    }
 }

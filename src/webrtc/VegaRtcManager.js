@@ -924,6 +924,18 @@ export default class VegaRtcManager {
     }
 
     /**
+     * This sends a signal to the SFU to pause all incoming video streams to the client.
+     *
+     * @param {boolean} audioOnly
+     */
+    setAudioOnly(audioOnly) {
+        this._vegaConnection?.message(audioOnly ? "enableAudioOnly" : "disableAudioOnly");
+    }
+
+    // the track ids send by signal server for remote-initiated screenshares
+    setRemoteScreenshareVideoTrackIds(/*remoteScreenshareVideoTrackIds*/) {}
+
+    /**
      * The unique identifier for this room session.
      *
      * @param {string} roomSessionId

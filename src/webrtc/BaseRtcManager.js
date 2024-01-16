@@ -41,6 +41,7 @@ export default class BaseRtcManager {
         this.peerConnections = {};
         this.localStreams = {};
         this.enabledLocalStreamIds = [];
+        this._screenshareVideoTrackIds = [];
         this._socketListenerDeregisterFunctions = [];
         this._localStreamDeregisterFunction = null;
         this._emitter = emitter;
@@ -48,6 +49,7 @@ export default class BaseRtcManager {
         this._webrtcProvider = webrtcProvider;
         this._features = features || {};
         this._logger = logger;
+        this._isAudioOnlyMode = false;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
@@ -327,6 +329,11 @@ export default class BaseRtcManager {
                             this.maybeRestrictRelayBandwidth(session);
                         }
                     }
+
+                    if (this._isAudioOnlyMode) {
+                        session.setAudioOnly(true, this._screenshareVideoTrackIds);
+                    }
+
                     session.registerConnected();
                     break;
                 case "disconnected":
@@ -555,6 +562,7 @@ export default class BaseRtcManager {
         }
 
         // at this point it is clearly a screensharing stream.
+        this._screenshareVideoTrackIds.push(stream.getVideoTracks()[0].id);
         this._shareScreen(streamId, stream);
         return;
     }
@@ -761,6 +769,27 @@ export default class BaseRtcManager {
 
     _stopMonitoringAudioTrack(track) {
         track.removeEventListener("ended", this._audioTrackOnEnded);
+    }
+
+    setAudioOnly(audioOnly) {
+        this._isAudioOnlyMode = audioOnly;
+
+        this._forEachPeerConnection((session) => {
+            if (session.hasConnectedPeerConnection()) {
+                this._withForcedRenegotiation(session, () =>
+                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds)
+                );
+            }
+        });
+    }
+
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
+        const localScreenshareStream = this._getFirstLocalNonCameraStream();
+
+        this._screenshareVideoTrackIds = [
+            ...(localScreenshareStream?.track ? [localScreenshareStream.track.id] : []),
+            ...remoteScreenshareVideoTrackIds,
+        ];
     }
 
     setRoomSessionId(roomSessionId) {
