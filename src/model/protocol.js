@@ -137,4 +137,5 @@ export const KNOCK_MESSAGES = {
 // Events: something happened that we want to let the client know about
 export const PROTOCOL_EVENTS = {
     PENDING_CLIENT_LEFT: "pending_client_left",
+    MEDIA_QUALITY_CHANGED: "media_quality_changed",
 };

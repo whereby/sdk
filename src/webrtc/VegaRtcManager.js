@@ -1,5 +1,5 @@
 import { Device } from "mediasoup-client";
-import { PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
+import { PROTOCOL_EVENTS, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import ServerSocket from "../utils/ServerSocket";
 import rtcManagerEvents from "./rtcManagerEvents";
@@ -13,6 +13,7 @@ import assert from "../utils/assert";
 import { v4 as uuidv4 } from "uuid";
 import createMicAnalyser from "./VegaMicAnalyser";
 import { maybeTurnOnly } from "../utils/transportSettings";
+import VegaMediaQualityMonitor from "./VegaMediaQualityMonitor";
 
 const browserName = adapter.browserDetails.browser;
 let unloading = false;
@@ -112,6 +113,11 @@ export default class VegaRtcManager {
         // Retry if connection closed until disconnectAll called;
         this._reconnect = true;
         this._reconnectTimeOut = null;
+
+        this._qualityMonitor = new VegaMediaQualityMonitor({ logger: this._logger });
+        this._qualityMonitor.on(PROTOCOL_EVENTS.MEDIA_QUALITY_CHANGED, (payload) => {
+            this._emitToPWA(PROTOCOL_EVENTS.MEDIA_QUALITY_CHANGED, payload);
+        });
     }
 
     _updateAndScheduleMediaServersRefresh({ iceServers, sfuServer, mediaserverConfigTtlSeconds }) {
@@ -196,6 +202,8 @@ export default class VegaRtcManager {
         if (this._reconnect) {
             this._reconnectTimeOut = setTimeout(() => this._connect(), 1000);
         }
+
+        this._qualityMonitor.close();
     }
 
     async _join() {
@@ -443,6 +451,7 @@ export default class VegaRtcManager {
                 currentPaused ? producer.pause() : producer.resume();
 
                 this._micProducer = producer;
+                this._qualityMonitor.addProducer(this._selfId, producer.id);
 
                 producer.observer.once("close", () => {
                     this._logger.debug('micProducer "close" event');
@@ -452,6 +461,7 @@ export default class VegaRtcManager {
 
                     this._micProducer = null;
                     this._micProducerPromise = null;
+                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
 
                 if (this._micTrack !== this._micProducer.track) await this._replaceMicTrack();
@@ -637,6 +647,7 @@ export default class VegaRtcManager {
                 currentPaused ? producer.pause() : producer.resume();
 
                 this._webcamProducer = producer;
+                this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     this._logger.debug('webcamProducer "close" event');
 
@@ -645,6 +656,7 @@ export default class VegaRtcManager {
 
                     this._webcamProducer = null;
                     this._webcamProducerPromise = null;
+                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
 
                 // Has someone replaced the track?
@@ -739,6 +751,7 @@ export default class VegaRtcManager {
                 });
 
                 this._screenVideoProducer = producer;
+                this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     this._logger.debug('screenVideoProducer "close" event');
 
@@ -747,6 +760,7 @@ export default class VegaRtcManager {
 
                     this._screenVideoProducer = null;
                     this._screenVideoProducerPromise = null;
+                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
 
                 // Has someone replaced the track?
@@ -816,6 +830,7 @@ export default class VegaRtcManager {
                 });
 
                 this._screenAudioProducer = producer;
+                this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     this._logger.debug('screenAudioProducer "close" event');
 
@@ -824,6 +839,7 @@ export default class VegaRtcManager {
 
                     this._screenAudioProducer = null;
                     this._screenAudioProducerPromise = null;
+                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
 
                 // Has someone replaced the track?
@@ -1369,6 +1385,10 @@ export default class VegaRtcManager {
                         return this._onDataConsumerClosed(data);
                     case "dominantSpeaker":
                         return this._onDominantSpeaker(data);
+                    case "consumerScore":
+                        return this._onConsumerScore(data);
+                    case "producerScore":
+                        return this._onProducerScore(data);
                     default:
                         this._logger.debug(`unknown message method "${method}"`);
                         return;
@@ -1389,8 +1409,10 @@ export default class VegaRtcManager {
         consumer.appData.spatialLayer = 2;
 
         this._consumers.set(consumer.id, consumer);
+        this._qualityMonitor.addConsumer(consumer.appData.sourceClientId, consumer.id);
         consumer.observer.once("close", () => {
             this._consumers.delete(consumer.id);
+            this._qualityMonitor.removeConsumer(consumer.appData.sourceClientId, consumer.id);
 
             this._consumerClosedCleanup(consumer);
         });
@@ -1462,6 +1484,28 @@ export default class VegaRtcManager {
         if (!consumer.appData.localPaused) {
             consumer.resume();
         }
+    }
+
+    _onConsumerScore({ consumerId, kind, score }) {
+        this._logger.debug("_onConsumerScore()", { consumerId, kind, score });
+        const {
+            appData: { sourceClientId },
+        } = this._consumers.get(consumerId) || { appData: {} };
+
+        if (sourceClientId) {
+            this._qualityMonitor.addConsumerScore(sourceClientId, consumerId, kind, score);
+        }
+    }
+
+    _onProducerScore({ producerId, kind, score }) {
+        this._logger.debug("_onProducerScore()", { producerId, kind, score });
+        [this._micProducer, this._webcamProducer, this._screenVideoProducer, this._screenAudioProducer].forEach(
+            (producer) => {
+                if (producer?.id === producerId) {
+                    this._qualityMonitor.addProducerScore(this._selfId, producerId, kind, score);
+                }
+            }
+        );
     }
 
     async _onDataConsumerReady(options) {
