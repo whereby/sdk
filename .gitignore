@@ -1,0 +1,13 @@
+*.env
+*.log
+
+.DS_Store
+
+dist/
+node_modules/
+storybook-static/
+yalc.lock
+.yalc/
+/test-results/
+/playwright-report/
+/playwright/.cache/
