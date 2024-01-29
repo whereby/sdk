@@ -90,15 +90,14 @@ const issueDetectors = [
         check: ({ ssrc0 }) => ssrc0.fps < 10,
     },
     {
-        id: "bad-network", // this drives quality-indicator
+        id: "bad-network",
         enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0,
-        check: ({ ssrc0, ssrcs, kind, client }) =>
+        check: ({ ssrc0, kind, client }) =>
             ssrc0.bitrate === 0 ||
             ssrc0.lossRatio > 0.03 ||
             (ssrc0.fractionLost || 0) > 0.03 ||
             (!client.isPresentation && kind === "video" && ssrc0.bitrate < 30000) ||
-            (ssrc0.direction === "in" && ssrc0.pliRate > 2) ||
-            ssrcs.find((ssrc) => ssrc.qualityLimitationReason === "bandwidth"),
+            (ssrc0.direction === "in" && ssrc0.pliRate > 2),
     },
     {
         id: "cpu-pressure-serious",
