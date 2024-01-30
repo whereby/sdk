@@ -5,7 +5,7 @@ import RtcStream from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
 import { setCodecPreferenceSDP } from "./sdpModifier";
 import adapter from "webrtc-adapter";
-import ipRegex from "ip-regex";
+import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
 import checkIp from "check-ip";
 import validate from "uuid-validate";

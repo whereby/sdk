@@ -14,13 +14,15 @@ const originalMediasoupDevice = mediasoupClient.Device;
 describe("RtcManagerDispatcher", () => {
     let emitter;
     let serverSocketStub;
+    const features = {};
 
     beforeEach(() => {
         emitter = new EventEmitter();
         serverSocketStub = helpers.createServerSocketStub();
+
         const serverSocket = serverSocketStub.socket;
         // eslint-disable-next-line no-new
-        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider: {}, features: {} });
+        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider: {}, features });
         Object.defineProperty(mediasoupClient, "Device", {
             value: jest.fn(),
         });
@@ -57,6 +59,19 @@ describe("RtcManagerDispatcher", () => {
     it("emits an VegaRtcManager when sfuServer is set", () => {
         const rtcManager = mockEmitRoomJoined({ sfuServer: { url: helpers.randomString("sfu-") + ":443" } });
         expect(rtcManager).toBeInstanceOf(VegaRtcManager);
+    });
+    it("allows custom device handler factories when sfuServer", () => {
+        features.deviceHandlerFactory = function () {};
+        jest.mock("../../src/webrtc/VegaRtcManager", () => {
+            return {
+                default: jest.fn(),
+            };
+        });
+        const rtcManager = mockEmitRoomJoined({ sfuServer: { url: helpers.randomString("sfu-") + ":443" } });
+        expect(rtcManager).toBeInstanceOf(VegaRtcManager);
+        expect(mediasoupClient.Device).toHaveBeenCalledWith({
+            handlerFactory: features.deviceHandlerFactory,
+        });
     });
 
     it("emits nothing when error is set", () => {

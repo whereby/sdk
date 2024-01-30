@@ -9,7 +9,16 @@ export default class RtcManagerDispatcher {
         this.currentManager = null;
         serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, ({ room, selfId, error, eventClaim }) => {
             if (error) return; // ignore error responses which lack room
-            const config = { selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim };
+            const config = {
+                selfId,
+                room,
+                emitter,
+                serverSocket,
+                webrtcProvider,
+                features,
+                eventClaim,
+                deviceHandlerFactory: features?.deviceHandlerFactory,
+            };
             const isSfu = !!room.sfuServer;
             if (this.currentManager) {
                 if (this.currentManager.isInitializedWith({ selfId, roomName: room.name, isSfu })) {
