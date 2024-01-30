@@ -8,12 +8,22 @@ on:
         branches:
             - main
             - development
+        paths:
+          - "packages/**"
 jobs:
+    determine_changed_packages:
+      uses: ./.github/workflows/changed_dir_matrix.yml
+      with:
+          base-dir: packages/
     test:
         name: Test
         concurrency: test_${{ github.head_ref }}
         runs-on: ubuntu-latest
-
+        strategy:
+          matrix: ${{ fromJson(needs.determine_changed_packages.outputs.matrix) }}
+        defaults:
+          run:
+            working-directory: ${{ matrix.dir }}
         steps:
             - name: Checkout source code
               uses: actions/checkout@v3

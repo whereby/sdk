@@ -1,0 +1,17 @@
+# name: "Build"
+# description: "Installs dependencies and builds lib"
+# runs:
+#     using: "composite"
+#     steps:
+#         - uses: actions/setup-node@v3
+#           with:
+#               node-version: "20"
+#               cache: "yarn"
+
+#         - name: Install dependencies
+#           run: yarn install --frozen-lockfile
+#           shell: bash
+
+#         - name: Build
+#           run: yarn build
+#           shell: bash
