@@ -21,10 +21,10 @@ jobs:
         concurrency: test_${{ github.head_ref }}
         runs-on: ubuntu-latest
         strategy:
-          matrix: ${{fromJson(needs.determine_changed_packages.outputs.matrix)}}
+            matrix: ${{fromJSON(needs.determine_changed_packages.outputs.matrix)}}
         defaults:
-          run:
-            working-directory: ${{ matrix.dir }}
+            run:
+                working-directory: ${{ matrix.dir }}
         steps:
             - name: Checkout source code
               uses: actions/checkout@v3

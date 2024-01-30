@@ -171,5 +171,3 @@ web component. The following changes are necessary when upgrading to v2:
 The functionality of the web component should be exactly as the latest version
 on the v1 branch, but a TypeScript definition is now available for projects
 using this language.
-
-# Test
