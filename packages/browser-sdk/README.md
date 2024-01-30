@@ -43,24 +43,25 @@ function MyPreCallUX() {
     const { currentCameraDeviceId, cameraDevices, localStream } = localMedia.state;
     const { setCameraDevice, toggleCameraEnabled } = localMedia.actions;
 
-    return <div className="preCallView">
-        { /* Render any UI, making use of state */ }
-        { cameraDevices.map((d) => (
-            <p
-                key={d.deviceId}
-                onClick={() => {
-                    if (d.deviceId !== currentCameraDeviceId) {
-                        setCameraDevice(d.deviceId);
-                    }
-                }}
-            >
-                {d.label}
-            </p>
-        )) }
-        <VideoView muted stream={localStream} />
-    </div>;
+    return (
+        <div className="preCallView">
+            {/* Render any UI, making use of state */}
+            {cameraDevices.map((d) => (
+                <p
+                    key={d.deviceId}
+                    onClick={() => {
+                        if (d.deviceId !== currentCameraDeviceId) {
+                            setCameraDevice(d.deviceId);
+                        }
+                    }}
+                >
+                    {d.label}
+                </p>
+            ))}
+            <VideoView muted stream={localStream} />
+        </div>
+    );
 }
-
 ```
 
 #### useRoomConnection
@@ -111,13 +112,10 @@ client";` to the top of component, like in the following example:
 import { VideoView, useLocalMedia } from "@whereby.com/browser-sdk/react";
 
 export default function MyNextVideoExperience() {
-  const { state, actions } = useLocalMedia({ audio: false, video: true });
+    const { state, actions } = useLocalMedia({ audio: false, video: true });
 
-  return (
-    <p>{ state.localStream && <VideoView muted stream={state.localStream} /> }</p>
-  );
+    return <p>{state.localStream && <VideoView muted stream={state.localStream} />}</p>;
 }
-
 ```
 
 ### Web component for embedding
@@ -164,12 +162,14 @@ export default MyComponent;
 Migration from v1 to v2 is only relevant for users of the `<whereby-embed />`
 web component. The following changes are necessary when upgrading to v2:
 
-- If you import the web component in your app, you need to add `/embed` to the
-  import path, like so `import "whereby.com/browser-sdk/embed"`
-- If you load the web component using a `<script>` tag, the src needs to be 
-  changed to `https://cdn.srv.whereby.com/embed/v2-embed.js`. In addition, the
-  `type="module"` attribute is no longer required and can be removed.
+-   If you import the web component in your app, you need to add `/embed` to the
+    import path, like so `import "whereby.com/browser-sdk/embed"`
+-   If you load the web component using a `<script>` tag, the src needs to be
+    changed to `https://cdn.srv.whereby.com/embed/v2-embed.js`. In addition, the
+    `type="module"` attribute is no longer required and can be removed.
 
 The functionality of the web component should be exactly as the latest version
 on the v1 branch, but a TypeScript definition is now available for projects
 using this language.
+
+# Test

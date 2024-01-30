@@ -27,4 +27,4 @@ jobs:
       - id: set-matrix
         name: Set matrix
         run: |
-          echo "::set-output name=matrix::{\"dir\":$(git diff origin/master HEAD --name-only | xargs dirname | grep ${{ inputs.base-dir }} | cut -d "/" -f1,2 | uniq | jq -Rsc '. / "\n" - [""]')}"
+          echo "name=matrix::{\"dir\":$(git diff origin/master HEAD --name-only | xargs dirname | grep ${{ inputs.base-dir }} | cut -d "/" -f1,2 | uniq | jq -Rsc '. / "\n" - [""]')}" >> $GITHUB_OUTPUT
