@@ -21,7 +21,7 @@ jobs:
         concurrency: test_${{ github.head_ref }}
         runs-on: ubuntu-latest
         strategy:
-            matrix: ${{fromJSON(needs.determine_changed_packages.outputs.matrix)}}
+                matrix: ${{fromJSON(needs.determine_changed_packages.outputs.matrix)}}
         defaults:
             run:
                 working-directory: ${{ matrix.dir }}
