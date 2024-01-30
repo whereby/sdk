@@ -17,10 +17,11 @@ jobs:
           base-dir: packages/
     test:
         name: Test
+        needs: determine_changed_packages
         concurrency: test_${{ github.head_ref }}
         runs-on: ubuntu-latest
         strategy:
-          matrix: ${{ fromJson(needs.determine_changed_packages.outputs.matrix) }}
+          matrix: ${{fromJson(needs.determine_changed_packages.outputs.matrix)}}
         defaults:
           run:
             working-directory: ${{ matrix.dir }}
