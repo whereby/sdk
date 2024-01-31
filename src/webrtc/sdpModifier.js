@@ -173,3 +173,49 @@ export function changeMediaDirection(sdp, active) {
             .join("")
     );
 }
+
+// add SDP RTP header extension mapping
+export function addExtMap(sdp, extmapUri, modifyAudio = false, modifyVideo = false) {
+    try {
+        const sdpObj = sdpTransform.parse(sdp);
+
+        // in case session level extmaps we skip modification
+        // TODO: handle it more properly
+        if (sdpObj?.ext?.length > 0) {
+            return sdp;
+        }
+
+        // if sdp string is faulty, and lib can't parse any m= lines we return it unmodified.
+        if (sdpObj?.media.length < 1) return sdp;
+
+        const allHeaderExtensions = sdpObj?.media.flatMap((section) => section.ext || []);
+        const extmapId =
+            allHeaderExtensions.find((ext) => ext.uri === extmapUri)?.value ||
+            [...new Set([0, 15, ...allHeaderExtensions.map((ext) => ext.value)])]
+                .sort((a, b) => a - b)
+                .find((n, i, arr) => n + 1 !== arr[i + 1]) + 1;
+
+        sdpObj.media.forEach((mediaSection) => {
+            if ((modifyAudio && mediaSection.type === "audio") || (modifyVideo && mediaSection.type === "video")) {
+                if (!mediaSection.ext?.find((e) => e.uri === extmapUri)) {
+                    if (Array.isArray(mediaSection.ext)) {
+                        mediaSection["ext"].push({ value: extmapId, uri: extmapUri });
+                    } else {
+                        mediaSection["ext"] = [{ value: extmapId, uri: extmapUri }];
+                    }
+                }
+            }
+        });
+        return sdpTransform.write(sdpObj);
+    } catch (error) {
+        console.error("Error during addAbsCaptureTimeExtMap: ", error);
+    }
+    return sdp;
+}
+
+// Add SDP RTP header extension mapping to abs-capture-time
+// a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time
+export function addAbsCaptureTimeExtMap(sdp) {
+    const absCaptureTimeUri = "http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time";
+    return addExtMap(sdp, absCaptureTimeUri, true, true);
+}
