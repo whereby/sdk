@@ -1,1 +1,0 @@
-var uarray=function(r){"use strict";var i=Array.isArray,a=[],e=a.indexOf,s=a.slice;return r.indexOf=e,r.isArray=i,r.slice=s,r}({});
