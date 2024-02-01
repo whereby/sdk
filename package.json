@@ -5,6 +5,9 @@
   "author": "Whereby AS",
   "license": "MIT",
   "packageManager": "yarn@1.22.19",
+  "scripts": {
+    "release": "yarn workspaces run release"
+  },
   "workspaces": [
     "./apps/*",
     "./packages/*"
