@@ -8,6 +8,9 @@
         "type": "git",
         "url": "https://github.com/whereby/browser-sdk.git"
     },
+    "publishConfig": {
+        "access": "public"
+    },
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
     "exports": {
