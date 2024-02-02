@@ -7,7 +7,8 @@
   "packageManager": "yarn@1.22.19",
   "scripts": {
     "build": "yarn workspaces run build",
-    "release": "yarn build && changeset publish",
+    "build:packages": "yarn workspace @whereby.com/browser-sdk build",
+    "release": "yarn build:packages && changeset publish",
     "test": "yarn workspaces run test"
   },
   "workspaces": [
