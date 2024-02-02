@@ -11,14 +11,16 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v3
+
             - name: Cache turbo test setup
               uses: actions/cache/restore@v3
               with:
                   path: .turbo
                   key: turbo-${{ github.event.pull_request.base.sha }}
-
-            - name: Checkout Repo
-              uses: actions/checkout@v3
+                  restore-keys: |
+                      turbo-${{ github.event.pull_request.base.sha }}
 
             - name: Setup Node.js 20.x
               uses: actions/setup-node@v3
