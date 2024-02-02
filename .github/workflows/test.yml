@@ -7,7 +7,6 @@ on:
     pull_request:
         branches:
             - main
-            - development
 jobs:
     test:
         name: Test
@@ -19,9 +18,8 @@ jobs:
               uses: actions/cache@v3
               with:
                   path: .turbo
-                  key: ${{ runner.os }}-turbo-${{ github.event.pull_request.base.sha }}
-                  restore-keys: |
-                      ${{ runner.os }}-turbo-
+                  key: turbo-main
+                  lookup-only: ${{github.event_name == 'pull_request'}}
 
             - name: Checkout Repo
               uses: actions/checkout@v3
