@@ -17,7 +17,7 @@
     "scripts": {
         "start": "react-scripts start",
         "build": "react-scripts build",
-        "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --passWithNoTests",
+        "test": "jest --passWithNoTests",
         "eject": "react-scripts eject"
     },
     "eslintConfig": {
