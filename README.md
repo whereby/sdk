@@ -1,3 +1,3 @@
 # Whereby SDK
 
-Monorepo for Whereby SDKs
+Monorepo for Whereby SDKs.
