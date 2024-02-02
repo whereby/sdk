@@ -6,10 +6,11 @@
   "license": "MIT",
   "packageManager": "yarn@1.22.19",
   "scripts": {
-    "build": "yarn workspaces run build",
-    "build:packages": "yarn workspace @whereby.com/browser-sdk build",
+    "build": "turbo build",
+    "build:packages": "turbo build:packages",
     "release": "yarn build:packages && changeset publish",
-    "test": "yarn workspaces run test"
+    "test": "turbo test",
+    "test:lint": "turbo test:lint"
   },
   "workspaces": [
     "./apps/*",
