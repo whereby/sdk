@@ -11,7 +11,7 @@ interface Question {
 }
 
 interface QuestionViewProps {
-    answerQuestion: (string) => void;
+    answerQuestion: (a: string) => void;
     question: Question | null;
     currentAnswer: string | null;
     reveal: boolean;
@@ -31,7 +31,7 @@ const QuestionView = ({
 }: QuestionViewProps) => {
     const { question: questionText = "", alternatives = [], correctAlternative = "" } = question || {};
 
-    const handleClick = (answer) => {
+    const handleClick = (answer: string) => {
         if (!currentAnswer) {
             answerQuestion(answer);
         }
@@ -53,6 +53,7 @@ const QuestionView = ({
                                 key={k}
                                 locked={!!currentAnswer}
                                 isSelected={currentAnswer === k}
+                                // @ts-ignore
                                 answerText={alternatives[k]}
                                 onSelected={() => handleClick(k)}
                             />
@@ -63,6 +64,7 @@ const QuestionView = ({
                 <Center h="80px">
                     {reveal && (
                         <Heading my="4" fontSize={["md", null, "2xl"]}>
+                            {/* @ts-ignore */}
                             The correct answer is: {alternatives[correctAlternative]}
                         </Heading>
                     )}
