@@ -4,9 +4,6 @@ on:
     push:
         branches:
             - main
-    pull_request:
-        branches:
-            - main
 jobs:
     test:
         name: Test
@@ -14,12 +11,6 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Cache turbo test setup
-              uses: actions/cache/restore@v3
-              with:
-                  path: .turbo
-                  key: turbo-${{ github.event.pull_request.base.sha }}
-
             - name: Checkout Repo
               uses: actions/checkout@v3
 
@@ -33,3 +24,9 @@ jobs:
 
             - name: Test
               run: yarn test
+
+            - name: Cache turbo test setup
+              uses: actions/cache/save@v3
+              with:
+                  path: .turbo
+                  key: turbo-${{ github.sha }}
