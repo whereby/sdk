@@ -30,4 +30,4 @@ jobs:
               uses: actions/cache/save@v3
               with:
                   path: .turbo
-                  key: turbo-${{ github.sha }}
+                  key: turbo-${{ github.head_ref }}

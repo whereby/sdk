@@ -19,9 +19,9 @@ jobs:
               uses: actions/cache/restore@v3
               with:
                   path: .turbo
-                  key: turbo-${{ github.sha }}
+                  key: turbo-main
                   restore-keys: |
-                      turbo-${{ github.sha }}
+                      turbo-main
 
             - name: Setup Node.js 20.x
               uses: actions/setup-node@v3
