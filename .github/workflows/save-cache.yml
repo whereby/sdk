@@ -8,7 +8,7 @@ on:
 jobs:
     test:
         name: Test
-        concurrency: test_${{ github.head_ref }}
+        concurrency: test_${{ github.ref }}
         runs-on: ubuntu-latest
 
         steps:
@@ -30,4 +30,4 @@ jobs:
               uses: actions/cache/save@v3
               with:
                   path: .turbo
-                  key: turbo-${{ github.head_ref }}
+                  key: turbo-${{ github.ref }}
