@@ -5,7 +5,7 @@ export default class MockMediaStream implements MediaStream {
     id = "";
 
     constructor(streamOrTracks?: MediaStreamTrack[] | MediaStream) {
-        if (streamOrTracks instanceof Array<MediaStreamTrack>) {
+        if (Array.isArray(streamOrTracks) && streamOrTracks.every((t) => t instanceof MediaStreamTrack)) {
             this._tracks = streamOrTracks;
         } else {
             this._tracks = [];
