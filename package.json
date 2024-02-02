@@ -10,7 +10,8 @@
     "build:packages": "turbo build:packages",
     "release": "yarn build:packages && changeset publish",
     "test": "turbo test",
-    "test:lint": "turbo test:lint"
+    "test:lint": "turbo test:lint",
+    "test:e2e": "turbo test:e2e"
   },
   "workspaces": [
     "./apps/*",
