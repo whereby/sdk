@@ -1,30 +1,38 @@
 ---
 name: Test
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-      - development
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+            - development
 jobs:
-  test:
-    name: Test
-    concurrency: test_${{ github.head_ref }}
-    runs-on: ubuntu-latest
+    test:
+        name: Test
+        concurrency: test_${{ github.head_ref }}
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+        steps:
+            - name: Cache turbo test setup
+              uses: actions/cache@v3
+              with:
+                  path: .turbo
+                  key: ${{ runner.os }}-turbo-${{ github.event.pull_request.base.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-
 
-      - name: Setup Node.js 20.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20.x
+            - name: Checkout Repo
+              uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+            - name: Setup Node.js 20.x
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 20.x
 
-      - name: Test
-        run: yarn test
+            - name: Install Dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Test
+              run: yarn test

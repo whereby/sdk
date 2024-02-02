@@ -10,7 +10,7 @@
         },
         "test:lint": {},
         "test": {
-            "dependsOn": ["test:lint", "^build"],
+            "dependsOn": ["test:lint"],
             "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
         },
         "test:e2e": {

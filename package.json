@@ -9,7 +9,7 @@
     "build": "turbo build",
     "build:packages": "turbo build:packages",
     "release": "yarn build:packages && changeset publish",
-    "test": "turbo test",
+    "test": "turbo test --cache-dir=.turbo",
     "test:lint": "turbo test:lint",
     "test:e2e": "turbo test:e2e"
   },
