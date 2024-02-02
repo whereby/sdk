@@ -10,6 +10,11 @@ export class ReconnectManager extends EventEmitter {
         this._clients = {};
         this._signalDisconnectTime = undefined;
         this.rtcManager = undefined;
+        this.metrics = {
+            roomJoinedLate: 0,
+            pendingClientCanceled: 0,
+            evaluationFailed: 0,
+        };
 
         socket.on("disconnect", () => {
             this._signalDisconnectTime = Date.now();
@@ -65,6 +70,7 @@ export class ReconnectManager extends EventEmitter {
         if (timeSinceDisconnect > RECONNECT_THRESHOLD) {
             this._resetClientState(payload);
             this.emit(PROTOCOL_RESPONSES.ROOM_JOINED, payload);
+            this.metrics.roomJoinedLate++;
             return;
         }
 
@@ -110,6 +116,7 @@ export class ReconnectManager extends EventEmitter {
                 client.mergeWithOldClientState = true;
             } catch (error) {
                 this._logger.error("Failed to evaluate if we should merge client state %o", error);
+                this.metrics.evaluationFailed++;
             }
         });
 
@@ -169,6 +176,7 @@ export class ReconnectManager extends EventEmitter {
         if (client && client.isPendingToLeave) {
             clearTimeout(client.timeoutHandler);
             client.isPendingToLeave = false;
+            this.metrics.pendingClientCanceled++;
             return;
         }
 

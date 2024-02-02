@@ -68,6 +68,8 @@ export default class BaseRtcManager {
             iceServers: iceServers.iceServers || [],
             mediaserverConfigTtlSeconds,
         });
+
+        this.totalSessionsCreated = 0;
     }
 
     numberOfPeerconnections() {
@@ -173,6 +175,8 @@ export default class BaseRtcManager {
                     : MAXIMUM_TURN_BANDWIDTH,
                 deprioritizeH264Encoding,
             });
+
+            this.totalSessionsCreated++;
         }
         return session;
     }

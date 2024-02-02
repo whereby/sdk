@@ -9,6 +9,7 @@ export default {
     MICROPHONE_NOT_WORKING: "microphone_not_working",
     MICROPHONE_STOPPED_WORKING: "microphone_stopped_working",
     NEW_PC: "new_pc",
+    SFU_CONNECTION_OPEN: "sfu_connection_open",
     SFU_CONNECTION_CLOSED: "sfu_connection_closed",
     COLOCATION_SPEAKER: "colocation_speaker",
     DOMINANT_SPEAKER: "dominant_speaker",

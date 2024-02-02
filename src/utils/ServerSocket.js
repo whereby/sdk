@@ -180,4 +180,8 @@ export default class ServerSocket {
             if (this._reconnectManager) this._reconnectManager.removeListener(eventName, handler);
         };
     }
+
+    getGlitchFreeMetrics() {
+        return this._reconnectManager?.metrics;
+    }
 }

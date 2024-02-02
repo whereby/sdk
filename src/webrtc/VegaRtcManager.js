@@ -219,10 +219,12 @@ export default class VegaRtcManager {
         }
 
         this._qualityMonitor.close();
+        this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_CLOSED);
     }
 
     async _join() {
         this._logger.debug("join()");
+        this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_OPEN);
 
         try {
             // We need to always do this, as this triggers the join logic on the SFU
