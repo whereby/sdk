@@ -1,0 +1,33 @@
+---
+name: Save Test Cache
+on:
+    push:
+        branches:
+            - main
+            - development
+jobs:
+    test:
+        name: Test
+        concurrency: test_${{ github.head_ref }}
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js 20.x
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 20.x
+
+            - name: Install Dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Test
+              run: yarn test --cache-dir=.turbo
+
+            - name: Cache turbo test setup
+              uses: actions/cache/save@v3
+              with:
+                  path: .turbo
+                  key: turbo-${{ github.sha }}
