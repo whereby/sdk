@@ -22,11 +22,11 @@ jobs:
             - name: Install Dependencies
               run: yarn install --frozen-lockfile
 
-            - name: Test
-              run: yarn test
-
             - name: Cache turbo test setup
               uses: actions/cache/save@v3
               with:
                   path: .turbo
                   key: turbo-${{ github.sha }}
+
+            - name: Test
+              run: yarn test --cache-dir=.turbo
