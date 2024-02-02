@@ -7,8 +7,7 @@
   "packageManager": "yarn@1.22.19",
   "scripts": {
     "build": "turbo build",
-    "build:packages": "turbo build:packages",
-    "release": "yarn build:packages && changeset publish",
+    "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
     "test:e2e": "turbo test:e2e"

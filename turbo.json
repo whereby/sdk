@@ -4,10 +4,6 @@
         "build": {
             "dependsOn": ["^build"]
         },
-        "build:packages": {
-            "dependsOn": ["^build"],
-            "inputs": ["packages/**/*.json"]
-        },
         "test:lint": {},
         "test": {
             "dependsOn": ["test:lint"],
