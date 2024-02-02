@@ -1,5 +1,5 @@
 {
-  "name": "sdk-demo",
+  "name": "telehealth-tutorial-app",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -20,7 +20,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "jest --passWithNoTests",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
