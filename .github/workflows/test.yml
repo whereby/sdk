@@ -19,7 +19,6 @@ jobs:
               with:
                   path: .turbo
                   key: turbo-main
-                  lookup-only: ${{github.event_name == 'pull_request'}}
 
             - name: Checkout Repo
               uses: actions/checkout@v3
