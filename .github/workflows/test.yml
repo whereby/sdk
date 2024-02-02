@@ -18,7 +18,9 @@ jobs:
               uses: actions/cache@v3
               with:
                   path: .turbo
-                  key: turbo-main
+                  key: ${{ runner.os }}-turbo-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-
 
             - name: Checkout Repo
               uses: actions/checkout@v3
