@@ -1,4 +1,4 @@
-name: Release
+name: Build, test, realease
 
 on:
     push:
@@ -8,28 +8,34 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-    release:
-        name: Release
+    build-test-release:
+        name: Build, test, release
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
               uses: actions/checkout@v3
-
-            - name: Cache turbo test setup
-              uses: actions/cache/restore@v3
-              with:
-                  path: .turbo
-                  key: turbo-${{ github.ref }}
-                  restore-keys: |
-                      turbo-${{ github.ref }}
 
             - name: Setup Node.js 20.x
               uses: actions/setup-node@v3
               with:
                   node-version: 20.x
 
+            - name: Cache turbo setup
+              uses: actions/cache@v3
+              with:
+                  path: .turbo
+                  key: ${{ runner.os }}-turbo-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-
+
             - name: Install Dependencies
               run: yarn install --frozen-lockfile
+
+            - name: Run Tests
+              run: yarn test --cache-dir=.turbo
+
+            - name: Build
+              run: yarn build --cache-dir=.turbo
 
             - name: Create Release Pull Request or Publish to npm
               id: changesets
@@ -40,8 +46,3 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-            - name: Send a Slack notification if a publish happens
-              if: steps.changesets.outputs.published == 'true'
-              # You can do something when a publish happens.
-              run: my-slack-bot send-notification --message "A new version of ${GITHUB_REPOSITORY} was published!"
