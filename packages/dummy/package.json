@@ -14,5 +14,8 @@
     "build": "rm -rf dist && mkdir dist && mkdir dist/cdn && echo \"Built.... $(date)\" > dist/build.txt && cp dist/build.txt dist/cdn/",
     "release": "echo \"Releasing....\" && exit 0",
     "test": "echo \"Testing....\" && exit 0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
