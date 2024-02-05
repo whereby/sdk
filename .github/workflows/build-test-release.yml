@@ -1,4 +1,4 @@
-name: Build, test, realease
+name: Build, test, release
 
 on:
     push:
