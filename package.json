@@ -13,8 +13,8 @@
     "test:e2e": "turbo test:e2e"
   },
   "workspaces": [
-    "./apps/*",
-    "./packages/*"
+    "apps/*",
+    "packages/*"
   ],
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
