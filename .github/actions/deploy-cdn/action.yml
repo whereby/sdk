@@ -1,0 +1,43 @@
+name: "Deploy to CDN"
+description: "Deploys a package to the CDN"
+inputs:
+    aws_access_key_id:
+        description: "AWS access key ID"
+        required: true
+    aws_secret_access_key:
+        description: "AWS secret"
+        required: true
+    package:
+        description: "Which package to deploy"
+        required: true
+    dest_dir:
+        description: "The destination dir on the CDN, no leading or trailing slashes"
+        required: true
+runs:
+    using: "composite"
+    steps:
+        - name: Build
+          run: yarn build
+          shell: bash
+
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+              aws-access-key-id: ${{ inputs.aws_access_key_id }}
+              aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+              aws-region: eu-west-1
+
+        - uses: jakejarvis/s3-sync-action@v0.5.1
+          with:
+              args: --acl public-read --follow-symlinks
+          env:
+              AWS_S3_BUCKET: whereby-cdn
+              AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
+              AWS_REGION: "es-west-1"
+              SOURCE_DIR: "packages/${{ inputs.package }}/dist/cdn/"
+              DEST_DIR: "${{ inputs.dest_dir }}/"
+
+        - name: Invalidate cloudfront publication
+          run: aws cloudfront create-invalidation --distribution-id=E6H48QPJYYL39 --paths "/${{ inputs.dest_dir}}/*"
+          shell: bash
