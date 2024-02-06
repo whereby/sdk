@@ -1,6 +1,9 @@
 import SDPUtils from "sdp";
 import adapter from "webrtc-adapter";
 import * as sdpTransform from "sdp-transform";
+import Logger from "../utils/Logger";
+
+const logger = new Logger();
 
 const browserName = adapter.browserDetails.browser;
 const browserVersion = adapter.browserDetails.version;
@@ -43,8 +46,7 @@ export function setCodecPreferenceSDP(sdp, vp9On, redOn) {
         const newSdp = sdpTransform.write(sdpObject);
         return newSdp;
     } catch (error) {
-        // eslint-disable-next-line no-console
-        console.log("setCodecPreferenceSDP error:", error);
+        logger.error("setCodecPreferenceSDP error:", error);
     }
 }
 // Safari does not like VP8-only offers

@@ -9,6 +9,9 @@ import assert from "../utils/assert";
 import rtcStats from "./rtcStatsService";
 import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED, MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import adapter from "webrtc-adapter";
+import Logger from "../utils/Logger";
+
+const logger = new Logger();
 
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
 const browserName = adapter.browserDetails.browser;
@@ -26,7 +29,7 @@ if (browserName === "chrome") {
 }
 
 export default class BaseRtcManager {
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, logger = console }) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }) {
         assert.ok(selfId, "selfId is required");
         assert.ok(room, "room is required");
         assert.ok(emitter && emitter.emit, "emitter is required");
@@ -48,7 +51,6 @@ export default class BaseRtcManager {
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
         this._features = features || {};
-        this._logger = logger;
         this._isAudioOnlyMode = false;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
@@ -120,7 +122,7 @@ export default class BaseRtcManager {
                 receiver.playoutDelayHint = MEDIA_JITTER_BUFFER_TARGET / 1000; // seconds
             });
         } catch (error) {
-            this._logger.error("Error during setting jitter buffer target:", error);
+            logger.error("Error during setting jitter buffer target:", error);
         }
     }
 
@@ -441,7 +443,7 @@ export default class BaseRtcManager {
     _cleanup(peerConnectionId) {
         const session = this._getSession(peerConnectionId);
         if (!session) {
-            this._logger.warn("No RTCPeerConnection in RTCManager.disconnect()", peerConnectionId);
+            logger.warn("No RTCPeerConnection in RTCManager.disconnect()", peerConnectionId);
             return;
         }
         session.close();
@@ -471,10 +473,10 @@ export default class BaseRtcManager {
         const promises = [];
         this._forEachPeerConnection((session) => {
             if (!session.hasConnectedPeerConnection()) {
-                this._logger.log("Session doesn't have a connected PeerConnection, adding pending action!");
+                logger.info("Session doesn't have a connected PeerConnection, adding pending action!");
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
                 if (!pendingActions) {
-                    this._logger.warn(
+                    logger.warn(
                         `No pending action is created to repalce track, because the pending actions array is null`
                     );
                     return;
@@ -483,7 +485,7 @@ export default class BaseRtcManager {
                     const action = () => {
                         const replacedTrackPromise = session.replaceTrack(oldTrack, newTrack);
                         if (!replacedTrackPromise) {
-                            this._logger.error("replaceTrack returned false!");
+                            logger.error("replaceTrack returned false!");
                             reject(`ReplaceTrack returned false`);
                             return;
                         }
@@ -496,7 +498,7 @@ export default class BaseRtcManager {
             }
             const replacedTrackResult = session.replaceTrack(oldTrack, newTrack);
             if (!replacedTrackResult) {
-                this._logger.error("replaceTrack returned false!");
+                logger.error("replaceTrack returned false!");
                 return;
             }
             promises.push(replacedTrackResult);
@@ -665,7 +667,7 @@ export default class BaseRtcManager {
 
             this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data) => {
                 if (data.error) {
-                    this._logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
+                    logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
                     return;
                 }
                 this._updateAndScheduleMediaServersRefresh(data);
@@ -678,7 +680,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    this._logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
+                    logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
                     return;
                 }
                 session.addIceCandidate(data.message);
@@ -687,7 +689,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    this._logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
+                    logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
                     return;
                 }
                 session.addIceCandidate(null);
@@ -697,7 +699,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    this._logger.warn("No RTCPeerConnection on SDP_OFFER", data);
+                    logger.warn("No RTCPeerConnection on SDP_OFFER", data);
                     return;
                 }
                 const offer = this._transformIncomingSdp(data.message, session.pc);
@@ -713,7 +715,7 @@ export default class BaseRtcManager {
             this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
-                    this._logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
+                    logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
                     return;
                 }
                 const answer = this._transformIncomingSdp(data.message, session.pc);
@@ -731,7 +733,7 @@ export default class BaseRtcManager {
 
                 const screenshareStream = this.localStreams[screenShareStreamId];
                 if (!screenshareStream) {
-                    this._logger.warn(`screenshare stream ${screenShareStreamId} not found`);
+                    logger.warn("screenshare stream %s not found", screenShareStreamId);
                     return;
                 }
 

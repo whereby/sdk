@@ -32,7 +32,10 @@ const defaultParams = {
     outFormula: "score", // the out/score sent to SFU
 };
 
+import Logger from "../utils/Logger";
 import * as scriptFunctions from "./VegaMicAnalyserTools";
+
+const logger = new Logger();
 
 export default function createMicAnalyser({ micTrack, params, onScoreUpdated }) {
     // todo: might need to reuse existing in PWA
@@ -59,7 +62,7 @@ export default function createMicAnalyser({ micTrack, params, onScoreUpdated }) 
                 track = stream.getAudioTracks()[0];
                 lastTrackWasOurs = true;
             } catch (ex) {
-                console.warn("unable to fetch new track for colocation speaker analysis, using current", ex);
+                logger.warn("unable to fetch new track for colocation speaker analysis, using current", ex);
             }
         }
 

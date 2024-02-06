@@ -10,6 +10,9 @@ import { Address6 } from "ip-address";
 import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
+import Logger from "../utils/Logger";
+
+const logger = new Logger();
 
 const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
@@ -22,7 +25,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         let session = this._getSession(clientId);
         let bandwidth = (session && session.bandwidth) || 0;
         if (session) {
-            this._logger.warn("Replacing peer session", clientId);
+            logger.warn("Replacing peer session", clientId);
             this._cleanup(clientId);
         } else {
             bandwidth = this._changeBandwidthForAllClients(true);
@@ -105,13 +108,13 @@ export default class P2pRtcManager extends BaseRtcManager {
                 videoTransceiver.setCodecPreferences(capabilities.codecs);
             });
         } catch (error) {
-            this._logger.error("Error during setting setCodecPreferences:", error);
+            logger.error("Error during setting setCodecPreferences:", error);
         }
     }
 
     _negotiatePeerConnection(clientId, session, constraints) {
         if (!session) {
-            this._logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
+            logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;
         }
         const pc = session.pc;
@@ -153,11 +156,11 @@ export default class P2pRtcManager extends BaseRtcManager {
                     return;
                 }
                 pc.setLocalDescription(offer).catch((e) => {
-                    this._logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
+                    logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
                 });
             })
             .catch((e) => {
-                this._logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
+                logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
             });
     }
 
@@ -311,7 +314,7 @@ export default class P2pRtcManager extends BaseRtcManager {
                                 }
                             }
                         } catch (error) {
-                            this._logger.debug("Error during parsing candidates! Error: ", { error });
+                            logger.info("Error during parsing candidates! Error: ", { error });
                         }
                         break;
                     case "srflx":
@@ -376,7 +379,7 @@ export default class P2pRtcManager extends BaseRtcManager {
         if (session) {
             // this will happen on a signal-server reconnect
             // before we tried an ice-restart here, now we recreate the session/pc
-            this._logger.warn("Replacing peer session", clientId);
+            logger.warn("Replacing peer session", clientId);
             this._cleanup(clientId); // will cleanup and delete session/pc
         } else {
             // we adjust bandwidth based on number of sessions/pcs

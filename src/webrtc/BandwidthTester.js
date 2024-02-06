@@ -3,8 +3,9 @@ import { Device } from "mediasoup-client";
 import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import { getHandler } from "../utils/getHandler";
+import Logger from "../utils/Logger";
 
-const logger = { debug: () => {}, log: () => {}, warn: () => {}, error: () => {} };
+const logger = new Logger();
 
 export default class BandwidthTester extends EventEmitter {
     constructor({ features } = {}) {
@@ -62,7 +63,7 @@ export default class BandwidthTester extends EventEmitter {
         const host = this._features.sfuServerOverrideHost || "any.sfu.whereby.com";
         const wsUrl = `wss://${host}`;
 
-        this._vegaConnection = new VegaConnection(wsUrl, logger, "whereby-sfu#bw-test-v1");
+        this._vegaConnection = new VegaConnection(wsUrl, "whereby-sfu#bw-test-v1");
         this._vegaConnection.on("open", () => this._start());
         this._vegaConnection.on("close", () => this.close());
         this._vegaConnection.on("message", (message) => this._onMessage(message));
@@ -72,7 +73,7 @@ export default class BandwidthTester extends EventEmitter {
     }
 
     close() {
-        logger.debug("close()");
+        logger.info("close()");
 
         this.closed = true;
 
@@ -107,7 +108,7 @@ export default class BandwidthTester extends EventEmitter {
     }
 
     async _start() {
-        logger.debug("_start()");
+        logger.info("_start()");
 
         // Calculate how long it took to connect and maybe close the test
         this._connectTime = Date.now() - this._startTime;
@@ -327,7 +328,7 @@ export default class BandwidthTester extends EventEmitter {
         this._producer = producer;
 
         producer.observer.once("close", () => {
-            logger.debug('producer "close" event');
+            logger.info('producer "close" event');
 
             this._producer = null;
         });
@@ -343,12 +344,12 @@ export default class BandwidthTester extends EventEmitter {
                     case "consumerClosed":
                         return this._onConsumerClosed(data);
                     default:
-                        logger.debug(`unknown message method "${method}"`);
+                        logger.info(`unknown message method "${method}"`);
                         return;
                 }
             })
             .catch((error) => {
-                console.error('"message" failed [error:%o]', error);
+                logger.error('"message" failed [error:%o]', error);
             });
     }
 
@@ -367,7 +368,7 @@ export default class BandwidthTester extends EventEmitter {
     }
 
     _onConsumerClosed({ consumerId }) {
-        logger.debug("_onConsumerClosed()");
+        logger.info("_onConsumerClosed()");
 
         const consumer = this._consumers.get(consumerId);
 

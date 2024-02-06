@@ -3,9 +3,12 @@ import * as statsHelper from "./statsHelper";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapter from "webrtc-adapter";
 import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./constants";
+import Logger from "../utils/Logger";
+
+const logger = new Logger();
 
 export default class Session {
-    constructor({ peerConnectionId, bandwidth, maximumTurnBandwidth, deprioritizeH264Encoding, logger = console }) {
+    constructor({ peerConnectionId, bandwidth, maximumTurnBandwidth, deprioritizeH264Encoding }) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
@@ -34,7 +37,6 @@ export default class Session {
         });
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._deprioritizeH264Encoding = deprioritizeH264Encoding;
-        this._logger = logger;
     }
 
     setAndGetPeerConnection({ clientId, constraints, peerConnectionConfig, shouldAddLocalVideo }) {
@@ -178,7 +180,7 @@ export default class Session {
                 return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
             },
             (e) => {
-                this._logger.warn("Could not set remote description from remote answer: ", e);
+                logger.warn("Could not set remote description from remote answer: ", e);
             }
         );
     }
@@ -199,7 +201,7 @@ export default class Session {
                 return;
             }
             this.pc.addIceCandidate(candidate).catch((e) => {
-                this._logger.warn("Failed to add ICE candidate ('%s'): %s", candidate ? candidate.candidate : null, e);
+                logger.warn("Failed to add ICE candidate ('%s'): %s", candidate ? candidate.candidate : null, e);
             });
         });
     }
@@ -221,7 +223,7 @@ export default class Session {
             // do not handle state change events when we close the connection explicitly
             pc.close();
         } catch (e) {
-            console.warn("failures during close of session", e);
+            logger.warn("failures during close of session", e);
             // we're not interested in errors from RTCPeerConnection.close()
         }
     }
@@ -237,7 +239,7 @@ export default class Session {
         const senders = pc.getSenders();
         function dbg(msg) {
             const tr = (t) => t && `id:${t.id},kind:${t.kind},state:${t.readyState}`;
-            this._logger.warn(
+            logger.warn(
                 `${msg}. newTrack:${tr(newTrack)}, oldTrack:${tr(oldTrack)}, sender tracks: ${JSON.stringify(
                     senders.map((s) => `s ${tr(s.track)}`)
                 )}, sender first codecs: ${JSON.stringify(senders.map((s) => (s.getParameters().codecs || [])[0]))}`

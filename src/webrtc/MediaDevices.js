@@ -1,5 +1,8 @@
 import getConstraints from "./mediaConstraints";
 import assert from "../utils/assert";
+import Logger from "../utils/Logger";
+
+const logger = new Logger();
 
 export const isMobile = /mobi/i.test(navigator.userAgent);
 
@@ -60,7 +63,7 @@ export function getUserMedia(constraints) {
 
     return global.navigator.mediaDevices.getUserMedia(constraints).catch((error) => {
         const message = `${error}, ${JSON.stringify(constraints, null, 2)}`;
-        console.error(`getUserMedia ${message}`);
+        logger.error(`getUserMedia ${message}`);
         throw error;
     });
 }
@@ -191,7 +194,7 @@ async function constrainTrack(track, constraints) {
             break;
         } catch (e) {
             const c = constraints.pop();
-            console.warn(`unable to apply ${JSON.stringify(c)}`, e);
+            logger.warn(`unable to apply ${JSON.stringify(c)}`, e);
         }
     }
 }
@@ -395,7 +398,7 @@ export async function getStream(constraintOpt, { replaceStream, fallback = true 
                         getConstraints({ ...constraintOpt, options: { ...constraintOpt.options, lax: true } })
                     );
                 } catch (e2) {
-                    console.warn(`Tried getting stream again with laxer constraints, but failed: ${"" + e2}`);
+                    logger.warn(`Tried getting stream again with laxer constraints, but failed: ${"" + e2}`);
                 }
                 // Message often hints at which was the problem, let's use that
                 const errMsg = ("" + e).toLowerCase();
@@ -404,7 +407,7 @@ export async function getStream(constraintOpt, { replaceStream, fallback = true 
                     try {
                         stream = await getUserMedia(getConstraints({ ...constraintOpt, [problemWith]: null }));
                     } catch (e2) {
-                        console.warn(`Re-tried ${problemWith} with no constraints, but failed: ${"" + e2}`);
+                        logger.warn(`Re-tried ${problemWith} with no constraints, but failed: ${"" + e2}`);
                     }
                 }
                 if (!stream) {
@@ -415,7 +418,7 @@ export async function getStream(constraintOpt, { replaceStream, fallback = true 
                         try {
                             stream = await getUserMedia(getConstraints({ ...constraintOpt, [kind]: false }));
                         } catch (e2) {
-                            console.warn(`Re-tried without ${kind}, but failed: ${"" + e2}`);
+                            logger.warn(`Re-tried without ${kind}, but failed: ${"" + e2}`);
                         }
                         if (stream) break;
                     }

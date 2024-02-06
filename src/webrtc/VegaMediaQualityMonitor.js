@@ -1,5 +1,8 @@
 import EventEmitter from "events";
 import { PROTOCOL_EVENTS } from "../model/protocol";
+import Logger from "../utils/Logger";
+
+const logger = new Logger();
 
 export const MEDIA_QUALITY = Object.freeze({
     ok: "ok",
@@ -13,9 +16,8 @@ const WARNING_SCORE = 9;
 const CRITICAL_SCORE = 7;
 
 export default class VegaMediaQualityMonitor extends EventEmitter {
-    constructor({ logger }) {
+    constructor() {
         super();
-        this._logger = logger;
         this._clients = {};
         this._producers = {};
         this._startMonitor();
@@ -89,7 +91,7 @@ export default class VegaMediaQualityMonitor extends EventEmitter {
 
     addProducer(clientId, producerId) {
         if (!clientId || !producerId || !(typeof clientId === "string" && typeof producerId === "string")) {
-            this._logger.warn("Missing clientId or producerId");
+            logger.warn("Missing clientId or producerId");
             return;
         }
 
@@ -110,7 +112,7 @@ export default class VegaMediaQualityMonitor extends EventEmitter {
 
     addConsumer(clientId, consumerId) {
         if (!clientId || !consumerId) {
-            this._logger.warn("Missing clientId or consumerId");
+            logger.warn("Missing clientId or consumerId");
             return;
         }
 
@@ -135,7 +137,7 @@ export default class VegaMediaQualityMonitor extends EventEmitter {
             score.length === 0 ||
             score.some((s) => !s || !s.hasOwnProperty("score") || typeof s.score !== "number" || isNaN(s.score))
         ) {
-            this._logger.warn("VegaMediaQualityMonitor.addProducerScore(): Unexpected producer score format");
+            logger.warn("Unexpected producer score format");
             return;
         }
         this._producers[clientId][producerId] = { kind, score: this._calcAvgProducerScore(score.map((s) => s.score)) };
@@ -143,7 +145,7 @@ export default class VegaMediaQualityMonitor extends EventEmitter {
 
     addConsumerScore(clientId, consumerId, kind, score) {
         if (!score || !score.hasOwnProperty("producerScores") || !Array.isArray(score.producerScores)) {
-            this._logger.warn("VegaMediaQualityMonitor.addConsumerScore(): Unexpected consumer score format");
+            logger.warn("Unexpected consumer score format");
             return;
         }
         this._producers[clientId][consumerId] = { kind, score: this._calcAvgProducerScore(score.producerScores) };
@@ -181,7 +183,7 @@ export default class VegaMediaQualityMonitor extends EventEmitter {
                 return totalScore / divisor;
             }
         } catch (error) {
-            this._logger.error(error);
+            logger.error(error);
             return 0;
         }
     }
