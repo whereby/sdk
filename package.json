@@ -7,6 +7,8 @@
   "packageManager": "yarn@1.22.19",
   "scripts": {
     "build": "turbo build",
+    "dev": "turbo dev --filter=@whereby.com/browser-sdk",
+    "dev:sample-app": "turbo start --filter=sample-app",
     "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",

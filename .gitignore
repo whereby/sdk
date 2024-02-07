@@ -13,3 +13,5 @@ yalc.lock
 /playwright/.cache/
 
 .turbo
+
+.env

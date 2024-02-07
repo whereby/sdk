@@ -7,6 +7,11 @@ const pkg = require("./package.json");
 const typescript = require("rollup-plugin-typescript2");
 const { dts } = require("rollup-plugin-dts");
 const nodePolyfills = require("rollup-plugin-polyfill-node");
+const dotenv = require("dotenv");
+
+dotenv.config({
+    path: "../../.env",
+});
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 

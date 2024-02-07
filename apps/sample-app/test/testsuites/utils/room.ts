@@ -61,7 +61,7 @@ async function createTransientRoom({ isLocked, roomMode }: RoomConfig): Promise<
     return { roomUrl, hostRoomUrl, meetingId };
 }
 
-async function deleteTransientRoom(meetingId: string) {
+async function deleteTransientRoom(meetingId: string): Promise<void> {
     if (!meetingId) {
         console.warn("[WARN] deleteTransientRoom called with empty meetingId");
         return;
@@ -112,7 +112,7 @@ async function joinRoom({
     roomUrl: string;
     withFakeAudioStream?: boolean;
 }) {
-    await page.goto("http://127.0.0.1:3001");
+    await page.goto("http://127.0.0.1:5420");
     const locator = page.locator("h1");
     await expect(locator).toContainText(/Enter room URL/);
 

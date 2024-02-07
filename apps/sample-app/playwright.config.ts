@@ -1,11 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({
+    path: "../../.env",
+});
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -66,8 +69,8 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: "PORT=3001 yarn start:e2e-sample-app",
-        url: "http://127.0.0.1:3001",
+        command: "yarn start",
+        port: 5420,
         reuseExistingServer: !process.env.CI,
         stdout: "ignore",
         stderr: "pipe",
