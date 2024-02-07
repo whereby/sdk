@@ -48,8 +48,8 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-            - name: Deploy CDN builds of browser-sdk if needed
-              if: steps.changesets.outputs.published == 'true' && steps.changesets.outputs.publishedPackages.*.name == '@whereby.com/dummy'
+            - name: Deploy CDN builds if needed
+              if: steps.changesets.outputs.published == 'true' && contains(fromJSON(steps.changesets.outputs.publishedPackages).*.name, '@whereby.com/dummy')
               uses: ./.github/actions/deploy-cdn
               with:
                   aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
