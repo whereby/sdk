@@ -29,6 +29,7 @@ module.exports = {
         REACT_APP_API_BASE_URL: process.env.REACT_APP_API_BASE_URL,
         REACT_APP_SIGNAL_BASE_URL: process.env.REACT_APP_SIGNAL_BASE_URL,
         STORYBOOK_ROOM: process.env.STORYBOOK_ROOM,
+        REACT_APP_IS_DEV: process.env.REACT_APP_IS_DEV,
     }),
     docs: {
         autodocs: true,

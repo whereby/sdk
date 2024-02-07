@@ -9,6 +9,7 @@ export default defineConfig({
     envDir: "../..",
     envPrefix: "REACT_APP_",
     server: {
+        host: "127.0.0.1",
         port: 5420,
     },
 });
