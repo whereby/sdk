@@ -19,7 +19,7 @@ jobs:
               uses: actions/setup-node@v3
               with:
                   node-version: 20.x
-                  cache: 'yarn'
+                  cache: "yarn"
 
             - name: Cache turbo setup
               uses: actions/cache@v3
@@ -48,7 +48,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-            - name: Deploy CDN builds if needed
+            - name: Deploy CDN build - dummy
               if: steps.changesets.outputs.published == 'true' && contains(fromJSON(steps.changesets.outputs.publishedPackages).*.name, '@whereby.com/dummy')
               uses: ./.github/actions/deploy-cdn
               with:
@@ -56,3 +56,12 @@ jobs:
                   aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   package: "dummy"
                   dest_dir: "dummy"
+
+            - name: Deploy CDN build - browser-sdk
+              if: steps.changesets.outputs.published == 'true' && contains(fromJSON(steps.changesets.outputs.publishedPackages).*.name, '@whereby.com/browser-sdk')
+              uses: ./.github/actions/deploy-cdn
+              with:
+                  aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  package: "browser-sdk"
+                  dest_dir: "browser-sdk"
