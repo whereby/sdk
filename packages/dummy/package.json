@@ -2,7 +2,7 @@
   "name": "@whereby.com/dummy",
   "description": "This is a dummy package used to test release workflows",
   "author": "Whereby AS",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "index.js",
   "license": "MIT",
   "files": [
