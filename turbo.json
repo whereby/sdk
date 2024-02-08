@@ -10,18 +10,12 @@
             "dependsOn": ["test:lint"]
         },
         "dev": {
-            "dependsOn": ["build"]
-        },
-        "dev:sample-app": {
-            "dependsOn": ["build"]
+            "cache": false,
+            "persistent": true
         },
         "test:e2e": {
             "dependsOn": ["^build", "dev:sample-app"],
             "outputs": ["playwright-*"]
-        },
-        "start": {
-            "cache": false,
-            "persistent": true
         }
     }
 }

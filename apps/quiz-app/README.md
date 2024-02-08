@@ -20,7 +20,7 @@ https://hackday-sdk-demo.netlify.app/
 
 ```
 yarn
-yarn start
+yarn dev
 ```
 
 Runs the app in the development mode.\ Open
