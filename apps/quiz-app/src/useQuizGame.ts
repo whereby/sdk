@@ -133,7 +133,7 @@ function reducer(state: GameState, event: GameEvents): GameState {
 
 export default function useQuizGame(
     roomConnection: RoomConnectionRef,
-    { isQuizMaster }: { isQuizMaster: boolean }
+    { isQuizMaster }: { isQuizMaster: boolean },
 ): {
     state: GameState;
     actions: GameActions;
@@ -174,7 +174,7 @@ export default function useQuizGame(
                 roomActions.sendChatMessage(
                     JSON.stringify({
                         type: "END",
-                    })
+                    }),
                 );
             },
             nextQuestion() {
@@ -183,7 +183,7 @@ export default function useQuizGame(
                     roomActions.sendChatMessage(
                         JSON.stringify({
                             type: "END",
-                        })
+                        }),
                     );
                 }
 
@@ -202,7 +202,7 @@ export default function useQuizGame(
                     JSON.stringify({
                         type: "QUESTION",
                         payload: question,
-                    })
+                    }),
                 );
             },
 
@@ -211,7 +211,7 @@ export default function useQuizGame(
                     JSON.stringify({
                         type: "ANSWER",
                         payload: alternative,
-                    })
+                    }),
                 );
             },
 
@@ -225,7 +225,7 @@ export default function useQuizGame(
                 roomActions.sendChatMessage(
                     JSON.stringify({
                         type: "REVEAL",
-                    })
+                    }),
                 );
             },
         },

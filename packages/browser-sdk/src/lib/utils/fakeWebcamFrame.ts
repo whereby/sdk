@@ -54,7 +54,7 @@ function drawWebcamFrame(canvas: HTMLCanvasElement) {
     context.fillText(
         `rotation angle: ${rotationAngle.toFixed(2)}`,
         canvas.width - canvas.width / 2,
-        canvas.height - 20
+        canvas.height - 20,
     );
 
     rotationAngle += 0.01;

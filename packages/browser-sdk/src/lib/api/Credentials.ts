@@ -18,7 +18,7 @@ export default class Credentials {
     constructor(
         uuid: CredentialsOptions["uuid"],
         hmac: CredentialsOptions["hmac"],
-        userId: CredentialsOptions["userId"] = undefined
+        userId: CredentialsOptions["userId"] = undefined,
     ) {
         this.credentials = {
             uuid,
@@ -39,7 +39,7 @@ export default class Credentials {
         return new Credentials(
             extractString(extractJson(json, "credentials"), "uuid"),
             extractString(json, "hmac"),
-            extractNullOrString(json, "userId") || undefined
+            extractNullOrString(json, "userId") || undefined,
         );
     }
 }

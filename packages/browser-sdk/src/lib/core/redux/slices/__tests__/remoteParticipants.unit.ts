@@ -34,7 +34,7 @@ describe("remoteParticipantsSlice", () => {
                             knockers: [],
                             session: null,
                         },
-                    })
+                    }),
                 );
 
                 expect(result.remoteParticipants).toEqual([
@@ -64,7 +64,7 @@ describe("remoteParticipantsSlice", () => {
                 undefined,
                 signalEvents.newClient({
                     client,
-                })
+                }),
             );
 
             expect(result.remoteParticipants).toEqual([
@@ -94,7 +94,7 @@ describe("remoteParticipantsSlice", () => {
                 state,
                 signalEvents.clientLeft({
                     clientId: participant.id,
-                })
+                }),
             );
 
             expect(result.remoteParticipants).toEqual([]);
@@ -113,7 +113,7 @@ describe("remoteParticipantsSlice", () => {
                     signalEvents.audioEnabled({
                         clientId: participant.id,
                         isAudioEnabled,
-                    })
+                    }),
                 );
 
                 expect(result.remoteParticipants).toEqual([
@@ -141,7 +141,7 @@ describe("remoteParticipantsSlice", () => {
                             clientId: participant.id,
                             displayName,
                         },
-                    })
+                    }),
                 );
 
                 expect(result.remoteParticipants).toEqual([
@@ -166,7 +166,7 @@ describe("remoteParticipantsSlice", () => {
                     signalEvents.videoEnabled({
                         clientId: participant.id,
                         isVideoEnabled,
-                    })
+                    }),
                 );
 
                 expect(result.remoteParticipants).toEqual([
@@ -191,7 +191,7 @@ describe("remoteParticipantsSlice", () => {
                         clientId: participant.id,
                         streamId: "streamId",
                         hasAudioTrack: true,
-                    })
+                    }),
                 );
 
                 expect(result.remoteParticipants).toEqual([
@@ -221,7 +221,7 @@ describe("remoteParticipantsSlice", () => {
                     signalEvents.screenshareStopped({
                         clientId: participant.id,
                         streamId: "streamId",
-                    })
+                    }),
                 );
 
                 expect(result.remoteParticipants).toEqual([
@@ -249,7 +249,7 @@ describe("remoteParticipantsSlice", () => {
                         streamId: "streamId",
                         stream,
                         streamType: "webcam",
-                    })
+                    }),
                 );
 
                 expect(result.remoteParticipants).toEqual([
@@ -284,7 +284,7 @@ describe("remoteParticipantsSlice", () => {
                 "should return $expected when localScreenshareStream=$localScreenshareStream, remoteParticipants=$remoteParticipants",
                 ({ localScreenshareStream, remoteParticipants, expected }) => {
                     expect(selectScreenshares.resultFunc(localScreenshareStream, remoteParticipants)).toEqual(expected);
-                }
+                },
             );
         });
     });

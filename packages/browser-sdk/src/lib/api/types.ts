@@ -3,4 +3,3 @@ export type ConsentGrantRequest = {
     readonly consentRevisionId: string;
     readonly action: UserConsentAction;
 };
-

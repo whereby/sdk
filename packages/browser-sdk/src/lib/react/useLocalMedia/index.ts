@@ -25,7 +25,7 @@ const initialState: LocalMediaState = {
 };
 
 export function useLocalMedia(
-    optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true }
+    optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true },
 ): UseLocalMediaResult {
     const [store] = useState<Store>(() => {
         const services = createServices();
@@ -45,16 +45,16 @@ export function useLocalMedia(
 
     const setCameraDevice = useCallback(
         (deviceId: string) => store.dispatch(setCurrentCameraDeviceId({ deviceId })),
-        [store]
+        [store],
     );
     const setMicrophoneDevice = useCallback(
         (deviceId: string) => store.dispatch(setCurrentMicrophoneDeviceId({ deviceId })),
-        [store]
+        [store],
     );
     const toggleCamera = useCallback((enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })), [store]);
     const toggleMicrophone = useCallback(
         (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
-        [store]
+        [store],
     );
     return {
         state: localMediaState,

@@ -113,7 +113,7 @@ export default function VideoExperience({
                             (s) =>
                                 s.stream && (
                                     <VideoView style={{ width: 200, height: "auto" }} key={s.id} stream={s.stream} />
-                                )
+                                ),
                         )}
                     </div>
                     <div className="controls">

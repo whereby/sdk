@@ -29,7 +29,7 @@ export const selectRoomConnectionState = createSelector(
         screenshares,
         connectionStatus,
         streaming,
-        waitingParticipants
+        waitingParticipants,
     ) => {
         const state: RoomConnectionState = {
             chatMessages,
@@ -49,5 +49,5 @@ export const selectRoomConnectionState = createSelector(
         };
 
         return state;
-    }
+    },
 );

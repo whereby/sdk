@@ -160,7 +160,7 @@ export default class Organization {
             subdomain: assertString(parsedData.subdomain, "subdomain"),
             permissions,
             limits: createOrganizationLimits(
-                assertInstanceOf(parsedData.limits, Object, "limits") as Record<string, unknown>
+                assertInstanceOf(parsedData.limits, Object, "limits") as Record<string, unknown>,
             ),
             account: parsedData.account ? Account.fromJson(parsedData.account as Record<string, unknown>) : null,
             logoImageUrl: typeof parsedData.logoImageUrl === "string" ? parsedData.logoImageUrl : null,
