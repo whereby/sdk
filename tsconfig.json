@@ -4,6 +4,7 @@
     "rootDir": ".",
     "paths": {
       "browser-sdk": ["packages/browser-sdk"]
+      // "core": ["packages/core"]
     },
     "outDir": "dist",
     "allowJs": true,
