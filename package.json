@@ -7,14 +7,16 @@
   "packageManager": "yarn@1.22.19",
   "scripts": {
     "build": "turbo build",
+    "dev": "turbo dev --filter=@whereby.com/browser-sdk",
+    "dev:sample-app": "turbo start --filter=sample-app",
     "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
     "test:e2e": "turbo test:e2e"
   },
   "workspaces": [
-    "./apps/*",
-    "./packages/*"
+    "apps/*",
+    "packages/*"
   ],
   "devDependencies": {
     "@changesets/cli": "^2.27.1",

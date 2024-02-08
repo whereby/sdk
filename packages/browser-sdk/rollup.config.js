@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
 const json = require("@rollup/plugin-json");
@@ -7,6 +8,11 @@ const pkg = require("./package.json");
 const typescript = require("rollup-plugin-typescript2");
 const { dts } = require("rollup-plugin-dts");
 const nodePolyfills = require("rollup-plugin-polyfill-node");
+const dotenv = require("dotenv");
+
+dotenv.config({
+    path: "../../.env",
+});
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 

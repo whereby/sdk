@@ -6,14 +6,22 @@
         },
         "test:lint": {},
         "test": {
-            "dependsOn": ["build","test:lint"],
-            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
-        },
-        "test:e2e": {
-            "dependsOn": ["^build"],
+            "dependsOn": ["test:lint"],
             "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
         },
         "dev": {
+            "dependsOn": ["build"],
+            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+        },
+        "dev:sample-app": {
+            "dependsOn": ["build"],
+            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+        },
+        "test:e2e": {
+            "dependsOn": ["^build", "dev:sample-app"],
+            "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+        },
+        "start": {
             "cache": false,
             "persistent": true
         }
