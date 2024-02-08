@@ -3,7 +3,6 @@
     "version": "2.1.0",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
-    "private": true,
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -111,5 +110,8 @@
         "string-width": "^4",
         "jackspeak": "2.1.1",
         "wrap-ansi": "7.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
     }
 }
