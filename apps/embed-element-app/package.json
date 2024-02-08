@@ -6,7 +6,7 @@
     "dependencies": {
         "@coreui/icons": "^3.0.1",
         "@coreui/icons-react": "^2.2.1",
-        "@types/node": "^16.18.61",
+        "@types/node": "^20.11.16",
         "@types/react": "^18.2.37",
         "@types/react-dom": "^18.2.15",
         "@whereby.com/browser-sdk": "^2.0.0",
