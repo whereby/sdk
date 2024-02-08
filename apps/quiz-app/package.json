@@ -2,6 +2,7 @@
     "name": "quiz-app",
     "version": "0.1.0",
     "private": true,
+    "type": "module",
     "homepage": ".",
     "dependencies": {
         "@chakra-ui/react": "^2.5.5",
@@ -26,7 +27,6 @@
     "scripts": {
         "start": "vite",
         "build": "tsc && vite build",
-        "test": "jest --passWithNoTests",
         "preview": "vite preview"
     },
     "eslintConfig": {

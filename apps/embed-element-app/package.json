@@ -2,6 +2,7 @@
     "name": "embed-element-app",
     "version": "0.1.0",
     "private": true,
+    "type": "module",
     "dependencies": {
         "@coreui/icons": "^3.0.1",
         "@coreui/icons-react": "^2.2.1",
@@ -20,7 +21,6 @@
     "scripts": {
         "start": "vite",
         "build": "tsc && vite build",
-        "test": "jest --passWithNoTests",
         "preview": "vite preview"
     },
     "eslintConfig": {
