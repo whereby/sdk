@@ -18,10 +18,11 @@ import { selectDeviceId } from "./deviceCredentials";
 import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
 import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "./localScreenshare";
 import { selectRoomConnectionSessionId } from "./roomConnection";
+import { signalEvents } from "./signalConnection/actions";
 
 type RtcAnalyticsCustomEvent = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    action: ActionCreatorWithPayload<any> | AsyncThunkFulfilledActionCreator<any, any, ThunkConfig> | null;
+    actions: Array<ActionCreatorWithPayload<any> | AsyncThunkFulfilledActionCreator<any, any, ThunkConfig>> | null;
     rtcEventName: string;
     getValue: (state: RootState) => unknown;
     getOutput: (value: unknown) => unknown;
@@ -29,19 +30,19 @@ type RtcAnalyticsCustomEvent = {
 
 export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent } = {
     audioEnabled: {
-        action: doEnableAudio.fulfilled,
+        actions: [doEnableAudio.fulfilled],
         rtcEventName: "audioEnabled",
         getValue: (state: RootState) => selectIsMicrophoneEnabled(state),
         getOutput: (value) => ({ enabled: value }),
     },
     videoEnabled: {
-        action: doEnableVideo.fulfilled,
+        actions: [doEnableVideo.fulfilled],
         rtcEventName: "videoEnabled",
         getValue: (state: RootState) => selectIsCameraEnabled(state),
         getOutput: (value) => ({ enabled: value }),
     },
     localStream: {
-        action: doSetDevice.fulfilled,
+        actions: [doSetDevice.fulfilled],
         rtcEventName: "localStream",
         getValue: (state: RootState) =>
             selectLocalMediaStream(state)
@@ -50,7 +51,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => ({ stream: value }),
     },
     localScreenshareStream: {
-        action: doStartScreenshare.fulfilled,
+        actions: [doStartScreenshare.fulfilled],
         rtcEventName: "localScreenshareStream",
         getValue: (state: RootState) =>
             selectLocalScreenshareStream(state)
@@ -59,61 +60,66 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => ({ tracks: value }),
     },
     localScreenshareStreamStopped: {
-        action: stopScreenshare,
+        actions: [stopScreenshare],
         rtcEventName: "localScreenshareStream",
         getValue: () => () => null,
         getOutput: () => ({}),
     },
     displayName: {
-        action: doSetDisplayName.fulfilled,
+        actions: [doSetDisplayName.fulfilled],
         rtcEventName: "displayName",
         getValue: (state: RootState) => selectAppDisplayName(state),
         getOutput: (value) => ({ displayName: value }),
     },
     clientId: {
-        action: null,
+        actions: null,
         rtcEventName: "clientId",
         getValue: (state: RootState) => selectSelfId(state),
         getOutput: (value) => ({ clientId: value }),
     },
     deviceId: {
-        action: null,
+        actions: null,
         rtcEventName: "deviceId",
         getValue: (state: RootState) => selectDeviceId(state),
         getOutput: (value) => ({ deviceId: value }),
     },
     externalId: {
-        action: null,
+        actions: null,
         rtcEventName: "externalId",
         getValue: (state: RootState) => selectAppExternalId(state),
         getOutput: (value) => ({ externalId: value }),
     },
     organizationId: {
-        action: null,
+        actions: null,
         rtcEventName: "organizationId",
         getValue: (state: RootState) => selectOrganizationId(state),
         getOutput: (value) => ({ organizationId: value }),
     },
     signalConnectionStatus: {
-        action: null,
+        actions: null,
         rtcEventName: "signalConnectionStatus",
         getValue: (state: RootState) => selectSignalStatus(state),
         getOutput: (value) => ({ status: value }),
     },
     roomSessionId: {
-        action: null,
+        actions: [
+            signalEvents.newClient,
+            signalEvents.roomJoined,
+            signalEvents.roomSessionEnded,
+            signalEvents.clientLeft,
+        ],
         rtcEventName: "roomSessionId",
         getValue: (state: RootState) => selectRoomConnectionSessionId(state),
         getOutput: (value) => ({ roomSessionId: value }),
     },
     rtcConnectionStatus: {
-        action: null,
+        actions: null,
         rtcEventName: "rtcConnectionStatus",
         getValue: (state: RootState) => selectRtcStatus(state),
         getOutput: (value) => ({ status: value }),
     },
     userRole: {
-        action: null,
+        actions: null,
         rtcEventName: "userRole",
         getValue: (state: RootState) => selectLocalParticipantRole(state),
         getOutput: (value) => ({ userRole: value }),
@@ -121,7 +127,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
 };
 
 const rtcCustomEventActions = Object.values(rtcAnalyticsCustomEvents)
-    .map(({ action }) => action)
+    .flatMap(({ actions }) => actions?.map((action) => action) ?? null)
     .filter(
         (
             action
@@ -207,7 +213,9 @@ startAppListening({
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
         if (!rtcManager) return;
 
-        const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ action }) => action?.type === type);
+        const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actions }) =>
+            actions?.map((a) => a.type).includes(type)
+        );
         if (!rtcCustomEvent) return;
 
         const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
