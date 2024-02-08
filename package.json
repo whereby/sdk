@@ -7,6 +7,7 @@
   "packageManager": "yarn@1.22.19",
   "scripts": {
     "build": "turbo build",
+    "changeset": "changeset",
     "dev": "turbo dev --filter=@whereby.com/browser-sdk",
     "dev:embed-element-app": "turbo start --filter=embed-element-app",
     "dev:telehealth-app": "turbo start --filter=telehealth-tutorial-app",
