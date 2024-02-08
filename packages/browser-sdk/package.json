@@ -71,7 +71,7 @@
         "@testing-library/react": "^14.0.0",
         "@types/btoa": "^1.2.3",
         "@types/chrome": "^0.0.210",
-        "@types/node": "^20.7.1",
+        "@types/node": "^20.11.16",
         "@types/react": "^18.0.26",
         "@types/uuid": "^9.0.7",
         "babel-loader": "^8.2.5",
