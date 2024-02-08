@@ -4,7 +4,10 @@
         "paths": {
             "~/*": ["./packages/browser-sdk/src/*"],
             "@tests/*": ["./packages/browser-sdk/tests/*"],
-            "@types": ["./packages/browser-sdk/src/__types__/index.ts"]
+            "@types": ["./packages/browser-sdk/src/__types__/index.ts"],
+            "@core": ["./packages/core/dist/index.js"],
+            "@core/*": ["./packages/core/*"]
+
         }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"],

@@ -14,7 +14,7 @@ export interface CloudRecordingState {
     startedAt?: number;
 }
 
-export const initialState: CloudRecordingState = {
+export const initialCloudRecordingState: CloudRecordingState = {
     isRecording: false,
     error: null,
     startedAt: undefined,
@@ -22,7 +22,7 @@ export const initialState: CloudRecordingState = {
 
 export const cloudRecordingSlice = createSlice({
     name: "cloudRecording",
-    initialState,
+    initialState: initialCloudRecordingState,
     reducers: {
         recordingRequestStarted: (state) => {
             return {

@@ -35,7 +35,7 @@ export interface LocalMediaState {
     onDeviceChange?: () => void;
 }
 
-export const initialState: LocalMediaState = {
+export const initialLocalMediaState: LocalMediaState = {
     busyDeviceIds: [],
     cameraEnabled: false,
     devices: [],
@@ -49,7 +49,7 @@ export const initialState: LocalMediaState = {
 
 export const localMediaSlice = createSlice({
     name: "localMedia",
-    initialState,
+    initialState: initialLocalMediaState,
     reducers: {
         deviceBusy(state, action: PayloadAction<{ deviceId: string }>) {
             if (state.busyDeviceIds.includes(action.payload.deviceId)) {

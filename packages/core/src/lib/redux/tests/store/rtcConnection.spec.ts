@@ -9,7 +9,7 @@ import {
 import { randomRemoteParticipant, randomString } from "@browser-sdk/src/lib/__mocks__/appMocks";
 import MockMediaStream from "@browser-sdk/src/lib/__mocks__/MediaStream";
 import RtcManagerDispatcher from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import { initialState as localMediaInitialState } from "../../slices/localMedia";
+import { initialLocalMediaState as initialState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
 
 jest.mock("@whereby/jslib-media/src/webrtc/RtcManagerDispatcher");
@@ -111,7 +111,7 @@ describe("actions", () => {
             withRtcManager: true,
             initialState: {
                 localMedia: {
-                    ...localMediaInitialState,
+                    ...initialState,
                     stream: new MockMediaStream(),
                 },
             },
