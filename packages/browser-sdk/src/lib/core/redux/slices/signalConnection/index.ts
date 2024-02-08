@@ -141,7 +141,7 @@ export const doSignalIdentifyDevice = createAppThunk(
 
             signalSocket.emit("identify_device", { deviceCredentials });
             dispatch(deviceIdentifying());
-        }
+        },
 );
 
 export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
@@ -188,7 +188,7 @@ export const selectShouldConnectSignal = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldConnectSignal], ({ dispatch }, shouldConnectSignal) => {
@@ -207,7 +207,7 @@ export const selectShouldIdentifyDevice = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor(
@@ -216,5 +216,5 @@ createReactor(
         if (shouldIdentifyDevice && deviceCredentialsRaw.data) {
             dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
         }
-    }
+    },
 );

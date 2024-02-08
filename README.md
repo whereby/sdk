@@ -9,7 +9,7 @@ To set up local development against a local Whereby room, you can create a `.env
 `yarn dev` will run storybook for the browser SDK.
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/whereby/sdk/LICENSE.md) file for details.
 
 ## Issues
 Found a bug or missing a feature? Please [submit an issue](https://github.com/whereby/sdk/issues/new)

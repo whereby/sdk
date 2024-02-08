@@ -273,7 +273,7 @@ describe("organizationService", () => {
                             ...createdOrganization,
                             ...createOrganizationWithEmailArgs,
                         },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.createOrganization(createOrganizationWithEmailArgs);
@@ -290,7 +290,7 @@ describe("organizationService", () => {
                             ...createdOrganization,
                             ...createOrganizationWithEmailArgs,
                         },
-                    })
+                    }),
                 );
 
                 const promise = organizationService.createOrganization(createOrganizationWithEmailArgs);
@@ -325,7 +325,7 @@ describe("organizationService", () => {
                             ...createdOrganization,
                             ...createOrganizationWithIdTokenArgs,
                         },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.createOrganization(createOrganizationWithIdTokenArgs);
@@ -342,7 +342,7 @@ describe("organizationService", () => {
                             ...createdOrganization,
                             ...createOrganizationWithIdTokenArgs,
                         },
-                    })
+                    }),
                 );
 
                 const promise = organizationService.createOrganization(createOrganizationWithIdTokenArgs);
@@ -377,14 +377,14 @@ describe("organizationService", () => {
 
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.getOrganizationBySubdomain(subdomain)
+            () => organizationService.getOrganizationBySubdomain(subdomain),
         );
 
         it("should return null if no matching organization was found", async () => {
             apiClient.request.mockRejectedValue(
                 new Response({
                     status: 404,
-                })
+                }),
             );
 
             const result = await organizationService.getOrganizationBySubdomain(subdomain);
@@ -404,7 +404,7 @@ describe("organizationService", () => {
                 new Response({
                     status: 200,
                     data,
-                })
+                }),
             );
 
             const result = await organizationService.getOrganizationBySubdomain(subdomain);
@@ -423,7 +423,7 @@ describe("organizationService", () => {
                         permissions,
                         limits,
                     },
-                })
+                }),
             );
 
             const result = await organizationService.getOrganizationBySubdomain("");
@@ -435,7 +435,7 @@ describe("organizationService", () => {
                     subdomain,
                     permissions,
                     limits,
-                })
+                }),
             );
         });
     });
@@ -453,14 +453,14 @@ describe("organizationService", () => {
 
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.getOrganizationByOrganizationId(organizationId)
+            () => organizationService.getOrganizationByOrganizationId(organizationId),
         );
 
         it("should return null if no matching organization was found", async () => {
             apiClient.request.mockRejectedValue(
                 new Response({
                     status: 404,
-                })
+                }),
             );
 
             const result = await organizationService.getOrganizationByOrganizationId(organizationId);
@@ -479,7 +479,7 @@ describe("organizationService", () => {
                         permissions,
                         limits,
                     },
-                })
+                }),
             );
 
             const result = await organizationService.getOrganizationByOrganizationId(organizationId);
@@ -491,7 +491,7 @@ describe("organizationService", () => {
                     subdomain,
                     permissions,
                     limits,
-                })
+                }),
             );
         });
     });
@@ -535,7 +535,7 @@ describe("organizationService", () => {
 
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.getOrganizationsByContactPoint({ email, code })
+            () => organizationService.getOrganizationsByContactPoint({ email, code }),
         );
 
         describe("when phoneNumber is provided", () => {
@@ -544,7 +544,7 @@ describe("organizationService", () => {
                     new Response({
                         status: 200,
                         data: { organizations: [] },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.getOrganizationsByContactPoint({ phoneNumber, code });
@@ -559,7 +559,7 @@ describe("organizationService", () => {
                     new Response({
                         status: 200,
                         data: { organizations: organizationsPayload },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.getOrganizationsByContactPoint({ phoneNumber, code });
@@ -576,7 +576,7 @@ describe("organizationService", () => {
                         data: {
                             organizations: [],
                         },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.getOrganizationsByContactPoint({ email, code });
@@ -591,7 +591,7 @@ describe("organizationService", () => {
                     new Response({
                         status: 200,
                         data: { organizations: organizationsPayload },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.getOrganizationsByContactPoint({ email, code });
@@ -623,7 +623,7 @@ describe("organizationService", () => {
 
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.getOrganizationsByIdToken({ idToken })
+            () => organizationService.getOrganizationsByIdToken({ idToken }),
         );
 
         describe("when idToken is provided", () => {
@@ -632,7 +632,7 @@ describe("organizationService", () => {
                     new Response({
                         status: 200,
                         data: { organizations: [] },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.getOrganizationsByIdToken({ idToken });
@@ -647,7 +647,7 @@ describe("organizationService", () => {
                     new Response({
                         status: 200,
                         data: { organizations: organizationsPayload },
-                    })
+                    }),
                 );
 
                 const result = await organizationService.getOrganizationsByIdToken({ idToken });
@@ -670,7 +670,7 @@ describe("organizationService", () => {
 
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.getOrganizationsByLoggedInUser()
+            () => organizationService.getOrganizationsByLoggedInUser(),
         );
 
         it("should return empty array if no matching organizations were found", async () => {
@@ -678,7 +678,7 @@ describe("organizationService", () => {
                 new Response({
                     status: 200,
                     data: { organizations: [] },
-                })
+                }),
             );
 
             const result = await organizationService.getOrganizationsByLoggedInUser();
@@ -693,7 +693,7 @@ describe("organizationService", () => {
                 new Response({
                     status: 200,
                     data: { organizations: organizationsPayload },
-                })
+                }),
             );
 
             const result = await organizationService.getOrganizationsByLoggedInUser();
@@ -710,7 +710,7 @@ describe("organizationService", () => {
 
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.getSubdomainAvailability(subdomain)
+            () => organizationService.getSubdomainAvailability(subdomain),
         );
 
         it("should return the data provided by the server", async () => {
@@ -721,7 +721,7 @@ describe("organizationService", () => {
                 new Response({
                     status: 200,
                     data,
-                })
+                }),
             );
 
             const result = await organizationService.getSubdomainAvailability(subdomain);
@@ -733,7 +733,7 @@ describe("organizationService", () => {
     describe("updatePreferences", () => {
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.updatePreferences({ organizationId: "2", preferences: {} })
+            () => organizationService.updatePreferences({ organizationId: "2", preferences: {} }),
         );
 
         it("should update preferences", async () => {
@@ -753,7 +753,7 @@ describe("organizationService", () => {
     describe("deleteOrganization", () => {
         itShouldRejectIfApiClientRejects(
             () => apiClient,
-            () => organizationService.deleteOrganization({ organizationId: "2" })
+            () => organizationService.deleteOrganization({ organizationId: "2" }),
         );
 
         it("should delete organization", async () => {

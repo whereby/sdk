@@ -44,10 +44,10 @@ const replaceValues = {
         "process.env.AP_ROOM_BASE_URL": JSON.stringify(process.env.AP_ROOM_BASE_URL),
         "process.env.RTCSTATS_URL": JSON.stringify(process.env.RTCSTATS_URL || "wss://rtcstats.srv.whereby.com"),
         "process.env.REACT_APP_API_BASE_URL": JSON.stringify(
-            process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev"
+            process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev",
         ),
         "process.env.REACT_APP_SIGNAL_BASE_URL": JSON.stringify(
-            process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net"
+            process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net",
         ),
         "process.env.REACT_APP_IS_DEV": JSON.stringify(process.env.REACT_APP_IS_DEV),
     },

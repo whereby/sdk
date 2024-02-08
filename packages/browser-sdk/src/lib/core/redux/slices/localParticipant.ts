@@ -34,7 +34,7 @@ export const doEnableAudio = createAppAsyncThunk(
         socket?.emit("enable_audio", { enabled: payload.enabled });
 
         return payload.enabled;
-    }
+    },
 );
 
 export const doEnableVideo = createAppAsyncThunk(
@@ -46,7 +46,7 @@ export const doEnableVideo = createAppAsyncThunk(
         socket?.emit("enable_video", { enabled: payload.enabled });
 
         return payload.enabled;
-    }
+    },
 );
 
 export const doSetDisplayName = createAppAsyncThunk(
@@ -61,7 +61,7 @@ export const doSetDisplayName = createAppAsyncThunk(
         });
 
         return payload.displayName;
-    }
+    },
 );
 
 export const localParticipantSlice = createSlice({

@@ -42,7 +42,7 @@ describe("Account", () => {
                 expect(result.onTrialUntil).toEqual(expectedAccount.onTrialUntil);
                 expect(result.trialStatus).toEqual(expectedAccount.trialStatus);
                 expect(JSON.stringify(result.embeddedFreeTierStatus)).toEqual(
-                    JSON.stringify(embeddedFreeTierStatusFromJson)
+                    JSON.stringify(embeddedFreeTierStatusFromJson),
                 );
             });
         });
@@ -120,7 +120,7 @@ describe("Account", () => {
                 expect(result.onTrialUntil).toEqual(expectedAccount.onTrialUntil);
                 expect(result.trialStatus).toEqual(expectedAccount.trialStatus);
                 expect(JSON.stringify(result.embeddedFreeTierStatus)).toEqual(
-                    JSON.stringify(embeddedFreeTierStatusFromJson)
+                    JSON.stringify(embeddedFreeTierStatusFromJson),
                 );
             });
         });

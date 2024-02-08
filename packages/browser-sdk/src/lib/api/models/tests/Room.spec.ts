@@ -42,33 +42,27 @@ describe("Room", () => {
         expect(room).toEqual(expectedObj);
     });
 
-    it(
-        "should return a correctly extended room object without the invalid property",
-        () => {
-            const room = new Room({
-                isClaimed: true,
-                someProperty: "someValue",
-            });
-            const expectedObj = Object.assign({}, defaultRoom, { isClaimed: true });
+    it("should return a correctly extended room object without the invalid property", () => {
+        const room = new Room({
+            isClaimed: true,
+            someProperty: "someValue",
+        });
+        const expectedObj = Object.assign({}, defaultRoom, { isClaimed: true });
 
-            expect(room).toEqual(expectedObj);
-        }
-    );
+        expect(room).toEqual(expectedObj);
+    });
 
-    it(
-        "should return the room with the meeting if the meeting is passed in",
-        () => {
-            const meeting = new Meeting({
-                meetingId: "123",
-                startDate: new Date(),
-                endDate: new Date(),
-                roomName: "/some-room-name",
-                roomUrl: "some-room-url",
-            });
+    it("should return the room with the meeting if the meeting is passed in", () => {
+        const meeting = new Meeting({
+            meetingId: "123",
+            startDate: new Date(),
+            endDate: new Date(),
+            roomName: "/some-room-name",
+            roomUrl: "some-room-url",
+        });
 
-            const room = new Room({ meeting });
+        const room = new Room({ meeting });
 
-            expect(room).toEqual({ ...defaultRoom, meeting });
-        }
-    );
+        expect(room).toEqual({ ...defaultRoom, meeting });
+    });
 });

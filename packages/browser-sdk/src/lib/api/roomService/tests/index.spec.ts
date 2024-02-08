@@ -26,7 +26,7 @@ describe("RoomService", () => {
             () =>
                 new RoomService({
                     organizationApiClient: undefined,
-                })
+                }),
         );
     });
 
@@ -141,7 +141,7 @@ describe("RoomService", () => {
                     data: {
                         error: "Banned room",
                     },
-                })
+                }),
             );
 
             const result = await roomService.getRoom({ roomName });
@@ -164,7 +164,7 @@ describe("RoomService", () => {
                         categoryName: "personal_free",
                     },
                     type: "personal",
-                })
+                }),
             );
         });
 
@@ -208,7 +208,7 @@ describe("RoomService", () => {
                     data: {
                         error: expectedError,
                     },
-                })
+                }),
             );
 
             await expect(roomService.claimRoom({ roomName, type })).rejects.toThrow(expectedError);
@@ -219,7 +219,7 @@ describe("RoomService", () => {
                 new Response({
                     status: 500,
                     data: {},
-                })
+                }),
             );
 
             await expect(roomService.claimRoom({ roomName, type })).rejects.toThrow("Failed to claim room");
@@ -257,7 +257,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.unclaimRoom(roomName);
-            }
+            },
         );
 
         it("should call request the expected parameters", async () => {
@@ -306,7 +306,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.renameRoom({ roomName, newRoomName });
-            }
+            },
         );
     });
 
@@ -338,7 +338,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.changeMode({ roomName, mode });
-            }
+            },
         );
     });
 
@@ -362,7 +362,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.getRoomPermissions(roomName);
-            }
+            },
         );
 
         describe("when roomKey is not provided", () => {
@@ -371,7 +371,7 @@ describe("RoomService", () => {
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
-                    })
+                    }),
                 );
 
                 await roomService.getRoomPermissions(roomName);
@@ -380,7 +380,7 @@ describe("RoomService", () => {
                     `/room/${encodeURIComponent(roomName.substring(1))}/permissions`,
                     {
                         method: "GET",
-                    }
+                    },
                 );
             });
 
@@ -389,7 +389,7 @@ describe("RoomService", () => {
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
-                    })
+                    }),
                 );
 
                 const result = await roomService.getRoomPermissions(roomName);
@@ -410,7 +410,7 @@ describe("RoomService", () => {
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
-                    })
+                    }),
                 );
 
                 await roomService.getRoomPermissions(roomName, { roomKey });
@@ -422,7 +422,7 @@ describe("RoomService", () => {
                         headers: {
                             "X-Whereby-Room-Key": roomKey,
                         },
-                    }
+                    },
                 );
             });
 
@@ -431,7 +431,7 @@ describe("RoomService", () => {
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
-                    })
+                    }),
                 );
 
                 const result = await roomService.getRoomPermissions(roomName, { roomKey });
@@ -458,7 +458,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.getRoomMetrics(roomMetricsPayload);
-            }
+            },
         );
 
         describe("when valid payload provided", () => {
@@ -467,7 +467,7 @@ describe("RoomService", () => {
                     new Response({
                         status: 200,
                         data: {},
-                    })
+                    }),
                 );
 
                 await roomService.getRoomMetrics(roomMetricsPayload);
@@ -477,7 +477,7 @@ describe("RoomService", () => {
                     {
                         method: "GET",
                         params: { metrics, from: undefined, to: undefined },
-                    }
+                    },
                 );
             });
 
@@ -486,7 +486,7 @@ describe("RoomService", () => {
                     new Response({
                         status: 200,
                         data: {},
-                    })
+                    }),
                 );
                 const from = new Date().toISOString();
                 const to = new Date().toISOString();
@@ -498,7 +498,7 @@ describe("RoomService", () => {
                     {
                         method: "GET",
                         params: { metrics, from, to },
-                    }
+                    },
                 );
             });
 
@@ -508,7 +508,7 @@ describe("RoomService", () => {
                     new Response({
                         status: 200,
                         data: responseData,
-                    })
+                    }),
                 );
 
                 const result = await roomService.getRoomMetrics(roomMetricsPayload);
@@ -554,7 +554,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.updatePreferences({ roomName, preferences });
-            }
+            },
         );
     });
 
@@ -594,7 +594,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.updateProtectedPreferences({ roomName, preferences });
-            }
+            },
         );
     });
 
@@ -626,7 +626,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.changeType({ roomName, type });
-            }
+            },
         );
     });
 
@@ -662,7 +662,7 @@ describe("RoomService", () => {
             () => organizationApiClient,
             () => {
                 return roomService.getForestSocialImage({ roomName, count });
-            }
+            },
         );
     });
 });

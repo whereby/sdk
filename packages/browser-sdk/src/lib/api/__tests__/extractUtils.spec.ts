@@ -55,7 +55,7 @@ function testExtract(
     {
         invalidValues,
         validValues,
-    }: { invalidValues: ReadonlyArray<InvalidValue>; validValues: ReadonlyArray<ValidValue> }
+    }: { invalidValues: ReadonlyArray<InvalidValue>; validValues: ReadonlyArray<ValidValue> },
 ) {
     itShouldThrowForValues(extract, invalidValues);
     itShouldExtractForValues(extract, validValues);
@@ -206,7 +206,7 @@ describe("extractUtils", () => {
                         { desc: "empty array", value: ["some-id"], expected: ["some-id"] },
                     ],
                     invalidValues: invalidArrayStringValues.concat(invalidArrayValuesWithNullValues),
-                }
+                },
             );
         });
 
@@ -286,7 +286,7 @@ describe("extractUtils", () => {
                         { desc: "boolean field", value: { field: true }, expectedError: "field<string> is required" },
                         { desc: "null field", value: { field: null }, expectedError: "field<string> is required" },
                     ],
-                }
+                },
             );
         });
 
@@ -345,13 +345,10 @@ describe("extractUtils", () => {
             expect(value).toEqual(null);
         });
 
-        it(
-            "should return whatever value returned by the transformer if not null",
-            () => {
-                const value = nullOrIntToString(12);
+        it("should return whatever value returned by the transformer if not null", () => {
+            const value = nullOrIntToString(12);
 
-                expect(value).toEqual("12");
-            }
-        );
+            expect(value).toEqual("12");
+        });
     });
 });

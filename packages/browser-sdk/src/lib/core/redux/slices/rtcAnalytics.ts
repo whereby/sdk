@@ -130,10 +130,10 @@ const rtcCustomEventActions = Object.values(rtcAnalyticsCustomEvents)
     .flatMap(({ actions }) => actions?.map((action) => action) ?? null)
     .filter(
         (
-            action
+            action,
         ): action is
             | ActionCreatorWithPayload<unknown, string>
-            | AsyncThunkFulfilledActionCreator<unknown, unknown, ThunkConfig> => action !== null
+            | AsyncThunkFulfilledActionCreator<unknown, unknown, ThunkConfig> => action !== null,
     );
 
 const makeComparable = (value: unknown) => {
@@ -214,7 +214,7 @@ startAppListening({
         if (!rtcManager) return;
 
         const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actions }) =>
-            actions?.map((a) => a.type).includes(type)
+            actions?.map((a) => a.type).includes(type),
         );
         if (!rtcCustomEvent) return;
 

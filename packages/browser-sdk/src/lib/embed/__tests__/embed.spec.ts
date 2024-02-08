@@ -57,7 +57,7 @@ describe("@whereby/browser-sdk", () => {
                         "lowdata",
                         "breakout",
                     ],
-                })
+                }),
             );
         });
 
@@ -73,7 +73,7 @@ describe("@whereby/browser-sdk", () => {
                     toggleMicrophone: expect.any(Function),
                     toggleScreenshare: expect.any(Function),
                     toggleChat: expect.any(Function),
-                })
+                }),
             );
         });
     });

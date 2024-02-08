@@ -47,7 +47,7 @@ export default class MultipartHttpClient implements IHttpClient {
             Object.assign(options, {
                 headers,
                 transformRequest: MultipartHttpClient.dataToFormData,
-            })
+            }),
         );
     }
 }

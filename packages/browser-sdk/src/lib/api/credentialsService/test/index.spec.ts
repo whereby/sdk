@@ -5,8 +5,8 @@ import CredentialsService, { events } from "../index";
 import LocalStorageStore from "../../modules/LocalStorageStore";
 import DeviceService from "../../deviceService/index";
 
-jest.mock("../../modules/LocalStorageStore")
-jest.mock("../../deviceService")
+jest.mock("../../modules/LocalStorageStore");
+jest.mock("../../deviceService");
 
 describe("CredentialsService", () => {
     let apiClient;
@@ -17,7 +17,7 @@ describe("CredentialsService", () => {
 
     beforeEach(() => {
         apiClient = new ApiClient() as jest.Mocked<ApiClient>;
-        credentialsStore = new LocalStorageStore;
+        credentialsStore = new LocalStorageStore();
         deviceService = new DeviceService({ apiClient });
         credentialsService = new CredentialsService({
             deviceService,
@@ -163,18 +163,15 @@ describe("CredentialsService", () => {
                     expect(result).toBeUndefined();
                 });
 
-                it(
-                    "should set the userId property in the credentials and store them when it has changed",
-                    () => {
-                        const expectedCredentials = Object.assign({}, credentialsWithUserId, { userId: newUserId });
+                it("should set the userId property in the credentials and store them when it has changed", () => {
+                    const expectedCredentials = Object.assign({}, credentialsWithUserId, { userId: newUserId });
 
-                        const promise = credentialsService.setUserId(newUserId);
+                    const promise = credentialsService.setUserId(newUserId);
 
-                        return promise.then(() => {
-                            expect(credentialsStore.save).toBeCalledWith(expectedCredentials);
-                        });
-                    }
-                );
+                    return promise.then(() => {
+                        expect(credentialsStore.save).toBeCalledWith(expectedCredentials);
+                    });
+                });
             });
         });
     });

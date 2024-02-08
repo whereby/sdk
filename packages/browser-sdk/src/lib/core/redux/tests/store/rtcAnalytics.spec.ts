@@ -25,7 +25,7 @@ describe("actions", () => {
                 "signalConnectionStatus",
                 "rtcConnectionStatus",
                 "userRole",
-            ])
+            ]),
         );
         expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("insightsStats", expect.any(Object));
     });

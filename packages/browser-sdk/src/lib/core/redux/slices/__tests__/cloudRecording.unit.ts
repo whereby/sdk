@@ -7,7 +7,7 @@ describe("cloudRecordingSlice", () => {
         it("signalEvents.cloudRecordingStarted", () => {
             const result = cloudRecordingSlice.reducer(
                 undefined,
-                signalEvents.cloudRecordingStarted({ error: "some error" })
+                signalEvents.cloudRecordingStarted({ error: "some error" }),
             );
 
             expect(result).toEqual({
@@ -41,7 +41,7 @@ describe("cloudRecordingSlice", () => {
                         },
                         startedCloudRecordingAt: "2021-01-01T00:00:00.000Z",
                     },
-                })
+                }),
             );
 
             expect(result).toEqual({
