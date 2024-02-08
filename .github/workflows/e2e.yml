@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: End-to-end Tests
 on:
     pull_request:
         branches: [main, development]
