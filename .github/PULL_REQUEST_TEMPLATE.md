@@ -22,15 +22,11 @@ especially for UI-related changes. -->
 ### Checklist
 
 -   [ ] My code follows the project's coding standards.
+-   [ ] Prefixed the PR title and commit messages with the service or package name
 -   [ ] I have written unit tests (if applicable).
 -   [ ] I have updated the documentation (if applicable).
 -   [ ] By submitting this pull request, I confirm that my contribution is made
         under the terms of the MIT license.
-
-### Dependency Updates
-
-<!-- If this PR includes dependency updates, please list them here along with
-the reason for the update. -->
 
 ### Reviewers
 
