@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-const dotenv = require("dotenv");
-dotenv.config();
-=======
 /* eslint-disable @typescript-eslint/no-var-requires */
->>>>>>> main
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
 const json = require("@rollup/plugin-json");

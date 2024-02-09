@@ -20,12 +20,8 @@ describe("localMediaSlice", () => {
                             appWantsToJoin,
                             localMediaStatus,
                             localMediaOptions,
-<<<<<<< HEAD
-                            isNodeSdk
-                        )
-=======
+                            isNodeSdk,
                         ),
->>>>>>> main
                     ).toEqual(expected);
                 },
             );

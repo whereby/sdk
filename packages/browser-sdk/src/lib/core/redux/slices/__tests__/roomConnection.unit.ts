@@ -62,12 +62,8 @@ describe("roomConnectionSlice", () => {
                             roomConnectionStatus,
                             signalIdentified,
                             localMediaStatus,
-<<<<<<< HEAD
-                            isNodeSdk
-                        )
-=======
+                            isNodeSdk,
                         ),
->>>>>>> main
                     ).toEqual(expected);
                 },
             );
