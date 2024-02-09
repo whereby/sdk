@@ -2,4 +2,4 @@
 "@whereby.com/browser-sdk": minor
 ---
 
-Fix RTC stats bug
+Remove detection of node environment
