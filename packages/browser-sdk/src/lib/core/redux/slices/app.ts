@@ -24,7 +24,7 @@ const initialState: AppState = {
     displayName: null,
     sdkVersion: null,
     externalId: null,
-    isNodeSdk: typeof process !== "undefined" && process.release.name === "node",
+    isNodeSdk: false,
 };
 
 export const appSlice = createSlice({
