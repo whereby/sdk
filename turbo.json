@@ -5,23 +5,17 @@
             "dependsOn": ["^build"],
             "outputs": ["dist/**"]
         },
-        "test:lint": {},
+        "dev": {
+            "cache": false,
+            "persistent": true
+        },
         "test": {
             "dependsOn": ["test:lint"]
         },
-        "dev": {
-            "dependsOn": ["build"]
-        },
-        "dev:sample-app": {
-            "dependsOn": ["build"]
-        },
+        "test:lint": {},
         "test:e2e": {
-            "dependsOn": ["^build", "dev:sample-app"],
+            "dependsOn": ["^build"],
             "outputs": ["playwright-*"]
-        },
-        "start": {
-            "cache": false,
-            "persistent": true
         }
     }
 }
