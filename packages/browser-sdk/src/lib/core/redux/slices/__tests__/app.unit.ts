@@ -22,7 +22,7 @@ describe("appSlice", () => {
                 displayName: "displayName",
                 sdkVersion: "sdkVersion",
                 externalId: "externalId",
-                isNodeSdk: true,
+                isNodeSdk: false,
             });
         });
 
