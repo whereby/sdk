@@ -12,5 +12,5 @@ yarn install # or npm install
 ```
 
 ```bash
-yarn start # or npm start
+yarn dev # or npm dev
 ```

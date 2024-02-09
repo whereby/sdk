@@ -40,7 +40,7 @@ export const selectLocalMediaState = createSelector(
         microphoneDeviceError,
         microphoneDevices,
         speakerDevices,
-        startError
+        startError,
     ) => {
         const state: LocalMediaState = {
             cameraDeviceError,
@@ -57,5 +57,5 @@ export const selectLocalMediaState = createSelector(
             startError,
         };
         return state;
-    }
+    },
 );

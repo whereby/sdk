@@ -85,7 +85,7 @@ export default class HttpClient implements IHttpClient {
                         status,
                         statusText,
                         url: requestUrl,
-                    })
+                    }),
                 );
             });
     }

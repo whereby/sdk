@@ -83,7 +83,7 @@ roomModes.forEach((roomMode) => {
             // Participant 2 should see participant 1 with camera on
             await expect(participant2.getByTestId("remoteParticipantVideo")).toHaveCount(1);
             await expect(participant2.getByTestId("remoteParticipant")).not.toContainText(
-                "Participant's camera is off"
+                "Participant's camera is off",
             );
 
             // Participant 2 turns camera on again
@@ -92,7 +92,7 @@ roomModes.forEach((roomMode) => {
             // Participant 1 should see participant 2 with camera on
             await expect(participant1.getByTestId("remoteParticipantVideo")).toHaveCount(1);
             await expect(participant1.getByTestId("remoteParticipant")).not.toContainText(
-                "Participant's camera is off"
+                "Participant's camera is off",
             );
         });
     });

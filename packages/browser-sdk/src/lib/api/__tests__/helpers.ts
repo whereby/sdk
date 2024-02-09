@@ -19,7 +19,7 @@ export const itShouldThrowIfInvalid = (missingPropertyName: string, func: () => 
 
 export const itShouldRejectIfApiClientRejects = (
     getApiClient: () => jest.Mocked<ApiClient>,
-    func: () => void
+    func: () => void,
 ): void => {
     it("should fail if the request failed", async () => {
         const error = new Error("some error");
@@ -31,7 +31,7 @@ export const itShouldRejectIfApiClientRejects = (
 
 export const itShouldRejectIfMultipartRequestRejects = (
     getApiClient: () => jest.Mocked<ApiClient>,
-    func: () => void
+    func: () => void,
 ) => {
     it("should fail if the requestMultipart failed", () => {
         const error = new Error("some error");

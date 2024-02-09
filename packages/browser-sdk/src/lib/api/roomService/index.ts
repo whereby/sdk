@@ -71,8 +71,8 @@ export default class RoomService {
                         Object.assign({}, data, {
                             roomName,
                             ...(data.meeting && { meeting: Meeting.fromJson(data.meeting) }),
-                        })
-                    )
+                        }),
+                    ),
             )
             .catch((response) => {
                 if (response.status === 404) {

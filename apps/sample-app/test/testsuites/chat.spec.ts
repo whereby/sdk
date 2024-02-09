@@ -34,10 +34,10 @@ roomModes.forEach((roomMode) => {
             await participant1.getByTestId("sendChatMessageBtn").click();
 
             await expect(participant1.getByTestId("chatMessages")).toContainText(
-                `${participant1ClientId}: Hello Whereby!`
+                `${participant1ClientId}: Hello Whereby!`,
             );
             await expect(participant2.getByTestId("chatMessages")).toContainText(
-                `${participant1ClientId}: Hello Whereby!`
+                `${participant1ClientId}: Hello Whereby!`,
             );
         });
     });

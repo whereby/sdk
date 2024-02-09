@@ -61,7 +61,7 @@ export const doGetDeviceCredentials = createAppAsyncThunk(
         } catch (error) {
             console.error(error);
         }
-    }
+    },
 );
 
 /**
@@ -84,7 +84,7 @@ export const selectShouldFetchDeviceCredentials = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldFetchDeviceCredentials], ({ dispatch }, shouldFetchDeviceCredentials) => {

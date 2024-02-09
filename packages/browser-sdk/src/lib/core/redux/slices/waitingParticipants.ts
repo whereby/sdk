@@ -67,7 +67,7 @@ export const doAcceptWaitingParticipant = createAppThunk(
             clientId: participantId,
             response: {},
         });
-    }
+    },
 );
 
 export const doRejectWaitingParticipant = createAppThunk(
@@ -81,7 +81,7 @@ export const doRejectWaitingParticipant = createAppThunk(
             clientId: participantId,
             response: {},
         });
-    }
+    },
 );
 
 /**

@@ -33,7 +33,7 @@ describe("parameterAssertUtils", () => {
                 expect(() => {
                     assertBoolean(value, description);
                 }).toThrowError(`${description}<boolean> is required`);
-            }
+            },
         );
 
         it("should return provided value if false", () => {
@@ -63,7 +63,7 @@ describe("parameterAssertUtils", () => {
                 expect(() => {
                     assertNumber(value, description);
                 }).toThrowError(`${description}<number> is required`);
-            }
+            },
         );
 
         it("should return provided number", () => {
@@ -88,7 +88,7 @@ describe("parameterAssertUtils", () => {
                 expect(() => {
                     assertString(value, description);
                 }).toThrowError(`${description}<string> is required`);
-            }
+            },
         );
 
         it("should return provided value if string", () => {
@@ -113,7 +113,7 @@ describe("parameterAssertUtils", () => {
                 expect(() => {
                     assertRoomName(value, description);
                 }).toThrowError(`${description}<string> is required`);
-            }
+            },
         );
 
         it("should throw error if roomName is not prefixed with slash", () => {
@@ -173,7 +173,7 @@ describe("parameterAssertUtils", () => {
                 expect(() => {
                     assertRecord(value, description);
                 }).toThrowError(`${description} must be a record`);
-            }
+            },
         );
 
         it("should return provided value if {}", () => {

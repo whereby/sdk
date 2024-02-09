@@ -15,7 +15,7 @@ describe("chatSlice", () => {
                     sig: "sig",
                     timestamp: "123",
                     text: "text",
-                })
+                }),
             );
 
             expect(result.chatMessages).toEqual([

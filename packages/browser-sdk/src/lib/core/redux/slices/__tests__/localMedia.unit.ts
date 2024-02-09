@@ -20,10 +20,10 @@ describe("localMediaSlice", () => {
                             appWantsToJoin,
                             localMediaStatus,
                             localMediaOptions,
-                            isNodeSdk
-                        )
+                            isNodeSdk,
+                        ),
                     ).toEqual(expected);
-                }
+                },
             );
         });
 
@@ -39,9 +39,9 @@ describe("localMediaSlice", () => {
                 "expected $expected when appWantsToJoin=$appWantsToJoin, localMediaStatus=$localMediaStatus, localMediaOptions=$localMediaOptions",
                 ({ appWantsToJoin, localMediaStatus, localMediaOptions, expected }) => {
                     expect(
-                        selectLocalMediaShouldStop.resultFunc(appWantsToJoin, localMediaStatus, localMediaOptions)
+                        selectLocalMediaShouldStop.resultFunc(appWantsToJoin, localMediaStatus, localMediaOptions),
                     ).toEqual(expected);
-                }
+                },
             );
         });
     });

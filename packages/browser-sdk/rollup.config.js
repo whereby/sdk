@@ -1,5 +1,4 @@
-const dotenv = require("dotenv");
-dotenv.config();
+/* eslint-disable @typescript-eslint/no-var-requires */
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
 const json = require("@rollup/plugin-json");
@@ -9,6 +8,11 @@ const pkg = require("./package.json");
 const typescript = require("rollup-plugin-typescript2");
 const { dts } = require("rollup-plugin-dts");
 const nodePolyfills = require("rollup-plugin-polyfill-node");
+const dotenv = require("dotenv");
+
+dotenv.config({
+    path: "../../.env",
+});
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
@@ -40,10 +44,10 @@ const replaceValues = {
         "process.env.AP_ROOM_BASE_URL": JSON.stringify(process.env.AP_ROOM_BASE_URL),
         "process.env.RTCSTATS_URL": JSON.stringify(process.env.RTCSTATS_URL || "wss://rtcstats.srv.whereby.com"),
         "process.env.REACT_APP_API_BASE_URL": JSON.stringify(
-            process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev"
+            process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev",
         ),
         "process.env.REACT_APP_SIGNAL_BASE_URL": JSON.stringify(
-            process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net"
+            process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net",
         ),
         "process.env.REACT_APP_IS_DEV": JSON.stringify(process.env.REACT_APP_IS_DEV),
     },

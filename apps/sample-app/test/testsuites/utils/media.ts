@@ -14,7 +14,7 @@ type Sample = [number, number];
 export type CountFramesFunction = (
     element: HTMLVideoElement,
     interval: number,
-    numOfSamples: number
+    numOfSamples: number,
 ) => Promise<Array<Sample>>;
 
 export const countFrames: CountFramesFunction = async (element, interval, numOfSamples) => {

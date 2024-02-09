@@ -358,7 +358,7 @@ declare module "@whereby/jslib-media/src/webrtc/MediaDevices" {
 
     export function getStream(
         constraintOpt: GetConstraintsOptions,
-        getStreamOptions?: GetStreamOptions
+        getStreamOptions?: GetStreamOptions,
     ): Promise<GetStreamResult>;
 
     export function enumerate(): Promise<MediaDeviceInfo[]>;

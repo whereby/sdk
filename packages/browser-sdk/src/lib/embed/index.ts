@@ -73,7 +73,7 @@ export interface WherebyEmbedElement extends HTMLIFrameElement, WherebyEmbedElem
     addEventListener<K extends keyof (WherebyEmbedElementEventMap & HTMLElementEventMap)>(
         type: K,
         listener: (this: HTMLIFrameElement, ev: (WherebyEmbedElementEventMap & HTMLElementEventMap)[K]) => void,
-        options?: boolean | AddEventListenerOptions | undefined
+        options?: boolean | AddEventListenerOptions | undefined,
     ): void;
 }
 
@@ -236,7 +236,7 @@ define("WherebyEmbed", {
             ...boolAttrs.reduce(
                 // add to URL if set in any way
                 (o, v) => (this[v.toLowerCase()] != null ? { ...o, [v]: this[v.toLowerCase()] } : o),
-                {}
+                {},
             ),
         }).forEach(([k, v]) => {
             if (!this.roomUrl.searchParams.has(k)) {
