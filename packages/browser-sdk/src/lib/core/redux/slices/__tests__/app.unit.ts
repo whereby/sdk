@@ -11,7 +11,7 @@ describe("appSlice", () => {
                     displayName: "displayName",
                     sdkVersion: "sdkVersion",
                     externalId: "externalId",
-                })
+                }),
             );
 
             expect(result).toEqual({

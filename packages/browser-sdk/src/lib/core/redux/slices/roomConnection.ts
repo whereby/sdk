@@ -207,7 +207,7 @@ export const selectShouldConnectRoom = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldConnectRoom], ({ dispatch }, shouldConnectRoom) => {

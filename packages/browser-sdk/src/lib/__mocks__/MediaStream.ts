@@ -38,12 +38,12 @@ export default class MockMediaStream implements MediaStream {
     addEventListener<K extends keyof MediaStreamEventMap>(
         type: K,
         listener: (this: MediaStream, ev: MediaStreamEventMap[K]) => void,
-        options?: boolean | AddEventListenerOptions | undefined
+        options?: boolean | AddEventListenerOptions | undefined,
     ): void;
     addEventListener(
         type: string,
         listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions | undefined
+        options?: boolean | AddEventListenerOptions | undefined,
     ): void;
     addEventListener(type: unknown, listener: unknown, options?: unknown): void {
         throw new Error(`Method not implemented. ${type}, ${listener}, ${options}`);
@@ -51,12 +51,12 @@ export default class MockMediaStream implements MediaStream {
     removeEventListener<K extends keyof MediaStreamEventMap>(
         type: K,
         listener: (this: MediaStream, ev: MediaStreamEventMap[K]) => void,
-        options?: boolean | EventListenerOptions | undefined
+        options?: boolean | EventListenerOptions | undefined,
     ): void;
     removeEventListener(
         type: string,
         listener: EventListenerOrEventListenerObject,
-        options?: boolean | EventListenerOptions | undefined
+        options?: boolean | EventListenerOptions | undefined,
     ): void;
     removeEventListener(type: unknown, listener: unknown, options?: unknown): void {
         throw new Error(`Method not implemented. ${type}, ${listener}, ${options}`);

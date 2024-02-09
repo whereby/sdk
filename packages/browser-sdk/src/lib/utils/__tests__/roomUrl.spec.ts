@@ -23,7 +23,7 @@ describe("roomUrl", () => {
                 }
 
                 expect(res).toEqual(expectedRes);
-            }
+            },
         );
     });
 });

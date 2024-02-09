@@ -35,9 +35,9 @@ describe("deviceCredentialsSlice", () => {
                     };
 
                     expect(
-                        selectShouldFetchOrganization.resultFunc(wantsToJoin, organizationRaw, deviceCredentialsRaw)
+                        selectShouldFetchOrganization.resultFunc(wantsToJoin, organizationRaw, deviceCredentialsRaw),
                     ).toEqual(expected);
-                }
+                },
             );
         });
     });

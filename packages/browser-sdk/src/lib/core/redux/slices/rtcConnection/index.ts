@@ -273,7 +273,7 @@ export const doRtcReportStreamResolution = createAppThunk(
             }
 
             dispatch(resolutionReported({ streamId, width, height }));
-        }
+        },
 );
 
 export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch) => {
@@ -357,7 +357,7 @@ export const selectShouldConnectRtc = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldConnectRtc], ({ dispatch }, shouldConnectRtc) => {
@@ -375,7 +375,7 @@ export const selectShouldInitializeRtc = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) => {
@@ -394,7 +394,7 @@ export const selectShouldDisconnectRtc = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) => {
@@ -426,11 +426,11 @@ export const selectStreamsToAccept = createSelector(
                     // Handle case where we get reversed streams from signal-server
                     // To avoid sending 2 ready_to_receieve_offer and potentially ending up in failed ice state
                     if (i === 0) {
-                        streamId = streams[1].id
-                        state = streams[1].state
+                        streamId = streams[1].id;
+                        state = streams[1].state;
                     } else if (i === 1) {
-                        streamId = streams[0].id
-                        state = streams[0].state
+                        streamId = streams[0].id;
+                        state = streams[0].state;
                     }
                 }
 
@@ -450,7 +450,7 @@ export const selectStreamsToAccept = createSelector(
             }
         }
         return upd;
-    }
+    },
 );
 
 createReactor(
@@ -459,5 +459,5 @@ createReactor(
         if (0 < streamsToAccept.length && !isAcceptingStreams) {
             dispatch(doHandleAcceptStreams(streamsToAccept));
         }
-    }
+    },
 );

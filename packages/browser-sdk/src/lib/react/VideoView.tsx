@@ -40,8 +40,8 @@ export default ({ muted, mirror = false, stream, onResize, onSetAspectRatio, ...
                         }
                     }
                 },
-                { delay: 1000, edges: true }
-            )
+                { delay: 1000, edges: true },
+            ),
         );
 
         resizeObserver.observe(videoEl.current);

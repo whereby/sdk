@@ -2,23 +2,26 @@
     "name": "embed-element-app",
     "version": "0.1.0",
     "private": true,
+    "type": "module",
     "dependencies": {
         "@coreui/icons": "^3.0.1",
         "@coreui/icons-react": "^2.2.1",
-        "@types/node": "^16.18.61",
+        "@types/node": "^20.11.16",
         "@types/react": "^18.2.37",
         "@types/react-dom": "^18.2.15",
-        "@whereby.com/browser-sdk": "^2.0.0",
+        "@whereby.com/browser-sdk": "*",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "react-scripts": "5.0.1",
         "typescript": "^4.9.5"
     },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^4.2.1",
+        "vite": "^5.0.12"
+    },
     "scripts": {
-        "start": "react-scripts start",
-        "build": "react-scripts build",
-        "test": "jest --passWithNoTests",
-        "eject": "react-scripts eject"
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
     },
     "eslintConfig": {
         "extends": [

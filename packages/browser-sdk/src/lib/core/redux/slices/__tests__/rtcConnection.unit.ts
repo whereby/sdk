@@ -22,9 +22,9 @@ describe("rtcConnectionSlice", () => {
                 "should return $expected when rtcDispatcherCreated=$rtcDispatcherCreated, rtcIsCreatingDispatcher=$rtcIsCreatingDispatcher, signalSocket=$signalSocket",
                 ({ dispatcherCreated, isCreatingDispatcher, signalSocket, expected }) => {
                     expect(
-                        selectShouldConnectRtc.resultFunc(dispatcherCreated, isCreatingDispatcher, signalSocket)
+                        selectShouldConnectRtc.resultFunc(dispatcherCreated, isCreatingDispatcher, signalSocket),
                     ).toEqual(expected);
-                }
+                },
             );
         });
 
@@ -41,9 +41,9 @@ describe("rtcConnectionSlice", () => {
                 "should return $expected when rtcManager=$rtcManager, rtcManagerInitialized=$rtcManagerInitialized, localMediaStatus=$localMediaStatus",
                 ({ rtcManager, rtcManagerInitialized, localMediaStatus, expected }) => {
                     expect(
-                        selectShouldInitializeRtc.resultFunc(rtcManager, rtcManagerInitialized, localMediaStatus)
+                        selectShouldInitializeRtc.resultFunc(rtcManager, rtcManagerInitialized, localMediaStatus),
                     ).toEqual(expected);
-                }
+                },
             );
         });
 
@@ -60,7 +60,7 @@ describe("rtcConnectionSlice", () => {
                 "should return $expected when rtcStatus=$rtcStatus, wantsToJoin=$wantsToJoin",
                 ({ rtcStatus, wantsToJoin, expected }) => {
                     expect(selectShouldDisconnectRtc.resultFunc(rtcStatus, wantsToJoin)).toEqual(expected);
-                }
+                },
             );
         });
 
@@ -86,7 +86,7 @@ describe("rtcConnectionSlice", () => {
                 "should return $expected when rtcStatus=$rtcStatus, remoteParticipants=$remoteParticipants",
                 ({ rtcStatus, remoteParticipants, expected }) => {
                     expect(selectStreamsToAccept.resultFunc(rtcStatus, remoteParticipants)).toEqual(expected);
-                }
+                },
             );
         });
     });

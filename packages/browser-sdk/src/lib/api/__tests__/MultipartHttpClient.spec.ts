@@ -78,7 +78,7 @@ describe("MultipartHttpClient", () => {
             mockedAxios.request.mockRejectedValueOnce(response);
 
             await expect(multipartHttpClient.request(uri, { method: "GET" })).rejects.toThrow(
-                "Could not make the request."
+                "Could not make the request.",
             );
         });
 

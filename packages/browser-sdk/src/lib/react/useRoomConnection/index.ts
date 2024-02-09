@@ -32,7 +32,7 @@ const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
 
 export function useRoomConnection(
     roomUrl: string,
-    roomConnectionOptions = defaultRoomConnectionOptions
+    roomConnectionOptions = defaultRoomConnectionOptions,
 ): RoomConnectionRef {
     const [store] = React.useState<Store>(() => {
         if (roomConnectionOptions.localMedia) {
@@ -60,7 +60,7 @@ export function useRoomConnection(
                 roomUrl,
                 sdkVersion: sdkVersion,
                 externalId: roomConnectionOptions.externalId || null,
-            })
+            }),
         );
         return () => {
             unsubscribe();
@@ -88,10 +88,10 @@ export function useRoomConnection(
                                     streamId: stream.id,
                                     width,
                                     height,
-                                })
+                                }),
                             );
                         },
-                    })
+                    }),
                 );
             });
         }
@@ -101,23 +101,23 @@ export function useRoomConnection(
     const knock = React.useCallback(() => store.dispatch(doKnockRoom()), [store]);
     const setDisplayName = React.useCallback(
         (displayName: string) => store.dispatch(doSetDisplayName({ displayName })),
-        [store]
+        [store],
     );
     const toggleCamera = React.useCallback(
         (enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })),
-        [store]
+        [store],
     );
     const toggleMicrophone = React.useCallback(
         (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
-        [store]
+        [store],
     );
     const acceptWaitingParticipant = React.useCallback(
         (participantId: string) => store.dispatch(doAcceptWaitingParticipant({ participantId })),
-        [store]
+        [store],
     );
     const rejectWaitingParticipant = React.useCallback(
         (participantId: string) => store.dispatch(doRejectWaitingParticipant({ participantId })),
-        [store]
+        [store],
     );
     const startCloudRecording = React.useCallback(() => store.dispatch(doStartCloudRecording()), [store]);
     const startScreenshare = React.useCallback(() => store.dispatch(doStartScreenshare()), [store]);

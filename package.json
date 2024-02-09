@@ -7,15 +7,20 @@
   "packageManager": "yarn@1.22.19",
   "scripts": {
     "build": "turbo build",
-    "build:packages": "turbo build:packages",
-    "release": "yarn build:packages && changeset publish",
+    "changeset": "changeset",
+    "dev": "turbo dev --filter=@whereby.com/browser-sdk",
+    "dev:embed-element-app": "turbo dev --filter=embed-element-app",
+    "dev:telehealth-app": "turbo dev --filter=telehealth-tutorial-app",
+    "dev:quiz-app": "turbo dev --filter=quiz-app",
+    "dev:sample-app": "turbo dev --filter=sample-app",
+    "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
     "test:e2e": "turbo test:e2e"
   },
   "workspaces": [
-    "./apps/*",
-    "./packages/*"
+    "apps/*",
+    "packages/*"
   ],
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
@@ -26,6 +31,7 @@
     "eslint-plugin-jest": "^27.6.3",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
     "turbo": "^1.12.2"
   },
