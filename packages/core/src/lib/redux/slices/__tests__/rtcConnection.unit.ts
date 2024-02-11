@@ -4,8 +4,8 @@ import {
     selectShouldDisconnectRtc,
     selectStreamsToAccept,
 } from "../rtcConnection";
-import { oneOf, randomRemoteParticipant } from "@browser-sdk/src/lib/__mocks__/appMocks";
-import { StreamState } from "@browser-sdk/src/lib/RoomParticipant";
+import { oneOf, randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { StreamState } from "../../../RoomParticipant";
 
 describe("rtcConnectionSlice", () => {
     describe("reactors", () => {

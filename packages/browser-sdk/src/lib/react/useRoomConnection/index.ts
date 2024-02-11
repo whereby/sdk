@@ -15,6 +15,9 @@ import { doKnockRoom } from "../../core/redux/slices/roomConnection";
 import { doRtcReportStreamResolution } from "../../core/redux/slices/rtcConnection";
 import { sdkVersion } from "../../version";
 
+// https://turbo.build/repo/docs/handbook/sharing-code/internal-packages
+// import { doSendChatMessage } from "@whereby.com/core";
+
 const initialState: RoomConnectionState = {
     chatMessages: [],
     remoteParticipants: [],

@@ -6,7 +6,7 @@ import {
     randomRemoteParticipant,
     randomString,
     randomMediaStream,
-} from "@browser-sdk/src/lib/__mocks__/appMocks";
+} from "../../../__mocks__/appMocks";
 
 describe("remoteParticipantsSlice", () => {
     describe("reducers", () => {

@@ -97,6 +97,7 @@
         "@reduxjs/toolkit": "^2.0.1",
         "@swc/helpers": "^0.3.13",
         "@whereby/jslib-media": "whereby/jslib-media.git#1.4.1",
+        "@whereby.com/core": "*",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
         "events": "^3.3.0",

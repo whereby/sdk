@@ -1,4 +1,4 @@
-import { StreamState } from "@browser-sdk/src/lib/RoomParticipant";
+import { StreamState } from "../../../RoomParticipant";
 
 export interface StreamStatusUpdate {
     clientId: string;

@@ -6,8 +6,8 @@ import {
     doRtcReportStreamResolution,
     doRtcManagerInitialize,
 } from "../../slices/rtcConnection";
-import { randomRemoteParticipant, randomString } from "@browser-sdk/src/lib/__mocks__/appMocks";
-import MockMediaStream from "@browser-sdk/src/lib/__mocks__/MediaStream";
+import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
+import MockMediaStream from "../../../__mocks__/MediaStream";
 import RtcManagerDispatcher from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { initialLocalMediaState as initialState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";

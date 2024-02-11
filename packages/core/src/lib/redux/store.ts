@@ -1,6 +1,6 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
-import { createServices } from "../../../../browser-sdk/src/lib/services";
+import { createServices } from "../services";
 
 import { appSlice } from "./slices/app";
 import { chatSlice } from "./slices/chat";

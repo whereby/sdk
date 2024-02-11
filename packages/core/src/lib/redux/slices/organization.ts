@@ -1,7 +1,7 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
-import Organization from "@browser-sdk/src/lib/api/models/Organization";
+import Organization from "../../api/models/Organization";
 import { createReactor } from "../listenerMiddleware";
 import { selectAppRoomUrl, selectAppWantsToJoin } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";

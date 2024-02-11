@@ -16,3 +16,4 @@ yalc.lock
 .turbo
 
 .env
+yarn-error.log

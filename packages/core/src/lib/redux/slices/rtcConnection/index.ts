@@ -10,7 +10,7 @@ import RtcManagerDispatcher, {
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
-import { StreamState } from "@browser-sdk/src/lib/RoomParticipant";
+import { StreamState } from "../../../RoomParticipant";
 import { selectAppWantsToJoin } from "../app";
 import {
     selectIsCameraEnabled,

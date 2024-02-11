@@ -3,11 +3,11 @@ import { createStore } from "../store.setup";
 import { diff } from "deep-object-diff";
 import * as MediaDevices from "@whereby/jslib-media/src/webrtc/MediaDevices";
 
-import MockMediaStream from "@browser-sdk/src/lib/__mocks__/MediaStream";
-import MockMediaStreamTrack from "@browser-sdk/src/lib/__mocks__/MediaStreamTrack";
-import mockMediaDevices from "@browser-sdk/src/lib/__mocks__/mediaDevices";
+import MockMediaStream from "../../../__mocks__/MediaStream";
+import MockMediaStreamTrack from "../../../__mocks__/MediaStreamTrack";
+import mockMediaDevices from "../../../__mocks__/mediaDevices";
+import { randomString } from "../../../__mocks__/appMocks";
 import { RootState } from "../../store";
-import { randomString } from "@browser-sdk/src/lib/__mocks__/appMocks";
 
 Object.defineProperty(window, "MediaStream", {
     writable: true,

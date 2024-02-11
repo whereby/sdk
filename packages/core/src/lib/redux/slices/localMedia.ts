@@ -4,7 +4,7 @@ import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { doAppJoin, selectAppWantsToJoin } from "./app";
-import debounce from "../../../../../browser-sdk/src/lib/utils/debounce";
+import debounce from "../../utils/debounce";
 
 export type LocalMediaOptions = {
     audio: boolean;

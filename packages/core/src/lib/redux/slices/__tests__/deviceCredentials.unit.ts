@@ -1,4 +1,4 @@
-import { randomDeviceCredentials } from "@browser-sdk/src/lib/__mocks__/appMocks";
+import { randomDeviceCredentials } from "../../../__mocks__/appMocks";
 import { selectShouldFetchDeviceCredentials } from "../deviceCredentials";
 
 describe("deviceCredentialsSlice", () => {

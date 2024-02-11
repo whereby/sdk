@@ -1,4 +1,4 @@
-import { oneOf } from "@browser-sdk/src/lib/__mocks__/appMocks";
+import { oneOf } from "../../../__mocks__/appMocks";
 import { selectShouldConnectSignal, selectShouldIdentifyDevice } from "../signalConnection";
 
 describe("signalConnectionSlice", () => {

@@ -1,6 +1,6 @@
 import { createAsyncThunk, AsyncThunk, AsyncThunkPayloadCreator } from "@reduxjs/toolkit";
 import { RootState, AppDispatch } from "./store";
-import { createServices } from "@browser-sdk/src/lib/services";
+import { createServices } from "../services";
 
 export type ThunkConfig = {
     state: RootState;

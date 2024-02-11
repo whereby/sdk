@@ -1,5 +1,5 @@
 import { selectShouldFetchOrganization } from "../organization";
-import { oneOf, randomOrganization } from "@browser-sdk/src/lib/__mocks__/appMocks";
+import { oneOf, randomOrganization } from "../../../__mocks__/appMocks";
 
 describe("deviceCredentialsSlice", () => {
     describe("reactors", () => {

@@ -3,11 +3,7 @@
     "description": "Core library for whereby.com sdk",
     "author": "Whereby AS",
     "version": "0.1.0",
-    "main": "index.js",
     "license": "MIT",
-    "files": [
-        "dist/**/*"
-    ],
     "scripts": {
         "build": "rollup -c rollup.config.js",
         "release": "echo \"Releasing....\" && exit 0",
@@ -15,6 +11,18 @@
     },
     "publishConfig": {
         "access": "public"
+    },
+    "main": "dist/index.esm.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist/*.js",
+        "dist/*.d.ts"
+    ],
+    "exports": {
+        ".": {
+            "import": "./dist/index.esm.js",
+            "types": "./dist/index.d.ts"
+        }
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^25.0.7",

@@ -5,7 +5,7 @@ import {
     doSignalDisconnect,
     doSignalReconnect,
 } from "../../slices/signalConnection";
-import { randomDeviceCredentials } from "@browser-sdk/src/lib/__mocks__/appMocks";
+import { randomDeviceCredentials } from "../../../__mocks__/appMocks";
 import { diff } from "deep-object-diff";
 import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
 

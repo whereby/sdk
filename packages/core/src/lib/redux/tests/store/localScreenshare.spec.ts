@@ -2,7 +2,7 @@ import { diff } from "deep-object-diff";
 import { doStartScreenshare, doStopScreenshare } from "../../slices/localScreenshare";
 import { createStore, mockRtcManager } from "../store.setup";
 
-import MockMediaStream from "@browser-sdk/src/lib/__mocks__/MediaStream";
+import MockMediaStream from "../../../__mocks__/MediaStream";
 
 Object.defineProperty(navigator, "mediaDevices", {
     writable: true,
