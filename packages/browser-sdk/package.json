@@ -68,7 +68,7 @@
         "@storybook/addon-essentials": "^7.6.13",
         "@storybook/addon-links": "^7.6.13",
         "@storybook/react": "^7.5.2",
-        "@storybook/react-webpack5": "^7.5.2",
+        "@storybook/react-webpack5": "^7.6.14",
         "@testing-library/react": "^14.0.0",
         "@types/btoa": "^1.2.3",
         "@types/chrome": "^0.0.210",
