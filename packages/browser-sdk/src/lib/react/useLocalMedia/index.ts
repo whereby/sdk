@@ -6,11 +6,13 @@ import {
     doStopLocalMedia,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
-} from "../../core/redux/slices/localMedia";
+    createServices,
+    createStore,
+    observeStore,
+    Store,
+} from "@whereby.com/core";
 import { LocalMediaState, UseLocalMediaOptions, UseLocalMediaResult } from "./types";
 import { selectLocalMediaState } from "./selector";
-import { createStore, observeStore, Store } from "../../core/redux/store";
-import { createServices } from "../../services";
 
 const initialState: LocalMediaState = {
     cameraDeviceError: null,

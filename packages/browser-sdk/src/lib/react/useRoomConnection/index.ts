@@ -1,22 +1,28 @@
 import * as React from "react";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
-import { Store, createStore, observeStore } from "../../core/redux/store";
-import VideoView from "../VideoView";
-import { createServices } from "../../services";
-import { doSendChatMessage } from "../../core/redux/slices/chat";
-import { doStartCloudRecording, doStopCloudRecording } from "../../core/redux/slices/cloudRecording";
-import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "../../core/redux/slices/waitingParticipants";
-import { doSetDisplayName } from "../../core/redux/slices/localParticipant";
-import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../../core/redux/slices/localMedia";
-import { doStartScreenshare, doStopScreenshare } from "../../core/redux/slices/localScreenshare";
-import { appLeft, doAppJoin } from "../../core/redux/slices/app";
+import {
+    Store,
+    createStore,
+    observeStore,
+    createServices,
+    doSendChatMessage,
+    doStartCloudRecording,
+    doStopCloudRecording,
+    doAcceptWaitingParticipant,
+    doRejectWaitingParticipant,
+    doSetDisplayName,
+    toggleCameraEnabled,
+    toggleMicrophoneEnabled,
+    doStartScreenshare,
+    doStopScreenshare,
+    appLeft,
+    doAppJoin,
+    doKnockRoom,
+    doRtcReportStreamResolution,
+} from "@whereby.com/core";
 import { selectRoomConnectionState } from "./selector";
-import { doKnockRoom } from "../../core/redux/slices/roomConnection";
-import { doRtcReportStreamResolution } from "../../core/redux/slices/rtcConnection";
-import { sdkVersion } from "../../version";
-
-// https://turbo.build/repo/docs/handbook/sharing-code/internal-packages
-// import { doSendChatMessage } from "@whereby.com/core";
+import VideoView from "../VideoView";
+import { sdkVersion } from "../../version"; // TODO: should version go over?
 
 const initialState: RoomConnectionState = {
     chatMessages: [],

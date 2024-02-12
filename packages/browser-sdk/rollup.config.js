@@ -92,54 +92,54 @@ module.exports = [
         external: ["heresy", ...peerDependencies],
         plugins,
     },
-    {
-        input: "src/lib/utils/index.ts",
-        output: {
-            exports: "named",
-            file: "dist/utils/index.esm.js",
-            format: "esm",
-        },
-        external: ["heresy", ...peerDependencies],
-        plugins,
-    },
+    // {
+    //     input: "src/lib/utils/index.ts",
+    //     output: {
+    //         exports: "named",
+    //         file: "dist/utils/index.esm.js",
+    //         format: "esm",
+    //     },
+    //     external: ["heresy", ...peerDependencies],
+    //     plugins,
+    // },
 
     // CDN builds
-    {
-        input: "src/lib/embed/index.ts",
-        output: {
-            file: `dist/cdn/${makeCdnFilename("embed")}`,
-            format: "iife",
-            name: "whereby",
-        },
-        plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
-    },
-    {
-        input: "src/lib/react/index.ts",
-        output: {
-            file: `dist/cdn/${makeCdnFilename("react")}`,
-            format: "iife",
-            name: "whereby.react",
-            globals: {
-                react: "React",
-            },
-        },
-        external: [...peerDependencies],
-        plugins: [
-            commonjs(), // Needs to come before `nodePolyfills`
-            nodePolyfills(),
-            nodeResolve({ browser: true, preferBuiltins: false }),
-            json(),
-            terser(),
-            replace({
-                preventAssignment: true,
-                // jslib-media uses global.navigator for some gUM calls, replace these
-                delimiters: [" ", "."],
-                values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
-            }),
-            replace(replaceValues),
-            typescript(),
-        ],
-    },
+    // {
+    //     input: "src/lib/embed/index.ts",
+    //     output: {
+    //         file: `dist/cdn/${makeCdnFilename("embed")}`,
+    //         format: "iife",
+    //         name: "whereby",
+    //     },
+    //     plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
+    // },
+    // {
+    //     input: "src/lib/react/index.ts",
+    //     output: {
+    //         file: `dist/cdn/${makeCdnFilename("react")}`,
+    //         format: "iife",
+    //         name: "whereby.react",
+    //         globals: {
+    //             react: "React",
+    //         },
+    //     },
+    //     external: [...peerDependencies],
+    //     plugins: [
+    //         commonjs(), // Needs to come before `nodePolyfills`
+    //         nodePolyfills(),
+    //         nodeResolve({ browser: true, preferBuiltins: false }),
+    //         json(),
+    //         terser(),
+    //         replace({
+    //             preventAssignment: true,
+    //             // jslib-media uses global.navigator for some gUM calls, replace these
+    //             delimiters: [" ", "."],
+    //             values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
+    //         }),
+    //         replace(replaceValues),
+    //         typescript(),
+    //     ],
+    // },
 
     // Type definitions
     {
@@ -153,9 +153,9 @@ module.exports = [
         output: [{ file: "dist/embed/index.d.ts", format: "es" }],
         plugins: [dts()],
     },
-    {
-        input: "src/lib/utils/index.ts",
-        output: [{ file: "dist/utils/index.d.ts", format: "es" }],
-        plugins: [dts()],
-    },
+    // {
+    //     input: "src/lib/utils/index.ts",
+    //     output: [{ file: "dist/utils/index.d.ts", format: "es" }],
+    //     plugins: [dts()],
+    // },
 ];

@@ -1,5 +1,4 @@
-import { LocalMediaOptions } from "../../../lib/core/redux/slices/localMedia";
-import { Store } from "../../../lib/core/redux/store";
+import { Store, LocalMediaOptions } from "@whereby.com/core";
 
 export interface LocalMediaState {
     currentCameraDeviceId?: string;

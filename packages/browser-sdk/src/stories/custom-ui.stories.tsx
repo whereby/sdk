@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
-import fakeAudioStream from "../lib/utils/fakeAudioStream";
+import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 

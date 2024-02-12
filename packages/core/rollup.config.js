@@ -5,6 +5,7 @@ const replace = require("@rollup/plugin-replace");
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const pkg = require("./package.json");
 const { dts } = require("rollup-plugin-dts");
+const json = require("@rollup/plugin-json");
 
 const replaceValues = {
   preventAssignment: true,
@@ -43,6 +44,7 @@ const plugins = [
   }),
   commonjs(),
   typescript(),
+  json()
 ];
 
 module.exports = [

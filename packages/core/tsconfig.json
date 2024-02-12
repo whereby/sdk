@@ -7,6 +7,6 @@
             "@types": ["./packages/core/src/__types__/index.ts"]
         }
     },
-    "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"],
+    "include": ["src/**/*.ts", "tests/**/*.ts"],
     "exclude": ["node_modules", "dist", "src/lib/__mocks__"]
 }

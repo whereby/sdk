@@ -1,7 +1,7 @@
 import { define, ref } from "heresy";
 import { ReactHTMLElement } from "react";
 
-import { parseRoomUrlAndSubdomain } from "../utils/roomUrl";
+import { parseRoomUrlAndSubdomain } from "@whereby.com/core";
 import { sdkVersion } from "../version";
 
 interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
