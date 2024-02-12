@@ -1,5 +1,12 @@
 # @whereby.com/browser-sdk
 
+## 2.1.0-beta.0
+
+### Minor Changes
+
+- 9e8bb39: Update repo field in package.json to point to this repository.
+- 22a6cc0: Remove detection of node environment
+
 ## 2.1.0
 
 ### Minor Changes
