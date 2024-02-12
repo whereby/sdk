@@ -10,6 +10,7 @@
     "@whereby.com/dummy": "0.5.0"
   },
   "changesets": [
+    "cyan-elephants-fetch",
     "gentle-walls-thank",
     "six-rabbits-poke"
   ]
