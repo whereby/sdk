@@ -6,7 +6,8 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/whereby/browser-sdk.git"
+        "url": "https://github.com/whereby/sdk.git",
+        "directory": "packages/browser-sdk"
     },
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",

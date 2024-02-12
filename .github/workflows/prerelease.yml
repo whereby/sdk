@@ -33,10 +33,9 @@ jobs:
               # If .changeset/pre.json does not exist and we did not recently exit
               # prerelease mode, enter prerelease mode with tag beta
               if: steps.check_files.outputs.files_exists == 'false' && !contains(github.event.head_commit.message, 'Exit prerelease')
-              run: npx changeset pre enter beta
+              run: yarn changeset pre enter beta
 
             - name: Create prerelease PR
-              if: steps.check_files.outputs.files_exists == 'true'
               uses: changesets/action@v1
               with:
                   version: yarn changeset version
