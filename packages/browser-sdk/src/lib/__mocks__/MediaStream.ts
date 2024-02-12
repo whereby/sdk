@@ -61,7 +61,5 @@ export default class MockMediaStream implements MediaStream {
     removeEventListener(type: unknown, listener: unknown, options?: unknown): void {
         throw new Error(`Method not implemented. ${type}, ${listener}, ${options}`);
     }
-    dispatchEvent(event: Event): boolean {
-        throw new Error(`Method not implemented. ${event}`);
-    }
+    dispatchEvent = jest.fn();
 }

@@ -157,6 +157,121 @@ describe("actions", () => {
         });
     });
 
+    describe("doToggleCamera", () => {
+        describe("when camera is enabled", () => {
+            let audioTrack: MediaStreamTrack;
+            let initialState: Partial<RootState>;
+            let localStream: MediaStream;
+
+            beforeEach(() => {
+                audioTrack = new MockMediaStreamTrack("audio");
+                localStream = new MockMediaStream([audioTrack]);
+
+                initialState = {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: true,
+                        devices: [],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isTogglingCamera: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: localStream,
+                        isSwitchingStream: false,
+                    },
+                };
+            });
+
+            it("should get new track and add it to existing stream", () => {
+                const store = createStore({ initialState });
+
+                store.dispatch(localMediaSlice.doToggleCamera());
+
+                expect(mockedGetStream).toHaveBeenCalledTimes(1);
+            });
+
+            it("should dispatch `stopresumevideo` on stream with new video track", async () => {
+                const store = createStore({ initialState });
+                const videoTrack = new MockMediaStreamTrack("video");
+                mockedGetStream.mockImplementationOnce(async (_, opts) => {
+                    if (opts?.replaceStream) {
+                        opts.replaceStream.addTrack(videoTrack);
+                    }
+                    return { stream: opts?.replaceStream || new MockMediaStream([videoTrack]) };
+                });
+
+                await store.dispatch(localMediaSlice.doToggleCamera());
+
+                expect(localStream.dispatchEvent).toHaveBeenCalledWith(
+                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: true } }),
+                );
+            });
+        });
+
+        describe("when camera is disabled", () => {
+            let audioTrack: MediaStreamTrack;
+            let videoTrack: MediaStreamTrack;
+            let initialState: Partial<RootState>;
+            let localStream: MediaStream;
+
+            beforeEach(() => {
+                audioTrack = new MockMediaStreamTrack("audio");
+                videoTrack = new MockMediaStreamTrack("video");
+                localStream = new MockMediaStream([audioTrack, videoTrack]);
+
+                initialState = {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: false,
+                        devices: [],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isTogglingCamera: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: localStream,
+                        isSwitchingStream: false,
+                    },
+                };
+            });
+
+            it("should disable video track", () => {
+                const store = createStore({ initialState });
+
+                store.dispatch(localMediaSlice.doToggleCamera());
+
+                expect(videoTrack.enabled).toBe(false);
+            });
+
+            it("should stop video track", async () => {
+                const store = createStore({ initialState });
+
+                store.dispatch(localMediaSlice.doToggleCamera());
+
+                expect(videoTrack.stop).toHaveBeenCalled();
+            });
+
+            it("should remove video track from stream", () => {
+                const store = createStore({ initialState });
+
+                store.dispatch(localMediaSlice.doToggleCamera());
+
+                expect(localStream.getVideoTracks()).toHaveLength(0);
+            });
+
+            it("should dispatch `stopresumevideo` on stream with stopped video track", () => {
+                const store = createStore({ initialState });
+
+                store.dispatch(localMediaSlice.doToggleCamera());
+
+                expect(localStream.dispatchEvent).toHaveBeenCalledWith(
+                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: false } }),
+                );
+            });
+        });
+    });
+
     describe("doUpdateDeviceList", () => {
         it("should switch to the next video device if current cam is unplugged", async () => {
             const dev1 = {
