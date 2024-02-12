@@ -16,6 +16,7 @@ export class ReconnectManager extends EventEmitter {
             roomJoinedLate: 0,
             pendingClientCanceled: 0,
             evaluationFailed: 0,
+            roomJoined: 0,
         };
 
         socket.on("disconnect", () => {
@@ -129,6 +130,7 @@ export class ReconnectManager extends EventEmitter {
             }
         });
 
+        this.metrics.roomJoined++;
         this.emit(PROTOCOL_RESPONSES.ROOM_JOINED, payload);
     }
 

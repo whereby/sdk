@@ -112,13 +112,22 @@ const issueDetectors = [
         check: ({ stats }) => stats.pressure.state === "critical",
     },
     {
-        id: "distorted",
+        id: "concealed",
         enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && ssrc0 && kind === "audio",
         check: ({ ssrc0 }) =>
-            ssrc0.bitrate &&
-            ssrc0.direction === "in" &&
-            ssrc0.audioLevel >= 0.001 &&
-            Math.max(ssrc0.audioConcealment, ssrc0.audioAcceleration, ssrc0.audioDeceleration) >= 0.1,
+            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioConcealment >= 0.1,
+    },
+    {
+        id: "decelerated",
+        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && ssrc0 && kind === "audio",
+        check: ({ ssrc0 }) =>
+            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioDeceleration >= 0.1,
+    },
+    {
+        id: "accelerated",
+        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && ssrc0 && kind === "audio",
+        check: ({ ssrc0 }) =>
+            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioAcceleration >= 0.1,
     },
     // todo:
     // jitter/congestion - increasing jitter for several "ticks"
@@ -205,7 +214,7 @@ const metrics = [
         value: ({ stats }) => ({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 })[stats.pressure.state] || 0,
     },
     {
-        id: "distortion",
+        id: "concealment",
         enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
             ssrc0 &&
@@ -213,7 +222,29 @@ const metrics = [
             ssrc0.direction === "in" &&
             kind === "audio" &&
             ssrc0.audioLevel >= 0.001,
-        value: ({ ssrc0 }) => Math.max(ssrc0.audioConcealment, ssrc0.audioAcceleration, ssrc0.audioDeceleration),
+        value: ({ ssrc0 }) => ssrc0.audioConcealment,
+    },
+    {
+        id: "deceleration",
+        enabled: ({ hasLiveTrack, ssrc0, kind }) =>
+            hasLiveTrack &&
+            ssrc0 &&
+            ssrc0.bitrate &&
+            ssrc0.direction === "in" &&
+            kind === "audio" &&
+            ssrc0.audioLevel >= 0.001,
+        value: ({ ssrc0 }) => ssrc0.audioDeceleration,
+    },
+    {
+        id: "acceleration",
+        enabled: ({ hasLiveTrack, ssrc0, kind }) =>
+            hasLiveTrack &&
+            ssrc0 &&
+            ssrc0.bitrate &&
+            ssrc0.direction === "in" &&
+            kind === "audio" &&
+            ssrc0.audioLevel >= 0.001,
+        value: ({ ssrc0 }) => ssrc0.audioAcceleration,
     },
     {
         id: "qpf",

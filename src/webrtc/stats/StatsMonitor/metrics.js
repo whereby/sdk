@@ -53,7 +53,7 @@ export function captureSsrcInfo(ssrcMetrics, currentSsrcStats, prevSsrcStats, ti
 }
 
 export function captureCommonSsrcMetrics(ssrcMetrics, currentSsrcStats, prevSsrcStats, timeDiff, report) {
-    const nackCountDiff = currentSsrcStats.nackCount - (prevSsrcStats?.nackCount || 0);
+    const nackCountDiff = (currentSsrcStats.nackCount || 0) - (prevSsrcStats?.nackCount || 0);
     ssrcMetrics.nackCount = (ssrcMetrics.nackCount || 0) + nackCountDiff;
     ssrcMetrics.nackRate = (1000 * nackCountDiff) / timeDiff;
 
