@@ -23,6 +23,12 @@ jobs:
             - name: Install Dependencies
               run: yarn install --frozen-lockfile
 
+            - name: Run Tests
+              run: yarn test --cache-dir=.turbo
+
+            - name: Build
+              run: yarn build --cache-dir=.turbo
+
             - name: Check for pre.json file existence
               id: check_files
               uses: andstor/file-existence-action@v3.0.0
@@ -46,7 +52,7 @@ jobs:
               id: changesets
               # Only run publish if we're still in pre mode and the last commit was
               # via an automatically created Version Packages PR
-              if: steps.check_files.outputs.files_exists == 'true' && startsWith(github.event.head_commit.message, 'Version Packages')
+              if: steps.check_files.outputs.files_exists == 'true' && contains(github.event.head_commit.message, 'changeset-release/development')
               uses: changesets/action@v1
               with:
                   version: echo "This step should never version"
