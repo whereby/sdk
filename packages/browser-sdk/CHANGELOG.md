@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.1.0-beta.2
+
+### Minor Changes
+
+- 8839eb3: Release beta version
+
 ## 2.1.0-beta.1
 
 ### Minor Changes
