@@ -10,22 +10,21 @@ jobs:
         name: Changesets Exit Prerelease
         runs-on: ubuntu-latest
         steps:
-            # Check if pre.json file exists. The rest of the steps will only run if this file exists
-            - name: Check for pre.json file existence
-              id: check_files
-              uses: andstor/file-existence-action@v3.0.0
-              with:
-                  files: ".changeset/pre.json"
-
             - name: Checkout repo
               uses: actions/checkout@v4
-              if: steps.check_files.outputs.files_exists == 'true'
               with:
                   # Checkout the branch that triggered this workflow (This should be development branch in most cases)
                   ref: ${{ github.event.pull_request.head.ref }}
                   # Fetch entire git history so  Changesets can generate changelogs
                   # with the correct commits
                   fetch-depth: 0
+
+            # Check if pre.json file exists. The rest of the steps will only run if this file exists
+            - name: Check for pre.json file existence
+              id: check_files
+              uses: andstor/file-existence-action@v3.0.0
+              with:
+                  files: ".changeset/pre.json"
 
             - name: Setup Node.js 20.x
               uses: actions/setup-node@v4
