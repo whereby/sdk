@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+    createStore,
+    observeStore,
+    Store,
+    createServices,
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
     doStartLocalMedia,
     doStopLocalMedia,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
-} from "../../core/redux/slices/localMedia";
+} from "@whereby.com/core";
+
 import { LocalMediaState, UseLocalMediaOptions, UseLocalMediaResult } from "./types";
 import { selectLocalMediaState } from "./selector";
-import { createStore, observeStore, Store } from "../../core/redux/store";
-import { createServices } from "../../services";
 
 const initialState: LocalMediaState = {
     cameraDeviceError: null,

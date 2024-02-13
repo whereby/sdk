@@ -2,9 +2,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "rootDir": ".",
-    "paths": {
-      "browser-sdk": ["packages/browser-sdk"]
-    },
     "outDir": "dist",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
@@ -15,7 +12,7 @@
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
     "isolatedModules": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "lib": [
       "dom",
       "dom.iterable",

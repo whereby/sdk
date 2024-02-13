@@ -1,14 +1,17 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { RoomConnectionState } from "./types";
+import {
+    selectChatMessages,
+    selectCloudRecordingRaw,
+    selectRemoteParticipants,
+    selectScreenshares,
+    selectRoomConnectionStatus,
+    selectWaitingParticipants,
+    selectLocalParticipantRaw,
+    selectLocalMediaStream,
+    selectStreamingRaw,
+} from "@whereby.com/core";
 
-import { selectChatMessages } from "../../core/redux/slices/chat";
-import { selectCloudRecordingRaw } from "../../core/redux/slices/cloudRecording";
-import { selectRemoteParticipants, selectScreenshares } from "../../core/redux/slices/remoteParticipants";
-import { selectRoomConnectionStatus } from "../../core/redux/slices/roomConnection";
-import { selectWaitingParticipants } from "../../core/redux/slices/waitingParticipants";
-import { selectLocalParticipantRaw } from "../../core/redux/slices/localParticipant";
-import { selectLocalMediaStream } from "../../core/redux/slices/localMedia";
-import { selectStreamingRaw } from "../../core/redux/slices/streaming";
+import { RoomConnectionState } from "./types";
 
 export const selectRoomConnectionState = createSelector(
     selectChatMessages,

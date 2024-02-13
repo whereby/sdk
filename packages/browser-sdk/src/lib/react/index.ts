@@ -12,5 +12,3 @@ export type {
     ScreenshareState as Screenshare,
     WaitingParticipantState as WaitingParticipant,
 } from "./useRoomConnection/types";
-
-export { sdkVersion } from "../version";

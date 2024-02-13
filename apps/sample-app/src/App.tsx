@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRoomConnection, useLocalMedia, UseLocalMediaResult } from "@whereby.com/browser-sdk/react";
-import { fakeAudioStream, fakeWebcamFrame } from "@whereby.com/browser-sdk/utils";
+import { fakeAudioStream, fakeWebcamFrame } from "@whereby.com/core/utils";
 
 import "./App.css";
 

@@ -1,8 +1,7 @@
 import { define, ref } from "heresy";
 import { ReactHTMLElement } from "react";
 
-import { parseRoomUrlAndSubdomain } from "../utils/roomUrl";
-import { sdkVersion } from "../version";
+import { parseRoomUrlAndSubdomain } from "@whereby.com/core/utils";
 
 interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     audio: string;
@@ -222,7 +221,7 @@ define("WherebyEmbed", {
 
         Object.entries({
             jsApi: true,
-            we: sdkVersion,
+            we: "1",
             iframeSource: subdomain,
             ...(displayName && { displayName }),
             ...(lang && { lang: lang }),
@@ -253,4 +252,4 @@ define("WherebyEmbed", {
     },
 });
 
-export default { sdkVersion: sdkVersion };
+export default { sdkVersion: "1" };
