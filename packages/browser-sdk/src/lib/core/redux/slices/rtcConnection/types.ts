@@ -1,4 +1,4 @@
-import { StreamState } from "../../../../../lib/RoomParticipant";
+import { StreamState } from "@whereby.com/core";
 
 export interface StreamStatusUpdate {
     clientId: string;

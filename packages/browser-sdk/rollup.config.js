@@ -92,16 +92,16 @@ module.exports = [
         external: ["heresy", ...peerDependencies],
         plugins,
     },
-    // {
-    //     input: "src/lib/utils/index.ts",
-    //     output: {
-    //         exports: "named",
-    //         file: "dist/utils/index.esm.js",
-    //         format: "esm",
-    //     },
-    //     external: ["heresy", ...peerDependencies],
-    //     plugins,
-    // },
+    {
+        input: "src/lib/utils/index.ts",
+        output: {
+            exports: "named",
+            file: "dist/utils/index.esm.js",
+            format: "esm",
+        },
+        external: ["heresy", ...peerDependencies],
+        plugins,
+    },
 
     // CDN builds
     // {
@@ -153,9 +153,9 @@ module.exports = [
         output: [{ file: "dist/embed/index.d.ts", format: "es" }],
         plugins: [dts()],
     },
-    // {
-    //     input: "src/lib/utils/index.ts",
-    //     output: [{ file: "dist/utils/index.d.ts", format: "es" }],
-    //     plugins: [dts()],
-    // },
+    {
+        input: "src/lib/utils/index.ts",
+        output: [{ file: "dist/utils/index.d.ts", format: "es" }],
+        plugins: [dts()],
+    },
 ];
