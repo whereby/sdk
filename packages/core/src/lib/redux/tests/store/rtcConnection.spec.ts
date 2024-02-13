@@ -39,14 +39,14 @@ describe("actions", () => {
             doHandleAcceptStreams([
                 { clientId: participant1.id, streamId: id1, state: "to_accept" },
                 { clientId: participant2.id, streamId: id3, state: "to_accept" },
-            ])
+            ]),
         );
 
         expect(JSON.stringify(mockRtcManager.acceptNewStream.mock.calls)).toStrictEqual(
             JSON.stringify([
                 [{ streamId: id1, clientId: participant1.id, shouldAddLocalVideo: false, activeBreakout: false }],
                 [{ streamId: id3, clientId: participant2.id, shouldAddLocalVideo: false, activeBreakout: false }],
-            ])
+            ]),
         );
         expect(mockRtcManager.acceptNewStream).toHaveBeenCalledTimes(2);
     });

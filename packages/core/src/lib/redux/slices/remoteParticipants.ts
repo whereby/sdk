@@ -68,7 +68,7 @@ function updateStreamState(
     state: RemoteParticipantState,
     participantId: string,
     streamId: string,
-    state_: StreamState
+    state_: StreamState,
 ) {
     const { participant } = findParticipant(state, participantId);
     if (!participant) {
@@ -305,5 +305,5 @@ export const selectScreenshares = createSelector(
         }
 
         return screenshares;
-    }
+    },
 );

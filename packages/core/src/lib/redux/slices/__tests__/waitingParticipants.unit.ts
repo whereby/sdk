@@ -26,7 +26,7 @@ describe("reducer", () => {
                         ],
                         session: null,
                     },
-                })
+                }),
             );
 
             expect(state).toEqual({ waitingParticipants: [{ id: clientId, displayName }] });

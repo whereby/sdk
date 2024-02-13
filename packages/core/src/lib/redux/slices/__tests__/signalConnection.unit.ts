@@ -15,7 +15,7 @@ describe("signalConnectionSlice", () => {
                 "should return $expected when appWantsToJoin=$appWantsToJoin, signalStatus=$signalStatus",
                 ({ appWantsToJoin, signalStatus, expected }) => {
                     expect(selectShouldConnectSignal.resultFunc(appWantsToJoin, signalStatus)).toEqual(expected);
-                }
+                },
             );
         });
 
@@ -45,10 +45,10 @@ describe("signalConnectionSlice", () => {
                             deviceCredentialsRaw,
                             signalStatus,
                             deviceIdentified,
-                            isIdentifyingDevice
-                        )
+                            isIdentifyingDevice,
+                        ),
                     ).toEqual(expected);
-                }
+                },
             );
         });
     });

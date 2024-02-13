@@ -71,7 +71,7 @@ export const doOrganizationFetch = createAppAsyncThunk(
         } catch (error) {
             console.error(error);
         }
-    }
+    },
 );
 
 /**
@@ -100,7 +100,7 @@ export const selectShouldFetchOrganization = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldFetchOrganization], ({ dispatch }, shouldFetchOrganization) => {

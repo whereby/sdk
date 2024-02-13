@@ -93,7 +93,7 @@ export const doStartScreenshare = createAppAsyncThunk(
         } catch (error) {
             return rejectWithValue(error);
         }
-    }
+    },
 );
 
 export const doStopScreenshare = createAppThunk(() => (dispatch, getState) => {

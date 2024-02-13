@@ -12,7 +12,7 @@ describe("roomConnectionSlice", () => {
                         error: "room_locked",
                         selfId: "selfId",
                         isLocked: true,
-                    })
+                    }),
                 );
 
                 expect(result).toEqual({
@@ -29,7 +29,7 @@ describe("roomConnectionSlice", () => {
                         error: "room_locked",
                         selfId: "selfId",
                         isLocked: false,
-                    })
+                    }),
                 );
 
                 expect(result).toEqual({
@@ -60,10 +60,10 @@ describe("roomConnectionSlice", () => {
                             organizationId,
                             roomConnectionStatus,
                             signalIdentified,
-                            localMediaStatus
-                        )
+                            localMediaStatus,
+                        ),
                     ).toEqual(expected);
-                }
+                },
             );
         });
     });

@@ -23,9 +23,9 @@ describe("deviceCredentialsSlice", () => {
                     };
 
                     expect(selectShouldFetchDeviceCredentials.resultFunc(wantsToJoin, deviceCredentials)).toBe(
-                        expected
+                        expected,
                     );
-                }
+                },
             );
         });
     });

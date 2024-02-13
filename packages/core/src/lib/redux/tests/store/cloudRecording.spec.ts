@@ -1,5 +1,9 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { doStartCloudRecording, doStopCloudRecording, initialCloudRecordingState as initialState } from "../../slices/cloudRecording";
+import {
+    doStartCloudRecording,
+    doStopCloudRecording,
+    initialCloudRecordingState as initialState,
+} from "../../slices/cloudRecording";
 import { diff } from "deep-object-diff";
 
 describe("actions", () => {

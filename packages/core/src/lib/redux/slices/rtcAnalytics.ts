@@ -124,10 +124,10 @@ const rtcCustomEventActions = Object.values(rtcAnalyticsCustomEvents)
     .map(({ action }) => action)
     .filter(
         (
-            action
+            action,
         ): action is
             | ActionCreatorWithPayload<unknown, string>
-            | AsyncThunkFulfilledActionCreator<unknown, unknown, ThunkConfig> => action !== null
+            | AsyncThunkFulfilledActionCreator<unknown, unknown, ThunkConfig> => action !== null,
     );
 
 const makeComparable = (value: unknown) => {

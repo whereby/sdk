@@ -41,7 +41,7 @@ export const createReactor = <Selectors extends Selector<RootState, unknown>[]>(
             extra: ReturnType<typeof createServices>;
         },
         ...selectorValues: SelectorResults<Selectors>
-    ) => void | Promise<void>
+    ) => void | Promise<void>,
 ) => {
     return startAppListening({
         predicate: (_, currentState, previousState) => {
@@ -59,7 +59,7 @@ export const createReactor = <Selectors extends Selector<RootState, unknown>[]>(
                     getState,
                     extra,
                 },
-                ...selectorResults
+                ...selectorResults,
             );
         },
     });

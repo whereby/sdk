@@ -38,7 +38,7 @@ export const appSlice = createSlice({
                 roomUrl: string;
                 sdkVersion: string;
                 externalId: string | null;
-            }>
+            }>,
         ) => {
             const url = new URL(action.payload.roomUrl);
 
