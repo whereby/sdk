@@ -1,4 +1,4 @@
-import { parseRoomUrlAndSubdomain } from "../roomUrl";
+import parseRoomUrlAndSubdomain from "../roomUrl";
 
 describe("roomUrl", () => {
     describe("parseRoomUrlAndSubdomain", () => {

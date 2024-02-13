@@ -1,4 +1,4 @@
-export function parseRoomUrlAndSubdomain(roomAttribute?: string, subdomainAttribute?: string) {
+export default function parseRoomUrlAndSubdomain(roomAttribute?: string, subdomainAttribute?: string) {
     if (!roomAttribute) {
         throw new Error("Missing room attribute");
     }

@@ -1,4 +1,4 @@
-import { parseRoomUrlAndSubdomain } from "../roomUrl";
+import { parseRoomUrlAndSubdomain } from "@whereby.com/core";
 
 describe("roomUrl", () => {
     describe.only("parseRoomUrlAndSubdomain", () => {
