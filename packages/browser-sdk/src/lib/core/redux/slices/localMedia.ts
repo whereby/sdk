@@ -251,58 +251,55 @@ export const {
     localStreamMetadataUpdated,
 } = localMediaSlice.actions;
 
-const doToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async (_, { getState, rejectWithValue }) => {
-    const state = getState();
-    const stream = selectLocalMediaStream(state);
-    if (!stream) {
-        return;
-    }
-    let track = stream.getVideoTracks()[0];
-    const enabled = selectIsCameraEnabled(state);
+export const doToggleCamera = createAppAsyncThunk(
+    "localMedia/doToggleCamera",
+    async (_, { getState, rejectWithValue }) => {
+        const state = getState();
+        const stream = selectLocalMediaStream(state);
+        if (!stream) {
+            return;
+        }
+        let track = stream.getVideoTracks()[0];
+        const enabled = selectIsCameraEnabled(state);
 
-    // Only stop tracks if we fully own the media stream
-    const shouldStopTrack = selectLocalMediaOwnsStream(state);
+        try {
+            if (enabled) {
+                if (track) {
+                    // We have existing video track, just enable it
+                    track.enabled = true;
+                } else {
+                    // We dont have video track, get new one
+                    const constraintsOptions = selectLocalMediaConstraintsOptions(state);
+                    const cameraDeviceId = selectCurrentCameraDeviceId(state);
+                    await getStream(
+                        {
+                            ...constraintsOptions,
+                            audioId: false,
+                            videoId: cameraDeviceId,
+                            type: "exact",
+                        },
+                        { replaceStream: stream },
+                    );
 
-    try {
-        if (enabled) {
-            if (track) {
-                // We have existing video track, just enable it
-                track.enabled = true;
+                    track = stream.getVideoTracks()[0];
+                }
             } else {
-                // We dont have video track, get new one
-                const constraintsOptions = selectLocalMediaConstraintsOptions(state);
-                const cameraDeviceId = selectCurrentCameraDeviceId(state);
-                await getStream(
-                    {
-                        ...constraintsOptions,
-                        audioId: false,
-                        videoId: cameraDeviceId,
-                        type: "exact",
-                    },
-                    { replaceStream: stream },
-                );
+                if (!track) {
+                    return;
+                }
 
-                track = stream.getVideoTracks()[0];
-            }
-        } else {
-            if (!track) {
-                return;
-            }
-
-            track.enabled = false;
-
-            if (shouldStopTrack) {
+                track.enabled = false;
                 track.stop();
                 stream.removeTrack(track);
             }
-        }
 
-        // Dispatch event on stream to allow RTC layer effects
-        stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { track, enable: enabled } }));
-    } catch (error) {
-        return rejectWithValue(error);
-    }
-});
+            // Dispatch event on stream to allow RTC layer effects
+            stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { track, enable: enabled } }));
+        } catch (error) {
+            return rejectWithValue(error);
+        }
+    },
+);
 
 const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState }) => {
     const state = getState();
