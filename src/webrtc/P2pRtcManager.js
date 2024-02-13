@@ -157,6 +157,19 @@ export default class P2pRtcManager extends BaseRtcManager {
                 }
                 pc.setLocalDescription(offer).catch((e) => {
                     logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
+
+                    // we failed to create a valid offer so try having the other side create it, without looping
+                    if (this._features.reverseOfferOnFailure) {
+                        if (!this._lastReverseDirectionAttemptByClientId)
+                            this._lastReverseDirectionAttemptByClientId = {};
+                        if (
+                            !this._lastReverseDirectionAttemptByClientId[clientId] ||
+                            this._lastReverseDirectionAttemptByClientId[clientId] < Date.now() - 10000
+                        ) {
+                            this.acceptNewStream({ clientId, streamId: clientId, shouldAddLocalVideo: true });
+                            this._lastReverseDirectionAttemptByClientId[clientId] = Date.now();
+                        }
+                    }
                 });
             })
             .catch((e) => {
