@@ -19,10 +19,6 @@
         "./embed": {
             "import": "./dist/embed/index.esm.js",
             "types": "./dist/embed/index.d.ts"
-        },
-        "./utils": {
-            "import": "./dist/utils/index.esm.js",
-            "types": "./dist/utils/index.d.ts"
         }
     },
     "typesVersions": {
@@ -32,9 +28,6 @@
             ],
             "embed": [
                 "dist/embed/index.d.ts"
-            ],
-            "utils": [
-                "dist/utils/index.d.ts"
             ]
         }
     },
