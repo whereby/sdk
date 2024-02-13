@@ -1,40 +1,48 @@
 name: Exit Prerelease Mode
 
 on:
-    workflow_dispatch:
-        inputs:
-            branch:
-                description: "Exit prerelease mode on development branch"
-                type: string
-                default: "development"
-                required: true
+    pull_request:
+        branches:
+            - main
 
 jobs:
     exit_prerelease:
         name: Changesets Exit Prerelease
         runs-on: ubuntu-latest
         steps:
+            # Check if pre.json file exists. The rest of the steps will only run if this file exists
+            - name: Check for pre.json file existence
+              id: check_files
+              uses: andstor/file-existence-action@v3.0.0
+              with:
+                  files: ".changeset/pre.json"
+
             - name: Checkout repo
               uses: actions/checkout@v4
+              if: steps.check_files.outputs.files_exists == 'true'
               with:
-                  # Checkout development branch
-                  ref: ${{ github.event.inputs.branch }}
+                  # Checkout the branch that triggered this workflow (This should be development branch in most cases)
+                  ref: ${{ github.event.pull_request.head.ref }}
                   # Fetch entire git history so  Changesets can generate changelogs
                   # with the correct commits
                   fetch-depth: 0
 
             - name: Setup Node.js 20.x
               uses: actions/setup-node@v4
+              if: steps.check_files.outputs.files_exists == 'true'
               with:
                   node-version: 20.x
 
+              # Get the previous tag
             - name: Get latest tagged version
               id: previoustag
               uses: WyriHaximus/github-action-get-previous-tag@v1
+              if: steps.check_files.outputs.files_exists == 'true'
 
             - name: Remove 'v' prefix from version number (e.g. v1.0.0)
               uses: mad9000/actions-find-and-replace-string@4
               id: formatversion
+              if: steps.check_files.outputs.files_exists == 'true'
               with:
                   source: ${{ steps.previoustag.outputs.tag }}
                   find: "v"
@@ -42,14 +50,17 @@ jobs:
 
             - name: Write previous version to package.json
               uses: jaywcjlove/github-action-package@v1.3.2
+              if: steps.check_files.outputs.files_exists == 'true'
               with:
                   version: ${{ steps.formatversion.outputs.value }}
 
             - name: Remove pre.json
+              if: steps.check_files.outputs.files_exists == 'true'
               run: npx rimraf .changeset/pre.json
 
             - uses: stefanzweifel/git-auto-commit-action@v5
+              if: steps.check_files.outputs.files_exists == 'true'
               with:
                   commit_message: Exit prerelease mode
                   # Commit these changes to the branch workflow is running against
-                  branch: ${{ github.event.inputs.branch }}
+                  branch: ${{ github.event.pull_request.head.ref }}
