@@ -11,7 +11,7 @@
     "@types/node": "^20.11.16",
     "@types/react": "^18.2.25",
     "@types/react-dom": "^18.2.11",
-    "@whereby.com/browser-sdk": "*",
+    "@whereby.com/browser-sdk": "2.2.0-beta.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^4.9.5",
@@ -21,12 +21,12 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@vitejs/plugin-react": "^4.2.1",
     "vite": "^5.0.12"
-},
-"scripts": {
-  "dev": "vite",
-  "build": "tsc && vite build",
-  "preview": "vite preview"
-},
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
   "eslintConfig": {
     "extends": [
       "react-app",

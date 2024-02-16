@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "2.1.0",
+    "version": "2.2.0-beta.0",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -88,7 +88,7 @@
     "dependencies": {
         "@reduxjs/toolkit": "^2.0.1",
         "@swc/helpers": "^0.3.13",
-        "@whereby.com/core": "*",
+        "@whereby.com/core": "0.2.0-beta.0",
         "heresy": "^1.0.4"
     },
     "peerDependencies": {
