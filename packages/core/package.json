@@ -2,7 +2,7 @@
     "name": "@whereby.com/core",
     "description": "Core library for whereby.com sdk",
     "author": "Whereby AS",
-    "version": "0.1.0",
+    "version": "0.2.0-beta.0",
     "license": "MIT",
     "scripts": {
         "build": "rimraf dist && rollup -c rollup.config.js",
