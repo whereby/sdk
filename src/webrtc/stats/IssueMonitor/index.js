@@ -5,6 +5,32 @@ let stopStats = null;
 
 const issueDetectors = [
     {
+        id: "desync",
+        enabled: ({ client, track, stats }) => {
+            return (
+                !client.isLocalClient &&
+                track?.kind === "audio" &&
+                typeof stats?.tracks === "object" &&
+                Object.keys(stats.tracks).length > 1
+            );
+        },
+        check: ({ stats: { tracks } }) => {
+            const jitter = {
+                audio: 0,
+                video: 0,
+            };
+
+            Object.values(tracks)
+                .flatMap((t) => Object.values(t.ssrcs))
+                .forEach((ssrc) => {
+                    if (ssrc.kind === "audio" && ssrc.jitter > jitter.audio) jitter.audio = ssrc.jitter;
+                    if (ssrc.kind === "video" && ssrc.jitter > jitter.video) jitter.video = ssrc.jitter;
+                });
+            const diff = Math.abs(jitter.audio * 1000 - jitter.video * 1000); // diff in ms
+            return diff > 500;
+        },
+    },
+    {
         id: "no-track",
         check: ({ track }) => !track,
     },
@@ -276,7 +302,7 @@ export const getIssuesAndMetrics = () => {
 };
 
 function onUpdatedStats(statsByView, clients) {
-    // reset aggreated current metrics
+    // reset aggregated current metrics
     Object.values(aggregatedMetrics).forEach((metricData) => {
         metricData.curTicks = 0;
         metricData.curSum = 0;
@@ -285,7 +311,7 @@ function onUpdatedStats(statsByView, clients) {
         metricData.curAvg = 0;
     });
 
-    // reset aggreated current issues
+    // reset aggregated current issues
     Object.values(aggregatedIssues).forEach((issueData) => {
         issueData.curTicks = 0;
         issueData.curRegistered = 0;
@@ -301,6 +327,8 @@ function onUpdatedStats(statsByView, clients) {
         ["video", "audio", "global"].forEach((kind) => {
             // skip checking muted/disabled tracks if not global
             if (!(kind === "global" && !client.isPresentation) && !client[kind]?.enabled) return;
+            // don't check global for remote clients
+            if (kind === "global" && !client.isLocalClient) return;
 
             let issuesAndMetrics = issuesAndMetricsByView[client.id];
             if (!issuesAndMetrics) {
@@ -405,13 +433,13 @@ function onUpdatedStats(statsByView, clients) {
                 }
             });
 
-            issueDetectors.forEach((isssueDetector) => {
-                if (isssueDetector.global && kind !== "global") return;
-                if (!isssueDetector.global && kind === "global") return;
+            issueDetectors.forEach((issueDetector) => {
+                if (issueDetector.global && kind !== "global") return;
+                if (!issueDetector.global && kind === "global") return;
 
-                const issueKey = `${qualifierString}-${isssueDetector.id}`;
+                const issueKey = `${qualifierString}-${issueDetector.id}`;
 
-                const enabled = isssueDetector.enabled ? isssueDetector.enabled(checkData) : true;
+                const enabled = issueDetector.enabled ? issueDetector.enabled(checkData) : true;
 
                 let issueData = issuesAndMetrics.issues[issueKey];
                 let aggregatedIssueData = aggregatedIssues[issueKey];
@@ -446,7 +474,7 @@ function onUpdatedStats(statsByView, clients) {
                     aggregatedIssueData.ticks++;
                     aggregatedIssueData.curTicks++;
 
-                    const issueDetected = isssueDetector.check?.(checkData);
+                    const issueDetected = issueDetector.check?.(checkData);
                     if (issueDetected) {
                         issueData.registered++;
                         issueData.current++;
