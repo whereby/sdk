@@ -19,10 +19,6 @@
         "./embed": {
             "import": "./dist/embed/index.esm.js",
             "types": "./dist/embed/index.d.ts"
-        },
-        "./utils": {
-            "import": "./dist/utils/index.esm.js",
-            "types": "./dist/utils/index.d.ts"
         }
     },
     "typesVersions": {
@@ -32,9 +28,6 @@
             ],
             "embed": [
                 "dist/embed/index.d.ts"
-            ],
-            "utils": [
-                "dist/utils/index.d.ts"
             ]
         }
     },
@@ -70,7 +63,6 @@
         "@storybook/react": "^7.5.2",
         "@storybook/react-webpack5": "^7.5.2",
         "@testing-library/react": "^14.0.0",
-        "@types/btoa": "^1.2.3",
         "@types/chrome": "^0.0.210",
         "@types/node": "^20.11.16",
         "@types/react": "^18.0.26",
@@ -96,10 +88,7 @@
     "dependencies": {
         "@reduxjs/toolkit": "^2.0.1",
         "@swc/helpers": "^0.3.13",
-        "@whereby/jslib-media": "whereby/jslib-media.git#1.4.1",
-        "axios": "^1.2.3",
-        "btoa": "^1.2.1",
-        "events": "^3.3.0",
+        "@whereby.com/core": "*",
         "heresy": "^1.0.4"
     },
     "peerDependencies": {

@@ -1,7 +1,11 @@
-import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
+import {
+    ChatMessage as SignalChatMessage,
+    LocalParticipant,
+    RemoteParticipant,
+    Screenshare,
+    LocalMediaOptions,
+} from "@whereby.com/core";
 
-import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { LocalMediaOptions } from "../../core/redux/slices/localMedia";
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;

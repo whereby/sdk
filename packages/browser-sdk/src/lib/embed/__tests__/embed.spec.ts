@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 
 const define = jest.fn();
 const ref = jest.fn();
+
 jest.mock("heresy", () => ({
     __esModule: true,
     define,

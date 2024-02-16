@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { VideoView } from "~/lib/react";
-import { RoomConnectionRef } from "~/lib/react/useRoomConnection";
+import { VideoView } from "../../lib/react";
+import { RoomConnectionRef } from "../../lib/react/useRoomConnection";
 
 export default function Grid({ roomConnection }: { roomConnection: RoomConnectionRef }) {
     const { state, components } = roomConnection;

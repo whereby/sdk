@@ -12,7 +12,8 @@ import {
     selectMicrophoneDeviceError,
     selectMicrophoneDevices,
     selectSpeakerDevices,
-} from "../../core/redux/slices/localMedia";
+} from "@whereby.com/core";
+
 import { LocalMediaState } from "./types";
 
 export const selectLocalMediaState = createSelector(

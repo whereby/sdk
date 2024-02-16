@@ -8,13 +8,12 @@ const pkg = require("./package.json");
 const typescript = require("rollup-plugin-typescript2");
 const { dts } = require("rollup-plugin-dts");
 const nodePolyfills = require("rollup-plugin-polyfill-node");
-const dotenv = require("dotenv");
 
-dotenv.config({
-    path: "../../.env",
-});
+const baseConfig = require("../../rollup.base.config");
+const replaceValues = baseConfig(__dirname, {}).replaceValues;
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
+const dependencies = [...Object.keys(pkg.dependencies || {})];
 
 function makeCdnFilename(package) {
     const major = pkg.version.split(".")[0];
@@ -33,42 +32,12 @@ function makeCdnFilename(package) {
     return `v${major}${packagePart}${tag}.js`;
 }
 
-const replaceValues = {
-    preventAssignment: true,
-    values: {
-        __SDK_VERSION__: pkg.version,
-        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
-        "process.env.NODE_DEBUG": JSON.stringify(process.env.NODE_DEBUG),
-        "process.env.AWF_BASE_URL": JSON.stringify(process.env.AWF_BASE_URL),
-        "process.env.AWF_API_BASE_URL": JSON.stringify(process.env.AWF_API_BASE_URL),
-        "process.env.AP_ROOM_BASE_URL": JSON.stringify(process.env.AP_ROOM_BASE_URL),
-        "process.env.RTCSTATS_URL": JSON.stringify(process.env.RTCSTATS_URL || "wss://rtcstats.srv.whereby.com"),
-        "process.env.REACT_APP_API_BASE_URL": JSON.stringify(
-            process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev",
-        ),
-        "process.env.REACT_APP_SIGNAL_BASE_URL": JSON.stringify(
-            process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net",
-        ),
-        "process.env.REACT_APP_IS_DEV": JSON.stringify(process.env.REACT_APP_IS_DEV),
-    },
+const tsOptions = {
+    tsconfig: "tsconfig.build.json",
 };
+const external = [/^@whereby\.com/, ...dependencies, ...peerDependencies];
 
-const plugins = [
-    replace(replaceValues),
-    replace({
-        preventAssignment: true,
-        // jslib-media uses global.navigator for some gUM calls, replace these
-        delimiters: [" ", "."],
-        values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
-    }),
-    nodeResolve({
-        // only include @whereby/jslib-media and rtcstats in our bundle
-        preferBuiltins: true,
-        resolveOnly: [/@whereby\/jslib-media|rtcstats/],
-    }),
-    commonjs(),
-    typescript(),
-];
+const plugins = [replace(replaceValues), typescript(tsOptions)];
 
 module.exports = [
     // Esm build of lib, to be used with bundlers
@@ -79,7 +48,7 @@ module.exports = [
             file: "dist/react/index.esm.js",
             format: "esm",
         },
-        external: ["heresy", ...peerDependencies],
+        external,
         plugins,
     },
     {
@@ -89,17 +58,7 @@ module.exports = [
             file: "dist/embed/index.esm.js",
             format: "esm",
         },
-        external: ["heresy", ...peerDependencies],
-        plugins,
-    },
-    {
-        input: "src/lib/utils/index.ts",
-        output: {
-            exports: "named",
-            file: "dist/utils/index.esm.js",
-            format: "esm",
-        },
-        external: ["heresy", ...peerDependencies],
+        external,
         plugins,
     },
 
@@ -111,7 +70,15 @@ module.exports = [
             format: "iife",
             name: "whereby",
         },
-        plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
+        plugins: [
+            commonjs(), // Needs to come before `nodePolyfills`
+            nodePolyfills(),
+            nodeResolve({ browser: true, preferBuiltins: true }),
+            json(),
+            terser(),
+            replace(replaceValues),
+            typescript(tsOptions),
+        ],
     },
     {
         input: "src/lib/react/index.ts",
@@ -130,14 +97,8 @@ module.exports = [
             nodeResolve({ browser: true, preferBuiltins: false }),
             json(),
             terser(),
-            replace({
-                preventAssignment: true,
-                // jslib-media uses global.navigator for some gUM calls, replace these
-                delimiters: [" ", "."],
-                values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
-            }),
             replace(replaceValues),
-            typescript(),
+            typescript(tsOptions),
         ],
     },
 
@@ -145,17 +106,13 @@ module.exports = [
     {
         input: "src/lib/react/index.ts",
         output: [{ file: "dist/react/index.d.ts", format: "es" }],
-        external: ["@whereby/jslib-media/src/webrtc/RtcManager"],
-        plugins: [dts()],
+        external,
+        plugins: [dts(tsOptions)],
     },
     {
         input: "src/lib/embed/index.ts",
         output: [{ file: "dist/embed/index.d.ts", format: "es" }],
-        plugins: [dts()],
-    },
-    {
-        input: "src/lib/utils/index.ts",
-        output: [{ file: "dist/utils/index.d.ts", format: "es" }],
-        plugins: [dts()],
+        external,
+        plugins: [dts(tsOptions)],
     },
 ];
