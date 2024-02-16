@@ -1,0 +1,4 @@
+{
+    "author": "Whereby Bot <ops+gocd-github@whereby.com>",
+    "plugins": ["npm"]
+}
