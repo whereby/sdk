@@ -1,4 +1,5 @@
 module.exports = function buildConfig(packageDirectory, pkgConfig) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const pkg = require(`${packageDirectory}/package.json`);
 
     return {
