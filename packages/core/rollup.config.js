@@ -5,6 +5,11 @@ const replace = require("@rollup/plugin-replace");
 const nodeResolve = require("@rollup/plugin-node-resolve");
 const pkg = require("./package.json");
 const { dts } = require("rollup-plugin-dts");
+const dotenv = require("dotenv");
+
+dotenv.config({
+    path: `../../.env`,
+});
 
 const baseConfig = require("../../rollup.base.config");
 const replaceValues = baseConfig(__dirname, {}).replaceValues;
