@@ -47,6 +47,7 @@
 - 1084a44: Listen for client_kicked events and update room ConnectionStatus accordingly
 
 ## 0.2.0
+## 0.2.0-beta.0
 
 ### Minor Changes
 

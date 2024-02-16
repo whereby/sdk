@@ -44,6 +44,7 @@
 - 4eb75f8: Adds people_toggle to example docs
 
 ## 2.2.0
+## 2.2.0-beta.0
 
 ### Minor Changes
 
@@ -58,6 +59,13 @@
 - Updated dependencies [d983b09]
 - Updated dependencies [a6972da]
   - @whereby.com/core@0.2.0
+- 66b020f: Export grid component
+
+### Patch Changes
+
+- fd6c24f: Fix issue which kept camera light on after disabling video
+- Updated dependencies [d983b09]
+  - @whereby.com/core@0.2.0-beta.0
 
 ## 2.1.0
 
