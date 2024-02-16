@@ -6,7 +6,7 @@
         "jest/globals": true,
         "node": true
     },
-    "extends": ["@whereby/eslint-config/browser", "prettier"],
+    "extends": ["./config/eslint/browser", "prettier"],
     "parserOptions": {
         "sourceType": "module",
         "requireConfigFile": false

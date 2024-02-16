@@ -1,7 +1,7 @@
 {
   "name": "@whereby/jslib-media",
   "description": "Media library for Whereby",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": false,
   "license": "MIT",
   "homepage": "https://github.com/whereby/jslib-media",
@@ -34,11 +34,11 @@
     "webrtc-adapter": "^7.3.0"
   },
   "devDependencies": {
+    "@auto-it/npm": "^10.29.2",
     "@babel/core": "^7.23.2",
     "@babel/eslint-parser": "^7.22.15",
     "@babel/preset-env": "^7.23.2",
-    "@whereby/auto-config": "0.0.2",
-    "@whereby/eslint-config": "5.0.4",
+    "auto": "10.29.2",
     "babel-jest": "^29.7.0",
     "eslint": "^8.49.0",
     "eslint-config-prettier": "^9.0.0",
@@ -54,5 +54,8 @@
   },
   "engines": {
     "node": ">=16.0.0"
+  },
+  "auto": {
+    "extends": "./.autorc.json"
   }
 }
