@@ -30,7 +30,7 @@ jobs:
               uses: actions/setup-node@v4
               if: steps.check_files.outputs.files_exists == 'true'
               with:
-                  node-version: 20.x
+                  node-version: 20
 
               # Exit prerelease mode
             - name: Exit prerelease mode

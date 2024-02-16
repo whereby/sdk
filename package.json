@@ -41,5 +41,8 @@
   "resolutions": {
     "jest": "^29.7.0",
     "@types/jest": "^29.5.12"
+  },
+  "engines": {
+    "node": "^20"
   }
 }
