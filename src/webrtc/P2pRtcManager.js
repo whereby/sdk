@@ -3,7 +3,7 @@ import { PROTOCOL_REQUESTS, RELAY_MESSAGES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import RtcStream from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
-import { setCodecPreferenceSDP } from "./sdpModifier";
+import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap } from "./sdpModifier";
 import adapter from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
@@ -126,15 +126,16 @@ export default class P2pRtcManager extends BaseRtcManager {
         }
         session.isOperationPending = true;
 
-        const { vp9On, av1On, redOn } = this._features;
+        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn } = this._features;
 
         // Set codec preferences to video transceivers
         if (vp9On || av1On || redOn) {
             this._setCodecPreferences(pc, vp9On, av1On, redOn);
         }
-
         pc.createOffer(constraints || this.offerOptions)
             .then((offer) => {
+                // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
+                if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
                 // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
                 // Only vp9 because FF does not support AV1 yet
                 if ((vp9On || redOn) && browserName === "firefox") {
