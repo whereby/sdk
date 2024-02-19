@@ -10,7 +10,7 @@
         "@emotion/styled": "^11.10.6",
         "@types/jest": "^27.5.2",
         "@types/node": "^20.11.16",
-        "@types/react": "^18.0.38",
+        "@types/react": "^18.2.55",
         "@types/react-dom": "^18.0.11",
         "@whereby.com/browser-sdk": "*",
         "framer-motion": "^11.0.3",
