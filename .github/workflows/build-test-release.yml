@@ -15,11 +15,13 @@ jobs:
             - name: Checkout Repo
               uses: actions/checkout@v3
 
-            - name: Setup Node.js 20
-              uses: actions/setup-node@v3
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version-file: .nvmrc
                   cache: "yarn"
+                  cache-dependency-path: |
+                      yarn.lock
 
             - name: Cache turbo setup
               uses: actions/cache@v3
