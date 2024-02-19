@@ -6,6 +6,7 @@ import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core/utils";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
+import PreCallTest from "./components/PreCallTest";
 
 export default {
     title: "Examples/Custom UI",
@@ -23,6 +24,10 @@ const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
 export const StartStop = () => {
     return <div>Go to this story to eg verify all resources (camera, microphone, connections) are released.</div>;
+};
+
+export const PreCallTestD = () => {
+    return <PreCallTest />;
 };
 
 export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
