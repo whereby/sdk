@@ -17,6 +17,14 @@ jobs:
                   cache-dependency-path: |
                       yarn.lock
 
+            - name: Cache turbo test setup
+              uses: actions/cache@v3
+              with:
+                  path: .turbo
+                  key: ${{ runner.os }}-turbo-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-
+
             - name: Install dependencies
               run: yarn install --frozen-lockfile
 
@@ -33,7 +41,7 @@ jobs:
               if: steps.playwright-cache.outputs.cache-hit != 'true'
 
             - name: Run Playwright tests
-              run: yarn test:e2e
+              run: yarn test:e2e --cache-dir=.turbo
               env:
                   WHEREBY_API_KEY: ${{ secrets.WHEREBY_API_KEY }}
 
