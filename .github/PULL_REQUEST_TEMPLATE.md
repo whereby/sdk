@@ -28,16 +28,6 @@ especially for UI-related changes. -->
 -   [ ] By submitting this pull request, I confirm that my contribution is made
         under the terms of the MIT license.
 
-### Reviewers
-
-<!-- Tag the relevant team members or maintainers who should review this PR.
--->
-
-@havardholvik
-@kevinwhereby
-@nandito
-@thyal
-
 ### Additional Information
 
 <!-- Add any additional information that you think is relevant for the review,
