@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.2.1
+
+### Patch Changes
+
+- 4eb75f8: Adds people_toggle to example docs
+
 ## 2.2.0
 
 ### Minor Changes
