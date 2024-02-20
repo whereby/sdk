@@ -15,6 +15,7 @@ runs:
     steps:
         - name: Get published packages
           id: get-published-packages
+          shell: bash
           with:
               published_packages: ${{ inputs.published_packages }}
           run: |
