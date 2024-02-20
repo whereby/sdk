@@ -67,3 +67,11 @@ jobs:
                   aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   package: "browser-sdk"
                   dest_dir: "embed"
+
+            - name: Send Slack message
+              if: steps.changesets.outputs.published == 'true'
+              uses: ./.github/actions/notify-slack
+              with:
+                  channel_id: ${{ vars.WHEREBY_DEPLOYMENT_SLACK_CHANNEL_ID }}
+                  slack_bot_token: ${{ secrets.WHEREBY_DEPLOYMENT_SLACK_BOT_TOKEN }}
+                  published_packages: ${{ steps.changesets.outputs.publishedPackages }}

@@ -1,0 +1,57 @@
+name: "Slack Notification"
+description: "Send a slack notification when package(s) are published"
+inputs:
+    channel_id:
+        description: "The slack channel to send the message to"
+        required: true
+    slack_bot_token:
+        description: "The slack bot token"
+        required: true
+    published_packages:
+        description: "Stringified JSON of the published packages"
+        required: true
+runs:
+    using: "composite"
+    steps:
+        - name: Get published packages
+          id: get-published-packages
+          with:
+              published_packages: ${{ inputs.published_packages }}
+          run: |
+              PACKAGES=$(echo ${{ inputs.published_packages }} | jq -r '.packages | map(.name + "@" + .version) | join("\n")')
+              echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
+
+        - name: Send slack message
+          id: slack
+        - uses: slackapi/slack-github-action@v1.25.0
+          with:
+              channel-id: ${{ inputs.channel_id }}
+              update-ts: ${{ steps.slack.outputs.ts }}
+              payload: |
+                  {
+                    "blocks": [
+                      {
+                        "type": "section",
+                        "text": {
+                          "type": "mrkdwn",
+                          "text": "SDK: Publish to npm and deploy CDN build completed"
+                        }
+                      },
+                      {
+                        "type": "section",
+                        "fields": [
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Status:*\nCompleted"
+                          },
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Packages:*\n${{ env.PACKAGES }}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+          env:
+              SLACK_BOT_TOKEN: ${{ inputs.slack_bot_token }}
+              PACKAGES: ${{ steps.get-published-packages.outputs.packages }}
