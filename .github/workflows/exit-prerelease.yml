@@ -10,16 +10,8 @@ jobs:
         name: Changesets Exit Prerelease
         runs-on: ubuntu-latest
         steps:
-            # Check if pre.json file exists. The rest of the steps will only run if this file exists
-            - name: Check for pre.json file existence
-              id: check_files
-              uses: andstor/file-existence-action@v3.0.0
-              with:
-                  files: ".changeset/pre.json"
-
             - name: Checkout repo
               uses: actions/checkout@v4
-              if: steps.check_files.outputs.files_exists == 'true'
               with:
                   ref: ${{ github.event.pull_request.head.ref }}
                   # Fetch entire git history so  Changesets can generate changelogs
@@ -28,12 +20,18 @@ jobs:
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
-              if: steps.check_files.outputs.files_exists == 'true'
               with:
                   node-version-file: .nvmrc
                   cache: "yarn"
                   cache-dependency-path: |
                       yarn.lock
+
+              # Check if pre.json file exists. The rest of the steps will only run if this file exists
+            - name: Check for pre.json file existence
+              id: check_files
+              uses: andstor/file-existence-action@v3.0.0
+              with:
+                  files: ".changeset/pre.json"
 
               # Exit prerelease mode
             - name: Exit prerelease mode
