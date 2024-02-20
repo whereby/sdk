@@ -27,7 +27,6 @@ runs:
         - uses: slackapi/slack-github-action@v1.25.0
           with:
               channel-id: ${{ inputs.channel_id }}
-              update-ts: ${{ steps.slack.outputs.ts }}
               payload: |
                   {
                     "blocks": [
