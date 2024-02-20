@@ -37,6 +37,13 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     title: string;
     video: string;
     virtualBackgroundUrl: string;
+
+    /**
+     * Use dark text for bottom toolbar items.
+     *
+     * Use this attribute when the room background is **light** and the bottom toolbar items are hard to read.
+     */
+    toolbarDarkText: string;
 }
 
 interface WherebyEmbedElementEventMap {
@@ -109,6 +116,7 @@ const boolAttrs = [
     "subgridLabels",
     "lowData",
     "breakout",
+    "toolbarDarkText",
 ];
 
 define("WherebyEmbed", {

@@ -57,6 +57,7 @@ describe("@whereby/browser-sdk", () => {
                         "subgridlabels",
                         "lowdata",
                         "breakout",
+                        "toolbardarktext",
                     ],
                 }),
             );
