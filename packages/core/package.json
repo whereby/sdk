@@ -23,6 +23,10 @@
             "import": "./dist/index.js",
             "types": "./dist/index.d.ts"
         },
+        "./media": {
+            "import": "./dist/media.js",
+            "types": "./dist/media.d.ts"
+        },
         "./utils": {
             "import": "./dist/utils.js",
             "types": "./dist/utils.d.ts"
@@ -33,6 +37,9 @@
         "*": {
             "*": [
                 "dist/index.d.ts"
+            ],
+            "media": [
+                "dist/media.d.ts"
             ],
             "utils": [
                 "dist/utils.d.ts"

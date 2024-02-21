@@ -1,4 +1,5 @@
 import * as React from "react";
+import { BandwidthTest } from "./bandwidthTest";
 import { CameraTest } from "./cameraTest";
 import { MicrophoneTest } from "./microphoneTest";
 import { PreCallTestStatus, UseTestRef } from "./types";
@@ -9,12 +10,12 @@ interface PreCallTestOptions {
     language?: string;
 }
 
-type TestType = "camera" | "microphone";
+type TestType = "bandwidth" | "camera" | "microphone";
 
 interface PrecallTestState {
     status: PreCallTestStatus;
     currentTest: TestType | null;
-    tests: Pick<UseTestRef, "state">[];
+    tests: UseTestRef[];
 }
 
 interface PrecallTestRef {
@@ -25,8 +26,15 @@ type TestLookup = {
     [key in TestType]: UseTestRef;
 };
 
-const useCameraTest = useTestFactory("camera", new CameraTest());
-const useMicrophoneTest = useTestFactory("microphone", new MicrophoneTest());
+const useBandwidthTest = useTestFactory("bandwidth", new BandwidthTest(), {
+    description: "Checks whether your connection has enough bandwidth for a satisfactory call experience",
+});
+const useCameraTest = useTestFactory("camera", new CameraTest(), {
+    description: "Tries to get access to your local camera and verify the ability to retrieve a video track",
+});
+const useMicrophoneTest = useTestFactory("microphone", new MicrophoneTest(), {
+    description: "Checks whether you have or are able to give microphone permissions",
+});
 
 export function usePreCallTest(options: PreCallTestOptions = { autoStart: true }): PrecallTestRef {
     if (!options) {
@@ -34,15 +42,13 @@ export function usePreCallTest(options: PreCallTestOptions = { autoStart: true }
     }
 
     const [currentTest, setCurrentTest] = React.useState<TestType>("camera");
-    const [testList] = React.useState<TestType[]>(["camera", "microphone"]);
+    const [testList] = React.useState<TestType[]>(["camera", "microphone", "bandwidth"]);
 
     // Initialize all possible tests
-    const cameraTest = useCameraTest();
-    const microphoneTest = useMicrophoneTest();
-
     const tests: TestLookup = {
-        camera: cameraTest,
-        microphone: microphoneTest,
+        bandwidth: useBandwidthTest(),
+        camera: useCameraTest(),
+        microphone: useMicrophoneTest(),
     };
 
     // Optionally start the first test
@@ -84,5 +90,5 @@ export function usePreCallTest(options: PreCallTestOptions = { autoStart: true }
     const status = allIdle ? "idle" : allCompleted ? "completed" : someFailed ? "failed" : "running";
 
     // Always render tests state directly from the hook
-    return { state: { status, currentTest, tests: tests ? [cameraTest, microphoneTest] : [] } };
+    return { state: { status, currentTest, tests: testList.map((t) => tests[t]) } };
 }

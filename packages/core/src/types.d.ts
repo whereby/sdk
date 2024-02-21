@@ -1,3 +1,15 @@
+declare module "@whereby/jslib-media/src/webrtc/BandwidthTester" {
+    interface Features {
+        [key: string]: unknown;
+    }
+    export default class BandwidthTester {
+        constructor(features?: Features);
+
+        start: (runTime?: number) => void;
+        close: () => void;
+    }
+}
+
 declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
     enum RtcEventNames {
         rtc_manager_created = "rtc_manager_created",

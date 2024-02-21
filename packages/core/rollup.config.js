@@ -38,7 +38,7 @@ const plugins = [
 module.exports = [
     // Esm build of lib, to be used with bundlers
     {
-        input: { index: "src/index.ts", utils: "src/utils/index.ts" },
+        input: { index: "src/index.ts", media: "src/media/index.ts", utils: "src/utils/index.ts" },
 
         output: [
             {
@@ -53,6 +53,11 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.ts", format: "es" }],
         external: ["@whereby/jslib-media/src/webrtc/RtcManager"],
+        plugins: [dts()],
+    },
+    {
+        input: "src/media/index.ts",
+        output: [{ file: "dist/media.d.ts", format: "es" }],
         plugins: [dts()],
     },
     {
