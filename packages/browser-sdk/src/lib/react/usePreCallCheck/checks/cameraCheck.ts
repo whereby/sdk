@@ -1,4 +1,4 @@
-export class CameraTest extends EventTarget {
+export class CameraCheck extends EventTarget {
     async run() {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         await new Promise((resolve) => setTimeout(resolve, 2000));

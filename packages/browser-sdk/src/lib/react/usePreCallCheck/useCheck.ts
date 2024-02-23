@@ -1,23 +1,27 @@
 import * as React from "react";
-import { PreCallTestStatus, Test, UseTestRef } from "./types";
+import { CheckStatus, Check, UseCheckRef } from "./types";
 
-interface UseTestFactoryOptions {
+interface UseCheckFactoryOptions {
     description: string;
 }
 
-export function useTestFactory(id: string, test: Test, { description }: UseTestFactoryOptions = { description: "" }) {
-    return function useTest(): UseTestRef {
-        const [status, setStatus] = React.useState<PreCallTestStatus>("idle");
+export function useCheckFactory(
+    id: string,
+    check: Check,
+    { description }: UseCheckFactoryOptions = { description: "" },
+) {
+    return function useCheck(): UseCheckRef {
+        const [status, setStatus] = React.useState<CheckStatus>("idle");
         const [output, setOutput] = React.useState<string[]>([]);
 
         React.useEffect(() => {
-            async function runCameraTest() {
-                test.addEventListener("output", (ev) => {
+            async function runCheck() {
+                check.addEventListener("output", (ev) => {
                     setOutput((output) => [...output, `${id}: ${ev}`]);
                 });
 
                 try {
-                    await test.run();
+                    await check.run();
                     setStatus("completed");
                 } catch (error) {
                     setOutput((output) => [...output, `${id}: ${error}`]);
@@ -27,7 +31,7 @@ export function useTestFactory(id: string, test: Test, { description }: UseTestF
 
             if (status === "running") {
                 setOutput((output) => [...output, `${id}: starting...`]);
-                runCameraTest();
+                runCheck();
             }
         }, [status]);
 

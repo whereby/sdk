@@ -1,12 +1,11 @@
 import { BandwidthTester } from "@whereby.com/core/media";
 
-export class BandwidthTest extends EventTarget {
+export class BandwidthCheck extends EventTarget {
     run(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const bandwidthTester = new BandwidthTester();
 
-            bandwidthTester.on("result", (result) => {
-                console.log("Bandwidth test result", result);
+            bandwidthTester.on("result", () => {
                 resolve();
             });
             bandwidthTester.start();
