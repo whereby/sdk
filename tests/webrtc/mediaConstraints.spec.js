@@ -1,4 +1,4 @@
-import getConstraints from "../../src/webrtc/mediaConstraints";
+import getConstraints, { getMediaConstraints } from "../../src/webrtc/mediaConstraints";
 
 // the selectGetConstraintsOptions is testing most permutations of this
 describe("getConstraints", () => {
@@ -15,17 +15,24 @@ describe("getConstraints", () => {
 
         expect(result).toEqual({ video: expect.any(Object) });
     });
+});
 
-    it("should set fps to 24 if fps24 is true", () => {
-        const result = getConstraints({ devices: [vdev1], options: { fps24: true, hd: true } });
+describe("getMediaConstraints", () => {
+    describe("frameRate", () => {
+        it.each`
+            lowDataMode | simulcast | expected
+            ${false}    | ${false}  | ${24}
+            ${true}     | ${false}  | ${15}
+            ${true}     | ${true}   | ${24}
+        `(
+            "should set frameRate to $expected if lowDataMode is $lowDataMode and simulcast is $simulcast",
+            ({ lowDataMode, simulcast, expected }) => {
+                const preferredDeviceIds = { audioId: "audioId", videoId: "videoId" };
 
-        expect(result).toEqual({
-            video: {
-                aspectRatio: 1.3333333333333333,
-                facingMode: "user",
-                frameRate: 24,
-                height: { ideal: 720, min: 360 },
-            },
-        });
+                const result = getMediaConstraints({ lowDataMode, preferredDeviceIds, simulcast });
+
+                expect(result.video.frameRate).toBe(expected);
+            }
+        );
     });
 });
