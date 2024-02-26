@@ -4,6 +4,7 @@ import {
     RemoteParticipant,
     Screenshare,
     LocalMediaOptions,
+    ConnectionStatus,
 } from "@whereby.com/core";
 
 import { UseLocalMediaResult } from "../useLocalMedia/types";
@@ -24,16 +25,6 @@ export type ScreenshareState = Screenshare;
 type LocalScreenshareStatus = "starting" | "active";
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
-export type ConnectionStatus =
-    | "initializing"
-    | "connecting"
-    | "connected"
-    | "reconnect"
-    | "room_locked"
-    | "knocking"
-    | "disconnecting"
-    | "disconnected"
-    | "knock_rejected";
 
 export type CloudRecordingState = {
     error?: string;
