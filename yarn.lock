@@ -5050,9 +5050,10 @@
     "@webassemblyjs/ast" "1.11.6"
     "@xtuc/long" "4.2.2"
 
-"@whereby/jslib-media@whereby/jslib-media.git#1.9.0":
-  version "1.9.0"
-  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/83ac4a5b1af4cc9526eb6e664ceed8343a27c6ff"
+"@whereby/jslib-media@whereby/jslib-media.git#1.9.3":
+  version "1.9.3"
+  uid "92c83011d9012950bcd8c495dac67a011f9766d0"
+  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/92c83011d9012950bcd8c495dac67a011f9766d0"
   dependencies:
     check-ip "^1.1.1"
     events "^3.3.0"
