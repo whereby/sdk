@@ -38,6 +38,21 @@ describe("roomConnectionSlice", () => {
                     error: null,
                 });
             });
+
+            it("should set status to kicked if the client is kicked", () => {
+                const result = roomConnectionSlice.reducer(
+                    undefined,
+                    signalEvents.clientKicked({
+                        clientId: "abcd-1234",
+                    }),
+                );
+
+                expect(result).toEqual({
+                    status: "kicked",
+                    session: null,
+                    error: null,
+                });
+            });
         });
     });
 
