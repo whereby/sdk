@@ -57,6 +57,9 @@ describe("@whereby/browser-sdk", () => {
                         "subgridlabels",
                         "lowdata",
                         "breakout",
+                        "roomintegrations",
+                        "precallceremonycanskip",
+                        "precallpermissionshelplink",
                     ],
                 }),
             );
