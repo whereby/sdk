@@ -1,5 +1,13 @@
 # @whereby.com/browser-sdk
 
+## 2.2.2
+
+### Patch Changes
+
+- 1084a44: Listen for client_kicked events and update room ConnectionStatus accordingly
+- Updated dependencies [1084a44]
+  - @whereby.com/core@0.3.0
+
 ## 2.2.1
 
 ### Patch Changes
