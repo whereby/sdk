@@ -13,6 +13,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("room_joined", (payload) => dispatch(signalEvents.roomJoined(payload)));
     socket.on("new_client", (payload) => dispatch(signalEvents.newClient(payload)));
     socket.on("client_left", (payload) => dispatch(signalEvents.clientLeft(payload)));
+    socket.on("client_kicked", (payload) => dispatch(signalEvents.clientKicked(payload)));
     socket.on("audio_enabled", (payload) => dispatch(signalEvents.audioEnabled(payload)));
     socket.on("video_enabled", (payload) => dispatch(signalEvents.videoEnabled(payload)));
     socket.on("client_metadata_received", (payload) => dispatch(signalEvents.clientMetadataReceived(payload)));

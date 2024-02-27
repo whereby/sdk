@@ -31,7 +31,9 @@ export type ConnectionStatus =
     | "knocking"
     | "disconnecting"
     | "disconnected"
-    | "knock_rejected";
+    | "knock_rejected"
+    | "kicked";
+
 /**
  * Reducer
  */
@@ -91,6 +93,12 @@ export const roomConnectionSlice = createSlice({
             return {
                 ...state,
                 session: null,
+            };
+        });
+        builder.addCase(signalEvents.clientKicked, (state) => {
+            return {
+                ...state,
+                status: "kicked",
             };
         });
         builder.addCase(socketReconnecting, (state) => {

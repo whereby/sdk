@@ -154,6 +154,10 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         };
     }
 
+    interface ClientKickedEvent {
+        clientId: string;
+    }
+
     interface KnockerLeftEvent {
         clientId: string;
     }
@@ -222,6 +226,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         audio_enabled: AudioEnabledEvent;
         chat_message: ChatMessage;
         client_left: ClientLeftEvent;
+        client_kicked: ClientKickedEvent;
         client_metadata_received: ClientMetadataReceivedEvent;
         cloud_recording_started: CloudRecordingStartedEvent;
         cloud_recording_stopped: void;
