@@ -11,7 +11,6 @@ const parseResolution = (res) => res.split(/[^\d]/g).map((n) => parseInt(n, 10))
 export function getMediaConstraints({
     disableAEC,
     disableAGC,
-    fps24,
     hd,
     lax,
     lowDataMode,
@@ -22,7 +21,6 @@ export function getMediaConstraints({
 }) {
     let HIGH_HEIGHT = 480;
     let LOW_HEIGHT = 240;
-    let NON_STANDARD_FPS = 0;
 
     if (hd) {
         // respect user choice, but default to HD for pro, and SD for free
@@ -37,18 +35,14 @@ export function getMediaConstraints({
         }
     }
 
-    // Set framerate to 24 to increase quality/bandwidth
-    if (fps24) NON_STANDARD_FPS = 24;
-
-    // Set framerate for low data, but only for non-simulcast
-    if (lowDataMode && !simulcast) NON_STANDARD_FPS = 15;
-
     const constraints = {
         audio: { ...(preferredDeviceIds.audioId && { deviceId: preferredDeviceIds.audioId }) },
         video: {
             ...(preferredDeviceIds.videoId ? { deviceId: preferredDeviceIds.videoId } : { facingMode: "user" }),
             height: lowDataMode ? LOW_HEIGHT : HIGH_HEIGHT,
-            ...(NON_STANDARD_FPS && { frameRate: NON_STANDARD_FPS }),
+            // Set a lower frame rate (15fps) for low data, but only for non-simulcast.
+            // Otherwise use 24fps to increase quality/bandwidth.
+            frameRate: lowDataMode && !simulcast ? 15 : 24,
         },
     };
     if (lax) {
