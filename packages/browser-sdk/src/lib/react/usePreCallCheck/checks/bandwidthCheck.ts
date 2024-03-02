@@ -8,6 +8,7 @@ export class BandwidthCheck extends EventTarget {
             bandwidthTester.on("result", () => {
                 resolve();
             });
+
             bandwidthTester.start();
         });
     }

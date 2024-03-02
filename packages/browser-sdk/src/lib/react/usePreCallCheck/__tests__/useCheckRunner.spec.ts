@@ -62,14 +62,14 @@ describe("useCheckRunnerFactory", () => {
             });
         });
 
-        describe("when all checks complete", () => {
-            it("should enter 'completed' status", async () => {
+        describe("when all checks succeed", () => {
+            it("should enter 'succeeded' status", async () => {
                 const { result } = renderHook(() => useCheckRunner());
 
                 await waitFor(() => {
                     const { state } = result.current;
 
-                    expect(state.status).toEqual("completed");
+                    expect(state.status).toEqual("succeeded");
                 });
             });
         });

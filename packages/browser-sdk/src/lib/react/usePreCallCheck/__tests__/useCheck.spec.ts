@@ -18,12 +18,12 @@ describe("useCheckFactory", () => {
             useCheck = useCheckFactory("check", new CheckMock());
         });
 
-        it("should have initial status of 'idle'", () => {
+        it("should have initial status of 'pending'", () => {
             const { result } = renderHook(() => useCheck());
 
             const { state } = result.current;
 
-            expect(state.status).toEqual("idle");
+            expect(state.status).toEqual("pending");
         });
 
         describe("start", () => {
@@ -45,7 +45,7 @@ describe("useCheckFactory", () => {
                     useCheck = useCheckFactory("check", new CheckMock({ success: true }));
                 });
 
-                it("should change status to 'completed'", () => {
+                it("should change status to 'succeeded'", () => {
                     const { result } = renderHook(() => useCheck());
 
                     const { actions } = result.current;
@@ -54,7 +54,7 @@ describe("useCheckFactory", () => {
                     waitFor(() => {
                         const { state } = result.current;
 
-                        expect(state.status).toEqual("completed");
+                        expect(state.status).toEqual("succeeded");
                     });
                 });
             });

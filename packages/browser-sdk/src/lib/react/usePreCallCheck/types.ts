@@ -2,7 +2,7 @@ export interface Check extends EventTarget {
     run: () => void;
 }
 
-export type CheckStatus = "idle" | "running" | "completed" | "failed" | "skipped";
+export type CheckStatus = "pending" | "running" | "succeeded" | "failed" | "skipped";
 
 export interface UseCheckRef {
     id: string;

@@ -11,7 +11,7 @@ export function useCheckFactory(
     { description }: UseCheckFactoryOptions = { description: "" },
 ) {
     return function useCheck(): UseCheckRef {
-        const [status, setStatus] = React.useState<CheckStatus>("idle");
+        const [status, setStatus] = React.useState<CheckStatus>("pending");
         const [output, setOutput] = React.useState<string[]>([]);
 
         React.useEffect(() => {
@@ -22,7 +22,7 @@ export function useCheckFactory(
 
                 try {
                     await check.run();
-                    setStatus("completed");
+                    setStatus("succeeded");
                 } catch (error) {
                     setOutput((output) => [...output, `${id}: ${error}`]);
                     setStatus("failed");

@@ -53,7 +53,7 @@ export function useCheckRunnerFactory(
             const { actions, state } = checks[currentCheck];
             const { status: currentCheckStatus } = state;
 
-            if (currentCheckStatus === "idle") {
+            if (currentCheckStatus === "pending") {
                 logger.debug("Starting check:", currentCheck);
                 actions.start();
             } else if (currentCheckStatus === "running") {
@@ -65,8 +65,8 @@ export function useCheckRunnerFactory(
                     const checkToSkip = checkList[index];
                     checks[checkToSkip].actions.skip();
                 }
-            } else if (currentCheckStatus === "completed") {
-                logger.debug("Check completed:", currentCheck);
+            } else if (currentCheckStatus === "succeeded") {
+                logger.debug("Check succeeded:", currentCheck);
                 const nextCheckIdx = checkList.indexOf(currentCheck) + 1;
                 const nextCheck = checkList[nextCheckIdx];
 
@@ -80,11 +80,11 @@ export function useCheckRunnerFactory(
         }, [`${currentCheck}-${checks[currentCheck].state.status}`]);
 
         // Computed overall status based on individual checks
-        const allIdle = Object.values(checks).every((check) => check.state.status === "idle");
-        const allCompleted = Object.values(checks).every((check) => check.state.status === "completed");
+        const allPending = Object.values(checks).every((check) => check.state.status === "pending");
+        const allSucceeded = Object.values(checks).every((check) => check.state.status === "succeeded");
         const someFailed = Object.values(checks).some((check) => check.state.status === "failed");
 
-        const status = allIdle ? "idle" : allCompleted ? "completed" : someFailed ? "failed" : "running";
+        const status = allPending ? "pending" : allSucceeded ? "succeeded" : someFailed ? "failed" : "running";
 
         // Always render check state directly from the hook
         return { state: { status, currentCheck: currentCheck, checks: checkList.map((t) => checks[t]) } };
