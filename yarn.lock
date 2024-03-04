@@ -5050,21 +5050,22 @@
     "@webassemblyjs/ast" "1.11.6"
     "@xtuc/long" "4.2.2"
 
-"@whereby/jslib-media@whereby/jslib-media.git#1.9.0":
-  version "1.9.0"
-  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/83ac4a5b1af4cc9526eb6e664ceed8343a27c6ff"
+"@whereby/jslib-media@whereby/jslib-media.git#1.9.6":
+  version "1.9.6"
+  uid "701e70fc3c861590b2486e292c90559cddffaae6"
+  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/701e70fc3c861590b2486e292c90559cddffaae6"
   dependencies:
     check-ip "^1.1.1"
     events "^3.3.0"
     ip-address "^9.0.5"
     mediasoup-client "3.6.100"
     rtcstats "github:whereby/rtcstats#5.4.0"
-    sdp "^2.2.0"
-    sdp-transform "^2.14.1"
+    sdp "^3.2.0"
+    sdp-transform "^2.14.2"
     socket.io-client "4.7.2"
     uuid "^9.0.1"
     uuid-validate "^0.0.3"
-    webrtc-adapter "^7.3.0"
+    webrtc-adapter "^8.2.3"
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
@@ -10777,13 +10778,6 @@ rollup@^4.12.0, rollup@^4.2.0:
     "@rollup/rollup-win32-x64-msvc" "4.12.0"
     fsevents "~2.3.2"
 
-rtcpeerconnection-shim@^1.2.15:
-  version "1.2.15"
-  resolved "https://registry.yarnpkg.com/rtcpeerconnection-shim/-/rtcpeerconnection-shim-1.2.15.tgz#e7cc189a81b435324c4949aa3dfb51888684b243"
-  integrity sha512-C6DxhXt7bssQ1nHb154lqeL0SXz5Dx4RczXZu2Aa/L1NJFnEVDxFwCBo3fqtuljhHIGceg5JKBV4XJ0gW5JKyw==
-  dependencies:
-    sdp "^2.6.0"
-
 "rtcstats@github:whereby/rtcstats#5.4.0":
   version "5.4.0"
   resolved "https://codeload.github.com/whereby/rtcstats/tar.gz/6f6623b4b53e9f6b41f530339793de227f34ea51"
@@ -10871,15 +10865,15 @@ schema-utils@^4.0.0:
     ajv-formats "^2.1.1"
     ajv-keywords "^5.1.0"
 
-sdp-transform@^2.14.1:
+sdp-transform@^2.14.1, sdp-transform@^2.14.2:
   version "2.14.2"
   resolved "https://registry.yarnpkg.com/sdp-transform/-/sdp-transform-2.14.2.tgz#d2cee6a1f7abe44e6332ac6cbb94e8600f32d813"
   integrity sha512-icY6jVao7MfKCieyo1AyxFYm1baiM+fA00qW/KrNNVlkxHAd34riEKuEkUe4bBb3gJwLJZM+xT60Yj1QL8rHiA==
 
-sdp@^2.12.0, sdp@^2.2.0, sdp@^2.6.0:
-  version "2.12.0"
-  resolved "https://registry.yarnpkg.com/sdp/-/sdp-2.12.0.tgz#338a106af7560c86e4523f858349680350d53b22"
-  integrity sha512-jhXqQAQVM+8Xj5EjJGVweuEzgtGWb3tmEEpl3CLP3cStInSbVHSg0QWOGQzNq8pSID4JkpeV2mPqlMDLrm0/Vw==
+sdp@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/sdp/-/sdp-3.2.0.tgz#8961420552b36663b4d13ddba6f478d1461896a5"
+  integrity sha512-d7wDPgDV3DDiqulJjKiV2865wKsJ34YI+NDREbm+FySq6WuKOikwyNQcm+doLAZ1O6ltdO0SeKle2xMpN3Brgw==
 
 "semver@2 || 3 || 4 || 5", semver@^5.6.0:
   version "5.7.2"
@@ -12144,13 +12138,12 @@ webpack@5:
     watchpack "^2.4.0"
     webpack-sources "^3.2.3"
 
-webrtc-adapter@^7.3.0:
-  version "7.7.1"
-  resolved "https://registry.yarnpkg.com/webrtc-adapter/-/webrtc-adapter-7.7.1.tgz#b2c227a6144983b35057df67bd984a7d4bfd17f1"
-  integrity sha512-TbrbBmiQBL9n0/5bvDdORc6ZfRY/Z7JnEj+EYOD1ghseZdpJ+nF2yx14k3LgQKc7JZnG7HAcL+zHnY25So9d7A==
+webrtc-adapter@^8.2.3:
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/webrtc-adapter/-/webrtc-adapter-8.2.3.tgz#85e5e52ea68e808be8d6db85e338aa5c95e80022"
+  integrity sha512-gnmRz++suzmvxtp3ehQts6s2JtAGPuDPjA1F3a9ckNpG1kYdYuHWYpazoAnL9FS5/B21tKlhkorbdCXat0+4xQ==
   dependencies:
-    rtcpeerconnection-shim "^1.2.15"
-    sdp "^2.12.0"
+    sdp "^3.2.0"
 
 whatwg-encoding@^2.0.0:
   version "2.0.0"
