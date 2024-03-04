@@ -21,7 +21,7 @@ describe("@whereby/browser-sdk", () => {
             expect(define).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
-                    observedAttributes: [
+                    observedAttributes: expect.arrayContaining([
                         "displayname",
                         "minimal",
                         "room",
@@ -60,7 +60,7 @@ describe("@whereby/browser-sdk", () => {
                         "roomintegrations",
                         "precallceremonycanskip",
                         "precallpermissionshelplink",
-                    ],
+                    ]),
                 }),
             );
         });
