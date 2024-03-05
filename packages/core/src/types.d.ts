@@ -188,6 +188,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
             } | null;
         };
         selfId: string;
+        clientClaim?: string;
     }
 
     interface RoomKnockedEvent {
@@ -257,6 +258,8 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         organizationId: string;
         roomName: string;
         displayName?: string;
+        selfId?: string;
+        clientClaim?: string;
     }
 
     interface KnockRoomRequest {
