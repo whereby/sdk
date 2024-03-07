@@ -5,8 +5,13 @@ import { parseRoomUrlAndSubdomain } from "@whereby.com/core/utils";
 
 interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     audio: string;
+    /**
+     * Automatically spotlight the local participant on room join. Can only be used with users joining with host privileges.
+     */
+    autoSpotlight: string;
     avatarUrl: string;
     background: string;
+    bottomToolbar: string;
     breakout: string;
     cameraAccess: string;
     chat: string;
@@ -27,13 +32,22 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     participantCount: string;
     people: string;
     pipButton: string;
+    /**
+     * Displays a device and connectivity test for the user. Is dependent on precallReview being enabled
+     */
+    precallCeremony: string;
     precallReview: string;
     recording: string;
     room: string;
     settingsButton: string;
     screenshare: string;
+    /**
+     * Skips the Whereby permissions UI and causes browser to automatically request device permissions. Required for Android app integrations.
+     */
+    skipMediaPermissionPrompt: string;
     style: { [key: string]: string };
     subgridLabels: string;
+    timer: string;
     title: string;
     video: string;
     virtualBackgroundUrl: string;
@@ -87,7 +101,9 @@ declare global {
 
 const boolAttrs = [
     "audio",
+    "autoSpotlight",
     "background",
+    "bottomToolbar",
     "cameraAccess",
     "chat",
     "people",
@@ -95,6 +111,7 @@ const boolAttrs = [
     "emptyRoomInvitation",
     "help",
     "leaveButton",
+    "precallCeremony",
     "precallReview",
     "screenshare",
     "video",
@@ -107,9 +124,11 @@ const boolAttrs = [
     "pipButton",
     "moreButton",
     "personality",
+    "skipMediaPermissionPrompt",
     "subgridLabels",
     "lowData",
     "breakout",
+    "timer"
 ];
 
 define("WherebyEmbed", {
