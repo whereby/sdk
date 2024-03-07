@@ -16,3 +16,5 @@ yalc.lock
 
 .env
 yarn-error.log
+yarn.lock
+package-lock.json
