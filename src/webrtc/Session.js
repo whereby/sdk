@@ -1,10 +1,11 @@
 import * as sdpModifier from "./sdpModifier";
 import * as statsHelper from "./statsHelper";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
-import adapter from "webrtc-adapter";
+import adapterRaw from "webrtc-adapter";
 import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./constants";
 import Logger from "../utils/Logger";
 
+const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 export default class Session {

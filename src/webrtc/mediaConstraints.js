@@ -1,4 +1,6 @@
-import adapter from "webrtc-adapter";
+import adapterRaw from "webrtc-adapter";
+
+const adapter = adapterRaw.default ?? adapterRaw;
 
 const isSafari = adapter.browserDetails.browser === "safari";
 

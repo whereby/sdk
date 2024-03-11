@@ -4,7 +4,7 @@ import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import ServerSocket from "../utils/ServerSocket";
 import rtcManagerEvents from "./rtcManagerEvents";
 import rtcStats from "./rtcStatsService";
-import adapter from "webrtc-adapter";
+import adapterRaw from "webrtc-adapter";
 import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
@@ -16,6 +16,7 @@ import { maybeTurnOnly } from "../utils/transportSettings";
 import VegaMediaQualityMonitor from "./VegaMediaQualityMonitor";
 import Logger from "../utils/Logger";
 
+const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 const browserName = adapter.browserDetails.browser;

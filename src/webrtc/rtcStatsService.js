@@ -1,7 +1,9 @@
 // ensure adapter is loaded first.
-import adapter from "webrtc-adapter"; // eslint-disable-line no-unused-vars
+import adapterRaw from "webrtc-adapter";
 import rtcstats from "rtcstats";
 import { v4 as uuidv4 } from "uuid";
+
+const adapter = adapterRaw.default ?? adapterRaw; // eslint-disable-line no-unused-vars
 
 const RTCSTATS_PROTOCOL_VERSION = "1.0";
 
