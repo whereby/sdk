@@ -1,4 +1,6 @@
 declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
+    import { type HandlerFactory } from "mediasoup-client/lib/handlers/HandlerInterface";
+
     enum RtcEventNames {
         rtc_manager_created = "rtc_manager_created",
         stream_added = "stream_added",
@@ -36,6 +38,7 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
             vp9On: boolean;
             h264On: boolean;
             simulcastScreenshareOn: boolean;
+            deviceHandlerFactory?: HandlerFactory;
         };
         logger: {
             debug: (message: string) => void;
