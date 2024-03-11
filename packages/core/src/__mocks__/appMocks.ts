@@ -2,8 +2,10 @@ import { Credentials } from "../api";
 import Organization from "../api/models/Organization";
 import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { RemoteParticipant } from "../RoomParticipant";
-import { v4 as uuid } from "uuid";
+import * as uuidPkg from "uuid";
 import MockMediaStream from "./MediaStream";
+
+const uuid = uuidPkg.v4;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export const noop = () => {};
