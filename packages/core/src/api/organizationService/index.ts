@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby/jslib-media";
 import Organization, { OrganizationPreferences } from "../models/Organization";
 import {
     assertInstanceOf,
@@ -96,11 +96,11 @@ export default class OrganizationService {
         return this._apiClient
             .request(
                 `/organization-subdomains/${encodeURIComponent(
-                    subdomain,
+                    subdomain
                 )}/?fields=permissions,account,onboardingSurvey`,
                 {
                     method: "GET",
-                },
+                }
             )
 
             .then(({ data }) => {
@@ -163,7 +163,7 @@ export default class OrganizationService {
             | {
                   phoneNumber: string;
                   code: string;
-              },
+              }
     ): Promise<ReadonlyArray<Organization>> {
         const { code } = options;
         const email = "email" in options ? options.email : null;

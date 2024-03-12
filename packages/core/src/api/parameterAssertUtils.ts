@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby/jslib-media";
 
 /**
  * Asserts that value is truthy.
@@ -19,7 +19,7 @@ export function assertTruthy(value: unknown, parameterName: string): unknown {
  */
 export function assertBoolean(value: unknown, parameterName: string): boolean {
     assert.ok(typeof value === "boolean", `${parameterName}<boolean> is required`);
-    return value;
+    return value as boolean;
 }
 
 /**
@@ -30,7 +30,7 @@ export function assertBoolean(value: unknown, parameterName: string): boolean {
  */
 export function assertNumber(value: unknown, parameterName: string): number {
     assert.ok(typeof value === "number", `${parameterName}<number> is required`);
-    return value;
+    return value as number;
 }
 
 /**
@@ -41,7 +41,7 @@ export function assertNumber(value: unknown, parameterName: string): number {
  */
 export function assertString(value: unknown, parameterName: string): string {
     assert.ok(typeof value === "string", `${parameterName}<string> is required`);
-    return value;
+    return value as string;
 }
 
 /**
@@ -54,7 +54,7 @@ export function assertString(value: unknown, parameterName: string): string {
 export function assertInstanceOf<T>(value: unknown, type: new (any: unknown) => T, parameterName?: string): T {
     const resolvedParameterName = parameterName || type.name[0].toLowerCase() + type.name.substring(1);
     assert.ok(value instanceof type, `${resolvedParameterName}<${type.name}> is required`);
-    return value;
+    return value as T;
 }
 
 /**

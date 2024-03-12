@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby/jslib-media";
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import Response, { ErrorResponseObject } from "./Response";
 import { assertString } from "./parameterAssertUtils";
@@ -85,7 +85,7 @@ export default class HttpClient implements IHttpClient {
                         status,
                         statusText,
                         url: requestUrl,
-                    }),
+                    })
                 );
             });
     }

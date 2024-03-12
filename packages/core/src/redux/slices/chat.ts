@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
+import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";

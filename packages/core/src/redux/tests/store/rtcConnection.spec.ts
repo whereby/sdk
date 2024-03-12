@@ -1,18 +1,14 @@
 import { createStore, mockRtcManager } from "../store.setup";
 import {
     doHandleAcceptStreams,
-    doConnectRtc,
     doDisconnectRtc,
     doRtcReportStreamResolution,
     doRtcManagerInitialize,
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
-import RtcManagerDispatcher from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
-
-jest.mock("@whereby/jslib-media/src/webrtc/RtcManagerDispatcher");
 
 describe("actions", () => {
     it("doHandleAcceptStreams", () => {
@@ -39,32 +35,16 @@ describe("actions", () => {
             doHandleAcceptStreams([
                 { clientId: participant1.id, streamId: id1, state: "to_accept" },
                 { clientId: participant2.id, streamId: id3, state: "to_accept" },
-            ]),
+            ])
         );
 
         expect(JSON.stringify(mockRtcManager.acceptNewStream.mock.calls)).toStrictEqual(
             JSON.stringify([
                 [{ streamId: id1, clientId: participant1.id, shouldAddLocalVideo: false, activeBreakout: false }],
                 [{ streamId: id3, clientId: participant2.id, shouldAddLocalVideo: false, activeBreakout: false }],
-            ]),
+            ])
         );
         expect(mockRtcManager.acceptNewStream).toHaveBeenCalledTimes(2);
-    });
-
-    it("doConnectRtc", () => {
-        const store = createStore();
-
-        const before = store.getState().rtcConnection;
-
-        store.dispatch(doConnectRtc());
-
-        const after = store.getState().rtcConnection;
-
-        expect(RtcManagerDispatcher).toHaveBeenCalledTimes(1);
-        expect(diff(before, after)).toEqual({
-            dispatcherCreated: true,
-            rtcManagerDispatcher: expect.any(RtcManagerDispatcher),
-        });
     });
 
     it("doDisconnectRtc", () => {

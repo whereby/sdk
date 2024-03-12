@@ -1,5 +1,5 @@
 import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
-import { getStream, getUpdatedDevices, getDeviceData } from "@whereby/jslib-media/src/webrtc/MediaDevices";
+import { getStream, getUpdatedDevices, getDeviceData } from "@whereby/jslib-media";
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
@@ -277,7 +277,7 @@ export const doToggleCamera = createAppAsyncThunk(
                             videoId: cameraDeviceId,
                             type: "exact",
                         },
-                        { replaceStream: stream },
+                        { replaceStream: stream }
                     );
 
                     track = stream.getVideoTracks()[0];
@@ -297,7 +297,7 @@ export const doToggleCamera = createAppAsyncThunk(
         } catch (error) {
             return rejectWithValue(error);
         }
-    },
+    }
 );
 
 const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState }) => {
@@ -335,7 +335,7 @@ export const doSetDevice = createAppAsyncThunk(
                     videoId,
                     type: "exact",
                 },
-                { replaceStream: stream },
+                { replaceStream: stream }
             );
 
             const isAudioEnabled = selectIsMicrophoneEnabled(state);
@@ -348,7 +348,7 @@ export const doSetDevice = createAppAsyncThunk(
         } catch (error) {
             return rejectWithValue(error);
         }
-    },
+    }
 );
 
 export const doUpdateDeviceList = createAppAsyncThunk(
@@ -396,7 +396,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 
                 let nextVideoId = nextId(
                     videoDevices.filter((d) => !busy.includes(d.deviceId)),
-                    videoId,
+                    videoId
                 );
                 if (!nextVideoId || videoId === nextVideoId) {
                     nextVideoId = nextId(videoDevices, videoId);
@@ -412,7 +412,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 
                 let nextAudioId = nextId(
                     audioDevices.filter((d) => !busy.includes(d.deviceId)),
-                    audioId,
+                    audioId
                 );
                 if (!nextAudioId || audioId === nextAudioId) {
                     nextAudioId = nextId(audioDevices, audioId);
@@ -430,7 +430,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
         } catch (error) {
             return rejectWithValue(error);
         }
-    },
+    }
 );
 
 export const doSwitchLocalStream = createAppAsyncThunk(
@@ -453,7 +453,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                     videoId: videoId === undefined ? false : videoId,
                     type: "exact",
                 },
-                { replaceStream },
+                { replaceStream }
             );
 
             const deviceId = audioId || videoId;
@@ -461,7 +461,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                 dispatch(
                     deviceBusy({
                         deviceId,
-                    }),
+                    })
                 );
             }
 
@@ -473,12 +473,12 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                 dispatch(
                     deviceBusy({
                         deviceId,
-                    }),
+                    })
                 );
             }
             return rejectWithValue(error);
         }
-    },
+    }
 );
 
 export const doStartLocalMedia = createAppAsyncThunk(
@@ -488,7 +488,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
             () => {
                 dispatch(doUpdateDeviceList());
             },
-            { delay: 500 },
+            { delay: 500 }
         );
 
         if (navigator.mediaDevices) {
@@ -524,7 +524,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
         } catch (error) {
             return rejectWithValue(error);
         }
-    },
+    }
 );
 
 export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
@@ -581,16 +581,16 @@ export const selectCameraDevices = createSelector(
     selectLocalMediaDevices,
     selectBusyDeviceIds,
     (devices, busyDeviceIds) =>
-        devices.filter((d) => d.kind === "videoinput").filter((d) => !busyDeviceIds.includes(d.deviceId)),
+        devices.filter((d) => d.kind === "videoinput").filter((d) => !busyDeviceIds.includes(d.deviceId))
 );
 export const selectMicrophoneDevices = createSelector(
     selectLocalMediaDevices,
     selectBusyDeviceIds,
     (devices, busyDeviceIds) =>
-        devices.filter((d) => d.kind === "audioinput").filter((d) => !busyDeviceIds.includes(d.deviceId)),
+        devices.filter((d) => d.kind === "audioinput").filter((d) => !busyDeviceIds.includes(d.deviceId))
 );
 export const selectSpeakerDevices = createSelector(selectLocalMediaDevices, (devices) =>
-    devices.filter((d) => d.kind === "audiooutput"),
+    devices.filter((d) => d.kind === "audiooutput")
 );
 
 /**
@@ -607,7 +607,7 @@ export const selectLocalMediaShouldStartWithOptions = createSelector(
         if (appWantsToJoin && localMediaStatus === "" && !isNodeSdk && localMediaOptions) {
             return localMediaOptions;
         }
-    },
+    }
 );
 
 createReactor([selectLocalMediaShouldStartWithOptions], ({ dispatch }, options) => {
@@ -623,7 +623,7 @@ export const selectLocalMediaShouldStop = createSelector(
     selectLocalMediaOptions,
     (appWantsToJoin, localMediaStatus, localMediaOptions) => {
         return !appWantsToJoin && localMediaStatus !== "" && !!localMediaOptions;
-    },
+    }
 );
 
 createReactor([selectLocalMediaShouldStop], ({ dispatch }, localMediaShouldStop) => {
@@ -689,7 +689,7 @@ startAppListening({
         doStartLocalMedia.fulfilled,
         doUpdateDeviceList.fulfilled,
         doSwitchLocalStream.fulfilled,
-        doSwitchLocalStream.rejected,
+        doSwitchLocalStream.rejected
     ),
     effect: (_action, { dispatch, getState }) => {
         const state = getState();

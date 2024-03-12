@@ -18,14 +18,8 @@ const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
 const plugins = [
     replace(replaceValues),
-    replace({
-        preventAssignment: true,
-        // jslib-media uses global.navigator for some gUM calls, replace these
-        delimiters: [" ", "."],
-        values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
-    }),
     nodeResolve({
-        // only include @whereby/jslib-media and rtcstats in our bundle
+        // only include rtcstats in our bundle
         preferBuiltins: true,
         resolveOnly: [/@whereby\/jslib-media|rtcstats/],
     }),
@@ -52,7 +46,7 @@ module.exports = [
     {
         input: "src/index.ts",
         output: [{ file: "dist/index.d.ts", format: "es" }],
-        external: ["@whereby/jslib-media/src/webrtc/RtcManager"],
+        external: ["@whereby/jslib-media"],
         plugins: [dts()],
     },
     {
