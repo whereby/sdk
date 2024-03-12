@@ -6,6 +6,7 @@ import type { LocalMediaOptions } from "./localMedia";
  * Reducer
  */
 export interface AppState {
+    isNodeSdk: boolean;
     wantsToJoin: boolean;
     roomUrl: string | null;
     roomName: string | null;
@@ -16,6 +17,7 @@ export interface AppState {
 }
 
 const initialState: AppState = {
+    isNodeSdk: false,
     wantsToJoin: false,
     roomName: null,
     roomKey: null,
@@ -32,6 +34,7 @@ export const appSlice = createSlice({
         doAppJoin: (
             state,
             action: PayloadAction<{
+                isNodeSdk?: boolean;
                 displayName: string;
                 localMediaOptions?: LocalMediaOptions;
                 roomKey: string | null;
@@ -77,3 +80,4 @@ export const selectAppRoomKey = (state: RootState) => state.app.roomKey;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;
 export const selectAppSdkVersion = (state: RootState) => state.app.sdkVersion;
 export const selectAppExternalId = (state: RootState) => state.app.externalId;
+export const selectAppIsNodeSdk = (state: RootState) => state.app.isNodeSdk;

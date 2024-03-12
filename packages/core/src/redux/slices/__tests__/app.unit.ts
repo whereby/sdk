@@ -6,6 +6,7 @@ describe("appSlice", () => {
             const result = appSlice.reducer(
                 undefined,
                 appSlice.actions.doAppJoin({
+                    isNodeSdk: true,
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
                     displayName: "displayName",
@@ -22,6 +23,7 @@ describe("appSlice", () => {
                 displayName: "displayName",
                 sdkVersion: "sdkVersion",
                 externalId: "externalId",
+                isNodeSdk: true,
             });
         });
 
