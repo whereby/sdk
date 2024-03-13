@@ -1,13 +1,14 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
-import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
-import RtcManagerDispatcher, {
+import {
+    RtcManager,
+    RtcManagerDispatcher,
     RtcEvents,
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
-} from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+} from "@whereby/jslib-media";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
@@ -168,7 +169,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
 
-    if (dispatcher) {
+    if (dispatcher || !socket) {
         return;
     }
 
@@ -185,7 +186,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const rtcManagerDispatcher = new RtcManagerDispatcher({
         emitter: createWebRtcEmitter(dispatch),
         serverSocket: socket,
-        logger: console,
+        // logger: console,
         webrtcProvider,
         features: {
             lowDataModeEnabled: false,
@@ -273,7 +274,7 @@ export const doRtcReportStreamResolution = createAppThunk(
             }
 
             dispatch(resolutionReported({ streamId, width, height }));
-        },
+        }
 );
 
 export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch) => {
@@ -322,7 +323,8 @@ startAppListening({
             return track && rtcManager?.replaceTrack(oldTrack, track);
         };
 
-        replacedTracks?.forEach((t) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        replacedTracks?.forEach((t: any) => {
             replace(t.kind, t);
         });
     },
@@ -357,7 +359,7 @@ export const selectShouldConnectRtc = createSelector(
             return true;
         }
         return false;
-    },
+    }
 );
 
 createReactor([selectShouldConnectRtc], ({ dispatch }, shouldConnectRtc) => {
@@ -375,7 +377,7 @@ export const selectShouldInitializeRtc = createSelector(
             return true;
         }
         return false;
-    },
+    }
 );
 
 createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) => {
@@ -394,7 +396,7 @@ export const selectShouldDisconnectRtc = createSelector(
             return true;
         }
         return false;
-    },
+    }
 );
 
 createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) => {
@@ -450,7 +452,7 @@ export const selectStreamsToAccept = createSelector(
             }
         }
         return upd;
-    },
+    }
 );
 
 createReactor(
@@ -459,5 +461,5 @@ createReactor(
         if (0 < streamsToAccept.length && !isAcceptingStreams) {
             dispatch(doHandleAcceptStreams(streamsToAccept));
         }
-    },
+    }
 );

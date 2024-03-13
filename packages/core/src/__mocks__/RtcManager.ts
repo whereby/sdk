@@ -1,4 +1,4 @@
-import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
+import { RtcManager } from "@whereby/jslib-media";
 
 export default jest.fn(function (this: RtcManager): RtcManager {
     this.acceptNewStream = jest.fn();

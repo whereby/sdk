@@ -13,7 +13,7 @@ import {
     nullOrTransform,
     Transformer,
 } from "../extractUtils";
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby/jslib-media";
 import { Json } from "../Response";
 import { assertString } from "../parameterAssertUtils";
 type User = { name: string; eyeColor: string | null; age: number; dob: Date };
@@ -55,7 +55,7 @@ function testExtract(
     {
         invalidValues,
         validValues,
-    }: { invalidValues: ReadonlyArray<InvalidValue>; validValues: ReadonlyArray<ValidValue> },
+    }: { invalidValues: ReadonlyArray<InvalidValue>; validValues: ReadonlyArray<ValidValue> }
 ) {
     itShouldThrowForValues(extract, invalidValues);
     itShouldExtractForValues(extract, validValues);
@@ -206,7 +206,7 @@ describe("extractUtils", () => {
                         { desc: "empty array", value: ["some-id"], expected: ["some-id"] },
                     ],
                     invalidValues: invalidArrayStringValues.concat(invalidArrayValuesWithNullValues),
-                },
+                }
             );
         });
 
@@ -286,7 +286,7 @@ describe("extractUtils", () => {
                         { desc: "boolean field", value: { field: true }, expectedError: "field<string> is required" },
                         { desc: "null field", value: { field: null }, expectedError: "field<string> is required" },
                     ],
-                },
+                }
             );
         });
 

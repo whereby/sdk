@@ -1,5 +1,5 @@
 import { createAction } from "@reduxjs/toolkit";
-import { RtcManagerCreatedPayload, RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import { RtcManagerCreatedPayload, RtcStreamAddedPayload } from "@whereby/jslib-media";
 
 function createRtcEventAction<T>(name: string) {
     return createAction<T>(`rtcConnection/event/${name}`);

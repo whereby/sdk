@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby/jslib-media";
 import { HttpClientRequestConfig, IHttpClient } from "./HttpClient";
 import Response from "./Response";
 
@@ -47,7 +47,7 @@ export default class MultipartHttpClient implements IHttpClient {
             Object.assign(options, {
                 headers,
                 transformRequest: MultipartHttpClient.dataToFormData,
-            }),
+            })
         );
     }
 }

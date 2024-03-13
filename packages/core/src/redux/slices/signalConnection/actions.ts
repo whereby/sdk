@@ -17,7 +17,7 @@ import {
     ScreenshareStoppedEvent,
     VideoEnabledEvent,
     RoomSessionEndedEvent,
-} from "@whereby/jslib-media/src/utils/ServerSocket";
+} from "@whereby/jslib-media";
 
 function createSignalEventAction<T>(name: string) {
     return createAction<T>(`signalConnection/event/${name}`);

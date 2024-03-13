@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby/jslib-media";
 import ApiClient from "./ApiClient";
 import { assertString } from "./parameterAssertUtils";
 import { HttpClientRequestConfig } from "./HttpClient";
@@ -37,7 +37,7 @@ export default class OrganizationApiClient {
     _callRequestMethod(
         method: "request" | "requestMultipart",
         url: string,
-        options: HttpClientRequestConfig,
+        options: HttpClientRequestConfig
     ): Promise<Response> {
         assertString(url, "url");
         assert.ok(url[0] === "/", 'url<String> only accepts relative URLs beginning with "/".');

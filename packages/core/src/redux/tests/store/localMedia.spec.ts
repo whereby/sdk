@@ -1,7 +1,7 @@
 import * as localMediaSlice from "../../slices/localMedia";
 import { createStore } from "../store.setup";
 import { diff } from "deep-object-diff";
-import * as MediaDevices from "@whereby/jslib-media/src/webrtc/MediaDevices";
+import * as MediaDevices from "@whereby/jslib-media";
 
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import MockMediaStreamTrack from "../../../__mocks__/MediaStreamTrack";
@@ -24,7 +24,7 @@ Object.defineProperty(navigator, "mediaDevices", {
     value: mockMediaDevices,
 });
 
-jest.mock("@whereby/jslib-media/src/webrtc/MediaDevices", () => ({
+jest.mock("@whereby/jslib-media", () => ({
     __esModule: true,
     getStream: jest.fn(() => Promise.resolve()),
     getUpdatedDevices: jest.fn(() => Promise.resolve({ addedDevices: {}, changedDevices: {} })),
@@ -204,7 +204,7 @@ describe("actions", () => {
                 await store.dispatch(localMediaSlice.doToggleCamera());
 
                 expect(localStream.dispatchEvent).toHaveBeenCalledWith(
-                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: true } }),
+                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: true } })
                 );
             });
         });
@@ -266,7 +266,7 @@ describe("actions", () => {
                 store.dispatch(localMediaSlice.doToggleCamera());
 
                 expect(localStream.dispatchEvent).toHaveBeenCalledWith(
-                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: false } }),
+                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: false } })
                 );
             });
         });

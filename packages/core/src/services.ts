@@ -1,4 +1,4 @@
-import { fromLocation } from "@whereby/jslib-media/src/utils/urls";
+import { fromLocation } from "@whereby/jslib-media";
 import { ApiClient, CredentialsService, OrganizationService, OrganizationServiceCache } from "./api";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev";
