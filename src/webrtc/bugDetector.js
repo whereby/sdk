@@ -1,4 +1,6 @@
-import adapter from "webrtc-adapter";
+import adapterRaw from "webrtc-adapter";
+
+const adapter = adapterRaw.default ?? adapterRaw;
 
 /**
  * Detect mic issue which seems to happen on OSX when the computer is woken up and sleeping

@@ -1,7 +1,9 @@
 import { io } from "socket.io-client";
-import adapter from "webrtc-adapter";
+import adapterRaw from "webrtc-adapter";
 import { ReconnectManager } from "./ReconnectManager";
 import { PROTOCOL_RESPONSES } from "../model/protocol";
+
+const adapter = adapterRaw.default ?? adapterRaw;
 
 const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 

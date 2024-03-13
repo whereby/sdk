@@ -1,7 +1,7 @@
 {
   "name": "@whereby/jslib-media",
   "description": "Media library for Whereby",
-  "version": "1.9.6",
+  "version": "1.9.7",
   "private": false,
   "license": "MIT",
   "homepage": "https://github.com/whereby/jslib-media",

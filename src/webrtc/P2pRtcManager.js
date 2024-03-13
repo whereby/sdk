@@ -9,7 +9,7 @@ import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import RtcStream from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap } from "./sdpModifier";
-import adapter from "webrtc-adapter";
+import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
 import checkIp from "check-ip";
@@ -17,6 +17,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 
+const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
