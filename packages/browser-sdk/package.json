@@ -86,7 +86,7 @@
         "yalc": "^1.0.0-pre.53"
     },
     "dependencies": {
-        "@reduxjs/toolkit": "^2.0.1",
+        "@reduxjs/toolkit": "^2.2.1",
         "@swc/helpers": "^0.3.13",
         "@whereby.com/core": "*",
         "heresy": "^1.0.4"
