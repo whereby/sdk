@@ -152,7 +152,7 @@ function activateComputePressureOriginTrial() {
     const otMeta = document.createElement("meta");
     otMeta.httpEquiv = "origin-trial";
 
-    // these tokens expire March 22th 2024
+    // these tokens expire May 29th 2024
     if (/hereby\.dev/.test(document.location.hostname)) {
         // *.hereby.dev
         otMeta.content =
