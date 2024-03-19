@@ -47,6 +47,7 @@ interface WherebyEmbedElementEventMap {
     leave: CustomEvent<{ removed: boolean }>;
     participant_join: CustomEvent<{ participant: { metadata: string } }>;
     participant_leave: CustomEvent<{ participant: { metadata: string } }>;
+    meeting_end: CustomEvent;
     microphone_toggle: CustomEvent<{ enabled: boolean }>;
     camera_toggle: CustomEvent<{ enabled: boolean }>;
     chat_toggle: CustomEvent<{ open: boolean }>;
