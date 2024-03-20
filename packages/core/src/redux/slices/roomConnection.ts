@@ -42,7 +42,7 @@ export type ConnectionStatus =
 export interface RoomConnectionState {
     session: { createdAt: string; id: string } | null;
     status: ConnectionStatus;
-    error: unknown;
+    error: string | null;
 }
 
 const initialState: RoomConnectionState = {
@@ -64,13 +64,20 @@ export const roomConnectionSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            //TODO: Handle error
             const { error, isLocked } = action.payload;
 
             if (error === "room_locked" && isLocked) {
                 return {
                     ...state,
                     status: "room_locked",
+                };
+            }
+
+            if (error) {
+                return {
+                    ...state,
+                    status: "disconnected",
+                    error,
                 };
             }
 
@@ -192,6 +199,7 @@ export const selectRoomConnectionRaw = (state: RootState) => state.roomConnectio
 export const selectRoomConnectionSession = (state: RootState) => state.roomConnection.session;
 export const selectRoomConnectionSessionId = (state: RootState) => state.roomConnection.session?.id;
 export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
+export const selectRoomConnectionError = (state: RootState) => state.roomConnection.error;
 
 /**
  * Reactors
