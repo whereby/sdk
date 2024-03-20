@@ -26,7 +26,6 @@ describe("roomConnectionSlice", () => {
                 const result = roomConnectionSlice.reducer(
                     undefined,
                     signalEvents.roomJoined({
-                        error: "room_locked",
                         selfId: "selfId",
                         isLocked: false,
                     }),
