@@ -26,7 +26,6 @@ describe("roomConnectionSlice", () => {
                 const result = roomConnectionSlice.reducer(
                     undefined,
                     signalEvents.roomJoined({
-                        error: "room_locked",
                         selfId: "selfId",
                         isLocked: false,
                     }),
@@ -39,6 +38,24 @@ describe("roomConnectionSlice", () => {
                 });
             });
 
+            it("should set status to disconnected and populate the error if the there is an error", () => {
+                const result = roomConnectionSlice.reducer(
+                    undefined,
+                    signalEvents.roomJoined({
+                        error: "room_full",
+                        selfId: "selfId",
+                        isLocked: false,
+                    }),
+                );
+
+                expect(result).toEqual({
+                    status: "disconnected",
+                    session: null,
+                    error: "room_full",
+                });
+            });
+        });
+        describe("signalEvents.clientKicked", () => {
             it("should set status to kicked if the client is kicked", () => {
                 const result = roomConnectionSlice.reducer(
                     undefined,
