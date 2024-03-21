@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 0.7.0
+
+### Minor Changes
+
+- 689b05a: Update roomConnection and signalConnection status on signal disconnect
+  events
+
 ## 0.6.0
 
 ### Minor Changes
