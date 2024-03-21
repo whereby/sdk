@@ -87,6 +87,12 @@ export const roomConnectionSlice = createSlice({
                 session: action.payload.room?.session ?? null,
             };
         });
+        builder.addCase(signalEvents.disconnect, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+            };
+        });
         builder.addCase(signalEvents.newClient, (state, action) => {
             return {
                 ...state,

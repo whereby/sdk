@@ -1,7 +1,22 @@
 import { oneOf } from "../../../__mocks__/appMocks";
-import { selectShouldConnectSignal, selectShouldIdentifyDevice } from "../signalConnection";
+import { selectShouldConnectSignal, selectShouldIdentifyDevice, signalConnectionSlice } from "../signalConnection";
+import { signalEvents } from "../signalConnection/actions";
 
 describe("signalConnectionSlice", () => {
+    describe("reducers", () => {
+        describe("signalEvents.disconnect", () => {
+            it("should set status to disconnected", () => {
+                const result = signalConnectionSlice.reducer(undefined, signalEvents.disconnect());
+
+                expect(result).toEqual({
+                    deviceIdentified: false,
+                    isIdentifyingDevice: false,
+                    socket: null,
+                    status: "disconnected",
+                });
+            });
+        });
+    });
     describe("reactors", () => {
         describe("selectShouldConnectSignal", () => {
             const x = () => oneOf(true, false);
