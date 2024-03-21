@@ -78,6 +78,7 @@ const WherebyEmbed = ({
 }: Partial<WherebyEmbedAttributes>) => {
     const elmRef = useRef<WherebyEmbedElement>(null);
     const [cameraEnabled, setCameraEnabled] = useState(video);
+    const [meetingEnded, setMeetingEnded] = useState(false);
 
     useEffect(() => {
         const element = elmRef.current;
@@ -86,11 +87,16 @@ const WherebyEmbed = ({
             const cameraEnabled = e.detail.enabled;
             setCameraEnabled(cameraEnabled);
         });
+
+        element?.addEventListener("meeting_end", () => {
+            setMeetingEnded(true);
+        });
     }, []);
 
     return (
         <p>
-            <span>Camera: {cameraEnabled ? "ENABLED" : "DISABLED"}</span>
+            <p>Camera: {cameraEnabled ? "ENABLED" : "DISABLED"}</p>
+            <p>Meeting ended: {meetingEnded ? "TRUE" : "FALSE"}</p>
             <whereby-embed
                 audio={offOn(audio)}
                 avatarUrl={avatarUrl}
