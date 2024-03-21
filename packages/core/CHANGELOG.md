@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.6.0
+
+### Minor Changes
+
+- 41a9cc2: core: Return client claim when joining a room
+
 ## 0.5.0
 
 ### Minor Changes

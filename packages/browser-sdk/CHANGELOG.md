@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 2.3.0
+
+### Minor Changes
+
+- 41a9cc2: core: Return client claim when joining a room
+
+### Patch Changes
+
+- Updated dependencies [41a9cc2]
+  - @whereby.com/core@0.6.0
+
 ## 2.2.2
 
 ### Patch Changes
