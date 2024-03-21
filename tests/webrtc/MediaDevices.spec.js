@@ -1,9 +1,50 @@
 import * as MediaDevices from "../../src/webrtc/MediaDevices";
 import * as helpers from "./webRtcHelpers";
 
+const GUM_ERRORS = {
+    OVER_CONSTRAINED: "OverconstrainedError",
+    NOT_ALLOWED: "NotAllowedError",
+    NOT_FOUND: "NotFoundError",
+    NOT_READABLE: "NotReadableError",
+    ABORT: "AbortError",
+};
+
+class MockError extends Error {
+    constructor(name, msg = "") {
+        super(msg);
+        this.name = name;
+    }
+}
+
 const oldMediaDevices = global.navigator.mediaDevices;
 afterEach(() => {
     global.navigator.mediaDevices = oldMediaDevices;
+});
+
+describe("buildDeviceList", () => {
+    const vdev1 = { deviceId: "deviceId", label: "label", kind: "audioinput" };
+    const vdev2 = { deviceId: "deviceId", label: "", kind: "videoinput" };
+    it("should return default on no devices", () => {
+        const kind = "audioinput";
+        const devices = [];
+        const busyDeviceIds = [];
+        const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind });
+        expect(result).toEqual([{ audioId: "", label: "Default" }]);
+    });
+    it("should mark device as busy", () => {
+        const kind = "audioinput";
+        const devices = [vdev1];
+        const busyDeviceIds = ["deviceId"];
+        const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind });
+        expect(result).toEqual([{ audioId: vdev1.deviceId, label: `(busy) ${vdev1.label}`, busy: true }]);
+    });
+    it("should trim and use deviceId on missing label", () => {
+        const kind = "videoinput";
+        const devices = [vdev2];
+        const busyDeviceIds = [];
+        const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind });
+        expect(result).toEqual([{ videoId: vdev1.deviceId, label: vdev1.deviceId.slice(0, 5), busy: false }]);
+    });
 });
 
 describe("enumerate", () => {
@@ -136,6 +177,23 @@ describe("getStream", () => {
         expect(videoTrack1.stop).toHaveBeenCalled();
     });
 
+    it("should NOT stop video track in stream when switching only audio", async () => {
+        global.navigator.mediaDevices.getUserMedia = async () =>
+            helpers.createMockedMediaStream([videoTrack1, audioTrack2]);
+
+        await MediaDevices.getStream(
+            {
+                devices,
+                videoId: false,
+                audioId: adev1.deviceId,
+            },
+            { replaceStream: stream }
+        );
+
+        expect(audioTrack1.stop).toHaveBeenCalledTimes(1);
+        expect(videoTrack1.stop).not.toHaveBeenCalled();
+    });
+
     it("should reuse videoTrack if switching audio", async () => {
         global.navigator.mediaDevices.getUserMedia = jest.fn(() => {
             return Promise.resolve(helpers.createMockedMediaStream([videoTrack1, audioTrack2]));
@@ -192,6 +250,193 @@ describe("getStream", () => {
         expect(stream.removeTrack).toHaveBeenCalledWith(audioTrack1);
         expect(stream.addTrack).toHaveBeenCalledWith(videoTrack2);
         expect(stream.addTrack).toHaveBeenCalledWith(audioTrack1);
+    });
+
+    it("should use laxer retryConstraints on OverconstrainedError", async () => {
+        let called = false;
+        const e = new MockError(GUM_ERRORS.OVER_CONSTRAINED);
+        const mockGUM = jest.fn(() => {
+            if (called) return Promise.resolve(helpers.createMockedMediaStream([videoTrack2, audioTrack1]));
+            else {
+                called = true;
+                return Promise.reject(e);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        const result = await MediaDevices.getStream(
+            {
+                devices,
+                videoId: false,
+                audioId: adev2.deviceId,
+                type,
+            },
+            { replaceStream: stream }
+        );
+
+        expect(result.error).toBe(e);
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[1][0].audio).toEqual(true);
+    });
+
+    it("should retry video and audio seperately on NotFoundError", async () => {
+        let callCount = 0;
+        const e = new MockError(GUM_ERRORS.NOT_FOUND);
+        const mockGUM = jest.fn(() => {
+            if (callCount === 2) return Promise.resolve(helpers.createMockedMediaStream([audioTrack1]));
+            else {
+                callCount++;
+                return Promise.reject(e);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        const result = await MediaDevices.getStream(
+            {
+                devices,
+                videoId: vdev2.deviceId,
+                audioId: adev2.deviceId,
+                type,
+            },
+            { replaceStream: stream }
+        );
+
+        expect(result.error).toBe(e);
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[0][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined();
+        expect(mockGUM.mock.calls[1][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[2][0].video).toBeUndefined();
+        expect(mockGUM.mock.calls[2][0].audio).toEqual(expect.any(Object));
+    });
+
+    it("should stop tracks and retry with same constraints on NotAllowedError", async () => {
+        let called = false;
+        const e = new MockError(GUM_ERRORS.NOT_ALLOWED);
+        const mockGUM = jest.fn(() => {
+            if (called) return Promise.resolve(helpers.createMockedMediaStream([videoTrack2]));
+            else {
+                called = true;
+                return Promise.reject(e);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+        const promise = MediaDevices.getStream(
+            {
+                devices,
+                videoId: vdev2.deviceId,
+                audioId: false,
+                type,
+            },
+            { replaceStream: stream }
+        );
+        expect(videoTrack1.stop).not.toHaveBeenCalled();
+
+        const result = await promise;
+
+        expect(videoTrack1.stop).toHaveBeenCalled();
+        expect(result.error).toBe(e);
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0]).toEqual(mockGUM.mock.calls[1]);
+    });
+
+    it.each([["audio"], ["video"]])(
+        "should retry %s without constraints on NotReadableError + regex match on error message",
+        async (mediaKind) => {
+            let callCount = 0;
+            const e = new MockError(GUM_ERRORS.NOT_READABLE, mediaKind);
+            const mockGUM = jest.fn(() => {
+                if (callCount === 2) return Promise.resolve(helpers.createMockedMediaStream([videoTrack2]));
+                else {
+                    callCount++;
+                    return Promise.reject(e);
+                }
+            });
+            global.navigator.mediaDevices.getUserMedia = mockGUM;
+            const type = "exact";
+
+            const result = await MediaDevices.getStream(
+                {
+                    devices,
+                    videoId: vdev2.deviceId,
+                    audioId: adev2.deviceId,
+                    type,
+                },
+                { replaceStream: stream }
+            );
+
+            expect(result.error).toBe(e);
+            expect(result.stream).toBeDefined();
+            expect(mockGUM.mock.calls.length).toBe(3);
+            expect(mockGUM.mock.calls[1][0][mediaKind].deviceId[type]).toBe(
+                mediaKind === "audio" ? adev2.deviceId : vdev2.deviceId
+            );
+            expect(mockGUM.mock.calls[2][0][mediaKind].deviceId).toBeUndefined();
+        }
+    );
+
+    it.each([[GUM_ERRORS.NOT_READABLE], [GUM_ERRORS.ABORT]])(
+        "should retry with lax constraints, without video and without audio on %s",
+        async (errorName) => {
+            const e = new MockError(errorName);
+            let callCount = 0;
+            const mockGUM = jest.fn(() => {
+                if (callCount === 3) return Promise.resolve(helpers.createMockedMediaStream([videoTrack2]));
+                else {
+                    callCount++;
+                    return Promise.reject(e);
+                }
+            });
+            global.navigator.mediaDevices.getUserMedia = mockGUM;
+            const type = "exact";
+
+            const result = await MediaDevices.getStream(
+                {
+                    devices,
+                    videoId: vdev2.deviceId,
+                    audioId: adev2.deviceId,
+                    type,
+                },
+                { replaceStream: stream }
+            );
+
+            expect(result.error).toBe(e);
+            expect(result.stream).toBeDefined();
+            expect(mockGUM.mock.calls.length).toBe(4);
+            expect(mockGUM.mock.calls[2][0].video).toBeUndefined();
+            expect(mockGUM.mock.calls[3][0].audio).toBeUndefined();
+        }
+    );
+
+    it.each([
+        [GUM_ERRORS.NOT_READABLE],
+        [GUM_ERRORS.ABORT],
+        [GUM_ERRORS.NOT_ALLOWED],
+        [GUM_ERRORS.NOT_FOUND],
+        [GUM_ERRORS.OVER_CONSTRAINED],
+    ])("should throw %s when fallbacks fail", async (errorName) => {
+        const e = new MockError(errorName);
+        global.navigator.mediaDevices.getUserMedia = jest.fn(() => {
+            return Promise.reject(e);
+        });
+        const type = "exact";
+
+        await expect(
+            MediaDevices.getStream(
+                {
+                    devices,
+                    videoId: vdev2.deviceId,
+                    audioId: adev2.deviceId,
+                    type,
+                },
+                { replaceStream: stream }
+            )
+        ).rejects.toThrow();
     });
 });
 

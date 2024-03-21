@@ -36,7 +36,8 @@ const idFieldsByKind = {
  *
  * @param args
  * @param args.devices - list of available devices
- * @param args.kind - filter by "audioinput" | "videoinput" | "videooutput"
+ * @param args.busyDeviceIds - list of busy deviceIds
+ * @param args.kind - filter by "audioinput" | "videoinput" | "audiooutput"
  * @returns Array<{[idField]: deviceId}>
  */
 export function buildDeviceList({ busyDeviceIds, devices, kind }) {
@@ -382,7 +383,6 @@ export async function getStream(constraintOpt, { replaceStream, fallback = true 
             // NotReadableError - OS can't read
             // AbortError - Other error for browser giving us this
 
-            // Try to revert back to what we had before
             if (replaceStream && !stopTracks) {
                 // We didn't stop the tracks, so let's do that and retry
                 stopStreamTracks(replaceStream, only);
