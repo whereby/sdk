@@ -12,6 +12,7 @@ describe("reducer", () => {
                 signalEvents.roomJoined({
                     isLocked: true,
                     selfId: "self-id",
+                    clientClaim: "client-claim",
                     room: {
                         clients: [],
                         knockers: [

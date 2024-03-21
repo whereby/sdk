@@ -21,7 +21,7 @@ import {
     socketReconnecting,
 } from "./signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
-import { selectSelfId } from "./localParticipant";
+import { selectSelfId, selectLocalParticipantClientClaim } from "./localParticipant";
 
 export type ConnectionStatus =
     | "initializing"
@@ -168,6 +168,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
     const selfId = selectSelfId(getState());
+    const clientClaim = selectLocalParticipantClientClaim(getState());
 
     socket?.emit("join_room", {
         avatarUrl: null,
@@ -184,6 +185,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         roomKey,
         roomName,
         selfId,
+        ...(!!clientClaim && { clientClaim }),
         userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
         externalId,
     });
