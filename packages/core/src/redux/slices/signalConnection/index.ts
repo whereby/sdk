@@ -103,6 +103,14 @@ export const signalConnectionSlice = createSlice({
             };
         },
     },
+    extraReducers: (builder) => {
+        builder.addCase(signalEvents.disconnect, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+            };
+        });
+    },
 });
 
 export const { deviceIdentifying, deviceIdentified, socketConnected, socketConnecting, socketDisconnected } =

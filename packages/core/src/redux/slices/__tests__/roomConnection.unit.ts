@@ -57,6 +57,7 @@ describe("roomConnectionSlice", () => {
                 });
             });
         });
+
         describe("signalEvents.clientKicked", () => {
             it("should set status to kicked if the client is kicked", () => {
                 const result = roomConnectionSlice.reducer(
@@ -68,6 +69,18 @@ describe("roomConnectionSlice", () => {
 
                 expect(result).toEqual({
                     status: "kicked",
+                    session: null,
+                    error: null,
+                });
+            });
+        });
+
+        describe("signalEvents.disconnect", () => {
+            it("should set status to disconnected", () => {
+                const result = roomConnectionSlice.reducer(undefined, signalEvents.disconnect());
+
+                expect(result).toEqual({
+                    status: "disconnected",
                     session: null,
                     error: null,
                 });
