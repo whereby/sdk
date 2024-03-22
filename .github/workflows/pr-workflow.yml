@@ -23,10 +23,8 @@ jobs:
             - name: Setup npmrc
               run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> ~/.npmrc
 
-            - name: Use Node.js ${{ vars.NODE_VERSION }}
+            - name: Setup Node.js
               uses: actions/setup-node@v3
-              with:
-                  node-version: ${{ vars.NODE_VERSION }}
 
             - name: Install
               run: yarn install --frozen-lockfile
@@ -55,13 +53,14 @@ jobs:
             - name: Setup npmrc
               run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> ~/.npmrc
 
-            - name: Use Node.js ${{ vars.NODE_VERSION }}
+            - name: Setup Node.js
               uses: actions/setup-node@v3
-              with:
-                  node-version: ${{ vars.NODE_VERSION }}
 
             - name: Install
               run: yarn install --frozen-lockfile
+
+            - name: Build
+              run: yarn build
 
             - name: Create Release
               run: yarn run auto shipit

@@ -1,19 +1,36 @@
 {
-    "parser": "@babel/eslint-parser",
     "env": {
         "browser": true,
         "es6": true,
-        "jest/globals": true,
-        "node": true
+        "jest": true,
+        "node": true,
     },
-    "extends": ["./config/eslint/browser", "prettier"],
+    "ignorePatterns": ["dist/*"],
     "parserOptions": {
+        "ecmaVersion": "latest",
         "sourceType": "module",
-        "requireConfigFile": false
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true,
+        },
     },
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
     "plugins": ["prettier", "jest"],
     "rules": {
         "no-console": ["error", { "allow": ["warn", "error"] }],
-        "prettier/prettier": "error"
-    }
+        "prettier/prettier": "error",
+        "@typescript-eslint/ban-ts-comment": 0,
+        "@typescript-eslint/no-namespace": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "prefer-spread": "off",
+        "prefer-destructuring": "off",
+        "prefer-rest-params": "off",
+        "@typescript-eslint/no-var-requires": "off",
+        "no-inner-declarations": "off",
+        "no-unsafe-optional-chaining": "off",
+        "no-prototype-builtins": "off",
+        "no-case-declarations": "off",
+        "no-empty": "off",
+        "@typescript-eslint/ban-types": "off",
+    },
 }
