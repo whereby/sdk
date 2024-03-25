@@ -1,6 +1,0 @@
-change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
-
-template: |
-    ## What's changed
-
-    $CHANGES
