@@ -16,8 +16,10 @@ runs:
         - name: Get published packages
           id: get-published-packages
           shell: bash
+          env:
+              JSON: ${{ inputs.published_packages }}
           run: |
-              PACKAGES=$(echo ${{ inputs.published_packages }} | jq -r 'map(.name + "@" + .version) | join("\n")')
+              PACKAGES=$(echo "$JSON" | jq -r 'map(.name + "@" + .version) | join("\n")')
               echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
 
         - name: Send slack message
