@@ -1,8 +1,7 @@
 {
     "name": "@whereby.com/media",
     "description": "Media library for Whereby",
-    "version": "1.1.0",
-    "private": false,
+    "version": "1.0.0",
     "license": "MIT",
     "homepage": "https://github.com/whereby/sdk",
     "repository": {
@@ -20,6 +19,9 @@
         "test:unit:coverage": "jest --collectCoverage",
         "format:fix": "prettier --write './**/*.{js,ts,yml,json}'",
         "format:check": "prettier --check './**/*.{js,ts,yml,json}'"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "main": "./dist/index.esm.js",
     "module": "./dist/index.esm.js",
