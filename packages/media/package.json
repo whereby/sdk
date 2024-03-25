@@ -1,16 +1,16 @@
 {
-    "name": "@whereby/jslib-media",
+    "name": "@whereby.com/media",
     "description": "Media library for Whereby",
-    "version": "2.0.0",
+    "version": "1.0.0",
     "private": false,
     "license": "MIT",
-    "homepage": "https://github.com/whereby/jslib-media",
+    "homepage": "https://github.com/whereby/sdk",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/whereby/jslib-media.git"
+        "url": "git+https://github.com/whereby/sdk.git"
     },
     "bugs": {
-        "url": "https://github.com/whereby/jslib-media/issues"
+        "url": "https://github.com/whereby/sdk/issues"
     },
     "scripts": {
         "build": "rimraf dist && rollup -c rollup.config.js",
@@ -55,7 +55,6 @@
         "webrtc-adapter": "^8.2.3"
     },
     "devDependencies": {
-        "@auto-it/npm": "^11.1.1",
         "@babel/core": "^7.23.2",
         "@babel/eslint-parser": "^7.22.15",
         "@babel/preset-env": "^7.23.2",
@@ -82,13 +81,7 @@
         "rollup-plugin-typescript2": "^0.36.0",
         "ts-jest": "^29.1.2"
     },
-    "publishConfig": {
-        "registry": "https://npm.pkg.github.com"
-    },
     "engines": {
         "node": ">=16.0.0"
-    },
-    "auto": {
-        "extends": "./.autorc.json"
     }
 }

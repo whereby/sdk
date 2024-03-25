@@ -1,5 +1,4 @@
-jslib-media
-=============
+# Media
 
 This library contains JavaScript modules related to media in Whereby.
 
