@@ -28,6 +28,10 @@ Pre-releases are done from the `development` branch. To create a pre-release, fo
 
 Once the pull request is merged, the pre-release will be published to npm with the `beta` tag. Under the hood changesets will create a file in the `.changeset` folder called `.pre.json`, to indicate that the release is a pre-release. When it's time to release the pre-release, a pull request should be created to merge `development` into `main`. This should include the `.pre.json` file. The `exit-prerelease` workflow will make sure that changesets exits pre-release mode, and the file will be deleted once the `Version Packages` pull request on `main` is merged.
 
+### Canary releases
+Canary releases (snapshots) are not done automatically. However, you can create a canary release from a pull request simply
+by adding a comment to the PR with the text `/canary`, or `/canary-release`. This will trigger the `canary-release` GitHub action, which will publish a canary release to npm with the `canary` tag for all the packages that have a changeset in the PR. 
+
 
 ## Contact
 Join our [discord server](https://discord.gg/yWrAhZdvDG) to get in touch with us.
