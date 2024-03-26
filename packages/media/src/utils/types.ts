@@ -114,6 +114,7 @@ export interface RoomJoinedEvent {
         } | null;
     };
     selfId: string;
+    clientClaim?: string;
 }
 
 export interface RoomKnockedEvent {
@@ -121,6 +122,8 @@ export interface RoomKnockedEvent {
     displayName: string | null;
     imageUrl: string | null;
     liveVideo: boolean;
+    selfId?: string;
+    clientClaim?: string;
 }
 
 export interface RoomSessionEndedEvent {
