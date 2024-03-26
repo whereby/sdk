@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.1.1
+
+### Patch Changes
+
+- 048b147: Add clientClaim to room joined payload
+
 ## 1.1.0
 
 ### Minor Changes
