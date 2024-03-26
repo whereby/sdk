@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby.com/media";
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import Response, { ErrorResponseObject } from "./Response";
 import { assertString } from "./parameterAssertUtils";

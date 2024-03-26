@@ -8,11 +8,11 @@ import {
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
-import RtcManagerDispatcher from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import { RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
 
-jest.mock("@whereby/jslib-media/src/webrtc/RtcManagerDispatcher");
+jest.mock("@whereby.com/media");
 
 describe("actions", () => {
     it("doHandleAcceptStreams", () => {
@@ -52,7 +52,7 @@ describe("actions", () => {
     });
 
     it("doConnectRtc", () => {
-        const store = createStore();
+        const store = createStore({ withSignalConnection: true });
 
         const before = store.getState().rtcConnection;
 

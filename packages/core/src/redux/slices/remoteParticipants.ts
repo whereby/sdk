@@ -1,11 +1,10 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
+import { SignalClient, RtcStreamAddedPayload } from "@whereby.com/media";
 import { RemoteParticipant, Screenshare, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
-import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { selectLocalScreenshareStream } from "./localScreenshare";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];

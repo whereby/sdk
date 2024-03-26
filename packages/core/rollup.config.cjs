@@ -15,24 +15,22 @@ const baseConfig = require("../../rollup.base.config");
 const replaceValues = baseConfig(__dirname, {}).replaceValues;
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
+const dependencies = [...Object.keys(pkg.dependencies || {})];
+const external = [...dependencies, ...peerDependencies];
+
+const tsOptions = {
+    tsconfig: "tsconfig.build.json",
+};
 
 const plugins = [
     replace(replaceValues),
-    replace({
-        preventAssignment: true,
-        // jslib-media uses global.navigator for some gUM calls, replace these
-        delimiters: [" ", "."],
-        values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
-    }),
     nodeResolve({
-        // only include @whereby/jslib-media and rtcstats in our bundle
+        // only include rtcstats in our bundle
         preferBuiltins: true,
-        resolveOnly: [/@whereby\/jslib-media|rtcstats/],
+        resolveOnly: [/rtcstats/],
     }),
     commonjs(),
-    typescript({
-        tsconfig: "tsconfig.build.json",
-    }),
+    typescript(tsOptions),
 ];
 
 module.exports = [
@@ -47,17 +45,18 @@ module.exports = [
             },
         ],
         plugins,
-        external: [...peerDependencies],
+        external,
     },
     {
         input: "src/index.ts",
         output: [{ file: "dist/index.d.ts", format: "es" }],
-        external: ["@whereby/jslib-media/src/webrtc/RtcManager"],
-        plugins: [dts()],
+        external,
+        plugins: [dts(tsOptions)],
     },
     {
         input: "src/utils/index.ts",
         output: [{ file: "dist/utils.d.ts", format: "es" }],
-        plugins: [dts()],
+        external,
+        plugins: [dts(tsOptions)],
     },
 ];

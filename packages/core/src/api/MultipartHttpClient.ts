@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby.com/media";
 import { HttpClientRequestConfig, IHttpClient } from "./HttpClient";
 import Response from "./Response";
 

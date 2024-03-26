@@ -62,7 +62,7 @@
     },
     "dependencies": {
         "@reduxjs/toolkit": "^2.2.3",
-        "@whereby/jslib-media": "whereby/jslib-media.git#1.9.7",
+        "@whereby.com/media": "*",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
         "events": "^3.3.0"

@@ -1,4 +1,4 @@
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby.com/media";
 import ApiClient from "./ApiClient";
 import { assertString } from "./parameterAssertUtils";
 import { HttpClientRequestConfig } from "./HttpClient";

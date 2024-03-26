@@ -1,5 +1,5 @@
 import nodeBtoa from "btoa";
-import assert from "@whereby/jslib-media/src/utils/assert";
+import { assert } from "@whereby.com/media";
 import HttpClient, { HttpClientRequestConfig } from "./HttpClient";
 import MultipartHttpClient from "./MultipartHttpClient";
 import { assertString } from "./parameterAssertUtils";
