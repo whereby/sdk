@@ -20,7 +20,7 @@ runs:
               JSON: ${{ inputs.published_packages }}
           run: |
               PACKAGES=$(echo "$JSON" | jq -r 'map(.name + "@" + .version) | join("\n")')
-              echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
+              echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
 
         - name: Send slack message
           id: slack
@@ -46,7 +46,7 @@ runs:
                           },
                           {
                             "type": "mrkdwn",
-                            "text": "*Packages:*\n${{ env.PACKAGES }}"
+                            "text": "*Packages:*\n${{ steps.get-published-packages.outputs.packages }}"
                           }
                         ]
                       }
@@ -54,4 +54,3 @@ runs:
                   }
           env:
               SLACK_BOT_TOKEN: ${{ inputs.slack_bot_token }}
-              PACKAGES: ${{ steps.get-published-packages.outputs.packages }}
