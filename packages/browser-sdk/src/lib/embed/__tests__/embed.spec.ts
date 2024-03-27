@@ -60,6 +60,12 @@ describe("@whereby/browser-sdk", () => {
                         "roomintegrations",
                         "precallceremonycanskip",
                         "precallpermissionshelplink",
+                        "autospotlight",
+                        "bottomtoolbar",
+                        "precallceremony",
+                        "skipmediapermissionprompt",
+                        "timer",
+
                     ]),
                 }),
             );

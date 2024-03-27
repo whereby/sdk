@@ -1,5 +1,34 @@
 # @whereby.com/core
 
+## 0.7.0
+
+### Minor Changes
+
+- 689b05a: Update roomConnection and signalConnection status on signal disconnect
+  events
+
+## 0.6.0
+
+### Minor Changes
+
+- 41a9cc2: core: Return client claim when joining a room
+
+## 0.5.0
+
+### Minor Changes
+
+- 0de5018: Handle errors while joining a room
+
+## 0.4.0
+
+### Minor Changes
+
+- 3638f73: Use module type for the core package and update jslib-media
+- 7eae1d9: Add flag for Node SDK usage
+
+  disables local media and explicitly sets the mediasoup device handler to one
+  that supports node
+
 ## 0.3.0
 
 ### Minor Changes

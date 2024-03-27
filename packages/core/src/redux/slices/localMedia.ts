@@ -3,7 +3,7 @@ import { getStream, getUpdatedDevices, getDeviceData } from "@whereby/jslib-medi
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
-import { doAppJoin, selectAppWantsToJoin } from "./app";
+import { doAppJoin, selectAppIsNodeSdk, selectAppWantsToJoin } from "./app";
 import debounce from "../../utils/debounce";
 
 export type LocalMediaOptions = {
@@ -14,7 +14,6 @@ export type LocalMediaOptions = {
 /**
  * Reducer
  */
-
 export interface LocalMediaState {
     busyDeviceIds: string[];
     cameraDeviceError?: unknown;
@@ -603,8 +602,9 @@ export const selectLocalMediaShouldStartWithOptions = createSelector(
     selectAppWantsToJoin,
     selectLocalMediaStatus,
     selectLocalMediaOptions,
-    (appWantsToJoin, localMediaStatus, localMediaOptions) => {
-        if (appWantsToJoin && localMediaStatus === "" && localMediaOptions) {
+    selectAppIsNodeSdk,
+    (appWantsToJoin, localMediaStatus, localMediaOptions, isNodeSdk) => {
+        if (appWantsToJoin && localMediaStatus === "" && !isNodeSdk && localMediaOptions) {
             return localMediaOptions;
         }
     },

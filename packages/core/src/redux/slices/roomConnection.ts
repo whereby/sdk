@@ -10,6 +10,7 @@ import {
     selectAppSdkVersion,
     selectAppExternalId,
     setRoomKey,
+    selectAppIsNodeSdk,
 } from "./app";
 
 import { selectOrganizationId } from "./organization";
@@ -20,7 +21,7 @@ import {
     socketReconnecting,
 } from "./signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
-import { selectSelfId } from "./localParticipant";
+import { selectSelfId, selectLocalParticipantClientClaim } from "./localParticipant";
 
 export type ConnectionStatus =
     | "initializing"
@@ -41,7 +42,7 @@ export type ConnectionStatus =
 export interface RoomConnectionState {
     session: { createdAt: string; id: string } | null;
     status: ConnectionStatus;
-    error: unknown;
+    error: string | null;
 }
 
 const initialState: RoomConnectionState = {
@@ -63,7 +64,6 @@ export const roomConnectionSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            //TODO: Handle error
             const { error, isLocked } = action.payload;
 
             if (error === "room_locked" && isLocked) {
@@ -73,10 +73,24 @@ export const roomConnectionSlice = createSlice({
                 };
             }
 
+            if (error) {
+                return {
+                    ...state,
+                    status: "disconnected",
+                    error,
+                };
+            }
+
             return {
                 ...state,
                 status: "connected",
                 session: action.payload.room?.session ?? null,
+            };
+        });
+        builder.addCase(signalEvents.disconnect, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
             };
         });
         builder.addCase(signalEvents.newClient, (state, action) => {
@@ -160,6 +174,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
     const selfId = selectSelfId(getState());
+    const clientClaim = selectLocalParticipantClientClaim(getState());
 
     socket?.emit("join_room", {
         avatarUrl: null,
@@ -176,6 +191,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         roomKey,
         roomName,
         selfId,
+        ...(!!clientClaim && { clientClaim }),
         userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
         externalId,
     });
@@ -191,16 +207,23 @@ export const selectRoomConnectionRaw = (state: RootState) => state.roomConnectio
 export const selectRoomConnectionSession = (state: RootState) => state.roomConnection.session;
 export const selectRoomConnectionSessionId = (state: RootState) => state.roomConnection.session?.id;
 export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
+export const selectRoomConnectionError = (state: RootState) => state.roomConnection.error;
 
 /**
  * Reactors
  */
 
 export const selectShouldConnectRoom = createSelector(
-    [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionDeviceIdentified, selectLocalMediaStatus],
-    (hasOrganizationIdFetched, roomConnectionStatus, signalConnectionDeviceIdentified, localMediaStatus) => {
+    [
+        selectOrganizationId,
+        selectRoomConnectionStatus,
+        selectSignalConnectionDeviceIdentified,
+        selectLocalMediaStatus,
+        selectAppIsNodeSdk,
+    ],
+    (hasOrganizationIdFetched, roomConnectionStatus, signalConnectionDeviceIdentified, localMediaStatus, isNodeSdk) => {
         if (
-            localMediaStatus === "started" &&
+            (localMediaStatus === "started" || isNodeSdk) &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
             ["initializing", "reconnect"].includes(roomConnectionStatus)

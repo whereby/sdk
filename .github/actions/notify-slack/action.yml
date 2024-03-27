@@ -16,15 +16,15 @@ runs:
         - name: Get published packages
           id: get-published-packages
           shell: bash
-          with:
-              published_packages: ${{ inputs.published_packages }}
+          env:
+              JSON: ${{ inputs.published_packages }}
           run: |
-              PACKAGES=$(echo ${{ inputs.published_packages }} | jq -r '.packages | map(.name + "@" + .version) | join("\n")')
-              echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
+              PACKAGES=$(echo "$JSON" | jq -r 'map(.name + "@" + .version) | join("\n")')
+              echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
 
         - name: Send slack message
           id: slack
-        - uses: slackapi/slack-github-action@v1.25.0
+          uses: slackapi/slack-github-action@v1.25.0
           with:
               channel-id: ${{ inputs.channel_id }}
               payload: |
@@ -46,7 +46,7 @@ runs:
                           },
                           {
                             "type": "mrkdwn",
-                            "text": "*Packages:*\n${{ env.PACKAGES }}"
+                            "text": "*Packages:*\n${{ steps.get-published-packages.outputs.packages }}"
                           }
                         ]
                       }
@@ -54,4 +54,3 @@ runs:
                   }
           env:
               SLACK_BOT_TOKEN: ${{ inputs.slack_bot_token }}
-              PACKAGES: ${{ steps.get-published-packages.outputs.packages }}

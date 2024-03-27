@@ -3,9 +3,10 @@ module.exports = function buildConfig(_packageDirectory, pkgConfig) {
         preset: "ts-jest",
         testEnvironment: "jsdom",
         transform: {
-            "^.+\\.(j|t)sx?$": "ts-jest",
+            "^.+\\.(j|t)sx?$": ["ts-jest", { useESM: true }],
         },
         moduleNameMapper: {
+            "@whereby.com/core/utils": "<rootDir>/../core/dist/utils.js",
             "@whereby.com/core": "<rootDir>/../core/dist/index.js",
         },
         roots: ["<rootDir>/src"],

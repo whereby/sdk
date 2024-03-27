@@ -1,0 +1,5 @@
+node_modules/
+package.json
+test-report
+libraries
+config

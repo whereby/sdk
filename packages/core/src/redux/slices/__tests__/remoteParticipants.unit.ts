@@ -17,6 +17,7 @@ describe("remoteParticipantsSlice", () => {
                     signalEvents.roomJoined({
                         isLocked: false,
                         selfId: "selfId",
+                        clientClaim: "clientClaim",
                         room: {
                             clients: [
                                 {
