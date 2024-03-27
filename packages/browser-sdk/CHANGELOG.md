@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.4.0
+
+### Minor Changes
+
+- 37e17fd: Add attributes for timer, skipMediaPermissionPrompt, precallCeremony, bottomToolbar, and autoSpotlight
+
 ## 2.3.0
 
 ### Minor Changes
