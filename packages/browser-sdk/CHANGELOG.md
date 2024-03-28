@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.5.0
+
+### Minor Changes
+
+- fcab2c7: added attributes for roomIntegrations, precallCeremonyCanSkip, and precallPermissionsHelpLink
+
 ## 2.4.0
 
 ### Minor Changes
