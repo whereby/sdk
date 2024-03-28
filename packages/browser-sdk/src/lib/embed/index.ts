@@ -37,8 +37,14 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
      */
     precallCeremony: string;
     precallReview: string;
+    precallPermissionsHelpLink: string;
+    precallCeremonyCanSkip: string;
     recording: string;
     room: string;
+    /**
+     * Enables the use of supported room integrations (Miro and YouTube)
+     */
+    roomIntegrations: string;
     settingsButton: string;
     screenshare: string;
     /**
@@ -119,7 +125,9 @@ const boolAttrs = [
     "recording",
     "logo",
     "locking",
+    "precallCeremonyCanSkip",
     "participantCount",
+    "precallPermissionsHelpLink",
     "settingsButton",
     "pipButton",
     "moreButton",
@@ -128,7 +136,8 @@ const boolAttrs = [
     "subgridLabels",
     "lowData",
     "breakout",
-    "timer"
+    "roomIntegrations",
+    "timer",
 ];
 
 define("WherebyEmbed", {
