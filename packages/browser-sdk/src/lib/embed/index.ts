@@ -4,10 +4,14 @@ import { ReactHTMLElement } from "react";
 import { parseRoomUrlAndSubdomain } from "@whereby.com/core/utils";
 
 interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
+    aec: string;
+    agc: string;
     audio: string;
     /**
      * Automatically spotlight the local participant on room join. Can only be used with users joining with host privileges.
      */
+    audioDenoiser: string;
+    autoHideSelfView: string;
     autoSpotlight: string;
     avatarUrl: string;
     background: string;
@@ -106,7 +110,11 @@ declare global {
 }
 
 const boolAttrs = [
+    "aec",
+    "agc",
     "audio",
+    "audioDenoiser",
+    "autoHideSelfView",
     "autoSpotlight",
     "background",
     "bottomToolbar",

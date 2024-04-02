@@ -65,6 +65,10 @@ describe("@whereby/browser-sdk", () => {
                         "precallceremony",
                         "skipmediapermissionprompt",
                         "timer",
+                        "autohideselfview",
+                        "audiodenoiser",
+                        "aec",
+                        "agc",
 
                     ]),
                 }),
