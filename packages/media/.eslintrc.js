@@ -1,23 +1,8 @@
-{
-    "env": {
-        "browser": true,
-        "es6": true,
-        "jest": true,
-        "node": true,
-    },
-    "ignorePatterns": ["dist/*"],
-    "parserOptions": {
-        "ecmaVersion": "latest",
-        "sourceType": "module",
-        "ecmaFeatures": {
-            "experimentalObjectRestSpread": true,
-        },
-    },
-    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
-    "plugins": ["prettier", "jest"],
-    "rules": {
-        "no-console": ["error", { "allow": ["warn", "error"] }],
-        "prettier/prettier": "error",
+module.exports = {
+    root: true,
+    extends: ["@whereby.com/eslint-config"],
+    rules: {
+        "no-console": ["error", { allow: ["warn", "error"] }],
         "@typescript-eslint/ban-ts-comment": 0,
         "@typescript-eslint/no-namespace": "off",
         "@typescript-eslint/no-explicit-any": "off",
@@ -33,4 +18,4 @@
         "no-empty": "off",
         "@typescript-eslint/ban-types": "off",
     },
-}
+};
