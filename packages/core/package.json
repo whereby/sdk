@@ -5,7 +5,7 @@
     "version": "0.7.0",
     "license": "MIT",
     "scripts": {
-        "build": "rimraf dist && rollup -c rollup.config.cjs",
+        "build": "rimraf dist && rollup -c rollup.config.js",
         "test": "yarn test:lint && yarn test:unit",
         "test:lint": "eslint src/",
         "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
@@ -14,30 +14,23 @@
     "publishConfig": {
         "access": "public"
     },
-    "files": [
-        "dist/*.js",
-        "dist/*.d.ts"
-    ],
-    "type": "module",
+    "files": ["dist/**/*.cjs", "dist/*.mjs", "dist/*.d.ts"],
+    "main": "/dist/cjs/index.cjs",
     "exports": {
         ".": {
-            "import": "./dist/index.js",
+            "import": "./dist/index.mjs",
             "types": "./dist/index.d.ts"
         },
         "./utils": {
-            "import": "./dist/utils.js",
+            "import": "./dist/utils.mjs",
             "types": "./dist/utils.d.ts"
         }
     },
     "types": "dist/index.d.ts",
     "typesVersions": {
         "*": {
-            "*": [
-                "dist/index.d.ts"
-            ],
-            "utils": [
-                "dist/utils.d.ts"
-            ]
+            "*": ["dist/index.d.ts"],
+            "utils": ["dist/utils.d.ts"]
         }
     },
     "devDependencies": {

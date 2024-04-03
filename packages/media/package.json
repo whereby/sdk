@@ -23,25 +23,20 @@
     "publishConfig": {
         "access": "public"
     },
-    "main": "./dist/index.esm.js",
-    "module": "./dist/index.esm.js",
+    "main": "./dist/cjs/index.cjs",
     "exports": {
         ".": {
-            "import": "./dist/index.esm.js",
+            "import": "./dist/index.mjs",
             "types": "./dist/index.d.ts"
         }
     },
+    "types": "dist/index.d.ts",
     "typesVersions": {
         "*": {
-            "*": [
-                "./dist/index.d.ts"
-            ]
+            "*": ["./dist/index.d.ts"]
         }
     },
-    "files": [
-        "dist/**/*.js",
-        "dist/**/*.d.ts"
-    ],
+    "files": ["dist/**/*.js", "dist/**/*.mjs", "dist/**/*.cjs", "dist/**/*.d.ts"],
     "dependencies": {
         "check-ip": "^1.1.1",
         "events": "^3.3.0",

@@ -34,14 +34,52 @@ const plugins = [
 ];
 
 module.exports = [
+    // index and utils need to be built separately to avoid rollup code splitting (which breaks the .mjs and .cjs extensions)
     // Esm build of lib, to be used with bundlers
     {
-        input: { index: "src/index.ts", utils: "src/utils/index.ts" },
-
+        input: "src/index.ts",
         output: [
             {
-                format: "esm", // set ES modules
-                dir: "dist", // indicate not create a single-file
+                format: "esm",
+                file: "dist/index.mjs",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
+    {
+        input: "src/utils/index.ts",
+        output: [
+            {
+                format: "esm",
+                file: "dist/utils.mjs",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
+    // Cjs build of lib
+    {
+        input: "src/index.ts",
+        output: [
+            {
+                format: "cjs",
+                file: "dist/cjs/index.cjs",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
+    {
+        input: "src/utils/index.ts",
+        output: [
+            {
+                format: "cjs",
+                file: "dist/cjs/utils.cjs",
+                exports: "named",
             },
         ],
         plugins,
