@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.1.3
+
+### Patch Changes
+
+- 6443ce0: Use audio settings for screenshare audio producer
+
 ## 1.1.2
 
 ### Patch Changes
