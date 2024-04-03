@@ -33,7 +33,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
-    "turbo": "^1.12.2"
+    "turbo": "^1.13.1"
   },
   "dependencies": {
     "typescript": "^5.3.3"
