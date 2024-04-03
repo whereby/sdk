@@ -939,7 +939,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenAudioTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
-                    ...getMediaSettings("video", true, this._features),
+                    ...getMediaSettings("audio", true, this._features),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
                         sourceClientId: this._selfId,
