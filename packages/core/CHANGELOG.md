@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.8.0
+
+### Minor Changes
+
+- f22e7a1: Replace jslib-media library with the new @whereby.com/media
+
+### Patch Changes
+
+- Updated dependencies [3c84618]
+  - @whereby.com/media@1.2.0
+
 ## 0.7.0
 
 ### Minor Changes

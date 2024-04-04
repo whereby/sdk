@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.2.0
+
+### Minor Changes
+
+- 3c84618: Add commonjs builds of package
+
 ## 1.1.3
 
 ### Patch Changes
