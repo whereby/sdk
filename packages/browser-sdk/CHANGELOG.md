@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.6.0
+
+### Minor Changes
+
+- 10df15f: Added attributes for aec, agc, audioDenoiser, and autoHideSelfView
+
 ## 2.5.0
 
 ### Minor Changes
