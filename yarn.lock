@@ -5478,22 +5478,6 @@
     "@webassemblyjs/ast" "1.11.6"
     "@xtuc/long" "4.2.2"
 
-"@whereby/jslib-media@whereby/jslib-media.git#1.9.7":
-  version "1.9.7"
-  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/f8a1972dc25965760f288bc17069778076402b69"
-  dependencies:
-    check-ip "^1.1.1"
-    events "^3.3.0"
-    ip-address "^9.0.5"
-    mediasoup-client "3.6.100"
-    rtcstats "github:whereby/rtcstats#5.4.0"
-    sdp "^3.2.0"
-    sdp-transform "^2.14.2"
-    socket.io-client "4.7.2"
-    uuid "^9.0.1"
-    uuid-validate "^0.0.3"
-    webrtc-adapter "^8.2.3"
-
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@xtuc/ieee754/-/ieee754-1.2.0.tgz#eef014a3145ae477a1cbc00cd1e552336dceb790"

@@ -1,10 +1,10 @@
 import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
-import { getStream, getUpdatedDevices, getDeviceData } from "@whereby/jslib-media/src/webrtc/MediaDevices";
+import { getStream, getUpdatedDevices, getDeviceData } from "@whereby.com/media";
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { doAppJoin, selectAppIsNodeSdk, selectAppWantsToJoin } from "./app";
-import debounce from "../../utils/debounce";
+import { debounce } from "../../utils";
 
 export type LocalMediaOptions = {
     audio: boolean;

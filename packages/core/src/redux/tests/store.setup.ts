@@ -1,4 +1,4 @@
-import { RtcEvents } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import { RtcEvents } from "@whereby.com/media";
 import { RootState, createStore as createRealStore } from "../store";
 
 export const mockSignalEmit = jest.fn();
@@ -31,7 +31,8 @@ const createRtcDispatcher = ({
 }: {
     emitter: { emit: <K extends keyof RtcEvents>(eventName: K, args: RtcEvents[K]) => void };
 }) => {
-    emitter.emit("rtc_manager_created", { rtcManager: mockRtcManager });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    emitter.emit("rtc_manager_created", { rtcManager: mockRtcManager as any });
 
     return {
         stopRtcManager: jest.fn(),
@@ -80,7 +81,8 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             isIdentifyingDevice: false,
             deviceIdentified: true,
             status: "connected",
-            socket: mockServerSocket,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            socket: mockServerSocket as any,
         };
     }
 
@@ -91,9 +93,11 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             dispatcherCreated: true,
             error: null,
             reportedStreamResolutions: {},
-            rtcManagerDispatcher: createRtcDispatcher({ emitter: mockRtcEmitter }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            rtcManagerDispatcher: createRtcDispatcher({ emitter: mockRtcEmitter }) as any,
             rtcManagerInitialized: true,
-            rtcManager: mockRtcManager,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            rtcManager: mockRtcManager as any,
             isAcceptingStreams: false,
         };
     }

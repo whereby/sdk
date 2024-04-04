@@ -4,28 +4,58 @@ import { createAppThunk } from "../../thunk";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
 
-import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
+import {
+    AudioEnabledEvent,
+    ChatMessage,
+    ClientKickedEvent,
+    ClientLeftEvent,
+    ClientMetadataReceivedEvent,
+    CloudRecordingStartedEvent,
+    KnockAcceptedEvent,
+    KnockRejectedEvent,
+    KnockerLeftEvent,
+    NewClientEvent,
+    RoomJoinedEvent,
+    RoomKnockedEvent,
+    RoomSessionEndedEvent,
+    ScreenshareStartedEvent,
+    ScreenshareStoppedEvent,
+    ServerSocket,
+    VideoEnabledEvent,
+} from "@whereby.com/media";
 import { Credentials } from "../../../api";
 import { appLeft, selectAppWantsToJoin } from "../app";
 import { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, AnyAction>) {
-    socket.on("room_joined", (payload) => dispatch(signalEvents.roomJoined(payload)));
-    socket.on("new_client", (payload) => dispatch(signalEvents.newClient(payload)));
-    socket.on("client_left", (payload) => dispatch(signalEvents.clientLeft(payload)));
-    socket.on("client_kicked", (payload) => dispatch(signalEvents.clientKicked(payload)));
-    socket.on("audio_enabled", (payload) => dispatch(signalEvents.audioEnabled(payload)));
-    socket.on("video_enabled", (payload) => dispatch(signalEvents.videoEnabled(payload)));
-    socket.on("client_metadata_received", (payload) => dispatch(signalEvents.clientMetadataReceived(payload)));
-    socket.on("chat_message", (payload) => dispatch(signalEvents.chatMessage(payload)));
+    socket.on("room_joined", (payload: RoomJoinedEvent) => dispatch(signalEvents.roomJoined(payload)));
+    socket.on("new_client", (payload: NewClientEvent) => dispatch(signalEvents.newClient(payload)));
+    socket.on("client_left", (payload: ClientLeftEvent) => dispatch(signalEvents.clientLeft(payload)));
+    socket.on("client_kicked", (payload: ClientKickedEvent) => dispatch(signalEvents.clientKicked(payload)));
+    socket.on("audio_enabled", (payload: AudioEnabledEvent) => dispatch(signalEvents.audioEnabled(payload)));
+    socket.on("video_enabled", (payload: VideoEnabledEvent) => dispatch(signalEvents.videoEnabled(payload)));
+    socket.on("client_metadata_received", (payload: ClientMetadataReceivedEvent) =>
+        dispatch(signalEvents.clientMetadataReceived(payload)),
+    );
+    socket.on("chat_message", (payload: ChatMessage) => dispatch(signalEvents.chatMessage(payload)));
     socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
-    socket.on("room_knocked", (payload) => dispatch(signalEvents.roomKnocked(payload)));
-    socket.on("room_session_ended", (payload) => dispatch(signalEvents.roomSessionEnded(payload)));
-    socket.on("knocker_left", (payload) => dispatch(signalEvents.knockerLeft(payload)));
-    socket.on("knock_handled", (payload) => dispatch(signalEvents.knockHandled(payload)));
-    socket.on("screenshare_started", (payload) => dispatch(signalEvents.screenshareStarted(payload)));
-    socket.on("screenshare_stopped", (payload) => dispatch(signalEvents.screenshareStopped(payload)));
-    socket.on("cloud_recording_started", (payload) => dispatch(signalEvents.cloudRecordingStarted(payload)));
+    socket.on("room_knocked", (payload: RoomKnockedEvent) => dispatch(signalEvents.roomKnocked(payload)));
+    socket.on("room_session_ended", (payload: RoomSessionEndedEvent) =>
+        dispatch(signalEvents.roomSessionEnded(payload)),
+    );
+    socket.on("knocker_left", (payload: KnockerLeftEvent) => dispatch(signalEvents.knockerLeft(payload)));
+    socket.on("knock_handled", (payload: KnockAcceptedEvent | KnockRejectedEvent) =>
+        dispatch(signalEvents.knockHandled(payload)),
+    );
+    socket.on("screenshare_started", (payload: ScreenshareStartedEvent) =>
+        dispatch(signalEvents.screenshareStarted(payload)),
+    );
+    socket.on("screenshare_stopped", (payload: ScreenshareStoppedEvent) =>
+        dispatch(signalEvents.screenshareStopped(payload)),
+    );
+    socket.on("cloud_recording_started", (payload: CloudRecordingStartedEvent) =>
+        dispatch(signalEvents.cloudRecordingStarted(payload)),
+    );
     socket.on("cloud_recording_stopped", () => dispatch(signalEvents.cloudRecordingStopped()));
     socket.on("streaming_stopped", () => dispatch(signalEvents.streamingStopped()));
 }

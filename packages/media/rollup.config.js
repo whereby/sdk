@@ -30,8 +30,19 @@ module.exports = [
     {
         input: "src/index.ts",
         output: {
-            file: "dist/index.esm.js",
+            file: "dist/index.mjs",
             format: "esm",
+            exports: "named",
+        },
+        plugins,
+        external,
+    },
+    // Cjs build of lib, to be used with node
+    {
+        input: "src/index.ts",
+        output: {
+            file: "dist/cjs/index.cjs",
+            format: "cjs",
             exports: "named",
         },
         plugins,

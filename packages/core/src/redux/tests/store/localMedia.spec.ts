@@ -1,7 +1,7 @@
 import * as localMediaSlice from "../../slices/localMedia";
 import { createStore } from "../store.setup";
 import { diff } from "deep-object-diff";
-import * as MediaDevices from "@whereby/jslib-media/src/webrtc/MediaDevices";
+import * as MediaDevices from "@whereby.com/media";
 
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import MockMediaStreamTrack from "../../../__mocks__/MediaStreamTrack";
@@ -24,7 +24,7 @@ Object.defineProperty(navigator, "mediaDevices", {
     value: mockMediaDevices,
 });
 
-jest.mock("@whereby/jslib-media/src/webrtc/MediaDevices", () => ({
+jest.mock("@whereby.com/media", () => ({
     __esModule: true,
     getStream: jest.fn(() => Promise.resolve()),
     getUpdatedDevices: jest.fn(() => Promise.resolve({ addedDevices: {}, changedDevices: {} })),

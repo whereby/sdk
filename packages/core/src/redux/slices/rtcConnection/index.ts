@@ -1,13 +1,14 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
-import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
-import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
-import RtcManagerDispatcher, {
+import {
+    RtcManager,
+    RtcManagerDispatcher,
     RtcEvents,
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
-} from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+} from "@whereby.com/media";
+import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
@@ -168,7 +169,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
 
-    if (dispatcher) {
+    if (dispatcher || !socket) {
         return;
     }
 
@@ -185,7 +186,6 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const rtcManagerDispatcher = new RtcManagerDispatcher({
         emitter: createWebRtcEmitter(dispatch),
         serverSocket: socket,
-        logger: console,
         webrtcProvider,
         features: {
             lowDataModeEnabled: false,
