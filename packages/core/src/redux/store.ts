@@ -3,6 +3,7 @@ import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../services";
 
 import { appSlice } from "./slices/app";
+import { authorizationSlice } from "./slices/authorization";
 import { chatSlice } from "./slices/chat";
 import { cloudRecordingSlice } from "./slices/cloudRecording";
 import { deviceCredentialsSlice } from "./slices/deviceCredentials";
@@ -12,7 +13,6 @@ import { localScreenshareSlice } from "./slices/localScreenshare";
 import { organizationSlice } from "./slices/organization";
 import { remoteParticipantsSlice } from "./slices/remoteParticipants";
 import { roomConnectionSlice } from "./slices/roomConnection";
-import { roomLockSlice } from "./slices/roomLock";
 import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcAnalyticsSlice } from "./slices/rtcAnalytics";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
@@ -23,6 +23,7 @@ const IS_DEV = process.env.REACT_APP_IS_DEV === "true" ?? false;
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
+    authorization: authorizationSlice.reducer,
     chat: chatSlice.reducer,
     cloudRecording: cloudRecordingSlice.reducer,
     deviceCredentials: deviceCredentialsSlice.reducer,
@@ -32,7 +33,6 @@ export const rootReducer = combineReducers({
     organization: organizationSlice.reducer,
     remoteParticipants: remoteParticipantsSlice.reducer,
     roomConnection: roomConnectionSlice.reducer,
-    roomLock: roomLockSlice.reducer,
     rtcAnalytics: rtcAnalyticsSlice.reducer,
     rtcConnection: rtcConnectionSlice.reducer,
     signalConnection: signalConnectionSlice.reducer,
