@@ -21,6 +21,7 @@ const initialState: LocalParticipantState = {
     isAudioEnabled: true,
     isVideoEnabled: true,
     isLocalParticipant: true,
+    isHost: false,
     stream: undefined,
     isScreenSharing: false,
     roleName: "",
@@ -110,6 +111,7 @@ export const localParticipantSlice = createSlice({
                 id: action.payload.selfId,
                 clientClaim: action.payload.clientClaim,
                 roleName: client?.role.roleName || "",
+                isHost: client?.role.roleName === "host",
             };
         });
     },
@@ -122,6 +124,7 @@ export const selectSelfId = (state: RootState) => state.localParticipant.id;
 export const selectLocalParticipantClientClaim = (state: RootState) => state.localParticipant.clientClaim;
 export const selectLocalParticipantRole = (state: RootState) => state.localParticipant.roleName;
 export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
+export const selectLocalParticipantIsHost = (state: RootState) => state.localParticipant.isHost;
 
 startAppListening({
     actionCreator: toggleCameraEnabled,

@@ -17,12 +17,19 @@ import {
     appLeft,
     doAppJoin,
     doKnockRoom,
+    doLockRoom,
     doRtcReportStreamResolution,
 } from "@whereby.com/core";
 
 import VideoView from "../VideoView";
 import { selectRoomConnectionState } from "./selector";
-import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
+import {
+    RoomConnectionState,
+    RoomConnectionActions,
+    UseRoomConnectionOptions,
+    HostControlState,
+    HostControlActions,
+} from "./types";
 import { browserSdkVersion } from "../version";
 
 const initialState: RoomConnectionState = {
@@ -39,10 +46,19 @@ interface RoomConnectionComponents {
     VideoView: (props: VideoViewComponentProps) => ReturnType<typeof VideoView>;
 }
 
+interface HostControlComponents {}
+
+export type HostControlRef = {
+    state: HostControlState;
+    actions: HostControlActions;
+    components: HostControlComponents;
+};
+
 export type RoomConnectionRef = {
     state: RoomConnectionState;
     actions: RoomConnectionActions;
     components: RoomConnectionComponents;
+    host: HostControlRef;
     _ref: Store;
 };
 
@@ -71,7 +87,7 @@ export function useRoomConnection(
         const unsubscribe = observeStore(store, selectRoomConnectionState, setRoomConnectionState);
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
-        const roomKey = searchParams.get("roomKey");
+        const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
         store.dispatch(
             doAppJoin({
@@ -147,6 +163,8 @@ export function useRoomConnection(
     const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
 
+    const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
+
     return {
         state: roomConnectionState,
         actions: {
@@ -164,6 +182,13 @@ export function useRoomConnection(
         },
         components: {
             VideoView: boundVideoView || VideoView,
+        },
+        host: {
+            state: {},
+            actions: {
+                lockRoom,
+            },
+            components: {},
         },
         _ref: store,
     };

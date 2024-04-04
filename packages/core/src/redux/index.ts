@@ -13,6 +13,7 @@ export * from "./slices/localScreenshare";
 export * from "./slices/organization";
 export * from "./slices/remoteParticipants";
 export * from "./slices/roomConnection";
+export * from "./slices/roomLock";
 export * from "./slices/rtcAnalytics";
 export * from "./slices/streaming";
 export * from "./slices/waitingParticipants";

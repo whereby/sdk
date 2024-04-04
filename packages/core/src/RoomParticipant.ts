@@ -56,7 +56,8 @@ export interface RemoteParticipant {
 }
 
 export class LocalParticipant extends RoomParticipant {
-    public readonly isLocalParticipant = true;
+    public readonly isLocalParticipant: boolean = true;
+    public readonly isHost: boolean = false;
 
     constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled }: RoomParticipantData) {
         super({ displayName, id, stream, isAudioEnabled, isVideoEnabled });

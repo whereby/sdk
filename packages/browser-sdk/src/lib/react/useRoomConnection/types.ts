@@ -74,3 +74,9 @@ export interface RoomConnectionActions {
     stopCloudRecording(): void;
     stopScreenshare(): void;
 }
+
+export interface HostControlState {}
+
+export interface HostControlActions {
+    lockRoom(locked: boolean): void;
+}

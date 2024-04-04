@@ -6,25 +6,35 @@ import { useRoomConnection } from "../../lib/react/useRoomConnection";
 export default function VideoExperience({
     displayName,
     roomName,
+    roomKey,
     localMedia,
     externalId,
+    showHostControls,
 }: {
     displayName?: string;
     roomName: string;
+    roomKey?: string;
     localMedia?: UseLocalMediaResult;
     externalId?: string;
+    showHostControls?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const { state, actions, components } = useRoomConnection(roomName, {
-        displayName,
+    const {
+        state,
+        actions,
+        components,
+        host: { actions: hostActions },
+    } = useRoomConnection(roomName, {
         localMediaOptions: {
             audio: true,
             video: true,
         },
-        localMedia,
-        externalId,
+        ...(Boolean(displayName) && { displayName }),
+        ...(Boolean(roomKey) && { roomKey }),
+        ...(Boolean(localMedia) && { localMedia }),
+        ...(Boolean(externalId) && { externalId }),
     });
 
     const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
@@ -39,6 +49,7 @@ export default function VideoExperience({
         startScreenshare,
         stopScreenshare,
     } = actions;
+    const { lockRoom } = hostActions;
     const { VideoView } = components;
 
     return (
@@ -78,6 +89,23 @@ export default function VideoExperience({
                             );
                         })}
                     </div>
+                    {showHostControls && (
+                        <div className="hostControls">
+                            Host controls:
+                            <button
+                                onClick={() => lockRoom(true)}
+                                className={!localParticipant?.isHost ? "hostControlActionDisallowed" : ""}
+                            >
+                                Lock room
+                            </button>
+                            <button
+                                onClick={() => lockRoom(false)}
+                                className={!localParticipant?.isHost ? "hostControlActionDisallowed" : ""}
+                            >
+                                Unlock room
+                            </button>
+                        </div>
+                    )}
                     <div className="container">
                         {[localParticipant, ...remoteParticipants].map((participant, i) => (
                             <div className="participantWrapper" key={participant?.id || i}>
@@ -107,7 +135,16 @@ export default function VideoExperience({
                                                 />
                                             )}
                                         </div>
-                                        <div className="displayName" title={("externalId" in participant) ? participant.externalId || undefined : undefined}>{participant.displayName || "Guest"}</div>
+                                        <div
+                                            className="displayName"
+                                            title={
+                                                "externalId" in participant
+                                                    ? participant.externalId || undefined
+                                                    : undefined
+                                            }
+                                        >
+                                            {participant.displayName || "Guest"}
+                                        </div>
                                     </>
                                 ) : null}
                             </div>
