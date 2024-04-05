@@ -12,6 +12,7 @@ export default {
     argTypes: {
         displayName: { control: "text" },
         roomUrl: { control: "text", type: { required: true } },
+        externalId: { control: "text" },
     },
     args: {
         displayName: "SDK",
@@ -25,7 +26,7 @@ export const StartStop = () => {
     return <div>Go to this story to eg verify all resources (camera, microphone, connections) are released.</div>;
 };
 
-export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
+export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName, externalId }: { roomUrl: string; displayName?: string, externalId?: string }) => {
     const localMedia = useLocalMedia({ audio: true, video: true });
     const [shouldJoin, setShouldJoin] = useState(false);
 
@@ -38,7 +39,7 @@ export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl
             <PrecallExperience {...localMedia} hideVideoPreview={shouldJoin} />
             <button onClick={() => setShouldJoin(!shouldJoin)}>{shouldJoin ? "Leave room" : "Join room"}</button>
 
-            {shouldJoin && <VideoExperience displayName={displayName} roomName={roomUrl} localMedia={localMedia} />}
+            {shouldJoin && <VideoExperience displayName={displayName} roomName={roomUrl} localMedia={localMedia} externalId={externalId} />}
         </div>
     );
 };

@@ -7,10 +7,12 @@ export default function VideoExperience({
     displayName,
     roomName,
     localMedia,
+    externalId,
 }: {
     displayName?: string;
     roomName: string;
     localMedia?: UseLocalMediaResult;
+    externalId?: string;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
@@ -22,6 +24,7 @@ export default function VideoExperience({
             video: true,
         },
         localMedia,
+        externalId,
     });
 
     const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
@@ -104,7 +107,7 @@ export default function VideoExperience({
                                                 />
                                             )}
                                         </div>
-                                        <div className="displayName">{participant.displayName || "Guest"}</div>
+                                        <div className="displayName" title={("externalId" in participant) ? participant.externalId || undefined : undefined}>{participant.displayName || "Guest"}</div>
                                     </>
                                 ) : null}
                             </div>
