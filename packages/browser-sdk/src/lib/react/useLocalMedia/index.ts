@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import * as React from "react";
 import {
-    createStore,
     observeStore,
-    Store,
-    createServices,
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
+    setCurrentSpeakerDeviceId,
     doStartLocalMedia,
     doStopLocalMedia,
     toggleCameraEnabled,
@@ -14,6 +12,7 @@ import {
 
 import { LocalMediaState, UseLocalMediaOptions, UseLocalMediaResult } from "./types";
 import { selectLocalMediaState } from "./selector";
+import { WherebyContext } from "../Provider";
 
 const initialState: LocalMediaState = {
     cameraDeviceError: null,
@@ -30,13 +29,15 @@ const initialState: LocalMediaState = {
 export function useLocalMedia(
     optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true },
 ): UseLocalMediaResult {
-    const [store] = useState<Store>(() => {
-        const services = createServices();
-        return createStore({ injectServices: services });
-    });
-    const [localMediaState, setLocalMediaState] = useState(initialState);
+    const store = React.useContext(WherebyContext);
 
-    useEffect(() => {
+    if (!store) {
+        throw new Error("useLocalMedia must be used within a WherebyProvider");
+    }
+
+    const [localMediaState, setLocalMediaState] = React.useState(initialState);
+
+    React.useEffect(() => {
         const unsubscribe = observeStore(store, selectLocalMediaState, setLocalMediaState);
         store.dispatch(doStartLocalMedia(optionsOrStream));
 
@@ -46,16 +47,23 @@ export function useLocalMedia(
         };
     }, []);
 
-    const setCameraDevice = useCallback(
+    const setCameraDevice = React.useCallback(
         (deviceId: string) => store.dispatch(setCurrentCameraDeviceId({ deviceId })),
         [store],
     );
-    const setMicrophoneDevice = useCallback(
+    const setMicrophoneDevice = React.useCallback(
         (deviceId: string) => store.dispatch(setCurrentMicrophoneDeviceId({ deviceId })),
         [store],
     );
-    const toggleCamera = useCallback((enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })), [store]);
-    const toggleMicrophone = useCallback(
+    const setSpeakerDevice = React.useCallback(
+        (deviceId: string) => store.dispatch(setCurrentSpeakerDeviceId({ deviceId })),
+        [store],
+    );
+    const toggleCamera = React.useCallback(
+        (enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })),
+        [store],
+    );
+    const toggleMicrophone = React.useCallback(
         (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
         [store],
     );
@@ -64,6 +72,7 @@ export function useLocalMedia(
         actions: {
             setCameraDevice,
             setMicrophoneDevice,
+            setSpeakerDevice,
             toggleCameraEnabled: toggleCamera,
             toggleMicrophoneEnabled: toggleMicrophone,
         },

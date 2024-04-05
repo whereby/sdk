@@ -93,7 +93,7 @@ export const localMediaSlice = createSlice({
         setCurrentSpeakerDeviceId(state, action: PayloadAction<{ deviceId?: string }>) {
             return {
                 ...state,
-                currentSpeakerDeviceId: action.payload.deviceId,
+                currentSpeakerDeviceId: action.payload.deviceId ?? "default",
             };
         },
         setDevices(state, action: PayloadAction<{ devices: MediaDeviceInfo[] }>) {

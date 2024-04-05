@@ -9,8 +9,17 @@ interface PrecallExperienceProps extends UseLocalMediaResult {
 export default function PrecallExperience(props: PrecallExperienceProps) {
     const { state, actions, hideVideoPreview } = props;
 
-    const { currentCameraDeviceId, currentMicrophoneDeviceId, cameraDevices, localStream, microphoneDevices } = state;
-    const { setCameraDevice, setMicrophoneDevice, toggleCameraEnabled, toggleMicrophoneEnabled } = actions;
+    const {
+        currentCameraDeviceId,
+        currentMicrophoneDeviceId,
+        currentSpeakerDeviceId,
+        cameraDevices,
+        localStream,
+        microphoneDevices,
+        speakerDevices,
+    } = state;
+    const { setCameraDevice, setMicrophoneDevice, setSpeakerDevice, toggleCameraEnabled, toggleMicrophoneEnabled } =
+        actions;
 
     return (
         <div>
@@ -41,6 +50,23 @@ export default function PrecallExperience(props: PrecallExperienceProps) {
                             onClick={() => {
                                 if (d.deviceId !== currentMicrophoneDeviceId) {
                                     setMicrophoneDevice(d.deviceId);
+                                }
+                            }}
+                        >
+                            {d.label}
+                        </p>
+                    ))}
+                </div>
+
+                <div style={{ border: "1px solid grey" }}>
+                    <label>Speaker devices:</label>
+                    {speakerDevices.map((d) => (
+                        <p
+                            style={{ backgroundColor: d.deviceId === currentSpeakerDeviceId ? "green" : "inherit" }}
+                            key={d.deviceId}
+                            onClick={() => {
+                                if (d.deviceId !== currentSpeakerDeviceId) {
+                                    setSpeakerDevice(d.deviceId);
                                 }
                             }}
                         >

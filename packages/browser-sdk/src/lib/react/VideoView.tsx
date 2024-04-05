@@ -1,5 +1,23 @@
 import * as React from "react";
 import { debounce } from "@whereby.com/core";
+import { createSelector } from "@reduxjs/toolkit";
+import { WherebyContext } from "./Provider";
+import { observeStore, selectCurrentSpeakerDeviceId } from "@whereby.com/core";
+
+interface VideoViewState {
+    speakerId: string;
+}
+
+const initialState = {
+    speakerId: "",
+};
+
+const selectVideoViewState = createSelector(selectCurrentSpeakerDeviceId, (speakerId) => {
+    const state: VideoViewState = {
+        speakerId: speakerId || "default",
+    };
+    return state;
+});
 
 interface VideoViewSelfProps {
     stream: MediaStream;
@@ -13,8 +31,26 @@ interface VideoViewSelfProps {
 type VideoViewProps = VideoViewSelfProps &
     React.DetailedHTMLProps<React.VideoHTMLAttributes<HTMLVideoElement>, HTMLVideoElement>;
 
+type AudioElement = HTMLAudioElement & { setSinkId?: (deviceId: string) => void };
+
 export default ({ muted, mirror = false, stream, onResize, onSetAspectRatio, ...rest }: VideoViewProps) => {
+    const store = React.useContext(WherebyContext);
+
+    if (!store) {
+        throw new Error("VideoView must be used within a WherebyProvider");
+    }
+
+    const [videoViewState, setVideoViewState] = React.useState(initialState);
     const videoEl = React.useRef<HTMLVideoElement>(null);
+    const audioEl = React.useRef<AudioElement>(null);
+
+    React.useEffect(() => {
+        const unsubscribe = observeStore(store, selectVideoViewState, setVideoViewState);
+
+        return () => {
+            unsubscribe();
+        };
+    }, [store]);
 
     React.useEffect(() => {
         if (!videoEl.current) {
@@ -67,13 +103,30 @@ export default ({ muted, mirror = false, stream, onResize, onSetAspectRatio, ...
         }
     }, [muted, stream, videoEl]);
 
+    React.useEffect(() => {
+        if (!audioEl.current || muted || !stream || !videoViewState.speakerId) {
+            return;
+        }
+
+        if (audioEl.current.srcObject !== stream) {
+            audioEl.current.srcObject = stream;
+        }
+
+        if (audioEl.current.setSinkId) {
+            audioEl.current.setSinkId(videoViewState.speakerId);
+        }
+    }, [stream, audioEl, videoViewState.speakerId, muted]);
+
     return (
-        <video
-            ref={videoEl}
-            autoPlay
-            playsInline
-            {...rest}
-            style={{ transform: mirror ? "scaleX(-1)" : "none", width: "100%", height: "100%", ...rest.style }}
-        />
+        <>
+            <video
+                ref={videoEl}
+                autoPlay
+                playsInline
+                {...rest}
+                style={{ transform: mirror ? "scaleX(-1)" : "none", width: "100%", height: "100%", ...rest.style }}
+            />
+            <audio ref={audioEl} autoPlay playsInline />
+        </>
     );
 };
