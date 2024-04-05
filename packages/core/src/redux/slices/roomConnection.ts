@@ -7,7 +7,7 @@ import {
     selectAppDisplayName,
     selectAppRoomKey,
     selectAppRoomName,
-    selectAppSdkVersion,
+    selectAppUserAgent,
     selectAppExternalId,
     setRoomKey,
     selectAppIsNodeSdk,
@@ -136,7 +136,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const roomName = selectAppRoomName(state);
     const roomKey = selectAppRoomKey(state);
     const displayName = selectAppDisplayName(state);
-    const sdkVersion = selectAppSdkVersion(state);
+    const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
 
@@ -155,7 +155,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
         roomKey,
         roomName,
         selfId: "",
-        userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
+        userAgent,
         externalId,
     });
 
@@ -168,7 +168,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const roomName = selectAppRoomName(state);
     const roomKey = selectAppRoomKey(state);
     const displayName = selectAppDisplayName(state);
-    const sdkVersion = selectAppSdkVersion(state);
+    const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
@@ -192,7 +192,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         roomName,
         selfId,
         ...(!!clientClaim && { clientClaim }),
-        userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
+        userAgent,
         externalId,
     });
 
