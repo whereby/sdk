@@ -6,7 +6,7 @@ module.exports = function buildConfig(packageDirectory, pkgConfig) {
         replaceValues: {
             preventAssignment: true,
             values: {
-                __SDK_VERSION__: pkg.version,
+                __PKG_VERSION__: pkg.version,
                 "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
                 "process.env.NODE_DEBUG": JSON.stringify(process.env.NODE_DEBUG),
                 "process.env.AWF_BASE_URL": JSON.stringify(process.env.AWF_BASE_URL),
