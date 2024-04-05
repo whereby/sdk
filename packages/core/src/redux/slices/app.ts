@@ -1,6 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import type { LocalMediaOptions } from "./localMedia";
+import { coreVersion } from "../../version";
 
 /**
  * Reducer
@@ -12,7 +13,7 @@ export interface AppState {
     roomName: string | null;
     roomKey: string | null;
     displayName: string | null;
-    sdkVersion: string | null;
+    userAgent: string | null;
     externalId: string | null;
 }
 
@@ -23,7 +24,7 @@ const initialState: AppState = {
     roomKey: null,
     roomUrl: null,
     displayName: null,
-    sdkVersion: null,
+    userAgent: `core:${coreVersion}`,
     externalId: null,
 };
 
@@ -39,7 +40,7 @@ export const appSlice = createSlice({
                 localMediaOptions?: LocalMediaOptions;
                 roomKey: string | null;
                 roomUrl: string;
-                sdkVersion: string;
+                userAgent?: string;
                 externalId: string | null;
             }>,
         ) => {
@@ -78,6 +79,6 @@ export const selectAppRoomName = (state: RootState) => state.app.roomName;
 export const selectAppRoomUrl = (state: RootState) => state.app.roomUrl;
 export const selectAppRoomKey = (state: RootState) => state.app.roomKey;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;
-export const selectAppSdkVersion = (state: RootState) => state.app.sdkVersion;
+export const selectAppUserAgent = (state: RootState) => state.app.userAgent;
 export const selectAppExternalId = (state: RootState) => state.app.externalId;
 export const selectAppIsNodeSdk = (state: RootState) => state.app.isNodeSdk;
