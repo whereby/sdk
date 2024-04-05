@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.7.0-beta.0
+
+### Minor Changes
+
+- 9e19728: Rebase beta version on latest main
+
 ## 2.6.0
 
 ### Minor Changes
