@@ -30,6 +30,7 @@ describe("remoteParticipantsSlice", () => {
                                         roleName: "participant",
                                     },
                                     startedCloudRecordingAt: null,
+                                    externalId: null,
                                 },
                             ],
                             knockers: [],
@@ -53,6 +54,7 @@ describe("remoteParticipantsSlice", () => {
                         },
                         startedCloudRecordingAt: null,
                         presentationStream: null,
+                        externalId: null,
                     },
                 ]);
             });
@@ -81,6 +83,7 @@ describe("remoteParticipantsSlice", () => {
                     role: client.role,
                     startedCloudRecordingAt: client.startedCloudRecordingAt,
                     presentationStream: null,
+                    externalId: null,
                 },
             ]);
         });
