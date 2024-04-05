@@ -44,6 +44,7 @@ export interface SignalClient {
     isVideoEnabled: boolean;
     role: ClientRole;
     startedCloudRecordingAt: string | null;
+    externalId: string | null;
 }
 
 export interface AudioEnabledEvent {
