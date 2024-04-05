@@ -1,13 +1,13 @@
-import { subscribeIssues } from "../../../src/webrtc/stats/IssueMonitor";
-import { setClientProvider } from "../../../src/webrtc/stats/StatsMonitor";
-import { setPeerConnectionsForTests } from "../../../src/webrtc/stats/StatsMonitor/peerConnectionTracker";
+import { subscribeIssues } from "..";
+import { setClientProvider } from "../../StatsMonitor";
+import { setPeerConnectionsForTests } from "../../StatsMonitor/peerConnectionTracker";
 
-function createMockPeerConnection(clients: any) {
+function createMockPeerConnection(clients: ReturnType<typeof createMockClient>[]) {
     return {
         getStats() {
             return new Map(
                 clients
-                    .flatMap((client: any) => [
+                    .flatMap((client) => [
                         client.audio.enabled && { ...client.audio.stats, timestamp: Date.now() },
                         client.video.enabled && { ...client.video.stats, timestamp: Date.now() },
                     ])
@@ -18,7 +18,7 @@ function createMockPeerConnection(clients: any) {
     };
 }
 
-function createMockClient(id: any, isLocal: any) {
+function createMockClient(id: string, isLocal: boolean) {
     return {
         id,
         isLocalClient: !!isLocal,
@@ -57,10 +57,10 @@ function createMockClient(id: any, isLocal: any) {
 }
 
 describe("IssueMonitor", () => {
-    let stopSubscription: any;
-    let localCam: any;
-    let remoteCam1: any;
-    let remoteCam2: any;
+    let stopSubscription: () => void;
+    let localCam: ReturnType<typeof createMockClient>;
+    let remoteCam1: ReturnType<typeof createMockClient>;
+    let remoteCam2: ReturnType<typeof createMockClient>;
 
     beforeAll(() => {
         jest.useFakeTimers();

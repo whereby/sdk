@@ -3,7 +3,7 @@ const buildConfig = require("../../jest.base.config");
 
 module.exports = buildConfig(__dirname, {
     testEnvironment: "jsdom",
-    testMatch: ["<rootDir>/tests/**/?(*.)+(spec|test).[jt]s?(x)"],
+    testMatch: ["<rootDir>/tests/**/?(*.)+(spec|test).[jt]s?(x)", "<rootDir>/src/**/?(*.)+(spec|test|unit).[jt]s?(x)"],
     transform: {
         "^.+\\.(j|t)sx?$": "ts-jest",
     },
