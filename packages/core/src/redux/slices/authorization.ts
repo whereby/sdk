@@ -1,10 +1,16 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createAppThunk } from "../thunk";
+import { createAppAuthorizedThunk } from "../thunk";
 import { doAppJoin } from "./app";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { parseUnverifiedRoomKeyData } from "./../../utils";
+import { selectLocalParticipantRole } from "./localParticipant";
+
+type AvailableRoles = "none" | "visitor" | "granted_visitor" | "viewer" | "granted_viewer" | "host";
+
+const AUTHORIZED_ACTION_ROLES: { [permissionKey: string]: Array<AvailableRoles> } = {
+    canLockRoom: ["host"],
+};
 
 /**
  * Reducer
@@ -69,27 +75,24 @@ export const authorizationSlice = createSlice({
 
 export const { setRoomKey } = authorizationSlice.actions;
 
-export const doLockRoom = createAppThunk((payload: { locked: boolean }) => (_, getState) => {
-    const state = getState();
+export const doLockRoom = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToLockRoom(state),
+    (payload: { locked: boolean }) => (_, getState) => {
+        const state = getState();
 
-    const roomKey = selectAuthorizationRoomKey(state);
-    if (!roomKey) {
-        console.warn("No room key present");
-        return;
-    }
-
-    const { roomKeyType } = parseUnverifiedRoomKeyData(roomKey);
-    if (roomKeyType !== "meetingHost") {
-        console.warn("Only a host can perform this action");
-        return;
-    }
-
-    const { socket } = selectSignalConnectionRaw(state);
-    socket?.emit("set_lock", { locked: payload.locked });
-});
+        const { socket } = selectSignalConnectionRaw(state);
+        socket?.emit("set_lock", { locked: payload.locked });
+    },
+);
 
 /**
  * Selectors
  */
+
 export const selectAuthorizationRoomKey = (state: RootState) => state.authorization.roomKey;
+
 export const selectAuthorizationRoomLocked = (state: RootState) => state.authorization.roomLocked;
+
+export const selectIsAuthorizedToLockRoom = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
+    AUTHORIZED_ACTION_ROLES.canLockRoom.includes(localParticipantRole as AvailableRoles),
+);
