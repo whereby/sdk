@@ -18,12 +18,12 @@ import {
     doAppJoin,
     doKnockRoom,
     doRtcReportStreamResolution,
-    sdkVersion,
 } from "@whereby.com/core";
 
 import VideoView from "../VideoView";
 import { selectRoomConnectionState } from "./selector";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
+import { browserSdkVersion } from "../version";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -81,7 +81,7 @@ export function useRoomConnection(
                     : roomConnectionOptions.localMediaOptions,
                 roomKey,
                 roomUrl,
-                sdkVersion: sdkVersion,
+                userAgent: `browser-sdk:${browserSdkVersion}`,
                 externalId: roomConnectionOptions.externalId || null,
             }),
         );
