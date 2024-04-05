@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 0.9.0
+
+### Minor Changes
+
+- 6fc07f5: Expose `RemoteParticipant.externalId`
+- 300f6ac: Rename `sdkVersion` param in `doAppJoin` to `userAgent`, make it optional with a fallback to core module version and stop exporting the `sdkVersion`
+
+### Patch Changes
+
+- Updated dependencies [c6ff015]
+  - @whereby.com/media@1.3.0
+
 ## 0.8.0
 
 ### Minor Changes
