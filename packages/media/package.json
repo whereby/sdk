@@ -48,7 +48,7 @@
         "check-ip": "^1.1.1",
         "events": "^3.3.0",
         "ip-address": "^9.0.5",
-        "mediasoup-client": "3.6.100",
+        "mediasoup-client": "3.7.3",
         "rtcstats": "github:whereby/rtcstats#5.4.0",
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
