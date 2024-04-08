@@ -8,7 +8,7 @@ import { calculateLayout } from "./helpers/stageLayout";
 import { Bounds, Frame, Origin, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
 import { doRtcReportStreamResolution } from "@whereby.com/core";
-import { debounce } from "@whereby.com/core/utils";
+import { debounce } from "@whereby.com/core";
 import { RoomConnectionRef } from "../useRoomConnection";
 
 function GridVideoCellView({
@@ -92,7 +92,7 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
                         }),
                     );
                 },
-                { delay: 60 },
+                { delay: 60, edges: false },
             ),
         );
         resizeObserver.observe(gridRef.current);
@@ -116,7 +116,7 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
                 aspectRatio: aspectRatio ?? 16 / 9,
                 avatarSize: 0,
                 cellPaddings: 10,
-                client: participant,
+                client: { id: participant?.id },
             });
         });
     }, [participants, aspectRatios]);

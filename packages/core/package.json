@@ -16,30 +16,25 @@
         "access": "public"
     },
     "files": [
-        "dist/**/*.cjs",
+        "dist/*.cjs",
         "dist/*.mjs",
-        "dist/*.d.ts"
+        "dist/*.d.ts",
+        "dist/*.d.cts",
+        "dist/*.d.mts"
     ],
-    "main": "/dist/cjs/index.cjs",
+    "main": "dist/index.cjs",
+    "module": "dist/legacy-esm.js",
+    "types": "dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.mjs",
-            "types": "./dist/index.d.ts"
-        },
-        "./utils": {
-            "import": "./dist/utils.mjs",
-            "types": "./dist/utils.d.ts"
-        }
-    },
-    "types": "dist/index.d.ts",
-    "typesVersions": {
-        "*": {
-            "*": [
-                "dist/index.d.ts"
-            ],
-            "utils": [
-                "dist/utils.d.ts"
-            ]
+            "import": {
+                "default": "./dist/index.mjs",
+                "types": "./dist/index.d.mts"
+            },
+            "require": {
+                "default": "./dist/index.cjs",
+                "types": "./dist/index.d.cts"
+            }
         }
     },
     "devDependencies": {
