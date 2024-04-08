@@ -89,13 +89,13 @@ export default function VideoExperience({
                             Host controls:
                             <button
                                 onClick={() => lockRoom(true)}
-                                className={!localParticipant?.isHost ? "hostControlActionDisallowed" : ""}
+                                className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
                             >
                                 Lock room
                             </button>
                             <button
                                 onClick={() => lockRoom(false)}
-                                className={!localParticipant?.isHost ? "hostControlActionDisallowed" : ""}
+                                className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
                             >
                                 Unlock room
                             </button>

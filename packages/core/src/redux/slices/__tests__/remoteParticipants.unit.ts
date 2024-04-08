@@ -27,7 +27,7 @@ describe("remoteParticipantsSlice", () => {
                                     isAudioEnabled: true,
                                     isVideoEnabled: true,
                                     role: {
-                                        roleName: "participant",
+                                        roleName: "visitor",
                                     },
                                     startedCloudRecordingAt: null,
                                     externalId: null,
@@ -49,9 +49,7 @@ describe("remoteParticipantsSlice", () => {
                         isLocalParticipant: false,
                         stream: null,
                         newJoiner: false,
-                        role: {
-                            roleName: "participant",
-                        },
+                        roleName: "visitor",
                         startedCloudRecordingAt: null,
                         presentationStream: null,
                         externalId: null,
@@ -80,7 +78,7 @@ describe("remoteParticipantsSlice", () => {
                     stream: null,
                     streams: [],
                     newJoiner: true,
-                    role: client.role,
+                    roleName: client.role.roleName,
                     startedCloudRecordingAt: client.startedCloudRecordingAt,
                     presentationStream: null,
                     externalId: null,

@@ -23,8 +23,18 @@ export interface SocketManager {
     on: (eventName: string, callback: (args: unknown) => void) => void;
 }
 
+export type RoleName =
+    | "none"
+    | "visitor"
+    | "granted_visitor"
+    | "viewer"
+    | "granted_viewer"
+    | "host"
+    | "recorder"
+    | "streamer";
+
 export interface ClientRole {
-    roleName: string;
+    roleName: RoleName;
 }
 
 export interface SignalKnocker {

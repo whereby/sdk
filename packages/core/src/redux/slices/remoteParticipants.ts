@@ -14,13 +14,14 @@ const NON_PERSON_ROLES = ["recorder", "streamer"];
  */
 
 function createParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
-    const { streams, ...rest } = client;
+    const { streams, role, ...rest } = client;
 
     return {
         ...rest,
         stream: null,
         streams: streams.map((streamId) => ({ id: streamId, state: newJoiner ? "new_accept" : "to_accept" })),
         isLocalParticipant: false,
+        roleName: role?.roleName || "none",
         presentationStream: null,
         newJoiner,
     };

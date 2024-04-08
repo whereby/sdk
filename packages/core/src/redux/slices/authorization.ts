@@ -1,4 +1,5 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
+import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
 import { createAppAuthorizedThunk } from "../thunk";
 import { doAppJoin } from "./app";
@@ -6,9 +7,7 @@ import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectLocalParticipantRole } from "./localParticipant";
 
-type AvailableRoles = "none" | "visitor" | "granted_visitor" | "viewer" | "granted_viewer" | "host";
-
-const AUTHORIZED_ACTION_ROLES: { [permissionKey: string]: Array<AvailableRoles> } = {
+const ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
 };
 
@@ -94,5 +93,5 @@ export const selectAuthorizationRoomKey = (state: RootState) => state.authorizat
 export const selectAuthorizationRoomLocked = (state: RootState) => state.authorization.roomLocked;
 
 export const selectIsAuthorizedToLockRoom = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
-    AUTHORIZED_ACTION_ROLES.canLockRoom.includes(localParticipantRole as AvailableRoles),
+    ACTION_PERMISSIONS_BY_ROLE.canLockRoom.includes(localParticipantRole),
 );

@@ -7,6 +7,8 @@ import {
     ConnectionStatus,
 } from "@whereby.com/core";
 
+import { RoleName } from "@whereby.com/media";
+
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
