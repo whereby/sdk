@@ -12,7 +12,11 @@ import { RoleName } from "@whereby.com/media";
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
-export type LocalParticipantState = LocalParticipant;
+export interface LocalParticipantState extends LocalParticipant {
+    isScreenSharing: boolean;
+    roleName: RoleName;
+    clientClaim?: string;
+}
 export interface WaitingParticipantState {
     id: string;
     displayName: string | null;

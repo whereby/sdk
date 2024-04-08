@@ -2,7 +2,6 @@ import { RoleName } from "@whereby.com/media";
 
 interface RoomParticipantData {
     displayName: string;
-    roleName: RoleName;
     id: string;
     stream?: MediaStream;
     isAudioEnabled: boolean;
@@ -11,16 +10,14 @@ interface RoomParticipantData {
 
 export default class RoomParticipant {
     public readonly displayName;
-    public readonly roleName;
     public readonly id;
     public readonly stream?: MediaStream;
     public readonly isAudioEnabled: boolean;
     public readonly isLocalParticipant: boolean = false;
     public readonly isVideoEnabled: boolean;
 
-    constructor({ displayName, roleName, id, stream, isAudioEnabled, isVideoEnabled }: RoomParticipantData) {
+    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled }: RoomParticipantData) {
         this.displayName = displayName;
-        this.roleName = roleName;
         this.id = id;
         this.stream = stream;
         this.isAudioEnabled = isAudioEnabled;
@@ -62,10 +59,10 @@ export interface RemoteParticipant {
 }
 
 export class LocalParticipant extends RoomParticipant {
-    public readonly isLocalParticipant: boolean = true;
+    public readonly isLocalParticipant = true;
 
-    constructor({ displayName, roleName, id, stream, isAudioEnabled, isVideoEnabled }: RoomParticipantData) {
-        super({ displayName, roleName, id, stream, isAudioEnabled, isVideoEnabled });
+    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled }: RoomParticipantData) {
+        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled });
     }
 }
 

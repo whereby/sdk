@@ -13,7 +13,7 @@ const NON_PERSON_ROLES = ["recorder", "streamer"];
  * State mapping utils
  */
 
-function createParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
+function createRemoteParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
     const { streams, role, ...rest } = client;
 
     return {
@@ -208,7 +208,7 @@ export const remoteParticipantsSlice = createSlice({
                 remoteParticipants: clients
                     .filter((c) => c.id !== selfId)
                     .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
-                    .map((c) => createParticipant(c)),
+                    .map((c) => createRemoteParticipant(c)),
             };
         });
         builder.addCase(rtcEvents.streamAdded, (state, action) => {
@@ -221,7 +221,7 @@ export const remoteParticipantsSlice = createSlice({
                 return state;
             }
 
-            return addParticipant(state, createParticipant(client, true));
+            return addParticipant(state, createRemoteParticipant(client, true));
         });
         builder.addCase(signalEvents.clientLeft, (state, action) => {
             const { clientId } = action.payload;

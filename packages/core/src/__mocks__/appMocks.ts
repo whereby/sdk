@@ -1,6 +1,7 @@
 import { Credentials } from "../api";
 import Organization from "../api/models/Organization";
 import { SignalClient } from "@whereby.com/media";
+import { LocalParticipantState } from "../redux/slices/localParticipant";
 import { RemoteParticipant } from "../RoomParticipant";
 import * as uuidPkg from "uuid";
 import MockMediaStream from "./MediaStream";
@@ -93,6 +94,29 @@ export const randomSignalClient = ({
         role,
         startedCloudRecordingAt,
         externalId,
+    };
+};
+
+export const randomLocalParticipant = ({
+    id = randomString(),
+    displayName = randomString(),
+    stream = undefined,
+    isAudioEnabled = true,
+    isVideoEnabled = true,
+    clientClaim = randomString(),
+    isScreenSharing = false,
+    roleName = "visitor",
+}: Partial<LocalParticipantState> = {}): LocalParticipantState => {
+    return {
+        id,
+        displayName,
+        stream,
+        isAudioEnabled,
+        isVideoEnabled,
+        isLocalParticipant: true,
+        clientClaim,
+        isScreenSharing,
+        roleName,
     };
 };
 
