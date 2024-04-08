@@ -1,5 +1,14 @@
 # @whereby.com/browser-sdk
 
+## 2.6.1
+
+### Patch Changes
+
+- dd39593: Provide correct value for `userAgent` when connecting using `browser-sdk`.
+- Updated dependencies [6fc07f5]
+- Updated dependencies [300f6ac]
+  - @whereby.com/core@0.9.0
+
 ## 2.6.0
 
 ### Minor Changes

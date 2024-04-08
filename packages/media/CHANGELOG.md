@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.0
+
+### Minor Changes
+
+- c6ff015: Expose `SignalClient`s `externalId`
+
 ## 1.2.1
 
 ### Patch Changes
