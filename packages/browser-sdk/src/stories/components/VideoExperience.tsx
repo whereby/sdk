@@ -21,12 +21,7 @@ export default function VideoExperience({
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const {
-        state,
-        actions,
-        components,
-        host: { actions: hostActions },
-    } = useRoomConnection(roomName, {
+    const { state, actions, components } = useRoomConnection(roomName, {
         localMediaOptions: {
             audio: true,
             video: true,
@@ -48,8 +43,8 @@ export default function VideoExperience({
         rejectWaitingParticipant,
         startScreenshare,
         stopScreenshare,
+        lockRoom,
     } = actions;
-    const { lockRoom } = hostActions;
     const { VideoView } = components;
 
     return (

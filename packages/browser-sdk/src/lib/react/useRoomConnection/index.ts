@@ -23,13 +23,7 @@ import {
 
 import VideoView from "../VideoView";
 import { selectRoomConnectionState } from "./selector";
-import {
-    RoomConnectionState,
-    RoomConnectionActions,
-    UseRoomConnectionOptions,
-    HostControlState,
-    HostControlActions,
-} from "./types";
+import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
 
 const initialState: RoomConnectionState = {
@@ -46,19 +40,10 @@ interface RoomConnectionComponents {
     VideoView: (props: VideoViewComponentProps) => ReturnType<typeof VideoView>;
 }
 
-interface HostControlComponents {}
-
-export type HostControlRef = {
-    state: HostControlState;
-    actions: HostControlActions;
-    components: HostControlComponents;
-};
-
 export type RoomConnectionRef = {
     state: RoomConnectionState;
     actions: RoomConnectionActions;
     components: RoomConnectionComponents;
-    host: HostControlRef;
     _ref: Store;
 };
 
@@ -170,6 +155,7 @@ export function useRoomConnection(
         actions: {
             sendChatMessage,
             knock,
+            lockRoom,
             setDisplayName,
             toggleCamera,
             toggleMicrophone,
@@ -182,13 +168,6 @@ export function useRoomConnection(
         },
         components: {
             VideoView: boundVideoView || VideoView,
-        },
-        host: {
-            state: {},
-            actions: {
-                lockRoom,
-            },
-            components: {},
         },
         _ref: store,
     };

@@ -64,6 +64,7 @@ export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "l
 export interface RoomConnectionActions {
     sendChatMessage(text: string): void;
     knock(): void;
+    lockRoom(locked: boolean): void;
     setDisplayName(displayName: string): void;
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
@@ -73,10 +74,4 @@ export interface RoomConnectionActions {
     startScreenshare(): void;
     stopCloudRecording(): void;
     stopScreenshare(): void;
-}
-
-export interface HostControlState {}
-
-export interface HostControlActions {
-    lockRoom(locked: boolean): void;
 }
