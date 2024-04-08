@@ -9,7 +9,8 @@
         "test": "yarn test:lint && yarn test:unit",
         "test:lint": "eslint src/",
         "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
-        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch"
+        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
+        "test:attw": "attw --pack . -f table"
     },
     "publishConfig": {
         "access": "public"

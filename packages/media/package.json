@@ -17,6 +17,7 @@
         "test:unit": "jest",
         "test:lint": "eslint src tests",
         "test:unit:coverage": "jest --collectCoverage",
+        "test:attw": "attw --pack . -f table",
         "format:fix": "prettier --write './**/*.{js,ts,yml,json}'",
         "format:check": "prettier --check './**/*.{js,ts,yml,json}'"
     },

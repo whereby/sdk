@@ -16,6 +16,7 @@
         "test:e2e": {
             "dependsOn": ["^build"],
             "outputs": ["playwright-*"]
-        }
+        },
+        "test:attw": {}
     }
 }
