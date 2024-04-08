@@ -235,7 +235,7 @@ export default class Session {
             },
             (e: any) => {
                 logger.warn("Could not set remote description from remote answer: ", e);
-            }
+            },
         );
     }
 
@@ -295,8 +295,8 @@ export default class Session {
             const tr = (t: any) => t && `id:${t.id},kind:${t.kind},state:${t.readyState}`;
             logger.warn(
                 `${msg}. newTrack:${tr(newTrack)}, oldTrack:${tr(oldTrack)}, sender tracks: ${JSON.stringify(
-                    senders.map((s: any) => `s ${tr(s.track)}`)
-                )}, sender first codecs: ${JSON.stringify(senders.map((s: any) => (s.getParameters().codecs || [])[0]))}`
+                    senders.map((s: any) => `s ${tr(s.track)}`),
+                )}, sender first codecs: ${JSON.stringify(senders.map((s: any) => (s.getParameters().codecs || [])[0]))}`,
             );
         }
         if (!senders.length) {
@@ -322,10 +322,10 @@ export default class Session {
                             // odin: Temporary debug data, remove if you see after 2020-12-01
                             dbg("One of the tracks is null!");
                         }
-                        if (track.id === newTrack.id) {
+                        if (track?.id === newTrack?.id) {
                             return Promise.resolve(newTrack);
                         }
-                        if (track.id === oldTrack.id) {
+                        if (track?.id === oldTrack?.id) {
                             return senders[i].replaceTrack(newTrack);
                         }
                     }
@@ -458,7 +458,7 @@ export default class Session {
                     videoTransceiver?.direction !== "recvonly" &&
                     videoTransceiver?.receiver?.track?.kind === "video" &&
                     !excludedTrackIds.includes(videoTransceiver?.receiver?.track?.id) &&
-                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id)
+                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id),
             )
             .forEach((videoTransceiver: any) => {
                 videoTransceiver.direction = enable ? "sendonly" : "sendrecv";
