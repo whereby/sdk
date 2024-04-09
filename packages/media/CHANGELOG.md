@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.1
+
+### Patch Changes
+
+- 5412e6f: Build package to .js instead of .mjs
+
 ## 1.3.0
 
 ### Minor Changes

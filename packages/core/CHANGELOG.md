@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 0.9.1
+
+### Patch Changes
+
+- 5412e6f: Bump media
+- Updated dependencies [5412e6f]
+  - @whereby.com/media@1.3.1
+
 ## 0.9.0
 
 ### Minor Changes
