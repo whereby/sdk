@@ -16,13 +16,15 @@
     "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
-    "test:e2e": "turbo test:e2e"
+    "test:e2e": "turbo test:e2e",
+    "test:attw": "turbo test:attw"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.15.3",
     "@changesets/cli": "^2.27.1",
     "@types/jest": "^29.5.12",
     "@whereby.com/eslint-config": "*",

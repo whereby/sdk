@@ -17,32 +17,35 @@
         "test:unit": "jest",
         "test:lint": "eslint src tests",
         "test:unit:coverage": "jest --collectCoverage",
+        "test:attw": "attw --pack . -f table",
         "format:fix": "prettier --write './**/*.{js,ts,yml,json}'",
         "format:check": "prettier --check './**/*.{js,ts,yml,json}'"
     },
     "publishConfig": {
         "access": "public"
     },
-    "main": "./dist/cjs/index.cjs",
+    "main": "dist/index.cjs",
+    "module": "dist/legacy-esm.js",
+    "types": "dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.mjs",
-            "types": "./dist/index.d.ts"
-        }
-    },
-    "types": "dist/index.d.ts",
-    "typesVersions": {
-        "*": {
-            "*": [
-                "./dist/index.d.ts"
-            ]
+            "import": {
+                "default": "./dist/index.mjs",
+                "types": "./dist/index.d.mts"
+            },
+            "require": {
+                "default": "./dist/index.cjs",
+                "types": "./dist/index.d.cts"
+            }
         }
     },
     "files": [
         "dist/**/*.js",
         "dist/**/*.mjs",
         "dist/**/*.cjs",
-        "dist/**/*.d.ts"
+        "dist/**/*.d.ts",
+        "dist/**/*.d.mts",
+        "dist/**/*.d.cts"
     ],
     "dependencies": {
         "check-ip": "^1.1.1",

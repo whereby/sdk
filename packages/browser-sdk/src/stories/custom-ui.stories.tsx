@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core/utils";
+import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
@@ -26,7 +26,15 @@ export const StartStop = () => {
     return <div>Go to this story to eg verify all resources (camera, microphone, connections) are released.</div>;
 };
 
-export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName, externalId }: { roomUrl: string; displayName?: string, externalId?: string }) => {
+export const RoomConnectionWithLocalMedia = ({
+    roomUrl,
+    displayName,
+    externalId,
+}: {
+    roomUrl: string;
+    displayName?: string;
+    externalId?: string;
+}) => {
     const localMedia = useLocalMedia({ audio: true, video: true });
     const [shouldJoin, setShouldJoin] = useState(false);
 
@@ -39,7 +47,14 @@ export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName, externalId 
             <PrecallExperience {...localMedia} hideVideoPreview={shouldJoin} />
             <button onClick={() => setShouldJoin(!shouldJoin)}>{shouldJoin ? "Leave room" : "Join room"}</button>
 
-            {shouldJoin && <VideoExperience displayName={displayName} roomName={roomUrl} localMedia={localMedia} externalId={externalId} />}
+            {shouldJoin && (
+                <VideoExperience
+                    displayName={displayName}
+                    roomName={roomUrl}
+                    localMedia={localMedia}
+                    externalId={externalId}
+                />
+            )}
         </div>
     );
 };

@@ -6,9 +6,8 @@ module.exports = function buildConfig(_packageDirectory, pkgConfig) {
             "^.+\\.(j|t)sx?$": ["ts-jest", { useESM: true }],
         },
         moduleNameMapper: {
-            "@whereby.com/core/utils": "<rootDir>/../core/dist/utils.mjs",
-            "@whereby.com/core": "<rootDir>/../core/dist/index.mjs",
-            "@whereby.com/media": "<rootDir>/../media/dist/cjs/index.cjs",
+            "@whereby.com/core": "<rootDir>/../core/dist/legacy-esm.js",
+            "@whereby.com/media": "<rootDir>/../media/dist/legacy-esm.js",
         },
         roots: ["<rootDir>/src"],
         testMatch: ["<rootDir>/src/**/?(*.)+(spec|test|unit).[jt]s?(x)"],

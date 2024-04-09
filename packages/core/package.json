@@ -9,36 +9,32 @@
         "test": "yarn test:lint && yarn test:unit",
         "test:lint": "eslint src/",
         "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
-        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch"
+        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
+        "test:attw": "attw --pack . -f table"
     },
     "publishConfig": {
         "access": "public"
     },
     "files": [
-        "dist/**/*.cjs",
+        "dist/*.cjs",
         "dist/*.mjs",
-        "dist/*.d.ts"
+        "dist/*.d.ts",
+        "dist/*.d.cts",
+        "dist/*.d.mts"
     ],
-    "main": "/dist/cjs/index.cjs",
+    "main": "dist/index.cjs",
+    "module": "dist/legacy-esm.js",
+    "types": "dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.mjs",
-            "types": "./dist/index.d.ts"
-        },
-        "./utils": {
-            "import": "./dist/utils.mjs",
-            "types": "./dist/utils.d.ts"
-        }
-    },
-    "types": "dist/index.d.ts",
-    "typesVersions": {
-        "*": {
-            "*": [
-                "dist/index.d.ts"
-            ],
-            "utils": [
-                "dist/utils.d.ts"
-            ]
+            "import": {
+                "default": "./dist/index.mjs",
+                "types": "./dist/index.d.mts"
+            },
+            "require": {
+                "default": "./dist/index.cjs",
+                "types": "./dist/index.d.cts"
+            }
         }
     },
     "devDependencies": {

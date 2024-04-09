@@ -48,12 +48,13 @@ module.exports = [
         plugins,
         external,
     },
+    // Legacy Esm build of lib, to be used with older bundlers
     {
-        input: "src/utils/index.ts",
+        input: "src/index.ts",
         output: [
             {
-                format: "esm",
-                file: "dist/utils.mjs",
+                format: "es",
+                file: "dist/legacy-esm.js",
                 exports: "named",
             },
         ],
@@ -66,19 +67,7 @@ module.exports = [
         output: [
             {
                 format: "cjs",
-                file: "dist/cjs/index.cjs",
-                exports: "named",
-            },
-        ],
-        plugins,
-        external,
-    },
-    {
-        input: "src/utils/index.ts",
-        output: [
-            {
-                format: "cjs",
-                file: "dist/cjs/utils.cjs",
+                file: "dist/index.cjs",
                 exports: "named",
             },
         ],
@@ -87,13 +76,19 @@ module.exports = [
     },
     {
         input: "src/index.ts",
+        output: [{ file: "dist/index.d.mts", format: "esm" }],
+        external,
+        plugins: [dts(tsOptions)],
+    },
+    {
+        input: "src/index.ts",
         output: [{ file: "dist/index.d.ts", format: "es" }],
         external,
         plugins: [dts(tsOptions)],
     },
     {
-        input: "src/utils/index.ts",
-        output: [{ file: "dist/utils.d.ts", format: "es" }],
+        input: "src/index.ts",
+        output: [{ file: "dist/index.d.cts", format: "cjs" }],
         external,
         plugins: [dts(tsOptions)],
     },
