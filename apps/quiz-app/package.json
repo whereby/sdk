@@ -6,7 +6,7 @@
     "homepage": ".",
     "dependencies": {
         "@chakra-ui/react": "^2.5.5",
-        "@emotion/react": "^11.10.6",
+        "@emotion/react": "^11.11.4",
         "@emotion/styled": "^11.10.6",
         "@types/jest": "^27.5.2",
         "@types/node": "^20.11.19",
