@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 0.9.2
+
+### Patch Changes
+
+- b91990a: Reorder export fields, default should be last
+- Updated dependencies [b91990a]
+  - @whereby.com/media@1.3.2
+
 ## 0.9.1
 
 ### Patch Changes

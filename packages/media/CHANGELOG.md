@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.2
+
+### Patch Changes
+
+- b91990a: Reorder export fields, default should be last
+
 ## 1.3.1
 
 ### Patch Changes
