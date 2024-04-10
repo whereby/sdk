@@ -1,4 +1,4 @@
-import { Story } from "@storybook/react";
+import { StoryFn } from "@storybook/react";
 import React, { useEffect, useRef, useState } from "react";
 import "../lib/embed";
 import type { WherebyEmbedElement } from "../lib/embed";
@@ -118,7 +118,7 @@ const WherebyEmbed = ({
     );
 };
 
-const Template: Story<Partial<WherebyEmbedAttributes>> = (args) => WherebyEmbed(args);
+const Template: StoryFn<Partial<WherebyEmbedAttributes>> = (args) => WherebyEmbed(args);
 export const WherebyEmbedElementExample = Template.bind({});
 
 WherebyEmbedElementExample.args = {
