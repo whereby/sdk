@@ -52,11 +52,5 @@ describe("appSlice", () => {
                 });
             });
         });
-
-        it("setRoomKey", () => {
-            const result = appSlice.reducer(undefined, appSlice.actions.setRoomKey("roomKey"));
-
-            expect(result.roomKey).toEqual("roomKey");
-        });
     });
 });

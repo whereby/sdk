@@ -4,6 +4,7 @@ export * from "./listenerMiddleware";
 export * from "./slices/rtcConnection";
 export * from "./slices/signalConnection";
 export * from "./slices/app";
+export * from "./slices/authorization";
 export * from "./slices/chat";
 export * from "./slices/cloudRecording";
 export * from "./slices/deviceCredentials";

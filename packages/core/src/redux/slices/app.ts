@@ -11,7 +11,6 @@ export interface AppState {
     wantsToJoin: boolean;
     roomUrl: string | null;
     roomName: string | null;
-    roomKey: string | null;
     displayName: string | null;
     userAgent: string | null;
     externalId: string | null;
@@ -21,7 +20,6 @@ const initialState: AppState = {
     isNodeSdk: false,
     wantsToJoin: false,
     roomName: null,
-    roomKey: null,
     roomUrl: null,
     displayName: null,
     userAgent: `core:${coreVersion}`,
@@ -56,19 +54,13 @@ export const appSlice = createSlice({
         appLeft: (state) => {
             return { ...state, wantsToJoin: false };
         },
-        setRoomKey: (state, action: PayloadAction<string>) => {
-            return {
-                ...state,
-                roomKey: action.payload,
-            };
-        },
     },
 });
 
 /**
  * Action creators
  */
-export const { doAppJoin, appLeft, setRoomKey } = appSlice.actions;
+export const { doAppJoin, appLeft } = appSlice.actions;
 
 /**
  * Selectors
@@ -77,7 +69,6 @@ export const selectAppRaw = (state: RootState) => state.app;
 export const selectAppWantsToJoin = (state: RootState) => state.app.wantsToJoin;
 export const selectAppRoomName = (state: RootState) => state.app.roomName;
 export const selectAppRoomUrl = (state: RootState) => state.app.roomUrl;
-export const selectAppRoomKey = (state: RootState) => state.app.roomKey;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;
 export const selectAppUserAgent = (state: RootState) => state.app.userAgent;
 export const selectAppExternalId = (state: RootState) => state.app.externalId;

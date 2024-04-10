@@ -6,7 +6,7 @@ export interface Credentials {
     userId: string;
 }
 
-/* 
+/*
     Socket
 */
 
@@ -23,8 +23,18 @@ export interface SocketManager {
     on: (eventName: string, callback: (args: unknown) => void) => void;
 }
 
+export type RoleName =
+    | "none"
+    | "visitor"
+    | "granted_visitor"
+    | "viewer"
+    | "granted_viewer"
+    | "host"
+    | "recorder"
+    | "streamer";
+
 export interface ClientRole {
-    roleName: string;
+    roleName: RoleName;
 }
 
 export interface SignalKnocker {
@@ -127,6 +137,10 @@ export interface RoomKnockedEvent {
     clientClaim?: string;
 }
 
+export interface RoomLockedEvent {
+    isLocked: boolean;
+}
+
 export interface RoomSessionEndedEvent {
     roomSessionId: string;
 }
@@ -170,6 +184,7 @@ export interface SignalEvents {
     room_joined: RoomJoinedEvent;
     room_knocked: RoomKnockedEvent;
     room_left: void;
+    room_locked: RoomLockedEvent;
     room_session_ended: RoomSessionEndedEvent;
     screenshare_started: ScreenshareStartedEvent;
     screenshare_stopped: ScreenshareStoppedEvent;
@@ -208,6 +223,7 @@ export interface SignalRequests {
     knock_room: KnockRoomRequest;
     leave_room: void;
     send_client_metadata: { type: string; payload: { displayName?: string } };
+    set_lock: { locked: boolean };
     start_recording: { recording: string };
     stop_recording: void;
 }

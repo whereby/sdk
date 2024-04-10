@@ -7,7 +7,7 @@ import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
 
-export default {
+const defaultArgs = {
     title: "Examples/Custom UI",
     argTypes: {
         displayName: { control: "text" },
@@ -19,6 +19,8 @@ export default {
         roomUrl: process.env.STORYBOOK_ROOM,
     },
 };
+
+export default defaultArgs;
 
 const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
@@ -157,6 +159,24 @@ export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; 
     }
 
     return <VideoExperience displayName={displayName} roomName={roomUrl} />;
+};
+
+export const RoomConnectionWithHostControls = {
+    render: ({ roomUrl, roomKey, displayName }: { roomUrl: string; roomKey: string; displayName?: string }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
+
+        return <VideoExperience displayName={displayName} roomName={roomUrl} roomKey={roomKey} showHostControls />;
+    },
+    argTypes: {
+        ...defaultArgs.argTypes,
+        roomKey: { control: "text", type: { required: true } },
+    },
+    args: {
+        ...defaultArgs.args,
+        roomKey: process.env.STORYBOOK_ROOM_HOST_ROOMKEY || "[Host roomKey required]",
+    },
 };
 
 export const ResolutionReporting = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {

@@ -17,6 +17,7 @@ import {
     NewClientEvent,
     RoomJoinedEvent,
     RoomKnockedEvent,
+    RoomLockedEvent,
     RoomSessionEndedEvent,
     ScreenshareStartedEvent,
     ScreenshareStoppedEvent,
@@ -40,6 +41,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("chat_message", (payload: ChatMessage) => dispatch(signalEvents.chatMessage(payload)));
     socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
     socket.on("room_knocked", (payload: RoomKnockedEvent) => dispatch(signalEvents.roomKnocked(payload)));
+    socket.on("room_locked", (payload: RoomLockedEvent) => dispatch(signalEvents.roomLocked(payload)));
     socket.on("room_session_ended", (payload: RoomSessionEndedEvent) =>
         dispatch(signalEvents.roomSessionEnded(payload)),
     );

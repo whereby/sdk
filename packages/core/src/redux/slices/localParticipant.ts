@@ -1,9 +1,9 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import { LocalParticipant } from "../../RoomParticipant";
 import { selectSignalConnectionRaw } from "./signalConnection";
-
 import { doAppJoin } from "./app";
 import { toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
@@ -11,7 +11,7 @@ import { signalEvents } from "./signalConnection/actions";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
-    roleName: string;
+    roleName: RoleName;
     clientClaim?: string;
 }
 
@@ -23,7 +23,7 @@ const initialState: LocalParticipantState = {
     isLocalParticipant: true,
     stream: undefined,
     isScreenSharing: false,
-    roleName: "",
+    roleName: "none",
     clientClaim: undefined,
 };
 
@@ -108,8 +108,8 @@ export const localParticipantSlice = createSlice({
             return {
                 ...state,
                 id: action.payload.selfId,
+                roleName: client?.role.roleName || "none",
                 clientClaim: action.payload.clientClaim,
-                roleName: client?.role.roleName || "",
             };
         });
     },

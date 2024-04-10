@@ -17,6 +17,7 @@ import {
     appLeft,
     doAppJoin,
     doKnockRoom,
+    doLockRoom,
     doRtcReportStreamResolution,
 } from "@whereby.com/core";
 
@@ -71,7 +72,7 @@ export function useRoomConnection(
         const unsubscribe = observeStore(store, selectRoomConnectionState, setRoomConnectionState);
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
-        const roomKey = searchParams.get("roomKey");
+        const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
         store.dispatch(
             doAppJoin({
@@ -147,11 +148,14 @@ export function useRoomConnection(
     const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
 
+    const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
+
     return {
         state: roomConnectionState,
         actions: {
             sendChatMessage,
             knock,
+            lockRoom,
             setDisplayName,
             toggleCamera,
             toggleMicrophone,
