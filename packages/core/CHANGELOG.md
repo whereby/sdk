@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.10.0
+
+### Minor Changes
+
+- d75644f: Add roomKey-based authorization and allow room hosts to lock/unlock rooms
+
+### Patch Changes
+
+- Updated dependencies [d75644f]
+  - @whereby.com/media@1.3.3
+
 ## 0.9.2
 
 ### Patch Changes

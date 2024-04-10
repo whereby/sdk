@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.3
+
+### Patch Changes
+
+- d75644f: Refactor role name handling from signal
+
 ## 1.3.2
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 2.7.0
+
+### Minor Changes
+
+- d75644f: Add roomKey-based authorization and allow room hosts to lock/unlock rooms
+
+### Patch Changes
+
+- Updated dependencies [d75644f]
+  - @whereby.com/core@0.10.0
+
 ## 2.6.1
 
 ### Patch Changes
