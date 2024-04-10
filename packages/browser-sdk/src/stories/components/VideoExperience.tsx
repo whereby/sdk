@@ -37,6 +37,7 @@ export default function VideoExperience({
         knock,
         sendChatMessage,
         setDisplayName,
+        muteParticipants,
         toggleCamera,
         toggleMicrophone,
         acceptWaitingParticipant,
@@ -139,6 +140,23 @@ export default function VideoExperience({
                                             }
                                         >
                                             {participant.displayName || "Guest"}
+                                            {showHostControls && participant.id !== localParticipant?.id ? (
+                                                <>
+                                                    {" "}
+                                                    <button
+                                                        onClick={() => {
+                                                            muteParticipants([participant.id]);
+                                                        }}
+                                                        className={
+                                                            localParticipant?.roleName !== "host"
+                                                                ? "hostControlActionDisallowed"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        Mute
+                                                    </button>
+                                                </>
+                                            ) : null}
                                         </div>
                                     </>
                                 ) : null}
