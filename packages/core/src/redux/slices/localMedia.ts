@@ -5,6 +5,7 @@ import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { doAppJoin, selectAppIsNodeSdk, selectAppWantsToJoin } from "./app";
 import { debounce } from "../../utils";
+import { signalEvents } from "./signalConnection/actions";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -705,5 +706,20 @@ startAppListening({
         });
 
         dispatch(localStreamMetadataUpdated(deviceData));
+    },
+});
+
+startAppListening({
+    actionCreator: signalEvents.audioEnableRequested,
+    effect: ({ payload }, { dispatch }) => {
+        const { enable } = payload;
+
+        if (enable) {
+            // Do nothing. We need a notification system
+        }
+
+        if (!enable) {
+            dispatch(toggleMicrophoneEnabled({ enabled: false }));
+        }
     },
 });

@@ -1,11 +1,14 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { SignalClient, RtcStreamAddedPayload } from "@whereby.com/media";
+import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest } from "@whereby.com/media";
 import { RemoteParticipant, Screenshare, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
 import { selectLocalScreenshareStream } from "./localScreenshare";
+import { createAppAuthorizedThunk } from "../thunk";
+import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
+import { selectSignalConnectionRaw } from "./signalConnection";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -268,6 +271,16 @@ export const remoteParticipantsSlice = createSlice({
 
 export const { participantStreamAdded, participantStreamIdAdded, streamStatusUpdated } =
     remoteParticipantsSlice.actions;
+
+export const doRequestAudioEnable = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToRequestAudioEnable(state),
+    (payload: AudioEnableRequest) => (_, getState) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("request_audio_enable", payload);
+    },
+);
 
 /**
  * Selectors
