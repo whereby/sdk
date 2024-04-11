@@ -279,9 +279,9 @@ describe("remoteParticipantsSlice", () => {
             it.each`
                 localScreenshareStream    | remoteParticipants    | expected
                 ${null}                   | ${[]}                 | ${[]}
-                ${null}                   | ${[client1, client2]} | ${[{ id: "", hasAudioTrack: false, isLocal: false, participantId: client2.id, stream: client2.presentationStream }]}
-                ${localScreenshareStream} | ${[]}                 | ${[{ id: "", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }]}
-                ${localScreenshareStream} | ${[client3]}          | ${[{ id: "", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }, { id: "", hasAudioTrack: false, isLocal: false, participantId: client3.id, stream: client3.presentationStream }]}
+                ${null}                   | ${[client1, client2]} | ${[{ id: `pres-${client2.id}`, hasAudioTrack: false, isLocal: false, participantId: client2.id, stream: client2.presentationStream }]}
+                ${localScreenshareStream} | ${[]}                 | ${[{ id: "local-screenshare", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }]}
+                ${localScreenshareStream} | ${[client3]}          | ${[{ id: "local-screenshare", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }, { id: `pres-${client3.id}`, hasAudioTrack: false, isLocal: false, participantId: client3.id, stream: client3.presentationStream }]}
             `(
                 "should return $expected when localScreenshareStream=$localScreenshareStream, remoteParticipants=$remoteParticipants",
                 ({ localScreenshareStream, remoteParticipants, expected }) => {
