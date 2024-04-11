@@ -1,14 +1,14 @@
 {
-    "name": "@whereby.com/browser-sdk",
-    "version": "2.7.0",
-    "description": "Modules for integration Whereby video in web apps",
-    "author": "Whereby AS",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/whereby/sdk.git",
-        "directory": "packages/browser-sdk"
-    },
+  "name": "@whereby.com/browser-sdk",
+  "version": "2.8.0",
+  "description": "Modules for integration Whereby video in web apps",
+  "author": "Whereby AS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whereby/sdk.git",
+    "directory": "packages/browser-sdk"
+  },
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "source": "src/index.js",
   "exports": {

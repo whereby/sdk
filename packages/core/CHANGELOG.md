@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.11.0
+
+### Minor Changes
+
+- 8a75b16: Add action to mute participants
+
+### Patch Changes
+
+- Updated dependencies [8a75b16]
+  - @whereby.com/media@1.3.5
+
 ## 0.10.0
 
 ### Minor Changes
