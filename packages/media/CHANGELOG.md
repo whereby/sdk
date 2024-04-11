@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.4
+
+### Patch Changes
+
+- 48dce0c: media: Allow creating producers for tracks not live yet
+
 ## 1.3.3
 
 ### Patch Changes
