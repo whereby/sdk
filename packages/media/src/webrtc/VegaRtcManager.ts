@@ -213,7 +213,7 @@ export default class VegaRtcManager implements RtcManager {
         }
         this._fetchMediaServersTimer = setTimeout(
             () => this._emitToSignal(PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG),
-            mediaserverConfigTtlSeconds * 1000
+            mediaserverConfigTtlSeconds * 1000,
         );
     }
 
@@ -236,7 +236,7 @@ export default class VegaRtcManager implements RtcManager {
             }),
             this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, () => {
                 if (this._screenVideoTrack) this._emitScreenshareStarted();
-            })
+            }),
         );
 
         this._connect();
@@ -402,7 +402,7 @@ export default class VegaRtcManager implements RtcManager {
                         appData: any;
                     },
                     callback: any,
-                    errback: any
+                    errback: any,
                 ) => {
                     try {
                         const { paused } = appData;
@@ -419,7 +419,7 @@ export default class VegaRtcManager implements RtcManager {
                     } catch (error) {
                         errback(error);
                     }
-                }
+                },
             );
             transport.on(
                 "producedata",
@@ -432,7 +432,7 @@ export default class VegaRtcManager implements RtcManager {
                         sctpStreamParameters: any;
                     },
                     callback: any,
-                    errback: any
+                    errback: any,
                 ) => {
                     try {
                         const { id } = await this._vegaConnection?.request("produceData", {
@@ -444,7 +444,7 @@ export default class VegaRtcManager implements RtcManager {
                     } catch (error) {
                         errback(error);
                     }
-                }
+                },
             );
 
             this._sendTransport = transport;
@@ -508,7 +508,7 @@ export default class VegaRtcManager implements RtcManager {
                             () => {
                                 resolve(undefined);
                             },
-                            Math.min(RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS * 2 ** retried, 60000)
+                            Math.min(RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS * 2 ** retried, 60000),
                         );
                     });
                     await this._restartIce(transport, retried + 1);
@@ -521,7 +521,7 @@ export default class VegaRtcManager implements RtcManager {
                 () => {
                     resolve(undefined);
                 },
-                60000 * Math.min(8, retried + 1)
+                60000 * Math.min(8, retried + 1),
             );
         });
         if (transport.connectionState === "failed" || transport.connectionState === "disconnected") {
@@ -734,7 +734,7 @@ export default class VegaRtcManager implements RtcManager {
                 // after waiting, do we still want or need to produce the track?
                 if (
                     !this._webcamTrack ||
-                    this._webcamTrack.readyState !== "live" ||
+                    this._webcamTrack.readyState === "ended" ||
                     !this._sendTransport ||
                     this._webcamProducer
                 ) {
@@ -1380,7 +1380,7 @@ export default class VegaRtcManager implements RtcManager {
         }: {
             width: number;
             height: number;
-        }
+        },
     ) {
         logger.info("updateStreamResolution()", { streamId, width, height });
 
@@ -1634,7 +1634,7 @@ export default class VegaRtcManager implements RtcManager {
                 if (producer?.id === producerId) {
                     this._qualityMonitor.addProducerScore(this._selfId, producerId, kind, score);
                 }
-            }
+            },
         );
     }
 
