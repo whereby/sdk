@@ -166,8 +166,14 @@ export interface ClientMetadataReceivedEvent {
     payload: { clientId: string; displayName: string };
 }
 
+export interface AudioEnableRequestedEvent {
+    requestedByClientId: string;
+    enable: boolean;
+}
+
 export interface SignalEvents {
     audio_enabled: AudioEnabledEvent;
+    audio_enable_requested: AudioEnableRequestedEvent;
     client_left: ClientLeftEvent;
     client_kicked: ClientKickedEvent;
     client_metadata_received: ClientMetadataReceivedEvent;
@@ -213,6 +219,11 @@ export interface KnockRoomRequest {
     roomName: string;
 }
 
+export interface AudioEnableRequest {
+    clientIds: string[];
+    enable: boolean;
+}
+
 export interface SignalRequests {
     chat_message: { text: string };
     enable_audio: { enabled: boolean };
@@ -222,6 +233,7 @@ export interface SignalRequests {
     join_room: JoinRoomRequest;
     knock_room: KnockRoomRequest;
     leave_room: void;
+    request_audio_enable: AudioEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string } };
     set_lock: { locked: boolean };
     start_recording: { recording: string };

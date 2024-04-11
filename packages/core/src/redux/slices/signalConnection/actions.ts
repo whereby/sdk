@@ -18,6 +18,7 @@ import {
     ScreenshareStoppedEvent,
     VideoEnabledEvent,
     RoomSessionEndedEvent,
+    AudioEnableRequestedEvent,
 } from "@whereby.com/media";
 
 function createSignalEventAction<T>(name: string) {
@@ -26,6 +27,7 @@ function createSignalEventAction<T>(name: string) {
 
 export const signalEvents = {
     audioEnabled: createSignalEventAction<AudioEnabledEvent>("audioEnabled"),
+    audioEnableRequested: createSignalEventAction<AudioEnableRequestedEvent>("audioEnableRequested"),
     chatMessage: createSignalEventAction<ChatMessage>("chatMessage"),
     clientLeft: createSignalEventAction<ClientLeftEvent>("clientLeft"),
     clientKicked: createSignalEventAction<ClientKickedEvent>("clientKicked"),

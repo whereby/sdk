@@ -1,10 +1,11 @@
-import { createSlice, ThunkDispatch, AnyAction, PayloadAction, createSelector } from "@reduxjs/toolkit";
+import { createSlice, ThunkDispatch, PayloadAction, createSelector, UnknownAction } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
 
 import {
+    AudioEnableRequestedEvent,
     AudioEnabledEvent,
     ChatMessage,
     ClientKickedEvent,
@@ -28,13 +29,16 @@ import { Credentials } from "../../../api";
 import { appLeft, selectAppWantsToJoin } from "../app";
 import { signalEvents } from "./actions";
 
-function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, AnyAction>) {
+function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, UnknownAction>) {
     socket.on("room_joined", (payload: RoomJoinedEvent) => dispatch(signalEvents.roomJoined(payload)));
     socket.on("new_client", (payload: NewClientEvent) => dispatch(signalEvents.newClient(payload)));
     socket.on("client_left", (payload: ClientLeftEvent) => dispatch(signalEvents.clientLeft(payload)));
     socket.on("client_kicked", (payload: ClientKickedEvent) => dispatch(signalEvents.clientKicked(payload)));
     socket.on("audio_enabled", (payload: AudioEnabledEvent) => dispatch(signalEvents.audioEnabled(payload)));
     socket.on("video_enabled", (payload: VideoEnabledEvent) => dispatch(signalEvents.videoEnabled(payload)));
+    socket.on("audio_enable_requested", (payload: AudioEnableRequestedEvent) =>
+        dispatch(signalEvents.audioEnableRequested(payload)),
+    );
     socket.on("client_metadata_received", (payload: ClientMetadataReceivedEvent) =>
         dispatch(signalEvents.clientMetadataReceived(payload)),
     );

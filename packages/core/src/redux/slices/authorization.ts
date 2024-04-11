@@ -9,6 +9,7 @@ import { selectLocalParticipantRole } from "./localParticipant";
 
 const ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
+    canRequestAudioEnable: ["host"],
 };
 
 /**
@@ -89,9 +90,11 @@ export const doLockRoom = createAppAuthorizedThunk(
  */
 
 export const selectAuthorizationRoomKey = (state: RootState) => state.authorization.roomKey;
-
 export const selectAuthorizationRoomLocked = (state: RootState) => state.authorization.roomLocked;
-
 export const selectIsAuthorizedToLockRoom = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
     ACTION_PERMISSIONS_BY_ROLE.canLockRoom.includes(localParticipantRole),
+);
+export const selectIsAuthorizedToRequestAudioEnable = createSelector(
+    selectLocalParticipantRole,
+    (localParticipantRole) => ACTION_PERMISSIONS_BY_ROLE.canRequestAudioEnable.includes(localParticipantRole),
 );

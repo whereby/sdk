@@ -9,6 +9,7 @@ import {
     doStopCloudRecording,
     doAcceptWaitingParticipant,
     doRejectWaitingParticipant,
+    doRequestAudioEnable,
     doSetDisplayName,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
@@ -149,22 +150,29 @@ export function useRoomConnection(
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
 
     const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
+    const muteParticipants = React.useCallback(
+        (clientIds: string[]) => {
+            store.dispatch(doRequestAudioEnable({ clientIds, enable: false }));
+        },
+        [store],
+    );
 
     return {
         state: roomConnectionState,
         actions: {
-            sendChatMessage,
+            acceptWaitingParticipant,
             knock,
             lockRoom,
-            setDisplayName,
-            toggleCamera,
-            toggleMicrophone,
-            acceptWaitingParticipant,
+            muteParticipants,
             rejectWaitingParticipant,
+            sendChatMessage,
+            setDisplayName,
             startCloudRecording,
             startScreenshare,
             stopCloudRecording,
             stopScreenshare,
+            toggleCamera,
+            toggleMicrophone,
         },
         components: {
             VideoView: boundVideoView || VideoView,

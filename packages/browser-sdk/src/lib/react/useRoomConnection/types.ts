@@ -68,16 +68,17 @@ export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "l
 }
 
 export interface RoomConnectionActions {
-    sendChatMessage(text: string): void;
+    acceptWaitingParticipant(participantId: string): void;
     knock(): void;
     lockRoom(locked: boolean): void;
-    setDisplayName(displayName: string): void;
-    toggleCamera(enabled?: boolean): void;
-    toggleMicrophone(enabled?: boolean): void;
-    acceptWaitingParticipant(participantId: string): void;
+    muteParticipants(clientIds: string[]): void;
     rejectWaitingParticipant(participantId: string): void;
+    sendChatMessage(text: string): void;
+    setDisplayName(displayName: string): void;
     startCloudRecording(): void;
     startScreenshare(): void;
     stopCloudRecording(): void;
     stopScreenshare(): void;
+    toggleCamera(enabled?: boolean): void;
+    toggleMicrophone(enabled?: boolean): void;
 }
