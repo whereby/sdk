@@ -297,9 +297,9 @@ export const selectScreenshares = createSelector(
 
         if (localScreenshareStream) {
             screenshares.push({
-                id: localScreenshareStream.id,
+                id: localScreenshareStream.id || "local-screenshare",
                 participantId: "local",
-                hasAudioTrack: localScreenshareStream.getAudioTracks().length > 0,
+                hasAudioTrack: localScreenshareStream.getTracks().some((track) => track.kind === "audio"),
                 stream: localScreenshareStream,
                 isLocal: true,
             });
@@ -308,9 +308,9 @@ export const selectScreenshares = createSelector(
         for (const participant of remoteParticipants) {
             if (participant.presentationStream) {
                 screenshares.push({
-                    id: participant.presentationStream.id,
+                    id: participant.presentationStream.id || `pres-${participant.id}`,
                     participantId: participant.id,
-                    hasAudioTrack: participant.presentationStream.getAudioTracks().length > 0,
+                    hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
                     stream: participant.presentationStream,
                     isLocal: false,
                 });
