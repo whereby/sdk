@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 0.11.1
+
+### Patch Changes
+
+- e0f67e8: Use MediaStream.getTracks() to tell if a screenshare has audio enabled or not. `.getAudioTracks()` is not implemented in some WebRTC implementations.
+- 8f6987d: Use `pres-` prefixed clientId as screenshare id for remote participants and "local-screenshare" for local screenshares as a fallback, if the MediaStream has no `id`.
+
 ## 0.11.0
 
 ### Minor Changes
