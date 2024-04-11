@@ -63,6 +63,10 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     virtualBackgroundUrl: string;
 }
 
+interface PrecallCheckCompletedStepResult {
+    status: "passed" | "failed";
+}
+
 interface WherebyEmbedElementEventMap {
     ready: CustomEvent;
     knock: CustomEvent;
@@ -80,6 +84,15 @@ interface WherebyEmbedElementEventMap {
     screenshare_toggle: CustomEvent<{ enabled: boolean }>;
     streaming_status_change: CustomEvent<{ status: string }>;
     connection_status_change: CustomEvent<{ status: "stable" | "unstable" }>;
+    precall_check_completed: CustomEvent<{
+        status: "passed" | "failed";
+        steps: {
+            camera: PrecallCheckCompletedStepResult;
+            speaker: PrecallCheckCompletedStepResult;
+            microphone: PrecallCheckCompletedStepResult;
+            bandwidth: PrecallCheckCompletedStepResult;
+        };
+    }>;
 }
 
 interface WherebyEmbedElementCommands {
