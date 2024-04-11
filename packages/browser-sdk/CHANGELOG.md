@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 2.8.0
+
+### Minor Changes
+
+- 8a75b16: Add action to mute participants
+
+### Patch Changes
+
+- Updated dependencies [8a75b16]
+  - @whereby.com/core@0.11.0
+
 ## 2.7.0
 
 ### Minor Changes

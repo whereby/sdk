@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.5
+
+### Patch Changes
+
+- 8a75b16: Add action to mute participants
+
 ## 1.3.4
 
 ### Patch Changes
