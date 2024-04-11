@@ -63,20 +63,11 @@
     },
     "devDependencies": {
         "@babel/core": "^7.23.2",
-        "@babel/eslint-parser": "^7.22.15",
         "@babel/preset-env": "^7.23.2",
-        "@rollup/plugin-commonjs": "^25.0.7",
-        "@rollup/plugin-replace": "^5.0.5",
-        "@types/jest": "^29.5.12",
         "@types/sdp-transform": "^2.4.9",
         "@types/uuid": "^9.0.8",
         "@types/uuid-validate": "^0.0.3",
-        "babel-jest": "^29.7.0",
-        "jest-environment-jsdom": "^29.7.0",
-        "process": "^0.11.10",
-        "rollup": "^4.12.1",
-        "rollup-plugin-dts": "^6.1.0",
-        "rollup-plugin-typescript2": "^0.36.0"
+        "process": "^0.11.10"
     },
     "engines": {
         "node": ">=16.0.0"
