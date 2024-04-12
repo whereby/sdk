@@ -727,18 +727,15 @@ export default class VegaRtcManager implements RtcManager {
 
     async _internalSendWebcam() {
         logger.info("_internalSendWebcam()");
-        // after waiting, do we still want or need to produce the track?
-        if (
-            !this._webcamTrack ||
-            this._webcamTrack.readyState === "ended" ||
-            !this._sendTransport ||
-            this._webcamProducer
-        ) {
-            return;
-        }
 
         this._webcamProducerPromise = (async () => {
             try {
+                // Have any of our resources disappeared while we were waiting to be executed?
+                if (!this._webcamTrack || !this._sendTransport || this._webcamProducer) {
+                    this._webcamProducerPromise = null;
+                    return;
+                }
+
                 const currentPaused = this._webcamPaused;
 
                 const producer = await this._sendTransport.produce({
@@ -789,12 +786,6 @@ export default class VegaRtcManager implements RtcManager {
 
     async _replaceWebcamTrack() {
         logger.info("_replaceWebcamTrack()");
-
-        if (!this._webcamTrack) return;
-
-        // if we attempted to produce an ended track earlier no producer would have been made
-        // so here, later, it will be replaced with a working track, and the producer needs to be created
-        if (this._sendTransport && !this._webcamProducer && this._webcamTrack.enabled) await this._internalSendWebcam();
 
         if (!this._webcamTrack || !this._webcamProducer || this._webcamProducer.closed) return;
 
