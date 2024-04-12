@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.8
+
+### Patch Changes
+
+- 48fbe84: Revert 31090cbc
+
 ## 1.3.7
 
 ### Patch Changes
