@@ -1,7 +1,6 @@
 import { Device } from "mediasoup-client";
 import { PROTOCOL_EVENTS, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
-import { ServerSocket } from "../utils/ServerSocket";
 import rtcManagerEvents from "./rtcManagerEvents";
 import rtcStats from "./rtcStatsService";
 import adapterRaw from "webrtc-adapter";
@@ -728,20 +727,18 @@ export default class VegaRtcManager implements RtcManager {
 
     async _internalSendWebcam() {
         logger.info("_internalSendWebcam()");
+        // after waiting, do we still want or need to produce the track?
+        if (
+            !this._webcamTrack ||
+            this._webcamTrack.readyState === "ended" ||
+            !this._sendTransport ||
+            this._webcamProducer
+        ) {
+            return;
+        }
 
         this._webcamProducerPromise = (async () => {
             try {
-                // after waiting, do we still want or need to produce the track?
-                if (
-                    !this._webcamTrack ||
-                    this._webcamTrack.readyState === "ended" ||
-                    !this._sendTransport ||
-                    this._webcamProducer
-                ) {
-                    this._webcamProducerPromise = null;
-                    return;
-                }
-
                 const currentPaused = this._webcamPaused;
 
                 const producer = await this._sendTransport.produce({
@@ -797,7 +794,7 @@ export default class VegaRtcManager implements RtcManager {
 
         // if we attempted to produce an ended track earlier no producer would have been made
         // so here, later, it will be replaced with a working track, and the producer needs to be created
-        if (!this._webcamProducer && this._webcamTrack.enabled) await this._internalSendWebcam();
+        if (this._sendTransport && !this._webcamProducer && this._webcamTrack.enabled) await this._internalSendWebcam();
 
         if (!this._webcamTrack || !this._webcamProducer || this._webcamProducer.closed) return;
 
