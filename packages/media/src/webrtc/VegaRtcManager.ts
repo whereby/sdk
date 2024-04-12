@@ -790,11 +790,13 @@ export default class VegaRtcManager implements RtcManager {
     async _replaceWebcamTrack() {
         logger.info("_replaceWebcamTrack()");
 
-        if (!this._webcamTrack) return;
+        if (!this._webcamTrack || !this._sendTransport) return;
+
+        if (this._webcamProducerPromise) await this._webcamProducerPromise;
 
         // if we attempted to produce an ended track earlier no producer would have been made
         // so here, later, it will be replaced with a working track, and the producer needs to be created
-        if (this._sendTransport && !this._webcamProducer && this._webcamTrack.enabled) await this._internalSendWebcam();
+        if (!this._webcamProducer && this._webcamTrack.enabled) await this._internalSendWebcam();
 
         if (!this._webcamTrack || !this._webcamProducer || this._webcamProducer.closed) return;
 
