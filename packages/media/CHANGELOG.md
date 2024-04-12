@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.7
+
+### Patch Changes
+
+- ca66fa7: Fix broken issue detectors when audio-only mode is enabled
+
 ## 1.3.6
 
 ### Patch Changes
