@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.3.6
+
+### Patch Changes
+
+- d5ec7f5: Wait for send transport before restarting video producer
+
 ## 1.3.5
 
 ### Patch Changes
