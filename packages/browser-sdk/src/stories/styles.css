@@ -34,10 +34,18 @@
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-.controls {
+.controls, .hostControls {
     display: flex;
     gap: 10px;
-    margin-top: 12px;
+    padding: 12px 4px;
+}
+
+.hostControls {
+    background-color: #EEE;
+}
+
+.hostControlActionDisallowed {
+    color: red;
 }
 
 @keyframes bounce {

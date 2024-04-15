@@ -9,10 +9,13 @@
             "cache": false,
             "persistent": true
         },
-        "test": {
-            "dependsOn": ["^build", "test:lint"]
-        },
         "test:lint": {},
+        "test:attw": {
+            "dependsOn": ["build", "^build"]
+        },
+        "test": {
+            "dependsOn": ["test:lint", "test:attw"]
+        },
         "test:e2e": {
             "dependsOn": ["^build"],
             "outputs": ["playwright-*"]

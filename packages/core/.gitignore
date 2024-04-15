@@ -11,3 +11,5 @@ yalc.lock
 /playwright/.cache/
 
 yarn-error.log
+
+*.tgz

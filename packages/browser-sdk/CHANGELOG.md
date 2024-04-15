@@ -5,6 +5,36 @@
 ### Minor Changes
 
 - 9e19728: Rebase beta version on latest main
+## 2.8.0
+
+### Minor Changes
+
+- 8a75b16: Add action to mute participants
+
+### Patch Changes
+
+- Updated dependencies [8a75b16]
+  - @whereby.com/core@0.11.0
+
+## 2.7.0
+
+### Minor Changes
+
+- d75644f: Add roomKey-based authorization and allow room hosts to lock/unlock rooms
+
+### Patch Changes
+
+- Updated dependencies [d75644f]
+  - @whereby.com/core@0.10.0
+
+## 2.6.1
+
+### Patch Changes
+
+- dd39593: Provide correct value for `userAgent` when connecting using `browser-sdk`.
+- Updated dependencies [6fc07f5]
+- Updated dependencies [300f6ac]
+  - @whereby.com/core@0.9.0
 
 ## 2.6.0
 

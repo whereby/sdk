@@ -1,11 +1,14 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { SignalClient, RtcStreamAddedPayload } from "@whereby.com/media";
+import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest } from "@whereby.com/media";
 import { RemoteParticipant, Screenshare, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
 import { selectLocalScreenshareStream } from "./localScreenshare";
+import { createAppAuthorizedThunk } from "../thunk";
+import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
+import { selectSignalConnectionRaw } from "./signalConnection";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -13,14 +16,15 @@ const NON_PERSON_ROLES = ["recorder", "streamer"];
  * State mapping utils
  */
 
-function createParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
-    const { streams, ...rest } = client;
+function createRemoteParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
+    const { streams, role, ...rest } = client;
 
     return {
         ...rest,
         stream: null,
         streams: streams.map((streamId) => ({ id: streamId, state: newJoiner ? "new_accept" : "to_accept" })),
         isLocalParticipant: false,
+        roleName: role?.roleName || "none",
         presentationStream: null,
         newJoiner,
     };
@@ -207,7 +211,7 @@ export const remoteParticipantsSlice = createSlice({
                 remoteParticipants: clients
                     .filter((c) => c.id !== selfId)
                     .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
-                    .map((c) => createParticipant(c)),
+                    .map((c) => createRemoteParticipant(c)),
             };
         });
         builder.addCase(rtcEvents.streamAdded, (state, action) => {
@@ -220,7 +224,7 @@ export const remoteParticipantsSlice = createSlice({
                 return state;
             }
 
-            return addParticipant(state, createParticipant(client, true));
+            return addParticipant(state, createRemoteParticipant(client, true));
         });
         builder.addCase(signalEvents.clientLeft, (state, action) => {
             const { clientId } = action.payload;
@@ -268,6 +272,16 @@ export const remoteParticipantsSlice = createSlice({
 export const { participantStreamAdded, participantStreamIdAdded, streamStatusUpdated } =
     remoteParticipantsSlice.actions;
 
+export const doRequestAudioEnable = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToRequestAudioEnable(state),
+    (payload: AudioEnableRequest) => (_, getState) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("request_audio_enable", payload);
+    },
+);
+
 /**
  * Selectors
  */
@@ -283,9 +297,9 @@ export const selectScreenshares = createSelector(
 
         if (localScreenshareStream) {
             screenshares.push({
-                id: localScreenshareStream.id,
+                id: localScreenshareStream.id || "local-screenshare",
                 participantId: "local",
-                hasAudioTrack: localScreenshareStream.getAudioTracks().length > 0,
+                hasAudioTrack: localScreenshareStream.getTracks().some((track) => track.kind === "audio"),
                 stream: localScreenshareStream,
                 isLocal: true,
             });
@@ -294,9 +308,9 @@ export const selectScreenshares = createSelector(
         for (const participant of remoteParticipants) {
             if (participant.presentationStream) {
                 screenshares.push({
-                    id: participant.presentationStream.id,
+                    id: participant.presentationStream.id || `pres-${participant.id}`,
                     participantId: participant.id,
-                    hasAudioTrack: participant.presentationStream.getAudioTracks().length > 0,
+                    hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
                     stream: participant.presentationStream,
                     isLocal: false,
                 });

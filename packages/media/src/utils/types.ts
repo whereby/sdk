@@ -6,7 +6,7 @@ export interface Credentials {
     userId: string;
 }
 
-/* 
+/*
     Socket
 */
 
@@ -23,8 +23,18 @@ export interface SocketManager {
     on: (eventName: string, callback: (args: unknown) => void) => void;
 }
 
+export type RoleName =
+    | "none"
+    | "visitor"
+    | "granted_visitor"
+    | "viewer"
+    | "granted_viewer"
+    | "host"
+    | "recorder"
+    | "streamer";
+
 export interface ClientRole {
-    roleName: string;
+    roleName: RoleName;
 }
 
 export interface SignalKnocker {
@@ -44,6 +54,7 @@ export interface SignalClient {
     isVideoEnabled: boolean;
     role: ClientRole;
     startedCloudRecordingAt: string | null;
+    externalId: string | null;
 }
 
 export interface AudioEnabledEvent {
@@ -126,6 +137,10 @@ export interface RoomKnockedEvent {
     clientClaim?: string;
 }
 
+export interface RoomLockedEvent {
+    isLocked: boolean;
+}
+
 export interface RoomSessionEndedEvent {
     roomSessionId: string;
 }
@@ -151,8 +166,14 @@ export interface ClientMetadataReceivedEvent {
     payload: { clientId: string; displayName: string };
 }
 
+export interface AudioEnableRequestedEvent {
+    requestedByClientId: string;
+    enable: boolean;
+}
+
 export interface SignalEvents {
     audio_enabled: AudioEnabledEvent;
+    audio_enable_requested: AudioEnableRequestedEvent;
     client_left: ClientLeftEvent;
     client_kicked: ClientKickedEvent;
     client_metadata_received: ClientMetadataReceivedEvent;
@@ -169,6 +190,7 @@ export interface SignalEvents {
     room_joined: RoomJoinedEvent;
     room_knocked: RoomKnockedEvent;
     room_left: void;
+    room_locked: RoomLockedEvent;
     room_session_ended: RoomSessionEndedEvent;
     screenshare_started: ScreenshareStartedEvent;
     screenshare_stopped: ScreenshareStoppedEvent;
@@ -197,6 +219,11 @@ export interface KnockRoomRequest {
     roomName: string;
 }
 
+export interface AudioEnableRequest {
+    clientIds: string[];
+    enable: boolean;
+}
+
 export interface SignalRequests {
     chat_message: { text: string };
     enable_audio: { enabled: boolean };
@@ -206,7 +233,9 @@ export interface SignalRequests {
     join_room: JoinRoomRequest;
     knock_room: KnockRoomRequest;
     leave_room: void;
+    request_audio_enable: AudioEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string } };
+    set_lock: { locked: boolean };
     start_recording: { recording: string };
     stop_recording: void;
 }

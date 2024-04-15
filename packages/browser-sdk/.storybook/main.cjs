@@ -1,3 +1,8 @@
+const {
+    dirname,
+    join
+} = require("path");
+
 const dotenv = require("dotenv");
 
 dotenv.config({
@@ -6,8 +11,12 @@ dotenv.config({
 
 module.exports = {
     stories: ["../src/**/*.stories.@(js|jsx|ts|tsx)"],
-    addons: ["@storybook/addon-links", "@storybook/addon-essentials"],
-    framewkork: "@storybook/react",
+    addons: [
+        getAbsolutePath("@storybook/addon-links"),
+        getAbsolutePath("@storybook/addon-essentials"),
+        "@storybook/addon-webpack5-compiler-babel"
+    ],
+    framework: "@storybook/react",
 
     webpackFinal: async (config) => {
         config.module.rules.push({
@@ -21,7 +30,7 @@ module.exports = {
     },
 
     framework: {
-        name: "@storybook/react-webpack5",
+        name: getAbsolutePath("@storybook/react-webpack5"),
         options: {},
     },
     env: (config) => ({
@@ -35,3 +44,7 @@ module.exports = {
         autodocs: true,
     },
 };
+
+function getAbsolutePath(value) {
+    return dirname(require.resolve(join(value, "package.json")));
+}

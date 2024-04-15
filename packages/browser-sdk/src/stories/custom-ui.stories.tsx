@@ -2,16 +2,17 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core/utils";
+import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
 
-export default {
+const defaultArgs = {
     title: "Examples/Custom UI",
     argTypes: {
         displayName: { control: "text" },
         roomUrl: { control: "text", type: { required: true } },
+        externalId: { control: "text" },
     },
     args: {
         displayName: "SDK",
@@ -19,13 +20,23 @@ export default {
     },
 };
 
+export default defaultArgs;
+
 const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
 export const StartStop = () => {
     return <div>Go to this story to eg verify all resources (camera, microphone, connections) are released.</div>;
 };
 
-export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
+export const RoomConnectionWithLocalMedia = ({
+    roomUrl,
+    displayName,
+    externalId,
+}: {
+    roomUrl: string;
+    displayName?: string;
+    externalId?: string;
+}) => {
     const localMedia = useLocalMedia({ audio: true, video: true });
     const [shouldJoin, setShouldJoin] = useState(false);
 
@@ -38,7 +49,14 @@ export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl
             <PrecallExperience {...localMedia} hideVideoPreview={shouldJoin} />
             <button onClick={() => setShouldJoin(!shouldJoin)}>{shouldJoin ? "Leave room" : "Join room"}</button>
 
-            {shouldJoin && <VideoExperience displayName={displayName} roomName={roomUrl} localMedia={localMedia} />}
+            {shouldJoin && (
+                <VideoExperience
+                    displayName={displayName}
+                    roomName={roomUrl}
+                    localMedia={localMedia}
+                    externalId={externalId}
+                />
+            )}
         </div>
     );
 };
@@ -141,6 +159,24 @@ export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; 
     }
 
     return <VideoExperience displayName={displayName} roomName={roomUrl} />;
+};
+
+export const RoomConnectionWithHostControls = {
+    render: ({ roomUrl, roomKey, displayName }: { roomUrl: string; roomKey: string; displayName?: string }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
+
+        return <VideoExperience displayName={displayName} roomName={roomUrl} roomKey={roomKey} showHostControls />;
+    },
+    argTypes: {
+        ...defaultArgs.argTypes,
+        roomKey: { control: "text", type: { required: true } },
+    },
+    args: {
+        ...defaultArgs.args,
+        roomKey: process.env.STORYBOOK_ROOM_HOST_ROOMKEY || "[Host roomKey required]",
+    },
 };
 
 export const ResolutionReporting = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {

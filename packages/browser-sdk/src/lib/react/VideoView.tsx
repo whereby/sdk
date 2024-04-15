@@ -1,5 +1,5 @@
 import * as React from "react";
-import { debounce } from "@whereby.com/core/utils";
+import { debounce } from "@whereby.com/core";
 
 interface VideoViewSelfProps {
     stream: MediaStream;
