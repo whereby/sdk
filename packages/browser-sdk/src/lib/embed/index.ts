@@ -84,6 +84,7 @@ interface WherebyEmbedElementEventMap {
     screenshare_toggle: CustomEvent<{ enabled: boolean }>;
     streaming_status_change: CustomEvent<{ status: string }>;
     connection_status_change: CustomEvent<{ status: "stable" | "unstable" }>;
+    precall_check_skipped: CustomEvent;
     precall_check_completed: CustomEvent<{
         status: "passed" | "failed";
         steps: {
