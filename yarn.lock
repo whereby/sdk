@@ -3353,12 +3353,24 @@
   resolved "https://registry.yarnpkg.com/@socket.io/component-emitter/-/component-emitter-3.1.0.tgz#96116f2a912e0c02817345b3c10751069920d553"
   integrity sha512-+9jVqKhRSpsc591z5vX+X5Yyw+he/HCB4iQ/RYxw35CEPaY1gnsNE43nf9n9AaYjAQrTiI/mOwKUKdUs9vf7Xg==
 
-"@storybook/addon-actions@8.0.6", "@storybook/addon-actions@^8.0.6":
+"@storybook/addon-actions@8.0.6":
   version "8.0.6"
   resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-8.0.6.tgz#48eec5280f983ad39612e7a0e78430ad5c18ef2c"
   integrity sha512-3R/d2Td6+yeR+UnyCAeZ4tuiRGSm+6gKUQP9vB1bvEFQGuFBrV+zs3eakcYegOqZu3IXuejgaB0Knq987gUL5A==
   dependencies:
     "@storybook/core-events" "8.0.6"
+    "@storybook/global" "^5.0.0"
+    "@types/uuid" "^9.0.1"
+    dequal "^2.0.2"
+    polished "^4.2.2"
+    uuid "^9.0.0"
+
+"@storybook/addon-actions@^8.0.8":
+  version "8.0.8"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-8.0.8.tgz#0b625b36e738a3b02c25d7b0b0b9f28c4e68c918"
+  integrity sha512-F3qpN0n53d058EroW1A2IlzrsFNR5p2srLY4FmXB80nxAKV8oqoDI4jp15zYlf8ThcJoQl36plT8gx3r1BpANA==
+  dependencies:
+    "@storybook/core-events" "8.0.8"
     "@storybook/global" "^5.0.0"
     "@types/uuid" "^9.0.1"
     dequal "^2.0.2"
@@ -3705,6 +3717,13 @@
   version "8.0.6"
   resolved "https://registry.yarnpkg.com/@storybook/core-events/-/core-events-8.0.6.tgz#efc5bfb2d5da8f374851bc934e6055364d88c569"
   integrity sha512-EwGmuMm8QTUAHPhab4yftQWoSCX3OzEk6cQdpLtbNFtRRLE9aPZzxhk5Z/d3KhLNSCUAGyCiDt5I9JxTBetT9A==
+  dependencies:
+    ts-dedent "^2.0.0"
+
+"@storybook/core-events@8.0.8":
+  version "8.0.8"
+  resolved "https://registry.yarnpkg.com/@storybook/core-events/-/core-events-8.0.8.tgz#70b606bdcfd153b0e94ded4414069aac89e38419"
+  integrity sha512-PtuvR7vS4glDEdCfKB4f1k3Vs1C3rTWP2DNbF+IjjPhNLMBznCdzTAPcz+NUIBvpjjGnhKwWikJ0yj931YjSVg==
   dependencies:
     ts-dedent "^2.0.0"
 
