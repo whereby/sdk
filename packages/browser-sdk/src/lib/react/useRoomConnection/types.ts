@@ -7,10 +7,16 @@ import {
     ConnectionStatus,
 } from "@whereby.com/core";
 
+import { RoleName } from "@whereby.com/media";
+
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
-export type LocalParticipantState = LocalParticipant;
+export interface LocalParticipantState extends LocalParticipant {
+    isScreenSharing: boolean;
+    roleName: RoleName;
+    clientClaim?: string;
+}
 export interface WaitingParticipantState {
     id: string;
     displayName: string | null;
@@ -62,15 +68,17 @@ export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "l
 }
 
 export interface RoomConnectionActions {
-    sendChatMessage(text: string): void;
-    knock(): void;
-    setDisplayName(displayName: string): void;
-    toggleCamera(enabled?: boolean): void;
-    toggleMicrophone(enabled?: boolean): void;
     acceptWaitingParticipant(participantId: string): void;
+    knock(): void;
+    lockRoom(locked: boolean): void;
+    muteParticipants(clientIds: string[]): void;
     rejectWaitingParticipant(participantId: string): void;
+    sendChatMessage(text: string): void;
+    setDisplayName(displayName: string): void;
     startCloudRecording(): void;
     startScreenshare(): void;
     stopCloudRecording(): void;
     stopScreenshare(): void;
+    toggleCamera(enabled?: boolean): void;
+    toggleMicrophone(enabled?: boolean): void;
 }

@@ -1,3 +1,5 @@
+import { RoleName } from "@whereby.com/media";
+
 interface RoomParticipantData {
     displayName: string;
     id: string;
@@ -45,6 +47,7 @@ interface Stream {
 export interface RemoteParticipant {
     id: string;
     displayName: string;
+    roleName: RoleName;
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
     isLocalParticipant: boolean;
@@ -52,6 +55,7 @@ export interface RemoteParticipant {
     streams: Stream[];
     newJoiner: boolean;
     presentationStream: (MediaStream & { inboundId?: string }) | null;
+    externalId: string | null;
 }
 
 export class LocalParticipant extends RoomParticipant {

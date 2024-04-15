@@ -1,6 +1,7 @@
 import { Credentials } from "../api";
 import Organization from "../api/models/Organization";
 import { SignalClient } from "@whereby.com/media";
+import { LocalParticipantState } from "../redux/slices/localParticipant";
 import { RemoteParticipant } from "../RoomParticipant";
 import * as uuidPkg from "uuid";
 import MockMediaStream from "./MediaStream";
@@ -80,8 +81,9 @@ export const randomSignalClient = ({
     streams = [],
     isAudioEnabled = true,
     isVideoEnabled = true,
-    role = { roleName: "participant" },
+    role = { roleName: "visitor" },
     startedCloudRecordingAt = null,
+    externalId = null,
 }: Partial<SignalClient> = {}): SignalClient => {
     return {
         displayName,
@@ -91,12 +93,37 @@ export const randomSignalClient = ({
         isVideoEnabled,
         role,
         startedCloudRecordingAt,
+        externalId,
+    };
+};
+
+export const randomLocalParticipant = ({
+    id = randomString(),
+    displayName = randomString(),
+    stream = undefined,
+    isAudioEnabled = true,
+    isVideoEnabled = true,
+    clientClaim = randomString(),
+    isScreenSharing = false,
+    roleName = "visitor",
+}: Partial<LocalParticipantState> = {}): LocalParticipantState => {
+    return {
+        id,
+        displayName,
+        stream,
+        isAudioEnabled,
+        isVideoEnabled,
+        isLocalParticipant: true,
+        clientClaim,
+        isScreenSharing,
+        roleName,
     };
 };
 
 export const randomRemoteParticipant = ({
     id = randomString(),
     displayName = randomString(),
+    roleName = "visitor",
     isAudioEnabled = true,
     isVideoEnabled = true,
     isLocalParticipant = false,
@@ -104,10 +131,12 @@ export const randomRemoteParticipant = ({
     streams = [],
     newJoiner = false,
     presentationStream = null,
+    externalId = null,
 }: Partial<RemoteParticipant> = {}): RemoteParticipant => {
     return {
         id,
         displayName,
+        roleName,
         isAudioEnabled,
         isVideoEnabled,
         isLocalParticipant,
@@ -115,6 +144,7 @@ export const randomRemoteParticipant = ({
         streams,
         newJoiner,
         presentationStream,
+        externalId,
     };
 };
 

@@ -1,250 +1,29 @@
 import { subscribeStats } from "../StatsMonitor";
+import { StatsClient } from "../types";
+import { IssueCheckData, issueDetectors } from "./issueDetectors";
 
 let subscriptions: any[] = [];
 let stopStats: any = null;
 
-const issueDetectors = [
-    {
-        id: "desync",
-        enabled: ({ client, track, stats }: { client: any; track: MediaStreamTrack; stats: any }) => {
-            return (
-                !client.isLocalClient &&
-                track?.kind === "audio" &&
-                typeof stats?.tracks === "object" &&
-                Object.keys(stats.tracks).length > 1
-            );
-        },
-        check: ({ stats: { tracks } }: { stats: { tracks: MediaStreamTrack[] } }) => {
-            const jitter = {
-                audio: 0,
-                video: 0,
-            };
+interface Metric {
+    id: string;
+    global?: true;
+    enabled?: (checkData: IssueCheckData) => boolean;
+    value: (checkData: IssueCheckData) => any;
+}
 
-            Object.values(tracks)
-                .flatMap((t: any) => Object.values(t.ssrcs))
-                .forEach((ssrc: any) => {
-                    if (ssrc.kind === "audio" && ssrc.jitter > jitter.audio) jitter.audio = ssrc.jitter;
-                    if (ssrc.kind === "video" && ssrc.jitter > jitter.video) jitter.video = ssrc.jitter;
-                });
-            const diff = Math.abs(jitter.audio * 1000 - jitter.video * 1000); // diff in ms
-            return diff > 500;
-        },
-    },
-    {
-        id: "no-track",
-        check: ({ track }: { track: MediaStreamTrack }) => !track,
-    },
-    {
-        id: "ended-track",
-        enabled: ({ track }: { track: MediaStreamTrack }) => track,
-        check: ({ track }: { track: MediaStreamTrack }) => track.readyState === "ended",
-    },
-    {
-        id: "no-track-stats",
-        enabled: ({ hasLiveTrack }: { hasLiveTrack: boolean }) => hasLiveTrack,
-        check: ({ ssrc0 }: { ssrc0: any }) => !ssrc0,
-    },
-    {
-        id: "dry-track",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) => hasLiveTrack && ssrc0,
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.bitrate === 0,
-    },
-    {
-        id: "low-layer0-bitrate",
-        enabled: ({
-            hasLiveTrack,
-            ssrc0,
-            kind,
-            client,
-        }: {
-            hasLiveTrack: boolean;
-            ssrc0: any;
-            kind: string;
-            client: any;
-        }) => hasLiveTrack && kind === "video" && ssrc0 && ssrc0.height && !client.isPresentation,
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.height < 200 && ssrc0.bitrate < 30000,
-    },
-    {
-        id: "quality-limitation-bw",
-        enabled: ({
-            hasLiveTrack,
-            stats,
-            client,
-            kind,
-        }: {
-            hasLiveTrack: boolean;
-            stats: any;
-            client: any;
-            kind: string;
-        }) => hasLiveTrack && client.isLocalClient && kind === "video" && stats,
-        check: ({ stats }: { stats: any }) =>
-            Object.values(stats.tracks).find((track: any) =>
-                Object.values(track.ssrcs).find((ssrc: any) => ssrc.qualityLimitationReason === "bandwidth")
-            ),
-    },
-    {
-        id: "quality-limitation-cpu",
-        enabled: ({
-            hasLiveTrack,
-            stats,
-            client,
-            kind,
-        }: {
-            hasLiveTrack: boolean;
-            stats: any;
-            client: any;
-            kind: string;
-        }) => hasLiveTrack && client.isLocalClient && kind === "video" && stats,
-        check: ({ stats }: { stats: any }) =>
-            Object.values(stats.tracks).find((track: any) =>
-                Object.values(track.ssrcs).find((ssrc: any) => ssrc.qualityLimitationReason === "cpu")
-            ),
-    },
-    {
-        id: "high-plirate",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.height,
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.pliRate > 2,
-    },
-    {
-        id: "extreme-plirate",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.height,
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.pliRate > 5,
-    },
-    {
-        id: "high-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.direction === "in",
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.lossRatio > 0.02,
-    },
-    {
-        id: "extreme-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.direction === "in",
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.lossRatio > 0.1,
-    },
-    {
-        id: "high-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.direction === "out",
-        check: ({ ssrc0 }: { ssrc0: any }) => (ssrc0.fractionLost || 0) > 0.02,
-    },
-    {
-        id: "extreme-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.direction === "out",
-        check: ({ ssrc0 }: { ssrc0: any }) => (ssrc0.fractionLost || 0) > 0.1,
-    },
-    {
-        id: "fps-below-20",
-        enabled: ({
-            hasLiveTrack,
-            ssrc0,
-            kind,
-            client,
-        }: {
-            hasLiveTrack: boolean;
-            ssrc0: any;
-            kind: string;
-            client: any;
-        }) => hasLiveTrack && ssrc0 && ssrc0.height && kind === "video" && !client.isPresentation,
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.height > 180 && ssrc0.fps < 20,
-    },
-    {
-        id: "fps-below-10",
-        enabled: ({
-            hasLiveTrack,
-            ssrc0,
-            kind,
-            client,
-        }: {
-            hasLiveTrack: boolean;
-            ssrc0: any;
-            kind: string;
-            client: any;
-        }) => hasLiveTrack && ssrc0 && ssrc0.height && kind === "video" && !client.isPresentation,
-        check: ({ ssrc0 }: { ssrc0: any }) => ssrc0.fps < 10,
-    },
-    {
-        id: "bad-network",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) => hasLiveTrack && ssrc0,
-        check: ({ ssrc0, kind, client }: { ssrc0: any; kind: string; client: any }) =>
-            ssrc0.bitrate === 0 ||
-            ssrc0.lossRatio > 0.03 ||
-            (ssrc0.fractionLost || 0) > 0.03 ||
-            (!client.isPresentation && kind === "video" && ssrc0.bitrate < 30000) ||
-            (ssrc0.direction === "in" && ssrc0.pliRate > 2),
-    },
-    {
-        id: "cpu-pressure-serious",
-        global: true,
-        enabled: ({ stats }: { stats: any }) => stats?.pressure?.source === "cpu",
-        check: ({ stats }: { stats: any }) => stats.pressure.state === "serious",
-    },
-    {
-        id: "cpu-pressure-critical",
-        global: true,
-        enabled: ({ stats }: { stats: any }) => stats?.pressure?.source === "cpu",
-        check: ({ stats }: { stats: any }) => stats.pressure.state === "critical",
-    },
-    {
-        id: "concealed",
-        enabled: ({ hasLiveTrack, ssrc0, kind }: { hasLiveTrack: boolean; ssrc0: any; kind: string }) =>
-            hasLiveTrack && ssrc0 && kind === "audio",
-        check: ({ ssrc0 }: { ssrc0: any }) =>
-            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioConcealment >= 0.1,
-    },
-    {
-        id: "decelerated",
-        enabled: ({ hasLiveTrack, ssrc0, kind }: { hasLiveTrack: boolean; ssrc0: any; kind: string }) =>
-            hasLiveTrack && ssrc0 && kind === "audio",
-        check: ({ ssrc0 }: { ssrc0: any }) =>
-            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioDeceleration >= 0.1,
-    },
-    {
-        id: "accelerated",
-        enabled: ({ hasLiveTrack, ssrc0, kind }: { hasLiveTrack: boolean; ssrc0: any; kind: string }) =>
-            hasLiveTrack && ssrc0 && kind === "audio",
-        check: ({ ssrc0 }: { ssrc0: any }) =>
-            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioAcceleration >= 0.1,
-    },
-    // todo:
-    // jitter/congestion - increasing jitter for several "ticks"
-    // encodeTime?
-    // low audio (energy)?
-    // keyframe rate?
-    // canidate-pair switches
-    // RTT?
-    // stun req/res
-    // available bitrates
-    // probes? low media bitrate?
-    // match with wanted resolution/layer (updateStreamResolution)
-    // might want to take window focus into consideration
-];
-
-const metrics = [
+const metrics: Metric[] = [
     {
         id: "bitrate",
-        enabled: ({ hasLiveTrack, track, ssrc0 }: { hasLiveTrack: boolean; track: MediaStreamTrack; ssrc0: any }) =>
-            hasLiveTrack && track && ssrc0,
-        value: ({ trackStats }: { trackStats: any }) =>
+        enabled: ({ hasLiveTrack, track, ssrc0 }) => hasLiveTrack && track && ssrc0,
+        value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce((sum: number, ssrc: any) => sum + ssrc.bitrate, 0),
     },
     {
         id: "pixelrate",
-        enabled: ({
-            hasLiveTrack,
-            track,
-            ssrc0,
-            kind,
-        }: {
-            hasLiveTrack: boolean;
-            track: any;
-            ssrc0: any;
-            kind: string;
-        }) => hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
-        value: ({ trackStats }: { trackStats: any }) =>
+        enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
+            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
+        value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce(
                 (sum: number, ssrc: any) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
                 0
@@ -252,18 +31,9 @@ const metrics = [
     },
     {
         id: "height",
-        enabled: ({
-            hasLiveTrack,
-            track,
-            ssrc0,
-            kind,
-        }: {
-            hasLiveTrack: boolean;
-            track: any;
-            ssrc0: any;
-            kind: string;
-        }) => hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
-        value: ({ trackStats }: { trackStats: any }) =>
+        enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
+            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
+        value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce(
                 (max: number, ssrc: any) => Math.max(max, ssrc.fps > 0 ? ssrc.height : 0),
                 0
@@ -271,38 +41,26 @@ const metrics = [
     },
     {
         id: "sourceHeight",
-        enabled: ({
-            hasLiveTrack,
-            track,
-            ssrc0,
-            kind,
-        }: {
-            hasLiveTrack: boolean;
-            track: any;
-            ssrc0: any;
-            kind: string;
-        }) => hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.sourceHeight && ssrc0.direction === "out",
-        value: ({ ssrc0 }: { ssrc0: any }) => ssrc0.sourceHeight,
+        enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
+            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.sourceHeight && ssrc0.direction === "out",
+        value: ({ ssrc0 }) => ssrc0.sourceHeight,
     },
     {
         id: "packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.bitrate,
-        value: ({ ssrc0 }: { ssrc0: any }) => (ssrc0.direction === "in" ? ssrc0.lossRatio : ssrc0.fractionLost) || 0,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.bitrate,
+        value: ({ ssrc0 }) => (ssrc0.direction === "in" ? ssrc0.lossRatio : ssrc0.fractionLost) || 0,
     },
     {
         id: "jitter",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.bitrate && ssrc0.direction === "in",
-        value: ({ ssrc0 }: { ssrc0: any }) => ssrc0.jitter,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.bitrate && ssrc0.direction === "in",
+        value: ({ ssrc0 }) => ssrc0.jitter,
     },
     {
         // https://www.pingman.com/kb/article/how-is-mos-calculated-in-pingplotter-pro-50.html
         // I'm sceptical of this, we should validate this number makes sense, if not remove it
         id: "mos",
-        enabled: ({ hasLiveTrack, ssrc0 }: { hasLiveTrack: boolean; ssrc0: any }) =>
-            hasLiveTrack && ssrc0 && ssrc0.bitrate && ssrc0.direction === "out",
-        value: ({ ssrc0 }: { ssrc0: any }) => {
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.bitrate && ssrc0.direction === "out",
+        value: ({ ssrc0 }) => {
             const averageLatency = ssrc0.roundTripTime || 0;
             const jitter = ssrc0.jitter || 0;
             const packetLoss = (ssrc0.fractionLost || 0) * 100;
@@ -320,63 +78,53 @@ const metrics = [
     },
     {
         id: "active",
-        value: ({ hasLiveTrack, track, ssrc0 }: { hasLiveTrack: boolean; track: any; ssrc0: any }) =>
-            hasLiveTrack && track && ssrc0 ? 1 : 0,
+        value: ({ hasLiveTrack, track, ssrc0 }) => (hasLiveTrack && track && ssrc0 ? 1 : 0),
     },
     {
         id: "cpu-pressure",
         global: true,
-        enabled: ({ stats }: { stats: any }) => stats?.pressure?.source === "cpu",
-        value: ({ stats }: { stats: any }) =>
+        enabled: ({ stats }) => stats?.pressure?.source === "cpu",
+        value: ({ stats }) =>
             (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }) as any)[stats.pressure.state] || 0,
     },
     {
         id: "concealment",
-        enabled: ({ hasLiveTrack, ssrc0, kind }: { hasLiveTrack: boolean; ssrc0: any; kind: string }) =>
+        enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
             ssrc0 &&
             ssrc0.bitrate &&
             ssrc0.direction === "in" &&
             kind === "audio" &&
             ssrc0.audioLevel >= 0.001,
-        value: ({ ssrc0 }: { ssrc0: any }) => ssrc0.audioConcealment,
+        value: ({ ssrc0 }) => ssrc0.audioConcealment,
     },
     {
         id: "deceleration",
-        enabled: ({ hasLiveTrack, ssrc0, kind }: { hasLiveTrack: boolean; ssrc0: any; kind: string }) =>
+        enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
             ssrc0 &&
             ssrc0.bitrate &&
             ssrc0.direction === "in" &&
             kind === "audio" &&
             ssrc0.audioLevel >= 0.001,
-        value: ({ ssrc0 }: { ssrc0: any }) => ssrc0.audioDeceleration,
+        value: ({ ssrc0 }) => ssrc0.audioDeceleration,
     },
     {
         id: "acceleration",
-        enabled: ({ hasLiveTrack, ssrc0, kind }: { hasLiveTrack: boolean; ssrc0: any; kind: string }) =>
+        enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
             ssrc0 &&
             ssrc0.bitrate &&
             ssrc0.direction === "in" &&
             kind === "audio" &&
             ssrc0.audioLevel >= 0.001,
-        value: ({ ssrc0 }: { ssrc0: any }) => ssrc0.audioAcceleration,
+        value: ({ ssrc0 }) => ssrc0.audioAcceleration,
     },
     {
         id: "qpf",
-        enabled: ({
-            hasLiveTrack,
-            track,
-            ssrc0,
-            kind,
-        }: {
-            hasLiveTrack: boolean;
-            track: any;
-            ssrc0: any;
-            kind: string;
-        }) => hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
-        value: ({ trackStats }: { trackStats: any }) =>
+        enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
+            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
+        value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce((sum: number, ssrc: any) => sum + (ssrc.qpf || 0), 0),
     },
 ];
@@ -402,7 +150,7 @@ export const getIssuesAndMetrics = () => {
     return { ...issuesAndMetricsByView };
 };
 
-function onUpdatedStats(statsByView: any, clients: any) {
+function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
     // reset aggregated current metrics
     Object.values(aggregatedMetrics).forEach((metricData: any) => {
         metricData.curTicks = 0;
@@ -420,14 +168,14 @@ function onUpdatedStats(statsByView: any, clients: any) {
     });
 
     // skip detection and aggregation when alone in room
-    if (!clients.find((client: any) => !client.isLocalClient)) return;
+    if (!clients.find((client) => !client.isLocalClient)) return;
 
-    clients.forEach((client: any) => {
+    clients.forEach((client) => {
         const stats = statsByView[client.id];
 
         ["video", "audio", "global"].forEach((kind) => {
             // skip checking muted/disabled tracks if not global
-            if (!(kind === "global" && !client.isPresentation) && !client[kind]?.enabled) return;
+            if (!(kind === "global" && !client.isPresentation) && !(client as any)[kind]?.enabled) return;
             // don't check global for remote clients
             if (kind === "global" && !client.isLocalClient) return;
 
@@ -437,19 +185,20 @@ function onUpdatedStats(statsByView: any, clients: any) {
                 issuesAndMetricsByView[client.id] = issuesAndMetrics;
             }
 
-            const track = client[kind]?.track;
-            const hasLiveTrack = track && track.readyState !== "ended";
+            const track = (client as any)[kind]?.track as MediaStreamTrack | undefined;
+            const hasLiveTrack = !!track && track.readyState !== "ended";
 
             const trackStats = track && stats && stats.tracks[track.id];
-            const ssrcs =
-                trackStats &&
-                Object.values(trackStats.ssrcs).sort(
-                    (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER)
-                );
-            const ssrc0 = trackStats && ssrcs[0];
+            const ssrcs = trackStats
+                ? Object.values(trackStats.ssrcs).sort(
+                      (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER)
+                  )
+                : [];
+            const ssrc0 = ssrcs[0];
 
-            const checkData = {
+            const checkData: IssueCheckData = {
                 client,
+                clients,
                 kind,
                 track,
                 trackStats,
@@ -540,7 +289,7 @@ function onUpdatedStats(statsByView: any, clients: any) {
 
                 const issueKey = `${qualifierString}-${issueDetector.id}`;
 
-                const enabled = issueDetector.enabled ? issueDetector.enabled(checkData) : true;
+                const enabled = issueDetector.enabled(checkData);
 
                 let issueData = issuesAndMetrics.issues[issueKey];
                 let aggregatedIssueData = aggregatedIssues[issueKey];
@@ -575,7 +324,7 @@ function onUpdatedStats(statsByView: any, clients: any) {
                     aggregatedIssueData.ticks++;
                     aggregatedIssueData.curTicks++;
 
-                    const issueDetected = issueDetector.check?.(checkData);
+                    const issueDetected = issueDetector.check(checkData);
                     if (issueDetected) {
                         issueData.registered++;
                         issueData.current++;

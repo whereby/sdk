@@ -24,3 +24,19 @@ export type AppThunk<R = void> = (
 export function createAppThunk<A = void>(thunk: (args: A) => AppThunk) {
     return thunk;
 }
+
+export function createAppAuthorizedThunk<A = void>(
+    authorizationSelector: (state: RootState) => boolean,
+    thunk: (args: A) => AppThunk,
+) {
+    return createAppThunk((payload: A) => (dispatch, getState, extra) => {
+        const isAuthorized: boolean = authorizationSelector(getState());
+
+        if (!isAuthorized) {
+            console.warn("Not authorized to perform this action");
+            return false;
+        }
+
+        return thunk(payload)(dispatch, getState, extra);
+    });
+}

@@ -1,1 +1,1 @@
-export const sdkVersion = "__SDK_VERSION__";
+export const coreVersion = "__PKG_VERSION__";

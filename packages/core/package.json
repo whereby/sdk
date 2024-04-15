@@ -2,61 +2,48 @@
     "name": "@whereby.com/core",
     "description": "Core library for whereby.com sdk",
     "author": "Whereby AS",
-    "version": "0.8.0",
+    "version": "0.11.1",
     "license": "MIT",
     "scripts": {
         "build": "rimraf dist && rollup -c rollup.config.js",
         "test": "yarn test:lint && yarn test:unit",
         "test:lint": "eslint src/",
         "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
-        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch"
+        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
+        "test:attw": "attw --pack . -f table"
     },
     "publishConfig": {
         "access": "public"
     },
     "files": [
-        "dist/**/*.cjs",
+        "dist/*.cjs",
         "dist/*.mjs",
-        "dist/*.d.ts"
+        "dist/*.d.ts",
+        "dist/*.d.cts",
+        "dist/*.d.mts"
     ],
-    "main": "/dist/cjs/index.cjs",
+    "main": "dist/index.cjs",
+    "module": "dist/legacy-esm.js",
+    "types": "dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.mjs",
-            "types": "./dist/index.d.ts"
-        },
-        "./utils": {
-            "import": "./dist/utils.mjs",
-            "types": "./dist/utils.d.ts"
-        }
-    },
-    "types": "dist/index.d.ts",
-    "typesVersions": {
-        "*": {
-            "*": [
-                "dist/index.d.ts"
-            ],
-            "utils": [
-                "dist/utils.d.ts"
-            ]
+            "import": {
+                "types": "./dist/index.d.mts",
+                "default": "./dist/index.mjs"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
         }
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^25.0.7",
-        "@rollup/plugin-node-resolve": "^15.2.3",
-        "@rollup/plugin-replace": "^5.0.5",
         "@types/btoa": "^1.2.3",
         "@types/node": "^20.11.19",
         "@types/uuid": "^9.0.7",
         "deep-object-diff": "^1.1.9",
         "dotenv": "^16.4.5",
         "dotenv-run-script": "^0.4.1",
-        "rimraf": "^5.0.5",
-        "rollup": "^4.12.0",
-        "rollup-plugin-dts": "^6.1.0",
-        "rollup-plugin-polyfill-node": "^0.13.0",
-        "rollup-plugin-terser": "^7.0.2",
-        "rollup-plugin-typescript2": "^0.36.0",
         "tslib": "^2.4.1",
         "uuid": "^9.0.1",
         "yalc": "^1.0.0-pre.53"

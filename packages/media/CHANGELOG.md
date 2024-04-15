@@ -1,5 +1,65 @@
 # @whereby.com/media
 
+## 1.3.8
+
+### Patch Changes
+
+- 48fbe84: Revert 31090cbc
+
+## 1.3.7
+
+### Patch Changes
+
+- ca66fa7: Fix broken issue detectors when audio-only mode is enabled
+
+## 1.3.6
+
+### Patch Changes
+
+- d5ec7f5: Wait for send transport before restarting video producer
+
+## 1.3.5
+
+### Patch Changes
+
+- 8a75b16: Add action to mute participants
+
+## 1.3.4
+
+### Patch Changes
+
+- 48dce0c: media: Allow creating producers for tracks not live yet
+
+## 1.3.3
+
+### Patch Changes
+
+- d75644f: Refactor role name handling from signal
+
+## 1.3.2
+
+### Patch Changes
+
+- b91990a: Reorder export fields, default should be last
+
+## 1.3.1
+
+### Patch Changes
+
+- 5412e6f: Build package to .js instead of .mjs
+
+## 1.3.0
+
+### Minor Changes
+
+- c6ff015: Expose `SignalClient`s `externalId`
+
+## 1.2.1
+
+### Patch Changes
+
+- 5b61e58: Upgrade mediasoup-client to 3.7.3
+
 ## 1.2.0
 
 ### Minor Changes

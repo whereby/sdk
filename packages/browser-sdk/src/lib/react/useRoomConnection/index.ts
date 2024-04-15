@@ -9,6 +9,7 @@ import {
     doStopCloudRecording,
     doAcceptWaitingParticipant,
     doRejectWaitingParticipant,
+    doRequestAudioEnable,
     doSetDisplayName,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
@@ -17,13 +18,14 @@ import {
     appLeft,
     doAppJoin,
     doKnockRoom,
+    doLockRoom,
     doRtcReportStreamResolution,
-    sdkVersion,
 } from "@whereby.com/core";
 
 import VideoView from "../VideoView";
 import { selectRoomConnectionState } from "./selector";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
+import { browserSdkVersion } from "../version";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -71,7 +73,7 @@ export function useRoomConnection(
         const unsubscribe = observeStore(store, selectRoomConnectionState, setRoomConnectionState);
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
-        const roomKey = searchParams.get("roomKey");
+        const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
         store.dispatch(
             doAppJoin({
@@ -81,7 +83,7 @@ export function useRoomConnection(
                     : roomConnectionOptions.localMediaOptions,
                 roomKey,
                 roomUrl,
-                sdkVersion: sdkVersion,
+                userAgent: `browser-sdk:${browserSdkVersion}`,
                 externalId: roomConnectionOptions.externalId || null,
             }),
         );
@@ -147,20 +149,30 @@ export function useRoomConnection(
     const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
 
+    const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
+    const muteParticipants = React.useCallback(
+        (clientIds: string[]) => {
+            store.dispatch(doRequestAudioEnable({ clientIds, enable: false }));
+        },
+        [store],
+    );
+
     return {
         state: roomConnectionState,
         actions: {
-            sendChatMessage,
-            knock,
-            setDisplayName,
-            toggleCamera,
-            toggleMicrophone,
             acceptWaitingParticipant,
+            knock,
+            lockRoom,
+            muteParticipants,
             rejectWaitingParticipant,
+            sendChatMessage,
+            setDisplayName,
             startCloudRecording,
             startScreenshare,
             stopCloudRecording,
             stopScreenshare,
+            toggleCamera,
+            toggleMicrophone,
         },
         components: {
             VideoView: boundVideoView || VideoView,

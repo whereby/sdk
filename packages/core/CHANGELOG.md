@@ -1,5 +1,62 @@
 # @whereby.com/core
 
+## 0.11.1
+
+### Patch Changes
+
+- e0f67e8: Use MediaStream.getTracks() to tell if a screenshare has audio enabled or not. `.getAudioTracks()` is not implemented in some WebRTC implementations.
+- 8f6987d: Use `pres-` prefixed clientId as screenshare id for remote participants and "local-screenshare" for local screenshares as a fallback, if the MediaStream has no `id`.
+
+## 0.11.0
+
+### Minor Changes
+
+- 8a75b16: Add action to mute participants
+
+### Patch Changes
+
+- Updated dependencies [8a75b16]
+  - @whereby.com/media@1.3.5
+
+## 0.10.0
+
+### Minor Changes
+
+- d75644f: Add roomKey-based authorization and allow room hosts to lock/unlock rooms
+
+### Patch Changes
+
+- Updated dependencies [d75644f]
+  - @whereby.com/media@1.3.3
+
+## 0.9.2
+
+### Patch Changes
+
+- b91990a: Reorder export fields, default should be last
+- Updated dependencies [b91990a]
+  - @whereby.com/media@1.3.2
+
+## 0.9.1
+
+### Patch Changes
+
+- 5412e6f: Bump media
+- Updated dependencies [5412e6f]
+  - @whereby.com/media@1.3.1
+
+## 0.9.0
+
+### Minor Changes
+
+- 6fc07f5: Expose `RemoteParticipant.externalId`
+- 300f6ac: Rename `sdkVersion` param in `doAppJoin` to `userAgent`, make it optional with a fallback to core module version and stop exporting the `sdkVersion`
+
+### Patch Changes
+
+- Updated dependencies [c6ff015]
+  - @whereby.com/media@1.3.0
+
 ## 0.8.0
 
 ### Minor Changes
