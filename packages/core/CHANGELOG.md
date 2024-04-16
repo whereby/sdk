@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.12.0
+
+### Minor Changes
+
+- 0eba48d: Fix signal reconnect flow
+
 ## 0.11.1
 
 ### Patch Changes
