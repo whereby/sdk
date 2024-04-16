@@ -55,7 +55,7 @@
         "rtcstats": "github:whereby/rtcstats#5.4.0",
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
-        "socket.io-client": "4.7.2",
+        "socket.io-client": "4.7.5",
         "typescript": "^5.3.3",
         "uuid": "^9.0.1",
         "uuid-validate": "^0.0.3",
