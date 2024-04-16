@@ -116,6 +116,7 @@ export const signalConnectionSlice = createSlice({
         socketDisconnected: (state) => {
             return {
                 ...state,
+                deviceIdentified: false,
                 status: "disconnected",
             };
         },
@@ -143,14 +144,21 @@ export const signalConnectionSlice = createSlice({
         builder.addCase(signalEvents.disconnect, (state) => {
             return {
                 ...state,
+                deviceIdentified: false,
                 status: "disconnected",
             };
         });
     },
 });
 
-export const { deviceIdentifying, deviceIdentified, socketConnected, socketConnecting, socketDisconnected } =
-    signalConnectionSlice.actions;
+export const {
+    deviceIdentifying,
+    deviceIdentified,
+    socketConnected,
+    socketConnecting,
+    socketDisconnected,
+    socketReconnecting,
+} = signalConnectionSlice.actions;
 
 /**
  * Action creators
@@ -167,7 +175,7 @@ export const doSignalSocketConnect = createAppThunk(() => {
 
         socket.on("connect", () => dispatch(socketConnected(socket)));
         socket.on("device_identified", () => dispatch(deviceIdentified()));
-        socket.getManager().on("reconnect", () => dispatch(doSignalReconnect()));
+        socket.getManager().on("reconnect", () => dispatch(socketReconnecting()));
         forwardSocketEvents(socket, dispatch);
 
         socket.connect();
@@ -179,8 +187,13 @@ export const doSignalIdentifyDevice = createAppThunk(
         (dispatch, getState) => {
             const state = getState();
             const signalSocket = selectSignalConnectionSocket(state);
+            const deviceIdentified = selectSignalConnectionDeviceIdentified(state);
 
             if (!signalSocket) {
+                return;
+            }
+
+            if (deviceIdentified) {
                 return;
             }
 
@@ -195,16 +208,6 @@ export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
     socket?.disconnect();
     dispatch(socketDisconnected());
 });
-
-export const doSignalReconnect = createAppThunk(() => (dispatch, getState) => {
-    const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
-    dispatch(socketReconnecting());
-    if (deviceCredentialsRaw.data) {
-        dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
-    }
-});
-
-export const { socketReconnecting } = signalConnectionSlice.actions;
 
 /**
  * Selectors
