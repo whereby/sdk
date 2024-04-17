@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 0.12.1
+
+### Patch Changes
+
+- 7eb3cac: Drop sending of selfId in join_room signal request
+- Updated dependencies [7eb3cac]
+  - @whereby.com/media@1.3.9
+
 ## 0.12.0
 
 ### Minor Changes
