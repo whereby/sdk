@@ -153,7 +153,6 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
         organizationId,
         roomKey,
         roomName,
-        selfId: "",
         userAgent,
         externalId,
     });
@@ -172,7 +171,6 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
-    const selfId = selectSelfId(getState());
     const clientClaim = selectLocalParticipantClientClaim(getState());
 
     socket?.emit("join_room", {
@@ -189,10 +187,9 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         organizationId,
         roomKey,
         roomName,
-        selfId,
-        ...(!!clientClaim && { clientClaim }),
         userAgent,
         externalId,
+        ...(clientClaim && { clientClaim }),
     });
 
     dispatch(connectionStatusChanged("connecting"));

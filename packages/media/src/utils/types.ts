@@ -207,6 +207,7 @@ export interface JoinRoomRequest {
     organizationId: string;
     roomName: string;
     displayName?: string;
+    clientClaim?: string;
 }
 
 export interface KnockRoomRequest {
