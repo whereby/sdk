@@ -100,7 +100,7 @@ export const doKickParticipant = createAppAuthorizedThunk(
 
 export const doEndMeeting = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToEndMeeting(state),
-    (payload: { stayBehind?: boolean }) => (dispatch, getState) => {
+    () => (_, getState) => {
         const state = getState();
 
         const clientsToKick = selectRemoteParticipants(state).map((c) => c.id);
@@ -108,16 +108,6 @@ export const doEndMeeting = createAppAuthorizedThunk(
         const { socket } = selectSignalConnectionRaw(state);
 
         socket?.emit("kick_client", { clientIds: clientsToKick, reasonId: "end-meeting" });
-
-        dispatch({
-            type: "END_MEETING",
-            payload: { requestedByClientId: payload.stayBehind ? null : selectSelfId(state) },
-        });
-
-        // TODO: need to first implement leave room action
-        // if (!stayBehind) {
-        //     doLeaveRoom();
-        // }
     },
 );
 

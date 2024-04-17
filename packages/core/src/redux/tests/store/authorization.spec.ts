@@ -91,7 +91,7 @@ describe("actions", () => {
                     withSignalConnection: true,
                 });
 
-                expect(() => store.dispatch(doEndMeeting({ stayBehind: false }))).not.toThrow();
+                expect(() => store.dispatch(doEndMeeting())).not.toThrow();
 
                 expect(mockSignalEmit).toHaveBeenCalledWith("kick_client", {
                     clientIds: remoteParticipants.map(({ id }) => id),
@@ -110,9 +110,7 @@ describe("actions", () => {
                     withSignalConnection: true,
                 });
 
-                expect(() => store.dispatch(doEndMeeting({ stayBehind: false }))).toThrow(
-                    `Not authorized to perform this action`,
-                );
+                expect(() => store.dispatch(doEndMeeting())).toThrow(`Not authorized to perform this action`);
 
                 expect(mockSignalEmit).not.toHaveBeenCalled();
             });

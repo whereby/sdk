@@ -160,10 +160,9 @@ export function useRoomConnection(
     );
     const kickParticipant = React.useCallback(
         (clientId: string) => store.dispatch(doKickParticipant({ clientId })),
-    const endMeeting = React.useCallback(
-        (stayBehind: boolean = false) => store.dispatch(doEndMeeting({ stayBehind })),
         [store],
     );
+    const endMeeting = React.useCallback(() => store.dispatch(doEndMeeting()), [store]);
 
     return {
         state: roomConnectionState,
