@@ -1,6 +1,6 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { randomLocalParticipant } from "../../../__mocks__/appMocks";
-import { doLockRoom } from "../../slices/authorization";
+import { randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { doLockRoom, doKickParticipant } from "../../slices/authorization";
 
 describe("actions", () => {
     describe("doLockRoom", () => {
@@ -28,7 +28,50 @@ describe("actions", () => {
                     `Not authorized to perform this action`,
                 );
 
-                expect(mockSignalEmit).not.toHaveBeenCalledWith("set_lock", { locked: true });
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe("doKickParticipant", () => {
+        describe("when authorized", () => {
+            it("should kick client from room", () => {
+                const remoteParticipant = randomRemoteParticipant();
+
+                const store = createStore({
+                    initialState: {
+                        localParticipant: randomLocalParticipant({ roleName: "host" }),
+                        remoteParticipants: { remoteParticipants: [remoteParticipant] },
+                    },
+                    withSignalConnection: true,
+                });
+
+                expect(() => store.dispatch(doKickParticipant({ clientId: remoteParticipant.id }))).not.toThrow();
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("kick_client", {
+                    clientId: remoteParticipant.id,
+                    reasonId: "kick",
+                });
+            });
+        });
+
+        describe("when not authorized", () => {
+            it("should not kick client from room", () => {
+                const remoteParticipant = randomRemoteParticipant();
+
+                const store = createStore({
+                    initialState: {
+                        localParticipant: randomLocalParticipant({ roleName: "visitor" }),
+                        remoteParticipants: { remoteParticipants: [remoteParticipant] },
+                    },
+                    withSignalConnection: true,
+                });
+
+                expect(() => store.dispatch(doKickParticipant({ clientId: remoteParticipant.id }))).toThrow(
+                    `Not authorized to perform this action`,
+                );
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
             });
         });
     });

@@ -37,14 +37,15 @@ export default function VideoExperience({
         knock,
         sendChatMessage,
         setDisplayName,
+        lockRoom,
         muteParticipants,
+        kickParticipant,
         toggleCamera,
         toggleMicrophone,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
         startScreenshare,
         stopScreenshare,
-        lockRoom,
     } = actions;
     const { VideoView } = components;
 
@@ -154,6 +155,18 @@ export default function VideoExperience({
                                                         }
                                                     >
                                                         Mute
+                                                    </button>{" "}
+                                                    <button
+                                                        onClick={() => {
+                                                            kickParticipant(participant.id);
+                                                        }}
+                                                        className={
+                                                            localParticipant?.roleName !== "host"
+                                                                ? "hostControlActionDisallowed"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        Kick
                                                     </button>
                                                 </>
                                             ) : null}

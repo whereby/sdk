@@ -10,6 +10,7 @@ import { selectLocalParticipantRole } from "./localParticipant";
 const ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
     canRequestAudioEnable: ["host"],
+    canKickClient: ["host"],
 };
 
 /**
@@ -85,6 +86,16 @@ export const doLockRoom = createAppAuthorizedThunk(
     },
 );
 
+export const doKickParticipant = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToKickClient(state),
+    (payload: { clientId: string }) => (_, getState) => {
+        const state = getState();
+
+        const { socket } = selectSignalConnectionRaw(state);
+        socket?.emit("kick_client", { clientId: payload.clientId, reasonId: "kick" });
+    },
+);
+
 /**
  * Selectors
  */
@@ -97,4 +108,7 @@ export const selectIsAuthorizedToLockRoom = createSelector(selectLocalParticipan
 export const selectIsAuthorizedToRequestAudioEnable = createSelector(
     selectLocalParticipantRole,
     (localParticipantRole) => ACTION_PERMISSIONS_BY_ROLE.canRequestAudioEnable.includes(localParticipantRole),
+);
+export const selectIsAuthorizedToKickClient = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
+    ACTION_PERMISSIONS_BY_ROLE.canKickClient.includes(localParticipantRole),
 );
