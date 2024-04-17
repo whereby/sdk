@@ -6,11 +6,13 @@ import { doAppJoin } from "./app";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectLocalParticipantRole } from "./localParticipant";
+import { selectRemoteParticipants } from "./remoteParticipants";
 
 const ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
     canRequestAudioEnable: ["host"],
     canKickClient: ["host"],
+    canEndMeeting: ["host"],
 };
 
 /**
@@ -96,6 +98,29 @@ export const doKickParticipant = createAppAuthorizedThunk(
     },
 );
 
+export const doEndMeeting = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToEndMeeting(state),
+    (payload: { stayBehind?: boolean }) => (dispatch, getState) => {
+        const state = getState();
+
+        const clientsToKick = selectRemoteParticipants(state).map((c) => c.id);
+
+        const { socket } = selectSignalConnectionRaw(state);
+
+        socket?.emit("kick_client", { clientIds: clientsToKick, reasonId: "end-meeting" });
+
+        dispatch({
+            type: "END_MEETING",
+            payload: { requestedByClientId: payload.stayBehind ? null : selectSelfId(state) },
+        });
+
+        // TODO: need to first implement leave room action
+        // if (!stayBehind) {
+        //     doLeaveRoom();
+        // }
+    },
+);
+
 /**
  * Selectors
  */
@@ -111,4 +136,7 @@ export const selectIsAuthorizedToRequestAudioEnable = createSelector(
 );
 export const selectIsAuthorizedToKickClient = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
     ACTION_PERMISSIONS_BY_ROLE.canKickClient.includes(localParticipantRole),
+);
+export const selectIsAuthorizedToEndMeeting = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
+    ACTION_PERMISSIONS_BY_ROLE.canEndMeeting.includes(localParticipantRole),
 );

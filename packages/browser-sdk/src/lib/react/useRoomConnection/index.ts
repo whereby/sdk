@@ -20,6 +20,7 @@ import {
     doKnockRoom,
     doLockRoom,
     doKickParticipant,
+    doEndMeeting,
     doRtcReportStreamResolution,
 } from "@whereby.com/core";
 
@@ -159,6 +160,8 @@ export function useRoomConnection(
     );
     const kickParticipant = React.useCallback(
         (clientId: string) => store.dispatch(doKickParticipant({ clientId })),
+    const endMeeting = React.useCallback(
+        (stayBehind: boolean = false) => store.dispatch(doEndMeeting({ stayBehind })),
         [store],
     );
 
@@ -170,6 +173,7 @@ export function useRoomConnection(
             lockRoom,
             muteParticipants,
             kickParticipant,
+            endMeeting,
             rejectWaitingParticipant,
             sendChatMessage,
             setDisplayName,

@@ -2,6 +2,7 @@ import {
     authorizationSlice,
     selectIsAuthorizedToLockRoom,
     selectIsAuthorizedToKickClient,
+    selectIsAuthorizedToEndMeeting,
     selectIsAuthorizedToRequestAudioEnable,
 } from "../authorization";
 
@@ -37,6 +38,19 @@ describe("authorizationSlice", () => {
                 "should return $expectedResult when localParticipantRole=$localParticipantRole",
                 ({ localParticipantRole, expectedResult }) => {
                     expect(selectIsAuthorizedToKickClient.resultFunc(localParticipantRole)).toEqual(expectedResult);
+                },
+            );
+        });
+
+        describe("selectIsAuthorizedToEndMeeting", () => {
+            it.each`
+                localParticipantRole | expectedResult
+                ${"visitor"}         | ${false}
+                ${"host"}            | ${true}
+            `(
+                "should return $expectedResult when localParticipantRole=$localParticipantRole",
+                ({ localParticipantRole, expectedResult }) => {
+                    expect(selectIsAuthorizedToEndMeeting.resultFunc(localParticipantRole)).toEqual(expectedResult);
                 },
             );
         });

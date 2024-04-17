@@ -1,6 +1,6 @@
 import { createStore, mockSignalEmit } from "../store.setup";
 import { randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
-import { doLockRoom, doKickParticipant } from "../../slices/authorization";
+import { doLockRoom, doKickParticipant, doEndMeeting } from "../../slices/authorization";
 
 describe("actions", () => {
     describe("doLockRoom", () => {
@@ -68,6 +68,49 @@ describe("actions", () => {
                 });
 
                 expect(() => store.dispatch(doKickParticipant({ clientId: remoteParticipant.id }))).toThrow(
+                    `Not authorized to perform this action`,
+                );
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe("doEndMeeting", () => {
+        const remoteParticipants = [randomRemoteParticipant(), randomRemoteParticipant(), randomRemoteParticipant()];
+
+        describe("when authorized", () => {
+            it("should end the meeting for all remote participants", () => {
+                const store = createStore({
+                    initialState: {
+                        localParticipant: randomLocalParticipant({ roleName: "host" }),
+                        remoteParticipants: {
+                            remoteParticipants,
+                        },
+                    },
+                    withSignalConnection: true,
+                });
+
+                expect(() => store.dispatch(doEndMeeting({ stayBehind: false }))).not.toThrow();
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("kick_client", {
+                    clientIds: remoteParticipants.map(({ id }) => id),
+                    reasonId: "end-meeting",
+                });
+            });
+        });
+
+        describe("when not authorized", () => {
+            it("should not end the meeting for any participants", () => {
+                const store = createStore({
+                    initialState: {
+                        localParticipant: randomLocalParticipant({ roleName: "visitor" }),
+                        remoteParticipants: { remoteParticipants },
+                    },
+                    withSignalConnection: true,
+                });
+
+                expect(() => store.dispatch(doEndMeeting({ stayBehind: false }))).toThrow(
                     `Not authorized to perform this action`,
                 );
 

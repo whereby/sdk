@@ -40,6 +40,7 @@ export default function VideoExperience({
         lockRoom,
         muteParticipants,
         kickParticipant,
+        endMeeting,
         toggleCamera,
         toggleMicrophone,
         acceptWaitingParticipant,
@@ -100,6 +101,12 @@ export default function VideoExperience({
                                 className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
                             >
                                 Unlock room
+                            </button>
+                            <button
+                                onClick={() => endMeeting()}
+                                className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
+                            >
+                                End meeting
                             </button>
                         </div>
                     )}
