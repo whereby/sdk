@@ -25,6 +25,7 @@ export interface LocalMediaState {
     isSettingCameraDevice: boolean;
     isSettingMicrophoneDevice: boolean;
     isTogglingCamera: boolean;
+    lowDataMode: boolean;
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
     options?: LocalMediaOptions;
@@ -42,6 +43,7 @@ export const initialLocalMediaState: LocalMediaState = {
     isSettingCameraDevice: false,
     isSettingMicrophoneDevice: false,
     isTogglingCamera: false,
+    lowDataMode: false,
     microphoneEnabled: false,
     status: "",
     isSwitchingStream: false,
@@ -83,6 +85,12 @@ export const localMediaSlice = createSlice({
             return {
                 ...state,
                 currentMicrophoneDeviceId: action.payload.deviceId,
+            };
+        },
+        toggleLowDataModeEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
+            return {
+                ...state,
+                lowDataMode: action.payload.enabled ?? !state.lowDataMode,
             };
         },
         setDevices(state, action: PayloadAction<{ devices: MediaDeviceInfo[] }>) {
@@ -245,6 +253,7 @@ export const {
     setCurrentMicrophoneDeviceId,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
+    toggleLowDataModeEnabled,
     setLocalMediaOptions,
     setLocalMediaStream,
     localMediaStopped,
@@ -314,6 +323,18 @@ const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", 
     }
 
     audioTrack.enabled = enabled;
+});
+export const doToggleLowDataMode = createAppThunk(() => (dispatch, getState) => {
+    const state = getState();
+    const stream = selectLocalMediaStream(state);
+    if (!stream) {
+        return;
+    }
+
+    const videoId = selectCurrentCameraDeviceId(state);
+    const audioId = selectCurrentMicrophoneDeviceId(state);
+
+    dispatch(doSwitchLocalStream({ audioId, videoId }));
 });
 
 export const doSetDevice = createAppAsyncThunk(
@@ -432,7 +453,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                     }),
                 );
             }
-
             return { replacedTracks };
         } catch (error) {
             console.error(error);
@@ -520,6 +540,7 @@ export const selectCurrentCameraDeviceId = (state: RootState) => state.localMedi
 export const selectCurrentMicrophoneDeviceId = (state: RootState) => state.localMedia.currentMicrophoneDeviceId;
 export const selectIsCameraEnabled = (state: RootState) => state.localMedia.cameraEnabled;
 export const selectIsMicrophoneEnabled = (state: RootState) => state.localMedia.microphoneEnabled;
+export const selectIsLowDataModeEnabled = (state: RootState) => state.localMedia.lowDataMode;
 export const selectIsSettingCameraDevice = (state: RootState) => state.localMedia.isSettingCameraDevice;
 export const selectIsSettingMicrophoneDevice = (state: RootState) => state.localMedia.isSettingMicrophoneDevice;
 export const selectIsToggleCamera = (state: RootState) => state.localMedia.isTogglingCamera;
@@ -536,7 +557,8 @@ export const selectLocalMediaConstraintsOptions = createSelector(
     selectLocalMediaDevices,
     selectCurrentCameraDeviceId,
     selectCurrentMicrophoneDeviceId,
-    (devices, videoId, audioId) => ({
+    selectIsLowDataModeEnabled,
+    (devices, videoId, audioId, lowDataMode) => ({
         devices,
         videoId,
         audioId,
@@ -545,7 +567,7 @@ export const selectLocalMediaConstraintsOptions = createSelector(
             disableAGC: false,
             hd: true,
             lax: false,
-            lowDataMode: false,
+            lowDataMode,
             simulcast: true,
             widescreen: true,
         },
@@ -616,6 +638,19 @@ startAppListening({
     },
     effect: (_, { dispatch }) => {
         dispatch(doToggleMicrophone());
+    },
+});
+
+startAppListening({
+    predicate: (_action, currentState, previousState) => {
+        const oldValue = selectIsLowDataModeEnabled(previousState);
+        const newValue = selectIsLowDataModeEnabled(currentState);
+
+        const isReady = selectLocalMediaStatus(previousState) === "started";
+        return isReady && oldValue !== newValue;
+    },
+    effect: (_action, { dispatch }) => {
+        dispatch(doToggleLowDataMode());
     },
 });
 
