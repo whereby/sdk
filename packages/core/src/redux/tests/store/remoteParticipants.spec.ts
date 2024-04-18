@@ -1,12 +1,12 @@
 import { doRequestAudioEnable } from "../../slices/remoteParticipants";
 import { createStore, mockSignalEmit } from "../store.setup";
-import { randomLocalParticipant, randomString } from "../../../__mocks__/appMocks";
+import { randomString } from "../../../__mocks__/appMocks";
 
 describe("actions", () => {
     describe("when authorized", () => {
         it("should request audio enable", () => {
             const store = createStore({
-                initialState: { localParticipant: randomLocalParticipant({ roleName: "host" }) },
+                initialState: { authorization: { roleName: "host" } },
                 withSignalConnection: true,
             });
             const clientId = randomString();
@@ -23,7 +23,7 @@ describe("actions", () => {
     describe("when not authorized", () => {
         it("should not request audio enable", () => {
             const store = createStore({
-                initialState: { localParticipant: randomLocalParticipant({ roleName: "visitor" }) },
+                initialState: { authorization: { roleName: "visitor" } },
                 withSignalConnection: true,
             });
             const clientId = randomString();

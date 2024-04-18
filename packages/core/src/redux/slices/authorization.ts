@@ -1,14 +1,9 @@
-import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
-import { createAppAuthorizedThunk } from "../thunk";
-import { doAppJoin } from "./app";
 import { signalEvents } from "./signalConnection/actions";
-import { selectSignalConnectionRaw } from "./signalConnection";
-import { selectLocalParticipantRole } from "./localParticipant";
-import { selectRemoteParticipants } from "./remoteParticipants";
 
-const ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
+const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
     canRequestAudioEnable: ["host"],
     canKickClient: ["host"],
@@ -20,113 +15,44 @@ const ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } =
  */
 
 export interface AuthorizationState {
-    roomKey: string | null;
-    roomLocked: boolean;
+    roleName: RoleName;
 }
 
 const initialState: AuthorizationState = {
-    roomKey: null,
-    roomLocked: false,
+    roleName: "none",
 };
 
 export const authorizationSlice = createSlice({
     name: "authorization",
     initialState,
-    reducers: {
-        setRoomKey: (state, action: PayloadAction<string | null>) => {
-            return {
-                ...state,
-                roomKey: action.payload,
-            };
-        },
-    },
+    reducers: {},
     extraReducers: (builder) => {
-        builder.addCase(doAppJoin, (state, action) => {
-            return {
-                ...state,
-                roomKey: action.payload.roomKey,
-            };
-        });
-
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, isLocked } = action.payload;
-
-            if (error) {
-                return state;
-            }
-
+            const client = action.payload?.room?.clients.find((c) => c.id === action.payload?.selfId);
             return {
                 ...state,
-                roomLocked: isLocked,
-            };
-        });
-
-        builder.addCase(signalEvents.roomLocked, (state, action) => {
-            const { isLocked } = action.payload;
-
-            return {
-                ...state,
-                roomLocked: isLocked,
+                roleName: client?.role.roleName || "none",
             };
         });
     },
 });
 
 /**
- * Action creators
- */
-
-export const { setRoomKey } = authorizationSlice.actions;
-
-export const doLockRoom = createAppAuthorizedThunk(
-    (state) => selectIsAuthorizedToLockRoom(state),
-    (payload: { locked: boolean }) => (_, getState) => {
-        const state = getState();
-
-        const { socket } = selectSignalConnectionRaw(state);
-        socket?.emit("set_lock", { locked: payload.locked });
-    },
-);
-
-export const doKickParticipant = createAppAuthorizedThunk(
-    (state) => selectIsAuthorizedToKickClient(state),
-    (payload: { clientId: string }) => (_, getState) => {
-        const state = getState();
-
-        const { socket } = selectSignalConnectionRaw(state);
-        socket?.emit("kick_client", { clientId: payload.clientId, reasonId: "kick" });
-    },
-);
-
-export const doEndMeeting = createAppAuthorizedThunk(
-    (state) => selectIsAuthorizedToEndMeeting(state),
-    () => (_, getState) => {
-        const state = getState();
-
-        const clientsToKick = selectRemoteParticipants(state).map((c) => c.id);
-
-        const { socket } = selectSignalConnectionRaw(state);
-
-        socket?.emit("kick_client", { clientIds: clientsToKick, reasonId: "end-meeting" });
-    },
-);
-
-/**
  * Selectors
  */
 
-export const selectAuthorizationRoomKey = (state: RootState) => state.authorization.roomKey;
-export const selectAuthorizationRoomLocked = (state: RootState) => state.authorization.roomLocked;
-export const selectIsAuthorizedToLockRoom = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
-    ACTION_PERMISSIONS_BY_ROLE.canLockRoom.includes(localParticipantRole),
+export const selectAuthorizationRoleName = (state: RootState) => state.authorization.roleName;
+
+export const selectIsAuthorizedToLockRoom = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
+    ROOM_ACTION_PERMISSIONS_BY_ROLE.canLockRoom.includes(localParticipantRole),
 );
 export const selectIsAuthorizedToRequestAudioEnable = createSelector(
-    selectLocalParticipantRole,
-    (localParticipantRole) => ACTION_PERMISSIONS_BY_ROLE.canRequestAudioEnable.includes(localParticipantRole),
+    selectAuthorizationRoleName,
+    (localParticipantRole) => ROOM_ACTION_PERMISSIONS_BY_ROLE.canRequestAudioEnable.includes(localParticipantRole),
 );
-export const selectIsAuthorizedToKickClient = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
-    ACTION_PERMISSIONS_BY_ROLE.canKickClient.includes(localParticipantRole),
+export const selectIsAuthorizedToKickClient = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
+    ROOM_ACTION_PERMISSIONS_BY_ROLE.canKickClient.includes(localParticipantRole),
 );
-export const selectIsAuthorizedToEndMeeting = createSelector(selectLocalParticipantRole, (localParticipantRole) =>
-    ACTION_PERMISSIONS_BY_ROLE.canEndMeeting.includes(localParticipantRole),
+export const selectIsAuthorizedToEndMeeting = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
+    ROOM_ACTION_PERMISSIONS_BY_ROLE.canEndMeeting.includes(localParticipantRole),
 );

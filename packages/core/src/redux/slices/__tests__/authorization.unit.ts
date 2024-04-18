@@ -5,13 +5,38 @@ import {
     selectIsAuthorizedToEndMeeting,
     selectIsAuthorizedToRequestAudioEnable,
 } from "../authorization";
+import { signalEvents } from "../signalConnection/actions";
 
 describe("authorizationSlice", () => {
     describe("reducers", () => {
-        it("setRoomKey", () => {
-            const result = authorizationSlice.reducer(undefined, authorizationSlice.actions.setRoomKey("roomKey"));
-
-            expect(result.roomKey).toEqual("roomKey");
+        it("signalEvents.roomJoined", () => {
+            const result = authorizationSlice.reducer(
+                undefined,
+                signalEvents.roomJoined({
+                    selfId: "selfId",
+                    clientClaim: "clientClaim",
+                    isLocked: false,
+                    room: {
+                        clients: [
+                            {
+                                displayName: "displayName",
+                                id: "selfId",
+                                streams: [],
+                                isAudioEnabled: true,
+                                isVideoEnabled: true,
+                                role: {
+                                    roleName: "host",
+                                },
+                                startedCloudRecordingAt: null,
+                                externalId: null,
+                            },
+                        ],
+                        knockers: [],
+                        session: null,
+                    },
+                }),
+            );
+            expect(result.roleName).toEqual("host");
         });
     });
 

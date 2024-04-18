@@ -1,13 +1,13 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
-import { doLockRoom, doKickParticipant, doEndMeeting } from "../../slices/authorization";
+import { randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { doLockRoom, doKickParticipant, doEndMeeting } from "../../slices/room";
 
 describe("actions", () => {
     describe("doLockRoom", () => {
         describe("when authorized", () => {
             it("should lock room", () => {
                 const store = createStore({
-                    initialState: { localParticipant: randomLocalParticipant({ roleName: "host" }) },
+                    initialState: { authorization: { roleName: "host" } },
                     withSignalConnection: true,
                 });
 
@@ -20,7 +20,7 @@ describe("actions", () => {
         describe("when not authorized", () => {
             it("should not lock room", () => {
                 const store = createStore({
-                    initialState: { localParticipant: randomLocalParticipant({ roleName: "visitor" }) },
+                    initialState: { authorization: { roleName: "visitor" } },
                     withSignalConnection: true,
                 });
 
@@ -40,7 +40,7 @@ describe("actions", () => {
 
                 const store = createStore({
                     initialState: {
-                        localParticipant: randomLocalParticipant({ roleName: "host" }),
+                        authorization: { roleName: "host" },
                         remoteParticipants: { remoteParticipants: [remoteParticipant] },
                     },
                     withSignalConnection: true,
@@ -61,7 +61,7 @@ describe("actions", () => {
 
                 const store = createStore({
                     initialState: {
-                        localParticipant: randomLocalParticipant({ roleName: "visitor" }),
+                        authorization: { roleName: "visitor" },
                         remoteParticipants: { remoteParticipants: [remoteParticipant] },
                     },
                     withSignalConnection: true,
@@ -83,7 +83,7 @@ describe("actions", () => {
             it("should end the meeting for all remote participants", () => {
                 const store = createStore({
                     initialState: {
-                        localParticipant: randomLocalParticipant({ roleName: "host" }),
+                        authorization: { roleName: "host" },
                         remoteParticipants: {
                             remoteParticipants,
                         },
@@ -104,7 +104,7 @@ describe("actions", () => {
             it("should not end the meeting for any participants", () => {
                 const store = createStore({
                     initialState: {
-                        localParticipant: randomLocalParticipant({ roleName: "visitor" }),
+                        authorization: { roleName: "visitor" },
                         remoteParticipants: { remoteParticipants },
                     },
                     withSignalConnection: true,
