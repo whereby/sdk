@@ -40,6 +40,7 @@ export default function VideoExperience({
         muteParticipants,
         toggleCamera,
         toggleMicrophone,
+        toggleLowDataMode,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
         startScreenshare,
@@ -172,6 +173,7 @@ export default function VideoExperience({
                     <div className="controls">
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                        <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>
                         <button
                             onClick={() => {
                                 if (isLocalScreenshareActive) {
