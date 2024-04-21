@@ -7,9 +7,10 @@ import VideoView from "../VideoView";
 import { calculateLayout } from "./helpers/stageLayout";
 import { Bounds, Frame, Origin, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
-import { doRtcReportStreamResolution } from "@whereby.com/core";
+import { doRtcReportStreamResolution, observeStore } from "@whereby.com/core";
 import { debounce } from "@whereby.com/core";
-import { RoomConnectionRef } from "../useRoomConnection";
+import { selectVideoGridState, VideoGridState } from "./selector";
+import { WherebyContext } from "../Provider";
 
 function GridVideoCellView({
     cell,
@@ -58,8 +59,12 @@ function GridVideoCellView({
     );
 }
 
+const initialState: VideoGridState = {
+    localParticipant: undefined,
+    remoteParticipants: [],
+};
+
 interface GridProps {
-    roomConnection: RoomConnectionRef;
     renderParticipant?: ({
         cell,
         participant,
@@ -70,8 +75,24 @@ interface GridProps {
     videoGridGap?: number;
 }
 
-function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps) {
-    const { remoteParticipants, localParticipant } = roomConnection.state;
+function Grid({ renderParticipant, videoGridGap = 0 }: GridProps) {
+    const store = React.useContext(WherebyContext);
+
+    if (!store) {
+        throw new Error("VideoView must be used within a WherebyProvider");
+    }
+
+    const [videoGridState, setVideoViewState] = React.useState(initialState);
+
+    React.useEffect(() => {
+        const unsubscribe = observeStore(store, selectVideoGridState, setVideoViewState);
+
+        return () => {
+            unsubscribe();
+        };
+    }, [store]);
+
+    const { remoteParticipants, localParticipant } = videoGridState;
     const gridRef = React.useRef<HTMLDivElement>(null);
     const [containerFrame, setContainerFrame] = React.useState<Frame | null>(null);
     const [aspectRatios, setAspectRatios] = React.useState<{ clientId: string; aspectRatio: number }[]>([]);
@@ -138,11 +159,9 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
     // Handle resize
     const handleResize = React.useCallback(
         ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => {
-            if (!roomConnection._ref) return;
-
-            roomConnection._ref.dispatch(doRtcReportStreamResolution({ streamId: stream.id, width, height }));
+            store.dispatch(doRtcReportStreamResolution({ streamId: stream.id, width, height }));
         },
-        [localParticipant, roomConnection._ref],
+        [localParticipant, store],
     );
 
     return (

@@ -227,7 +227,7 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
 
     return (
         <div style={{ height: "100vh" }}>
-            <VideoGrid roomConnection={roomConnection} videoGridGap={10} />
+            <VideoGrid videoGridGap={10} />
         </div>
     );
 };
@@ -242,7 +242,6 @@ export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displa
     return (
         <div style={{ height: "100vh" }}>
             <VideoGrid
-                roomConnection={roomConnection}
                 videoGridGap={10}
                 renderParticipant={({ participant }) => {
                     if (!participant.stream) {
