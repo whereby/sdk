@@ -323,7 +323,7 @@ describe("actions", () => {
             expect(mockedEnumerateDevices).toHaveBeenCalled();
             expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledWith({
                 audioId: undefined,
-                videoId: dev1.deviceId,
+                videoId: dev2.deviceId,
             });
             expect(diff(before, after)).toMatchObject({
                 devices: {
