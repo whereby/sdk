@@ -2,8 +2,18 @@ import { fitToBounds } from "./gridUtils";
 
 import * as centerGrid from "./centerGridLayout";
 
-import { makeOrigin, makeBounds, makeFrame, makeBox, Frame, Bounds, Origin } from "./layout";
-import { type Box } from "./layout";
+import { makeOrigin, makeBounds, makeFrame, makeBox } from "./";
+import {
+    type Box,
+    type Frame,
+    type Bounds,
+    type Origin,
+    type CellView,
+    type VideoContainerLayout,
+    type GridLayout,
+    type CalculateLayoutResult,
+    ResultCellView,
+} from "./types";
 import layoutConstants from "./layoutConstants";
 
 const { BOTTOM_TOOLBAR_HEIGHT, VIDEO_CONTROLS_MIN_WIDTH, TABLET_BREAKPOINT } = layoutConstants;
@@ -31,7 +41,10 @@ export function fitSupersizedContent({
     aspectRatio: number;
     minGridContainerBounds: Bounds;
     hasPresentationGrid: boolean;
-}) {
+}): {
+    isPortrait: boolean;
+    supersizedContentBounds: Bounds;
+} {
     const { width, height } = bounds;
 
     // If we don't have any grids take up whole stage
@@ -125,7 +138,11 @@ export function calculateStageLayout({
     hasPresentationContent: boolean;
     hasVideoContent: boolean;
     isPortrait: boolean;
-}) {
+}): {
+    isPortrait: boolean;
+    videosContainer: Frame;
+    hasOverflow: boolean;
+} {
     const hasVideos = hasPresentationContent || hasVideoContent;
 
     // Sanity checks
@@ -159,7 +176,7 @@ export function calculateVideosContainerLayout({
     containerBounds: Bounds;
     containerOrigin: Origin;
     gridGap: number;
-    supersizedContentAspectRatio: number;
+    supersizedContentAspectRatio?: number;
     hasPresentationContent: boolean;
     hasPresentationGrid: boolean;
     hasVideoContent: boolean;
@@ -181,7 +198,7 @@ export function calculateVideosContainerLayout({
         });
         const supersizedContentLayout = fitSupersizedContent({
             bounds: containerBounds,
-            aspectRatio: supersizedContentAspectRatio,
+            aspectRatio: supersizedContentAspectRatio || 1,
             minGridContainerBounds,
             hasPresentationGrid,
         });
@@ -222,6 +239,23 @@ export function calculateVideosContainerLayout({
     };
 }
 
+type CalculateGridLayoutOptions = {
+    containerBounds: Bounds;
+    paddings?: Box;
+    videos: CellView[];
+    isConstrained: boolean;
+    maxGridWidth: number;
+    gridGap: number;
+};
+
+type CalculateGridLayoutResult = {
+    videoCells: ResultCellView[];
+    extraHorizontalPadding: number;
+    extraVerticalPadding: number;
+    paddings: Box;
+    gridGap: number;
+};
+
 function calculateGridLayout({
     containerBounds,
     paddings = makeBox(),
@@ -229,21 +263,14 @@ function calculateGridLayout({
     isConstrained,
     maxGridWidth,
     gridGap,
-}: {
-    containerBounds: Bounds;
-    paddings?: Box;
-    videos: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
-    isConstrained: boolean;
-    maxGridWidth: number;
-    gridGap: number;
-}) {
+}: CalculateGridLayoutOptions): CalculateGridLayoutResult {
     const { width, height } = containerBounds;
     const cappedWidth = maxGridWidth ? Math.min(width, maxGridWidth) : width;
     const cellCount = videos.length;
 
     let videoCells = null;
 
-    const cellAspectRatios = videos.map((video) => video.aspectRatio);
+    const cellAspectRatios = videos.map((video) => video.aspectRatio || 1);
     const minGridBounds = getMinGridBounds({ cellCount });
     // Cap grid to a sane width (on very wide monitors)
     const gridLayout = centerGrid.calculateLayout({
@@ -259,7 +286,7 @@ function calculateGridLayout({
         const cellProps = centerGrid.getCellPropsAtIndexForLayout({ index, layout: gridLayout });
         const isSmallCell = gridLayout.cellWidth < minGridBounds.width;
         const shouldZoom = isConstrained || isSmallCell;
-        const aspectRatio = shouldZoom ? gridLayout.cellWidth / gridLayout.cellHeight : video.aspectRatio;
+        const aspectRatio = shouldZoom ? gridLayout.cellWidth / gridLayout.cellHeight : video.aspectRatio || 1;
 
         return {
             clientId: video.clientId,
@@ -274,6 +301,7 @@ function calculateGridLayout({
             }),
             aspectRatio,
             isSmallCell,
+            type: "video",
         };
     });
 
@@ -299,14 +327,14 @@ function calculateFloatingLayout({
 }: {
     roomBounds: Bounds;
     containerFrame: Frame;
-    floatingVideo: { clientId: string; isDraggable: boolean; aspectRatio: number } | null;
+    floatingVideo: CellView | null;
     videoControlsHeight: number;
     margin?: number;
 }) {
     if (!floatingVideo) {
         return null;
     }
-    const bounds = fitToBounds(floatingVideo.aspectRatio, {
+    const bounds = fitToBounds(floatingVideo.aspectRatio || 0, {
         width: FLOATING_VIDEO_SIZE,
         height: FLOATING_VIDEO_SIZE,
     });
@@ -362,19 +390,6 @@ function rebalanceLayoutPaddedAreas({
     };
 }
 
-type VideoContainerLayout = {
-    isPortrait: boolean;
-    presentationGrid: Frame;
-    videoGrid: Frame;
-};
-type GridLayout = {
-    videoCells: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
-    extraHorizontalPadding: number;
-    extraVerticalPadding: number;
-    paddings: Box;
-    gridGap: number;
-};
-
 function rebalanceLayoutInPlace({
     videosContainerLayout,
     gridLayout,
@@ -425,8 +440,8 @@ function rebalanceLayoutInPlace({
 interface CalculateGridLayoutsOptions {
     gridGap: number;
     isConstrained: boolean;
-    presentationVideos: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
-    videos: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
+    presentationVideos: CellView[];
+    videos: CellView[];
     videosContainerLayout: VideoContainerLayout;
     gridLayoutPaddings?: Box;
     presentationGridLayoutPaddings?: Box;
@@ -469,19 +484,19 @@ interface CalculateLayoutOptions {
     breakoutActive?: boolean;
     breakoutGroupedClients?: [];
     breakoutStagePaddings?: Box;
-    floatingVideo?: { clientId: string; isDraggable: boolean; aspectRatio: number } | null;
+    floatingVideo?: CellView | null;
     frame: Frame;
     gridGap: number;
     isConstrained: boolean;
     isMaximizeMode?: boolean;
     isXLMeetingSize?: boolean;
     paddings?: Box;
-    presentationVideos?: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
+    presentationVideos: CellView[];
     rebalanceLayout?: boolean;
     roomBounds: Bounds;
     roomLayoutHasOverlow?: boolean;
     videoControlsHeight?: number;
-    videos?: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
+    videos?: CellView[];
     videoGridGap?: number;
 }
 
@@ -499,7 +514,7 @@ export function calculateLayout({
     videoControlsHeight = 0,
     videos = [],
     videoGridGap = 0,
-}: CalculateLayoutOptions) {
+}: CalculateLayoutOptions): CalculateLayoutResult {
     const hasPresentationContent = !!presentationVideos.length;
     const hasPresentationGrid = presentationVideos.length > 1;
     const supersizedContentAspectRatio =
