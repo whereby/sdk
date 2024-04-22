@@ -55,7 +55,7 @@
     "@storybook/builder-vite": "^8.0.8",
     "@storybook/react-vite": "^8.0.8",
     "@testing-library/react": "^14.0.0",
-    "@types/chrome": "^0.0.210",
+    "@types/chrome": "^0.0.266",
     "@types/node": "^20.11.19",
     "@types/react": "^18.2.57",
     "@types/uuid": "^9.0.7",
