@@ -13,6 +13,7 @@ import {
     doSetDisplayName,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
+    toggleLowDataModeEnabled,
     doStartScreenshare,
     doStopScreenshare,
     appLeft,
@@ -136,6 +137,10 @@ export function useRoomConnection(
         (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
         [store],
     );
+    const toggleLowDataMode = React.useCallback(
+        (enabled?: boolean) => store.dispatch(toggleLowDataModeEnabled({ enabled })),
+        [store],
+    );
     const acceptWaitingParticipant = React.useCallback(
         (participantId: string) => store.dispatch(doAcceptWaitingParticipant({ participantId })),
         [store],
@@ -160,6 +165,7 @@ export function useRoomConnection(
     return {
         state: roomConnectionState,
         actions: {
+            toggleLowDataMode,
             acceptWaitingParticipant,
             knock,
             lockRoom,

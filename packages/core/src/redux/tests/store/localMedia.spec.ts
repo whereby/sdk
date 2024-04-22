@@ -123,6 +123,7 @@ describe("actions", () => {
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream([audioTrack, videoTrack]),
@@ -175,6 +176,7 @@ describe("actions", () => {
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: localStream,
@@ -228,6 +230,7 @@ describe("actions", () => {
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: localStream,
@@ -272,6 +275,42 @@ describe("actions", () => {
         });
     });
 
+    describe("doToggleLowDataMode", () => {
+        describe("when low data mode is enabled", () => {
+            let initialState: Partial<RootState>;
+            beforeEach(() => {
+                initialState = {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: true,
+                        devices: [],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: new MockMediaStream(),
+                        isSwitchingStream: false,
+                    },
+                };
+            });
+
+            it("should call doSwitchLocalStream", () => {
+                jest.spyOn(localMediaSlice, "doSwitchLocalStream");
+                const store = createStore({ initialState });
+                const before = store.getState().localMedia;
+
+                store.dispatch(localMediaSlice.doToggleLowDataMode());
+
+                expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledTimes(1);
+                const after = store.getState().localMedia;
+
+                expect(diff(before, after)).toMatchObject({ isSwitchingStream: true });
+            });
+        });
+    });
+
     describe("doUpdateDeviceList", () => {
         it("should switch to the next video device if current cam is unplugged", async () => {
             const dev1 = {
@@ -299,6 +338,7 @@ describe("actions", () => {
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream(),
@@ -372,6 +412,7 @@ describe("actions", () => {
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream,

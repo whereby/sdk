@@ -10,6 +10,7 @@ import {
     doStopLocalMedia,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
+    toggleLowDataModeEnabled,
 } from "@whereby.com/core";
 
 import { LocalMediaState, UseLocalMediaOptions, UseLocalMediaResult } from "./types";
@@ -59,6 +60,11 @@ export function useLocalMedia(
         (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
         [store],
     );
+
+    const toggleLowDataMode = useCallback(
+        (enabled?: boolean) => store.dispatch(toggleLowDataModeEnabled({ enabled })),
+        [store],
+    );
     return {
         state: localMediaState,
         actions: {
@@ -66,6 +72,7 @@ export function useLocalMedia(
             setMicrophoneDevice,
             toggleCameraEnabled: toggleCamera,
             toggleMicrophoneEnabled: toggleMicrophone,
+            toggleLowDataModeEnabled: toggleLowDataMode,
         },
         store,
     };
