@@ -7,7 +7,7 @@ describe("actions", () => {
         describe("when authorized", () => {
             it("should lock room", () => {
                 const store = createStore({
-                    initialState: { authorization: { roleName: "host" } },
+                    initialState: { authorization: { roomKey: null, roleName: "host" } },
                     withSignalConnection: true,
                 });
 
@@ -20,7 +20,7 @@ describe("actions", () => {
         describe("when not authorized", () => {
             it("should not lock room", () => {
                 const store = createStore({
-                    initialState: { authorization: { roleName: "visitor" } },
+                    initialState: { authorization: { roomKey: null, roleName: "visitor" } },
                     withSignalConnection: true,
                 });
 
@@ -40,7 +40,7 @@ describe("actions", () => {
 
                 const store = createStore({
                     initialState: {
-                        authorization: { roleName: "host" },
+                        authorization: { roomKey: null, roleName: "host" },
                         remoteParticipants: { remoteParticipants: [remoteParticipant] },
                     },
                     withSignalConnection: true,
@@ -61,7 +61,7 @@ describe("actions", () => {
 
                 const store = createStore({
                     initialState: {
-                        authorization: { roleName: "visitor" },
+                        authorization: { roomKey: null, roleName: "visitor" },
                         remoteParticipants: { remoteParticipants: [remoteParticipant] },
                     },
                     withSignalConnection: true,
@@ -83,7 +83,7 @@ describe("actions", () => {
             it("should end the meeting for all remote participants", () => {
                 const store = createStore({
                     initialState: {
-                        authorization: { roleName: "host" },
+                        authorization: { roomKey: null, roleName: "host" },
                         remoteParticipants: {
                             remoteParticipants,
                         },
@@ -104,7 +104,7 @@ describe("actions", () => {
             it("should not end the meeting for any participants", () => {
                 const store = createStore({
                     initialState: {
-                        authorization: { roleName: "visitor" },
+                        authorization: { roomKey: null, roleName: "visitor" },
                         remoteParticipants: { remoteParticipants },
                     },
                     withSignalConnection: true,

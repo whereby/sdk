@@ -6,9 +6,29 @@ import {
     selectIsAuthorizedToRequestAudioEnable,
 } from "../authorization";
 import { signalEvents } from "../signalConnection/actions";
+import { doAppJoin } from "../app";
 
 describe("authorizationSlice", () => {
     describe("reducers", () => {
+        it("setRoomKey", () => {
+            const result = authorizationSlice.reducer(undefined, authorizationSlice.actions.setRoomKey("roomKey"));
+
+            expect(result.roomKey).toEqual("roomKey");
+        });
+
+        it("doAppJoin", () => {
+            const result = authorizationSlice.reducer(
+                undefined,
+                doAppJoin({
+                    roomUrl: "https://some.url/roomName",
+                    roomKey: "roomKey",
+                    displayName: "displayName",
+                    externalId: "externalId",
+                }),
+            );
+            expect(result.roomKey).toEqual("roomKey");
+        });
+
         it("signalEvents.roomJoined", () => {
             const result = authorizationSlice.reducer(
                 undefined,

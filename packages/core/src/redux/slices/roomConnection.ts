@@ -10,7 +10,7 @@ import {
     selectAppExternalId,
     selectAppIsNodeSdk,
 } from "./app";
-import { selectRoomKey, setRoomKey } from "./room";
+import { selectRoomKey, setRoomKey } from "./authorization";
 
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";

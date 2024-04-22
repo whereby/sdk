@@ -6,7 +6,7 @@ describe("actions", () => {
     describe("when authorized", () => {
         it("should request audio enable", () => {
             const store = createStore({
-                initialState: { authorization: { roleName: "host" } },
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
                 withSignalConnection: true,
             });
             const clientId = randomString();
@@ -23,7 +23,7 @@ describe("actions", () => {
     describe("when not authorized", () => {
         it("should not request audio enable", () => {
             const store = createStore({
-                initialState: { authorization: { roleName: "visitor" } },
+                initialState: { authorization: { roomKey: null, roleName: "visitor" } },
                 withSignalConnection: true,
             });
             const clientId = randomString();

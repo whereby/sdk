@@ -1,7 +1,8 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
 import { signalEvents } from "./signalConnection/actions";
+import { doAppJoin } from "./app";
 
 const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
@@ -15,18 +16,34 @@ const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName
  */
 
 export interface AuthorizationState {
+    roomKey: string | null;
     roleName: RoleName;
 }
 
 const initialState: AuthorizationState = {
+    roomKey: null,
     roleName: "none",
 };
 
 export const authorizationSlice = createSlice({
     name: "authorization",
     initialState,
-    reducers: {},
+    reducers: {
+        setRoomKey: (state, action: PayloadAction<string | null>) => {
+            return {
+                ...state,
+                roomKey: action.payload,
+            };
+        },
+    },
     extraReducers: (builder) => {
+        builder.addCase(doAppJoin, (state, action) => {
+            return {
+                ...state,
+                roomKey: action.payload.roomKey,
+            };
+        });
+
         builder.addCase(signalEvents.roomJoined, (state, action) => {
             const client = action.payload?.room?.clients.find((c) => c.id === action.payload?.selfId);
             return {
@@ -38,8 +55,16 @@ export const authorizationSlice = createSlice({
 });
 
 /**
+ * Action creators
+ */
+
+export const { setRoomKey } = authorizationSlice.actions;
+
+/**
  * Selectors
  */
+
+export const selectRoomKey = (state: RootState) => state.authorization.roomKey;
 
 export const selectAuthorizationRoleName = (state: RootState) => state.authorization.roleName;
 

@@ -1,4 +1,4 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAuthorizedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
@@ -9,41 +9,24 @@ import {
 } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRemoteParticipants } from "./remoteParticipants";
-import { doAppJoin } from "./app";
 
 /**
  * Reducer
  */
 
 export interface RoomState {
-    roomKey: string | null;
     isLocked: boolean;
 }
 
 const initialState: RoomState = {
-    roomKey: null,
     isLocked: false,
 };
 
 export const roomSlice = createSlice({
     name: "room",
     initialState,
-    reducers: {
-        setRoomKey: (state, action: PayloadAction<string | null>) => {
-            return {
-                ...state,
-                roomKey: action.payload,
-            };
-        },
-    },
+    reducers: {},
     extraReducers: (builder) => {
-        builder.addCase(doAppJoin, (state, action) => {
-            return {
-                ...state,
-                roomKey: action.payload.roomKey,
-            };
-        });
-
         builder.addCase(signalEvents.roomJoined, (state, action) => {
             const { error, isLocked } = action.payload;
 
@@ -72,8 +55,6 @@ export const roomSlice = createSlice({
  * Action creators
  */
 
-export const { setRoomKey } = roomSlice.actions;
-
 export const doLockRoom = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToLockRoom(state),
     (payload: { locked: boolean }) => (_, getState) => {
@@ -101,16 +82,16 @@ export const doEndMeeting = createAppAuthorizedThunk(
 
         const clientsToKick = selectRemoteParticipants(state).map((c) => c.id);
 
-        const { socket } = selectSignalConnectionRaw(state);
+        if (clientsToKick.length) {
+            const { socket } = selectSignalConnectionRaw(state);
 
-        socket?.emit("kick_client", { clientIds: clientsToKick, reasonId: "end-meeting" });
+            socket?.emit("kick_client", { clientIds: clientsToKick, reasonId: "end-meeting" });
+        }
     },
 );
 
 /**
  * Selectors
  */
-
-export const selectRoomKey = (state: RootState) => state.room.roomKey;
 
 export const selectRoomIsLocked = (state: RootState) => state.room.isLocked;
