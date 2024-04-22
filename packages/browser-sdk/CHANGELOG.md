@@ -1,5 +1,19 @@
 # @whereby.com/browser-sdk
 
+## 2.9.0
+
+### Minor Changes
+
+- 35dbed6: enable toggling low data mode
+- 7fcc0d9: Allow room hosts to kick clients and end the meeting
+
+### Patch Changes
+
+- Updated dependencies [35dbed6]
+- Updated dependencies [b31e2f2]
+- Updated dependencies [7fcc0d9]
+  - @whereby.com/core@0.13.0
+
 ## 2.8.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.13.0
+
+### Minor Changes
+
+- 35dbed6: enable toggling low data mode
+- 7fcc0d9: Allow room hosts to kick clients and end the meeting
+
+### Patch Changes
+
+- b31e2f2: refactor doUpdateDeviceList
+
 ## 0.12.1
 
 ### Patch Changes
