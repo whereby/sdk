@@ -20,6 +20,8 @@ import {
     doAppJoin,
     doKnockRoom,
     doLockRoom,
+    doKickParticipant,
+    doEndMeeting,
     doRtcReportStreamResolution,
 } from "@whereby.com/core";
 
@@ -161,6 +163,11 @@ export function useRoomConnection(
         },
         [store],
     );
+    const kickParticipant = React.useCallback(
+        (clientId: string) => store.dispatch(doKickParticipant({ clientId })),
+        [store],
+    );
+    const endMeeting = React.useCallback(() => store.dispatch(doEndMeeting()), [store]);
 
     return {
         state: roomConnectionState,
@@ -170,6 +177,8 @@ export function useRoomConnection(
             knock,
             lockRoom,
             muteParticipants,
+            kickParticipant,
+            endMeeting,
             rejectWaitingParticipant,
             sendChatMessage,
             setDisplayName,

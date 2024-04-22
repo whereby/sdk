@@ -37,7 +37,10 @@ export default function VideoExperience({
         knock,
         sendChatMessage,
         setDisplayName,
+        lockRoom,
         muteParticipants,
+        kickParticipant,
+        endMeeting,
         toggleCamera,
         toggleMicrophone,
         toggleLowDataMode,
@@ -45,7 +48,6 @@ export default function VideoExperience({
         rejectWaitingParticipant,
         startScreenshare,
         stopScreenshare,
-        lockRoom,
     } = actions;
     const { VideoView } = components;
 
@@ -101,6 +103,12 @@ export default function VideoExperience({
                             >
                                 Unlock room
                             </button>
+                            <button
+                                onClick={() => endMeeting()}
+                                className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
+                            >
+                                End meeting
+                            </button>
                         </div>
                     )}
                     <div className="container">
@@ -155,6 +163,18 @@ export default function VideoExperience({
                                                         }
                                                     >
                                                         Mute
+                                                    </button>{" "}
+                                                    <button
+                                                        onClick={() => {
+                                                            kickParticipant(participant.id);
+                                                        }}
+                                                        className={
+                                                            localParticipant?.roleName !== "host"
+                                                                ? "hostControlActionDisallowed"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        Kick
                                                     </button>
                                                 </>
                                             ) : null}

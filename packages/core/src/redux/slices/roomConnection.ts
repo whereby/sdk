@@ -10,7 +10,7 @@ import {
     selectAppExternalId,
     selectAppIsNodeSdk,
 } from "./app";
-import { selectAuthorizationRoomKey, setRoomKey } from "./authorization";
+import { selectRoomKey, setRoomKey } from "./authorization";
 
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";
@@ -133,7 +133,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const roomName = selectAppRoomName(state);
-    const roomKey = selectAuthorizationRoomKey(state);
+    const roomKey = selectRoomKey(state);
     const displayName = selectAppDisplayName(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
@@ -164,7 +164,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const roomName = selectAppRoomName(state);
-    const roomKey = selectAuthorizationRoomKey(state);
+    const roomKey = selectRoomKey(state);
     const displayName = selectAppDisplayName(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);

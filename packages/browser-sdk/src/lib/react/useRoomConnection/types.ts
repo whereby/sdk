@@ -73,6 +73,8 @@ export interface RoomConnectionActions {
     knock(): void;
     lockRoom(locked: boolean): void;
     muteParticipants(clientIds: string[]): void;
+    kickParticipant(clientId: string): void;
+    endMeeting(): void;
     rejectWaitingParticipant(participantId: string): void;
     sendChatMessage(text: string): void;
     setDisplayName(displayName: string): void;
