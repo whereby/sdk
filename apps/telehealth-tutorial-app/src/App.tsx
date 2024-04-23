@@ -1,6 +1,6 @@
 import * as React from "react";
 import "./App.css";
-import { useRoomConnection } from "@whereby.com/browser-sdk/react";
+import { useRoomConnection, VideoView } from "@whereby.com/browser-sdk/react";
 import IconButton from "./IconButton";
 import ChatInput from "./ChatInput";
 
@@ -20,9 +20,8 @@ function App() {
         },
     });
 
-    const { state, components, actions } = roomConnection;
+    const { state, actions } = roomConnection;
     const { localParticipant, remoteParticipants, screenshares, chatMessages } = state;
-    const { VideoView } = components;
     const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, sendChatMessage } = actions;
 
     function getDisplayName(id: string) {

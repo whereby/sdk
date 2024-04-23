@@ -1,5 +1,5 @@
 import * as React from "react";
-import { debounce } from "@whereby.com/core";
+import { debounce, doRtcReportStreamResolution } from "@whereby.com/core";
 import { createSelector } from "@reduxjs/toolkit";
 import { WherebyContext } from "./Provider";
 import { observeStore, selectCurrentSpeakerDeviceId } from "@whereby.com/core";
@@ -84,10 +84,19 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
                 debounce(
                     () => {
                         if (videoEl.current && stream?.id) {
+                            const width = videoEl.current.clientWidth;
+                            const height = videoEl.current.clientHeight;
+                            store.dispatch(
+                                doRtcReportStreamResolution({
+                                    streamId: stream.id,
+                                    width,
+                                    height,
+                                }),
+                            );
                             if (onVideoResize) {
                                 onVideoResize({
-                                    width: videoEl.current.clientWidth,
-                                    height: videoEl.current.clientHeight,
+                                    width,
+                                    height,
                                     stream,
                                 });
                             }
