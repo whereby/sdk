@@ -1,5 +1,5 @@
 export { Provider as WherebyProvider } from "./Provider";
-export { default as VideoView } from "./VideoView";
+export { VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { useLocalMedia } from "./useLocalMedia";
 export { Grid as VideoGrid } from "./Grid";

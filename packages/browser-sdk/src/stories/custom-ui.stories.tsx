@@ -223,7 +223,7 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
         return <p>Set room url on the Controls panel</p>;
     }
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+    useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
 
     return (
         <div style={{ height: "100vh" }}>
@@ -237,7 +237,7 @@ export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displa
         return <p>Set room url on the Controls panel</p>;
     }
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+    useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
 
     return (
         <div style={{ height: "100vh" }}>

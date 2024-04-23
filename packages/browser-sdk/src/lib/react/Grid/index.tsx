@@ -3,7 +3,7 @@ import type {
     LocalParticipantState as LocalParticipant,
     RemoteParticipantState as RemoteParticipant,
 } from "../useRoomConnection/types";
-import VideoView from "../VideoView";
+import { VideoView, WherebyVideoElement } from "../VideoView";
 import {
     doRtcReportStreamResolution,
     observeStore,
@@ -30,13 +30,17 @@ function GridVideoCellView({
     onSetAspectRatio: ({ aspectRatio }: { aspectRatio: number }) => void;
     onResize?: ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => void;
 }) {
-    const handleAspectRatioChange = React.useCallback(
-        ({ ar }: { ar: number }) => {
-            if (ar !== cell.aspectRatio) {
+    const videoEl = React.useRef<WherebyVideoElement>(null);
+
+    const handleResize = React.useCallback(
+        ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => {
+            onResize?.({ width, height, stream });
+            const ar = videoEl.current && videoEl.current.captureAspectRatio();
+            if (ar && ar !== cell.aspectRatio) {
                 onSetAspectRatio({ aspectRatio: ar });
             }
         },
-        [cell.aspectRatio, onSetAspectRatio],
+        [onResize],
     );
 
     return (
@@ -53,12 +57,7 @@ function GridVideoCellView({
             {render ? (
                 render()
             ) : participant.stream ? (
-                <VideoView
-                    stream={participant.stream}
-                    onSetAspectRatio={({ aspectRatio }) => handleAspectRatioChange({ ar: aspectRatio })}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onResize={onResize as any}
-                />
+                <VideoView ref={videoEl} stream={participant.stream} onVideoResize={handleResize} />
             ) : null}
         </div>
     );

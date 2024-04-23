@@ -23,7 +23,7 @@ import {
     doRtcReportStreamResolution,
 } from "@whereby.com/core";
 
-import VideoView from "../VideoView";
+import { VideoView } from "../VideoView";
 import { selectRoomConnectionState } from "./selector";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
