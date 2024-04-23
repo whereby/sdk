@@ -226,7 +226,7 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
     useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
 
     return (
-        <div style={{ height: "100vh" }}>
+        <div style={{ height: "500px", width: "100%" }}>
             <VideoGrid videoGridGap={10} />
         </div>
     );

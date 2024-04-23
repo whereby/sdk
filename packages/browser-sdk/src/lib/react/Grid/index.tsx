@@ -2,64 +2,78 @@ import * as React from "react";
 
 import { VideoView, WherebyVideoElement } from "../VideoView";
 import {
-    observeStore,
     setAspectRatio,
     debounce,
     setContainerBounds,
     Bounds,
     Origin,
-    ResultCellView,
     CellView,
+    observeStore,
+    makeBounds,
+    makeOrigin,
 } from "@whereby.com/core";
-import { selectVideoGridState, VideoGridState } from "./selector";
+import { VideoGridState, selectVideoGridState } from "./selector";
 import { WherebyContext } from "../Provider";
+import { VideoStageLayout } from "./VideoStageLayout";
 
-function GridVideoCellView({
-    cell,
-    cellView,
-    render,
-    onSetAspectRatio,
-}: {
-    cell: ResultCellView;
+interface RenderCellViewProps {
     cellView: CellView;
+    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
+}
+
+function renderCellView({ cellView, onSetClientAspectRatio }: RenderCellViewProps) {
+    switch (cellView.type) {
+        case "video":
+            return (
+                <GridVideoCellView
+                    aspectRatio={cellView.aspectRatio}
+                    participant={cellView.client}
+                    isPlaceholder={cellView.isPlaceholder}
+                    isSubgrid={cellView.isSubgrid}
+                    key={cellView.clientId}
+                    onSetClientAspectRatio={onSetClientAspectRatio}
+                />
+            );
+    }
+}
+
+interface GridVideoCellViewProps {
+    aspectRatio?: number;
+    participant: CellView["client"];
+    isPlaceholder?: boolean;
+    isSubgrid?: boolean;
     render?: () => React.ReactNode;
-    onSetAspectRatio: ({ aspectRatio }: { aspectRatio: number }) => void;
-}) {
+    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
+}
+
+function GridVideoCellView({ aspectRatio, participant, render, onSetClientAspectRatio }: GridVideoCellViewProps) {
     const videoEl = React.useRef<WherebyVideoElement>(null);
 
     const handleResize = React.useCallback(() => {
         const ar = videoEl.current && videoEl.current.captureAspectRatio();
 
-        if (ar && ar !== cell.aspectRatio) {
-            onSetAspectRatio({ aspectRatio: ar });
+        if (ar && ar !== aspectRatio && participant?.id) {
+            onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
         }
     }, []);
 
     return (
-        <div
-            style={{
-                position: "absolute",
-                width: cell.bounds.width,
-                height: cell.bounds.height,
-                boxSizing: "border-box",
-                top: cell.origin.top,
-                left: cell.origin.left,
-            }}
-        >
+        <div>
             {render ? (
                 render()
-            ) : cellView.client?.stream ? (
-                <VideoView ref={videoEl} stream={cellView.client.stream} onVideoResize={handleResize} />
+            ) : participant?.stream ? (
+                <VideoView
+                    ref={videoEl}
+                    stream={participant.stream}
+                    onVideoResize={handleResize}
+                    style={{
+                        borderRadius: "8px",
+                    }}
+                />
             ) : null}
         </div>
     );
 }
-
-const initialState: VideoGridState = {
-    cellViewsVideoGrid: [],
-    cellViewsInPresentationGrid: [],
-    videoStage: undefined,
-};
 
 interface GridProps {
     renderParticipant?: ({
@@ -72,8 +86,16 @@ interface GridProps {
     videoGridGap?: number;
 }
 
+const initialState: VideoGridState = {
+    videoStage: null,
+    cellViewsVideoGrid: [],
+    cellViewsInPresentationGrid: [],
+    containerFrame: { bounds: makeBounds(), origin: makeOrigin() },
+};
+
 function Grid({ renderParticipant }: GridProps) {
     const store = React.useContext(WherebyContext);
+    const gridRef = React.useRef<HTMLDivElement>(null);
 
     if (!store) {
         throw new Error("VideoView must be used within a WherebyProvider");
@@ -90,8 +112,30 @@ function Grid({ renderParticipant }: GridProps) {
     }, [store]);
 
     const { cellViewsVideoGrid, cellViewsInPresentationGrid } = videoGridState;
-    const allCellViews = [...cellViewsVideoGrid, ...cellViewsInPresentationGrid].filter(Boolean);
-    const gridRef = React.useRef<HTMLDivElement>(null);
+
+    const presentationGridContent = React.useMemo(
+        () =>
+            cellViewsInPresentationGrid.map((cellView) =>
+                renderCellView({
+                    cellView,
+                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
+                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                }),
+            ),
+        [cellViewsInPresentationGrid],
+    );
+
+    const gridContent = React.useMemo(
+        () =>
+            cellViewsVideoGrid.map((cellView) =>
+                renderCellView({
+                    cellView,
+                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
+                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                }),
+            ),
+        [cellViewsVideoGrid],
+    );
 
     // Calculate container frame on resize
     React.useEffect(() => {
@@ -119,6 +163,10 @@ function Grid({ renderParticipant }: GridProps) {
         };
     }, []);
 
+    React.useEffect(() => {
+        console.log(videoGridState.videoStage);
+    }, [videoGridState.videoStage]);
+
     return (
         <div
             ref={gridRef}
@@ -128,27 +176,12 @@ function Grid({ renderParticipant }: GridProps) {
                 position: "relative",
             }}
         >
-            {allCellViews.map((cellView, i) => {
-                const cell = videoGridState.videoStage?.videoGrid.cells[i];
-
-                if (!cell || !cellView || !cellView.client?.stream || !cell.clientId) return null;
-
-                return (
-                    <GridVideoCellView
-                        key={cell.clientId}
-                        cell={cell}
-                        cellView={cellView}
-                        render={
-                            renderParticipant
-                                ? () => renderParticipant({ cell, participant: cellView.client })
-                                : undefined
-                        }
-                        onSetAspectRatio={({ aspectRatio }) => {
-                            store.dispatch(setAspectRatio({ clientId: cell.clientId, aspectRatio }));
-                        }}
-                    />
-                );
-            })}
+            <VideoStageLayout
+                layoutVideoStage={videoGridState.videoStage!}
+                presentationGridContent={presentationGridContent}
+                gridContent={gridContent}
+                frame={videoGridState.containerFrame}
+            />
         </div>
     );
 }

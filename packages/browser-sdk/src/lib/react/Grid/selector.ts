@@ -6,6 +6,8 @@ import {
     CalculateLayoutResult,
     selectLayoutVideoStage,
     selectCellViewsPresentationGrid,
+    Frame,
+    selectLayoutContainerFrame,
 } from "@whereby.com/core";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
@@ -13,18 +15,21 @@ export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "stre
 export interface VideoGridState {
     cellViewsVideoGrid: CellView[];
     cellViewsInPresentationGrid: CellView[];
-    videoStage: CalculateLayoutResult | undefined;
+    videoStage: CalculateLayoutResult | null;
+    containerFrame: Frame;
 }
 
 export const selectVideoGridState = createSelector(
     selectCellViewsVideoGrid,
     selectCellViewsPresentationGrid,
     selectLayoutVideoStage,
-    (cellViewsVideoGrid, cellViewsInPresentationGrid, videoStage) => {
+    selectLayoutContainerFrame,
+    (cellViewsVideoGrid, cellViewsInPresentationGrid, videoStage, containerFrame) => {
         const state: VideoGridState = {
             cellViewsVideoGrid,
             cellViewsInPresentationGrid,
             videoStage,
+            containerFrame,
         };
 
         return state;

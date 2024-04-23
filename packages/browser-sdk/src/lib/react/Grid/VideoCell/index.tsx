@@ -48,16 +48,16 @@ function VideoCell({
     };
 
     return (
-        <div className={className} style={style}>
-            <div
-                style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    ...contentStyle,
-                }}
-                {...rest}
-            >
+        <div
+            className={className}
+            style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                ...style,
+            }}
+        >
+            <div style={contentStyle} {...rest}>
                 {React.cloneElement(children, { contentWidth, contentHeight, withRoundedCorners, withShadow })}
             </div>
         </div>

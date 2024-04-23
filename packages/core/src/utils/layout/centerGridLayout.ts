@@ -1,6 +1,6 @@
 import { getGridSizeForCount } from "./gridUtils";
 
-import { makeBox } from "./";
+import { makeBox } from "./helpers";
 import { type Box } from "./types";
 
 const WIDE_AR = 16 / 9;

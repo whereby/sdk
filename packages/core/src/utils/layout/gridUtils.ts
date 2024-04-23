@@ -1,4 +1,4 @@
-import { makeFrame } from "./";
+import { makeFrame } from "./helpers";
 import { type Bounds, type Frame } from "./types";
 
 export function fitToBounds(aspectRatio: number, containerSize: Bounds) {

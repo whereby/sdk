@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { selectRemoteClientViews } from "./remoteParticipants";
 import { makeVideoCellView } from "../../utils/layout/cellView";
 import { ClientView, type Bounds, type Frame } from "../../utils/layout/types";
-import { makeFrame } from "../../utils/layout";
+import { makeFrame } from "../../utils/layout/helpers";
 import { calculateLayout } from "../../utils/layout/stageLayout";
 import { selectLocalParticipantView } from "./localParticipant";
 
@@ -99,6 +99,13 @@ export const selectClientViewsOnStage = createSelector(selectAllClientViews, (al
 export const selectClientViewsInPresentationGrid = createSelector(selectAllClientViews, (allClientViews) => {
     return allClientViews.filter((client) => client.isPresentation);
 });
+export const selectClientViewsInGrid = createSelector(
+    selectClientViewsInPresentationGrid,
+    selectClientViewsOnStage,
+    (clientViewsInPresentationGrid, clientViewsOnStage) => {
+        return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));
+    },
+);
 export const selectCellViewsPresentationGrid = createSelector(
     selectClientViewsInPresentationGrid,
     selectLayoutClientAspectRatios,
@@ -115,7 +122,7 @@ export const selectCellViewsPresentationGrid = createSelector(
 );
 export const selectCellViewsVideoGrid = createSelector(
     selectLayoutClientAspectRatios,
-    selectAllClientViews,
+    selectClientViewsInGrid,
     (clientAspectRatios, clientViews) => [
         ...clientViews.map((client) => {
             return makeVideoCellView({
@@ -134,7 +141,7 @@ export const selectLayoutVideoStage = createSelector(
     (cellViews, cellViewsInPresentationGrid, containerFrame) => {
         return calculateLayout({
             frame: containerFrame,
-            gridGap: 0,
+            gridGap: 8,
             isConstrained: false,
             roomBounds: containerFrame.bounds,
             videos: cellViews,

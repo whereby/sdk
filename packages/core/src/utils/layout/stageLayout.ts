@@ -2,7 +2,7 @@ import { fitToBounds } from "./gridUtils";
 
 import * as centerGrid from "./centerGridLayout";
 
-import { makeOrigin, makeBounds, makeFrame, makeBox } from "./";
+import { makeOrigin, makeBounds, makeFrame, makeBox } from "./helpers";
 import {
     type Box,
     type Frame,

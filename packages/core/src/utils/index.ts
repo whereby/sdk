@@ -5,3 +5,5 @@ export { default as parseRoomUrlAndSubdomain } from "./roomUrl";
 export { default as parseUnverifiedRoomKeyData } from "./roomKey";
 export * from "./layout/types";
 export * from "./layout/gridUtils";
+export * from "./layout/cellView";
+export * from "./layout/helpers";
