@@ -1,13 +1,14 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import { LocalParticipant } from "../../RoomParticipant";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { doAppJoin } from "./app";
-import { toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
+import { selectLocalMediaStream, toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
+import { ClientView } from "../../utils";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
@@ -121,6 +122,23 @@ export const selectLocalParticipantRaw = (state: RootState) => state.localPartic
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
 export const selectLocalParticipantClientClaim = (state: RootState) => state.localParticipant.clientClaim;
 export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
+export const selectLocalParticipantView = createSelector(
+    selectLocalParticipantRaw,
+    selectLocalMediaStream,
+    (participant, localStream) => {
+        const clientView: ClientView = {
+            id: participant.id,
+            clientId: participant.id,
+            displayName: participant.displayName,
+            stream: localStream,
+            isLocalClient: true,
+            isAudioEnabled: participant.isAudioEnabled,
+            isVideoEnabled: participant.isVideoEnabled,
+        };
+
+        return clientView;
+    },
+);
 
 startAppListening({
     actionCreator: toggleCameraEnabled,

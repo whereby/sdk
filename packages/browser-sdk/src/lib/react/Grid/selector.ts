@@ -1,36 +1,29 @@
 import { createSelector } from "@reduxjs/toolkit";
 import {
     selectCellViewsVideoGrid,
-    selectRemoteParticipants,
-    selectLocalParticipantRaw,
-    selectLocalMediaStream,
-    LocalParticipantState,
     RemoteParticipant,
     CellView,
     CalculateLayoutResult,
     selectLayoutVideoStage,
+    selectCellViewsPresentationGrid,
 } from "@whereby.com/core";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 
 export interface VideoGridState {
     cellViewsVideoGrid: CellView[];
-    localParticipant?: LocalParticipantState;
-    remoteParticipants: RemoteParticipantState[];
+    cellViewsInPresentationGrid: CellView[];
     videoStage: CalculateLayoutResult | undefined;
 }
 
 export const selectVideoGridState = createSelector(
     selectCellViewsVideoGrid,
-    selectLocalParticipantRaw,
-    selectLocalMediaStream,
-    selectRemoteParticipants,
+    selectCellViewsPresentationGrid,
     selectLayoutVideoStage,
-    (cellViewsVideoGrid, localParticipant, localMediaStream, remoteParticipants, videoStage) => {
+    (cellViewsVideoGrid, cellViewsInPresentationGrid, videoStage) => {
         const state: VideoGridState = {
             cellViewsVideoGrid,
-            localParticipant: { ...localParticipant, stream: localMediaStream },
-            remoteParticipants,
+            cellViewsInPresentationGrid,
             videoStage,
         };
 

@@ -9,6 +9,8 @@ import { selectLocalScreenshareStream } from "./localScreenshare";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
+import { selectLocalParticipantRaw } from "./localParticipant";
+import { ClientView } from "../../utils";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -29,6 +31,18 @@ function createRemoteParticipant(client: SignalClient, newJoiner = false): Remot
         newJoiner,
     };
 }
+
+function isStreamerClient(client: RemoteParticipant) {
+    return client.roleName === "streamer";
+}
+
+function isRecorderClient(client: RemoteParticipant) {
+    return client.roleName === "recorder";
+}
+
+// function isCaptionerClient(client: SignalClient) {
+//     return client.roleName === "captioner" || client.role?.roleName === "captioner";
+// }
 
 function findParticipant(state: RemoteParticipantState, participantId: string) {
     const index = state.remoteParticipants.findIndex((c) => c.id === participantId);
@@ -318,5 +332,61 @@ export const selectScreenshares = createSelector(
         }
 
         return screenshares;
+    },
+);
+export const selectRemoteClientViews = createSelector(
+    selectLocalScreenshareStream,
+    selectLocalParticipantRaw,
+    selectRemoteParticipants,
+    (localScreenshareStream, localParticipant, remoteParticipants) => {
+        const views: ClientView[] = [];
+
+        if (localScreenshareStream) {
+            const isScreenshareAudioEnabled = !!localScreenshareStream.getAudioTracks().length;
+
+            views.push({
+                clientId: localParticipant.id,
+                displayName: "Your screenshare",
+                id: "local-screenshare",
+                isAudioEnabled: isScreenshareAudioEnabled,
+                isLocalClient: true,
+                isPresentation: true,
+                isVideoEnabled: true,
+                stream: localScreenshareStream,
+            });
+        }
+        for (const c of remoteParticipants) {
+            if (isStreamerClient(c) || isRecorderClient(c)) {
+                continue;
+            }
+            const { presentationStream, ...clientView } = c;
+            const displayName = c.displayName || "Guest";
+            const isPresentationActive = presentationStream && presentationStream.active;
+            const presentationId = "pres-" + c.id;
+            const isStreamActive = c.stream && c.stream.active;
+
+            const isVideoEnabled = c.isVideoEnabled;
+            views.push({
+                ...clientView,
+                clientId: c.id,
+                displayName,
+                hasActivePresentation: !!isPresentationActive,
+                ...(c.isVideoEnabled ? { isVideoEnabled } : {}),
+            });
+            if (isPresentationActive) {
+                views.push({
+                    ...clientView,
+                    clientId: c.id,
+                    stream: c.presentationStream,
+                    displayName: `Screenshare (${displayName})`,
+                    id: presentationId,
+                    isPresentation: true,
+                    isVideoEnabled: true,
+                    // Don't show as recording unless this is our only view
+                    ...(isStreamActive && { isRecording: null }),
+                });
+            }
+        }
+        return views;
     },
 );

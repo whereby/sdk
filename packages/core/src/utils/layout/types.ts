@@ -20,11 +20,23 @@ export type Frame = {
     bounds: Bounds;
 };
 
+export type ClientView = {
+    id: string;
+    clientId: string;
+    displayName: string;
+    hasActivePresentation?: boolean;
+    stream?: MediaStream | null;
+    isLocalClient?: boolean;
+    isPresentation?: boolean;
+    isVideoEnabled?: boolean;
+    isAudioEnabled?: boolean;
+};
+
 export type CellView = {
     aspectRatio?: number;
     avatarSize?: number;
     cellPaddings?: number;
-    client?: { id: string };
+    client?: ClientView;
     clientId: string;
     isDraggable?: boolean;
     isPlaceholder?: boolean;
