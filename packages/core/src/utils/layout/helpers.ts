@@ -1,5 +1,5 @@
 import layoutConstants from "./layoutConstants";
-import { Bounds, Box, Frame, Origin } from "./types";
+import { type Bounds, type Box, type Frame, type Origin } from "./types";
 
 const { DESKTOP_BREAKPOINT, TABLET_BREAKPOINT, PHONE_BREAKPOINT } = layoutConstants;
 

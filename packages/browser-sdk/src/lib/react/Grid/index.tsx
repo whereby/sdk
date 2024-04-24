@@ -90,9 +90,11 @@ const initialState: VideoGridState = {
     videoStage: null,
     cellViewsVideoGrid: [],
     cellViewsInPresentationGrid: [],
+    cellViewsInSubgrid: [],
     containerFrame: { bounds: makeBounds(), origin: makeOrigin() },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Grid({ renderParticipant }: GridProps) {
     const store = React.useContext(WherebyContext);
     const gridRef = React.useRef<HTMLDivElement>(null);
@@ -111,7 +113,7 @@ function Grid({ renderParticipant }: GridProps) {
         };
     }, [store]);
 
-    const { cellViewsVideoGrid, cellViewsInPresentationGrid } = videoGridState;
+    const { cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid } = videoGridState;
 
     const presentationGridContent = React.useMemo(
         () =>
@@ -135,6 +137,18 @@ function Grid({ renderParticipant }: GridProps) {
                 }),
             ),
         [cellViewsVideoGrid],
+    );
+
+    const subgridContent = React.useMemo(
+        () =>
+            cellViewsInSubgrid.map((cellView) =>
+                renderCellView({
+                    cellView,
+                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
+                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                }),
+            ),
+        [cellViewsInSubgrid],
     );
 
     // Calculate container frame on resize
@@ -163,10 +177,6 @@ function Grid({ renderParticipant }: GridProps) {
         };
     }, []);
 
-    React.useEffect(() => {
-        console.log(videoGridState.videoStage);
-    }, [videoGridState.videoStage]);
-
     return (
         <div
             ref={gridRef}
@@ -180,7 +190,7 @@ function Grid({ renderParticipant }: GridProps) {
                 layoutVideoStage={videoGridState.videoStage!}
                 presentationGridContent={presentationGridContent}
                 gridContent={gridContent}
-                frame={videoGridState.containerFrame}
+                subgridContent={subgridContent}
             />
         </div>
     );

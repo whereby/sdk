@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { VideoCell } from "../VideoCell";
 
-import { Bounds, Box, CalculateLayoutResult, Frame, Origin, hasBounds, makeBox, makeFrame } from "@whereby.com/core";
+import { Bounds, Box, Frame, Origin, StageLayout, hasBounds, makeFrame } from "@whereby.com/core";
 
 function generateStylesFromFrame({ origin, bounds }: { origin: Origin; bounds: Bounds }) {
     return {
@@ -50,10 +50,58 @@ function renderVideoCell({
     );
 }
 
+interface RenderSubgridVideoCellsProps {
+    content: (React.JSX.Element | undefined)[];
+    stageLayout: StageLayout;
+    withRoundedCorners: boolean;
+    withShadow: boolean;
+}
+
+function renderSubgridVideoCells({
+    content,
+    stageLayout,
+    withRoundedCorners,
+    withShadow,
+}: RenderSubgridVideoCellsProps) {
+    const cells = stageLayout.subgrid.cells;
+    return content.map((child, index) => {
+        const cell = cells[index];
+        const style = { height: Math.round(cell.bounds.height), width: Math.round(cell.bounds.width), transform: "" };
+
+        const origin = {
+            top: stageLayout.subgrid.origin.top + cell.origin.top,
+            left: stageLayout.subgrid.origin.left + cell.origin.left,
+        };
+        style.transform = `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`;
+        const clientId = child?.props.participant.id;
+        const leftPaddings = cell.paddings?.left || 0;
+        const rightPaddings = cell.paddings?.right || 0;
+        const childWithProps = React.cloneElement(child!, {
+            avatarSize: cell.bounds.width - leftPaddings - rightPaddings,
+            canZoom: false,
+            cellPaddings: cell.paddings,
+            isSmallCell: cell.isSmallCell,
+            isZoomedByDefault: false,
+            key: child?.props.participant.id,
+            style,
+        });
+
+        return renderVideoCell({
+            cell,
+            child: childWithProps,
+            // className: styles.gridVideoCell,
+            clientId,
+            style,
+            withRoundedCorners,
+            withShadow,
+        });
+    });
+}
+
 interface RenderVideoCellsProps {
     content: (React.JSX.Element | undefined)[];
     isConstrained: boolean;
-    stageLayout: CalculateLayoutResult;
+    stageLayout: StageLayout;
     withRoundedCorners: boolean;
     withShadow: boolean;
 }
@@ -65,8 +113,11 @@ function renderPresentationGridVideoCells({
     withRoundedCorners,
     withShadow,
 }: RenderVideoCellsProps) {
-    const cells = stageLayout.presentationGrid.cells;
+    const cells = stageLayout.presentationGrid?.cells || [];
     return content.map((child, index) => {
+        if (!stageLayout.presentationGrid) {
+            return null;
+        }
         const cell = cells[index];
         const origin = {
             top: stageLayout.presentationGrid.origin.top + stageLayout.presentationGrid.paddings.top + cell.origin.top,
@@ -106,8 +157,11 @@ function renderGridVideoCells({
     withRoundedCorners,
     withShadow,
 }: RenderVideoCellsProps) {
-    const cells = stageLayout.videoGrid.cells;
+    const cells = stageLayout.videoGrid?.cells || [];
     const gridVideoCells = content.map((child, index) => {
+        if (!stageLayout.videoGrid) {
+            return null;
+        }
         const cell = cells[index];
         const origin = {
             top: stageLayout.videoGrid.origin.top + stageLayout.videoGrid.paddings.top + cell.origin.top,
@@ -144,35 +198,26 @@ interface VideoStageLayoutProps {
     debug?: boolean;
     featureRoundedCornersOff?: boolean;
     floatingContent?: React.ReactElement;
-    frame?: Frame;
     gridContent?: (React.JSX.Element | undefined)[];
     hiddenGridContent?: React.ReactElement[];
     hiddenPresentationGridContent?: React.ReactElement[];
     isConstrained?: boolean;
     layoutOverflowBackdropFrame?: Frame;
-    layoutVideoStage: CalculateLayoutResult;
+    layoutVideoStage: StageLayout;
     presentationGridContent?: (React.JSX.Element | undefined)[];
-    subgridContent?: React.ReactElement[];
+    subgridContent?: (React.JSX.Element | undefined)[];
 }
 
 function VideoStageLayout({
-    containerPaddings = makeBox(),
     debug = false,
     featureRoundedCornersOff = false,
-    floatingContent,
-    frame,
     gridContent = [],
-    hiddenGridContent = [],
-    hiddenPresentationGridContent = [],
     isConstrained = false,
     layoutOverflowBackdropFrame = makeFrame(),
     layoutVideoStage: stageLayout,
     presentationGridContent = [],
     subgridContent = [],
 }: VideoStageLayoutProps) {
-    const hasSupersizedContent = !!presentationGridContent.length;
-    const hasVideoGridContent = !!gridContent.length;
-    // const noneOnStage = !hasSupersizedContent && !hasVideoGridContent;
     const withRoundedCorners = !featureRoundedCornersOff && !isConstrained;
 
     // Build grid cells:
@@ -190,10 +235,8 @@ function VideoStageLayout({
             }),
         );
     }
-    // if (hiddenGridContent.length) {
-    //     cells.push(...renderHiddenVideoCells({ content: hiddenGridContent }));
-    // }
-    // Supersized:
+
+    // Presentation grid:
     if (presentationGridContent.length) {
         cells.push(
             ...renderPresentationGridVideoCells({
@@ -202,6 +245,18 @@ function VideoStageLayout({
                 stageLayout,
                 withRoundedCorners,
                 withShadow: !isConstrained,
+            }),
+        );
+    }
+
+    // Subgrid:
+    if (subgridContent.length) {
+        cells.push(
+            ...renderSubgridVideoCells({
+                content: subgridContent,
+                stageLayout,
+                withRoundedCorners: !featureRoundedCornersOff, // round even if constrained (if feature allows)
+                withShadow: true,
             }),
         );
     }
@@ -221,8 +276,8 @@ function VideoStageLayout({
             {cells}
             {debug && (
                 <>
-                    <div style={generateStylesFromFrame(stageLayout.presentationGrid)} />
-                    <div style={generateStylesFromFrame(stageLayout.videoGrid)} />
+                    {/* <div style={generateStylesFromFrame(stageLayout.presentationGrid)} /> */}
+                    {/* <div style={generateStylesFromFrame(stageLayout.videoGrid)} /> */}
                     {/* <div style={generateStylesFromFrame(stageLayout.subgrid)} /> */}
                 </>
             )}

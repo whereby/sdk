@@ -1,8 +1,9 @@
 import { fitToBounds } from "./gridUtils";
 
 import * as centerGrid from "./centerGridLayout";
+import * as subgrid from "./subgridLayout";
 
-import { makeOrigin, makeBounds, makeFrame, makeBox } from "./helpers";
+import { makeOrigin, makeBounds, makeFrame, makeBox, insetBounds } from "./helpers";
 import {
     type Box,
     type Frame,
@@ -11,17 +12,28 @@ import {
     type CellView,
     type VideoContainerLayout,
     type GridLayout,
-    type CalculateLayoutResult,
-    ResultCellView,
+    type StageLayout,
 } from "./types";
 import layoutConstants from "./layoutConstants";
 
-const { BOTTOM_TOOLBAR_HEIGHT, VIDEO_CONTROLS_MIN_WIDTH, TABLET_BREAKPOINT } = layoutConstants;
+const { BOTTOM_TOOLBAR_HEIGHT, VIDEO_CONTROLS_MIN_WIDTH, TABLET_BREAKPOINT, SUBGRID_EMPTY_STAGE_MAX_WIDTH } =
+    layoutConstants;
 
 const MIN_GRID_HEIGHT = 200;
 const MIN_GRID_WIDTH = 300;
 const FLOATING_VIDEO_SIZE = 200;
+const OVERFLOW_ROOM_SUBGRID_TOP_PADDING = 20;
 const CONSTRAINED_OVERFLOW_TRIGGER = 12;
+
+export const SUBGRID_CELL_PADDING_BOX = makeBox({ top: 4, bottom: 4 + 20 + 4, left: 8, right: 8 });
+
+function getSubgridSizeOptions({ hasOverflow, hasStage }: { hasOverflow: boolean; hasStage: boolean }) {
+    // If we have an overflow we don't have to make the grid responsive
+    if (hasOverflow && hasStage) {
+        return [80];
+    }
+    return [80, 60]; // note: must be in descending order
+}
 
 function getMinGridBounds({ cellCount }: { cellCount: number }): Bounds {
     // Reduce min grid dimensions if we have 6 videos or less
@@ -119,47 +131,316 @@ export function fitSupersizedContent({
     };
 }
 
+function findBestSubgridLayout({
+    containerBounds,
+    isPortrait,
+    cellCount,
+    cellSizeOptions,
+    cellPaddings,
+    paddings,
+}: {
+    containerBounds: Bounds;
+    isPortrait: boolean;
+    cellCount: number;
+    cellSizeOptions: number[];
+    cellPaddings: Box;
+    paddings: Box;
+}) {
+    let layout;
+    for (let i = 0; i < cellSizeOptions.length; i++) {
+        const cellSize = cellSizeOptions[i];
+        layout = subgrid.calculateLayout({
+            containerBounds,
+            isPortrait,
+            cellCount,
+            cellBounds: makeBounds({
+                width: cellSize + cellPaddings.left + cellPaddings.right,
+                height: cellSize + cellPaddings.top + cellPaddings.bottom,
+            }),
+            paddings,
+        });
+        // Assuming options are sorted from largest to smallest, return first option we can fit everything in:
+        if (layout.width <= containerBounds.width && layout.height <= containerBounds.height) {
+            return layout;
+        }
+    }
+    // Return the smallest even if we overflow as we're out of options:
+    return layout!;
+}
+
+function calculateSubgridLayout({
+    containerBounds,
+    isPortrait,
+    cellCount,
+    cellSizeOptions,
+    cellPaddings,
+    paddings,
+}: {
+    containerBounds: Bounds;
+    isPortrait: boolean;
+    cellCount: number;
+    cellSizeOptions: number[];
+    cellPaddings: Box;
+    paddings: Box;
+}) {
+    const layout = findBestSubgridLayout({
+        containerBounds,
+        isPortrait,
+        cellCount,
+        cellSizeOptions,
+        cellPaddings,
+        paddings,
+    });
+    // If we're the smallest size, the subgrid cell is small:
+    const isSmallCell =
+        layout.cellBounds.width - cellPaddings.left - cellPaddings.right ===
+        cellSizeOptions[cellSizeOptions.length - 1];
+    const bounds = makeBounds({
+        width: Math.min(layout.width, containerBounds.width),
+        height: Math.min(layout.height, containerBounds.height),
+    });
+    const contentBounds = makeBounds({ width: layout.width, height: layout.height });
+
+    if (cellCount === 0) {
+        return {
+            bounds,
+            contentBounds,
+            videoCells: [],
+        };
+    }
+
+    return {
+        bounds,
+        contentBounds,
+        videoCells: [...Array(cellCount)].map((_, index) => {
+            const { top, left, width, height } = subgrid.getCellPropsAtIndexForLayout({ index, layout });
+            return {
+                origin: makeOrigin({ top, left }),
+                bounds: makeBounds({ width, height }),
+                paddings: cellPaddings,
+                isSmallCell,
+            };
+        }),
+    };
+}
+
 // The stage layout is the base room layout
 // It divides the stage area between a videos container (made up of video grid +
 // presentation grid)
 
 export function calculateStageLayout({
+    cellPaddings,
+    cellSizeOptions,
     containerBounds,
     containerOrigin,
+    gridGap,
     hasConstrainedOverflow,
     hasPresentationContent,
     hasVideoContent,
+    isConstrained,
+    isMaximizeMode,
     isPortrait,
+    isSmallScreen,
+    maxGridWidth,
+    shouldOverflowSubgrid,
+    subgridVideos,
 }: {
+    cellPaddings: Box;
     containerBounds: Bounds;
     containerOrigin: Origin;
+    cellSizeOptions: number[];
     gridGap: number;
     hasConstrainedOverflow: boolean;
     hasPresentationContent: boolean;
     hasVideoContent: boolean;
+    isConstrained: boolean;
+    isMaximizeMode: boolean;
     isPortrait: boolean;
-}): {
-    isPortrait: boolean;
-    videosContainer: Frame;
-    hasOverflow: boolean;
-} {
+    isSmallScreen: boolean;
+    maxGridWidth: number;
+    shouldOverflowSubgrid: boolean;
+    subgridVideos: CellView[];
+}): StageLayout {
+    const { width, height } = containerBounds;
     const hasVideos = hasPresentationContent || hasVideoContent;
+    const hasSubgrid = subgridVideos.length > 0;
 
     // Sanity checks
 
     // Do we have anything to calculate?
-    if (!hasVideos) {
+    if (!hasSubgrid && !hasVideos) {
         return {
             isPortrait,
             videosContainer: makeFrame(),
+            subgrid: {
+                ...makeFrame(),
+                contentBounds: makeBounds(),
+                cells: [],
+            },
             hasOverflow: false,
         };
     }
 
+    // Give up whole space to videos if we have no subgrid
+    if (!hasSubgrid) {
+        return {
+            isPortrait,
+            videosContainer: makeFrame({ ...containerBounds, ...containerOrigin }),
+            subgrid: {
+                ...makeFrame(),
+                contentBounds: makeBounds(),
+                cells: [],
+            },
+            hasOverflow: hasConstrainedOverflow,
+        };
+    }
+
+    // Things get a bit more complicated from here:
+    // - we're either told to overflow the room if shouldOverflowSubgrid is true
+    // - or we try to fit into a sane container and fail, thus resulting in an overflow state
+
+    const topSubgridPadding = shouldOverflowSubgrid ? OVERFLOW_ROOM_SUBGRID_TOP_PADDING : 0;
+
+    // Figure out what bounds we want the grid to fit into:
+    let _containerBounds = null;
+    if (!hasVideos) {
+        // We have an empty stage - just the subgrid:
+        // - limit the width of the empty stage subgrid to something sane so it's not overwhelming
+        _containerBounds = makeBounds({
+            width: Math.min(SUBGRID_EMPTY_STAGE_MAX_WIDTH, containerBounds.width),
+            height: containerBounds.height,
+        });
+    } else if (shouldOverflowSubgrid) {
+        // We have an overflow stage:
+        // - give up only bottom section of the container bounds and let it overflow
+        const cellSize = cellSizeOptions[0];
+        // This is pretty hacky but we expect a fixed cell size here. If we can spare the room we want to expose the top row.
+        // If we don't we want to partially overlap the top row:
+        // Special case is Maximized mode where we want to reserve as much vertical space as possible for the stage.
+        // Note: assuming BOTTOM_TOOLBAR_HEIGHT is the roomBottomMargin
+        let visibleSubgridHeight = isMaximizeMode
+            ? BOTTOM_TOOLBAR_HEIGHT
+            : BOTTOM_TOOLBAR_HEIGHT +
+              cellPaddings.top +
+              (isConstrained || isSmallScreen ? cellSize / 2 : cellSize) +
+              cellPaddings.bottom;
+        // If we're on super vertically constrained devices (embed and phone landscape) only give up enough to show there is a grid
+        if (containerBounds.height - visibleSubgridHeight < MIN_GRID_HEIGHT) {
+            visibleSubgridHeight = 0;
+        }
+        _containerBounds = makeBounds({
+            width: containerBounds.width,
+            height: visibleSubgridHeight,
+        });
+    } else {
+        // We have a stage:
+        if (isMaximizeMode) {
+            // We know we're portrait when maximized and we know the cell size is the largest. Give up just one row or force layout to overflow:
+            _containerBounds = makeBounds({
+                width: containerBounds.width,
+                height: cellSizeOptions[0] + cellPaddings.top + cellPaddings.bottom,
+            });
+        } else {
+            // Give up to half the screen to the subgrid:
+            _containerBounds = isPortrait
+                ? makeBounds({ width: containerBounds.width, height: containerBounds.height / 2 })
+                : makeBounds({ width: containerBounds.width / 2, height: containerBounds.height });
+        }
+    }
+
+    // Limit grid width to something sane (on very wide monitors)
+    let leftSubgridPadding = 0;
+    if (_containerBounds.width > maxGridWidth) {
+        leftSubgridPadding = (_containerBounds.width - maxGridWidth) / 2;
+    }
+    const subgridLayout = calculateSubgridLayout({
+        containerBounds: _containerBounds,
+        isPortrait,
+        cellCount: subgridVideos.length,
+        cellSizeOptions,
+        cellPaddings,
+        // When overflowing, inset cells from the top to make room for the room overflow backdrop:
+        paddings: makeBox({ top: topSubgridPadding, left: leftSubgridPadding, right: leftSubgridPadding }),
+    });
+
+    // Figure out if we're overflowing our container bounds:
+    const overflowNeedBounds = makeBounds({
+        width: subgridLayout.contentBounds.width - _containerBounds.width,
+        height: subgridLayout.contentBounds.height - _containerBounds.height,
+    });
+    const hasOverflow = overflowNeedBounds.width > 0 || overflowNeedBounds.height > 0;
+
+    let subgridBounds = null;
+    if (!hasVideos || shouldOverflowSubgrid || hasOverflow) {
+        // Empty stage - we have to take care to allow it to overflow
+        // Or if we can't fit into the bounds we picked or we're in a room overflow mode make the
+        // container match the real content bounds:
+        subgridBounds = subgridLayout.contentBounds;
+    } else {
+        subgridBounds = subgridLayout.bounds;
+    }
+
+    // Calculate video container frame based on what's left from subgrid:
+    // - if we can overflow, take up all but what we originally asked for and let it append the rest
+    // - if we can't overflow, take up what's left
+    let videosContainerBounds;
+    let _subgridContainerShareBounds = subgridBounds;
+    if (hasVideos) {
+        // Figure out how much of the original containerBounds we want to give up to subgrid and give up the rest to video stage
+        if (shouldOverflowSubgrid) {
+            // We know it's portrait always
+            _subgridContainerShareBounds = makeBounds({
+                width: 0,
+                height: _containerBounds.height + topSubgridPadding + gridGap,
+            });
+        } else {
+            _subgridContainerShareBounds = isPortrait
+                ? makeBounds({ width: 0, height: subgridLayout.bounds.height + gridGap })
+                : makeBounds({ width: subgridLayout.bounds.width + gridGap, height: 0 });
+        }
+        // Substract subgrid and grid gap from container bounds to get the video containers bounds:
+        videosContainerBounds = insetBounds({
+            bounds: _subgridContainerShareBounds,
+            fromBounds: containerBounds,
+        });
+    } else {
+        videosContainerBounds = makeBounds();
+    }
+    const videosContainerOrigin = { ...containerOrigin };
+
+    // Position subgrid based on videosContainer
+    let subgridOrigin;
+    if (hasVideos) {
+        subgridOrigin = makeOrigin({
+            top: isPortrait
+                ? Math.max(containerOrigin.top + height - _subgridContainerShareBounds.height + gridGap, 0)
+                : containerOrigin.top,
+            left: isPortrait ? containerOrigin.left : Math.max(containerOrigin.left + width - subgridBounds.width, 0),
+        });
+    } else {
+        // Absolutely center subgrid when alone on stage
+        subgridOrigin = makeOrigin({
+            top: containerOrigin.top + Math.max(0, (height - subgridBounds.height) / 2),
+            left: containerOrigin.left + Math.max(0, (width - subgridBounds.width) / 2),
+        });
+    }
+
     return {
         isPortrait,
-        videosContainer: makeFrame({ ...containerBounds, ...containerOrigin }),
-        hasOverflow: hasConstrainedOverflow,
+        videosContainer: makeFrame({ ...videosContainerBounds, ...videosContainerOrigin }),
+        subgrid: {
+            ...makeFrame({ ...subgridBounds, ...subgridOrigin }),
+            cells: subgridLayout.videoCells.map((cell, index) => ({
+                aspectRatio: subgridVideos[index]?.aspectRatio || 1,
+                type: "video",
+                clientId: subgridVideos[index]?.clientId,
+                ...cell,
+            })),
+            contentBounds: subgridLayout.contentBounds,
+        },
+        hasOverflow: hasOverflow || shouldOverflowSubgrid || hasConstrainedOverflow,
+        // Don't claim back any space if we're in a room overflow state:
+        overflowNeedBounds: shouldOverflowSubgrid ? makeBounds() : overflowNeedBounds,
     };
 }
 
@@ -248,14 +529,6 @@ type CalculateGridLayoutOptions = {
     gridGap: number;
 };
 
-type CalculateGridLayoutResult = {
-    videoCells: ResultCellView[];
-    extraHorizontalPadding: number;
-    extraVerticalPadding: number;
-    paddings: Box;
-    gridGap: number;
-};
-
 function calculateGridLayout({
     containerBounds,
     paddings = makeBox(),
@@ -263,7 +536,7 @@ function calculateGridLayout({
     isConstrained,
     maxGridWidth,
     gridGap,
-}: CalculateGridLayoutOptions): CalculateGridLayoutResult {
+}: CalculateGridLayoutOptions): GridLayout {
     const { width, height } = containerBounds;
     const cappedWidth = maxGridWidth ? Math.min(width, maxGridWidth) : width;
     const cellCount = videos.length;
@@ -394,15 +667,20 @@ function rebalanceLayoutInPlace({
     videosContainerLayout,
     gridLayout,
     presentationGridLayout,
+    stageLayout,
     gridGap,
+    shouldOverflowSubgrid,
 }: {
     videosContainerLayout: VideoContainerLayout;
     gridLayout: GridLayout;
     presentationGridLayout: GridLayout;
+    stageLayout: StageLayout;
     gridGap: number;
+    shouldOverflowSubgrid: boolean;
 }) {
     const hasPresentationGrid = videosContainerLayout.presentationGrid.bounds.width > 0;
     const hasVideoGrid = videosContainerLayout.videoGrid.bounds.width > 0;
+    const hasSubgrid = stageLayout.subgrid.bounds.width > 0;
 
     const videoGridRebalanceOffset = { vertical: 0, horizontal: 0 };
 
@@ -435,6 +713,134 @@ function rebalanceLayoutInPlace({
             videoGridRebalanceOffset.horizontal = correction.b;
         }
     }
+
+    // Rebalance stage layout if we have subgrid bounds (unless it's overflown):
+    if (hasSubgrid && (hasPresentationGrid || hasVideoGrid) && !shouldOverflowSubgrid) {
+        const presentationGridArea = {
+            horizontal: presentationGridLayout.extraHorizontalPadding,
+            vertical: presentationGridLayout.extraVerticalPadding,
+        };
+        const gridArea = {
+            // Takes into account how much if any we moved the grid over in the previous phase:
+            horizontal: gridLayout.extraHorizontalPadding + videoGridRebalanceOffset.horizontal,
+            vertical: gridLayout.extraVerticalPadding + videoGridRebalanceOffset.vertical,
+        };
+
+        let area;
+        const hasBothGrids = hasPresentationGrid && hasVideoGrid;
+        if (hasBothGrids && videosContainerLayout.isPortrait && !stageLayout.isPortrait) {
+            // Special case: video containers are stacked and subgrid is on the right,
+            // take the one with the smallest padding:
+            area = presentationGridArea.horizontal < gridArea.horizontal ? presentationGridArea : gridArea;
+        } else if (hasBothGrids && !videosContainerLayout.isPortrait && stageLayout.isPortrait) {
+            // Special case: video containers are next to each other and subgrid is on the bottom,
+            // take the one with the smallest padding:
+            area = presentationGridArea.vertical < gridArea.vertical ? presentationGridArea : gridArea;
+        } else if (hasVideoGrid) {
+            area = gridArea;
+        } else {
+            area = presentationGridArea;
+        }
+
+        const correction = rebalanceLayoutPaddedAreas({
+            a: area,
+            b: {
+                // Subgrid is not expected to have padding ever:
+                horizontal: 0,
+                vertical: 0,
+            },
+            gridGap,
+            isPortrait: stageLayout.isPortrait,
+        });
+
+        // Update in place:
+        if (stageLayout.isPortrait) {
+            stageLayout.subgrid.origin.top -= correction.b;
+        } else {
+            stageLayout.subgrid.origin.left -= correction.b;
+        }
+    }
+}
+
+function redistributeEmptySpaceToSubgridInPlace({
+    vPaddings,
+    hPaddings,
+    stageLayout,
+    videosContainerLayout,
+}: {
+    vPaddings: { presentationGrid: number; grid: number };
+    hPaddings: { presentationGrid: number; grid: number };
+    stageLayout: StageLayout;
+    videosContainerLayout: VideoContainerLayout;
+}) {
+    // Redistribute empty space to subgrid in place:
+    if (stageLayout.isPortrait && (vPaddings.presentationGrid || vPaddings.grid)) {
+        const totalVPadding = videosContainerLayout.isPortrait
+            ? vPaddings.presentationGrid * 2 + vPaddings.grid * 2
+            : vPaddings.presentationGrid + vPaddings.grid;
+        stageLayout.videosContainer.bounds.height -= totalVPadding;
+        stageLayout.subgrid.origin.top -= totalVPadding;
+        stageLayout.subgrid.bounds.height += totalVPadding;
+
+        videosContainerLayout.presentationGrid.bounds.height -= vPaddings.presentationGrid * 2;
+        videosContainerLayout.videoGrid.bounds.height -= vPaddings.grid * 2;
+        if (videosContainerLayout.isPortrait) {
+            videosContainerLayout.videoGrid.origin.top -= vPaddings.presentationGrid;
+        }
+    }
+
+    if (!stageLayout.isPortrait && (hPaddings.presentationGrid || hPaddings.grid)) {
+        const totalHPadding = videosContainerLayout.isPortrait
+            ? hPaddings.presentationGrid + hPaddings.grid
+            : hPaddings.presentationGrid * 2 + hPaddings.grid * 2;
+        stageLayout.videosContainer.bounds.width -= totalHPadding;
+        stageLayout.subgrid.origin.left -= totalHPadding;
+        stageLayout.subgrid.bounds.width += totalHPadding;
+
+        videosContainerLayout.presentationGrid.bounds.width -= hPaddings.presentationGrid * 2;
+        videosContainerLayout.videoGrid.bounds.width -= hPaddings.grid * 2;
+        if (!videosContainerLayout.isPortrait) {
+            videosContainerLayout.videoGrid.origin.left -= hPaddings.grid;
+        }
+    }
+}
+
+function findGridsEmptySpaceToRedistribute({
+    need,
+    stageLayout,
+    gridLayout,
+    presentationGridLayout,
+    videosContainerLayout,
+}: {
+    need: Bounds;
+    stageLayout: StageLayout;
+    gridLayout: GridLayout;
+    presentationGridLayout: GridLayout;
+    videosContainerLayout: VideoContainerLayout;
+}) {
+    let vPaddings = { presentationGrid: 0, grid: 0 };
+    let hPaddings = { presentationGrid: 0, grid: 0 };
+
+    if (stageLayout.isPortrait) {
+        const minDim = Math.min(gridLayout.extraVerticalPadding, presentationGridLayout.extraVerticalPadding);
+        vPaddings = {
+            presentationGrid: Math.min(
+                videosContainerLayout.isPortrait ? presentationGridLayout.extraVerticalPadding : minDim,
+                need.height,
+            ),
+            grid: Math.min(videosContainerLayout.isPortrait ? gridLayout.extraVerticalPadding : minDim, need.height),
+        };
+    } else {
+        const minDim = Math.min(gridLayout.extraHorizontalPadding, presentationGridLayout.extraHorizontalPadding);
+        hPaddings = {
+            presentationGrid: Math.min(
+                videosContainerLayout.isPortrait ? minDim : presentationGridLayout.extraHorizontalPadding,
+                need.width,
+            ),
+            grid: Math.min(videosContainerLayout.isPortrait ? minDim : gridLayout.extraHorizontalPadding, need.width),
+        };
+    }
+    return { vPaddings, hPaddings };
 }
 
 interface CalculateGridLayoutsOptions {
@@ -457,7 +863,10 @@ function calculateGridLayouts({
     gridLayoutPaddings = makeBox(),
     presentationGridLayoutPaddings = makeBox(),
     maxGridWidth,
-}: CalculateGridLayoutsOptions) {
+}: CalculateGridLayoutsOptions): {
+    gridLayout: GridLayout;
+    presentationGridLayout: GridLayout;
+} {
     // Lay out video cells in provided video containers:
     const gridLayout = calculateGridLayout({
         containerBounds: videosContainerLayout.videoGrid.bounds,
@@ -495,37 +904,43 @@ interface CalculateLayoutOptions {
     rebalanceLayout?: boolean;
     roomBounds: Bounds;
     roomLayoutHasOverlow?: boolean;
+    subgridCellPaddings?: Box;
+    subgridVideos: CellView[];
     videoControlsHeight?: number;
     videos?: CellView[];
     videoGridGap?: number;
 }
 
 export function calculateLayout({
-    floatingVideo = null,
+    floatingVideo,
     frame,
-    gridGap = 0,
-    isConstrained = false,
+    gridGap,
+    isConstrained,
     isMaximizeMode = false,
+    isXLMeetingSize = false,
     paddings = makeBox(),
     presentationVideos = [],
     rebalanceLayout = false,
     roomBounds,
     roomLayoutHasOverlow = false,
+    subgridCellPaddings = SUBGRID_CELL_PADDING_BOX,
+    subgridVideos = [],
     videoControlsHeight = 0,
     videos = [],
-    videoGridGap = 0,
-}: CalculateLayoutOptions): CalculateLayoutResult {
+    videoGridGap,
+}: CalculateLayoutOptions): StageLayout {
+    let shouldOverflowSubgrid = isXLMeetingSize && (screen ? screen.width <= 2048 : true); // If we're on really large monitors don't force overflow
     const hasPresentationContent = !!presentationVideos.length;
     const hasPresentationGrid = presentationVideos.length > 1;
     const supersizedContentAspectRatio =
-        hasPresentationContent && !hasPresentationGrid ? presentationVideos[0].aspectRatio : 1;
+        hasPresentationContent && !hasPresentationGrid ? presentationVideos[0].aspectRatio : null;
     const hasVideoContent = !!videos.length;
     const width = frame.bounds.width - paddings.left - paddings.right;
     let height = frame.bounds.height - paddings.top - paddings.bottom;
     const maxGridWidth = Math.max(25 * 88, (80 / 100) * width); // go up to 80vw after a sane max width
 
     // On mobile, we set a hard limit on 12 videos, and overflows after that.
-    const hasConstrainedOverflow = (isConstrained && videos.length > CONSTRAINED_OVERFLOW_TRIGGER) || false;
+    const hasConstrainedOverflow = isConstrained && videos.length > CONSTRAINED_OVERFLOW_TRIGGER;
     const lineHeight = height / 4;
     const extraLines = Math.ceil((videos.length - CONSTRAINED_OVERFLOW_TRIGGER) / 3);
 
@@ -535,17 +950,19 @@ export function calculateLayout({
     const stageOrigin = makeOrigin({ top: paddings.top, left: paddings.left });
     const _minBounds = getMinGridBounds({ cellCount: videos.length });
     const minGridBounds = _minBounds;
-
+    // We curently only use this for making the overflown subgrid responsive. Might make sense to pass in the
+    // responsive layout object in place of isConstrained etc flags:
     const isSmallScreen = roomBounds.width < TABLET_BREAKPOINT || roomBounds.height < TABLET_BREAKPOINT;
 
     const forceStageLayoutPortrait = isMaximizeMode;
     const stageLayoutIsPortrait =
         forceStageLayoutPortrait ||
+        shouldOverflowSubgrid ||
         !(hasPresentationContent || hasVideoContent) ||
         stageBounds.width <= stageBounds.height;
 
     const stableStageLayoutProps = {
-        cellPaddings: { top: 4, left: 4, bottom: 4, right: 4 },
+        cellPaddings: subgridCellPaddings,
         containerBounds: stageBounds,
         containerOrigin: stageOrigin,
         gridGap,
@@ -554,12 +971,18 @@ export function calculateLayout({
         isConstrained,
         isMaximizeMode,
         isSmallScreen,
+        subgridVideos,
         maxGridWidth,
     };
 
     let stageLayout = calculateStageLayout({
         ...stableStageLayoutProps,
+        cellSizeOptions: getSubgridSizeOptions({
+            hasOverflow: shouldOverflowSubgrid,
+            hasStage: hasPresentationContent || hasVideoContent,
+        }),
         isPortrait: stageLayoutIsPortrait,
+        shouldOverflowSubgrid,
         hasConstrainedOverflow,
     });
 
@@ -567,14 +990,19 @@ export function calculateLayout({
     // - if we're not in a forced overflow state and main room layout has overflow already (prev we could not fit) and now we can fit,
     // - double check by re-running the stage layout with the non overflow bounds:
     let forceRerunAsOverflow = false;
-    if (roomLayoutHasOverlow && !stageLayout.hasOverflow) {
+    if (!shouldOverflowSubgrid && roomLayoutHasOverlow && !stageLayout.hasOverflow) {
         const _stageLayout = calculateStageLayout({
             ...stableStageLayoutProps,
             containerBounds: makeBounds({
                 width: stageBounds.width,
                 height: stageBounds.height - BOTTOM_TOOLBAR_HEIGHT, // override "stable" prop
             }),
+            cellSizeOptions: getSubgridSizeOptions({
+                hasOverflow: shouldOverflowSubgrid,
+                hasStage: hasPresentationContent || hasVideoContent,
+            }),
             isPortrait: stageLayoutIsPortrait,
+            shouldOverflowSubgrid,
             hasConstrainedOverflow,
         });
         // If it turns out we can't fit, force re-layout as overflow:
@@ -584,10 +1012,16 @@ export function calculateLayout({
     }
 
     // If subgrid cannot fit, re-run the stage layout in overflow:
-    if (forceRerunAsOverflow || stageLayout.hasOverflow) {
+    if (forceRerunAsOverflow || (stageLayout.hasOverflow && !shouldOverflowSubgrid)) {
+        shouldOverflowSubgrid = true;
         stageLayout = calculateStageLayout({
             ...stableStageLayoutProps,
+            cellSizeOptions: getSubgridSizeOptions({
+                hasOverflow: true,
+                hasStage: hasPresentationContent || hasVideoContent,
+            }),
             isPortrait: true,
+            shouldOverflowSubgrid,
             hasConstrainedOverflow,
         });
     }
@@ -596,15 +1030,15 @@ export function calculateLayout({
         containerBounds: stageLayout.videosContainer.bounds,
         containerOrigin: stageLayout.videosContainer.origin,
         gridGap,
-        supersizedContentAspectRatio,
+        supersizedContentAspectRatio: supersizedContentAspectRatio || 1,
         hasPresentationContent,
         hasPresentationGrid,
         hasVideoContent,
         minGridBounds,
     });
 
-    const { gridLayout, presentationGridLayout } = calculateGridLayouts({
-        gridGap: videoGridGap,
+    let { gridLayout, presentationGridLayout } = calculateGridLayouts({
+        gridGap: videoGridGap || gridGap,
         isConstrained,
         presentationVideos,
         videos,
@@ -612,10 +1046,35 @@ export function calculateLayout({
         maxGridWidth,
     });
 
+    // If subgrid needs more room from layout try to recover it from the video grids:
+    if (stageLayout.hasOverflow && !shouldOverflowSubgrid) {
+        const { vPaddings, hPaddings } = findGridsEmptySpaceToRedistribute({
+            need: stageLayout.overflowNeedBounds || makeBounds(),
+            stageLayout,
+            gridLayout,
+            presentationGridLayout,
+            videosContainerLayout,
+        });
+
+        if (vPaddings.presentationGrid || vPaddings.grid || hPaddings.presentationGrid || hPaddings.grid) {
+            // If we have any wasted space in the grids, redistribute back to subgrid:
+            redistributeEmptySpaceToSubgridInPlace({ vPaddings, hPaddings, stageLayout, videosContainerLayout });
+            // Now we have to re-layout the video cells in the adjusted containers:
+            ({ gridLayout, presentationGridLayout } = calculateGridLayouts({
+                gridGap: videoGridGap || gridGap,
+                isConstrained,
+                presentationVideos,
+                videos,
+                videosContainerLayout,
+                maxGridWidth,
+            }));
+        }
+    }
+
     const floatingLayout = calculateFloatingLayout({
         roomBounds,
         containerFrame: frame,
-        floatingVideo,
+        floatingVideo: floatingVideo || null,
         videoControlsHeight,
     });
 
@@ -626,15 +1085,35 @@ export function calculateLayout({
             videosContainerLayout,
             gridLayout,
             presentationGridLayout,
+            stageLayout,
             gridGap,
+            shouldOverflowSubgrid,
         });
+    }
+
+    // Calculate overflown bounds:
+    let overflowBoundsHeight =
+        paddings.top + stageLayout.videosContainer.bounds.height + stageLayout.subgrid.bounds.height + paddings.bottom;
+    if (hasPresentationContent || hasVideoContent) {
+        overflowBoundsHeight += gridGap;
     }
 
     return {
         isPortrait: stageLayout.isPortrait,
         hasOverflow: stageLayout.hasOverflow,
+        videosContainer: {
+            ...videosContainerLayout,
+            bounds: makeBounds({
+                width: stageLayout.videosContainer.bounds.width,
+                height: stageLayout.videosContainer.bounds.height,
+            }),
+            origin: makeOrigin({
+                top: stageLayout.videosContainer.origin.top,
+                left: stageLayout.videosContainer.origin.left,
+            }),
+        },
         bounds: makeBounds({
-            height: frame.bounds.height,
+            height: shouldOverflowSubgrid ? overflowBoundsHeight : frame.bounds.height,
             width: frame.bounds.width,
         }),
         gridGap,
@@ -658,6 +1137,7 @@ export function calculateLayout({
                 right: gridLayout.paddings.right + gridLayout.extraHorizontalPadding,
             }),
         },
+        subgrid: stageLayout.subgrid,
         floatingContent: {
             ...floatingLayout,
             ...floatingVideo,

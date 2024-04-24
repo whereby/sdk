@@ -1,7 +1,7 @@
 import { getGridSizeForCount } from "./gridUtils";
 
 import { makeBox } from "./helpers";
-import { type Box } from "./types";
+import { type CellAspectRatio, type CellBounds, type CellProps, type CenterGridLayout, type Box } from "./types";
 
 const WIDE_AR = 16 / 9;
 const NORMAL_AR = 4 / 3;
@@ -18,7 +18,7 @@ function findMostCommon<T>(arr: T[]) {
 
 // Grid cells are all the same aspect ratio (not to be confused with the video cells)
 // Pick the best ratio given a list of the video cell ratios:
-export function pickCellAspectRatio({ choices = [] }: { choices: number[] }) {
+export function pickCellAspectRatio({ choices = [] }: { choices: number[] }): CellAspectRatio {
     // If all cells are the same aspect ratio use that:
     const minAr = Math.min(...choices);
     const maxAr = Math.max(...choices);
@@ -87,7 +87,7 @@ function getCellBounds({
     cols: number;
     gridGap: number;
     aspectRatio: number;
-}) {
+}): CellBounds {
     // Naively calculate the cell size based on grid and container size:
     const cellWidth = (width - (cols - 1) * gridGap) / cols;
     const cellHeight = (height - (rows - 1) * gridGap) / rows;
@@ -129,7 +129,7 @@ export function calculateLayout({
     gridGap: number;
     cellAspectRatios?: number[];
     paddings?: Box;
-}) {
+}): CenterGridLayout {
     // Handle empty grid:
     if (!cellCount) {
         return {
@@ -204,8 +204,8 @@ export function getCellPropsAtIndexForLayout({
     layout,
 }: {
     index: number;
-    layout: ReturnType<typeof calculateLayout>;
-}) {
+    layout: CenterGridLayout;
+}): CellProps {
     const { cellWidth, cellHeight, rows, cols, cellCount, gridGap } = layout;
 
     const top = Math.floor(index / cols);

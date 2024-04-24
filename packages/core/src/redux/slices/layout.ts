@@ -93,9 +93,17 @@ export const selectAllClientViews = createSelector(
         });
     },
 );
-export const selectClientViewsOnStage = createSelector(selectAllClientViews, (allClientViews) => {
-    return allClientViews;
+export const selectClientViewsInSubgrid = createSelector(selectAllClientViews, (allClientViews) => {
+    const videos = allClientViews.filter((client) => !client.isPresentation);
+    return videos.filter((client) => !client.isAudioEnabled);
 });
+export const selectClientViewsOnStage = createSelector(
+    selectAllClientViews,
+    selectClientViewsInSubgrid,
+    (allClientViews, clientViewsInSubgrid) => {
+        return allClientViews.filter((client) => !clientViewsInSubgrid.includes(client));
+    },
+);
 export const selectClientViewsInPresentationGrid = createSelector(selectAllClientViews, (allClientViews) => {
     return allClientViews.filter((client) => client.isPresentation);
 });
@@ -104,6 +112,21 @@ export const selectClientViewsInGrid = createSelector(
     selectClientViewsOnStage,
     (clientViewsInPresentationGrid, clientViewsOnStage) => {
         return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));
+    },
+);
+export const selectCellViewsSubgrid = createSelector(
+    selectClientViewsInSubgrid,
+    selectLayoutClientAspectRatios,
+    (clientViews, clientAspectRatios) => {
+        return clientViews.map((client) => {
+            return makeVideoCellView({
+                client,
+                aspectRatio: clientAspectRatios[client.id],
+                avatarSize: 0,
+                cellPaddings: 0,
+                isSubgrid: true,
+            });
+        });
     },
 );
 export const selectCellViewsPresentationGrid = createSelector(
@@ -137,8 +160,9 @@ export const selectCellViewsVideoGrid = createSelector(
 export const selectLayoutVideoStage = createSelector(
     selectCellViewsVideoGrid,
     selectCellViewsPresentationGrid,
+    selectCellViewsSubgrid,
     selectLayoutContainerFrame,
-    (cellViews, cellViewsInPresentationGrid, containerFrame) => {
+    (cellViews, cellViewsInPresentationGrid, cellViewsSubgrid, containerFrame) => {
         return calculateLayout({
             frame: containerFrame,
             gridGap: 8,
@@ -147,6 +171,7 @@ export const selectLayoutVideoStage = createSelector(
             videos: cellViews,
             videoGridGap: 0,
             presentationVideos: cellViewsInPresentationGrid,
+            subgridVideos: cellViewsSubgrid,
         });
     },
 );

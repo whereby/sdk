@@ -47,11 +47,33 @@ export type CellView = {
 export type ResultCellView = {
     aspectRatio: number;
     bounds: Bounds;
+    client?: ClientView;
     clientId: string;
     origin: Origin;
     isDraggable?: boolean;
     isSmallCell: boolean;
     type: string;
+    paddings?: Box;
+};
+
+export type CellProps = {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+};
+
+export type CellBounds = {
+    cellWidth: number;
+    cellHeight: number;
+    extraHorizontalPadding: number;
+    extraVerticalPadding: number;
+};
+
+export type CellAspectRatio = {
+    minAr: number;
+    maxAr: number;
+    chosenAr: number;
 };
 
 export type VideoContainerLayout = {
@@ -60,37 +82,70 @@ export type VideoContainerLayout = {
     videoGrid: Frame;
 };
 
+export type CenterGridLayout = {
+    cellCount: number;
+    cellHeight: number;
+    cellWidth: number;
+    cols: number;
+    rows: number;
+    extraHorizontalPadding: number;
+    extraVerticalPadding: number;
+    gridGap: number;
+    paddings: Box;
+};
+
+export type SubgridLayout = {
+    isPortrait: boolean;
+    width: number;
+    height: number;
+    cellBounds: Bounds;
+    cellCount: number;
+    rows: number;
+    cols: number;
+    extraHorizontalPadding: number;
+    extraVerticalPadding: number;
+    paddings: Box;
+};
+
 export type GridLayout = {
-    videoCells: CellView[];
+    videoCells: ResultCellView[];
     extraHorizontalPadding: number;
     extraVerticalPadding: number;
     paddings: Box;
     gridGap: number;
 };
 
-export type CalculateLayoutResult = {
+export type StageLayout = {
     isPortrait: boolean;
+    videosContainer: Frame;
     hasOverflow: boolean;
-    bounds: Bounds;
-    gridGap: number;
-    presentationGrid: {
+    bounds?: Bounds;
+    gridGap?: number;
+    presentationGrid?: {
         bounds: Bounds;
         origin: Origin;
         cells: ResultCellView[];
         paddings: Box;
     };
-    videoGrid: {
+    videoGrid?: {
         bounds: Bounds;
         origin: Origin;
         cells: ResultCellView[];
         paddings: Box;
     };
-    floatingContent: {
+    floatingContent?: {
         clientId?: string;
         isDraggable?: boolean;
         origin?: Origin;
         bounds?: Bounds;
         aspectRatio?: number;
         isSmallCell?: boolean;
-    } | null;
+    };
+    subgrid: {
+        bounds: Bounds;
+        origin: Origin;
+        cells: ResultCellView[];
+        contentBounds: Bounds;
+    };
+    overflowNeedBounds?: Bounds;
 };
