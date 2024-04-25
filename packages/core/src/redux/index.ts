@@ -19,3 +19,4 @@ export * from "./slices/roomConnection";
 export * from "./slices/rtcAnalytics";
 export * from "./slices/streaming";
 export * from "./slices/waitingParticipants";
+export * from "./types";

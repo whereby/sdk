@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { fitToBounds } from "@whereby.com/core";
+import { fitToBounds } from "../layout/gridUtils";
 
 interface Props {
     aspectRatio: number;

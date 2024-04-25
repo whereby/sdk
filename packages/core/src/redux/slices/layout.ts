@@ -1,11 +1,8 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { selectRemoteClientViews } from "./remoteParticipants";
-import { makeVideoCellView } from "../../utils/layout/cellView";
-import { ClientView, type Bounds, type Frame } from "../../utils/layout/types";
-import { makeFrame } from "../../utils/layout/helpers";
-import { calculateLayout } from "../../utils/layout/stageLayout";
 import { selectLocalParticipantView } from "./localParticipant";
+import { ClientView } from "../types";
 
 export function sortClientViews({
     sortedClientIds = [],
@@ -33,14 +30,11 @@ export function sortClientViews({
  */
 export interface LayoutState {
     aspectRatios: Record<string, number>;
-    containerBounds: Bounds;
-    containerFrame?: Frame;
     sortedClientIds: string[];
 }
 
 const initialState: LayoutState = {
     aspectRatios: {},
-    containerBounds: { width: 0, height: 0 },
     sortedClientIds: [],
 };
 
@@ -57,12 +51,6 @@ export const layoutSlice = createSlice({
                 },
             };
         },
-        setContainerBounds: (state, action: { payload: Bounds }) => {
-            return {
-                ...state,
-                containerBounds: action.payload,
-            };
-        },
     },
 });
 
@@ -70,18 +58,14 @@ export const layoutSlice = createSlice({
  * Action creators
  */
 
-export const { setAspectRatio, setContainerBounds } = layoutSlice.actions;
+export const { setAspectRatio } = layoutSlice.actions;
 
 /**
  * Selectors
  */
 export const selectLayoutRaw = (state: RootState) => state.layout;
 export const selectLayoutClientAspectRatios = (state: RootState) => state.layout.aspectRatios;
-export const selectLayoutContainerBounds = (state: RootState) => state.layout.containerBounds;
 export const selectLayoutSortedClientIds = (state: RootState) => state.layout.sortedClientIds;
-export const selectLayoutContainerFrame = createSelector(selectLayoutContainerBounds, (containerBounds) => {
-    return makeFrame(containerBounds);
-});
 export const selectAllClientViews = createSelector(
     selectLocalParticipantView,
     selectRemoteClientViews,
@@ -112,66 +96,5 @@ export const selectClientViewsInGrid = createSelector(
     selectClientViewsOnStage,
     (clientViewsInPresentationGrid, clientViewsOnStage) => {
         return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));
-    },
-);
-export const selectCellViewsSubgrid = createSelector(
-    selectClientViewsInSubgrid,
-    selectLayoutClientAspectRatios,
-    (clientViews, clientAspectRatios) => {
-        return clientViews.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: 0,
-                isSubgrid: true,
-            });
-        });
-    },
-);
-export const selectCellViewsPresentationGrid = createSelector(
-    selectClientViewsInPresentationGrid,
-    selectLayoutClientAspectRatios,
-    (clientViews, clientAspectRatios) => {
-        return clientViews.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: 0,
-            });
-        });
-    },
-);
-export const selectCellViewsVideoGrid = createSelector(
-    selectLayoutClientAspectRatios,
-    selectClientViewsInGrid,
-    (clientAspectRatios, clientViews) => [
-        ...clientViews.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: 10,
-            });
-        }),
-    ],
-);
-export const selectLayoutVideoStage = createSelector(
-    selectCellViewsVideoGrid,
-    selectCellViewsPresentationGrid,
-    selectCellViewsSubgrid,
-    selectLayoutContainerFrame,
-    (cellViews, cellViewsInPresentationGrid, cellViewsSubgrid, containerFrame) => {
-        return calculateLayout({
-            frame: containerFrame,
-            gridGap: 8,
-            isConstrained: false,
-            roomBounds: containerFrame.bounds,
-            videos: cellViews,
-            videoGridGap: 0,
-            presentationVideos: cellViewsInPresentationGrid,
-            subgridVideos: cellViewsSubgrid,
-        });
     },
 );

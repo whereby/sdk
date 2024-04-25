@@ -10,7 +10,7 @@ import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectLocalParticipantRaw } from "./localParticipant";
-import { ClientView } from "../../utils";
+import { ClientView } from "../types";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 

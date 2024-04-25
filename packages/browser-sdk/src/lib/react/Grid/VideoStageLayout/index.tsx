@@ -2,7 +2,8 @@ import * as React from "react";
 
 import { VideoCell } from "../VideoCell";
 
-import { Bounds, Box, Frame, Origin, StageLayout, hasBounds, makeFrame } from "@whereby.com/core";
+import { hasBounds, makeFrame } from "../layout/helpers";
+import { Bounds, Box, Frame, Origin, StageLayout } from "../layout/types";
 
 function generateStylesFromFrame({ origin, bounds }: { origin: Origin; bounds: Bounds }) {
     return {

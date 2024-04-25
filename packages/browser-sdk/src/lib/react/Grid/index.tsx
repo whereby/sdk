@@ -1,20 +1,10 @@
 import * as React from "react";
 
 import { VideoView, WherebyVideoElement } from "../VideoView";
-import {
-    setAspectRatio,
-    debounce,
-    setContainerBounds,
-    Bounds,
-    Origin,
-    CellView,
-    observeStore,
-    makeBounds,
-    makeOrigin,
-} from "@whereby.com/core";
-import { VideoGridState, selectVideoGridState } from "./selector";
-import { WherebyContext } from "../Provider";
+import { setAspectRatio, debounce } from "@whereby.com/core";
+import { CellView, Bounds, Origin } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
+import { useGrid } from "./useGrid";
 
 interface RenderCellViewProps {
     cellView: CellView;
@@ -86,34 +76,18 @@ interface GridProps {
     videoGridGap?: number;
 }
 
-const initialState: VideoGridState = {
-    videoStage: null,
-    cellViewsVideoGrid: [],
-    cellViewsInPresentationGrid: [],
-    cellViewsInSubgrid: [],
-    containerFrame: { bounds: makeBounds(), origin: makeOrigin() },
-};
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Grid({ renderParticipant }: GridProps) {
-    const store = React.useContext(WherebyContext);
     const gridRef = React.useRef<HTMLDivElement>(null);
 
-    if (!store) {
-        throw new Error("VideoView must be used within a WherebyProvider");
-    }
-
-    const [videoGridState, setVideoViewState] = React.useState(initialState);
-
-    React.useEffect(() => {
-        const unsubscribe = observeStore(store, selectVideoGridState, setVideoViewState);
-
-        return () => {
-            unsubscribe();
-        };
-    }, [store]);
-
-    const { cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid } = videoGridState;
+    const {
+        store,
+        cellViewsVideoGrid,
+        cellViewsInPresentationGrid,
+        cellViewsInSubgrid,
+        videoStage,
+        setContainerBounds,
+    } = useGrid();
 
     const presentationGridContent = React.useMemo(
         () =>
@@ -160,12 +134,10 @@ function Grid({ renderParticipant }: GridProps) {
         const resizeObserver = new ResizeObserver(
             debounce(
                 () => {
-                    store.dispatch(
-                        setContainerBounds({
-                            width: gridRef.current?.clientWidth || 0,
-                            height: gridRef.current?.clientHeight || 0,
-                        }),
-                    );
+                    setContainerBounds({
+                        width: gridRef.current?.clientWidth ?? 640,
+                        height: gridRef.current?.clientHeight ?? 480,
+                    });
                 },
                 { delay: 60, edges: false },
             ),
@@ -187,7 +159,7 @@ function Grid({ renderParticipant }: GridProps) {
             }}
         >
             <VideoStageLayout
-                layoutVideoStage={videoGridState.videoStage!}
+                layoutVideoStage={videoStage!}
                 presentationGridContent={presentationGridContent}
                 gridContent={gridContent}
                 subgridContent={subgridContent}

@@ -1,5 +1,4 @@
 import { calculateStageLayout } from "../stageLayout";
-import { randomString } from "../../../__mocks__/appMocks";
 
 const GRID_GAP_PX = 10;
 const SUBGRID_CELL_PADDING = 8;
@@ -303,7 +302,7 @@ describe("calculateStageLayout", () => {
                     isMaximizeMode: false,
                     isConstrained,
                     isSmallScreen: false,
-                    subgridVideos: new Array(numSubgridClients).fill({ clientId: randomString("clientId") }),
+                    subgridVideos: new Array(numSubgridClients).fill({ clientId: "clientId" }),
                     shouldOverflowSubgrid: shouldOverflow,
                 }),
             ).toEqual(expectedResult);

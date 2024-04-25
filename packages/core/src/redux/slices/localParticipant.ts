@@ -8,7 +8,7 @@ import { doAppJoin } from "./app";
 import { selectLocalMediaStream, toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
-import { ClientView } from "../../utils";
+import { ClientView } from "../types";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;

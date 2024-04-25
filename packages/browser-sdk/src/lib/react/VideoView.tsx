@@ -86,6 +86,7 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
                         if (videoEl.current && stream?.id) {
                             const width = videoEl.current.clientWidth;
                             const height = videoEl.current.clientHeight;
+
                             store.dispatch(
                                 doRtcReportStreamResolution({
                                     streamId: stream.id,
