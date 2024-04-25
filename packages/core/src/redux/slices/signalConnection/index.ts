@@ -45,6 +45,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("chat_message", (payload: ChatMessage) => dispatch(signalEvents.chatMessage(payload)));
     socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
     socket.on("room_knocked", (payload: RoomKnockedEvent) => dispatch(signalEvents.roomKnocked(payload)));
+    socket.on("room_left", () => dispatch(signalEvents.roomLeft()));
     socket.on("room_locked", (payload: RoomLockedEvent) => dispatch(signalEvents.roomLocked(payload)));
     socket.on("room_session_ended", (payload: RoomSessionEndedEvent) =>
         dispatch(signalEvents.roomSessionEnded(payload)),
@@ -203,8 +204,9 @@ export const doSignalIdentifyDevice = createAppThunk(
 );
 
 export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
-    const socket = selectSignalConnectionRaw(getState()).socket;
-    socket?.emit("leave_room");
+    const state = getState();
+    const socket = selectSignalConnectionRaw(state).socket;
+
     socket?.disconnect();
     dispatch(socketDisconnected());
 });

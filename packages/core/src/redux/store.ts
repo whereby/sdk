@@ -15,6 +15,7 @@ import { remoteParticipantsSlice } from "./slices/remoteParticipants";
 import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
+import { signalEvents } from "./slices/signalConnection/actions";
 import { rtcAnalyticsSlice } from "./slices/rtcAnalytics";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
 import { streamingSlice } from "./slices/streaming";
@@ -22,7 +23,7 @@ import { waitingParticipantsSlice } from "./slices/waitingParticipants";
 
 const IS_DEV = process.env.REACT_APP_IS_DEV === "true" ?? false;
 
-export const rootReducer = combineReducers({
+const appReducer = combineReducers({
     app: appSlice.reducer,
     authorization: authorizationSlice.reducer,
     chat: chatSlice.reducer,
@@ -41,6 +42,15 @@ export const rootReducer = combineReducers({
     streaming: streamingSlice.reducer,
     waitingParticipants: waitingParticipantsSlice.reducer,
 });
+
+export const rootReducer: AppReducer = (state, action) => {
+    // Reset store state on leave
+    if (action.type === signalEvents.roomLeft.type) {
+        return appReducer(undefined, action);
+    }
+
+    return appReducer(state, action);
+};
 
 export const createStore = ({
     preloadedState,
@@ -63,8 +73,8 @@ export const createStore = ({
     });
 };
 
-export type RootReducer = typeof rootReducer;
-export type RootState = ReturnType<typeof rootReducer>;
+export type AppReducer = typeof appReducer;
+export type RootState = ReturnType<typeof appReducer>;
 export type AppDispatch = ReturnType<typeof createStore>["dispatch"];
 
 export type Store = ReturnType<typeof createStore>;

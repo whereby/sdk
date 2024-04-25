@@ -16,9 +16,9 @@ import {
     toggleLowDataModeEnabled,
     doStartScreenshare,
     doStopScreenshare,
-    appLeft,
     doAppJoin,
     doKnockRoom,
+    doLeaveRoom,
     doLockRoom,
     doKickParticipant,
     doEndMeeting,
@@ -91,8 +91,11 @@ export function useRoomConnection(
             }),
         );
         return () => {
+            if (roomConnectionState.connectionStatus === "connected") {
+                store.dispatch(doLeaveRoom());
+            }
+
             unsubscribe();
-            store.dispatch(appLeft());
         };
     }, []);
 
@@ -156,6 +159,7 @@ export function useRoomConnection(
     const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
 
+    const leaveRoom = React.useCallback(() => store.dispatch(doLeaveRoom()), [store]);
     const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
     const muteParticipants = React.useCallback(
         (clientIds: string[]) => {
@@ -175,6 +179,7 @@ export function useRoomConnection(
             toggleLowDataMode,
             acceptWaitingParticipant,
             knock,
+            leaveRoom,
             lockRoom,
             muteParticipants,
             kickParticipant,

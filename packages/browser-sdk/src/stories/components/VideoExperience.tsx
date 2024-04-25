@@ -37,6 +37,7 @@ export default function VideoExperience({
         knock,
         sendChatMessage,
         setDisplayName,
+        leaveRoom,
         lockRoom,
         muteParticipants,
         kickParticipant,
@@ -54,6 +55,17 @@ export default function VideoExperience({
     return (
         <div>
             {connectionStatus === "connecting" && <span>Connecting...</span>}
+            {connectionStatus === "leaving" && <span>Leaving...</span>}
+            {connectionStatus === "disconnected" && (
+                <button
+                    onClick={() => {
+                        // TODO
+                        // joinRoom()
+                    }}
+                >
+                    Join room
+                </button>
+            )}
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>
                     <span>Room locked, please knock....</span>
@@ -191,6 +203,7 @@ export default function VideoExperience({
                         )}
                     </div>
                     <div className="controls">
+                        <button onClick={() => leaveRoom()}>Leave</button>
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                         <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>

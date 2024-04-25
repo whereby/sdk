@@ -15,8 +15,10 @@ import { selectRoomKey, setRoomKey } from "./authorization";
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";
 import {
+    doSignalDisconnect,
     selectSignalConnectionDeviceIdentified,
     selectSignalConnectionRaw,
+    selectSignalStatus,
     socketReconnecting,
 } from "./signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
@@ -26,13 +28,15 @@ export type ConnectionStatus =
     | "initializing"
     | "connecting"
     | "connected"
-    | "reconnect"
     | "room_locked"
     | "knocking"
-    | "disconnecting"
-    | "disconnected"
     | "knock_rejected"
-    | "kicked";
+    | "kicked"
+    | "leaving"
+    | "left"
+    | "reconnect"
+    | "disconnecting"
+    | "disconnected";
 
 /**
  * Reducer
@@ -112,6 +116,12 @@ export const roomConnectionSlice = createSlice({
             return {
                 ...state,
                 status: "kicked",
+            };
+        });
+        builder.addCase(signalEvents.roomLeft, (state) => {
+            return {
+                ...state,
+                status: "left",
             };
         });
         builder.addCase(socketReconnecting, (state) => {
@@ -195,6 +205,15 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     dispatch(connectionStatusChanged("connecting"));
 });
 
+export const doLeaveRoom = createAppThunk(() => (dispatch, getState) => {
+    const state = getState();
+    const socket = selectSignalConnectionRaw(state).socket;
+
+    socket?.emit("leave_room");
+
+    dispatch(connectionStatusChanged("leaving"));
+});
+
 /**
  * Selectors
  */
@@ -255,4 +274,10 @@ startAppListening({
             dispatch(connectionStatusChanged("knock_rejected"));
         }
     },
+});
+
+createReactor([selectRoomConnectionStatus, selectSignalStatus], ({ dispatch }, roomConnectionStatus, signalStatus) => {
+    if (["kicked", "left"].includes(roomConnectionStatus) && signalStatus !== "disconnected") {
+        dispatch(doSignalDisconnect());
+    }
 });
