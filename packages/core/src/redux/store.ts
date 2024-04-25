@@ -12,6 +12,7 @@ import { localParticipantSlice } from "./slices/localParticipant";
 import { localScreenshareSlice } from "./slices/localScreenshare";
 import { organizationSlice } from "./slices/organization";
 import { remoteParticipantsSlice } from "./slices/remoteParticipants";
+import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcAnalyticsSlice } from "./slices/rtcAnalytics";
@@ -32,6 +33,7 @@ export const rootReducer = combineReducers({
     localScreenshare: localScreenshareSlice.reducer,
     organization: organizationSlice.reducer,
     remoteParticipants: remoteParticipantsSlice.reducer,
+    room: roomSlice.reducer,
     roomConnection: roomConnectionSlice.reducer,
     rtcAnalytics: rtcAnalyticsSlice.reducer,
     rtcConnection: rtcConnectionSlice.reducer,

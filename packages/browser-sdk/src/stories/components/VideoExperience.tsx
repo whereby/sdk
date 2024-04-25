@@ -37,14 +37,17 @@ export default function VideoExperience({
         knock,
         sendChatMessage,
         setDisplayName,
+        lockRoom,
         muteParticipants,
+        kickParticipant,
+        endMeeting,
         toggleCamera,
         toggleMicrophone,
+        toggleLowDataMode,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
         startScreenshare,
         stopScreenshare,
-        lockRoom,
     } = actions;
     const { VideoView } = components;
 
@@ -100,6 +103,12 @@ export default function VideoExperience({
                             >
                                 Unlock room
                             </button>
+                            <button
+                                onClick={() => endMeeting()}
+                                className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
+                            >
+                                End meeting
+                            </button>
                         </div>
                     )}
                     <div className="container">
@@ -154,6 +163,18 @@ export default function VideoExperience({
                                                         }
                                                     >
                                                         Mute
+                                                    </button>{" "}
+                                                    <button
+                                                        onClick={() => {
+                                                            kickParticipant(participant.id);
+                                                        }}
+                                                        className={
+                                                            localParticipant?.roleName !== "host"
+                                                                ? "hostControlActionDisallowed"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        Kick
                                                     </button>
                                                 </>
                                             ) : null}
@@ -172,6 +193,7 @@ export default function VideoExperience({
                     <div className="controls">
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                        <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>
                         <button
                             onClick={() => {
                                 if (isLocalScreenshareActive) {

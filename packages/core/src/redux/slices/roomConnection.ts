@@ -10,7 +10,7 @@ import {
     selectAppExternalId,
     selectAppIsNodeSdk,
 } from "./app";
-import { selectAuthorizationRoomKey, setRoomKey } from "./authorization";
+import { selectRoomKey, setRoomKey } from "./authorization";
 
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";
@@ -133,7 +133,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const roomName = selectAppRoomName(state);
-    const roomKey = selectAuthorizationRoomKey(state);
+    const roomKey = selectRoomKey(state);
     const displayName = selectAppDisplayName(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
@@ -153,7 +153,6 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
         organizationId,
         roomKey,
         roomName,
-        selfId: "",
         userAgent,
         externalId,
     });
@@ -165,14 +164,13 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const roomName = selectAppRoomName(state);
-    const roomKey = selectAuthorizationRoomKey(state);
+    const roomKey = selectRoomKey(state);
     const displayName = selectAppDisplayName(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
-    const selfId = selectSelfId(getState());
     const clientClaim = selectLocalParticipantClientClaim(getState());
 
     socket?.emit("join_room", {
@@ -189,10 +187,9 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         organizationId,
         roomKey,
         roomName,
-        selfId,
-        ...(!!clientClaim && { clientClaim }),
         userAgent,
         externalId,
+        ...(clientClaim && { clientClaim }),
     });
 
     dispatch(connectionStatusChanged("connecting"));

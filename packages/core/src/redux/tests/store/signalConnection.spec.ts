@@ -1,10 +1,5 @@
 import { createStore, mockSignalEmit, mockServerSocket } from "../store.setup";
-import {
-    doSignalSocketConnect,
-    doSignalIdentifyDevice,
-    doSignalDisconnect,
-    doSignalReconnect,
-} from "../../slices/signalConnection";
+import { doSignalSocketConnect, doSignalIdentifyDevice, doSignalDisconnect } from "../../slices/signalConnection";
 import { randomDeviceCredentials } from "../../../__mocks__/appMocks";
 import { diff } from "deep-object-diff";
 import { ServerSocket } from "@whereby.com/media";
@@ -18,70 +13,67 @@ jest.mock("@whereby.com/media", () => {
     };
 });
 
-describe("actions", () => {
-    it("doSignalSocketConnect", () => {
-        const store = createStore();
+describe("signalConnectionSlice", () => {
+    describe("actions", () => {
+        it("doSignalSocketConnect", () => {
+            const store = createStore();
 
-        store.dispatch(doSignalSocketConnect());
+            store.dispatch(doSignalSocketConnect());
 
-        expect(ServerSocket).toHaveBeenCalledTimes(1);
-        expect(mockServerSocket.connect).toHaveBeenCalledTimes(1);
-    });
-
-    it("doSignalIdentifyDevice", () => {
-        const deviceCredentials = randomDeviceCredentials();
-        const store = createStore({ withSignalConnection: true });
-
-        const before = store.getState().signalConnection;
-
-        store.dispatch(doSignalIdentifyDevice({ deviceCredentials }));
-
-        const after = store.getState().signalConnection;
-
-        expect(mockSignalEmit).toHaveBeenCalledWith("identify_device", { deviceCredentials });
-        expect(diff(before, after)).toEqual({
-            isIdentifyingDevice: true,
+            expect(ServerSocket).toHaveBeenCalledTimes(1);
+            expect(mockServerSocket.connect).toHaveBeenCalledTimes(1);
         });
-    });
 
-    it("doSignalDisconnect", () => {
-        const store = createStore({ withSignalConnection: true });
-
-        const before = store.getState().signalConnection;
-
-        store.dispatch(doSignalDisconnect());
-
-        const after = store.getState().signalConnection;
-
-        expect(mockSignalEmit).toHaveBeenCalledWith("leave_room");
-        expect(mockServerSocket.disconnect).toHaveBeenCalled();
-        expect(diff(before, after)).toEqual({
-            status: "disconnected",
-        });
-    });
-
-    it("doSignalReconnect", () => {
-        const deviceCredentials = randomDeviceCredentials();
-        const store = createStore({
-            withSignalConnection: true,
-            initialState: {
-                deviceCredentials: {
-                    data: deviceCredentials,
-                    isFetching: false,
+        it("doSignalIdentifyDevice", () => {
+            const deviceCredentials = randomDeviceCredentials();
+            const store = createStore({
+                initialState: {
+                    signalConnection: {
+                        isIdentifyingDevice: false,
+                        deviceIdentified: false,
+                        status: "connected",
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        socket: mockServerSocket as any,
+                    },
                 },
-            },
+            });
+
+            const before = store.getState().signalConnection;
+
+            store.dispatch(doSignalIdentifyDevice({ deviceCredentials }));
+
+            const after = store.getState().signalConnection;
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("identify_device", { deviceCredentials });
+            expect(diff(before, after)).toEqual({
+                isIdentifyingDevice: true,
+            });
         });
 
-        const before = store.getState().signalConnection;
+        it("doSignalDisconnect", () => {
+            const deviceCredentials = randomDeviceCredentials();
+            const store = createStore({
+                withSignalConnection: true,
+                initialState: {
+                    deviceCredentials: {
+                        data: deviceCredentials,
+                        isFetching: false,
+                    },
+                },
+            });
 
-        store.dispatch(doSignalReconnect());
+            const before = store.getState().signalConnection;
 
-        const after = store.getState().signalConnection;
+            store.dispatch(doSignalDisconnect());
 
-        expect(mockSignalEmit).toHaveBeenCalledWith("identify_device", { deviceCredentials });
-        expect(diff(before, after)).toEqual({
-            isIdentifyingDevice: true,
-            status: "reconnect",
+            const after = store.getState().signalConnection;
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("leave_room");
+            expect(mockServerSocket.disconnect).toHaveBeenCalled();
+            expect(diff(before, after)).toEqual({
+                deviceIdentified: false,
+                status: "disconnected",
+            });
         });
     });
 });

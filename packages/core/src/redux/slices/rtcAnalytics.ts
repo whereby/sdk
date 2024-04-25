@@ -6,13 +6,8 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { selectRtcConnectionRaw, selectRtcManagerInitialized, selectRtcStatus } from "./rtcConnection";
 import { selectAppDisplayName, selectAppExternalId } from "./app";
 import { selectOrganizationId } from "./organization";
-import {
-    doEnableAudio,
-    doEnableVideo,
-    doSetDisplayName,
-    selectLocalParticipantRole,
-    selectSelfId,
-} from "./localParticipant";
+import { doEnableAudio, doEnableVideo, doSetDisplayName, selectSelfId } from "./localParticipant";
+import { selectAuthorizationRoleName } from "./authorization";
 import { selectSignalStatus } from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
 import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
@@ -121,7 +116,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
     userRole: {
         actions: null,
         rtcEventName: "userRole",
-        getValue: (state: RootState) => selectLocalParticipantRole(state),
+        getValue: (state: RootState) => selectAuthorizationRoleName(state),
         getOutput: (value) => ({ userRole: value }),
     },
 };
