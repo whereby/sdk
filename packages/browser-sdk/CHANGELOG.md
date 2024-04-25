@@ -5,6 +5,13 @@
 ### Minor Changes
 
 - 9e19728: Rebase beta version on latest main
+
+## 2.8.1
+
+### Patch Changes
+
+- 6b5dcc9: Add precall check events to whereby embed element events map
+
 ## 2.8.0
 
 ### Minor Changes

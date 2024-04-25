@@ -1,9 +1,7 @@
 import * as React from "react";
 import {
     Store,
-    createStore,
     observeStore,
-    createServices,
     doSendChatMessage,
     doStartCloudRecording,
     doStopCloudRecording,
@@ -26,6 +24,7 @@ import VideoView from "../VideoView";
 import { selectRoomConnectionState } from "./selector";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
+import { WherebyContext } from "../Provider";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -59,13 +58,12 @@ export function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions = defaultRoomConnectionOptions,
 ): RoomConnectionRef {
-    const [store] = React.useState<Store>(() => {
-        if (roomConnectionOptions.localMedia) {
-            return roomConnectionOptions.localMedia.store;
-        }
-        const services = createServices();
-        return createStore({ injectServices: services });
-    });
+    const store = React.useContext(WherebyContext);
+
+    if (!store) {
+        throw new Error("useRoomConnection must be used within a WherebyProvider");
+    }
+
     const [boundVideoView, setBoundVideoView] = React.useState<(props: VideoViewComponentProps) => JSX.Element>();
     const [roomConnectionState, setRoomConnectionState] = React.useState(initialState);
 

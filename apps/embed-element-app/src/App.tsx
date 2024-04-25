@@ -27,6 +27,8 @@ const events = [
     "participant_join",
     "participant_leave",
     "participantupdate",
+    "precall_check_skipped",
+    "precall_check_completed",
     "people_toggle",
     "pip_toggle",
     "screenshare_toggle",

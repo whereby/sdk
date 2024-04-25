@@ -21,12 +21,15 @@ export interface LocalMediaState {
     cameraEnabled: boolean;
     currentCameraDeviceId?: string;
     currentMicrophoneDeviceId?: string;
+    currentSpeakerDeviceId?: string;
     devices: MediaDeviceInfo[];
     isSettingCameraDevice: boolean;
     isSettingMicrophoneDevice: boolean;
+    isSettingSpeakerDevice: boolean;
     isTogglingCamera: boolean;
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
+    speakerDeviceError?: unknown;
     options?: LocalMediaOptions;
     status: "" | "stopped" | "starting" | "started" | "error";
     startError?: unknown;
@@ -38,9 +41,11 @@ export interface LocalMediaState {
 export const initialLocalMediaState: LocalMediaState = {
     busyDeviceIds: [],
     cameraEnabled: false,
+    currentSpeakerDeviceId: "default",
     devices: [],
     isSettingCameraDevice: false,
     isSettingMicrophoneDevice: false,
+    isSettingSpeakerDevice: false,
     isTogglingCamera: false,
     microphoneEnabled: false,
     status: "",
@@ -83,6 +88,12 @@ export const localMediaSlice = createSlice({
             return {
                 ...state,
                 currentMicrophoneDeviceId: action.payload.deviceId,
+            };
+        },
+        setCurrentSpeakerDeviceId(state, action: PayloadAction<{ deviceId?: string }>) {
+            return {
+                ...state,
+                currentSpeakerDeviceId: action.payload.deviceId ?? "default",
             };
         },
         setDevices(state, action: PayloadAction<{ devices: MediaDeviceInfo[] }>) {
@@ -243,6 +254,7 @@ export const {
     deviceBusy,
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
+    setCurrentSpeakerDeviceId,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
     setLocalMediaOptions,
@@ -380,6 +392,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 newDevices,
                 currentAudioId: selectCurrentMicrophoneDeviceId(state),
                 currentVideoId: selectCurrentCameraDeviceId(state),
+                currentSpeakerId: selectCurrentSpeakerDeviceId(state),
             });
 
             let autoSwitchAudioId = changedDevices.audioinput?.deviceId;
@@ -551,6 +564,7 @@ export const selectBusyDeviceIds = (state: RootState) => state.localMedia.busyDe
 export const selectCameraDeviceError = (state: RootState) => state.localMedia.cameraDeviceError;
 export const selectCurrentCameraDeviceId = (state: RootState) => state.localMedia.currentCameraDeviceId;
 export const selectCurrentMicrophoneDeviceId = (state: RootState) => state.localMedia.currentMicrophoneDeviceId;
+export const selectCurrentSpeakerDeviceId = (state: RootState) => state.localMedia.currentSpeakerDeviceId;
 export const selectIsCameraEnabled = (state: RootState) => state.localMedia.cameraEnabled;
 export const selectIsMicrophoneEnabled = (state: RootState) => state.localMedia.microphoneEnabled;
 export const selectIsSettingCameraDevice = (state: RootState) => state.localMedia.isSettingCameraDevice;

@@ -6,6 +6,8 @@ import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
+import { Provider as WherebyProvider } from "../lib/react/Provider";
+import { StoryFn } from "@storybook/react";
 
 const defaultArgs = {
     title: "Examples/Custom UI",
@@ -18,6 +20,13 @@ const defaultArgs = {
         displayName: "SDK",
         roomUrl: process.env.STORYBOOK_ROOM,
     },
+    decorators: [
+        (Story: StoryFn) => (
+            <WherebyProvider>
+                <Story />
+            </WherebyProvider>
+        ),
+    ],
 };
 
 export default defaultArgs;
