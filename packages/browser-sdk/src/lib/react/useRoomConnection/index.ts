@@ -20,7 +20,6 @@ import {
     doLockRoom,
     doKickParticipant,
     doEndMeeting,
-    doRtcReportStreamResolution,
 } from "@whereby.com/core";
 
 import { selectRoomConnectionState } from "./selector";
