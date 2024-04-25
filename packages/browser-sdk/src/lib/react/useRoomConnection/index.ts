@@ -17,6 +17,7 @@ import {
     doStartScreenshare,
     doStopScreenshare,
     doAppJoin,
+    doJoinRoom,
     doKnockRoom,
     doLeaveRoom,
     doLockRoom,
@@ -90,6 +91,10 @@ export function useRoomConnection(
                 externalId: roomConnectionOptions.externalId || null,
             }),
         );
+
+        // TODO: move this out of initial useEffect and trigger manually
+        store.dispatch(doJoinRoom());
+
         return () => {
             if (roomConnectionState.connectionStatus === "connected") {
                 store.dispatch(doLeaveRoom());
@@ -158,7 +163,7 @@ export function useRoomConnection(
     const startScreenshare = React.useCallback(() => store.dispatch(doStartScreenshare()), [store]);
     const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
-
+    const joinRoom = React.useCallback(() => store.dispatch(doJoinRoom()), [store]);
     const leaveRoom = React.useCallback(() => store.dispatch(doLeaveRoom()), [store]);
     const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
     const muteParticipants = React.useCallback(
@@ -179,6 +184,7 @@ export function useRoomConnection(
             toggleLowDataMode,
             acceptWaitingParticipant,
             knock,
+            joinRoom,
             leaveRoom,
             lockRoom,
             muteParticipants,

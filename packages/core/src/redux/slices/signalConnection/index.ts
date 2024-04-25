@@ -234,7 +234,7 @@ export const selectShouldConnectSignal = createSelector(
     selectAppWantsToJoin,
     selectSignalStatus,
     (wantsToJoin, signalStatus) => {
-        if (wantsToJoin && ["", "reconnect"].includes(signalStatus)) {
+        if (wantsToJoin && ["", "reconnect", "disconnected"].includes(signalStatus)) {
             return true;
         }
         return false;

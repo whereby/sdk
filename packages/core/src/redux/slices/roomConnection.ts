@@ -4,11 +4,13 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 import {
+    doWantsToJoin,
     selectAppDisplayName,
     selectAppRoomName,
     selectAppUserAgent,
     selectAppExternalId,
     selectAppIsNodeSdk,
+    selectAppWantsToJoin,
 } from "./app";
 import { selectRoomKey, setRoomKey } from "./authorization";
 
@@ -205,6 +207,10 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     dispatch(connectionStatusChanged("connecting"));
 });
 
+export const doJoinRoom = createAppThunk(() => (dispatch) => {
+    dispatch(doWantsToJoin());
+});
+
 export const doLeaveRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
@@ -230,18 +236,27 @@ export const selectRoomConnectionError = (state: RootState) => state.roomConnect
 
 export const selectShouldConnectRoom = createSelector(
     [
+        selectAppWantsToJoin,
         selectOrganizationId,
         selectRoomConnectionStatus,
         selectSignalConnectionDeviceIdentified,
         selectLocalMediaStatus,
         selectAppIsNodeSdk,
     ],
-    (hasOrganizationIdFetched, roomConnectionStatus, signalConnectionDeviceIdentified, localMediaStatus, isNodeSdk) => {
+    (
+        appWantsToJoin,
+        hasOrganizationIdFetched,
+        roomConnectionStatus,
+        signalConnectionDeviceIdentified,
+        localMediaStatus,
+        isNodeSdk,
+    ) => {
         if (
+            appWantsToJoin &&
             (localMediaStatus === "started" || isNodeSdk) &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
-            ["initializing", "reconnect"].includes(roomConnectionStatus)
+            ["initializing", "reconnect", "disconnected"].includes(roomConnectionStatus)
         ) {
             return true;
         }

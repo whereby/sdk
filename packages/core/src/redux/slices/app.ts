@@ -48,11 +48,13 @@ export const appSlice = createSlice({
                 ...state,
                 ...action.payload,
                 roomName: url.pathname,
-                wantsToJoin: true,
             };
         },
         appLeft: (state) => {
             return { ...state, wantsToJoin: false };
+        },
+        doWantsToJoin: (state) => {
+            return { ...state, wantsToJoin: true };
         },
     },
 });
@@ -60,7 +62,7 @@ export const appSlice = createSlice({
 /**
  * Action creators
  */
-export const { doAppJoin, appLeft } = appSlice.actions;
+export const { doAppJoin, appLeft, doWantsToJoin } = appSlice.actions;
 
 /**
  * Selectors

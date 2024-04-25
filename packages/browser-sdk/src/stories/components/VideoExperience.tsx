@@ -37,6 +37,7 @@ export default function VideoExperience({
         knock,
         sendChatMessage,
         setDisplayName,
+        joinRoom,
         leaveRoom,
         lockRoom,
         muteParticipants,
@@ -56,16 +57,7 @@ export default function VideoExperience({
         <div>
             {connectionStatus === "connecting" && <span>Connecting...</span>}
             {connectionStatus === "leaving" && <span>Leaving...</span>}
-            {connectionStatus === "disconnected" && (
-                <button
-                    onClick={() => {
-                        // TODO
-                        // joinRoom()
-                    }}
-                >
-                    Join room
-                </button>
-            )}
+            {connectionStatus === "disconnected" && <button onClick={() => joinRoom()}>Join room</button>}
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>
                     <span>Room locked, please knock....</span>

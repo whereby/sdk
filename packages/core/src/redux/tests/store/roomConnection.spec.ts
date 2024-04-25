@@ -1,5 +1,5 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { doKnockRoom, doConnectRoom, doLeaveRoom } from "../../slices/roomConnection";
+import { doKnockRoom, doConnectRoom, doJoinRoom, doLeaveRoom } from "../../slices/roomConnection";
 import { diff } from "deep-object-diff";
 
 describe("actions", () => {
@@ -30,6 +30,20 @@ describe("actions", () => {
         expect(mockSignalEmit).toHaveBeenCalledWith("join_room", expect.any(Object));
         expect(diff(before, after)).toEqual({
             status: "connecting",
+        });
+    });
+
+    it("doJoinRoom", async () => {
+        const store = createStore();
+
+        const before = store.getState().app;
+
+        store.dispatch(doJoinRoom());
+
+        const after = store.getState().app;
+
+        expect(diff(before, after)).toEqual({
+            wantsToJoin: true,
         });
     });
 

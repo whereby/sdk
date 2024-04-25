@@ -44,9 +44,22 @@ const appReducer = combineReducers({
 });
 
 export const rootReducer: AppReducer = (state, action) => {
-    // Reset store state on leave
-    if (action.type === signalEvents.roomLeft.type) {
-        return appReducer(undefined, action);
+    // Reset store state on signal disconnect
+    if (action.type === signalEvents.disconnect.type) {
+        const resetState: Partial<RootState> = {
+            app: {
+                ...(state?.app ?? appSlice.getInitialState()),
+                wantsToJoin: false,
+            },
+            localMedia: {
+                ...(state?.localMedia ?? localMediaSlice.getInitialState()),
+            },
+            organization: {
+                ...(state?.organization ?? organizationSlice.getInitialState()),
+            },
+        };
+
+        return appReducer(resetState, action);
     }
 
     return appReducer(state, action);
