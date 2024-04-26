@@ -293,6 +293,6 @@ startAppListening({
 
 createReactor([selectRoomConnectionStatus, selectSignalStatus], ({ dispatch }, roomConnectionStatus, signalStatus) => {
     if (["kicked", "left"].includes(roomConnectionStatus) && signalStatus !== "disconnected") {
-        dispatch(doSignalDisconnect());
+        dispatch(doSignalDisconnect({ reset: true }));
     }
 });

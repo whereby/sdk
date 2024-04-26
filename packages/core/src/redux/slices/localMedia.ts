@@ -602,7 +602,7 @@ export const selectLocalMediaShouldStartWithOptions = createSelector(
     selectLocalMediaOptions,
     selectAppIsNodeSdk,
     (appWantsToJoin, localMediaStatus, localMediaOptions, isNodeSdk) => {
-        if (appWantsToJoin && localMediaStatus === "" && !isNodeSdk && localMediaOptions) {
+        if (appWantsToJoin && ["", "stopped"].includes(localMediaStatus) && !isNodeSdk && localMediaOptions) {
             return localMediaOptions;
         }
     },
@@ -615,20 +615,20 @@ createReactor([selectLocalMediaShouldStartWithOptions], ({ dispatch }, options) 
 });
 
 // Stop localMedia when roomConnection is no longer wanted and media was started when joining
-// export const selectLocalMediaShouldStop = createSelector(
-//     selectAppWantsToJoin,
-//     selectLocalMediaStatus,
-//     selectLocalMediaOptions,
-//     (appWantsToJoin, localMediaStatus, localMediaOptions) => {
-//         return !appWantsToJoin && localMediaStatus !== "" && !!localMediaOptions;
-//     },
-// );
+export const selectLocalMediaShouldStop = createSelector(
+    selectAppWantsToJoin,
+    selectLocalMediaStatus,
+    selectLocalMediaOptions,
+    (appWantsToJoin, localMediaStatus, localMediaOptions) => {
+        return !appWantsToJoin && localMediaStatus !== "" && !!localMediaOptions;
+    },
+);
 
-// createReactor([selectLocalMediaShouldStop], ({ dispatch }, localMediaShouldStop) => {
-//     if (localMediaShouldStop) {
-//         dispatch(doStopLocalMedia());
-//     }
-// });
+createReactor([selectLocalMediaShouldStop], ({ dispatch }, localMediaShouldStop) => {
+    if (localMediaShouldStop) {
+        dispatch(doStopLocalMedia());
+    }
+});
 
 startAppListening({
     predicate: (_action, currentState, previousState) => {

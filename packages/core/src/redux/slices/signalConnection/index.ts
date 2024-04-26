@@ -3,6 +3,7 @@ import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
+import { doAppReset } from "../app";
 
 import {
     AudioEnableRequestedEvent,
@@ -26,7 +27,7 @@ import {
     VideoEnabledEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
-import { appLeft, selectAppWantsToJoin } from "../app";
+import { doAppLeft, selectAppWantsToJoin } from "../app";
 import { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, UnknownAction>) {
@@ -203,13 +204,16 @@ export const doSignalIdentifyDevice = createAppThunk(
         },
 );
 
-export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
+export const doSignalDisconnect = createAppThunk((payload: { reset?: boolean } = {}) => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
 
     socket?.disconnect();
     dispatch(socketDisconnected());
-    dispatch({ type: "app/reset" });
+
+    if (payload?.reset) {
+        dispatch(doAppReset());
+    }
 });
 
 /**
@@ -225,9 +229,9 @@ export const selectSignalConnectionSocket = (state: RootState) => state.signalCo
  * Reactors
  */
 startAppListening({
-    actionCreator: appLeft,
+    actionCreator: doAppLeft,
     effect: (_, { dispatch }) => {
-        dispatch(doSignalDisconnect());
+        dispatch(doSignalDisconnect({ reset: false }));
     },
 });
 

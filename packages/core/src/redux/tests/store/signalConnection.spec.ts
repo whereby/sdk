@@ -64,11 +64,10 @@ describe("signalConnectionSlice", () => {
 
             const before = store.getState().signalConnection;
 
-            store.dispatch(doSignalDisconnect());
+            store.dispatch(doSignalDisconnect({ reset: false }));
 
             const after = store.getState().signalConnection;
 
-            expect(mockSignalEmit).toHaveBeenCalledWith("leave_room");
             expect(mockServerSocket.disconnect).toHaveBeenCalled();
             expect(diff(before, after)).toEqual({
                 deviceIdentified: false,

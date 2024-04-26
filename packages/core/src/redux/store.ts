@@ -2,7 +2,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../services";
 
-import { appSlice } from "./slices/app";
+import { appSlice, doAppReset } from "./slices/app";
 import { authorizationSlice } from "./slices/authorization";
 import { chatSlice } from "./slices/chat";
 import { cloudRecordingSlice } from "./slices/cloudRecording";
@@ -43,18 +43,16 @@ const appReducer = combineReducers({
 });
 
 export const rootReducer: AppReducer = (state, action) => {
-    // Reset store state on reset signal
-    if (action.type === "app/reset") {
+    // Reset store state on app reset action
+    if (doAppReset.match(action)) {
         const resetState: Partial<RootState> = {
             app: {
-                ...(state?.app ?? appSlice.getInitialState()),
-                wantsToJoin: false,
+                ...appSlice.getInitialState(),
+                initialConfig: state?.app?.initialConfig,
             },
             localMedia: {
-                ...(state?.localMedia ?? localMediaSlice.getInitialState()),
-            },
-            organization: {
-                ...(state?.organization ?? organizationSlice.getInitialState()),
+                ...localMediaSlice.getInitialState(),
+                ...state?.localMedia,
             },
         };
 

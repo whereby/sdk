@@ -17,7 +17,7 @@ import {
     doStartScreenshare,
     doStopScreenshare,
     doAppJoin,
-    doSignalDisconnect,
+    doAppLeft,
     doJoinRoom,
     doKnockRoom,
     doLeaveRoom,
@@ -97,8 +97,8 @@ export function useRoomConnection(
         store.dispatch(doJoinRoom());
 
         return () => {
+            store.dispatch(doAppLeft());
             unsubscribe();
-            store.dispatch(doSignalDisconnect());
         };
     }, []);
 
