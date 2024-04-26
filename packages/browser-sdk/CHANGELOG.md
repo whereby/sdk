@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.10.0
+
+### Minor Changes
+
+- 0092158: Add support for meeting_end event on embed element
+
 ## 2.9.0
 
 ### Minor Changes
