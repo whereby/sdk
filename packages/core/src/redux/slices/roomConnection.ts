@@ -27,7 +27,7 @@ import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatu
 import { selectSelfId, selectLocalParticipantClientClaim } from "./localParticipant";
 
 export type ConnectionStatus =
-    | "initializing"
+    | "ready"
     | "connecting"
     | "connected"
     | "room_locked"
@@ -52,7 +52,7 @@ export interface RoomConnectionState {
 
 const initialState: RoomConnectionState = {
     session: null,
-    status: "initializing",
+    status: "ready",
     error: null,
 };
 
@@ -256,7 +256,7 @@ export const selectShouldConnectRoom = createSelector(
             (localMediaStatus === "started" || isNodeSdk) &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
-            ["initializing", "reconnect", "disconnected"].includes(roomConnectionStatus)
+            ["ready", "reconnect", "disconnected"].includes(roomConnectionStatus)
         ) {
             return true;
         }

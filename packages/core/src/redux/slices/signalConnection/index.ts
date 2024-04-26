@@ -209,6 +209,7 @@ export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
 
     socket?.disconnect();
     dispatch(socketDisconnected());
+    dispatch({ type: "app/reset" });
 });
 
 /**

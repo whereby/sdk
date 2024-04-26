@@ -15,7 +15,6 @@ import { remoteParticipantsSlice } from "./slices/remoteParticipants";
 import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
-import { signalEvents } from "./slices/signalConnection/actions";
 import { rtcAnalyticsSlice } from "./slices/rtcAnalytics";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
 import { streamingSlice } from "./slices/streaming";
@@ -44,8 +43,8 @@ const appReducer = combineReducers({
 });
 
 export const rootReducer: AppReducer = (state, action) => {
-    // Reset store state on signal disconnect
-    if (action.type === signalEvents.disconnect.type) {
+    // Reset store state on reset signal
+    if (action.type === "app/reset") {
         const resetState: Partial<RootState> = {
             app: {
                 ...(state?.app ?? appSlice.getInitialState()),

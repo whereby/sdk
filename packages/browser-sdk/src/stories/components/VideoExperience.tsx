@@ -55,9 +55,8 @@ export default function VideoExperience({
 
     return (
         <div>
+            {connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
             {connectionStatus === "connecting" && <span>Connecting...</span>}
-            {connectionStatus === "leaving" && <span>Leaving...</span>}
-            {connectionStatus === "disconnected" && <button onClick={() => joinRoom()}>Join room</button>}
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>
                     <span>Room locked, please knock....</span>
@@ -215,6 +214,8 @@ export default function VideoExperience({
                     </div>
                 </>
             )}
+            {connectionStatus === "leaving" && <span>Leaving...</span>}
+            {connectionStatus === "disconnected" && <span>Disconnected</span>}
         </div>
     );
 }

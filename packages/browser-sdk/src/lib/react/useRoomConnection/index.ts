@@ -17,6 +17,7 @@ import {
     doStartScreenshare,
     doStopScreenshare,
     doAppJoin,
+    doSignalDisconnect,
     doJoinRoom,
     doKnockRoom,
     doLeaveRoom,
@@ -34,7 +35,7 @@ import { browserSdkVersion } from "../version";
 const initialState: RoomConnectionState = {
     chatMessages: [],
     remoteParticipants: [],
-    connectionStatus: "initializing",
+    connectionStatus: "ready",
     screenshares: [],
     waitingParticipants: [],
 };
@@ -96,11 +97,8 @@ export function useRoomConnection(
         store.dispatch(doJoinRoom());
 
         return () => {
-            if (roomConnectionState.connectionStatus === "connected") {
-                store.dispatch(doLeaveRoom());
-            }
-
             unsubscribe();
+            store.dispatch(doSignalDisconnect());
         };
     }, []);
 
