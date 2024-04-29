@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useRoomConnection, useLocalMedia, UseLocalMediaResult } from "@whereby.com/browser-sdk/react";
-import { fakeAudioStream, fakeWebcamFrame } from "@whereby.com/core";
+import { getFakeMediaStream } from "@whereby.com/core";
 
 import "./App.css";
 
@@ -231,36 +231,25 @@ const CanvasWrapper = ({ roomUrl, canvasStream }: { roomUrl: string; canvasStrea
 
 const App = () => {
     const [roomUrlInput, setRoomUrlInput] = useState<string>("");
-    const [roomUrl, setRoomUrl] = useState<string | null>(null);
-    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-    const canvas = useRef<HTMLCanvasElement>(null);
+    const [roomUrl, setRoomUrl] = useState<string>();
+    const [localStream, setLocalStream] = useState<MediaStream>();
+    const [canvas, setCanvas] = useState<HTMLCanvasElement>();
+    const [hasAudio, setHasAudio] = useState<boolean>(false);
 
-    useEffect(() => {
-        if (canvas.current) {
-            fakeWebcamFrame(canvas.current);
-        }
-    }, [canvas]);
-
-    useEffect(() => {
-        setTimeout(() => {
-            if (canvas.current) {
-                setLocalStream(canvas.current.captureStream());
-            }
-        }, 1000);
-    }, [canvas]);
+    const canvasRef = useCallback((canvas: HTMLCanvasElement) => {
+        setCanvas(canvas);
+        const stream = getFakeMediaStream({ canvas });
+        setLocalStream(stream);
+    }, []);
 
     function toggleFakeAudio() {
-        if (!localStream) {
+        if (!canvas) {
             return;
         }
-        if (localStream.getAudioTracks().length > 0) {
-            localStream.getAudioTracks()[0].stop();
-            localStream.removeTrack(localStream.getAudioTracks()[0]);
-        } else {
-            const audioStream = fakeAudioStream();
-            localStream.addTrack(audioStream.getAudioTracks()[0]);
-        }
-        setLocalStream(localStream.clone());
+
+        const stream = getFakeMediaStream({ canvas, hasAudio: !hasAudio });
+        setLocalStream(stream);
+        setHasAudio(!hasAudio);
     }
 
     return (
@@ -302,7 +291,7 @@ const App = () => {
                     </dl>
                 )}
                 <br />
-                <canvas ref={canvas} width="640" height="360" />
+                <canvas ref={canvasRef} width="640" height="480" />
             </div>
         </div>
     );
