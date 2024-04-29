@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core";
+import { getFakeMediaStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
@@ -100,31 +100,24 @@ function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: 
 }
 
 export const LocalMediaWithFakeMediaStream = ({ roomUrl }: { roomUrl: string }) => {
-    const canvas = useRef<HTMLCanvasElement>(null);
-    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const [localStream, setLocalStream] = useState<MediaStream>();
     const [isAudioReady, setIsAudioReady] = useState(false);
+    const [canvas, setCanvas] = useState<HTMLCanvasElement>();
 
-    useEffect(() => {
-        if (canvas.current) {
-            fakeWebcamFrame(canvas.current);
-        }
-    }, [canvas]);
-
-    useEffect(() => {
-        setTimeout(() => {
-            if (canvas.current) {
-                setLocalStream(canvas.current.captureStream());
-            }
-        }, 1000);
-    }, [canvas]);
+    const canvasRef = useCallback((canvas: HTMLCanvasElement) => {
+        setCanvas(canvas);
+        const stream = getFakeMediaStream({ canvas });
+        setLocalStream(stream);
+    }, []);
 
     function addAudioTrack() {
-        if (localStream) {
-            const audioStream = fakeAudioStream();
-            localStream.addTrack(audioStream.getAudioTracks()[0]);
-            setLocalStream(localStream.clone());
-            setIsAudioReady(true);
+        if (!canvas) {
+            return;
         }
+
+        const stream = getFakeMediaStream({ canvas, hasAudio: true });
+        setLocalStream(stream);
+        setIsAudioReady(true);
     }
 
     return (
@@ -147,7 +140,7 @@ export const LocalMediaWithFakeMediaStream = ({ roomUrl }: { roomUrl: string }) 
                     <div>Waiting for canvas to be loaded</div>
                 )}
                 <br />
-                <canvas ref={canvas} id="canvas" width="640" height="360"></canvas>
+                <canvas ref={canvasRef} id="canvas" width="640" height="360"></canvas>
             </div>
         </div>
     );
