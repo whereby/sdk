@@ -20,6 +20,7 @@ import {
     selectLocalMediaStream,
     selectLocalMediaStatus,
     doSetDevice,
+    doSwitchLocalStream,
 } from "../localMedia";
 import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
@@ -345,6 +346,24 @@ startAppListening({
         const { rtcManager } = selectRtcConnectionRaw(getState());
 
         rtcManager?.removeStream(stream.id, stream, null);
+    },
+});
+
+startAppListening({
+    actionCreator: doSwitchLocalStream.fulfilled,
+    effect: ({ payload }, { getState }) => {
+        const stream = selectLocalMediaStream(getState());
+        const { rtcManager } = selectRtcConnectionRaw(getState());
+
+        if (stream && rtcManager) {
+            const replace = (kind: string, oldTrack: MediaStreamTrack) => {
+                const track = stream.getTracks().find((t) => t.kind === kind);
+                return track && rtcManager.replaceTrack(oldTrack, track);
+            };
+            payload?.replacedTracks?.forEach((t) => {
+                replace(t.kind, t);
+            });
+        }
     },
 });
 

@@ -124,6 +124,7 @@ describe("actions", () => {
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream([audioTrack, videoTrack]),
@@ -177,6 +178,7 @@ describe("actions", () => {
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: localStream,
@@ -231,6 +233,7 @@ describe("actions", () => {
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: localStream,
@@ -275,6 +278,43 @@ describe("actions", () => {
         });
     });
 
+    describe("doToggleLowDataMode", () => {
+        describe("when low data mode is enabled", () => {
+            let initialState: Partial<RootState>;
+            beforeEach(() => {
+                initialState = {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: true,
+                        devices: [],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: new MockMediaStream(),
+                        isSwitchingStream: false,
+                    },
+                };
+            });
+
+            it("should call doSwitchLocalStream", () => {
+                jest.spyOn(localMediaSlice, "doSwitchLocalStream");
+                const store = createStore({ initialState });
+                const before = store.getState().localMedia;
+
+                store.dispatch(localMediaSlice.doToggleLowDataMode());
+
+                expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledTimes(1);
+                const after = store.getState().localMedia;
+
+                expect(diff(before, after)).toMatchObject({ isSwitchingStream: true });
+            });
+        });
+    });
+
     describe("doUpdateDeviceList", () => {
         it("should switch to the next video device if current cam is unplugged", async () => {
             const dev1 = {
@@ -303,6 +343,7 @@ describe("actions", () => {
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream(),
@@ -327,7 +368,7 @@ describe("actions", () => {
             expect(mockedEnumerateDevices).toHaveBeenCalled();
             expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledWith({
                 audioId: undefined,
-                videoId: dev1.deviceId,
+                videoId: dev2.deviceId,
             });
             expect(diff(before, after)).toMatchObject({
                 devices: {
@@ -377,6 +418,7 @@ describe("actions", () => {
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
                         isTogglingCamera: false,
+                        lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream,

@@ -11,12 +11,15 @@ import {
     doSetDisplayName,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
+    toggleLowDataModeEnabled,
     doStartScreenshare,
     doStopScreenshare,
     appLeft,
     doAppJoin,
     doKnockRoom,
     doLockRoom,
+    doKickParticipant,
+    doEndMeeting,
     doRtcReportStreamResolution,
 } from "@whereby.com/core";
 
@@ -134,6 +137,10 @@ export function useRoomConnection(
         (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
         [store],
     );
+    const toggleLowDataMode = React.useCallback(
+        (enabled?: boolean) => store.dispatch(toggleLowDataModeEnabled({ enabled })),
+        [store],
+    );
     const acceptWaitingParticipant = React.useCallback(
         (participantId: string) => store.dispatch(doAcceptWaitingParticipant({ participantId })),
         [store],
@@ -154,14 +161,22 @@ export function useRoomConnection(
         },
         [store],
     );
+    const kickParticipant = React.useCallback(
+        (clientId: string) => store.dispatch(doKickParticipant({ clientId })),
+        [store],
+    );
+    const endMeeting = React.useCallback(() => store.dispatch(doEndMeeting()), [store]);
 
     return {
         state: roomConnectionState,
         actions: {
+            toggleLowDataMode,
             acceptWaitingParticipant,
             knock,
             lockRoom,
             muteParticipants,
+            kickParticipant,
+            endMeeting,
             rejectWaitingParticipant,
             sendChatMessage,
             setDisplayName,

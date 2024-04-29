@@ -120,7 +120,6 @@ export const { doSetLocalParticipant } = localParticipantSlice.actions;
 export const selectLocalParticipantRaw = (state: RootState) => state.localParticipant;
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
 export const selectLocalParticipantClientClaim = (state: RootState) => state.localParticipant.clientClaim;
-export const selectLocalParticipantRole = (state: RootState) => state.localParticipant.roleName;
 export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
 
 startAppListening({

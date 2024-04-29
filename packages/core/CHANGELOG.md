@@ -1,5 +1,30 @@
 # @whereby.com/core
 
+## 0.13.0
+
+### Minor Changes
+
+- 35dbed6: enable toggling low data mode
+- 7fcc0d9: Allow room hosts to kick clients and end the meeting
+
+### Patch Changes
+
+- b31e2f2: refactor doUpdateDeviceList
+
+## 0.12.1
+
+### Patch Changes
+
+- 7eb3cac: Drop sending of selfId in join_room signal request
+- Updated dependencies [7eb3cac]
+  - @whereby.com/media@1.3.9
+
+## 0.12.0
+
+### Minor Changes
+
+- 0eba48d: Fix signal reconnect flow
+
 ## 0.11.1
 
 ### Patch Changes
