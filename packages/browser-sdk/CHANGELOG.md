@@ -5,6 +5,12 @@
 ### Minor Changes
 
 - 9e19728: Rebase beta version on latest main
+## 2.10.0
+
+### Minor Changes
+
+- 0092158: Add support for meeting_end event on embed element
+
 ## 2.9.0
 
 ### Minor Changes
