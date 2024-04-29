@@ -4,7 +4,7 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 import {
-    doAppStart,
+    doAppStop,
     selectAppDisplayName,
     selectAppRoomName,
     selectAppUserAgent,
@@ -20,7 +20,6 @@ import {
     doSignalDisconnect,
     selectSignalConnectionDeviceIdentified,
     selectSignalConnectionRaw,
-    selectSignalStatus,
     socketReconnecting,
 } from "./signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
@@ -207,19 +206,6 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     dispatch(connectionStatusChanged("connecting"));
 });
 
-export const doJoinRoom = createAppThunk(() => (dispatch) => {
-    dispatch(doAppStart());
-});
-
-export const doLeaveRoom = createAppThunk(() => (dispatch, getState) => {
-    const state = getState();
-    const socket = selectSignalConnectionRaw(state).socket;
-
-    socket?.emit("leave_room");
-
-    dispatch(connectionStatusChanged("leaving"));
-});
-
 /**
  * Selectors
  */
@@ -291,8 +277,21 @@ startAppListening({
     },
 });
 
-createReactor([selectRoomConnectionStatus, selectSignalStatus], ({ dispatch }, roomConnectionStatus, signalStatus) => {
-    if (["kicked", "left"].includes(roomConnectionStatus) && signalStatus !== "disconnected") {
-        dispatch(doSignalDisconnect({ reset: true }));
-    }
+startAppListening({
+    actionCreator: doAppStop,
+    effect: (_, { dispatch, getState }) => {
+        const state = getState();
+
+        const roomConnectionStatus = selectRoomConnectionStatus(state);
+
+        if (roomConnectionStatus === "connected") {
+            const socket = selectSignalConnectionRaw(state).socket;
+
+            socket?.emit("leave_room");
+
+            dispatch(connectionStatusChanged("leaving"));
+        } else {
+            doSignalDisconnect();
+        }
+    },
 });

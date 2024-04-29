@@ -2,7 +2,7 @@ import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import type { LocalMediaOptions } from "./localMedia";
 import { coreVersion } from "../../version";
-import { createReactor } from "../listenerMiddleware";
+import { startAppListening } from "../listenerMiddleware";
 
 /**
  * Reducer
@@ -97,13 +97,18 @@ export const selectShouldReloadApp = createSelector(
     },
 );
 
-createReactor([selectShouldReloadApp], ({ dispatch, getState }, shouldReloadApp) => {
-    if (shouldReloadApp) {
+/**
+ * Reactors
+ */
+
+startAppListening({
+    actionCreator: doAppReset,
+    effect: (_, { dispatch, getState }) => {
         const state = getState();
         const appInitialConfig = selectAppInitialConfig(state);
 
         if (appInitialConfig) {
             dispatch(doAppConfigure(appInitialConfig));
         }
-    }
+    },
 });

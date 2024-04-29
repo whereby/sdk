@@ -17,10 +17,9 @@ import {
     doStartScreenshare,
     doStopScreenshare,
     doAppConfigure,
+    doAppStart,
     doAppStop,
-    doJoinRoom,
     doKnockRoom,
-    doLeaveRoom,
     doLockRoom,
     doKickParticipant,
     doEndMeeting,
@@ -93,8 +92,8 @@ export function useRoomConnection(
             }),
         );
 
-        // TODO: move this out of initial useEffect and trigger manually
-        store.dispatch(doJoinRoom());
+        // TODO: remove this in SDK v3. Require developers to call joinRoom() API explicitly instead.
+        store.dispatch(doAppStart());
 
         return () => {
             store.dispatch(doAppStop());
@@ -161,8 +160,8 @@ export function useRoomConnection(
     const startScreenshare = React.useCallback(() => store.dispatch(doStartScreenshare()), [store]);
     const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
-    const joinRoom = React.useCallback(() => store.dispatch(doJoinRoom()), [store]);
-    const leaveRoom = React.useCallback(() => store.dispatch(doLeaveRoom()), [store]);
+    const joinRoom = React.useCallback(() => store.dispatch(doAppStart()), [store]);
+    const leaveRoom = React.useCallback(() => store.dispatch(doAppStop()), [store]);
     const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
     const muteParticipants = React.useCallback(
         (clientIds: string[]) => {
