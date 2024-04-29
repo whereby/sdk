@@ -1,4 +1,4 @@
-import { Store, LocalMediaOptions } from "@whereby.com/core";
+import { LocalMediaOptions } from "@whereby.com/core";
 
 export interface LocalMediaState {
     currentCameraDeviceId?: string;
@@ -25,6 +25,6 @@ interface LocalMediaActions {
     toggleLowDataModeEnabled: (enabled?: boolean) => void;
 }
 
-export type UseLocalMediaResult = { state: LocalMediaState; actions: LocalMediaActions; store: Store };
+export type UseLocalMediaResult = { state: LocalMediaState; actions: LocalMediaActions };
 
 export type UseLocalMediaOptions = LocalMediaOptions;

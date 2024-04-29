@@ -1,23 +1,7 @@
 import * as React from "react";
 import { debounce, doRtcReportStreamResolution } from "@whereby.com/core";
-import { createSelector } from "@reduxjs/toolkit";
-import { WherebyContext } from "./Provider";
-import { observeStore, selectCurrentSpeakerDeviceId } from "@whereby.com/core";
-
-interface VideoViewState {
-    speakerId: string;
-}
-
-const initialState = {
-    speakerId: "",
-};
-
-const selectVideoViewState = createSelector(selectCurrentSpeakerDeviceId, (speakerId) => {
-    const state: VideoViewState = {
-        speakerId: speakerId || "default",
-    };
-    return state;
-});
+import { selectCurrentSpeakerDeviceId } from "@whereby.com/core";
+import { useAppDispatch, useAppSelector } from "./Provider/hooks";
 
 interface VideoViewSelfProps {
     stream: MediaStream;
@@ -39,13 +23,9 @@ type AudioElement = HTMLAudioElement & { setSinkId?: (deviceId: string) => void 
 
 export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
     ({ muted, mirror = false, stream, onVideoResize, ...rest }, ref) => {
-        const store = React.useContext(WherebyContext);
+        const dispatch = useAppDispatch();
+        const currentSpeakerId = useAppSelector(selectCurrentSpeakerDeviceId);
 
-        if (!store) {
-            throw new Error("VideoView must be used within a WherebyProvider");
-        }
-
-        const [videoViewState, setVideoViewState] = React.useState(initialState);
         const videoEl = React.useRef<WherebyVideoElement>(null);
         const audioEl = React.useRef<AudioElement>(null);
 
@@ -68,14 +48,6 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
         });
 
         React.useEffect(() => {
-            const unsubscribe = observeStore(store, selectVideoViewState, setVideoViewState);
-
-            return () => {
-                unsubscribe();
-            };
-        }, [store]);
-
-        React.useEffect(() => {
             if (!videoEl.current) {
                 return;
             }
@@ -87,7 +59,7 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
                             const width = videoEl.current.clientWidth;
                             const height = videoEl.current.clientHeight;
 
-                            store.dispatch(
+                            dispatch(
                                 doRtcReportStreamResolution({
                                     streamId: stream.id,
                                     width,
@@ -131,7 +103,7 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
         }, [muted, stream, videoEl]);
 
         React.useEffect(() => {
-            if (!audioEl.current || muted || !stream || !videoViewState.speakerId) {
+            if (!audioEl.current || muted || !stream || !currentSpeakerId) {
                 return;
             }
 
@@ -140,9 +112,9 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
             }
 
             if (audioEl.current.setSinkId) {
-                audioEl.current.setSinkId(videoViewState.speakerId);
+                audioEl.current.setSinkId(currentSpeakerId);
             }
-        }, [stream, audioEl, videoViewState.speakerId, muted]);
+        }, [stream, audioEl, currentSpeakerId, muted]);
 
         return (
             <>

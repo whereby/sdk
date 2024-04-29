@@ -5,6 +5,7 @@ import { setAspectRatio, debounce } from "@whereby.com/core";
 import { CellView, Bounds, Origin } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
 import { useGrid } from "./useGrid";
+import { useAppDispatch } from "../Provider/hooks";
 
 interface RenderCellViewProps {
     cellView: CellView;
@@ -78,16 +79,11 @@ interface GridProps {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Grid({ renderParticipant }: GridProps) {
+    const dispatch = useAppDispatch();
     const gridRef = React.useRef<HTMLDivElement>(null);
 
-    const {
-        store,
-        cellViewsVideoGrid,
-        cellViewsInPresentationGrid,
-        cellViewsInSubgrid,
-        videoStage,
-        setContainerBounds,
-    } = useGrid();
+    const { cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid, videoStage, setContainerBounds } =
+        useGrid();
 
     const presentationGridContent = React.useMemo(
         () =>
@@ -95,7 +91,7 @@ function Grid({ renderParticipant }: GridProps) {
                 renderCellView({
                     cellView,
                     onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                        dispatch(setAspectRatio({ clientId, aspectRatio })),
                 }),
             ),
         [cellViewsInPresentationGrid],
@@ -107,7 +103,7 @@ function Grid({ renderParticipant }: GridProps) {
                 renderCellView({
                     cellView,
                     onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                        dispatch(setAspectRatio({ clientId, aspectRatio })),
                 }),
             ),
         [cellViewsVideoGrid],
@@ -119,7 +115,7 @@ function Grid({ renderParticipant }: GridProps) {
                 renderCellView({
                     cellView,
                     onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                        dispatch(setAspectRatio({ clientId, aspectRatio })),
                 }),
             ),
         [cellViewsInSubgrid],
