@@ -12,7 +12,7 @@ import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnec
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
-import { selectAppIsNodeSdk, selectAppWantsToJoin } from "../app";
+import { selectAppIsNodeSdk, selectAppIsActive } from "../app";
 import { Chrome111 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Chrome111.js";
 import {
     selectIsCameraEnabled,
@@ -405,16 +405,12 @@ createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) =
 
 // Disonnect and clean up
 
-export const selectShouldDisconnectRtc = createSelector(
-    selectRtcStatus,
-    selectAppWantsToJoin,
-    (status, wantsToJoin) => {
-        if (!wantsToJoin && !["", "disconnected"].includes(status)) {
-            return true;
-        }
-        return false;
-    },
-);
+export const selectShouldDisconnectRtc = createSelector(selectRtcStatus, selectAppIsActive, (status, appIsActive) => {
+    if (!appIsActive && !["", "disconnected"].includes(status)) {
+        return true;
+    }
+    return false;
+});
 
 createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) => {
     if (shouldDisconnectRtc) {

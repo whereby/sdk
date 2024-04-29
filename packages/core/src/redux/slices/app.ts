@@ -20,7 +20,7 @@ interface AppConfig {
 
 export interface AppState {
     isNodeSdk: boolean;
-    wantsToJoin: boolean;
+    isActive: boolean;
     roomUrl: string | null;
     roomName: string | null;
     displayName: string | null;
@@ -32,7 +32,7 @@ export interface AppState {
 
 const initialState: AppState = {
     isNodeSdk: false,
-    wantsToJoin: false,
+    isActive: false,
     roomName: null,
     roomUrl: null,
     displayName: null,
@@ -45,7 +45,7 @@ export const appSlice = createSlice({
     name: "app",
     initialState,
     reducers: {
-        doAppJoin: (state, action: PayloadAction<AppConfig>) => {
+        doAppConfigure: (state, action: PayloadAction<AppConfig>) => {
             const url = new URL(action.payload.roomUrl);
 
             return {
@@ -56,11 +56,11 @@ export const appSlice = createSlice({
                 isLoaded: true,
             };
         },
-        doAppLeft: (state) => {
-            return { ...state, wantsToJoin: false };
+        doAppStart: (state) => {
+            return { ...state, isActive: true };
         },
-        doWantsToJoin: (state) => {
-            return { ...state, wantsToJoin: true };
+        doAppStop: (state) => {
+            return { ...state, isActive: false };
         },
         doAppReset: (state) => {
             return { ...state, isLoaded: false };
@@ -72,14 +72,14 @@ export const appSlice = createSlice({
  * Action creators
  */
 
-export const { doAppJoin, doAppLeft, doAppReset, doWantsToJoin } = appSlice.actions;
+export const { doAppConfigure, doAppStop, doAppReset, doAppStart } = appSlice.actions;
 
 /**
  * Selectors
  */
 
 export const selectAppRaw = (state: RootState) => state.app;
-export const selectAppWantsToJoin = (state: RootState) => state.app.wantsToJoin;
+export const selectAppIsActive = (state: RootState) => state.app.isActive;
 export const selectAppRoomName = (state: RootState) => state.app.roomName;
 export const selectAppRoomUrl = (state: RootState) => state.app.roomUrl;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;
@@ -103,7 +103,7 @@ createReactor([selectShouldReloadApp], ({ dispatch, getState }, shouldReloadApp)
         const appInitialConfig = selectAppInitialConfig(state);
 
         if (appInitialConfig) {
-            dispatch(doAppJoin(appInitialConfig));
+            dispatch(doAppConfigure(appInitialConfig));
         }
     }
 });

@@ -21,9 +21,9 @@ type SelectorResults<Selectors extends Selector<RootState, unknown>[]> = {
  * example:
  * ```ts
  * createReactor(
- *    [selectAppWantsToJoin, selectDeviceCredentialsRaw],
- *   ({ dispatch }, wantsToJoin, deviceCredentialsRaw) => {
- *      if (wantsToJoin && deviceCredentialsRaw.data) {
+ *    [selectAppIsActive, selectDeviceCredentialsRaw],
+ *   ({ dispatch }, appIsActive, deviceCredentialsRaw) => {
+ *      if (appIsActive && deviceCredentialsRaw.data) {
  *         dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
  *    }
  * });

@@ -51,15 +51,15 @@ describe("rtcConnectionSlice", () => {
             const x = () => oneOf(true, false);
 
             it.each`
-                rtcStatus         | wantsToJoin | expected
+                rtcStatus         | appIsActive | expected
                 ${"ready"}        | ${true}     | ${false}
                 ${"ready"}        | ${false}    | ${true}
                 ${""}             | ${x()}      | ${false}
                 ${"disconnected"} | ${x()}      | ${false}
             `(
-                "should return $expected when rtcStatus=$rtcStatus, wantsToJoin=$wantsToJoin",
-                ({ rtcStatus, wantsToJoin, expected }) => {
-                    expect(selectShouldDisconnectRtc.resultFunc(rtcStatus, wantsToJoin)).toEqual(expected);
+                "should return $expected when rtcStatus=$rtcStatus, appIsActive=$appIsActive",
+                ({ rtcStatus, appIsActive, expected }) => {
+                    expect(selectShouldDisconnectRtc.resultFunc(rtcStatus, appIsActive)).toEqual(expected);
                 },
             );
         });

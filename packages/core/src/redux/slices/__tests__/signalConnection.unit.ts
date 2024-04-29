@@ -22,14 +22,14 @@ describe("signalConnectionSlice", () => {
             const x = () => oneOf(true, false);
 
             it.each`
-                appWantsToJoin | signalStatus   | expected
-                ${true}        | ${""}          | ${true}
-                ${false}       | ${""}          | ${false}
-                ${x()}         | ${"connected"} | ${false}
+                appIsActive | signalStatus   | expected
+                ${true}     | ${""}          | ${true}
+                ${false}    | ${""}          | ${false}
+                ${x()}      | ${"connected"} | ${false}
             `(
-                "should return $expected when appWantsToJoin=$appWantsToJoin, signalStatus=$signalStatus",
-                ({ appWantsToJoin, signalStatus, expected }) => {
-                    expect(selectShouldConnectSignal.resultFunc(appWantsToJoin, signalStatus)).toEqual(expected);
+                "should return $expected when appIsActive=$appIsActive, signalStatus=$signalStatus",
+                ({ appIsActive, signalStatus, expected }) => {
+                    expect(selectShouldConnectSignal.resultFunc(appIsActive, signalStatus)).toEqual(expected);
                 },
             );
         });

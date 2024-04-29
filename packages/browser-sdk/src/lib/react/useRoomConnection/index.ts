@@ -16,8 +16,8 @@ import {
     toggleLowDataModeEnabled,
     doStartScreenshare,
     doStopScreenshare,
-    doAppJoin,
-    doAppLeft,
+    doAppConfigure,
+    doAppStop,
     doJoinRoom,
     doKnockRoom,
     doLeaveRoom,
@@ -81,7 +81,7 @@ export function useRoomConnection(
         const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
         store.dispatch(
-            doAppJoin({
+            doAppConfigure({
                 displayName: roomConnectionOptions.displayName || "Guest",
                 localMediaOptions: roomConnectionOptions.localMedia
                     ? undefined
@@ -97,7 +97,7 @@ export function useRoomConnection(
         store.dispatch(doJoinRoom());
 
         return () => {
-            store.dispatch(doAppLeft());
+            store.dispatch(doAppStop());
             unsubscribe();
         };
     }, []);

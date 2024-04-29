@@ -43,7 +43,7 @@ describe("actions", () => {
         const after = store.getState().app;
 
         expect(diff(before, after)).toEqual({
-            wantsToJoin: true,
+            appIsActive: true,
         });
     });
 

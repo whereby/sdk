@@ -75,7 +75,7 @@
 ### Minor Changes
 
 - 6fc07f5: Expose `RemoteParticipant.externalId`
-- 300f6ac: Rename `sdkVersion` param in `doAppJoin` to `userAgent`, make it optional with a fallback to core module version and stop exporting the `sdkVersion`
+- 300f6ac: Rename `sdkVersion` param in `doAppConfigure` to `userAgent`, make it optional with a fallback to core module version and stop exporting the `sdkVersion`
 
 ### Patch Changes
 

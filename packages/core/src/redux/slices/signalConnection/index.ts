@@ -27,7 +27,7 @@ import {
     VideoEnabledEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
-import { doAppLeft, selectAppWantsToJoin } from "../app";
+import { doAppStop, selectAppIsActive } from "../app";
 import { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, UnknownAction>) {
@@ -229,17 +229,17 @@ export const selectSignalConnectionSocket = (state: RootState) => state.signalCo
  * Reactors
  */
 startAppListening({
-    actionCreator: doAppLeft,
+    actionCreator: doAppStop,
     effect: (_, { dispatch }) => {
         dispatch(doSignalDisconnect({ reset: false }));
     },
 });
 
 export const selectShouldConnectSignal = createSelector(
-    selectAppWantsToJoin,
+    selectAppIsActive,
     selectSignalStatus,
-    (wantsToJoin, signalStatus) => {
-        if (wantsToJoin && ["", "reconnect", "disconnected"].includes(signalStatus)) {
+    (appIsActive, signalStatus) => {
+        if (appIsActive && ["", "reconnect", "disconnected"].includes(signalStatus)) {
             return true;
         }
         return false;

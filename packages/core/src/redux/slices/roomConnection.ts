@@ -4,13 +4,13 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 import {
-    doWantsToJoin,
+    doAppStart,
     selectAppDisplayName,
     selectAppRoomName,
     selectAppUserAgent,
     selectAppExternalId,
     selectAppIsNodeSdk,
-    selectAppWantsToJoin,
+    selectAppIsActive,
 } from "./app";
 import { selectRoomKey, setRoomKey } from "./authorization";
 
@@ -208,7 +208,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
 });
 
 export const doJoinRoom = createAppThunk(() => (dispatch) => {
-    dispatch(doWantsToJoin());
+    dispatch(doAppStart());
 });
 
 export const doLeaveRoom = createAppThunk(() => (dispatch, getState) => {
@@ -236,7 +236,7 @@ export const selectRoomConnectionError = (state: RootState) => state.roomConnect
 
 export const selectShouldConnectRoom = createSelector(
     [
-        selectAppWantsToJoin,
+        selectAppIsActive,
         selectOrganizationId,
         selectRoomConnectionStatus,
         selectSignalConnectionDeviceIdentified,
@@ -244,7 +244,7 @@ export const selectShouldConnectRoom = createSelector(
         selectAppIsNodeSdk,
     ],
     (
-        appWantsToJoin,
+        appIsActive,
         hasOrganizationIdFetched,
         roomConnectionStatus,
         signalConnectionDeviceIdentified,
@@ -252,7 +252,7 @@ export const selectShouldConnectRoom = createSelector(
         isNodeSdk,
     ) => {
         if (
-            appWantsToJoin &&
+            appIsActive &&
             (localMediaStatus === "started" || isNodeSdk) &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&

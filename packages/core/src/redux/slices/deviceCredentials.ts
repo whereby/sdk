@@ -2,7 +2,7 @@ import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import { createReactor } from "../listenerMiddleware";
-import { selectAppWantsToJoin } from "./app";
+import { selectAppIsActive } from "./app";
 import { Credentials } from "../../api";
 
 /**
@@ -77,10 +77,10 @@ export const selectDeviceId = (state: RootState) => state.deviceCredentials.data
  */
 
 export const selectShouldFetchDeviceCredentials = createSelector(
-    selectAppWantsToJoin,
+    selectAppIsActive,
     selectDeviceCredentialsRaw,
-    (wantsToJoin, deviceCredentials) => {
-        if (wantsToJoin && !deviceCredentials.isFetching && !deviceCredentials.data) {
+    (appIsActive, deviceCredentials) => {
+        if (appIsActive && !deviceCredentials.isFetching && !deviceCredentials.data) {
             return true;
         }
         return false;

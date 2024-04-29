@@ -2,7 +2,7 @@ import { appSlice } from "../app";
 
 describe("appSlice", () => {
     describe("reducers", () => {
-        describe("doAppJoin", () => {
+        describe("doAppConfigure", () => {
             it("should change the state", () => {
                 const initialConfig = {
                     isNodeSdk: true,
@@ -13,10 +13,11 @@ describe("appSlice", () => {
                     externalId: "externalId",
                 };
 
-                const result = appSlice.reducer(undefined, appSlice.actions.doAppJoin(initialConfig));
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppConfigure(initialConfig));
 
                 expect(result).toEqual({
-                    wantsToJoin: false,
+                    isLoaded: true,
+                    isActive: false,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
@@ -25,7 +26,6 @@ describe("appSlice", () => {
                     externalId: "externalId",
                     isNodeSdk: true,
                     initialConfig,
-                    isLoaded: true,
                 });
             });
 
@@ -38,10 +38,11 @@ describe("appSlice", () => {
                     externalId: "externalId",
                 };
 
-                const result = appSlice.reducer(undefined, appSlice.actions.doAppJoin(initialConfig));
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppConfigure(initialConfig));
 
                 expect(result).toEqual({
-                    wantsToJoin: false,
+                    isLoaded: true,
+                    isActive: false,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
@@ -50,7 +51,6 @@ describe("appSlice", () => {
                     externalId: "externalId",
                     isNodeSdk: true,
                     initialConfig,
-                    isLoaded: true,
                 });
             });
         });

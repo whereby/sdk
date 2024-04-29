@@ -4,7 +4,7 @@ import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import { LocalParticipant } from "../../RoomParticipant";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { doAppJoin } from "./app";
+import { doAppConfigure } from "./app";
 import { toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
@@ -78,7 +78,7 @@ export const localParticipantSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doAppJoin, (state, action) => {
+        builder.addCase(doAppConfigure, (state, action) => {
             return {
                 ...state,
                 displayName: action.payload.displayName,
