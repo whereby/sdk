@@ -33,6 +33,11 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     let connectionAttempt = 0;
     let hasPassedOnRoomSessionId = false;
     let getStatsBufferUsed = 0;
+    let deviceId: string;
+    let roomProduct: string;
+    let roomMode: string;
+    let sfuServer: string;
+    let featureFlags: string;
 
     const connection = {
         connected: false,
@@ -65,6 +70,16 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 displayName = args;
             } else if (args[0] === "customEvent" && args[2].type === "userRole") {
                 userRole = args;
+            } else if (args[0] === "customEvent" && args[2].type === "deviceId") {
+                deviceId = args;
+            } else if (args[0] === "customEvent" && args[2].type === "roomProduct") {
+                roomProduct = args;
+            } else if (args[0] === "customEvent" && args[2].type === "roomMode") {
+                roomMode = args;
+            } else if (args[0] === "customEvent" && args[2].type === "sfuServer") {
+                sfuServer = args;
+            } else if (args[0] === "customEvent" && args[2].type === "featureFlags") {
+                featureFlags = args;
             }
 
             if (ws.readyState === WebSocket.OPEN) {
@@ -125,11 +140,9 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 if (organizationId) {
                     ws.send(JSON.stringify(organizationId));
                 }
-
                 if (clientId) {
                     ws.send(JSON.stringify(clientId));
                 }
-
                 if (roomSessionId) {
                     ws.send(JSON.stringify(roomSessionId));
                 }
@@ -138,6 +151,21 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 }
                 if (userRole) {
                     ws.send(JSON.stringify(userRole));
+                }
+                if (deviceId) {
+                    ws.send(JSON.stringify(deviceId));
+                }
+                if (roomMode) {
+                    ws.send(JSON.stringify(roomMode));
+                }
+                if (roomProduct) {
+                    ws.send(JSON.stringify(roomProduct));
+                }
+                if (sfuServer) {
+                    ws.send(JSON.stringify(sfuServer));
+                }
+                if (featureFlags) {
+                    ws.send(JSON.stringify(featureFlags));
                 }
 
                 // send buffered events
@@ -156,7 +184,7 @@ const server = rtcStatsConnection(process.env.RTCSTATS_URL || "wss://rtcstats.sr
 const stats = rtcstats(
     server.trace,
     10000, // query once every 10 seconds.
-    [""] // only shim unprefixed RTCPeerConnecion.
+    [""], // only shim unprefixed RTCPeerConnecion.
 );
 // on node clients this function can be undefined
 resetDelta = stats?.resetDelta || noop;
