@@ -1,32 +1,12 @@
 import * as React from "react";
-import { WherebyContext } from "../Provider";
-import { observeStore } from "@whereby.com/core";
-import { VideoGridState, selectVideoGridState } from "./selector";
+import { selectVideoGridState } from "./selector";
 import { makeFrame } from "./layout/helpers";
 import { calculateLayout } from "./layout/stageLayout";
-
-const initialState: VideoGridState = {
-    cellViewsVideoGrid: [],
-    cellViewsInPresentationGrid: [],
-    cellViewsInSubgrid: [],
-};
+import { useAppSelector } from "../Provider/hooks";
 
 function useGrid() {
-    const store = React.useContext(WherebyContext);
-    const [videoGridState, setVideoViewState] = React.useState(initialState);
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
-
-    if (!store) {
-        throw new Error("useGrid must be used within a WherebyProvider");
-    }
-
-    React.useEffect(() => {
-        const unsubscribe = observeStore(store, selectVideoGridState, setVideoViewState);
-
-        return () => {
-            unsubscribe();
-        };
-    }, [store]);
+    const videoGridState = useAppSelector(selectVideoGridState);
 
     const { cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid } = videoGridState;
 
@@ -48,7 +28,6 @@ function useGrid() {
     }, [containerFrame, cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid]);
 
     return {
-        store,
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,

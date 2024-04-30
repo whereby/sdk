@@ -1,19 +1,16 @@
 import * as React from "react";
-import { Store, createServices, createStore } from "@whereby.com/core";
+import { Provider as ReduxProvider } from "react-redux";
+import { createServices, createStore } from "@whereby.com/core";
 
 export interface ProviderProps {
     children: React.ReactNode;
 }
 
-const WherebyContext = React.createContext<Store | null>(null);
-
 function Provider({ children }: ProviderProps) {
-    const [store] = React.useState<Store>(() => {
-        const services = createServices();
-        return createStore({ injectServices: services });
-    });
+    const services = createServices();
+    const store = createStore({ injectServices: services });
 
-    return <WherebyContext.Provider value={store}>{children}</WherebyContext.Provider>;
+    return <ReduxProvider store={store}>{children}</ReduxProvider>;
 }
 
-export { Provider, WherebyContext };
+export { Provider };

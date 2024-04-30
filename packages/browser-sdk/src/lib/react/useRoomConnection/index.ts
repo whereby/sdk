@@ -1,7 +1,5 @@
 import * as React from "react";
 import {
-    Store,
-    observeStore,
     doSendChatMessage,
     doStartCloudRecording,
     doStopCloudRecording,
@@ -25,20 +23,11 @@ import {
 import { selectRoomConnectionState } from "./selector";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
-import { WherebyContext } from "../Provider";
-
-const initialState: RoomConnectionState = {
-    chatMessages: [],
-    remoteParticipants: [],
-    connectionStatus: "initializing",
-    screenshares: [],
-    waitingParticipants: [],
-};
+import { useAppDispatch, useAppSelector } from "../Provider/hooks";
 
 export type RoomConnectionRef = {
     state: RoomConnectionState;
     actions: RoomConnectionActions;
-    _ref: Store;
 };
 
 const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
@@ -52,21 +41,15 @@ export function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions = defaultRoomConnectionOptions,
 ): RoomConnectionRef {
-    const store = React.useContext(WherebyContext);
-
-    if (!store) {
-        throw new Error("useRoomConnection must be used within a WherebyProvider");
-    }
-
-    const [roomConnectionState, setRoomConnectionState] = React.useState(initialState);
+    const dispatch = useAppDispatch();
+    const roomConnectionState = useAppSelector(selectRoomConnectionState);
 
     React.useEffect(() => {
-        const unsubscribe = observeStore(store, selectRoomConnectionState, setRoomConnectionState);
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
         const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
-        store.dispatch(
+        dispatch(
             doAppJoin({
                 displayName: roomConnectionOptions.displayName || "Guest",
                 localMediaOptions: roomConnectionOptions.localMedia
@@ -79,54 +62,53 @@ export function useRoomConnection(
             }),
         );
         return () => {
-            unsubscribe();
-            store.dispatch(appLeft());
+            dispatch(appLeft());
         };
     }, []);
 
-    const sendChatMessage = React.useCallback((text: string) => store.dispatch(doSendChatMessage({ text })), [store]);
-    const knock = React.useCallback(() => store.dispatch(doKnockRoom()), [store]);
+    const sendChatMessage = React.useCallback((text: string) => dispatch(doSendChatMessage({ text })), [dispatch]);
+    const knock = React.useCallback(() => dispatch(doKnockRoom()), [dispatch]);
     const setDisplayName = React.useCallback(
-        (displayName: string) => store.dispatch(doSetDisplayName({ displayName })),
-        [store],
+        (displayName: string) => dispatch(doSetDisplayName({ displayName })),
+        [dispatch],
     );
     const toggleCamera = React.useCallback(
-        (enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })),
-        [store],
+        (enabled?: boolean) => dispatch(toggleCameraEnabled({ enabled })),
+        [dispatch],
     );
     const toggleMicrophone = React.useCallback(
-        (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
-        [store],
+        (enabled?: boolean) => dispatch(toggleMicrophoneEnabled({ enabled })),
+        [dispatch],
     );
     const toggleLowDataMode = React.useCallback(
-        (enabled?: boolean) => store.dispatch(toggleLowDataModeEnabled({ enabled })),
-        [store],
+        (enabled?: boolean) => dispatch(toggleLowDataModeEnabled({ enabled })),
+        [dispatch],
     );
     const acceptWaitingParticipant = React.useCallback(
-        (participantId: string) => store.dispatch(doAcceptWaitingParticipant({ participantId })),
-        [store],
+        (participantId: string) => dispatch(doAcceptWaitingParticipant({ participantId })),
+        [dispatch],
     );
     const rejectWaitingParticipant = React.useCallback(
-        (participantId: string) => store.dispatch(doRejectWaitingParticipant({ participantId })),
-        [store],
+        (participantId: string) => dispatch(doRejectWaitingParticipant({ participantId })),
+        [dispatch],
     );
-    const startCloudRecording = React.useCallback(() => store.dispatch(doStartCloudRecording()), [store]);
-    const startScreenshare = React.useCallback(() => store.dispatch(doStartScreenshare()), [store]);
-    const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
-    const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
+    const startCloudRecording = React.useCallback(() => dispatch(doStartCloudRecording()), [dispatch]);
+    const startScreenshare = React.useCallback(() => dispatch(doStartScreenshare()), [dispatch]);
+    const stopCloudRecording = React.useCallback(() => dispatch(doStopCloudRecording()), [dispatch]);
+    const stopScreenshare = React.useCallback(() => dispatch(doStopScreenshare()), [dispatch]);
 
-    const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
+    const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
     const muteParticipants = React.useCallback(
         (clientIds: string[]) => {
-            store.dispatch(doRequestAudioEnable({ clientIds, enable: false }));
+            dispatch(doRequestAudioEnable({ clientIds, enable: false }));
         },
-        [store],
+        [dispatch],
     );
     const kickParticipant = React.useCallback(
-        (clientId: string) => store.dispatch(doKickParticipant({ clientId })),
-        [store],
+        (clientId: string) => dispatch(doKickParticipant({ clientId })),
+        [dispatch],
     );
-    const endMeeting = React.useCallback(() => store.dispatch(doEndMeeting()), [store]);
+    const endMeeting = React.useCallback(() => dispatch(doEndMeeting()), [dispatch]);
 
     return {
         state: roomConnectionState,
@@ -148,6 +130,5 @@ export function useRoomConnection(
             toggleCamera,
             toggleMicrophone,
         },
-        _ref: store,
     };
 }

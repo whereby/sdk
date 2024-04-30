@@ -76,7 +76,8 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.3",
     "@whereby.com/core": "0.13.0",
-    "heresy": "^1.0.4"
+    "heresy": "^1.0.4",
+    "react-redux": "^9.1.1"
   },
   "peerDependencies": {
     "react": "^18.2.0",
