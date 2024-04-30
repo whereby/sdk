@@ -1,57 +1,64 @@
 import * as React from "react";
-import type {
-    LocalParticipantState as LocalParticipant,
-    RemoteParticipantState as RemoteParticipant,
-} from "../useRoomConnection/types";
-import VideoView from "../VideoView";
-import { calculateLayout } from "./helpers/stageLayout";
-import { Bounds, Frame, Origin, makeFrame } from "./helpers/layout";
-import { makeVideoCellView } from "./helpers/cellView";
-import { doRtcReportStreamResolution } from "@whereby.com/core";
-import { debounce } from "@whereby.com/core";
-import { RoomConnectionRef } from "../useRoomConnection";
 
-function GridVideoCellView({
-    cell,
-    participant,
-    render,
-    onSetAspectRatio,
-    onResize,
-}: {
-    cell: { aspectRatio: number; clientId: string; bounds: Bounds; origin: Origin };
-    participant: RemoteParticipant | LocalParticipant;
+import { VideoView, WherebyVideoElement } from "../VideoView";
+import { setAspectRatio, debounce } from "@whereby.com/core";
+import { CellView, Bounds, Origin } from "./layout/types";
+import { VideoStageLayout } from "./VideoStageLayout";
+import { useGrid } from "./useGrid";
+
+interface RenderCellViewProps {
+    cellView: CellView;
+    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
+}
+
+function renderCellView({ cellView, onSetClientAspectRatio }: RenderCellViewProps) {
+    switch (cellView.type) {
+        case "video":
+            return (
+                <GridVideoCellView
+                    aspectRatio={cellView.aspectRatio}
+                    participant={cellView.client}
+                    isPlaceholder={cellView.isPlaceholder}
+                    isSubgrid={cellView.isSubgrid}
+                    key={cellView.clientId}
+                    onSetClientAspectRatio={onSetClientAspectRatio}
+                />
+            );
+    }
+}
+
+interface GridVideoCellViewProps {
+    aspectRatio?: number;
+    participant: CellView["client"];
+    isPlaceholder?: boolean;
+    isSubgrid?: boolean;
     render?: () => React.ReactNode;
-    onSetAspectRatio: ({ aspectRatio }: { aspectRatio: number }) => void;
-    onResize?: ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => void;
-}) {
-    const handleAspectRatioChange = React.useCallback(
-        ({ ar }: { ar: number }) => {
-            if (ar !== cell.aspectRatio) {
-                onSetAspectRatio({ aspectRatio: ar });
-            }
-        },
-        [cell.aspectRatio, onSetAspectRatio],
-    );
+    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
+}
+
+function GridVideoCellView({ aspectRatio, participant, render, onSetClientAspectRatio }: GridVideoCellViewProps) {
+    const videoEl = React.useRef<WherebyVideoElement>(null);
+
+    const handleResize = React.useCallback(() => {
+        const ar = videoEl.current && videoEl.current.captureAspectRatio();
+
+        if (ar && ar !== aspectRatio && participant?.id) {
+            onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
+        }
+    }, []);
 
     return (
-        <div
-            style={{
-                position: "absolute",
-                width: cell.bounds.width,
-                height: cell.bounds.height,
-                boxSizing: "border-box",
-                top: cell.origin.top,
-                left: cell.origin.left,
-            }}
-        >
+        <div>
             {render ? (
                 render()
-            ) : participant.stream ? (
+            ) : participant?.stream ? (
                 <VideoView
+                    ref={videoEl}
                     stream={participant.stream}
-                    onSetAspectRatio={({ aspectRatio }) => handleAspectRatioChange({ ar: aspectRatio })}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onResize={onResize as any}
+                    onVideoResize={handleResize}
+                    style={{
+                        borderRadius: "8px",
+                    }}
                 />
             ) : null}
         </div>
@@ -59,22 +66,64 @@ function GridVideoCellView({
 }
 
 interface GridProps {
-    roomConnection: RoomConnectionRef;
     renderParticipant?: ({
         cell,
         participant,
     }: {
         cell: { clientId: string; bounds: Bounds; origin: Origin };
-        participant: RemoteParticipant | LocalParticipant;
+        participant: CellView["client"];
     }) => React.ReactNode;
     videoGridGap?: number;
 }
 
-function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps) {
-    const { remoteParticipants, localParticipant } = roomConnection.state;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function Grid({ renderParticipant }: GridProps) {
     const gridRef = React.useRef<HTMLDivElement>(null);
-    const [containerFrame, setContainerFrame] = React.useState<Frame | null>(null);
-    const [aspectRatios, setAspectRatios] = React.useState<{ clientId: string; aspectRatio: number }[]>([]);
+
+    const {
+        store,
+        cellViewsVideoGrid,
+        cellViewsInPresentationGrid,
+        cellViewsInSubgrid,
+        videoStage,
+        setContainerBounds,
+    } = useGrid();
+
+    const presentationGridContent = React.useMemo(
+        () =>
+            cellViewsInPresentationGrid.map((cellView) =>
+                renderCellView({
+                    cellView,
+                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
+                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                }),
+            ),
+        [cellViewsInPresentationGrid],
+    );
+
+    const gridContent = React.useMemo(
+        () =>
+            cellViewsVideoGrid.map((cellView) =>
+                renderCellView({
+                    cellView,
+                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
+                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                }),
+            ),
+        [cellViewsVideoGrid],
+    );
+
+    const subgridContent = React.useMemo(
+        () =>
+            cellViewsInSubgrid.map((cellView) =>
+                renderCellView({
+                    cellView,
+                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
+                        store.dispatch(setAspectRatio({ clientId, aspectRatio })),
+                }),
+            ),
+        [cellViewsInSubgrid],
+    );
 
     // Calculate container frame on resize
     React.useEffect(() => {
@@ -85,12 +134,10 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
         const resizeObserver = new ResizeObserver(
             debounce(
                 () => {
-                    setContainerFrame(
-                        makeFrame({
-                            width: gridRef.current?.clientWidth,
-                            height: gridRef.current?.clientHeight,
-                        }),
-                    );
+                    setContainerBounds({
+                        width: gridRef.current?.clientWidth ?? 640,
+                        height: gridRef.current?.clientHeight ?? 480,
+                    });
                 },
                 { delay: 60, edges: false },
             ),
@@ -102,49 +149,6 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
         };
     }, []);
 
-    // Merge local and remote participants
-    const participants = React.useMemo(() => {
-        return [...(localParticipant ? [localParticipant] : []), ...remoteParticipants];
-    }, [remoteParticipants, localParticipant]);
-
-    // Make video cells
-    const videoCells = React.useMemo(() => {
-        return participants.map((participant) => {
-            const aspectRatio = aspectRatios.find((item) => item.clientId === participant?.id)?.aspectRatio;
-
-            return makeVideoCellView({
-                aspectRatio: aspectRatio ?? 16 / 9,
-                avatarSize: 0,
-                cellPaddings: 10,
-                client: { id: participant?.id },
-            });
-        });
-    }, [participants, aspectRatios]);
-
-    // Calculate stage layout
-    const stageLayout = React.useMemo(() => {
-        if (!containerFrame) return null;
-
-        return calculateLayout({
-            frame: containerFrame,
-            gridGap: 0,
-            isConstrained: false,
-            roomBounds: containerFrame.bounds,
-            videos: videoCells,
-            videoGridGap,
-        });
-    }, [containerFrame, videoCells, videoGridGap]);
-
-    // Handle resize
-    const handleResize = React.useCallback(
-        ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => {
-            if (!roomConnection._ref) return;
-
-            roomConnection._ref.dispatch(doRtcReportStreamResolution({ streamId: stream.id, width, height }));
-        },
-        [localParticipant, roomConnection._ref],
-    );
-
     return (
         <div
             ref={gridRef}
@@ -154,36 +158,12 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
                 position: "relative",
             }}
         >
-            {participants.map((participant, i) => {
-                const cell = stageLayout?.videoGrid.cells[i];
-
-                if (!cell || !participant || !participant.stream || !cell.clientId) return null;
-
-                return (
-                    <GridVideoCellView
-                        key={cell.clientId}
-                        cell={cell}
-                        participant={participant}
-                        render={renderParticipant ? () => renderParticipant({ cell, participant }) : undefined}
-                        onResize={handleResize}
-                        onSetAspectRatio={({ aspectRatio }) => {
-                            setAspectRatios((prev) => {
-                                const index = prev.findIndex((item) => item.clientId === cell.clientId);
-
-                                if (index === -1) {
-                                    return [...prev, { clientId: cell.clientId, aspectRatio }];
-                                }
-
-                                return [
-                                    ...prev.slice(0, index),
-                                    { clientId: cell.clientId, aspectRatio },
-                                    ...prev.slice(index + 1),
-                                ];
-                            });
-                        }}
-                    />
-                );
-            })}
+            <VideoStageLayout
+                layoutVideoStage={videoStage!}
+                presentationGridContent={presentationGridContent}
+                gridContent={gridContent}
+                subgridContent={subgridContent}
+            />
         </div>
     );
 }

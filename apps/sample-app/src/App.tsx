@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRoomConnection, useLocalMedia, UseLocalMediaResult } from "@whereby.com/browser-sdk/react";
 import { fakeAudioStream, fakeWebcamFrame } from "@whereby.com/core";
+import { VideoView } from "@whereby.com/browser-sdk/react";
 
 import "./App.css";
 
@@ -68,7 +69,6 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         startScreenshare,
         stopScreenshare,
     } = roomConnection.actions;
-    const { VideoView } = roomConnection.components;
 
     useEffect(() => {
         setIsCameraEnabled(localParticipant?.isVideoEnabled || false);

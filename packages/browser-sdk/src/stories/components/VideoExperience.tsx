@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
+import { VideoView } from "../../lib/react/VideoView";
 
 export default function VideoExperience({
     displayName,
@@ -21,7 +22,7 @@ export default function VideoExperience({
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const { state, actions, components } = useRoomConnection(roomName, {
+    const { state, actions } = useRoomConnection(roomName, {
         localMediaOptions: {
             audio: true,
             video: true,
@@ -49,7 +50,6 @@ export default function VideoExperience({
         startScreenshare,
         stopScreenshare,
     } = actions;
-    const { VideoView } = components;
 
     return (
         <div>

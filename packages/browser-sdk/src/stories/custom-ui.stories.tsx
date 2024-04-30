@@ -222,58 +222,77 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
     if (!roomUrl || !roomUrl.match(roomRegEx)) {
         return <p>Set room url on the Controls panel</p>;
     }
+    const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+    const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+    const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare } = actions;
 
     return (
-        <div style={{ height: "100vh" }}>
-            <VideoGrid roomConnection={roomConnection} videoGridGap={10} />
-        </div>
+        <>
+            <div className="controls">
+                <button onClick={() => toggleCamera()}>Toggle camera</button>
+                <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                <button
+                    onClick={() => {
+                        if (isLocalScreenshareActive) {
+                            stopScreenshare();
+                        } else {
+                            startScreenshare();
+                        }
+                        setIsLocalScreenshareActive((prev) => !prev);
+                    }}
+                >
+                    Toggle screenshare
+                </button>
+            </div>
+            <div style={{ height: "500px", width: "100%" }}>
+                <VideoGrid videoGridGap={10} />
+            </div>
+        </>
     );
 };
 
-export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
-    if (!roomUrl || !roomUrl.match(roomRegEx)) {
-        return <p>Set room url on the Controls panel</p>;
-    }
+// export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
+//     if (!roomUrl || !roomUrl.match(roomRegEx)) {
+//         return <p>Set room url on the Controls panel</p>;
+//     }
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+//     useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
 
-    return (
-        <div style={{ height: "100vh" }}>
-            <VideoGrid
-                roomConnection={roomConnection}
-                videoGridGap={10}
-                renderParticipant={({ participant }) => {
-                    if (!participant.stream) {
-                        return null;
-                    }
+//     return (
+//         <div style={{ height: "100vh" }}>
+//             <VideoGrid
+//                 videoGridGap={10}
+//                 renderParticipant={({ participant }) => {
+//                     if (!participant.stream) {
+//                         return null;
+//                     }
 
-                    return (
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: "100%",
-                            }}
-                        >
-                            <VideoView
-                                style={{
-                                    border: "4px dashed red",
-                                    boxSizing: "border-box",
-                                    borderRadius: "100%",
-                                    objectFit: "cover",
-                                    width: "60%",
-                                }}
-                                stream={participant.stream}
-                            />
-                            <p>{participant.displayName}</p>
-                        </div>
-                    );
-                }}
-            />
-        </div>
-    );
-};
+//                     return (
+//                         <div
+//                             style={{
+//                                 display: "flex",
+//                                 flexDirection: "column",
+//                                 alignItems: "center",
+//                                 justifyContent: "center",
+//                                 height: "100%",
+//                             }}
+//                         >
+//                             <VideoView
+//                                 style={{
+//                                     border: "4px dashed red",
+//                                     boxSizing: "border-box",
+//                                     borderRadius: "100%",
+//                                     objectFit: "cover",
+//                                     width: "60%",
+//                                 }}
+//                                 stream={participant.stream}
+//                             />
+//                             <p>{participant.displayName}</p>
+//                         </div>
+//                     );
+//                 }}
+//             />
+//         </div>
+//     );
+// };
