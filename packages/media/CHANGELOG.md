@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.4.0
+
+### Minor Changes
+
+- 998eebb: Adds some information to analytics reconnect
+
 ## 1.3.9
 
 ### Patch Changes
