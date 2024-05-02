@@ -63,7 +63,7 @@ export interface RtcConnectionState {
     rtcManager: RtcManager | null;
     rtcManagerDispatcher: RtcManagerDispatcher | null;
     rtcManagerInitialized: boolean;
-    status: "" | "ready" | "reconnect";
+    status: "inactive" | "ready" | "reconnecting";
     isAcceptingStreams: boolean;
 }
 
@@ -75,7 +75,7 @@ const initialState: RtcConnectionState = {
     rtcManager: null,
     rtcManagerDispatcher: null,
     rtcManagerInitialized: false,
-    status: "",
+    status: "inactive",
     isAcceptingStreams: false,
 };
 
@@ -136,13 +136,13 @@ export const rtcConnectionSlice = createSlice({
         builder.addCase(socketReconnecting, (state) => {
             return {
                 ...state,
-                status: "reconnect",
+                status: "reconnecting",
             };
         });
         builder.addCase(signalEvents.roomJoined, (state) => {
             return {
                 ...state,
-                status: state.status === "reconnect" ? "ready" : state.status,
+                status: state.status === "reconnecting" ? "ready" : state.status,
             };
         });
     },
@@ -406,7 +406,7 @@ createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) =
 // Disonnect and clean up
 
 export const selectShouldDisconnectRtc = createSelector(selectRtcStatus, selectAppIsActive, (status, appIsActive) => {
-    if (!appIsActive && !["", "disconnected"].includes(status)) {
+    if (!appIsActive && !["inactive", "disconnected"].includes(status)) {
         return true;
     }
     return false;

@@ -29,7 +29,7 @@ export interface LocalMediaState {
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
     options?: LocalMediaOptions;
-    status: "" | "stopped" | "starting" | "started" | "error";
+    status: "inactive" | "stopped" | "starting" | "started" | "error";
     startError?: unknown;
     stream?: MediaStream;
     isSwitchingStream: boolean;
@@ -45,7 +45,7 @@ export const initialLocalMediaState: LocalMediaState = {
     isTogglingCamera: false,
     lowDataMode: false,
     microphoneEnabled: false,
-    status: "",
+    status: "inactive",
     stream: undefined,
     isSwitchingStream: false,
 };
@@ -602,7 +602,7 @@ export const selectLocalMediaShouldStartWithOptions = createSelector(
     selectLocalMediaOptions,
     selectAppIsNodeSdk,
     (appIsActive, localMediaStatus, localMediaOptions, isNodeSdk) => {
-        if (appIsActive && ["", "stopped"].includes(localMediaStatus) && !isNodeSdk && localMediaOptions) {
+        if (appIsActive && ["inactive", "stopped"].includes(localMediaStatus) && !isNodeSdk && localMediaOptions) {
             return localMediaOptions;
         }
     },
@@ -620,7 +620,7 @@ export const selectLocalMediaShouldStop = createSelector(
     selectLocalMediaStatus,
     selectLocalMediaOptions,
     (appIsActive, localMediaStatus, localMediaOptions) => {
-        return !appIsActive && localMediaStatus !== "" && !!localMediaOptions;
+        return !appIsActive && localMediaStatus !== "inactive" && !!localMediaOptions;
     },
 );
 

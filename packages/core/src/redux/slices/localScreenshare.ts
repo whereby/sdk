@@ -5,13 +5,13 @@ import { startAppListening } from "../listenerMiddleware";
 import { localMediaStopped } from "./localMedia";
 
 export interface LocalScreenshareState {
-    status: "" | "starting" | "active";
+    status: "inactive" | "starting" | "active";
     stream: MediaStream | null;
     error: unknown | null;
 }
 
 const initialState: LocalScreenshareState = {
-    status: "",
+    status: "inactive",
     stream: null,
     error: null,
 };
@@ -28,7 +28,7 @@ export const localScreenshareSlice = createSlice({
         stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {
             return {
                 ...state,
-                status: "",
+                status: "inactive",
                 stream: null,
             };
         },
@@ -51,7 +51,7 @@ export const localScreenshareSlice = createSlice({
             return {
                 ...state,
                 error: payload,
-                status: "",
+                status: "inactive",
                 stream: null,
             };
         });

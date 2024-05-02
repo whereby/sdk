@@ -35,9 +35,8 @@ export type ConnectionStatus =
     | "kicked"
     | "leaving"
     | "left"
-    | "reconnect"
-    | "disconnecting"
-    | "disconnected";
+    | "disconnected"
+    | "reconnecting";
 
 /**
  * Reducer
@@ -128,7 +127,7 @@ export const roomConnectionSlice = createSlice({
         builder.addCase(socketReconnecting, (state) => {
             return {
                 ...state,
-                status: "reconnect",
+                status: "reconnecting",
             };
         });
     },
@@ -242,7 +241,7 @@ export const selectShouldConnectRoom = createSelector(
             (localMediaStatus === "started" || isNodeSdk) &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
-            ["ready", "reconnect", "disconnected"].includes(roomConnectionStatus)
+            ["ready", "reconnecting", "disconnected"].includes(roomConnectionStatus)
         ) {
             return true;
         }

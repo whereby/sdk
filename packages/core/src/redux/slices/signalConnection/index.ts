@@ -87,14 +87,14 @@ function createSocket() {
 export interface SignalConnectionState {
     deviceIdentified: boolean;
     isIdentifyingDevice: boolean;
-    status: "connected" | "connecting" | "disconnected" | "reconnect" | ""; // the state of the underlying socket.io connection
+    status: "ready" | "connecting" | "connected" | "disconnected" | "reconnecting"; // the state of the underlying socket.io connection
     socket: ServerSocket | null;
 }
 
 const initialState: SignalConnectionState = {
     deviceIdentified: false,
     isIdentifyingDevice: false,
-    status: "",
+    status: "ready",
     socket: null,
 };
 
@@ -125,7 +125,7 @@ export const signalConnectionSlice = createSlice({
         socketReconnecting: (state) => {
             return {
                 ...state,
-                status: "reconnect",
+                status: "reconnecting",
             };
         },
         deviceIdentifying: (state) => {
@@ -235,7 +235,7 @@ export const selectShouldConnectSignal = createSelector(
     selectAppIsActive,
     selectSignalStatus,
     (appIsActive, signalStatus) => {
-        if (appIsActive && ["", "reconnect"].includes(signalStatus)) {
+        if (appIsActive && ["ready", "reconnecting"].includes(signalStatus)) {
             return true;
         }
         return false;
