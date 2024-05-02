@@ -69,6 +69,10 @@ describe("@whereby/browser-sdk", () => {
                         "audiodenoiser",
                         "aec",
                         "agc",
+                        "toptoolbar",
+                        "toolbardarktext",
+                        "cameraeffect",
+                        "localization"
 
                     ]),
                 }),
