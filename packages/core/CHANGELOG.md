@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 0.14.0
+
+### Minor Changes
+
+- 324b52b: Add actions to join and leave Whereby rooms on-demand
+- b857c2b: Add stayBehind parameter to endMeeting host room action
+
 ## 0.13.1
 
 ### Patch Changes
