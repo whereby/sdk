@@ -93,18 +93,27 @@ describe("roomConnectionSlice", () => {
             const x = () => oneOf(true, false);
 
             it.each`
-                organizationId | roomConnectionStatus | signalIdentified | localMediaStatus | isNodeSdk | expected
-                ${undefined}   | ${"initializing"}    | ${x()}           | ${"started"}     | ${x()}    | ${false}
-                ${"orgId"}     | ${"initializing"}    | ${true}          | ${"started"}     | ${false}  | ${true}
-                ${"orgId"}     | ${"connected"}       | ${x()}           | ${"started"}     | ${x()}    | ${false}
-                ${"orgId"}     | ${"initializing"}    | ${false}         | ${"starting"}    | ${x()}    | ${false}
-                ${"orgId"}     | ${"initializing"}    | ${x()}           | ${"error"}       | ${false}  | ${false}
-                ${"orgId"}     | ${"initializing"}    | ${true}          | ${"error"}       | ${true}   | ${true}
+                appIsActive | organizationId | roomConnectionStatus | signalIdentified | localMediaStatus | isNodeSdk | expected
+                ${true}     | ${undefined}   | ${"ready"}           | ${x()}           | ${"started"}     | ${x()}    | ${false}
+                ${true}     | ${"orgId"}     | ${"ready"}           | ${true}          | ${"started"}     | ${false}  | ${true}
+                ${true}     | ${"orgId"}     | ${"connected"}       | ${x()}           | ${"started"}     | ${x()}    | ${false}
+                ${true}     | ${"orgId"}     | ${"ready"}           | ${false}         | ${"starting"}    | ${x()}    | ${false}
+                ${true}     | ${"orgId"}     | ${"ready"}           | ${x()}           | ${"error"}       | ${false}  | ${false}
+                ${true}     | ${"orgId"}     | ${"ready"}           | ${true}          | ${"error"}       | ${true}   | ${true}
             `(
-                "Should return $expected when organizationId=$organizationId, roomConnectionStatus=$roomConnectionStatus, signalIdentified=$signalIdentified, localMediaStatus=$localMediaStatus, isNodeSdk=$isNodeSdk",
-                ({ organizationId, roomConnectionStatus, signalIdentified, localMediaStatus, isNodeSdk, expected }) => {
+                "Should return $expected when appIsActive=$appIsActive, organizationId=$organizationId, roomConnectionStatus=$roomConnectionStatus, signalIdentified=$signalIdentified, localMediaStatus=$localMediaStatus, isNodeSdk=$isNodeSdk",
+                ({
+                    appIsActive,
+                    organizationId,
+                    roomConnectionStatus,
+                    signalIdentified,
+                    localMediaStatus,
+                    isNodeSdk,
+                    expected,
+                }) => {
                     expect(
                         selectShouldConnectRoom.resultFunc(
+                            appIsActive,
                             organizationId,
                             roomConnectionStatus,
                             signalIdentified,

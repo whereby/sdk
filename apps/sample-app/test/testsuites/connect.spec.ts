@@ -16,10 +16,18 @@ test.describe("unlocked room", () => {
         await deleteTransientRoom(meetingId);
     });
 
-    test("join room", async ({ page }) => {
+    test("join room => leave room => re-join room => re-leave room", async ({ page }) => {
         await joinRoom({ page, roomUrl });
 
-        await expect(page.locator("h1")).toContainText(/Room/);
+        await page.click('[data-testid="leaveRoomBtn"]');
+        await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("leaving");
+        await expect(page.locator('[data-testid="joinRoomBtn"]')).toHaveCount(1);
+
+        await page.click('[data-testid="joinRoomBtn"]');
         await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("connected");
+
+        await page.click('[data-testid="leaveRoomBtn"]');
+        await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("leaving");
+        await expect(page.locator('[data-testid="joinRoomBtn"]')).toHaveCount(1);
     });
 });

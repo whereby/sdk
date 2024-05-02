@@ -67,6 +67,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         toggleMicrophone,
         startScreenshare,
         stopScreenshare,
+        joinRoom,
+        leaveRoom,
     } = roomConnection.actions;
     const { VideoView } = roomConnection.components;
 
@@ -77,6 +79,14 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     useEffect(() => {
         setIsMicrophoneEnabled(localParticipant?.isAudioEnabled || false);
     }, [localParticipant?.isAudioEnabled]);
+
+    if (connectionStatus === "ready") {
+        return (
+            <button data-testid="joinRoomBtn" onClick={() => joinRoom()}>
+                Re-join room
+            </button>
+        );
+    }
 
     if (connectionStatus === "room_locked") {
         return <WaitingArea knock={knock} />;
@@ -129,6 +139,9 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                         </button>
                     </>
                 )}
+                <button data-testid="leaveRoomBtn" onClick={() => leaveRoom()}>
+                    Leave room
+                </button>
             </div>
             {isHost && waitingParticipants.length > 0 && (
                 <div>

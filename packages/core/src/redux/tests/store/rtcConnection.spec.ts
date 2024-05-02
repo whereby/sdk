@@ -82,7 +82,7 @@ describe("actions", () => {
             rtcManager: null,
             rtcManagerDispatcher: null,
             rtcManagerInitialized: false,
-            status: "",
+            status: "inactive",
         });
     });
 

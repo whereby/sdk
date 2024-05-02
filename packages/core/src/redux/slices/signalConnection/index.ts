@@ -3,6 +3,7 @@ import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
+import { doAppReset } from "../app";
 
 import {
     AudioEnableRequestedEvent,
@@ -26,7 +27,7 @@ import {
     VideoEnabledEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
-import { appLeft, selectAppWantsToJoin } from "../app";
+import { selectAppIsActive } from "../app";
 import { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, UnknownAction>) {
@@ -45,6 +46,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("chat_message", (payload: ChatMessage) => dispatch(signalEvents.chatMessage(payload)));
     socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
     socket.on("room_knocked", (payload: RoomKnockedEvent) => dispatch(signalEvents.roomKnocked(payload)));
+    socket.on("room_left", () => dispatch(signalEvents.roomLeft()));
     socket.on("room_locked", (payload: RoomLockedEvent) => dispatch(signalEvents.roomLocked(payload)));
     socket.on("room_session_ended", (payload: RoomSessionEndedEvent) =>
         dispatch(signalEvents.roomSessionEnded(payload)),
@@ -85,14 +87,14 @@ function createSocket() {
 export interface SignalConnectionState {
     deviceIdentified: boolean;
     isIdentifyingDevice: boolean;
-    status: "connected" | "connecting" | "disconnected" | "reconnect" | ""; // the state of the underlying socket.io connection
+    status: "ready" | "connecting" | "connected" | "disconnected" | "reconnecting"; // the state of the underlying socket.io connection
     socket: ServerSocket | null;
 }
 
 const initialState: SignalConnectionState = {
     deviceIdentified: false,
     isIdentifyingDevice: false,
-    status: "",
+    status: "ready",
     socket: null,
 };
 
@@ -123,7 +125,7 @@ export const signalConnectionSlice = createSlice({
         socketReconnecting: (state) => {
             return {
                 ...state,
-                status: "reconnect",
+                status: "reconnecting",
             };
         },
         deviceIdentifying: (state) => {
@@ -163,7 +165,7 @@ export const {
 /**
  * Action creators
  */
-export const doSignalSocketConnect = createAppThunk(() => {
+export const doSignalConnect = createAppThunk(() => {
     return (dispatch, getState) => {
         if (selectSignalConnectionSocket(getState())) {
             return;
@@ -203,10 +205,17 @@ export const doSignalIdentifyDevice = createAppThunk(
 );
 
 export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
-    const socket = selectSignalConnectionRaw(getState()).socket;
-    socket?.emit("leave_room");
-    socket?.disconnect();
-    dispatch(socketDisconnected());
+    const state = getState();
+    const signalStatus = selectSignalStatus(state);
+
+    if (signalStatus === "connected") {
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.disconnect();
+        dispatch(socketDisconnected());
+    } else {
+        doAppReset();
+    }
 });
 
 /**
@@ -221,18 +230,12 @@ export const selectSignalConnectionSocket = (state: RootState) => state.signalCo
 /**
  * Reactors
  */
-startAppListening({
-    actionCreator: appLeft,
-    effect: (_, { dispatch }) => {
-        dispatch(doSignalDisconnect());
-    },
-});
 
 export const selectShouldConnectSignal = createSelector(
-    selectAppWantsToJoin,
+    selectAppIsActive,
     selectSignalStatus,
-    (wantsToJoin, signalStatus) => {
-        if (wantsToJoin && ["", "reconnect"].includes(signalStatus)) {
+    (appIsActive, signalStatus) => {
+        if (appIsActive && ["ready", "reconnecting"].includes(signalStatus)) {
             return true;
         }
         return false;
@@ -241,7 +244,7 @@ export const selectShouldConnectSignal = createSelector(
 
 createReactor([selectShouldConnectSignal], ({ dispatch }, shouldConnectSignal) => {
     if (shouldConnectSignal) {
-        dispatch(doSignalSocketConnect());
+        dispatch(doSignalConnect());
     }
 });
 
@@ -266,3 +269,24 @@ createReactor(
         }
     },
 );
+
+startAppListening({
+    actionCreator: signalEvents.roomLeft,
+    effect: (_, { dispatch }) => {
+        dispatch(doSignalDisconnect());
+    },
+});
+
+startAppListening({
+    actionCreator: signalEvents.clientKicked,
+    effect: (_, { dispatch }) => {
+        dispatch(doSignalDisconnect());
+    },
+});
+
+startAppListening({
+    actionCreator: socketDisconnected,
+    effect: (_, { dispatch }) => {
+        dispatch(doAppReset());
+    },
+});

@@ -3,7 +3,7 @@ import { getStream, getUpdatedDevices, getDeviceData } from "@whereby.com/media"
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
-import { doAppJoin, selectAppIsNodeSdk, selectAppWantsToJoin } from "./app";
+import { doAppConfigure, selectAppIsNodeSdk, selectAppIsActive } from "./app";
 import { debounce } from "../../utils";
 import { signalEvents } from "./signalConnection/actions";
 
@@ -29,7 +29,7 @@ export interface LocalMediaState {
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
     options?: LocalMediaOptions;
-    status: "" | "stopped" | "starting" | "started" | "error";
+    status: "inactive" | "stopped" | "starting" | "started" | "error";
     startError?: unknown;
     stream?: MediaStream;
     isSwitchingStream: boolean;
@@ -45,7 +45,8 @@ export const initialLocalMediaState: LocalMediaState = {
     isTogglingCamera: false,
     lowDataMode: false,
     microphoneEnabled: false,
-    status: "",
+    status: "inactive",
+    stream: undefined,
     isSwitchingStream: false,
 };
 
@@ -129,7 +130,7 @@ export const localMediaSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doAppJoin, (state, action) => {
+        builder.addCase(doAppConfigure, (state, action) => {
             return {
                 ...state,
                 options: action.payload.localMediaOptions,
@@ -596,12 +597,12 @@ export const selectSpeakerDevices = createSelector(selectLocalMediaDevices, (dev
 
 // Start localMedia unless started when roomConnection is wanted
 export const selectLocalMediaShouldStartWithOptions = createSelector(
-    selectAppWantsToJoin,
+    selectAppIsActive,
     selectLocalMediaStatus,
     selectLocalMediaOptions,
     selectAppIsNodeSdk,
-    (appWantsToJoin, localMediaStatus, localMediaOptions, isNodeSdk) => {
-        if (appWantsToJoin && localMediaStatus === "" && !isNodeSdk && localMediaOptions) {
+    (appIsActive, localMediaStatus, localMediaOptions, isNodeSdk) => {
+        if (appIsActive && ["inactive", "stopped"].includes(localMediaStatus) && !isNodeSdk && localMediaOptions) {
             return localMediaOptions;
         }
     },
@@ -615,11 +616,11 @@ createReactor([selectLocalMediaShouldStartWithOptions], ({ dispatch }, options) 
 
 // Stop localMedia when roomConnection is no longer wanted and media was started when joining
 export const selectLocalMediaShouldStop = createSelector(
-    selectAppWantsToJoin,
+    selectAppIsActive,
     selectLocalMediaStatus,
     selectLocalMediaOptions,
-    (appWantsToJoin, localMediaStatus, localMediaOptions) => {
-        return !appWantsToJoin && localMediaStatus !== "" && !!localMediaOptions;
+    (appIsActive, localMediaStatus, localMediaOptions) => {
+        return !appIsActive && localMediaStatus !== "inactive" && !!localMediaOptions;
     },
 );
 

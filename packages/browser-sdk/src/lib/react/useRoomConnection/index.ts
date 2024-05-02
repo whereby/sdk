@@ -16,8 +16,9 @@ import {
     toggleLowDataModeEnabled,
     doStartScreenshare,
     doStopScreenshare,
-    appLeft,
-    doAppJoin,
+    doAppConfigure,
+    doAppStart,
+    doAppStop,
     doKnockRoom,
     doLockRoom,
     doKickParticipant,
@@ -33,7 +34,7 @@ import { browserSdkVersion } from "../version";
 const initialState: RoomConnectionState = {
     chatMessages: [],
     remoteParticipants: [],
-    connectionStatus: "initializing",
+    connectionStatus: "ready",
     screenshares: [],
     waitingParticipants: [],
 };
@@ -79,7 +80,7 @@ export function useRoomConnection(
         const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
         store.dispatch(
-            doAppJoin({
+            doAppConfigure({
                 displayName: roomConnectionOptions.displayName || "Guest",
                 localMediaOptions: roomConnectionOptions.localMedia
                     ? undefined
@@ -90,9 +91,13 @@ export function useRoomConnection(
                 externalId: roomConnectionOptions.externalId || null,
             }),
         );
+
+        // TODO: remove this in SDK v3. Require developers to call joinRoom() API explicitly instead.
+        store.dispatch(doAppStart());
+
         return () => {
+            store.dispatch(doAppStop());
             unsubscribe();
-            store.dispatch(appLeft());
         };
     }, []);
 
@@ -155,7 +160,8 @@ export function useRoomConnection(
     const startScreenshare = React.useCallback(() => store.dispatch(doStartScreenshare()), [store]);
     const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
     const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
-
+    const joinRoom = React.useCallback(() => store.dispatch(doAppStart()), [store]);
+    const leaveRoom = React.useCallback(() => store.dispatch(doAppStop()), [store]);
     const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
     const muteParticipants = React.useCallback(
         (clientIds: string[]) => {
@@ -175,6 +181,8 @@ export function useRoomConnection(
             toggleLowDataMode,
             acceptWaitingParticipant,
             knock,
+            joinRoom,
+            leaveRoom,
             lockRoom,
             muteParticipants,
             kickParticipant,

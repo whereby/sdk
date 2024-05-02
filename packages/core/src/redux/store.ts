@@ -2,7 +2,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../services";
 
-import { appSlice } from "./slices/app";
+import { appSlice, doAppReset } from "./slices/app";
 import { authorizationSlice } from "./slices/authorization";
 import { chatSlice } from "./slices/chat";
 import { cloudRecordingSlice } from "./slices/cloudRecording";
@@ -22,7 +22,7 @@ import { waitingParticipantsSlice } from "./slices/waitingParticipants";
 
 const IS_DEV = process.env.REACT_APP_IS_DEV === "true" ?? false;
 
-export const rootReducer = combineReducers({
+const appReducer = combineReducers({
     app: appSlice.reducer,
     authorization: authorizationSlice.reducer,
     chat: chatSlice.reducer,
@@ -41,6 +41,26 @@ export const rootReducer = combineReducers({
     streaming: streamingSlice.reducer,
     waitingParticipants: waitingParticipantsSlice.reducer,
 });
+
+export const rootReducer: AppReducer = (state, action) => {
+    // Reset store state on app reset action
+    if (doAppReset.match(action)) {
+        const resetState: Partial<RootState> = {
+            app: {
+                ...appSlice.getInitialState(),
+                initialConfig: state?.app?.initialConfig,
+            },
+            localMedia: {
+                ...localMediaSlice.getInitialState(),
+                ...state?.localMedia,
+            },
+        };
+
+        return appReducer(resetState, action);
+    }
+
+    return appReducer(state, action);
+};
 
 export const createStore = ({
     preloadedState,
@@ -63,8 +83,8 @@ export const createStore = ({
     });
 };
 
-export type RootReducer = typeof rootReducer;
-export type RootState = ReturnType<typeof rootReducer>;
+export type AppReducer = typeof appReducer;
+export type RootState = ReturnType<typeof appReducer>;
 export type AppDispatch = ReturnType<typeof createStore>["dispatch"];
 
 export type Store = ReturnType<typeof createStore>;

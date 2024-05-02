@@ -40,6 +40,7 @@ export const signalEvents = {
     newClient: createSignalEventAction<NewClientEvent>("newClient"),
     roomJoined: createSignalEventAction<RoomJoinedEvent>("roomJoined"),
     roomKnocked: createSignalEventAction<RoomKnockedEvent>("roomKnocked"),
+    roomLeft: createSignalEventAction<void>("roomLeft"),
     roomLocked: createSignalEventAction<RoomLockedEvent>("roomLocked"),
     roomSessionEnded: createSignalEventAction<RoomSessionEndedEvent>("roomSessionEnded"),
     screenshareStarted: createSignalEventAction<ScreenshareStartedEvent>("screenshareStarted"),
