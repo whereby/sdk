@@ -108,6 +108,7 @@ interface WherebyEmbedElementEventMap {
 
 interface WherebyEmbedElementCommands {
     endMeeting: () => void;
+    leaveMeeting: () => void;
     startRecording: () => void;
     stopRecording: () => void;
     startStreaming: () => void;
@@ -226,6 +227,9 @@ define("WherebyEmbed", {
     },
     endMeeting() {
         this._postCommand("end_meeting");
+    },
+    leaveMeeting() {
+        this._postCommand("room_left");
     },
     startRecording() {
         this._postCommand("start_recording");
