@@ -69,7 +69,6 @@ describe("@whereby/browser-sdk", () => {
                         "audiodenoiser",
                         "aec",
                         "agc",
-
                     ]),
                 }),
             );
@@ -81,8 +80,11 @@ describe("@whereby/browser-sdk", () => {
             expect(define).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
+                    endMeeting: expect.any(Function),
                     startRecording: expect.any(Function),
                     stopRecording: expect.any(Function),
+                    startStreaming: expect.any(Function),
+                    stopStreaming: expect.any(Function),
                     toggleCamera: expect.any(Function),
                     toggleMicrophone: expect.any(Function),
                     toggleScreenshare: expect.any(Function),

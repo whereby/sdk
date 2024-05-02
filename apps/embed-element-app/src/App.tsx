@@ -23,6 +23,7 @@ const events = [
     "deny_device_permission",
     "join",
     "leave",
+    "meeting_end",
     "microphone_toggle",
     "participant_join",
     "participant_leave",
