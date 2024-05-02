@@ -51,7 +51,7 @@
     "dependencies": {
         "@reduxjs/toolkit": "^2.2.3",
         "@whereby.com/media": "1.4.0",
-        "axios": "^1.2.3",
+        "axios": "^1.6.8",
         "btoa": "^1.2.1",
         "events": "^3.3.0"
     }
