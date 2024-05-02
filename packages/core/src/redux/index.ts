@@ -8,7 +8,6 @@ export * from "./slices/authorization";
 export * from "./slices/chat";
 export * from "./slices/cloudRecording";
 export * from "./slices/deviceCredentials";
-export * from "./slices/layout";
 export * from "./slices/localMedia";
 export * from "./slices/localParticipant";
 export * from "./slices/localScreenshare";
