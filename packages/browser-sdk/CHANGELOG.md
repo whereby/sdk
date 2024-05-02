@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 2.11.0
+
+### Minor Changes
+
+- 324b52b: Add actions to join and leave Whereby rooms on-demand
+- b857c2b: Add stayBehind parameter to endMeeting host room action
+
+### Patch Changes
+
+- Updated dependencies [324b52b]
+- Updated dependencies [b857c2b]
+  - @whereby.com/core@0.14.0
+
 ## 2.10.1
 
 ### Patch Changes
