@@ -155,20 +155,47 @@ export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; 
 };
 
 export const RoomConnectionWithHostControls = {
-    render: ({ roomUrl, roomKey, displayName }: { roomUrl: string; roomKey: string; displayName?: string }) => {
+    render: ({
+        roomUrl,
+        roomKey,
+        displayName,
+        hostOptions,
+    }: {
+        roomUrl: string;
+        roomKey: string;
+        displayName?: string;
+        hostOptions: Array<string>;
+    }) => {
         if (!roomUrl || !roomUrl.match(roomRegEx)) {
             return <p>Set room url on the Controls panel</p>;
         }
 
-        return <VideoExperience displayName={displayName} roomName={roomUrl} roomKey={roomKey} showHostControls />;
+        return (
+            <VideoExperience
+                displayName={displayName}
+                roomName={roomUrl}
+                roomKey={roomKey}
+                showHostControls
+                hostOptions={hostOptions}
+            />
+        );
     },
     argTypes: {
         ...defaultArgs.argTypes,
         roomKey: { control: "text", type: { required: true } },
+        hostOptions: {
+            name: "Host options",
+            control: {
+                type: "check",
+                labels: { stayBehind: "Stay behind after triggering meeting end" },
+            },
+            options: ["stayBehind"],
+        },
     },
     args: {
         ...defaultArgs.args,
         roomKey: process.env.STORYBOOK_ROOM_HOST_ROOMKEY || "[Host roomKey required]",
+        hostOptions: ["stayBehind"],
     },
 };
 

@@ -10,6 +10,7 @@ export default function VideoExperience({
     localMedia,
     externalId,
     showHostControls,
+    hostOptions,
 }: {
     displayName?: string;
     roomName: string;
@@ -17,6 +18,7 @@ export default function VideoExperience({
     localMedia?: UseLocalMediaResult;
     externalId?: string;
     showHostControls?: boolean;
+    hostOptions?: Array<string>;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
@@ -107,7 +109,7 @@ export default function VideoExperience({
                                 Unlock room
                             </button>
                             <button
-                                onClick={() => endMeeting(false)}
+                                onClick={() => endMeeting(Boolean(hostOptions?.includes("stayBehind")))}
                                 className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
                             >
                                 End meeting
