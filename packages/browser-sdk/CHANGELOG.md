@@ -1,5 +1,12 @@
 # @whereby.com/browser-sdk
 
+## 2.12.0
+
+### Minor Changes
+
+- 7256e58: organize bool attributes. Add support for topToolbar, toolbarDarkText, cameraEffect, and localization as attributes
+- 4a7bd59: Add `endMeeting()` command on embed element
+
 ## 2.11.0
 
 ### Minor Changes
