@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
@@ -34,7 +34,8 @@ export default function VideoExperience({
         ...(Boolean(externalId) && { externalId }),
     });
 
-    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
+    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares, notifications } =
+        state;
     const {
         knock,
         sendChatMessage,
@@ -54,6 +55,13 @@ export default function VideoExperience({
         stopScreenshare,
     } = actions;
     const { VideoView } = components;
+
+    const notificationsLog = useMemo(() => {
+        return notifications
+            .toReversed()
+            .map(({ timestamp, message, type }) => `${timestamp}: ${message} (${type})`)
+            .join("\n");
+    }, [notifications]);
 
     return (
         <div>
@@ -212,6 +220,14 @@ export default function VideoExperience({
                             Toggle screenshare
                         </button>
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
+                    </div>
+                    <div className="notifications">
+                        Notifications log:
+                        <div>
+                            <textarea rows={10} cols={120}>
+                                {notificationsLog}
+                            </textarea>
+                        </div>
                     </div>
                 </>
             )}

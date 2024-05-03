@@ -37,6 +37,7 @@ const initialState: RoomConnectionState = {
     connectionStatus: "ready",
     screenshares: [],
     waitingParticipants: [],
+    notifications: [],
 };
 
 type VideoViewComponentProps = Omit<React.ComponentProps<typeof VideoView>, "onResize">;

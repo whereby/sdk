@@ -10,6 +10,7 @@ import { deviceCredentialsSlice } from "./slices/deviceCredentials";
 import { localMediaSlice } from "./slices/localMedia";
 import { localParticipantSlice } from "./slices/localParticipant";
 import { localScreenshareSlice } from "./slices/localScreenshare";
+import { notificationsSlice } from "./slices/notifications";
 import { organizationSlice } from "./slices/organization";
 import { remoteParticipantsSlice } from "./slices/remoteParticipants";
 import { roomSlice } from "./slices/room";
@@ -31,6 +32,7 @@ const appReducer = combineReducers({
     localMedia: localMediaSlice.reducer,
     localParticipant: localParticipantSlice.reducer,
     localScreenshare: localScreenshareSlice.reducer,
+    notifications: notificationsSlice.reducer,
     organization: organizationSlice.reducer,
     remoteParticipants: remoteParticipantsSlice.reducer,
     room: roomSlice.reducer,
