@@ -229,7 +229,7 @@ define("WherebyEmbed", {
         this._postCommand("end_meeting");
     },
     leaveMeeting() {
-        this._postCommand("room_left");
+        this._postCommand("leave_room");
     },
     startRecording() {
         this._postCommand("start_recording");
