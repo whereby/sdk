@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.15.0
+
+### Minor Changes
+
+- ef26bd0: Export Signal events from core package
+
 ## 0.14.0
 
 ### Minor Changes
