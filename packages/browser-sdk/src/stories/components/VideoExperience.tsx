@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
@@ -21,9 +21,10 @@ export default function VideoExperience({
     hostOptions?: Array<string>;
 }) {
     const [chatMessage, setChatMessage] = useState("");
+    const [notifications, setNotifications] = useState<Array<string>>([]);
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const { state, actions, components } = useRoomConnection(roomName, {
+    const { state, actions, components, events } = useRoomConnection(roomName, {
         localMediaOptions: {
             audio: true,
             video: true,
@@ -34,8 +35,7 @@ export default function VideoExperience({
         ...(Boolean(externalId) && { externalId }),
     });
 
-    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares, notifications } =
-        state;
+    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
     const {
         knock,
         sendChatMessage,
@@ -55,13 +55,12 @@ export default function VideoExperience({
         stopScreenshare,
     } = actions;
     const { VideoView } = components;
+    const { onNotification } = events;
 
-    const notificationsLog = useMemo(() => {
-        return notifications
-            .toReversed()
-            .map(({ timestamp, message, type }) => `${timestamp}: ${message} (${type})`)
-            .join("\n");
-    }, [notifications]);
+    onNotification(({ timestamp, message, type }) => {
+        const localDate = new Date(timestamp).toLocaleString();
+        setNotifications([...notifications, `${localDate}: ${message} (${type})`]);
+    });
 
     return (
         <div>
@@ -224,9 +223,7 @@ export default function VideoExperience({
                     <div className="notifications">
                         Notifications log:
                         <div>
-                            <textarea rows={10} cols={120}>
-                                {notificationsLog}
-                            </textarea>
+                            <textarea rows={10} cols={120} value={notifications.join("\n")} readOnly />
                         </div>
                     </div>
                 </>

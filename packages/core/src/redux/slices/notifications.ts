@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
+import { createAppThunk } from "../thunk";
 
 export interface NotificationEvent {
     type: string;
@@ -15,32 +16,36 @@ export interface NotificationMessage extends NotificationEvent {
     timestamp: number;
 }
 
+export type NotificationCallbackFunction = (message: NotificationMessage) => void;
+
 /**
  * Reducer
  */
 
 export interface NotificationsState {
     messages: NotificationMessage[];
+    callback: NotificationCallbackFunction;
 }
 
 export const initialNotificationsState: NotificationsState = {
     messages: [],
+    callback: () => {},
 };
 
 export const notificationsSlice = createSlice({
     name: "notifications",
     initialState: initialNotificationsState,
     reducers: {
-        doSetNotification: (state, action: PayloadAction<NotificationEvent>) => {
-            const notificationMessage: NotificationMessage = {
-                ...action.payload,
-                level: action.payload.level ?? "log",
-                timestamp: Date.now(),
-            };
-
+        addNotification: (state, action: PayloadAction<NotificationMessage>) => {
             return {
                 ...state,
-                messages: [...state.messages, notificationMessage],
+                messages: [...state.messages, { ...action.payload }],
+            };
+        },
+        doSetNotificationCallback: (state, action: PayloadAction<NotificationCallbackFunction>) => {
+            return {
+                ...state,
+                callback: action.payload,
             };
         },
         doClearNotifications: (state) => {
@@ -56,7 +61,24 @@ export const notificationsSlice = createSlice({
  * Action creators
  */
 
-export const { doSetNotification, doClearNotifications } = notificationsSlice.actions;
+export const { doClearNotifications, doSetNotificationCallback } = notificationsSlice.actions;
+
+export const doSetNotification = createAppThunk((payload: NotificationEvent) => (dispatch, getState) => {
+    const notificationMessage: NotificationMessage = {
+        ...payload,
+        level: payload.level ?? "log",
+        timestamp: Date.now(),
+    };
+
+    dispatch(notificationsSlice.actions.addNotification(notificationMessage));
+
+    const state = getState();
+    const callback = selectNotificationsCallback(state);
+
+    if (callback) {
+        callback.call(undefined, notificationMessage);
+    }
+});
 
 /**
  * Selectors
@@ -64,3 +86,4 @@ export const { doSetNotification, doClearNotifications } = notificationsSlice.ac
 
 export const selectNotificationsRaw = (state: RootState) => state.notifications;
 export const selectNotificationsMessages = (state: RootState) => state.notifications.messages;
+export const selectNotificationsCallback = (state: RootState) => state.notifications.callback;
