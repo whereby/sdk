@@ -21,13 +21,13 @@ test.describe("unlocked room", () => {
 
         await page.click('[data-testid="leaveRoomBtn"]');
         await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("leaving");
-        await expect(page.locator('[data-testid="joinRoomBtn"]')).toHaveCount(1);
+        await expect(page.locator('[data-testid="rejoinRoomBtn"]')).toHaveCount(1);
 
-        await page.click('[data-testid="joinRoomBtn"]');
+        await page.click('[data-testid="rejoinRoomBtn"]');
         await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("connected");
 
         await page.click('[data-testid="leaveRoomBtn"]');
         await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("leaving");
-        await expect(page.locator('[data-testid="joinRoomBtn"]')).toHaveCount(1);
+        await expect(page.locator('[data-testid="rejoinRoomBtn"]')).toHaveCount(1);
     });
 });

@@ -2,7 +2,7 @@ import { appSlice } from "../app";
 
 describe("appSlice", () => {
     describe("reducers", () => {
-        describe("doAppConfigure", () => {
+        describe("doAppStart", () => {
             it("should change the state", () => {
                 const initialConfig = {
                     isNodeSdk: true,
@@ -13,11 +13,10 @@ describe("appSlice", () => {
                     externalId: "externalId",
                 };
 
-                const result = appSlice.reducer(undefined, appSlice.actions.doAppConfigure(initialConfig));
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
 
                 expect(result).toEqual({
-                    isLoaded: true,
-                    isActive: false,
+                    isActive: true,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
@@ -38,11 +37,10 @@ describe("appSlice", () => {
                     externalId: "externalId",
                 };
 
-                const result = appSlice.reducer(undefined, appSlice.actions.doAppConfigure(initialConfig));
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
 
                 expect(result).toEqual({
-                    isLoaded: true,
-                    isActive: false,
+                    isActive: true,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",

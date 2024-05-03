@@ -1,14 +1,13 @@
-import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import type { LocalMediaOptions } from "./localMedia";
 import { coreVersion } from "../../version";
-import { startAppListening } from "../listenerMiddleware";
 
 /**
  * Reducer
  */
 
-interface AppConfig {
+export interface AppConfig {
     isNodeSdk?: boolean;
     displayName: string;
     localMediaOptions?: LocalMediaOptions;
@@ -27,7 +26,6 @@ export interface AppState {
     userAgent: string | null;
     externalId: string | null;
     initialConfig?: AppConfig;
-    isLoaded: boolean;
 }
 
 const initialState: AppState = {
@@ -38,14 +36,13 @@ const initialState: AppState = {
     displayName: null,
     userAgent: `core:${coreVersion}`,
     externalId: null,
-    isLoaded: false,
 };
 
 export const appSlice = createSlice({
     name: "app",
     initialState,
     reducers: {
-        doAppConfigure: (state, action: PayloadAction<AppConfig>) => {
+        doAppStart: (state, action: PayloadAction<AppConfig>) => {
             const url = new URL(action.payload.roomUrl);
 
             return {
@@ -53,17 +50,11 @@ export const appSlice = createSlice({
                 ...action.payload,
                 roomName: url.pathname,
                 initialConfig: { ...action.payload },
-                isLoaded: true,
+                isActive: true,
             };
-        },
-        doAppStart: (state) => {
-            return { ...state, isActive: true };
         },
         doAppStop: (state) => {
             return { ...state, isActive: false };
-        },
-        doAppReset: (state) => {
-            return { ...state, isLoaded: false };
         },
     },
 });
@@ -72,7 +63,7 @@ export const appSlice = createSlice({
  * Action creators
  */
 
-export const { doAppConfigure, doAppStop, doAppReset, doAppStart } = appSlice.actions;
+export const { doAppStop, doAppStart } = appSlice.actions;
 
 /**
  * Selectors
@@ -87,28 +78,3 @@ export const selectAppUserAgent = (state: RootState) => state.app.userAgent;
 export const selectAppExternalId = (state: RootState) => state.app.externalId;
 export const selectAppIsNodeSdk = (state: RootState) => state.app.isNodeSdk;
 export const selectAppInitialConfig = (state: RootState) => state.app.initialConfig;
-export const selectAppIsLoaded = (state: RootState) => state.app.isLoaded;
-
-export const selectShouldReloadApp = createSelector(
-    selectAppIsLoaded,
-    selectAppInitialConfig,
-    (appIsLoaded, appInitialConfig) => {
-        return !appIsLoaded && appInitialConfig;
-    },
-);
-
-/**
- * Reactors
- */
-
-startAppListening({
-    actionCreator: doAppReset,
-    effect: (_, { dispatch, getState }) => {
-        const state = getState();
-        const appInitialConfig = selectAppInitialConfig(state);
-
-        if (appInitialConfig) {
-            dispatch(doAppConfigure(appInitialConfig));
-        }
-    },
-});
