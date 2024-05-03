@@ -1,7 +1,5 @@
 import {
     notificationsSlice,
-    doSetNotification,
-    NotificationEvent,
     NotificationMessage,
     NotificationsState,
     doClearNotifications,
@@ -10,25 +8,22 @@ import {
 
 describe("notificationsSlice", () => {
     describe("reducers", () => {
-        it("doSetNotification", () => {
-            const now = Date.now();
-            jest.spyOn(global.Date, "now").mockImplementationOnce(() => now);
-
-            const testNotification: NotificationEvent = {
+        it("addNotification", () => {
+            const testNotification: NotificationMessage = {
                 type: "micNotWorking",
                 message: "Problems with your microphone have been detected and it is not delivering input",
                 level: "error",
+                timestamp: Date.now(),
             };
 
             const result: NotificationsState = notificationsSlice.reducer(
                 initialNotificationsState,
-                doSetNotification({ ...testNotification }),
+                notificationsSlice.actions.addNotification({ ...testNotification }),
             );
 
             expect(result.messages).toEqual([
                 {
                     ...testNotification,
-                    timestamp: now,
                 },
             ]);
         });
@@ -43,6 +38,7 @@ describe("notificationsSlice", () => {
 
             const result: NotificationsState = notificationsSlice.reducer(
                 {
+                    ...initialNotificationsState,
                     messages: [testNotification, testNotification],
                 },
                 doClearNotifications(),

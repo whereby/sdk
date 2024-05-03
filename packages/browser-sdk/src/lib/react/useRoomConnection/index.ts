@@ -2,6 +2,7 @@ import * as React from "react";
 import {
     AppConfig,
     Store,
+    NotificationCallbackFunction,
     createStore,
     observeStore,
     createServices,
@@ -24,6 +25,7 @@ import {
     doKickParticipant,
     doEndMeeting,
     doRtcReportStreamResolution,
+    doSetNotificationCallback,
 } from "@whereby.com/core";
 
 import VideoView from "../VideoView";
@@ -46,10 +48,15 @@ interface RoomConnectionComponents {
     VideoView: (props: VideoViewComponentProps) => ReturnType<typeof VideoView>;
 }
 
+interface RoomConnectionEvents {
+    onNotification: (callback: NotificationCallbackFunction) => void;
+}
+
 export type RoomConnectionRef = {
     state: RoomConnectionState;
     actions: RoomConnectionActions;
     components: RoomConnectionComponents;
+    events: RoomConnectionEvents;
     _ref: Store;
 };
 
@@ -182,6 +189,13 @@ export function useRoomConnection(
         [store],
     );
 
+    const onNotification = React.useCallback(
+        (callback: NotificationCallbackFunction = () => {}) => {
+            store.dispatch(doSetNotificationCallback(callback));
+        },
+        [store],
+    );
+
     return {
         state: roomConnectionState,
         actions: {
@@ -206,6 +220,9 @@ export function useRoomConnection(
         },
         components: {
             VideoView: boundVideoView || VideoView,
+        },
+        events: {
+            onNotification,
         },
         _ref: store,
     };
