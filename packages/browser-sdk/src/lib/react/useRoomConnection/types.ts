@@ -1,5 +1,6 @@
 import {
     ChatMessage as SignalChatMessage,
+    NotificationMessage,
     LocalParticipant,
     RemoteParticipant,
     Screenshare,
@@ -44,14 +45,15 @@ export type LiveStreamState = {
 };
 
 export interface RoomConnectionState {
+    connectionStatus: ConnectionStatus;
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
+    liveStream?: LiveStreamState;
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
+    notifications: NotificationMessage[];
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
-    connectionStatus: ConnectionStatus;
-    liveStream?: LiveStreamState;
     waitingParticipants: WaitingParticipantState[];
 }
 
