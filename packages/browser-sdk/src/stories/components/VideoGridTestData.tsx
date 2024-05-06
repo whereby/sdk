@@ -1,6 +1,7 @@
 import * as React from "react";
 import { makeVideoCellView } from "../../lib/react/Grid/layout/cellView";
 import { Avatar } from "../../lib/react/Avatar";
+import { CellView } from "../../lib/react/Grid/layout/types";
 
 export const NORMAL = 4 / 3;
 export const WIDE = 16 / 9;
@@ -85,41 +86,21 @@ function SubgridClient({ index, cellPaddings }: { index: number; cellPaddings: {
     );
 }
 
-function PresentationContent() {
-    return (
-        <div
-            style={{
-                background: "#222",
-                width: "100%",
-                height: "100%",
-            }}
-        />
-    );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function renderCellView({ cellView }: { cellView: any }) {
+export function renderCellView({ cellView }: { cellView: CellView }) {
+    const clientId = cellView.client?.id || "";
     switch (cellView.type) {
         case "video":
             return cellView.isSubgrid ? (
                 <SubgridClient
                     key={cellView.client?.id}
-                    index={parseInt(cellView.client.id.split("-")[1])}
-                    cellPaddings={cellView.cellPaddings}
+                    index={parseInt(clientId.split("-")[1])}
+                    cellPaddings={cellView.cellPaddings || { top: 0, right: 0 }}
                 />
             ) : (
-                <WebRtcVideo
-                    key={cellView.client.id}
-                    // aspectRatio={cellView.aspectRatio}
-                    // client={cellView.client}
-                >
-                    {cellView.client.id.split("-")[1]}
-                </WebRtcVideo>
+                <WebRtcVideo key={cellView.client?.id}>{clientId.split("-")[1]}</WebRtcVideo>
             );
-        case "integration":
-            return <PresentationContent key={cellView.integration.id} />;
         default:
-            throw new Error("Unhandled cellView type", cellView.type);
+            throw new Error("Unhandled cellView type");
     }
 }
 

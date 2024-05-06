@@ -4,7 +4,7 @@ import { selectLocalParticipantView, selectRemoteClientViews, selectNumClients, 
 import { useAppSelector } from "../Provider/hooks";
 import { ACTIVE_VIDEO_SUBGRID_TRIGGER, STAGE_PARTICIPANT_LIMIT } from "./contants";
 
-function calculateSubgridViews({
+export function calculateSubgridViews({
     clientViews,
     activeVideosSubgridTrigger,
     shouldShowSubgrid,
@@ -26,7 +26,7 @@ function calculateSubgridViews({
     const mutedVideos = allClientViews.filter((client) => !noVideoViews.includes(client) && !client.isAudioEnabled);
 
     if (noVideoViews.length) {
-        return [...mutedVideos, ...noVideoViews];
+        return [...noVideoViews];
     }
 
     // If we reached the limit for active videos, and we have videos with muted audio,

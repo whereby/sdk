@@ -85,7 +85,7 @@ interface GridProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Grid({ renderParticipant }: GridProps) {
+function Grid({ renderParticipant, stageParticipantLimit }: GridProps) {
     const gridRef = React.useRef<HTMLDivElement>(null);
 
     const {
@@ -95,7 +95,7 @@ function Grid({ renderParticipant }: GridProps) {
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
-    } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit: 1, forceSubgrid: true });
+    } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit });
 
     const presentationGridContent = React.useMemo(
         () =>

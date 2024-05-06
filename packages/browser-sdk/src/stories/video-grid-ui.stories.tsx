@@ -2,7 +2,7 @@ import * as React from "react";
 import "./styles.css";
 
 import { VideoStageLayout } from "../lib/react/Grid/VideoStageLayout";
-// import { useWindowSize } from "../../../helpers/hooks/useWindowSize";
+import { useWindowSize } from "../lib/helpers/hooks/useWindowSize";
 import { makeFrame, makeBox } from "../lib/react/Grid/layout/helpers";
 import { calculateLayout } from "../lib/react/Grid/layout/stageLayout";
 
@@ -31,13 +31,13 @@ function SizedVideoStageLayout({
     ratios,
     ...props
 }: Props) {
-    // const { windowSize } = useWindowSize(isTouchDevice);
+    const { windowSize } = useWindowSize(false);
     const windowFrame = makeFrame({
-        width: window.innerWidth - 100,
-        height: window.innerHeight - 100,
+        ...windowSize,
         top: 0,
         left: 0,
     });
+
     const isConstrained = window.screen.width < 500 || window.screen.height < 500;
     const cellViewsVideoGrid = createVideoCellViews({ count, ratios });
     const gridContent = cellViewsVideoGrid.map((cellView) => renderCellView({ cellView }));
@@ -64,24 +64,18 @@ function SizedVideoStageLayout({
                 {...props}
                 containerPaddings={videoStagePaddings}
                 debug={debug}
-                // featureRoundedCornersOn
-                // floatingContent={floatingContent}
-                // frame={windowFrame}
                 gridContent={gridContent}
                 isConstrained={isConstrained}
                 presentationGridContent={presentationGridContent}
                 subgridContent={subgridContent}
                 layoutVideoStage={calculateLayout({
-                    // floatingVideo: cellViewsFloating[0] || null,
                     videoGridGap,
                     frame: windowFrame,
                     gridGap,
                     isConstrained,
-                    // isMaximizeMode,
                     isXLMeetingSize,
                     paddings: videoStagePaddings,
                     presentationVideos: cellViewsPresentationGrid,
-                    // rebalanceLayout,
                     roomBounds: windowFrame.bounds,
                     subgridVideos: cellViewsSubgrid,
                     videos: cellViewsVideoGrid,
@@ -117,7 +111,6 @@ export default {
         floatingAspectRatio: undefined,
         numSubgridClients: 0,
         ratios: [WIDE],
-        // rebalanceLayout: false,
         isXLMeetingSize: false,
     },
 };

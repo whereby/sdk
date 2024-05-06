@@ -31,7 +31,7 @@ function useGrid({
                 client,
                 aspectRatio: clientAspectRatios[client.id],
                 avatarSize: 0,
-                cellPaddings: 10,
+                cellPaddings: { top: 0, right: 0 },
             });
         });
     }, [clientViewsInGrid, clientAspectRatios]);
@@ -42,7 +42,7 @@ function useGrid({
                 client,
                 aspectRatio: clientAspectRatios[client.id],
                 avatarSize: 0,
-                cellPaddings: 0,
+                cellPaddings: { top: 0, right: 0 },
             });
         });
     }, [clientViewsInPresentationGrid, clientAspectRatios]);
@@ -53,7 +53,7 @@ function useGrid({
                 client,
                 aspectRatio: clientAspectRatios[client.id],
                 avatarSize: 0,
-                cellPaddings: 0,
+                cellPaddings: { top: 0, right: 0 },
                 isSubgrid: true,
             });
         });
