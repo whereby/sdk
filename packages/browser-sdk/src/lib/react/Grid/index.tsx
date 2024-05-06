@@ -87,7 +87,7 @@ function Grid({ renderParticipant }: GridProps) {
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
-    } = useGrid();
+    } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit: 1, forceSubgrid: true });
 
     const presentationGridContent = React.useMemo(
         () =>

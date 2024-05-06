@@ -1,16 +1,29 @@
 import * as React from "react";
-import { selectClientViewsInGrid, selectClientViewsInPresentationGrid, selectClientViewsInSubgrid } from "./selector";
+
 import { makeFrame } from "./layout/helpers";
 import { calculateLayout } from "./layout/stageLayout";
-import { useAppSelector } from "../Provider/hooks";
 import { makeVideoCellView } from "./layout/cellView";
+import { STAGE_PARTICIPANT_LIMIT } from "./contants";
+import { useGridParticipants } from "./useGridParticipants";
 
-function useGrid() {
+interface Props {
+    activeVideosSubgridTrigger?: number;
+    forceSubgrid?: boolean;
+    stageParticipantLimit?: number;
+}
+
+function useGrid({
+    activeVideosSubgridTrigger,
+    forceSubgrid,
+    stageParticipantLimit = STAGE_PARTICIPANT_LIMIT,
+}: Props = {}) {
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
-    const clientViewsInGrid = useAppSelector(selectClientViewsInGrid);
-    const clientViewsInPresentationGrid = useAppSelector(selectClientViewsInPresentationGrid);
-    const clientViewsInSubgrid = useAppSelector(selectClientViewsInSubgrid);
+    const { clientViewsInGrid, clientViewsInPresentationGrid, clientViewsInSubgrid } = useGridParticipants({
+        activeVideosSubgridTrigger,
+        forceSubgrid,
+        stageParticipantLimit,
+    });
 
     const cellViewsVideoGrid = React.useMemo(() => {
         return clientViewsInGrid.map((client) => {

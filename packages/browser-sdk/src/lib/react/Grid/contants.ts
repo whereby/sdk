@@ -1,0 +1,2 @@
+export const STAGE_PARTICIPANT_LIMIT = 12;
+export const ACTIVE_VIDEO_SUBGRID_TRIGGER = 12;
