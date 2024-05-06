@@ -1,6 +1,6 @@
 import {
     notificationsSlice,
-    NotificationMessage,
+    NotificationEvent,
     NotificationsState,
     doClearNotifications,
     initialNotificationsState,
@@ -9,7 +9,7 @@ import {
 describe("notificationsSlice", () => {
     describe("reducers", () => {
         it("addNotification", () => {
-            const testNotification: NotificationMessage = {
+            const testNotification: NotificationEvent = {
                 type: "micNotWorking",
                 message: "Problems with your microphone have been detected and it is not delivering input",
                 level: "error",
@@ -21,7 +21,7 @@ describe("notificationsSlice", () => {
                 notificationsSlice.actions.addNotification({ ...testNotification }),
             );
 
-            expect(result.messages).toEqual([
+            expect(result.events).toEqual([
                 {
                     ...testNotification,
                 },
@@ -29,7 +29,7 @@ describe("notificationsSlice", () => {
         });
 
         it("doClearNotifications", () => {
-            const testNotification: NotificationMessage = {
+            const testNotification: NotificationEvent = {
                 type: "micNotWorking",
                 message: "Problems with your microphone have been detected and it is not delivering input",
                 level: "error",
@@ -39,12 +39,12 @@ describe("notificationsSlice", () => {
             const result: NotificationsState = notificationsSlice.reducer(
                 {
                     ...initialNotificationsState,
-                    messages: [testNotification, testNotification],
+                    events: [testNotification, testNotification],
                 },
                 doClearNotifications(),
             );
 
-            expect(result.messages).toEqual(initialNotificationsState.messages);
+            expect(result.events).toEqual(initialNotificationsState.events);
         });
     });
 });
