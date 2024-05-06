@@ -24,7 +24,7 @@ export default function VideoExperience({
     const [notifications, setNotifications] = useState<Array<string>>([]);
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const { state, actions, components, events } = useRoomConnection(roomName, {
+    const { state, actions, components } = useRoomConnection(roomName, {
         localMediaOptions: {
             audio: true,
             video: true,
@@ -35,7 +35,7 @@ export default function VideoExperience({
         ...(Boolean(externalId) && { externalId }),
     });
 
-    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
+    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares, events } = state;
     const {
         knock,
         sendChatMessage,
@@ -55,12 +55,13 @@ export default function VideoExperience({
         stopScreenshare,
     } = actions;
     const { VideoView } = components;
-    const { onNotification } = events;
 
-    onNotification(({ timestamp, message, type }) => {
-        const localDate = new Date(timestamp).toLocaleString();
-        setNotifications([...notifications, `${localDate}: ${message} (${type})`]);
-    });
+    ["debug", "log", "info", "warn", "error"].map((logLevel) =>
+        events?.on(logLevel, ({ timestamp, message, type }) => {
+            const localDate = new Date(timestamp).toLocaleString();
+            setNotifications([...notifications, `[${logLevel}] ${localDate}: ${message} (${type})`]);
+        }),
+    );
 
     return (
         <div>

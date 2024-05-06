@@ -1,4 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { EventEmitter } from "events";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 
@@ -16,20 +17,18 @@ export interface NotificationMessage extends NotificationEvent {
     timestamp: number;
 }
 
-export type NotificationCallbackFunction = (message: NotificationMessage) => void;
-
 /**
  * Reducer
  */
 
 export interface NotificationsState {
     messages: NotificationMessage[];
-    callback: NotificationCallbackFunction;
+    emitter: EventEmitter;
 }
 
 export const initialNotificationsState: NotificationsState = {
     messages: [],
-    callback: () => {},
+    emitter: new EventEmitter(),
 };
 
 export const notificationsSlice = createSlice({
@@ -40,12 +39,6 @@ export const notificationsSlice = createSlice({
             return {
                 ...state,
                 messages: [...state.messages, { ...action.payload }],
-            };
-        },
-        doSetNotificationCallback: (state, action: PayloadAction<NotificationCallbackFunction>) => {
-            return {
-                ...state,
-                callback: action.payload,
             };
         },
         doClearNotifications: (state) => {
@@ -61,7 +54,7 @@ export const notificationsSlice = createSlice({
  * Action creators
  */
 
-export const { doClearNotifications, doSetNotificationCallback } = notificationsSlice.actions;
+export const { doClearNotifications } = notificationsSlice.actions;
 
 export const doSetNotification = createAppThunk((payload: NotificationEvent) => (dispatch, getState) => {
     const notificationMessage: NotificationMessage = {
@@ -73,11 +66,9 @@ export const doSetNotification = createAppThunk((payload: NotificationEvent) => 
     dispatch(notificationsSlice.actions.addNotification(notificationMessage));
 
     const state = getState();
-    const callback = selectNotificationsCallback(state);
+    const emitter = selectNotificationsEmitter(state);
 
-    if (callback) {
-        callback.call(undefined, notificationMessage);
-    }
+    emitter.emit(notificationMessage.level, notificationMessage);
 });
 
 /**
@@ -86,4 +77,4 @@ export const doSetNotification = createAppThunk((payload: NotificationEvent) => 
 
 export const selectNotificationsRaw = (state: RootState) => state.notifications;
 export const selectNotificationsMessages = (state: RootState) => state.notifications.messages;
-export const selectNotificationsCallback = (state: RootState) => state.notifications.callback;
+export const selectNotificationsEmitter = (state: RootState) => state.notifications.emitter;
