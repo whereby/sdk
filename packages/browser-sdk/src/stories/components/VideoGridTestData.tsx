@@ -1,6 +1,6 @@
 import * as React from "react";
 import { makeVideoCellView } from "../../lib/react/Grid/layout/cellView";
-// import { CellView } from "../../lib/react/Grid/layout/types";
+import { Avatar } from "../../lib/react/Avatar";
 
 export const NORMAL = 4 / 3;
 export const WIDE = 16 / 9;
@@ -65,14 +65,14 @@ function SubgridClient({ index, cellPaddings }: { index: number; cellPaddings: {
                 padding: `${cellPaddings.top}px ${cellPaddings.right}px`,
             }}
         >
-            daw
+            <Avatar name={name} variant={"square"} />
             <div
                 style={{
                     width: "100%",
                     fontSize: "var(--font-size-small)",
                     lineHeight: "var(--font-line-height-small)",
                     textShadow: "var(--drop-shadow-small)",
-                    color: "#fff",
+                    color: "#000",
                     textAlign: "center",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
@@ -105,7 +105,6 @@ export function renderCellView({ cellView }: { cellView: any }) {
                 <SubgridClient
                     key={cellView.client?.id}
                     index={parseInt(cellView.client.id.split("-")[1])}
-                    // client={cellView.client}
                     cellPaddings={cellView.cellPaddings}
                 />
             ) : (

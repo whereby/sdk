@@ -11,6 +11,7 @@ import { createVideoCellViews, renderCellView, NORMAL, PORTRAIT, SQUARE, WIDE } 
 interface Props {
     count: number;
     debug: boolean;
+    videoGridGap: number;
     floatingAspectRatio: number;
     isMaximizeMode: boolean;
     numSubgridClients: number;
@@ -23,6 +24,7 @@ interface Props {
 function SizedVideoStageLayout({
     count,
     debug,
+    videoGridGap,
     isXLMeetingSize,
     numSubgridClients,
     presAspectRatios = [],
@@ -31,8 +33,8 @@ function SizedVideoStageLayout({
 }: Props) {
     // const { windowSize } = useWindowSize(isTouchDevice);
     const windowFrame = makeFrame({
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: window.innerWidth - 100,
+        height: window.innerHeight - 100,
         top: 0,
         left: 0,
     });
@@ -41,10 +43,13 @@ function SizedVideoStageLayout({
     const gridContent = cellViewsVideoGrid.map((cellView) => renderCellView({ cellView }));
     const cellViewsSubgrid = createVideoCellViews({ count: numSubgridClients, isSubgrid: true, ratios: [WIDE] });
     const subgridContent = cellViewsSubgrid.map((cellView) => renderCellView({ cellView }));
-    const cellViewsPresentationGrid = [];
-    const presentationGridContent = [];
+    const cellViewsPresentationGrid = createVideoCellViews({
+        count: presAspectRatios.length,
+        ratios: presAspectRatios,
+    });
+    const presentationGridContent = cellViewsPresentationGrid.map((cellView) => renderCellView({ cellView }));
 
-    const gridGap = 8;
+    const gridGap = 30;
 
     const videoStagePaddings = makeBox({
         top: gridGap,
@@ -60,22 +65,23 @@ function SizedVideoStageLayout({
                 containerPaddings={videoStagePaddings}
                 debug={debug}
                 // featureRoundedCornersOn
-                floatingContent={floatingContent}
+                // floatingContent={floatingContent}
                 // frame={windowFrame}
                 gridContent={gridContent}
                 isConstrained={isConstrained}
-                presentationGridContent={[]}
+                presentationGridContent={presentationGridContent}
                 subgridContent={subgridContent}
                 layoutVideoStage={calculateLayout({
-                    floatingVideo: cellViewsFloating[0] || null,
+                    // floatingVideo: cellViewsFloating[0] || null,
+                    videoGridGap,
                     frame: windowFrame,
                     gridGap,
                     isConstrained,
-                    isMaximizeMode,
+                    // isMaximizeMode,
                     isXLMeetingSize,
                     paddings: videoStagePaddings,
-                    presentationVideos: [],
-                    rebalanceLayout,
+                    presentationVideos: cellViewsPresentationGrid,
+                    // rebalanceLayout,
                     roomBounds: windowFrame.bounds,
                     subgridVideos: cellViewsSubgrid,
                     videos: cellViewsVideoGrid,
@@ -94,11 +100,8 @@ export default {
         numSubgridClients: {
             control: { type: "range", min: 0, max: 100, step: 1 },
         },
-        floatingAspectRatio: {
-            control: {
-                type: "select",
-                options: [null, NORMAL, WIDE, PORTRAIT],
-            },
+        videoGridGap: {
+            control: { type: "range", min: 0, max: 100, step: 1 },
         },
         ratios: {
             control: {
@@ -109,30 +112,31 @@ export default {
     },
     args: {
         count: 0,
+        videoGridGap: 30,
         debug: false,
-        featureBrandAvatarsOn: false,
         floatingAspectRatio: undefined,
-        isMaximizeMode: false,
         numSubgridClients: 0,
         ratios: [WIDE],
-        rebalanceLayout: false,
+        // rebalanceLayout: false,
         isXLMeetingSize: false,
     },
 };
 
-export const Empty = (args) => <SizedVideoStageLayout {...args} />;
+export const Empty = (args: Props) => <SizedVideoStageLayout {...args} />;
 
-export const TallSupersized = (args) => <SizedVideoStageLayout presAspectRatios={[PORTRAIT]} {...args} />;
+export const TallSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[PORTRAIT]} />;
 TallSupersized.storyName = "Tall content supersized";
 
-export const WideSupersized = (args) => <SizedVideoStageLayout presAspectRatios={[WIDE]} {...args} />;
+export const WideSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[WIDE]} />;
 WideSupersized.storyName = "Wide content supersized";
 
-export const SquareSupersized = (args) => <SizedVideoStageLayout presAspectRatios={[SQUARE]} {...args} />;
+export const SquareSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[SQUARE]} />;
 SquareSupersized.storyName = "Square content supersized";
 
-export const IntegrationSupersized = (args) => <SizedVideoStageLayout presAspectRatios={[undefined]} {...args} />;
+export const IntegrationSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[]} />;
 IntegrationSupersized.storyName = "Integration content supersized";
 
-export const PresentationGrid = (args) => <SizedVideoStageLayout presAspectRatios={[WIDE, PORTRAIT]} {...args} />;
+export const PresentationGrid = (args: Props) => (
+    <SizedVideoStageLayout {...args} presAspectRatios={[WIDE, PORTRAIT]} />
+);
 PresentationGrid.storyName = "Presentation grid";

@@ -266,7 +266,7 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
                 </button>
             </div>
             <div style={{ height: "500px", width: "100%" }}>
-                <VideoGrid videoGridGap={10} />
+                <VideoGrid videoGridGap={10} stageParticipantLimit={2} />
             </div>
         </>
     );

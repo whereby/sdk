@@ -5,6 +5,7 @@ import { debounce } from "@whereby.com/core";
 import { CellView, Bounds, Origin } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
 import { useGrid } from "./useGrid";
+import { VideoMutedIndicator } from "./VideoMutedIndicator";
 
 interface RenderCellViewProps {
     cellView: CellView;
@@ -51,7 +52,7 @@ function GridVideoCellView({ aspectRatio, participant, render, onSetClientAspect
         <div>
             {render ? (
                 render()
-            ) : participant?.stream ? (
+            ) : participant?.stream && participant.isVideoEnabled ? (
                 <VideoView
                     ref={videoEl}
                     stream={participant.stream}
@@ -60,7 +61,13 @@ function GridVideoCellView({ aspectRatio, participant, render, onSetClientAspect
                         borderRadius: "8px",
                     }}
                 />
-            ) : null}
+            ) : (
+                <VideoMutedIndicator
+                    isSmallCell={false}
+                    displayName={participant?.displayName || "Guest"}
+                    withRoundedCorners
+                />
+            )}
         </div>
     );
 }
@@ -74,6 +81,7 @@ interface GridProps {
         participant: CellView["client"];
     }) => React.ReactNode;
     videoGridGap?: number;
+    stageParticipantLimit?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

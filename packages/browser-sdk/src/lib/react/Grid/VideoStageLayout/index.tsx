@@ -74,7 +74,7 @@ function renderSubgridVideoCells({
             left: stageLayout.subgrid.origin.left + cell.origin.left,
         };
         style.transform = `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`;
-        const clientId = child?.props.participant.id;
+        const clientId = child?.props?.participant?.id;
         const leftPaddings = cell.paddings?.left || 0;
         const rightPaddings = cell.paddings?.right || 0;
         const childWithProps = React.cloneElement(child!, {
@@ -83,14 +83,13 @@ function renderSubgridVideoCells({
             cellPaddings: cell.paddings,
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault: false,
-            key: child?.props.participant.id,
+            key: child?.props?.participant?.id,
             style,
         });
 
         return renderVideoCell({
             cell,
             child: childWithProps,
-            // className: styles.gridVideoCell,
             clientId,
             style,
             withRoundedCorners,
@@ -132,7 +131,7 @@ function renderPresentationGridVideoCells({
             height: Math.round(cell.bounds.height),
             transform: `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`,
         };
-        const clientId = child?.props.participant.id;
+        const clientId = child?.props?.participant?.id;
         const childWithProps = React.cloneElement(child!, {
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault: !!isConstrained && !child?.props.participant.isPresentation,
@@ -174,7 +173,7 @@ function renderGridVideoCells({
             transform: `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`,
         };
 
-        const clientId = child?.props.participant.id;
+        const clientId = child?.props?.participant?.id;
         const childWithProps = React.cloneElement(child!, {
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault: !!isConstrained && !child?.props.participant.isPresentation,
