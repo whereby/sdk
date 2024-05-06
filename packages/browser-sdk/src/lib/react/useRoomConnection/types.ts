@@ -1,6 +1,5 @@
 import {
     ChatMessage as SignalChatMessage,
-    NotificationMessage,
     LocalParticipant,
     RemoteParticipant,
     Screenshare,
@@ -11,6 +10,7 @@ import {
 import { RoleName } from "@whereby.com/media";
 
 import { UseLocalMediaResult } from "../useLocalMedia/types";
+import { EventEmitter } from "stream";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 export interface LocalParticipantState extends LocalParticipant {
@@ -48,10 +48,10 @@ export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
+    events?: EventEmitter;
     liveStream?: LiveStreamState;
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
-    notifications: NotificationMessage[];
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
     waitingParticipants: WaitingParticipantState[];

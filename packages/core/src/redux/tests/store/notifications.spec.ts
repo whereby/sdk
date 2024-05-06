@@ -1,6 +1,7 @@
 import { createStore } from "../store.setup";
 import { NotificationEvent, doSetNotification } from "../../slices/notifications";
 import { diff } from "deep-object-diff";
+import { EventEmitter } from "events";
 
 describe("actions", () => {
     it("doSetNotification", async () => {
@@ -12,13 +13,14 @@ describe("actions", () => {
             message: "Problems with your microphone have been detected and it is not delivering input",
         };
 
-        const notificationsCallback = jest.fn();
+        const notificationsEmitter = new EventEmitter();
+        jest.spyOn(notificationsEmitter, "emit");
 
         const store = createStore({
             initialState: {
                 notifications: {
                     messages: [],
-                    callback: notificationsCallback,
+                    emitter: notificationsEmitter,
                 },
             },
         });
@@ -35,7 +37,10 @@ describe("actions", () => {
             timestamp: now,
         };
 
-        expect(notificationsCallback).toHaveBeenCalledWith(expectedTestNotificationMessage);
+        expect(notificationsEmitter.emit).toHaveBeenCalledWith(
+            expectedTestNotificationMessage.level,
+            expectedTestNotificationMessage,
+        );
 
         expect(diff(before, after)).toEqual({
             messages: { 0: expectedTestNotificationMessage },
