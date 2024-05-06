@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
+import { NotificationEvent, NotificationLogLevel } from "packages/core/dist";
 
 export default function VideoExperience({
     displayName,
@@ -56,12 +57,19 @@ export default function VideoExperience({
     } = actions;
     const { VideoView } = components;
 
-    ["debug", "log", "info", "warn", "error"].map((logLevel) =>
-        events?.on(logLevel, ({ timestamp, message, type }) => {
+    useEffect(() => {
+        const sdkLogLevels: Array<NotificationLogLevel> = ["debug", "log", "info", "warn", "error"];
+        const sdkEventHandler = ({ timestamp, message, type, level }: NotificationEvent) => {
             const localDate = new Date(timestamp).toLocaleString();
-            setNotifications([...notifications, `[${logLevel}] ${localDate}: ${message} (${type})`]);
-        }),
-    );
+            setNotifications((notifications) => [...notifications, `[${level}] ${localDate}: ${message} (${type})`]);
+        };
+
+        sdkLogLevels.map((logLevel) => events?.on(logLevel, sdkEventHandler));
+
+        return () => {
+            sdkLogLevels.map((logLevel) => events?.off(logLevel, sdkEventHandler));
+        };
+    }, [events]);
 
     return (
         <div>

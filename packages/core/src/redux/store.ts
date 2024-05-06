@@ -45,7 +45,7 @@ const appReducer = combineReducers({
 });
 
 export const rootReducer: AppReducer = (state, action) => {
-    // Reset store state on app reset action
+    // Reset store state on app join action
     if (doAppStart.match(action)) {
         const resetState: Partial<RootState> = {
             app: {

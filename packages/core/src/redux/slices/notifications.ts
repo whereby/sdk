@@ -3,7 +3,7 @@ import { EventEmitter } from "events";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 
-export interface NotificationEvent {
+export interface Notification {
     type: string;
     message: string;
     level?: "debug" | "log" | "info" | "warn" | "error";
@@ -12,39 +12,45 @@ export interface NotificationEvent {
     };
 }
 
-export interface NotificationMessage extends NotificationEvent {
+export interface NotificationEvent extends Notification {
     level: "debug" | "log" | "info" | "warn" | "error";
     timestamp: number;
 }
+
+export type NotificationLogLevel = "debug" | "log" | "info" | "warn" | "error";
+
+export type NotificationsEventEmitter = EventEmitter<{ [logLevel in NotificationLogLevel]: [NotificationEvent] }>;
+
+const emitter: NotificationsEventEmitter = new EventEmitter();
 
 /**
  * Reducer
  */
 
 export interface NotificationsState {
-    messages: NotificationMessage[];
-    emitter: EventEmitter;
+    emitter: NotificationsEventEmitter;
+    events: Array<NotificationEvent>;
 }
 
 export const initialNotificationsState: NotificationsState = {
-    messages: [],
-    emitter: new EventEmitter(),
+    emitter,
+    events: [],
 };
 
 export const notificationsSlice = createSlice({
     name: "notifications",
     initialState: initialNotificationsState,
     reducers: {
-        addNotification: (state, action: PayloadAction<NotificationMessage>) => {
+        addNotification: (state, action: PayloadAction<NotificationEvent>) => {
             return {
                 ...state,
-                messages: [...state.messages, { ...action.payload }],
+                events: [...state.events, { ...action.payload }],
             };
         },
         doClearNotifications: (state) => {
             return {
                 ...state,
-                messages: [],
+                events: [],
             };
         },
     },
@@ -56,8 +62,8 @@ export const notificationsSlice = createSlice({
 
 export const { doClearNotifications } = notificationsSlice.actions;
 
-export const doSetNotification = createAppThunk((payload: NotificationEvent) => (dispatch, getState) => {
-    const notificationMessage: NotificationMessage = {
+export const doSetNotification = createAppThunk((payload: Notification) => (dispatch, getState) => {
+    const notificationMessage: NotificationEvent = {
         ...payload,
         level: payload.level ?? "log",
         timestamp: Date.now(),
@@ -76,5 +82,5 @@ export const doSetNotification = createAppThunk((payload: NotificationEvent) => 
  */
 
 export const selectNotificationsRaw = (state: RootState) => state.notifications;
-export const selectNotificationsMessages = (state: RootState) => state.notifications.messages;
+export const selectNotificationsEvents = (state: RootState) => state.notifications.events;
 export const selectNotificationsEmitter = (state: RootState) => state.notifications.emitter;
