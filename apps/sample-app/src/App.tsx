@@ -73,6 +73,11 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     } = roomConnection.actions;
 
     useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
+
+    useEffect(() => {
         setIsCameraEnabled(localParticipant?.isVideoEnabled || false);
     }, [localParticipant?.isVideoEnabled]);
 
