@@ -1,5 +1,12 @@
 import { createStore, mockSignalEmit } from "../store.setup";
 import { randomRemoteParticipant } from "../../../__mocks__/appMocks";
+
+jest.mock("../../slices/app", () => ({
+    ...jest.requireActual("../../slices/app"),
+    doAppStop: jest.fn().mockReturnValue({ type: "TEST_ACTION" }),
+}));
+
+import { doAppStop } from "../../slices/app";
 import { doLockRoom, doKickParticipant, doEndMeeting } from "../../slices/room";
 
 describe("actions", () => {
@@ -80,22 +87,51 @@ describe("actions", () => {
         const remoteParticipants = [randomRemoteParticipant(), randomRemoteParticipant(), randomRemoteParticipant()];
 
         describe("when authorized", () => {
-            it("should end the meeting for all remote participants", () => {
-                const store = createStore({
-                    initialState: {
-                        authorization: { roomKey: null, roleName: "host" },
-                        remoteParticipants: {
-                            remoteParticipants,
+            describe("with stayBehind: false", () => {
+                it("should end the meeting for all remote participants and local participant should also leave room", () => {
+                    const store = createStore({
+                        initialState: {
+                            authorization: { roomKey: null, roleName: "host" },
+                            remoteParticipants: {
+                                remoteParticipants,
+                            },
                         },
-                    },
-                    withSignalConnection: true,
+                        withSignalConnection: true,
+                    });
+
+                    expect(() => store.dispatch(doEndMeeting({ stayBehind: false }))).not.toThrow();
+
+                    expect(mockSignalEmit).toHaveBeenCalledTimes(1);
+                    expect(mockSignalEmit).toHaveBeenCalledWith("kick_client", {
+                        clientIds: remoteParticipants.map(({ id }) => id),
+                        reasonId: "end-meeting",
+                    });
+
+                    expect(doAppStop).toHaveBeenCalled();
                 });
+            });
 
-                expect(() => store.dispatch(doEndMeeting())).not.toThrow();
+            describe("with stayBehind: true", () => {
+                it("should end the meeting for all remote participants but the local participant should not leave the room", () => {
+                    const store = createStore({
+                        initialState: {
+                            authorization: { roomKey: null, roleName: "host" },
+                            remoteParticipants: {
+                                remoteParticipants,
+                            },
+                        },
+                        withSignalConnection: true,
+                    });
 
-                expect(mockSignalEmit).toHaveBeenCalledWith("kick_client", {
-                    clientIds: remoteParticipants.map(({ id }) => id),
-                    reasonId: "end-meeting",
+                    expect(() => store.dispatch(doEndMeeting({ stayBehind: true }))).not.toThrow();
+
+                    expect(mockSignalEmit).toHaveBeenCalledTimes(1);
+                    expect(mockSignalEmit).toHaveBeenCalledWith("kick_client", {
+                        clientIds: remoteParticipants.map(({ id }) => id),
+                        reasonId: "end-meeting",
+                    });
+
+                    expect(doAppStop).not.toHaveBeenCalled();
                 });
             });
         });
@@ -110,7 +146,9 @@ describe("actions", () => {
                     withSignalConnection: true,
                 });
 
-                expect(() => store.dispatch(doEndMeeting())).toThrow(`Not authorized to perform this action`);
+                expect(() => store.dispatch(doEndMeeting({ stayBehind: false }))).toThrow(
+                    `Not authorized to perform this action`,
+                );
 
                 expect(mockSignalEmit).not.toHaveBeenCalled();
             });

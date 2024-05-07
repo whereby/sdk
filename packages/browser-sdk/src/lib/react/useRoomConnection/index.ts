@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+    AppConfig,
     doSendChatMessage,
     doStartCloudRecording,
     doStopCloudRecording,
@@ -12,8 +13,8 @@ import {
     toggleLowDataModeEnabled,
     doStartScreenshare,
     doStopScreenshare,
-    appLeft,
-    doAppJoin,
+    doAppStart,
+    doAppStop,
     doKnockRoom,
     doLockRoom,
     doKickParticipant,
@@ -44,25 +45,29 @@ export function useRoomConnection(
     const dispatch = useAppDispatch();
     const roomConnectionState = useAppSelector(selectRoomConnectionState);
 
+    const [roomConfig, setRoomConfig] = React.useState<AppConfig>();
+
     React.useEffect(() => {
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
         const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
-        dispatch(
-            doAppJoin({
-                displayName: roomConnectionOptions.displayName || "Guest",
-                localMediaOptions: roomConnectionOptions.localMedia
-                    ? undefined
-                    : roomConnectionOptions.localMediaOptions,
-                roomKey,
-                roomUrl,
-                userAgent: `browser-sdk:${browserSdkVersion}`,
-                externalId: roomConnectionOptions.externalId || null,
-            }),
-        );
+        const roomConfig = {
+            displayName: roomConnectionOptions.displayName || "Guest",
+            localMediaOptions: roomConnectionOptions.localMedia ? undefined : roomConnectionOptions.localMediaOptions,
+            roomKey,
+            roomUrl,
+            userAgent: `browser-sdk:${browserSdkVersion}`,
+            externalId: roomConnectionOptions.externalId || null,
+        };
+
+        setRoomConfig(roomConfig);
+
+        // TODO: remove this in SDK v3. Require developers to call joinRoom() API explicitly instead.
+        dispatch(doAppStart(roomConfig));
+
         return () => {
-            dispatch(appLeft());
+            dispatch(doAppStop());
         };
     }, []);
 
@@ -96,7 +101,11 @@ export function useRoomConnection(
     const startScreenshare = React.useCallback(() => dispatch(doStartScreenshare()), [dispatch]);
     const stopCloudRecording = React.useCallback(() => dispatch(doStopCloudRecording()), [dispatch]);
     const stopScreenshare = React.useCallback(() => dispatch(doStopScreenshare()), [dispatch]);
-
+    const joinRoom = React.useCallback(
+        () => (roomConfig ? dispatch(doAppStart(roomConfig)) : () => {}),
+        [dispatch, roomConfig],
+    );
+    const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
     const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
     const muteParticipants = React.useCallback(
         (clientIds: string[]) => {
@@ -108,7 +117,7 @@ export function useRoomConnection(
         (clientId: string) => dispatch(doKickParticipant({ clientId })),
         [dispatch],
     );
-    const endMeeting = React.useCallback(() => dispatch(doEndMeeting()), [dispatch]);
+    const endMeeting = React.useCallback((stayBehind?: boolean) => dispatch(doEndMeeting({ stayBehind })), [dispatch]);
 
     return {
         state: roomConnectionState,
@@ -116,6 +125,8 @@ export function useRoomConnection(
             toggleLowDataMode,
             acceptWaitingParticipant,
             knock,
+            joinRoom,
+            leaveRoom,
             lockRoom,
             muteParticipants,
             kickParticipant,

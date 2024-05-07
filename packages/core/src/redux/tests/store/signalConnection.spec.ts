@@ -1,5 +1,5 @@
 import { createStore, mockSignalEmit, mockServerSocket } from "../store.setup";
-import { doSignalSocketConnect, doSignalIdentifyDevice, doSignalDisconnect } from "../../slices/signalConnection";
+import { doSignalConnect, doSignalIdentifyDevice, doSignalDisconnect } from "../../slices/signalConnection";
 import { randomDeviceCredentials } from "../../../__mocks__/appMocks";
 import { diff } from "deep-object-diff";
 import { ServerSocket } from "@whereby.com/media";
@@ -15,10 +15,10 @@ jest.mock("@whereby.com/media", () => {
 
 describe("signalConnectionSlice", () => {
     describe("actions", () => {
-        it("doSignalSocketConnect", () => {
+        it("doSignalConnect", () => {
             const store = createStore();
 
-            store.dispatch(doSignalSocketConnect());
+            store.dispatch(doSignalConnect());
 
             expect(ServerSocket).toHaveBeenCalledTimes(1);
             expect(mockServerSocket.connect).toHaveBeenCalledTimes(1);
@@ -51,15 +51,8 @@ describe("signalConnectionSlice", () => {
         });
 
         it("doSignalDisconnect", () => {
-            const deviceCredentials = randomDeviceCredentials();
             const store = createStore({
                 withSignalConnection: true,
-                initialState: {
-                    deviceCredentials: {
-                        data: deviceCredentials,
-                        isFetching: false,
-                    },
-                },
             });
 
             const before = store.getState().signalConnection;
@@ -68,7 +61,6 @@ describe("signalConnectionSlice", () => {
 
             const after = store.getState().signalConnection;
 
-            expect(mockSignalEmit).toHaveBeenCalledWith("leave_room");
             expect(mockServerSocket.disconnect).toHaveBeenCalled();
             expect(diff(before, after)).toEqual({
                 deviceIdentified: false,

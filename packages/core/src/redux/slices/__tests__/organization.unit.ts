@@ -8,7 +8,7 @@ describe("deviceCredentialsSlice", () => {
             const x = () => oneOf(true, false);
 
             it.each`
-                wantsToJoin | organizationData | isFetchingOrganization | organizationError | isFetchingDeviceCredentials | expected
+                appIsActive | organizationData | isFetchingOrganization | organizationError | isFetchingDeviceCredentials | expected
                 ${true}     | ${undefined}     | ${false}               | ${false}          | ${false}                    | ${true}
                 ${true}     | ${null}          | ${false}               | ${false}          | ${false}                    | ${true}
                 ${x()}      | ${organization}  | ${x()}                 | ${x()}            | ${x()}                      | ${false}
@@ -16,9 +16,9 @@ describe("deviceCredentialsSlice", () => {
                 ${x()}      | ${organization}  | ${x()}                 | ${true}           | ${x()}                      | ${false}
                 ${x()}      | ${organization}  | ${x()}                 | ${x()}            | ${true}                     | ${false}
             `(
-                "should return $expected when wantsToJoin=$wantsToJoin, organizationData=$organizationData, isFetchingOrganization=$isFetchingOrganization, organizationError=$organizationError, isFetchingDeviceCredentials=$isFetchingDeviceCredentials",
+                "should return $expected when appIsActive=$appIsActive, organizationData=$organizationData, isFetchingOrganization=$isFetchingOrganization, organizationError=$organizationError, isFetchingDeviceCredentials=$isFetchingDeviceCredentials",
                 ({
-                    wantsToJoin,
+                    appIsActive,
                     organizationData,
                     isFetchingOrganization,
                     organizationError,
@@ -35,7 +35,7 @@ describe("deviceCredentialsSlice", () => {
                     };
 
                     expect(
-                        selectShouldFetchOrganization.resultFunc(wantsToJoin, organizationRaw, deviceCredentialsRaw),
+                        selectShouldFetchOrganization.resultFunc(appIsActive, organizationRaw, deviceCredentialsRaw),
                     ).toEqual(expected);
                 },
             );

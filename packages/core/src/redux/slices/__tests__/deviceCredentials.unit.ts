@@ -7,7 +7,7 @@ describe("deviceCredentialsSlice", () => {
             const credentials = randomDeviceCredentials();
 
             it.each`
-                wantsToJoin | isFetching | deviceCredentialsData | expected
+                appIsActive | isFetching | deviceCredentialsData | expected
                 ${true}     | ${false}   | ${undefined}          | ${true}
                 ${true}     | ${false}   | ${null}               | ${true}
                 ${true}     | ${false}   | ${credentials}        | ${false}
@@ -15,14 +15,14 @@ describe("deviceCredentialsSlice", () => {
                 ${true}     | ${true}    | ${null}               | ${false}
                 ${true}     | ${true}    | ${credentials}        | ${false}
             `(
-                "expected $expected when wantsToJoin=$wantsToJoin, isFetching=$isFetching, deviceCredentialsData=$deviceCredentialsData",
-                ({ wantsToJoin, isFetching, deviceCredentialsData, expected }) => {
+                "expected $expected when appIsActive=$appIsActive, isFetching=$isFetching, deviceCredentialsData=$deviceCredentialsData",
+                ({ appIsActive, isFetching, deviceCredentialsData, expected }) => {
                     const deviceCredentials = {
                         isFetching,
                         data: deviceCredentialsData,
                     };
 
-                    expect(selectShouldFetchDeviceCredentials.resultFunc(wantsToJoin, deviceCredentials)).toBe(
+                    expect(selectShouldFetchDeviceCredentials.resultFunc(appIsActive, deviceCredentials)).toBe(
                         expected,
                     );
                 },

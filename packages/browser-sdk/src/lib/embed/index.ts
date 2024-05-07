@@ -18,6 +18,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     bottomToolbar: string;
     breakout: string;
     cameraAccess: string;
+    cameraEffect: string;
     chat: string;
     displayName: string;
     emptyRoomInvitation: string;
@@ -28,6 +29,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     lang: string;
     leaveButton: string;
     locking: string;
+    localization: string;
     logo: string;
     lowData: string;
     metadata: string;
@@ -59,6 +61,13 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     subgridLabels: string;
     timer: string;
     title: string;
+    /**
+     * Use dark text for bottom toolbar items.
+     *
+     * Use this attribute when the room background is light and the bottom toolbar items are hard to read.
+     */
+    toolbarDarkText: string;
+    topToolbar: string;
     video: string;
     virtualBackgroundUrl: string;
 }
@@ -98,6 +107,7 @@ interface WherebyEmbedElementEventMap {
 }
 
 interface WherebyEmbedElementCommands {
+    endMeeting: () => void;
     startRecording: () => void;
     stopRecording: () => void;
     startStreaming: () => void;
@@ -133,34 +143,37 @@ const boolAttrs = [
     "autoSpotlight",
     "background",
     "bottomToolbar",
+    "breakout",
     "cameraAccess",
     "chat",
-    "people",
     "embed",
     "emptyRoomInvitation",
+    "floatSelf",
     "help",
     "leaveButton",
-    "precallCeremony",
-    "precallReview",
-    "screenshare",
-    "video",
-    "floatSelf",
-    "recording",
-    "logo",
     "locking",
-    "precallCeremonyCanSkip",
-    "participantCount",
-    "precallPermissionsHelpLink",
-    "settingsButton",
-    "pipButton",
+    "localization",
+    "logo",
+    "lowData",
     "moreButton",
+    "participantCount",
     "personality",
+    "pipButton",
+    "precallCeremony",
+    "precallCeremonyCanSkip",
+    "precallPermissionsHelpLink",
+    "precallReview",
+    "people",
+    "recording",
+    "roomIntegrations",
+    "screenshare",
+    "settingsButton",
     "skipMediaPermissionPrompt",
     "subgridLabels",
-    "lowData",
-    "breakout",
-    "roomIntegrations",
     "timer",
+    "toolbarDarkText",
+    "topToolbar",
+    "video"
 ];
 
 define("WherebyEmbed", {
@@ -185,6 +198,7 @@ define("WherebyEmbed", {
         "avatarUrl",
         "externalId",
         "title",
+        "cameraEffect",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
     onattributechanged({ attributeName, oldValue }) {
@@ -209,6 +223,9 @@ define("WherebyEmbed", {
         if (this.iframe.current) {
             this.iframe.current.contentWindow.postMessage({ command, args }, this.roomUrl.origin);
         }
+    },
+    endMeeting() {
+        this._postCommand("end_meeting");
     },
     startRecording() {
         this._postCommand("start_recording");
@@ -252,6 +269,7 @@ define("WherebyEmbed", {
         const {
             avatarurl: avatarUrl,
             displayname: displayName,
+            cameraeffect: cameraEffect,
             lang,
             metadata,
             externalid: externalId,
@@ -282,6 +300,7 @@ define("WherebyEmbed", {
             ...(groups && { groups: groups }),
             ...(virtualBackgroundUrl && { virtualBackgroundUrl: virtualBackgroundUrl }),
             ...(avatarUrl && { avatarUrl: avatarUrl }),
+            ...(cameraEffect && { cameraEffect: cameraEffect }),
             // the original ?embed name was confusing, so we give minimal
             ...(minimal != null && { embed: minimal }),
             ...boolAttrs.reduce(

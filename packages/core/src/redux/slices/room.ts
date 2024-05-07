@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAuthorizedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
+import { doAppStop } from "./app";
 import {
     selectIsAuthorizedToLockRoom,
     selectIsAuthorizedToKickClient,
@@ -77,7 +78,7 @@ export const doKickParticipant = createAppAuthorizedThunk(
 
 export const doEndMeeting = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToEndMeeting(state),
-    () => (_, getState) => {
+    (payload: { stayBehind?: boolean }) => (dispatch, getState) => {
         const state = getState();
 
         const clientsToKick = selectRemoteParticipants(state).map((c) => c.id);
@@ -86,6 +87,10 @@ export const doEndMeeting = createAppAuthorizedThunk(
             const { socket } = selectSignalConnectionRaw(state);
 
             socket?.emit("kick_client", { clientIds: clientsToKick, reasonId: "end-meeting" });
+        }
+
+        if (!payload.stayBehind) {
+            dispatch(doAppStop());
         }
     },
 );

@@ -11,6 +11,7 @@ export default function VideoExperience({
     localMedia,
     externalId,
     showHostControls,
+    hostOptions,
 }: {
     displayName?: string;
     roomName: string;
@@ -18,6 +19,7 @@ export default function VideoExperience({
     localMedia?: UseLocalMediaResult;
     externalId?: string;
     showHostControls?: boolean;
+    hostOptions?: Array<string>;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
@@ -38,6 +40,8 @@ export default function VideoExperience({
         knock,
         sendChatMessage,
         setDisplayName,
+        joinRoom,
+        leaveRoom,
         lockRoom,
         muteParticipants,
         kickParticipant,
@@ -104,7 +108,7 @@ export default function VideoExperience({
                                 Unlock room
                             </button>
                             <button
-                                onClick={() => endMeeting()}
+                                onClick={() => endMeeting(Boolean(hostOptions?.includes("stayBehind")))}
                                 className={localParticipant?.roleName !== "host" ? "hostControlActionDisallowed" : ""}
                             >
                                 End meeting
@@ -191,6 +195,7 @@ export default function VideoExperience({
                         )}
                     </div>
                     <div className="controls">
+                        <button onClick={() => leaveRoom()}>Leave</button>
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                         <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>
@@ -209,6 +214,11 @@ export default function VideoExperience({
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
                     </div>
                 </>
+            )}
+            {connectionStatus === "leaving" && <span>Leaving...</span>}
+            {connectionStatus === "disconnected" && <span>Disconnected</span>}
+            {["kicked", "left"].includes(connectionStatus) && (
+                <button onClick={() => joinRoom()}>Re-join {connectionStatus} room</button>
             )}
         </div>
     );

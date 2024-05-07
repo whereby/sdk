@@ -2,22 +2,21 @@ import { appSlice } from "../app";
 
 describe("appSlice", () => {
     describe("reducers", () => {
-        describe("doAppJoin", () => {
+        describe("doAppStart", () => {
             it("should change the state", () => {
-                const result = appSlice.reducer(
-                    undefined,
-                    appSlice.actions.doAppJoin({
-                        isNodeSdk: true,
-                        roomUrl: "https://some.url/roomName",
-                        roomKey: "roomKey",
-                        displayName: "displayName",
-                        userAgent: "userAgent",
-                        externalId: "externalId",
-                    }),
-                );
-    
+                const initialConfig = {
+                    isNodeSdk: true,
+                    roomUrl: "https://some.url/roomName",
+                    roomKey: "roomKey",
+                    displayName: "displayName",
+                    userAgent: "userAgent",
+                    externalId: "externalId",
+                };
+
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
+
                 expect(result).toEqual({
-                    wantsToJoin: true,
+                    isActive: true,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
@@ -25,23 +24,23 @@ describe("appSlice", () => {
                     userAgent: "userAgent",
                     externalId: "externalId",
                     isNodeSdk: true,
+                    initialConfig,
                 });
             });
 
             it("should change the state with default userAgent", () => {
-                const result = appSlice.reducer(
-                    undefined,
-                    appSlice.actions.doAppJoin({
-                        isNodeSdk: true,
-                        roomUrl: "https://some.url/roomName",
-                        roomKey: "roomKey",
-                        displayName: "displayName",
-                        externalId: "externalId",
-                    }),
-                );
-    
+                const initialConfig = {
+                    isNodeSdk: true,
+                    roomUrl: "https://some.url/roomName",
+                    roomKey: "roomKey",
+                    displayName: "displayName",
+                    externalId: "externalId",
+                };
+
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
+
                 expect(result).toEqual({
-                    wantsToJoin: true,
+                    isActive: true,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
@@ -49,6 +48,7 @@ describe("appSlice", () => {
                     userAgent: "core:__PKG_VERSION__",
                     externalId: "externalId",
                     isNodeSdk: true,
+                    initialConfig,
                 });
             });
         });

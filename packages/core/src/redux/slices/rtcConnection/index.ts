@@ -12,7 +12,7 @@ import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnec
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
-import { selectAppIsNodeSdk, selectAppWantsToJoin } from "../app";
+import { selectAppIsNodeSdk, selectAppIsActive } from "../app";
 import { Chrome111 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Chrome111.js";
 import {
     selectIsCameraEnabled,
@@ -63,7 +63,7 @@ export interface RtcConnectionState {
     rtcManager: RtcManager | null;
     rtcManagerDispatcher: RtcManagerDispatcher | null;
     rtcManagerInitialized: boolean;
-    status: "" | "ready" | "reconnect";
+    status: "inactive" | "ready" | "reconnecting";
     isAcceptingStreams: boolean;
 }
 
@@ -75,7 +75,7 @@ const initialState: RtcConnectionState = {
     rtcManager: null,
     rtcManagerDispatcher: null,
     rtcManagerInitialized: false,
-    status: "",
+    status: "inactive",
     isAcceptingStreams: false,
 };
 
@@ -136,13 +136,13 @@ export const rtcConnectionSlice = createSlice({
         builder.addCase(socketReconnecting, (state) => {
             return {
                 ...state,
-                status: "reconnect",
+                status: "reconnecting",
             };
         });
         builder.addCase(signalEvents.roomJoined, (state) => {
             return {
                 ...state,
-                status: state.status === "reconnect" ? "ready" : state.status,
+                status: state.status === "reconnecting" ? "ready" : state.status,
             };
         });
     },
@@ -405,16 +405,12 @@ createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) =
 
 // Disonnect and clean up
 
-export const selectShouldDisconnectRtc = createSelector(
-    selectRtcStatus,
-    selectAppWantsToJoin,
-    (status, wantsToJoin) => {
-        if (!wantsToJoin && !["", "disconnected"].includes(status)) {
-            return true;
-        }
-        return false;
-    },
-);
+export const selectShouldDisconnectRtc = createSelector(selectRtcStatus, selectAppIsActive, (status, appIsActive) => {
+    if (!appIsActive && !["inactive", "disconnected"].includes(status)) {
+        return true;
+    }
+    return false;
+});
 
 createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) => {
     if (shouldDisconnectRtc) {
