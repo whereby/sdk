@@ -91,6 +91,10 @@ export const roomConnectionSlice = createSlice({
             };
         });
         builder.addCase(signalEvents.disconnect, (state) => {
+            if (["kicked", "left"].includes(state.status)) {
+                return { ...state };
+            }
+
             return {
                 ...state,
                 status: "disconnected",

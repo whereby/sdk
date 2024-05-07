@@ -3,7 +3,6 @@ import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
-import { doAppReset } from "../app";
 
 import {
     AudioEnableRequestedEvent,
@@ -214,8 +213,6 @@ export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
 
         socket?.disconnect();
         dispatch(socketDisconnected());
-    } else {
-        doAppReset();
     }
 });
 
@@ -282,12 +279,5 @@ startAppListening({
     actionCreator: signalEvents.clientKicked,
     effect: (_, { dispatch }) => {
         dispatch(doSignalDisconnect());
-    },
-});
-
-startAppListening({
-    actionCreator: socketDisconnected,
-    effect: (_, { dispatch }) => {
-        dispatch(doAppReset());
     },
 });

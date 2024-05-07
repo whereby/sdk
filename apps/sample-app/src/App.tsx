@@ -83,7 +83,15 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     if (connectionStatus === "ready") {
         return (
             <button data-testid="joinRoomBtn" onClick={() => joinRoom()}>
-                Re-join room
+                Join room
+            </button>
+        );
+    }
+
+    if (connectionStatus === "left" || connectionStatus === "kicked") {
+        return (
+            <button data-testid="rejoinRoomBtn" onClick={() => joinRoom()}>
+                Re-join {connectionStatus} room
             </button>
         );
     }

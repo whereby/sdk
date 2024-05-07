@@ -3,7 +3,7 @@ import { getStream, getUpdatedDevices, getDeviceData } from "@whereby.com/media"
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
-import { doAppConfigure, selectAppIsNodeSdk, selectAppIsActive } from "./app";
+import { doAppStart, selectAppIsNodeSdk, selectAppIsActive } from "./app";
 import { debounce } from "../../utils";
 import { signalEvents } from "./signalConnection/actions";
 
@@ -130,7 +130,7 @@ export const localMediaSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doAppConfigure, (state, action) => {
+        builder.addCase(doAppStart, (state, action) => {
             return {
                 ...state,
                 options: action.payload.localMediaOptions,
