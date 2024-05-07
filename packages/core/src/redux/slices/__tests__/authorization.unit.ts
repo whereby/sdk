@@ -52,6 +52,7 @@ describe("authorizationSlice", () => {
                             },
                         ],
                         knockers: [],
+                        spotlights: [],
                         session: null,
                     },
                 }),

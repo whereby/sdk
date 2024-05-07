@@ -3,7 +3,7 @@ export type ClientView = {
     clientId: string;
     displayName: string;
     hasActivePresentation?: boolean;
-    stream?: MediaStream | null;
+    stream?: (MediaStream & { outboundId?: string; inboundId?: string }) | null;
     isLocalClient?: boolean;
     isPresentation?: boolean;
     isVideoEnabled?: boolean;

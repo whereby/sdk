@@ -183,6 +183,12 @@ export interface SpotlightAddedEvent {
     requestedByClientId: string;
 }
 
+export interface SpotlightRemovedEvent {
+    clientId: string;
+    streamId: string;
+    requestedByClientId: string;
+}
+
 export interface SignalEvents {
     audio_enabled: AudioEnabledEvent;
     audio_enable_requested: AudioEnableRequestedEvent;
@@ -207,6 +213,7 @@ export interface SignalEvents {
     screenshare_started: ScreenshareStartedEvent;
     screenshare_stopped: ScreenshareStoppedEvent;
     spotlight_added: SpotlightAddedEvent;
+    spotlight_removed: SpotlightRemovedEvent;
     streaming_stopped: void;
     video_enabled: VideoEnabledEvent;
 }
@@ -243,6 +250,11 @@ export interface AddSpotlightRequest {
     streamId: string;
 }
 
+export interface RemoveSpotlightRequest {
+    clientId: string;
+    streamId: string;
+}
+
 export interface SignalRequests {
     add_spotlight: AddSpotlightRequest;
     chat_message: { text: string };
@@ -253,6 +265,7 @@ export interface SignalRequests {
     join_room: JoinRoomRequest;
     knock_room: KnockRoomRequest;
     leave_room: void;
+    remove_spotlight: RemoveSpotlightRequest;
     request_audio_enable: AudioEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string } };
     set_lock: { locked: boolean };

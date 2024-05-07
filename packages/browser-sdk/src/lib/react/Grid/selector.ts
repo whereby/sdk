@@ -1,13 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { selectLocalParticipantView, selectRemoteClientViews } from "@whereby.com/core";
+import { selectAllClientViews } from "@whereby.com/core";
 
-export const selectAllClientViews = createSelector(
-    selectLocalParticipantView,
-    selectRemoteClientViews,
-    (localParticipant, remoteParticipants) => {
-        return [localParticipant, ...remoteParticipants];
-    },
-);
 export const selectClientViewsInSubgrid = createSelector(selectAllClientViews, (allClientViews) => {
     const videos = allClientViews.filter((client) => !client.isPresentation);
     return videos.filter((client) => !client.isAudioEnabled);

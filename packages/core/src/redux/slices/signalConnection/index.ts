@@ -23,6 +23,8 @@ import {
     ScreenshareStartedEvent,
     ScreenshareStoppedEvent,
     ServerSocket,
+    SpotlightAddedEvent,
+    SpotlightRemovedEvent,
     VideoEnabledEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
@@ -66,6 +68,10 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     );
     socket.on("cloud_recording_stopped", () => dispatch(signalEvents.cloudRecordingStopped()));
     socket.on("streaming_stopped", () => dispatch(signalEvents.streamingStopped()));
+    socket.on("spotlight_added", (payload: SpotlightAddedEvent) => dispatch(signalEvents.spotlightAdded(payload)));
+    socket.on("spotlight_removed", (payload: SpotlightRemovedEvent) =>
+        dispatch(signalEvents.spotlightRemoved(payload)),
+    );
 }
 
 const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net";

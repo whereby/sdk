@@ -16,6 +16,7 @@ export * from "./slices/remoteParticipants";
 export * from "./slices/room";
 export * from "./slices/roomConnection";
 export * from "./slices/rtcAnalytics";
+export * from "./slices/spotlights";
 export * from "./slices/streaming";
 export * from "./slices/waitingParticipants";
 export * from "./types";
