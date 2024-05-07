@@ -10,40 +10,23 @@ const captureDocumentSize = () => {
     };
 };
 
-type Dimensions = {
-    windowSize: { width: number; height: number };
-    safeAreaInsets: { top: number; right: number; bottom: number; left: number };
-};
-
-const dimensionsReducer = (state: Dimensions, action: { type: "update"; newDimensions: Dimensions }) => {
-    switch (action.type) {
-        case "update":
-            return {
-                ...state,
-                ...action.newDimensions,
-            };
-        default:
-            return state;
-    }
-};
-
 const captureDimensions = () => ({
     windowSize: captureDocumentSize(),
     safeAreaInsets: captureSafeAreaInsets(),
 });
 
 export const useWindowSize = (isTouchDevice: boolean) => {
-    const [state, dispatch] = React.useReducer(dimensionsReducer, {}, captureDimensions);
+    const [dimensions, setDimensions] = React.useState(captureDimensions());
 
     React.useEffect(() => {
         const handler = () => {
             const newDimensions = captureDimensions();
-            dispatch({ type: "update", newDimensions });
+            setDimensions(newDimensions);
         };
         const onResize = isTouchDevice ? handler : debounce(handler, { delay: 60 });
         window.addEventListener("resize", onResize);
         return () => window.removeEventListener("resize", onResize);
     }, [isTouchDevice]);
 
-    return state;
+    return dimensions;
 };

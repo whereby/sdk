@@ -10,7 +10,7 @@ interface AvatarProps {
     size?: 32 | 36 | 40 | 60 | 80 | 200;
 }
 
-const getInitialsFromName = (name = "") => {
+export const getInitialsFromName = (name = "") => {
     name = name.trim();
 
     if (name) {
