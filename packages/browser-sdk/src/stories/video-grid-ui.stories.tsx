@@ -47,7 +47,9 @@ function SizedVideoStageLayout({
         count: presAspectRatios.length,
         ratios: presAspectRatios,
     });
-    const presentationGridContent = cellViewsPresentationGrid.map((cellView) => renderCellView({ cellView }));
+    const presentationGridContent = cellViewsPresentationGrid.map((cellView) =>
+        renderCellView({ cellView, isPresentation: true }),
+    );
 
     const gridGap = 30;
 
@@ -97,12 +99,7 @@ export default {
         videoGridGap: {
             control: { type: "range", min: 0, max: 100, step: 1 },
         },
-        ratios: {
-            control: {
-                type: "multi-select",
-                options: [NORMAL, WIDE, PORTRAIT],
-            },
-        },
+        ratios: { control: "multi-select", options: [NORMAL, WIDE, PORTRAIT] },
     },
     args: {
         count: 0,

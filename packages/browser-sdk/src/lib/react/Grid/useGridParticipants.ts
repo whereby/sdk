@@ -1,6 +1,11 @@
 import * as React from "react";
 
-import { selectLocalParticipantView, selectRemoteClientViews, selectNumClients, ClientView } from "@whereby.com/core";
+import {
+    selectLocalParticipantView,
+    selectRemoteClientViews,
+    selectNumParticipants,
+    ClientView,
+} from "@whereby.com/core";
 import { useAppSelector } from "../Provider/hooks";
 import { ACTIVE_VIDEO_SUBGRID_TRIGGER, STAGE_PARTICIPANT_LIMIT } from "./contants";
 
@@ -59,11 +64,11 @@ function useGridParticipants({
 }: Props = {}) {
     const localParticipantView = useAppSelector(selectLocalParticipantView);
     const remoteClientViews = useAppSelector(selectRemoteClientViews);
-    const numClients = useAppSelector(selectNumClients);
+    const numParticipants = useAppSelector(selectNumParticipants);
 
     const shouldShowSubgrid = React.useMemo(() => {
-        return forceSubgrid ? true : numClients > stageParticipantLimit;
-    }, [forceSubgrid, numClients, stageParticipantLimit]);
+        return forceSubgrid ? true : numParticipants > stageParticipantLimit;
+    }, [forceSubgrid, numParticipants, stageParticipantLimit]);
 
     const allClientViews = React.useMemo(() => {
         return [localParticipantView, ...remoteClientViews];

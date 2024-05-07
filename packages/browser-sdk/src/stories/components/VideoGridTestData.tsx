@@ -52,6 +52,18 @@ function WebRtcVideo({ children }: { children: React.ReactNode }) {
     );
 }
 
+function PresentationContent() {
+    return (
+        <div
+            style={{
+                background: "#222",
+                width: "100%",
+                height: "100%",
+            }}
+        />
+    );
+}
+
 function SubgridClient({ index, cellPaddings }: { index: number; cellPaddings: { top: number; right: number } }) {
     const name = sampleNameForIndex(index);
     return (
@@ -86,18 +98,21 @@ function SubgridClient({ index, cellPaddings }: { index: number; cellPaddings: {
     );
 }
 
-export function renderCellView({ cellView }: { cellView: CellView }) {
+export function renderCellView({ cellView, isPresentation }: { cellView: CellView; isPresentation?: boolean }) {
     const clientId = cellView.client?.id || "";
+
     switch (cellView.type) {
         case "video":
             return cellView.isSubgrid ? (
                 <SubgridClient
-                    key={cellView.client?.id}
+                    key={cellView.clientId}
                     index={parseInt(clientId.split("-")[1])}
                     cellPaddings={cellView.cellPaddings || { top: 0, right: 0 }}
                 />
+            ) : isPresentation ? (
+                <PresentationContent key={`presentation-${cellView.clientId}`} />
             ) : (
-                <WebRtcVideo key={cellView.client?.id}>{clientId.split("-")[1]}</WebRtcVideo>
+                <WebRtcVideo key={cellView.clientId}>{clientId.split("-")[1]}</WebRtcVideo>
             );
         default:
             throw new Error("Unhandled cellView type");

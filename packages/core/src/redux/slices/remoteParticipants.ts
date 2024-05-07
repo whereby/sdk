@@ -303,7 +303,7 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
 
-export const selectNumClients = createSelector(
+export const selectNumParticipants = createSelector(
     selectRemoteParticipants,
     (clients) => clients.filter((c) => !NON_PERSON_ROLES.includes(c.roleName)).length + 1,
 );

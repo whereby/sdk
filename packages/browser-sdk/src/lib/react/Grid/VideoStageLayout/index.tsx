@@ -83,14 +83,14 @@ function renderSubgridVideoCells({
             cellPaddings: cell.paddings,
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault: false,
-            key: child?.props?.participant?.id,
+            key: clientId || `subgrid-${index}`,
             style,
         });
 
         return renderVideoCell({
             cell,
             child: childWithProps,
-            clientId,
+            clientId: clientId || `subgrid-${index}`,
             style,
             withRoundedCorners,
             withShadow,
@@ -136,13 +136,13 @@ function renderPresentationGridVideoCells({
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault: !!isConstrained && !child?.props.participant.isPresentation,
             canZoom: !!isConstrained,
-            key: clientId,
+            key: clientId || `presentation-${index}`,
         });
 
         return renderVideoCell({
             cell,
             child: childWithProps,
-            clientId,
+            clientId: clientId || `presentation-${index}`,
             style,
             withRoundedCorners,
             withShadow,
@@ -178,13 +178,13 @@ function renderGridVideoCells({
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault: !!isConstrained && !child?.props.participant.isPresentation,
             canZoom: !!isConstrained,
-            key: clientId,
+            key: clientId || `video-${index}`,
         });
 
         return renderVideoCell({
             cell,
             child: childWithProps,
-            clientId,
+            clientId: clientId || `video-${index}`,
             withRoundedCorners,
             style,
             withShadow,
