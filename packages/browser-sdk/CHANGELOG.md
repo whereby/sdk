@@ -1,5 +1,13 @@
 # @whereby.com/browser-sdk
 
+## 2.12.2
+
+### Patch Changes
+
+- 5cf454d: Delay resetting the store state until the next joinRoom() API request is called
+- Updated dependencies [5cf454d]
+  - @whereby.com/core@0.15.1
+
 ## 2.12.1
 
 ### Patch Changes
