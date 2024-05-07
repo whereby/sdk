@@ -71,10 +71,12 @@ export interface RoomConnectionActions {
     toggleLowDataMode(enabled?: boolean): void;
     acceptWaitingParticipant(participantId: string): void;
     knock(): void;
+    joinRoom(): void;
+    leaveRoom(): void;
     lockRoom(locked: boolean): void;
     muteParticipants(clientIds: string[]): void;
     kickParticipant(clientId: string): void;
-    endMeeting(): void;
+    endMeeting(stayBehind?: boolean): void;
     rejectWaitingParticipant(participantId: string): void;
     sendChatMessage(text: string): void;
     setDisplayName(displayName: string): void;

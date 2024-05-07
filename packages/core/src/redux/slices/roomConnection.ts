@@ -4,17 +4,20 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 import {
+    doAppStop,
     selectAppDisplayName,
     selectAppRoomName,
     selectAppUserAgent,
     selectAppExternalId,
     selectAppIsNodeSdk,
+    selectAppIsActive,
 } from "./app";
 import { selectRoomKey, setRoomKey } from "./authorization";
 
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";
 import {
+    doSignalDisconnect,
     selectSignalConnectionDeviceIdentified,
     selectSignalConnectionRaw,
     socketReconnecting,
@@ -23,16 +26,17 @@ import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatu
 import { selectSelfId, selectLocalParticipantClientClaim } from "./localParticipant";
 
 export type ConnectionStatus =
-    | "initializing"
+    | "ready"
     | "connecting"
     | "connected"
-    | "reconnect"
     | "room_locked"
     | "knocking"
-    | "disconnecting"
-    | "disconnected"
     | "knock_rejected"
-    | "kicked";
+    | "kicked"
+    | "leaving"
+    | "left"
+    | "disconnected"
+    | "reconnecting";
 
 /**
  * Reducer
@@ -46,7 +50,7 @@ export interface RoomConnectionState {
 
 const initialState: RoomConnectionState = {
     session: null,
-    status: "initializing",
+    status: "ready",
     error: null,
 };
 
@@ -87,6 +91,10 @@ export const roomConnectionSlice = createSlice({
             };
         });
         builder.addCase(signalEvents.disconnect, (state) => {
+            if (["kicked", "left"].includes(state.status)) {
+                return { ...state };
+            }
+
             return {
                 ...state,
                 status: "disconnected",
@@ -114,10 +122,16 @@ export const roomConnectionSlice = createSlice({
                 status: "kicked",
             };
         });
+        builder.addCase(signalEvents.roomLeft, (state) => {
+            return {
+                ...state,
+                status: "left",
+            };
+        });
         builder.addCase(socketReconnecting, (state) => {
             return {
                 ...state,
-                status: "reconnect",
+                status: "reconnecting",
             };
         });
     },
@@ -211,18 +225,27 @@ export const selectRoomConnectionError = (state: RootState) => state.roomConnect
 
 export const selectShouldConnectRoom = createSelector(
     [
+        selectAppIsActive,
         selectOrganizationId,
         selectRoomConnectionStatus,
         selectSignalConnectionDeviceIdentified,
         selectLocalMediaStatus,
         selectAppIsNodeSdk,
     ],
-    (hasOrganizationIdFetched, roomConnectionStatus, signalConnectionDeviceIdentified, localMediaStatus, isNodeSdk) => {
+    (
+        appIsActive,
+        hasOrganizationIdFetched,
+        roomConnectionStatus,
+        signalConnectionDeviceIdentified,
+        localMediaStatus,
+        isNodeSdk,
+    ) => {
         if (
+            appIsActive &&
             (localMediaStatus === "started" || isNodeSdk) &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
-            ["initializing", "reconnect"].includes(roomConnectionStatus)
+            ["ready", "reconnecting", "disconnected"].includes(roomConnectionStatus)
         ) {
             return true;
         }
@@ -253,6 +276,25 @@ startAppListening({
             dispatch(doConnectRoom());
         } else if (resolution === "rejected") {
             dispatch(connectionStatusChanged("knock_rejected"));
+        }
+    },
+});
+
+startAppListening({
+    actionCreator: doAppStop,
+    effect: (_, { dispatch, getState }) => {
+        const state = getState();
+
+        const roomConnectionStatus = selectRoomConnectionStatus(state);
+
+        if (roomConnectionStatus === "connected") {
+            const socket = selectSignalConnectionRaw(state).socket;
+
+            socket?.emit("leave_room");
+
+            dispatch(connectionStatusChanged("leaving"));
+        } else {
+            doSignalDisconnect();
         }
     },
 });

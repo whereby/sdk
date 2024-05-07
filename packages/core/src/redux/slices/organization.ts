@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import Organization from "../../api/models/Organization";
 import { createReactor } from "../listenerMiddleware";
-import { selectAppRoomUrl, selectAppWantsToJoin } from "./app";
+import { selectAppRoomUrl, selectAppIsActive } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
 /**
@@ -86,12 +86,12 @@ export const selectOrganizationId = (state: RootState) => state.organization.dat
  */
 
 export const selectShouldFetchOrganization = createSelector(
-    selectAppWantsToJoin,
+    selectAppIsActive,
     selectOrganizationRaw,
     selectDeviceCredentialsRaw,
-    (wantsToJoin, organization, deviceCredentials) => {
+    (appIsActive, organization, deviceCredentials) => {
         if (
-            wantsToJoin &&
+            appIsActive &&
             !organization.data &&
             !organization.isFetching &&
             !organization.error &&

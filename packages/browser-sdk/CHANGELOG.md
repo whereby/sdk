@@ -1,10 +1,46 @@
 # @whereby.com/browser-sdk
 
-## 2.7.0-beta.0
+## 2.12.2
+
+### Patch Changes
+
+- 5cf454d: Delay resetting the store state until the next joinRoom() API request is called
+- Updated dependencies [5cf454d]
+  - @whereby.com/core@0.15.1
+
+## 2.12.1
+
+### Patch Changes
+
+- Updated dependencies [ef26bd0]
+  - @whereby.com/core@0.15.0
+
+## 2.12.0
 
 ### Minor Changes
 
-- 9e19728: Rebase beta version on latest main
+- 7256e58: organize bool attributes. Add support for topToolbar, toolbarDarkText, cameraEffect, and localization as attributes
+- 4a7bd59: Add `endMeeting()` command on embed element
+
+## 2.11.0
+
+### Minor Changes
+
+- 324b52b: Add actions to join and leave Whereby rooms on-demand
+- b857c2b: Add stayBehind parameter to endMeeting host room action
+
+### Patch Changes
+
+- Updated dependencies [324b52b]
+- Updated dependencies [b857c2b]
+  - @whereby.com/core@0.14.0
+
+## 2.10.1
+
+### Patch Changes
+
+- @whereby.com/core@0.13.1
+
 ## 2.10.0
 
 ### Minor Changes
@@ -41,6 +77,12 @@
 
 - Updated dependencies [8a75b16]
   - @whereby.com/core@0.11.0
+
+## 2.7.0-beta.0
+
+### Minor Changes
+
+- 9e19728: Rebase beta version on latest main
 
 ## 2.7.0
 

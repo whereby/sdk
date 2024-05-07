@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import { fakeWebcamFrame, fakeAudioStream } from "@whereby.com/core";
+import { getFakeMediaStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
@@ -109,31 +109,24 @@ function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: 
 }
 
 export const LocalMediaWithFakeMediaStream = ({ roomUrl }: { roomUrl: string }) => {
-    const canvas = useRef<HTMLCanvasElement>(null);
-    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const [localStream, setLocalStream] = useState<MediaStream>();
     const [isAudioReady, setIsAudioReady] = useState(false);
+    const [canvas, setCanvas] = useState<HTMLCanvasElement>();
 
-    useEffect(() => {
-        if (canvas.current) {
-            fakeWebcamFrame(canvas.current);
-        }
-    }, [canvas]);
-
-    useEffect(() => {
-        setTimeout(() => {
-            if (canvas.current) {
-                setLocalStream(canvas.current.captureStream());
-            }
-        }, 1000);
-    }, [canvas]);
+    const canvasRef = useCallback((canvas: HTMLCanvasElement) => {
+        setCanvas(canvas);
+        const stream = getFakeMediaStream({ canvas });
+        setLocalStream(stream);
+    }, []);
 
     function addAudioTrack() {
-        if (localStream) {
-            const audioStream = fakeAudioStream();
-            localStream.addTrack(audioStream.getAudioTracks()[0]);
-            setLocalStream(localStream.clone());
-            setIsAudioReady(true);
+        if (!canvas) {
+            return;
         }
+
+        const stream = getFakeMediaStream({ canvas, hasAudio: true });
+        setLocalStream(stream);
+        setIsAudioReady(true);
     }
 
     return (
@@ -156,7 +149,7 @@ export const LocalMediaWithFakeMediaStream = ({ roomUrl }: { roomUrl: string }) 
                     <div>Waiting for canvas to be loaded</div>
                 )}
                 <br />
-                <canvas ref={canvas} id="canvas" width="640" height="360"></canvas>
+                <canvas ref={canvasRef} id="canvas" width="640" height="360"></canvas>
             </div>
         </div>
     );
@@ -171,20 +164,47 @@ export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; 
 };
 
 export const RoomConnectionWithHostControls = {
-    render: ({ roomUrl, roomKey, displayName }: { roomUrl: string; roomKey: string; displayName?: string }) => {
+    render: ({
+        roomUrl,
+        roomKey,
+        displayName,
+        hostOptions,
+    }: {
+        roomUrl: string;
+        roomKey: string;
+        displayName?: string;
+        hostOptions: Array<string>;
+    }) => {
         if (!roomUrl || !roomUrl.match(roomRegEx)) {
             return <p>Set room url on the Controls panel</p>;
         }
 
-        return <VideoExperience displayName={displayName} roomName={roomUrl} roomKey={roomKey} showHostControls />;
+        return (
+            <VideoExperience
+                displayName={displayName}
+                roomName={roomUrl}
+                roomKey={roomKey}
+                showHostControls
+                hostOptions={hostOptions}
+            />
+        );
     },
     argTypes: {
         ...defaultArgs.argTypes,
         roomKey: { control: "text", type: { required: true } },
+        hostOptions: {
+            name: "Host options",
+            control: {
+                type: "check",
+                labels: { stayBehind: "Stay behind after triggering meeting end" },
+            },
+            options: ["stayBehind"],
+        },
     },
     args: {
         ...defaultArgs.args,
         roomKey: process.env.STORYBOOK_ROOM_HOST_ROOMKEY || "[Host roomKey required]",
+        hostOptions: ["stayBehind"],
     },
 };
 

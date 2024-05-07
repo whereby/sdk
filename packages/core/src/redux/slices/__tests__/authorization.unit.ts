@@ -6,7 +6,7 @@ import {
     selectIsAuthorizedToRequestAudioEnable,
 } from "../authorization";
 import { signalEvents } from "../signalConnection/actions";
-import { doAppJoin } from "../app";
+import { doAppStart } from "../app";
 
 describe("authorizationSlice", () => {
     describe("reducers", () => {
@@ -16,10 +16,10 @@ describe("authorizationSlice", () => {
             expect(result.roomKey).toEqual("roomKey");
         });
 
-        it("doAppJoin", () => {
+        it("doAppStart", () => {
             const result = authorizationSlice.reducer(
                 undefined,
-                doAppJoin({
+                doAppStart({
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
                     displayName: "displayName",

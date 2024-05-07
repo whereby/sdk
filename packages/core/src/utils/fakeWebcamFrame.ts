@@ -62,5 +62,5 @@ function drawWebcamFrame(canvas: HTMLCanvasElement) {
 
 export default function fakeWebcamFrame(canvas: HTMLCanvasElement) {
     drawWebcamFrame(canvas);
-    requestAnimationFrame(() => fakeWebcamFrame(canvas));
+    setInterval(() => drawWebcamFrame(canvas), 50);
 }

@@ -55,7 +55,7 @@ describe("actions", () => {
         const after = store.getState().localScreenshare;
 
         expect(diff(before, after)).toEqual({
-            status: "",
+            status: "inactive",
             stream: null,
         });
     });

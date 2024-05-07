@@ -1,5 +1,31 @@
 # @whereby.com/core
 
+## 0.15.1
+
+### Patch Changes
+
+- 5cf454d: Delay resetting the store state until the next joinRoom() API request is called
+
+## 0.15.0
+
+### Minor Changes
+
+- ef26bd0: Export Signal events from core package
+
+## 0.14.0
+
+### Minor Changes
+
+- 324b52b: Add actions to join and leave Whereby rooms on-demand
+- b857c2b: Add stayBehind parameter to endMeeting host room action
+
+## 0.13.1
+
+### Patch Changes
+
+- Updated dependencies [998eebb]
+  - @whereby.com/media@1.4.0
+
 ## 0.13.0
 
 ### Minor Changes
@@ -75,7 +101,7 @@
 ### Minor Changes
 
 - 6fc07f5: Expose `RemoteParticipant.externalId`
-- 300f6ac: Rename `sdkVersion` param in `doAppJoin` to `userAgent`, make it optional with a fallback to core module version and stop exporting the `sdkVersion`
+- 300f6ac: Rename `sdkVersion` param in `doAppConfigure` to `userAgent`, make it optional with a fallback to core module version and stop exporting the `sdkVersion`
 
 ### Patch Changes
 
