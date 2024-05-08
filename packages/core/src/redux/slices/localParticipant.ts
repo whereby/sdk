@@ -8,7 +8,6 @@ import { doAppStart } from "./app";
 import { toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
-import { doSetNotification } from "./notifications";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
@@ -100,31 +99,17 @@ export const doEnableAudio = createAppAsyncThunk(
             dispatch(doSetLocalStickyReaction({ enabled: false }));
         }
 
-        dispatch(
-            doSetNotification({
-                type: payload.enabled ? "localAudioEnabled" : "localAudioDisabled",
-                message: `Local microphone ${payload.enabled ? "enabled" : "disabled"}`,
-            }),
-        );
-
         return payload.enabled;
     },
 );
 
 export const doEnableVideo = createAppAsyncThunk(
     "localParticipant/doEnableVideo",
-    async (payload: { enabled: boolean }, { dispatch, getState }) => {
+    async (payload: { enabled: boolean }, { getState }) => {
         const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
 
         socket?.emit("enable_video", { enabled: payload.enabled });
-
-        dispatch(
-            doSetNotification({
-                type: payload.enabled ? "localVideoEnabled" : "localVideoDisabled",
-                message: `Local video ${payload.enabled ? "enabled" : "disabled"}`,
-            }),
-        );
 
         return payload.enabled;
     },
@@ -132,7 +117,7 @@ export const doEnableVideo = createAppAsyncThunk(
 
 export const doSetLocalStickyReaction = createAppAsyncThunk(
     "localParticipant/doSetLocalStickyReaction",
-    async (payload: { enabled?: boolean }, { dispatch, getState, rejectWithValue }) => {
+    async (payload: { enabled?: boolean }, { getState, rejectWithValue }) => {
         const state = getState();
 
         const currentStickyReaction = selectLocalParticipantStickyReaction(state);
@@ -144,16 +129,6 @@ export const doSetLocalStickyReaction = createAppAsyncThunk(
         }
 
         const stickyReaction = enabled ? { reaction: "✋", timestamp: new Date().toISOString() } : null;
-
-        dispatch(
-            doSetNotification({
-                type: enabled ? "localHandRaised" : "localHandLowered",
-                message: `You ${enabled ? "raised" : "lowered"} your hand`,
-                props: {
-                    stickyReaction,
-                },
-            }),
-        );
 
         return stickyReaction;
     },

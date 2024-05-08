@@ -28,9 +28,6 @@ import {
 import { Credentials } from "../../../api";
 import { selectAppIsActive } from "../app";
 import { signalEvents } from "./actions";
-import { doSetNotification } from "../notifications";
-
-export { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, UnknownAction>) {
     socket.on("room_joined", (payload: RoomJoinedEvent) => dispatch(signalEvents.roomJoined(payload)));
@@ -281,32 +278,5 @@ startAppListening({
     actionCreator: signalEvents.clientKicked,
     effect: (_, { dispatch }) => {
         dispatch(doSignalDisconnect());
-    },
-});
-
-startAppListening({
-    predicate: (_action, currentState, previousState) => {
-        const oldSignalStatus = selectSignalStatus(previousState);
-        const signalStatus = selectSignalStatus(currentState);
-        return oldSignalStatus !== signalStatus;
-    },
-    effect: (_, { dispatch, getState }) => {
-        const state = getState();
-        const signalStatus = selectSignalStatus(state);
-
-        const notificationSignalEvents = ["connected", "disconnected", "reconnecting"];
-
-        if (notificationSignalEvents.includes(signalStatus)) {
-            dispatch(
-                doSetNotification({
-                    type: "networkConnection",
-                    message: `Network ${signalStatus}`,
-                    level: signalStatus === "disconnected" ? "warn" : "info",
-                    props: {
-                        status: signalStatus,
-                    },
-                }),
-            );
-        }
     },
 });

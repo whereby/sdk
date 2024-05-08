@@ -8,8 +8,6 @@ import { signalEvents } from "./signalConnection/actions";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { startAppListening } from "../listenerMiddleware";
-import { doSetNotification } from "./notifications";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -297,32 +295,3 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
-
-/**
- * Reactors
- */
-
-startAppListening({
-    actionCreator: signalEvents.clientMetadataReceived,
-    effect: (action, { dispatch, getState }) => {
-        const { clientId, stickyReaction } = action.payload.payload;
-
-        const state = getState();
-        const client = selectRemoteParticipants(state).find(({ id }) => id === clientId);
-
-        if (!client) {
-            return;
-        }
-
-        dispatch(
-            doSetNotification({
-                type: stickyReaction ? "remoteHandRaised" : "remoteHandLowered",
-                message: `${client.displayName} ${stickyReaction ? "raised" : "lowered"} their hand`,
-                props: {
-                    clientId,
-                    stickyReaction,
-                },
-            }),
-        );
-    },
-});

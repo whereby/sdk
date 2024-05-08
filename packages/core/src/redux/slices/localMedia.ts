@@ -6,8 +6,6 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { doAppStart, selectAppIsNodeSdk, selectAppIsActive } from "./app";
 import { debounce } from "../../utils";
 import { signalEvents } from "./signalConnection/actions";
-import { selectRemoteParticipants } from "./remoteParticipants";
-import { doSetNotification } from "./notifications";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -723,30 +721,8 @@ startAppListening({
 
 startAppListening({
     actionCreator: signalEvents.audioEnableRequested,
-    effect: ({ payload }, { dispatch, getState }) => {
-        const { enable, requestedByClientId } = payload;
-
-        const state = getState();
-        const client = selectRemoteParticipants(state).find(({ id }) => id === requestedByClientId);
-
-        if (!client) {
-            console.warn("Could not find client that requested a local audio change");
-            return;
-        }
-
-        dispatch(
-            doSetNotification({
-                type: enable ? "requestAudioEnable" : "requestAudioDisable",
-                message: enable
-                    ? `${client.displayName} has requested for you to speak`
-                    : `${client.displayName} has requested for you to mute your microphone`,
-                props: {
-                    enable,
-                    requestedByClientId,
-                    requestedByClientDisplayName: client.displayName,
-                },
-            }),
-        );
+    effect: ({ payload }, { dispatch }) => {
+        const { enable } = payload;
 
         if (!enable) {
             dispatch(toggleMicrophoneEnabled({ enabled: false }));
