@@ -5,6 +5,7 @@ import {
     Screenshare,
     LocalMediaOptions,
     ConnectionStatus,
+    ClientView,
 } from "@whereby.com/core";
 
 import { RoleName } from "@whereby.com/media";
@@ -53,6 +54,7 @@ export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     liveStream?: LiveStreamState;
     waitingParticipants: WaitingParticipantState[];
+    spotlightedParticipants: ClientView[];
 }
 
 export interface RoomConnectionOptions {
@@ -86,4 +88,6 @@ export interface RoomConnectionActions {
     stopScreenshare(): void;
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
+    spotlightParticipant(clientId: string): void;
+    removeSpotlight(clientId: string): void;
 }

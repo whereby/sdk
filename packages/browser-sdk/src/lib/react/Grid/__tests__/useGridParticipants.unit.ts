@@ -49,6 +49,7 @@ describe("useGridParticipants", () => {
                         clientViews: allClientViews,
                         shouldShowSubgrid,
                         activeVideosSubgridTrigger,
+                        spotlightedParticipants: [],
                     }),
                 ).toEqual(result);
             },
