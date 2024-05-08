@@ -1,11 +1,11 @@
 import * as React from "react";
 
 import { VideoView, WherebyVideoElement } from "../VideoView";
-import { setAspectRatio, debounce } from "@whereby.com/core";
+import { debounce } from "@whereby.com/core";
 import { CellView, Bounds, Origin } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
 import { useGrid } from "./useGrid";
-import { useAppDispatch } from "../Provider/hooks";
+import { VideoMutedIndicator } from "./VideoMutedIndicator";
 
 interface RenderCellViewProps {
     cellView: CellView;
@@ -52,7 +52,7 @@ function GridVideoCellView({ aspectRatio, participant, render, onSetClientAspect
         <div>
             {render ? (
                 render()
-            ) : participant?.stream ? (
+            ) : participant?.stream && participant.isVideoEnabled ? (
                 <VideoView
                     ref={videoEl}
                     stream={participant.stream}
@@ -61,7 +61,13 @@ function GridVideoCellView({ aspectRatio, participant, render, onSetClientAspect
                         borderRadius: "8px",
                     }}
                 />
-            ) : null}
+            ) : (
+                <VideoMutedIndicator
+                    isSmallCell={false}
+                    displayName={participant?.displayName || "Guest"}
+                    withRoundedCorners
+                />
+            )}
         </div>
     );
 }
@@ -75,15 +81,21 @@ interface GridProps {
         participant: CellView["client"];
     }) => React.ReactNode;
     videoGridGap?: number;
+    stageParticipantLimit?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Grid({ renderParticipant }: GridProps) {
-    const dispatch = useAppDispatch();
+function Grid({ renderParticipant, stageParticipantLimit }: GridProps) {
     const gridRef = React.useRef<HTMLDivElement>(null);
 
-    const { cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid, videoStage, setContainerBounds } =
-        useGrid();
+    const {
+        cellViewsVideoGrid,
+        cellViewsInPresentationGrid,
+        cellViewsInSubgrid,
+        videoStage,
+        setContainerBounds,
+        setClientAspectRatios,
+    } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit });
 
     const presentationGridContent = React.useMemo(
         () =>
@@ -91,7 +103,10 @@ function Grid({ renderParticipant }: GridProps) {
                 renderCellView({
                     cellView,
                     onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        dispatch(setAspectRatio({ clientId, aspectRatio })),
+                        setClientAspectRatios((prev) => ({
+                            ...prev,
+                            [clientId]: aspectRatio,
+                        })),
                 }),
             ),
         [cellViewsInPresentationGrid],
@@ -103,7 +118,10 @@ function Grid({ renderParticipant }: GridProps) {
                 renderCellView({
                     cellView,
                     onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        dispatch(setAspectRatio({ clientId, aspectRatio })),
+                        setClientAspectRatios((prev) => ({
+                            ...prev,
+                            [clientId]: aspectRatio,
+                        })),
                 }),
             ),
         [cellViewsVideoGrid],
@@ -115,7 +133,10 @@ function Grid({ renderParticipant }: GridProps) {
                 renderCellView({
                     cellView,
                     onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        dispatch(setAspectRatio({ clientId, aspectRatio })),
+                        setClientAspectRatios((prev) => ({
+                            ...prev,
+                            [clientId]: aspectRatio,
+                        })),
                 }),
             ),
         [cellViewsInSubgrid],

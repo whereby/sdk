@@ -25,7 +25,7 @@ export type Frame = {
 export type CellView = {
     aspectRatio?: number;
     avatarSize?: number;
-    cellPaddings?: number;
+    cellPaddings?: { top: number; right: number };
     client?: ClientView;
     clientId: string;
     isDraggable?: boolean;

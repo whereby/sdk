@@ -4283,6 +4283,11 @@
   resolved "https://registry.yarnpkg.com/@types/resolve/-/resolve-1.20.6.tgz#e6e60dad29c2c8c206c026e6dd8d6d1bdda850b8"
   integrity sha512-A4STmOXPhMUtHH+S6ymgE2GiBSMqf4oTvcQZMcHzokuTLVYzXTB8ttjcgxOVaAp2lGwEdzZ0J+cRbbeevQj1UQ==
 
+"@types/runes@^0.4.3":
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/@types/runes/-/runes-0.4.3.tgz#d25bd9c4f42eff1bd2ca2a93f1962d6f397da8c0"
+  integrity sha512-kncnfKlRj4FM0+9IRBlZ/06b1BNVDya3d5hN5kFfuzCNAgZFZuApz/XBqe0+d6Y5cV/f86UD8q2ehnaSVdtBrw==
+
 "@types/scheduler@*":
   version "0.16.8"
   resolved "https://registry.yarnpkg.com/@types/scheduler/-/scheduler-0.16.8.tgz#ce5ace04cfeabe7ef87c0091e50752e36707deff"
@@ -9832,6 +9837,11 @@ run-parallel@^1.1.9:
   integrity sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==
   dependencies:
     queue-microtask "^1.2.2"
+
+runes@^0.4.3:
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/runes/-/runes-0.4.3.tgz#32f7738844bc767b65cc68171528e3373c7bb355"
+  integrity sha512-K6p9y4ZyL9wPzA+PMDloNQPfoDGTiFYDvdlXznyGKgD10BJpcAosvATKrExRKOrNLgD8E7Um7WGW0lxsnOuNLg==
 
 safe-array-concat@^1.0.1:
   version "1.1.0"

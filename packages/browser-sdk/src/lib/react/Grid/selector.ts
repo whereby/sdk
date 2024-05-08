@@ -1,76 +1,31 @@
 import { createSelector } from "@reduxjs/toolkit";
-import {
-    selectClientViewsInSubgrid,
-    selectLayoutClientAspectRatios,
-    selectClientViewsInPresentationGrid,
-    selectClientViewsInGrid,
-} from "@whereby.com/core";
-import { makeVideoCellView } from "./layout/cellView";
-import { type CellView } from "./layout/types";
+import { selectLocalParticipantView, selectRemoteClientViews } from "@whereby.com/core";
 
-const selectCellViewsSubgrid = createSelector(
-    selectClientViewsInSubgrid,
-    selectLayoutClientAspectRatios,
-    (clientViews, clientAspectRatios) => {
-        return clientViews.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: 0,
-                isSubgrid: true,
-            });
-        });
+export const selectAllClientViews = createSelector(
+    selectLocalParticipantView,
+    selectRemoteClientViews,
+    (localParticipant, remoteParticipants) => {
+        return [localParticipant, ...remoteParticipants];
     },
 );
-
-const selectCellViewsPresentationGrid = createSelector(
-    selectClientViewsInPresentationGrid,
-    selectLayoutClientAspectRatios,
-    (clientViews, clientAspectRatios) => {
-        return clientViews.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: 0,
-            });
-        });
+export const selectClientViewsInSubgrid = createSelector(selectAllClientViews, (allClientViews) => {
+    const videos = allClientViews.filter((client) => !client.isPresentation);
+    return videos.filter((client) => !client.isAudioEnabled);
+});
+export const selectClientViewsOnStage = createSelector(
+    selectAllClientViews,
+    selectClientViewsInSubgrid,
+    (allClientViews, clientViewsInSubgrid) => {
+        return allClientViews.filter((client) => !clientViewsInSubgrid.includes(client));
     },
 );
-
-const selectCellViewsVideoGrid = createSelector(
-    selectLayoutClientAspectRatios,
-    selectClientViewsInGrid,
-    (clientAspectRatios, clientViews) => [
-        ...clientViews.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: 10,
-            });
-        }),
-    ],
-);
-
-export interface VideoGridState {
-    cellViewsVideoGrid: CellView[];
-    cellViewsInPresentationGrid: CellView[];
-    cellViewsInSubgrid: CellView[];
-}
-
-export const selectVideoGridState = createSelector(
-    selectCellViewsVideoGrid,
-    selectCellViewsPresentationGrid,
-    selectCellViewsSubgrid,
-    (cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid) => {
-        const state: VideoGridState = {
-            cellViewsVideoGrid,
-            cellViewsInPresentationGrid,
-            cellViewsInSubgrid,
-        };
-
-        return state;
+export const selectClientViewsInPresentationGrid = createSelector(selectAllClientViews, (allClientViews) => {
+    return allClientViews.filter((client) => client.isPresentation);
+});
+export const selectClientViewsInGrid = createSelector(
+    selectClientViewsInPresentationGrid,
+    selectClientViewsOnStage,
+    (clientViewsInPresentationGrid, clientViewsOnStage) => {
+        return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));
     },
 );
