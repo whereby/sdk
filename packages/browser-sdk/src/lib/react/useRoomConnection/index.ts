@@ -12,6 +12,7 @@ import {
     doRejectWaitingParticipant,
     doRequestAudioEnable,
     doSetDisplayName,
+    doSetLocalStickyReaction,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
     toggleLowDataModeEnabled,
@@ -148,6 +149,15 @@ export function useRoomConnection(
         (enabled?: boolean) => store.dispatch(toggleLowDataModeEnabled({ enabled })),
         [store],
     );
+    const toggleRaiseHand = React.useCallback(
+        (enabled?: boolean) => store.dispatch(doSetLocalStickyReaction({ enabled })),
+        [store],
+    );
+    // TODO: Add host-only askToSpeak API
+    // const askToSpeak = React.useCallback(
+    //     (participantId: string) => store.dispatch(doAskToSpeak({ participantId })),
+    //     [store],
+    // );
     const acceptWaitingParticipant = React.useCallback(
         (participantId: string) => store.dispatch(doAcceptWaitingParticipant({ participantId })),
         [store],
@@ -185,6 +195,7 @@ export function useRoomConnection(
         state: roomConnectionState,
         actions: {
             toggleLowDataMode,
+            toggleRaiseHand,
             acceptWaitingParticipant,
             knock,
             joinRoom,

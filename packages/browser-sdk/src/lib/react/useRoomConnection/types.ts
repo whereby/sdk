@@ -71,6 +71,7 @@ export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "l
 
 export interface RoomConnectionActions {
     toggleLowDataMode(enabled?: boolean): void;
+    toggleRaiseHand(enabled?: boolean): void;
     acceptWaitingParticipant(participantId: string): void;
     knock(): void;
     joinRoom(): void;

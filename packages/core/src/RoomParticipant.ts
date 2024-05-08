@@ -1,11 +1,17 @@
 import { RoleName } from "@whereby.com/media";
 
+export interface StickyReaction {
+    reaction: string;
+    timestamp: string;
+}
+
 interface RoomParticipantData {
     displayName: string;
     id: string;
     stream?: MediaStream;
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
+    stickyReaction?: StickyReaction | null;
 }
 
 export default class RoomParticipant {
@@ -15,13 +21,15 @@ export default class RoomParticipant {
     public readonly isAudioEnabled: boolean;
     public readonly isLocalParticipant: boolean = false;
     public readonly isVideoEnabled: boolean;
+    public readonly stickyReaction?: StickyReaction | null;
 
-    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled }: RoomParticipantData) {
+    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction }: RoomParticipantData) {
         this.displayName = displayName;
         this.id = id;
         this.stream = stream;
         this.isAudioEnabled = isAudioEnabled;
         this.isVideoEnabled = isVideoEnabled;
+        this.stickyReaction = stickyReaction;
     }
 }
 
@@ -56,13 +64,14 @@ export interface RemoteParticipant {
     newJoiner: boolean;
     presentationStream: (MediaStream & { inboundId?: string }) | null;
     externalId: string | null;
+    stickyReaction?: StickyReaction | null;
 }
 
 export class LocalParticipant extends RoomParticipant {
     public readonly isLocalParticipant = true;
 
-    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled }: RoomParticipantData) {
-        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled });
+    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction }: RoomParticipantData) {
+        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction });
     }
 }
 

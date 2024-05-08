@@ -1,14 +1,15 @@
-import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest } from "@whereby.com/media";
-import { RemoteParticipant, Screenshare, StreamState } from "../../RoomParticipant";
+import { RemoteParticipant, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
-import { selectLocalScreenshareStream } from "./localScreenshare";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
+import { startAppListening } from "../listenerMiddleware";
+import { doSetNotification } from "./notifications";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -253,10 +254,11 @@ export const remoteParticipantsSlice = createSlice({
                 return state;
             }
 
-            const { clientId, displayName } = payload;
+            const { clientId, displayName, stickyReaction } = payload;
 
             return updateParticipant(state, clientId, {
                 displayName,
+                stickyReaction,
             });
         });
         builder.addCase(signalEvents.screenshareStarted, (state, action) => {
@@ -296,34 +298,31 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
 
-export const selectScreenshares = createSelector(
-    selectLocalScreenshareStream,
-    selectRemoteParticipants,
-    (localScreenshareStream, remoteParticipants) => {
-        const screenshares: Screenshare[] = [];
+/**
+ * Reactors
+ */
 
-        if (localScreenshareStream) {
-            screenshares.push({
-                id: localScreenshareStream.id || "local-screenshare",
-                participantId: "local",
-                hasAudioTrack: localScreenshareStream.getTracks().some((track) => track.kind === "audio"),
-                stream: localScreenshareStream,
-                isLocal: true,
-            });
+startAppListening({
+    actionCreator: signalEvents.clientMetadataReceived,
+    effect: (action, { dispatch, getState }) => {
+        const { clientId, stickyReaction } = action.payload.payload;
+
+        const state = getState();
+        const client = selectRemoteParticipants(state).find(({ id }) => id === clientId);
+
+        if (!client) {
+            return;
         }
 
-        for (const participant of remoteParticipants) {
-            if (participant.presentationStream) {
-                screenshares.push({
-                    id: participant.presentationStream.id || `pres-${participant.id}`,
-                    participantId: participant.id,
-                    hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
-                    stream: participant.presentationStream,
-                    isLocal: false,
-                });
-            }
-        }
-
-        return screenshares;
+        dispatch(
+            doSetNotification({
+                type: stickyReaction ? "remoteHandRaised" : "remoteHandLowered",
+                message: `${client.displayName} ${stickyReaction ? "raised" : "lowered"} their hand`,
+                props: {
+                    clientId,
+                    stickyReaction,
+                },
+            }),
+        );
     },
-);
+});

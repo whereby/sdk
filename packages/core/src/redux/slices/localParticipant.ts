@@ -8,6 +8,7 @@ import { doAppStart } from "./app";
 import { toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
+import { doSetNotification } from "./notifications";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
@@ -25,15 +26,20 @@ const initialState: LocalParticipantState = {
     isScreenSharing: false,
     roleName: "none",
     clientClaim: undefined,
+    stickyReaction: undefined,
 };
 
 export const doEnableAudio = createAppAsyncThunk(
     "localParticipant/doEnableAudio",
-    async (payload: { enabled: boolean }, { getState }) => {
+    async (payload: { enabled: boolean }, { dispatch, getState }) => {
         const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
 
         socket?.emit("enable_audio", { enabled: payload.enabled });
+
+        if (payload.enabled) {
+            dispatch(doSetLocalStickyReaction({ enabled: false }));
+        }
 
         return payload.enabled;
     },
@@ -66,11 +72,45 @@ export const doSetDisplayName = createAppAsyncThunk(
     },
 );
 
+export const doSetLocalStickyReaction = createAppAsyncThunk(
+    "localParticipant/doSetLocalStickyReaction",
+    async (payload: { enabled?: boolean }, { dispatch, getState, rejectWithValue }) => {
+        const state = getState();
+
+        const currentStickyReaction = selectLocalParticipantStickyReaction(state);
+        const stickyReactionCurrentlyEnabled = Boolean(currentStickyReaction);
+        const enabled = payload.enabled ?? !stickyReactionCurrentlyEnabled;
+
+        if (enabled === stickyReactionCurrentlyEnabled) {
+            return rejectWithValue(currentStickyReaction);
+        }
+
+        const stickyReaction = enabled ? { reaction: "✋", timestamp: new Date().toISOString() } : null;
+
+        const socket = selectSignalConnectionRaw(state).socket;
+        socket?.emit("send_client_metadata", {
+            type: "UserData",
+            payload: {
+                stickyReaction,
+            },
+        });
+
+        dispatch(
+            doSetNotification({
+                type: enabled ? "localHandRaised" : "localHandLowered",
+                message: `You ${enabled ? "raised" : "lowered"} your hand`,
+            }),
+        );
+
+        return stickyReaction;
+    },
+);
+
 export const localParticipantSlice = createSlice({
     name: "localParticipant",
     initialState,
     reducers: {
-        doSetLocalParticipant: (state, action: PayloadAction<LocalParticipant>) => {
+        doSetLocalParticipant: (state, action: PayloadAction<Partial<LocalParticipant>>) => {
             return {
                 ...state,
                 ...action.payload,
@@ -103,6 +143,12 @@ export const localParticipantSlice = createSlice({
                 displayName: action.payload,
             };
         });
+        builder.addCase(doSetLocalStickyReaction.fulfilled, (state, action) => {
+            return {
+                ...state,
+                stickyReaction: action.payload,
+            };
+        });
         builder.addCase(signalEvents.roomJoined, (state, action) => {
             const client = action.payload?.room?.clients.find((c) => c.id === action.payload?.selfId);
             return {
@@ -121,6 +167,7 @@ export const selectLocalParticipantRaw = (state: RootState) => state.localPartic
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
 export const selectLocalParticipantClientClaim = (state: RootState) => state.localParticipant.clientClaim;
 export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
+export const selectLocalParticipantStickyReaction = (state: RootState) => state.localParticipant.stickyReaction;
 
 startAppListening({
     actionCreator: toggleCameraEnabled,

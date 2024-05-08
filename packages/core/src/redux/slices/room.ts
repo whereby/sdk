@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAuthorizedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
@@ -10,6 +10,8 @@ import {
 } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRemoteParticipants } from "./remoteParticipants";
+import { selectLocalScreenshareStream } from "./localScreenshare";
+import { Screenshare } from "../../RoomParticipant";
 
 /**
  * Reducer
@@ -100,3 +102,35 @@ export const doEndMeeting = createAppAuthorizedThunk(
  */
 
 export const selectRoomIsLocked = (state: RootState) => state.room.isLocked;
+
+export const selectScreenshares = createSelector(
+    selectLocalScreenshareStream,
+    selectRemoteParticipants,
+    (localScreenshareStream, remoteParticipants) => {
+        const screenshares: Screenshare[] = [];
+
+        if (localScreenshareStream) {
+            screenshares.push({
+                id: localScreenshareStream.id || "local-screenshare",
+                participantId: "local",
+                hasAudioTrack: localScreenshareStream.getTracks().some((track) => track.kind === "audio"),
+                stream: localScreenshareStream,
+                isLocal: true,
+            });
+        }
+
+        for (const participant of remoteParticipants) {
+            if (participant.presentationStream) {
+                screenshares.push({
+                    id: participant.presentationStream.id || `pres-${participant.id}`,
+                    participantId: participant.id,
+                    hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
+                    stream: participant.presentationStream,
+                    isLocal: false,
+                });
+            }
+        }
+
+        return screenshares;
+    },
+);

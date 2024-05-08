@@ -164,7 +164,14 @@ export interface VideoEnabledEvent {
 export interface ClientMetadataReceivedEvent {
     error?: string;
     type?: string;
-    payload?: { clientId: string; displayName: string };
+    payload?: {
+        clientId: string;
+        displayName: string;
+        stickyReaction?: {
+            reaction: string;
+            timestamp: string;
+        } | null;
+    };
 }
 
 export interface AudioEnableRequestedEvent {

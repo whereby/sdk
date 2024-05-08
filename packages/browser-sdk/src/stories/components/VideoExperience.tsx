@@ -50,6 +50,7 @@ export default function VideoExperience({
         toggleCamera,
         toggleMicrophone,
         toggleLowDataMode,
+        toggleRaiseHand,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
         startScreenshare,
@@ -169,6 +170,7 @@ export default function VideoExperience({
                                             }
                                         >
                                             {participant.displayName || "Guest"}
+                                            {participant.stickyReaction && <div>✋</div>}
                                             {showHostControls && participant.id !== localParticipant?.id ? (
                                                 <>
                                                     {" "}
@@ -215,6 +217,7 @@ export default function VideoExperience({
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                         <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>
+                        <button onClick={() => toggleRaiseHand()}>Toggle raise hand</button>
                         <button
                             onClick={() => {
                                 if (isLocalScreenshareActive) {
