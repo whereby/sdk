@@ -45,14 +45,12 @@ export function useRoomConnection(
     const dispatch = useAppDispatch();
     const roomConnectionState = useAppSelector(selectRoomConnectionState);
 
-    const [roomConfig, setRoomConfig] = React.useState<AppConfig>();
-
-    React.useEffect(() => {
+    const roomConfig = React.useMemo((): AppConfig => {
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
         const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
-        const roomConfig = {
+        return {
             displayName: roomConnectionOptions.displayName || "Guest",
             localMediaOptions: roomConnectionOptions.localMedia ? undefined : roomConnectionOptions.localMediaOptions,
             roomKey,
@@ -60,12 +58,9 @@ export function useRoomConnection(
             userAgent: `browser-sdk:${browserSdkVersion}`,
             externalId: roomConnectionOptions.externalId || null,
         };
+    }, [roomUrl, roomConnectionOptions]);
 
-        setRoomConfig(roomConfig);
-
-        // TODO: remove this in SDK v3. Require developers to call joinRoom() API explicitly instead.
-        dispatch(doAppStart(roomConfig));
-
+    React.useEffect(() => {
         return () => {
             dispatch(doAppStop());
         };
@@ -101,10 +96,7 @@ export function useRoomConnection(
     const startScreenshare = React.useCallback(() => dispatch(doStartScreenshare()), [dispatch]);
     const stopCloudRecording = React.useCallback(() => dispatch(doStopCloudRecording()), [dispatch]);
     const stopScreenshare = React.useCallback(() => dispatch(doStopScreenshare()), [dispatch]);
-    const joinRoom = React.useCallback(
-        () => (roomConfig ? dispatch(doAppStart(roomConfig)) : () => {}),
-        [dispatch, roomConfig],
-    );
+    const joinRoom = React.useCallback(() => dispatch(doAppStart(roomConfig)), [dispatch]);
     const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
     const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
     const muteParticipants = React.useCallback(

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
@@ -64,6 +64,7 @@ export const RoomConnectionWithLocalMedia = ({
                     roomName={roomUrl}
                     localMedia={localMedia}
                     externalId={externalId}
+                    joinRoomOnLoad
                 />
             )}
         </div>
@@ -81,7 +82,15 @@ export const LocalMediaOnly = () => {
 };
 
 function CanvasInRoom({ localMedia, roomUrl }: { localMedia: UseLocalMediaResult; roomUrl: string }) {
-    const { state } = useRoomConnection(roomUrl, { localMedia });
+    const {
+        state,
+        actions: { joinRoom, leaveRoom },
+    } = useRoomConnection(roomUrl, { localMedia });
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     return <div>Room connection status: {state.connectionStatus}</div>;
 }
@@ -168,11 +177,13 @@ export const RoomConnectionWithHostControls = {
         roomUrl,
         roomKey,
         displayName,
+        roomOptions,
         hostOptions,
     }: {
         roomUrl: string;
         roomKey: string;
         displayName?: string;
+        roomOptions: Array<string>;
         hostOptions: Array<string>;
     }) => {
         if (!roomUrl || !roomUrl.match(roomRegEx)) {
@@ -186,17 +197,30 @@ export const RoomConnectionWithHostControls = {
                 roomKey={roomKey}
                 showHostControls
                 hostOptions={hostOptions}
+                joinRoomOnLoad={roomOptions.includes("joinRoomOnLoad")}
             />
         );
     },
     argTypes: {
         ...defaultArgs.argTypes,
         roomKey: { control: "text", type: { required: true } },
+        roomOptions: {
+            name: "Room options",
+            control: {
+                type: "check",
+                labels: {
+                    joinRoomOnLoad: "Join room when useRoomConnection is created",
+                },
+            },
+            options: ["joinRoomOnLoad"],
+        },
         hostOptions: {
             name: "Host options",
             control: {
                 type: "check",
-                labels: { stayBehind: "Stay behind after triggering meeting end" },
+                labels: {
+                    stayBehind: "Stay behind after triggering meeting end",
+                },
             },
             options: ["stayBehind"],
         },
@@ -204,6 +228,7 @@ export const RoomConnectionWithHostControls = {
     args: {
         ...defaultArgs.args,
         roomKey: process.env.STORYBOOK_ROOM_HOST_ROOMKEY || "[Host roomKey required]",
+        roomOptions: [],
         hostOptions: ["stayBehind"],
     },
 };
@@ -214,6 +239,15 @@ export const ResolutionReporting = ({ roomUrl }: { roomUrl: string; displayName?
     }
 
     const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
+
+    const {
+        actions: { joinRoom, leaveRoom },
+    } = roomConnection;
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     return <Grid roomConnection={roomConnection} />;
 };
@@ -245,7 +279,12 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
     const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
-    const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare } = actions;
+    const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     return (
         <>
@@ -277,7 +316,14 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
 //         return <p>Set room url on the Controls panel</p>;
 //     }
 
-//     useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+//     const {
+//         actions: { joinRoom, leaveRoom },
+//     } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+
+//     useEffect(() => {
+//         joinRoom();
+//         return () => leaveRoom();
+//     }, []);
 
 //     return (
 //         <div style={{ height: "100vh" }}>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
@@ -12,6 +12,7 @@ export default function VideoExperience({
     externalId,
     showHostControls,
     hostOptions,
+    joinRoomOnLoad,
 }: {
     displayName?: string;
     roomName: string;
@@ -20,6 +21,7 @@ export default function VideoExperience({
     externalId?: string;
     showHostControls?: boolean;
     hostOptions?: Array<string>;
+    joinRoomOnLoad?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
@@ -55,8 +57,16 @@ export default function VideoExperience({
         stopScreenshare,
     } = actions;
 
+    useEffect(() => {
+        if (!joinRoomOnLoad) return;
+
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
+
     return (
         <div>
+            {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
             {connectionStatus === "connecting" && <span>Connecting...</span>}
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>
