@@ -736,10 +736,10 @@ startAppListening({
 
         dispatch(
             doSetNotification({
-                type: enable ? "audioEnabled" : "audioDisabled",
+                type: enable ? "requestAudioEnable" : "requestAudioDisable",
                 message: enable
-                    ? `${client.displayName} has unmuted your microphone`
-                    : `${client.displayName} has muted your microphone`,
+                    ? `${client.displayName} has requested for you to speak`
+                    : `${client.displayName} has requested for you to mute your microphone`,
                 props: {
                     enable,
                     requestedByClientId,
@@ -748,6 +748,8 @@ startAppListening({
             }),
         );
 
-        dispatch(toggleMicrophoneEnabled({ enabled: Boolean(enable) }));
+        if (!enable) {
+            dispatch(toggleMicrophoneEnabled({ enabled: false }));
+        }
     },
 });

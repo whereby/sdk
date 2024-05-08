@@ -301,6 +301,10 @@ startAppListening({
                 doSetNotification({
                     type: "networkConnection",
                     message: `Network ${signalStatus}`,
+                    level: signalStatus === "disconnected" ? "warn" : "info",
+                    props: {
+                        status: signalStatus,
+                    },
                 }),
             );
         }

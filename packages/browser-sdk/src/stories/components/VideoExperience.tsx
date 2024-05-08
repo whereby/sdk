@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
@@ -58,11 +60,56 @@ export default function VideoExperience({
     } = actions;
     const { VideoView } = components;
 
+    function showRequestAudioEnableNotification(requestedByClientDisplayName: string) {
+        toast(
+            (t) => (
+                <span>
+                    {requestedByClientDisplayName} has invited you to speak.
+                    <button
+                        onClick={() => {
+                            toggleMicrophone(true);
+                            toast.dismiss(t.id);
+                        }}
+                    >
+                        Unmute microphone
+                    </button>{" "}
+                    <button onClick={() => toast.dismiss(t.id)}>Got it</button>
+                </span>
+            ),
+            {
+                id: "requestAudioEnable",
+                duration: Infinity,
+            },
+        );
+    }
+
+    function showNetworkConnectionNotification(networkConnectionStatus: string) {
+        if (networkConnectionStatus === "disconnected") {
+            toast.error(`Network ${networkConnectionStatus}`, {
+                id: "networkConnection",
+                duration: Infinity,
+            });
+        } else {
+            toast.remove("networkConnection");
+        }
+    }
+
     useEffect(() => {
         const sdkLogLevels: Array<NotificationLogLevel> = ["debug", "log", "info", "warn", "error"];
-        const sdkEventHandler = ({ timestamp, message, type, level }: NotificationEvent) => {
-            const localDate = new Date(timestamp).toLocaleString();
-            setNotifications((notifications) => [...notifications, `[${level}] ${localDate}: ${message} (${type})`]);
+        const sdkEventHandler = ({ timestamp, message, type, level, props }: NotificationEvent) => {
+            const localDate = new Date(timestamp).toISOString();
+            const notificationSummary = `${localDate} [${level}:${type}] ${message}`;
+            setNotifications((notifications) => [...notifications, notificationSummary]);
+
+            // Handle some notifications
+            switch (type) {
+                case "requestAudioEnable":
+                    showRequestAudioEnableNotification(String(props?.requestedByClientDisplayName));
+                    break;
+                case "networkConnection":
+                    showNetworkConnectionNotification(String(props?.status));
+                    break;
+            }
         };
 
         sdkLogLevels.map((logLevel) => events?.on(logLevel, sdkEventHandler));
@@ -233,9 +280,10 @@ export default function VideoExperience({
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
                     </div>
                     <div className="notifications">
-                        Notifications log:
-                        <div>
-                            <textarea rows={10} cols={120} value={notifications.join("\n")} readOnly />
+                        <div className="log">
+                            {notifications.map((notification, idx) => (
+                                <div key={`notification-${idx}`}>{notification}</div>
+                            ))}
                         </div>
                     </div>
                 </>
@@ -245,6 +293,12 @@ export default function VideoExperience({
             {["kicked", "left"].includes(connectionStatus) && (
                 <button onClick={() => joinRoom()}>Re-join {connectionStatus} room</button>
             )}
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    className: "toaster",
+                }}
+            />
         </div>
     );
 }

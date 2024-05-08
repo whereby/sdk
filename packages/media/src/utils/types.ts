@@ -161,16 +161,19 @@ export interface VideoEnabledEvent {
     isVideoEnabled: boolean;
 }
 
+export interface ClientMetadataPayload {
+    displayName: string;
+    stickyReaction?: {
+        reaction: string;
+        timestamp: string;
+    } | null;
+}
+
 export interface ClientMetadataReceivedEvent {
     error?: string;
     type?: string;
-    payload?: {
+    payload?: ClientMetadataPayload & {
         clientId: string;
-        displayName: string;
-        stickyReaction?: {
-            reaction: string;
-            timestamp: string;
-        } | null;
     };
 }
 
@@ -228,6 +231,11 @@ export interface KnockRoomRequest {
     roomName: string;
 }
 
+export interface SendClientMetadataRequest {
+    type: string;
+    payload: ClientMetadataPayload;
+}
+
 export interface AudioEnableRequest {
     clientIds: string[];
     enable: boolean;
@@ -243,7 +251,7 @@ export interface SignalRequests {
     knock_room: KnockRoomRequest;
     leave_room: void;
     request_audio_enable: AudioEnableRequest;
-    send_client_metadata: { type: string; payload: { displayName?: string } };
+    send_client_metadata: { type: string; payload: { displayName?: string; stickyReaction?: unknown } };
     set_lock: { locked: boolean };
     start_recording: { recording: string };
     stop_recording: void;
