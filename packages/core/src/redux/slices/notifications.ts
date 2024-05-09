@@ -7,6 +7,9 @@ import { signalEvents } from "./signalConnection/actions";
 import { selectRemoteParticipants } from "./remoteParticipants";
 import { selectSignalStatus } from "./signalConnection";
 import { doEnableAudio, doEnableVideo, doSetLocalStickyReaction } from "./localParticipant";
+import { ChatMessage as SignalChatMessage } from "@whereby.com/media";
+import { ChatMessage } from "./chat";
+import { selectIsAuthorizedToAskToSpeak } from "./authorization";
 
 export interface Notification {
     type: string;
@@ -94,6 +97,36 @@ export const selectNotificationsEmitter = (state: RootState) => state.notificati
  */
 
 startAppListening({
+    actionCreator: signalEvents.chatMessage,
+    effect: ({ payload }: PayloadAction<SignalChatMessage>, { dispatch, getState }) => {
+        const state = getState();
+        const client = selectRemoteParticipants(state).find(({ id }) => id === payload.senderId);
+
+        if (!client) {
+            console.warn("Could not find remote client that sent chat message");
+            return;
+        }
+
+        const chatMessage: ChatMessage = {
+            senderId: payload.senderId,
+            timestamp: payload.timestamp,
+            text: payload.text,
+        };
+
+        dispatch(
+            doSetNotification({
+                type: "chatMessageReceived",
+                message: `${client.displayName} says: ${chatMessage.text}`,
+                props: {
+                    client,
+                    chatMessage,
+                },
+            }),
+        );
+    },
+});
+
+startAppListening({
     actionCreator: signalEvents.audioEnableRequested,
     effect: ({ payload }, { dispatch, getState }) => {
         const { enable, requestedByClientId } = payload;
@@ -102,7 +135,7 @@ startAppListening({
         const client = selectRemoteParticipants(state).find(({ id }) => id === requestedByClientId);
 
         if (!client) {
-            console.warn("Could not find client that requested a local audio change");
+            console.warn("Could not find remote client that requested a local audio change");
             return;
         }
 
@@ -111,11 +144,10 @@ startAppListening({
                 type: enable ? "requestAudioEnable" : "requestAudioDisable",
                 message: enable
                     ? `${client.displayName} has requested for you to speak`
-                    : `${client.displayName} has requested for you to mute your microphone`,
+                    : `${client.displayName} has muted your microphone`,
                 props: {
+                    client,
                     enable,
-                    requestedByClientId,
-                    requestedByClientDisplayName: client.displayName,
                 },
             }),
         );
@@ -124,14 +156,35 @@ startAppListening({
 
 startAppListening({
     actionCreator: signalEvents.clientMetadataReceived,
-    effect: (action, { dispatch, getState }) => {
-        const { clientId, stickyReaction } = action.payload.payload;
+    effect: (action, { dispatch, getOriginalState, getState }) => {
+        const { error, payload } = action.payload;
+
+        if (error || !payload) {
+            return;
+        }
+
+        const { clientId, stickyReaction } = payload;
 
         const state = getState();
-        const client = selectRemoteParticipants(state).find(({ id }) => id === clientId);
 
-        if (!client) {
+        const canAskToSpeak = selectIsAuthorizedToAskToSpeak(state);
+        if (!canAskToSpeak) {
             return;
+        }
+
+        const client = selectRemoteParticipants(state).find(({ id }) => id === clientId);
+        if (!client) {
+            console.warn("Could not find remote client that provided updated metadata");
+            return;
+        }
+
+        const previousState = getOriginalState();
+        const previousClient = selectRemoteParticipants(previousState).find(({ id }) => id === clientId);
+        if (
+            (!stickyReaction && !previousClient?.stickyReaction) ||
+            stickyReaction?.timestamp === previousClient?.stickyReaction?.timestamp
+        ) {
+            return; // No changes seen in stickyReaction state
         }
 
         dispatch(
@@ -139,7 +192,7 @@ startAppListening({
                 type: stickyReaction ? "remoteHandRaised" : "remoteHandLowered",
                 message: `${client.displayName} ${stickyReaction ? "raised" : "lowered"} their hand`,
                 props: {
-                    clientId,
+                    client,
                     stickyReaction,
                 },
             }),
@@ -148,56 +201,19 @@ startAppListening({
 });
 
 createReactor([selectSignalStatus], ({ dispatch }, signalStatus) => {
-    const notificationSignalStatuses = ["connected", "disconnected", "reconnecting"];
-
-    if (notificationSignalStatuses.includes(signalStatus)) {
+    if (signalStatus === "disconnected") {
         dispatch(
             doSetNotification({
-                type: "networkConnection",
-                message: `Network ${signalStatus}`,
-                props: {
-                    status: signalStatus,
-                },
+                type: "signalTrouble",
+                message: `Network connection lost. Trying to reconnect you...`,
+            }),
+        );
+    } else {
+        dispatch(
+            doSetNotification({
+                type: "signalOk",
+                message: `Network connection available`,
             }),
         );
     }
-});
-
-startAppListening({
-    actionCreator: doEnableAudio.fulfilled,
-    effect: ({ payload }, { dispatch }) => {
-        dispatch(
-            doSetNotification({
-                type: payload ? "localAudioEnabled" : "localAudioDisabled",
-                message: `Local microphone ${payload ? "enabled" : "disabled"}`,
-            }),
-        );
-    },
-});
-
-startAppListening({
-    actionCreator: doEnableVideo.fulfilled,
-    effect: ({ payload }, { dispatch }) => {
-        dispatch(
-            doSetNotification({
-                type: payload ? "localVideoEnabled" : "localVideoDisabled",
-                message: `Local video ${payload ? "enabled" : "disabled"}`,
-            }),
-        );
-    },
-});
-
-startAppListening({
-    actionCreator: doSetLocalStickyReaction.fulfilled,
-    effect: ({ payload }, { dispatch }) => {
-        dispatch(
-            doSetNotification({
-                type: payload ? "localHandRaised" : "localHandLowered",
-                message: `You ${payload ? "raised" : "lowered"} your hand`,
-                props: {
-                    stickyReaction: payload,
-                },
-            }),
-        );
-    },
 });

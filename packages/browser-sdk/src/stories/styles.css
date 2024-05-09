@@ -48,14 +48,6 @@
     color: red;
 }
 
-.log {
-    padding: 10px;
-    background-color: #000;
-    color: #fff;
-    font-size: 14px;
-    font-family: 'Courier New', Courier, monospace;
-}
-
 .toaster {
     border: 1px solid #713200;
     padding: 16px;

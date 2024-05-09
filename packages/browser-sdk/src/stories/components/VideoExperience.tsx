@@ -4,7 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
-import { NotificationEvent } from "@whereby.com/core";
+import { NotificationEvent, RemoteParticipant } from "@whereby.com/core";
 
 export default function VideoExperience({
     displayName,
@@ -24,7 +24,6 @@ export default function VideoExperience({
     hostOptions?: Array<string>;
 }) {
     const [chatMessage, setChatMessage] = useState("");
-    const [notifications, setNotifications] = useState<Array<string>>([]);
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
     const { state, actions, components } = useRoomConnection(roomName, {
@@ -60,21 +59,29 @@ export default function VideoExperience({
     } = actions;
     const { VideoView } = components;
 
-    function showRequestAudioEnableNotification(requestedByClientDisplayName: string) {
+    function showIncomingChatMessageNotification(message: string) {
+        toast(message, {
+            icon: "💬",
+        });
+    }
+
+    function showRequestAudioEnableNotification(message: string) {
         toast(
             (t) => (
-                <span>
-                    {requestedByClientDisplayName} has invited you to speak.
-                    <button
-                        onClick={() => {
-                            toggleMicrophone(true);
-                            toast.dismiss(t.id);
-                        }}
-                    >
-                        Unmute microphone
-                    </button>{" "}
-                    <button onClick={() => toast.dismiss(t.id)}>Got it</button>
-                </span>
+                <div>
+                    {message}
+                    <div>
+                        <button
+                            onClick={() => {
+                                toggleMicrophone(true);
+                                toast.dismiss(t.id);
+                            }}
+                        >
+                            Unmute microphone
+                        </button>{" "}
+                        <button onClick={() => toast.dismiss(t.id)}>Got it</button>
+                    </div>
+                </div>
             ),
             {
                 id: "requestAudioEnable",
@@ -83,30 +90,80 @@ export default function VideoExperience({
         );
     }
 
-    function showNetworkConnectionNotification(networkConnectionStatus: string) {
-        if (networkConnectionStatus === "disconnected") {
-            toast.error(`Network ${networkConnectionStatus}`, {
-                id: "networkConnection",
+    function showRequestAudioDisableNotification(message: string) {
+        toast(message, {
+            id: "requestAudioDisable",
+        });
+    }
+
+    function showSignalTroubleNotification(message: string) {
+        toast.error(message, {
+            id: "signalTrouble",
+            duration: Infinity,
+        });
+    }
+
+    function hideSignalTroublenNotification() {
+        toast.remove("signalTrouble");
+    }
+
+    function showRemoteHandRaised(
+        message: string,
+        props?: { client?: RemoteParticipant; stickyReaction?: { reaction: string } | null },
+    ) {
+        toast(
+            (t) => (
+                <div>
+                    {message}
+                    <div>
+                        <button
+                            onClick={() => {
+                                // TODO: Implement "Ask to speak" API
+                                // askToSpeak(props?.client?.id);
+                                toast.dismiss(t.id);
+                            }}
+                        >
+                            Ask to speak
+                        </button>{" "}
+                        <button onClick={() => toast.dismiss(t.id)}>Dismiss</button>
+                    </div>
+                </div>
+            ),
+            {
+                id: `remoteHandRaised-${props?.client?.id}`,
+                icon: props?.stickyReaction?.reaction,
                 duration: Infinity,
-            });
-        } else {
-            toast.remove("networkConnection");
-        }
+            },
+        );
+    }
+
+    function hideRemoteHandRaised(props?: { client?: RemoteParticipant }) {
+        toast.remove(`remoteHandRaised-${props?.client?.id}`);
     }
 
     useEffect(() => {
-        const sdkEventHandler = ({ timestamp, message, type, props }: NotificationEvent) => {
-            const localDate = new Date(timestamp).toISOString();
-            const notificationSummary = `${localDate} [${type}] ${message} ${props ? JSON.stringify(props) : ""}`;
-            setNotifications((notifications) => [...notifications, notificationSummary]);
-
-            // Handle some notifications
+        const sdkEventHandler = ({ type, message, props }: NotificationEvent) => {
             switch (type) {
-                case "requestAudioEnable":
-                    showRequestAudioEnableNotification(String(props?.requestedByClientDisplayName));
+                case "chatMessageReceived":
+                    showIncomingChatMessageNotification(message);
                     break;
-                case "networkConnection":
-                    showNetworkConnectionNotification(String(props?.status));
+                case "requestAudioEnable":
+                    showRequestAudioEnableNotification(message);
+                    break;
+                case "requestAudioDisable":
+                    showRequestAudioDisableNotification(message);
+                    break;
+                case "signalTrouble":
+                    showSignalTroubleNotification(message);
+                    break;
+                case "signalOk":
+                    hideSignalTroublenNotification();
+                    break;
+                case "remoteHandRaised":
+                    showRemoteHandRaised(message, props);
+                    break;
+                case "remoteHandLowered":
+                    hideRemoteHandRaised(props);
                     break;
             }
         };
@@ -132,30 +189,20 @@ export default function VideoExperience({
             {connectionStatus === "knock_rejected" && <span>Rejected :(</span>}
             {connectionStatus === "connected" && (
                 <>
-                    <div className="chat">
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                sendChatMessage(chatMessage);
-                                setChatMessage("");
-                            }}
-                        >
-                            <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
-                            <button type="submit">Send message</button>
-                        </form>
-                    </div>
-                    <div className="waiting_room">
-                        <h2>Waiting room</h2>
-                        {waitingParticipants.map((p) => {
-                            return (
-                                <div key={p.id}>
-                                    Waiting: {p.displayName || "unknown"} {p.id}
-                                    <button onClick={() => acceptWaitingParticipant(p.id)}>Accept</button>
-                                    <button onClick={() => rejectWaitingParticipant(p.id)}>Reject</button>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    {waitingParticipants.length > 0 && (
+                        <div className="waiting_room">
+                            <h2>Waiting room</h2>
+                            {waitingParticipants.map((p) => {
+                                return (
+                                    <div key={p.id}>
+                                        Waiting: {p.displayName || "unknown"} {p.id}
+                                        <button onClick={() => acceptWaitingParticipant(p.id)}>Accept</button>
+                                        <button onClick={() => rejectWaitingParticipant(p.id)}>Reject</button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                     {showHostControls && (
                         <div className="hostControls">
                             Host controls:
@@ -217,22 +264,26 @@ export default function VideoExperience({
                                             }
                                         >
                                             {participant.displayName || "Guest"}
-                                            {participant.stickyReaction && <div>✋</div>}
+                                            {participant.stickyReaction && (
+                                                <div>{participant.stickyReaction?.reaction}</div>
+                                            )}
                                             {showHostControls && participant.id !== localParticipant?.id ? (
-                                                <>
+                                                <div>
                                                     {" "}
-                                                    <button
-                                                        onClick={() => {
-                                                            muteParticipants([participant.id]);
-                                                        }}
-                                                        className={
-                                                            localParticipant?.roleName !== "host"
-                                                                ? "hostControlActionDisallowed"
-                                                                : ""
-                                                        }
-                                                    >
-                                                        Mute
-                                                    </button>{" "}
+                                                    {participant.isAudioEnabled && (
+                                                        <button
+                                                            onClick={() => {
+                                                                muteParticipants([participant.id]);
+                                                            }}
+                                                            className={
+                                                                localParticipant?.roleName !== "host"
+                                                                    ? "hostControlActionDisallowed"
+                                                                    : ""
+                                                            }
+                                                        >
+                                                            Mute
+                                                        </button>
+                                                    )}{" "}
                                                     <button
                                                         onClick={() => {
                                                             kickParticipant(participant.id);
@@ -245,7 +296,7 @@ export default function VideoExperience({
                                                     >
                                                         Kick
                                                     </button>
-                                                </>
+                                                </div>
                                             ) : null}
                                         </div>
                                     </>
@@ -279,12 +330,17 @@ export default function VideoExperience({
                         </button>
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
                     </div>
-                    <div className="notifications">
-                        <div className="log">
-                            {notifications.map((notification, idx) => (
-                                <div key={`notification-${idx}`}>{notification}</div>
-                            ))}
-                        </div>
+                    <div className="chat">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                sendChatMessage(chatMessage);
+                                setChatMessage("");
+                            }}
+                        >
+                            <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+                            <button type="submit">Send message</button>
+                        </form>
                     </div>
                 </>
             )}
