@@ -12,7 +12,6 @@ describe("notificationsSlice", () => {
             const testNotification: NotificationEvent = {
                 type: "micNotWorking",
                 message: "Problems with your microphone have been detected and it is not delivering input",
-                level: "error",
                 timestamp: Date.now(),
             };
 
@@ -32,7 +31,6 @@ describe("notificationsSlice", () => {
             const testNotification: NotificationEvent = {
                 type: "micNotWorking",
                 message: "Problems with your microphone have been detected and it is not delivering input",
-                level: "error",
                 timestamp: Date.now(),
             };
 

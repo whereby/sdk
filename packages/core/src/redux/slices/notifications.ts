@@ -11,20 +11,19 @@ import { doEnableAudio, doEnableVideo, doSetLocalStickyReaction } from "./localP
 export interface Notification {
     type: string;
     message: string;
-    level?: "debug" | "log" | "info" | "warn" | "error";
     props?: {
         [key: string]: unknown;
     };
 }
 
 export interface NotificationEvent extends Notification {
-    level: "debug" | "log" | "info" | "warn" | "error";
     timestamp: number;
 }
 
-export type NotificationLogLevel = "debug" | "log" | "info" | "warn" | "error";
-
-export type NotificationsEventEmitter = EventEmitter<{ [logLevel in NotificationLogLevel]: [NotificationEvent] }>;
+export type NotificationsEventEmitter = EventEmitter<{
+    "*": [NotificationEvent];
+    [type: string]: [NotificationEvent];
+}>;
 
 const emitter: NotificationsEventEmitter = new EventEmitter();
 
@@ -70,7 +69,6 @@ export const { doClearNotifications } = notificationsSlice.actions;
 export const doSetNotification = createAppThunk((payload: Notification) => (dispatch, getState) => {
     const notificationMessage: NotificationEvent = {
         ...payload,
-        level: payload.level ?? "log",
         timestamp: Date.now(),
     };
 
@@ -79,7 +77,8 @@ export const doSetNotification = createAppThunk((payload: Notification) => (disp
     const state = getState();
     const emitter = selectNotificationsEmitter(state);
 
-    emitter.emit(notificationMessage.level, notificationMessage);
+    emitter.emit(notificationMessage.type, notificationMessage);
+    emitter.emit("*", notificationMessage); // also emit event to catch-all wildcard handlers
 });
 
 /**
@@ -156,7 +155,6 @@ createReactor([selectSignalStatus], ({ dispatch }, signalStatus) => {
             doSetNotification({
                 type: "networkConnection",
                 message: `Network ${signalStatus}`,
-                level: signalStatus === "disconnected" ? "warn" : "info",
                 props: {
                     status: signalStatus,
                 },

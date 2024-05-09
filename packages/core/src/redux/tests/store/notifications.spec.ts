@@ -33,12 +33,11 @@ describe("actions", () => {
 
         const expectedTestNotificationEvent = {
             ...testNotification,
-            level: "log",
             timestamp: now,
         };
 
         expect(notificationsEmitter.emit).toHaveBeenCalledWith(
-            expectedTestNotificationEvent.level,
+            expectedTestNotificationEvent.type,
             expectedTestNotificationEvent,
         );
 

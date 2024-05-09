@@ -4,7 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
-import { NotificationEvent, NotificationLogLevel } from "packages/core/dist";
+import { NotificationEvent } from "@whereby.com/core";
 
 export default function VideoExperience({
     displayName,
@@ -95,10 +95,9 @@ export default function VideoExperience({
     }
 
     useEffect(() => {
-        const sdkLogLevels: Array<NotificationLogLevel> = ["debug", "log", "info", "warn", "error"];
-        const sdkEventHandler = ({ timestamp, message, type, level, props }: NotificationEvent) => {
+        const sdkEventHandler = ({ timestamp, message, type, props }: NotificationEvent) => {
             const localDate = new Date(timestamp).toISOString();
-            const notificationSummary = `${localDate} [${level}:${type}] ${message}`;
+            const notificationSummary = `${localDate} [${type}] ${message} ${props ? JSON.stringify(props) : ""}`;
             setNotifications((notifications) => [...notifications, notificationSummary]);
 
             // Handle some notifications
@@ -112,10 +111,11 @@ export default function VideoExperience({
             }
         };
 
-        sdkLogLevels.map((logLevel) => events?.on(logLevel, sdkEventHandler));
+        // Use wildcard to catch _all_ notifications
+        events?.on("*", sdkEventHandler);
 
         return () => {
-            sdkLogLevels.map((logLevel) => events?.off(logLevel, sdkEventHandler));
+            events?.off("*", sdkEventHandler);
         };
     }, [events]);
 
