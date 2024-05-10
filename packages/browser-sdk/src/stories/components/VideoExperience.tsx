@@ -4,7 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
-import { NotificationEvent, RemoteParticipant } from "@whereby.com/core";
+import { NotificationEvent, StickyReactionEvent } from "@whereby.com/core";
 
 export default function VideoExperience({
     displayName,
@@ -108,10 +108,7 @@ export default function VideoExperience({
         toast.remove("signalTrouble");
     }
 
-    function showRemoteHandRaised(
-        message: string,
-        props?: { client?: RemoteParticipant; stickyReaction?: { reaction: string } | null },
-    ) {
+    function showRemoteHandRaised(message: string, props?: StickyReactionEvent) {
         toast(
             (t) => (
                 <div>
@@ -139,7 +136,7 @@ export default function VideoExperience({
         );
     }
 
-    function hideRemoteHandRaised(props?: { client?: RemoteParticipant }) {
+    function hideRemoteHandRaised(props?: StickyReactionEvent) {
         toast.remove(`remoteHandRaised-${props?.client?.id}`);
     }
 
@@ -162,10 +159,10 @@ export default function VideoExperience({
                     hideSignalTroublenNotification();
                     break;
                 case "remoteHandRaised":
-                    showRemoteHandRaised(message, props);
+                    showRemoteHandRaised(message, props as StickyReactionEvent);
                     break;
                 case "remoteHandLowered":
-                    hideRemoteHandRaised(props);
+                    hideRemoteHandRaised(props as StickyReactionEvent);
                     break;
             }
         };

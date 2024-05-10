@@ -1,5 +1,5 @@
 import { createStore } from "../store.setup";
-import { Notification, NotificationsEventEmitter, doSetNotification } from "../../slices/notifications";
+import { NotificationEvent, NotificationsEventEmitter, doSetNotification } from "../../slices/notifications";
 import { diff } from "deep-object-diff";
 import { EventEmitter } from "events";
 
@@ -8,9 +8,10 @@ describe("actions", () => {
         const now = Date.now();
         jest.spyOn(global.Date, "now").mockImplementationOnce(() => now);
 
-        const testNotification: Notification = {
+        const testNotification: NotificationEvent = {
             type: "micNotWorking",
             message: "Problems with your microphone have been detected and it is not delivering input",
+            timestamp: now,
         };
 
         const notificationsEmitter: NotificationsEventEmitter = new EventEmitter();
@@ -31,18 +32,10 @@ describe("actions", () => {
 
         const after = store.getState().notifications;
 
-        const expectedTestNotificationEvent = {
-            ...testNotification,
-            timestamp: now,
-        };
-
-        expect(notificationsEmitter.emit).toHaveBeenCalledWith(
-            expectedTestNotificationEvent.type,
-            expectedTestNotificationEvent,
-        );
+        expect(notificationsEmitter.emit).toHaveBeenCalledWith(testNotification.type, testNotification);
 
         expect(diff(before, after)).toEqual({
-            events: { 0: expectedTestNotificationEvent },
+            events: { 0: testNotification },
         });
     });
 });

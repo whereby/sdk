@@ -1,34 +1,35 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { EventEmitter } from "events";
-import { RootState } from "../store";
-import { createAppThunk } from "../thunk";
-import { createReactor, startAppListening } from "../listenerMiddleware";
-import { signalEvents } from "./signalConnection/actions";
-import { selectRemoteParticipants } from "./remoteParticipants";
-import { selectSignalStatus } from "./signalConnection";
-import { doEnableAudio, doEnableVideo, doSetLocalStickyReaction } from "./localParticipant";
 import { ChatMessage as SignalChatMessage } from "@whereby.com/media";
-import { ChatMessage } from "./chat";
-import { selectIsAuthorizedToAskToSpeak } from "./authorization";
+import { RootState } from "../../store";
+import { createAppThunk } from "../../thunk";
+import { createReactor, startAppListening } from "../../listenerMiddleware";
+import { signalEvents } from "../signalConnection/actions";
+import { selectRemoteParticipants } from "../remoteParticipants";
+import { selectSignalStatus } from "../signalConnection";
+import { selectIsAuthorizedToAskToSpeak } from "../authorization";
 
-export interface Notification {
-    type: string;
-    message: string;
-    props?: {
-        [key: string]: unknown;
-    };
-}
+import {
+    Notification,
+    NotificationEvents,
+    NotificationEvent,
+    RequestAudioEvent,
+    ChatMessageEvent,
+    StickyReactionEvent,
+} from "./events";
+export * from "./events";
 
-export interface NotificationEvent extends Notification {
-    timestamp: number;
-}
-
-export type NotificationsEventEmitter = EventEmitter<{
-    "*": [NotificationEvent];
-    [type: string]: [NotificationEvent];
-}>;
+export type NotificationsEventEmitter = EventEmitter<NotificationEvents>;
 
 const emitter: NotificationsEventEmitter = new EventEmitter();
+
+function createNotification<T>(payload: Notification<T>): NotificationEvent<T> {
+    const notificationEvent = {
+        ...payload,
+        timestamp: Date.now(),
+    };
+    return notificationEvent;
+}
 
 /**
  * Reducer
@@ -69,19 +70,14 @@ export const notificationsSlice = createSlice({
 
 export const { doClearNotifications } = notificationsSlice.actions;
 
-export const doSetNotification = createAppThunk((payload: Notification) => (dispatch, getState) => {
-    const notificationMessage: NotificationEvent = {
-        ...payload,
-        timestamp: Date.now(),
-    };
-
-    dispatch(notificationsSlice.actions.addNotification(notificationMessage));
+export const doSetNotification = createAppThunk((payload: NotificationEvent) => (dispatch, getState) => {
+    dispatch(notificationsSlice.actions.addNotification(payload));
 
     const state = getState();
     const emitter = selectNotificationsEmitter(state);
 
-    emitter.emit(notificationMessage.type, notificationMessage);
-    emitter.emit("*", notificationMessage); // also emit event to catch-all wildcard handlers
+    emitter.emit(payload.type as keyof NotificationEvents, payload);
+    emitter.emit("*", payload); // also emit event to catch-all wildcard handlers
 });
 
 /**
@@ -107,21 +103,21 @@ startAppListening({
             return;
         }
 
-        const chatMessage: ChatMessage = {
-            senderId: payload.senderId,
-            timestamp: payload.timestamp,
-            text: payload.text,
-        };
-
         dispatch(
-            doSetNotification({
-                type: "chatMessageReceived",
-                message: `${client.displayName} says: ${chatMessage.text}`,
-                props: {
-                    client,
-                    chatMessage,
-                },
-            }),
+            doSetNotification(
+                createNotification<ChatMessageEvent>({
+                    type: "chatMessageReceived",
+                    message: `${client.displayName} says: ${payload.text}`,
+                    props: {
+                        client,
+                        chatMessage: {
+                            senderId: payload.senderId,
+                            timestamp: payload.timestamp,
+                            text: payload.text,
+                        },
+                    },
+                }),
+            ),
         );
     },
 });
@@ -140,16 +136,18 @@ startAppListening({
         }
 
         dispatch(
-            doSetNotification({
-                type: enable ? "requestAudioEnable" : "requestAudioDisable",
-                message: enable
-                    ? `${client.displayName} has requested for you to speak`
-                    : `${client.displayName} has muted your microphone`,
-                props: {
-                    client,
-                    enable,
-                },
-            }),
+            doSetNotification(
+                createNotification<RequestAudioEvent>({
+                    type: enable ? "requestAudioEnable" : "requestAudioDisable",
+                    message: enable
+                        ? `${client.displayName} has requested for you to speak`
+                        : `${client.displayName} has muted your microphone`,
+                    props: {
+                        client,
+                        enable,
+                    },
+                }),
+            ),
         );
     },
 });
@@ -188,14 +186,16 @@ startAppListening({
         }
 
         dispatch(
-            doSetNotification({
-                type: stickyReaction ? "remoteHandRaised" : "remoteHandLowered",
-                message: `${client.displayName} ${stickyReaction ? "raised" : "lowered"} their hand`,
-                props: {
-                    client,
-                    stickyReaction,
-                },
-            }),
+            doSetNotification(
+                createNotification<StickyReactionEvent>({
+                    type: stickyReaction ? "remoteHandRaised" : "remoteHandLowered",
+                    message: `${client.displayName} ${stickyReaction ? "raised" : "lowered"} their hand`,
+                    props: {
+                        client,
+                        stickyReaction,
+                    },
+                }),
+            ),
         );
     },
 });
@@ -203,17 +203,21 @@ startAppListening({
 createReactor([selectSignalStatus], ({ dispatch }, signalStatus) => {
     if (signalStatus === "disconnected") {
         dispatch(
-            doSetNotification({
-                type: "signalTrouble",
-                message: `Network connection lost. Trying to reconnect you...`,
-            }),
+            doSetNotification(
+                createNotification<void>({
+                    type: "signalTrouble",
+                    message: `Network connection lost. Trying to reconnect you...`,
+                }),
+            ),
         );
     } else {
         dispatch(
-            doSetNotification({
-                type: "signalOk",
-                message: `Network connection available`,
-            }),
+            doSetNotification(
+                createNotification<void>({
+                    type: "signalOk",
+                    message: `Network connection available`,
+                }),
+            ),
         );
     }
 });

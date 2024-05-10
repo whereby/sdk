@@ -12,11 +12,12 @@
         "@whereby.com/core": "*",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-hot-toast": "^2.4.1",
         "typescript": "^5.3.3"
     },
     "devDependencies": {
-        "@vitejs/plugin-react": "^4.2.1",
         "@playwright/test": "^1.38.1",
+        "@vitejs/plugin-react": "^4.2.1",
         "vite": "^5.0.13"
     },
     "scripts": {

@@ -1,6 +1,14 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { useRoomConnection, useLocalMedia, UseLocalMediaResult } from "@whereby.com/browser-sdk/react";
-import { getFakeMediaStream } from "@whereby.com/core";
+import {
+    getFakeMediaStream,
+    NotificationEvent,
+    ChatMessageEvent,
+    RequestAudioEvent,
+    SignalStatusEvent,
+    StickyReactionEvent,
+} from "@whereby.com/core";
+import toast, { Toaster } from "react-hot-toast";
 
 import "./App.css";
 
@@ -57,6 +65,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         cloudRecording,
         liveStream,
         screenshares,
+        events,
     } = roomConnection.state;
     const {
         acceptWaitingParticipant,
@@ -69,6 +78,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         stopScreenshare,
         joinRoom,
         leaveRoom,
+        toggleRaiseHand,
+        askToSpeak,
     } = roomConnection.actions;
     const { VideoView } = roomConnection.components;
 
@@ -79,6 +90,123 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     useEffect(() => {
         setIsMicrophoneEnabled(localParticipant?.isAudioEnabled || false);
     }, [localParticipant?.isAudioEnabled]);
+
+    function showIncomingChatMessageNotification({ message }: NotificationEvent<ChatMessageEvent>) {
+        toast(message, {
+            icon: "💬",
+        });
+    }
+
+    function showRequestAudioEnableNotification({ message }: NotificationEvent<RequestAudioEvent>) {
+        toast(
+            (t) => (
+                <div>
+                    {message}
+                    <div>
+                        <button
+                            data-testid="unmuteMicrophoneBtn"
+                            onClick={() => {
+                                toggleMicrophone(true);
+                                toast.dismiss(t.id);
+                            }}
+                        >
+                            Unmute microphone
+                        </button>{" "}
+                        <button onClick={() => toast.dismiss(t.id)}>Got it</button>
+                    </div>
+                </div>
+            ),
+            {
+                id: "requestAudioEnable",
+                duration: Infinity,
+            },
+        );
+    }
+
+    function showRequestAudioDisableNotification({ message }: NotificationEvent<RequestAudioEvent>) {
+        toast(message, {
+            id: "requestAudioDisable",
+        });
+    }
+
+    function showSignalTroubleNotification({ message }: NotificationEvent<SignalStatusEvent>) {
+        toast.error(message, {
+            id: "signalTrouble",
+            duration: Infinity,
+        });
+    }
+
+    function hideSignalTroublenNotification() {
+        toast.remove("signalTrouble");
+    }
+
+    function showRemoteHandRaised({ message, props }: NotificationEvent<StickyReactionEvent>) {
+        toast(
+            (t) => (
+                <div>
+                    {message}
+                    <div>
+                        <button
+                            data-testid="askToSpeakBtn"
+                            onClick={() => {
+                                if (props?.client?.id) {
+                                    askToSpeak(props.client.id);
+                                }
+                                toast.dismiss(t.id);
+                            }}
+                        >
+                            Ask to speak
+                        </button>{" "}
+                        <button onClick={() => toast.dismiss(t.id)}>Dismiss</button>
+                    </div>
+                </div>
+            ),
+            {
+                id: `remoteHandRaised-${props?.client?.id}`,
+                icon: props?.stickyReaction?.reaction,
+                duration: Infinity,
+            },
+        );
+    }
+
+    function hideRemoteHandRaised({ props }: NotificationEvent<StickyReactionEvent>) {
+        toast.remove(`remoteHandRaised-${props?.client?.id}`);
+    }
+
+    useEffect(() => {
+        const sdkEventHandler = (event: NotificationEvent) => {
+            switch (event.type) {
+                case "chatMessageReceived":
+                    showIncomingChatMessageNotification(event as NotificationEvent<ChatMessageEvent>);
+                    break;
+                case "requestAudioEnable":
+                    showRequestAudioEnableNotification(event as NotificationEvent<RequestAudioEvent>);
+                    break;
+                case "requestAudioDisable":
+                    showRequestAudioDisableNotification(event as NotificationEvent<RequestAudioEvent>);
+                    break;
+                case "signalTrouble":
+                    showSignalTroubleNotification(event as NotificationEvent<SignalStatusEvent>);
+                    break;
+                case "signalOk":
+                    hideSignalTroublenNotification();
+                    break;
+                case "remoteHandRaised":
+                    showRemoteHandRaised(event as NotificationEvent<StickyReactionEvent>);
+                    break;
+                case "remoteHandLowered":
+                    hideRemoteHandRaised(event as NotificationEvent<StickyReactionEvent>);
+                    break;
+            }
+        };
+
+        // Use wildcard to catch _all_ notifications
+        events?.on("*", sdkEventHandler);
+
+        return () => {
+            events?.off("*", sdkEventHandler);
+        };
+    }, [events]);
 
     if (connectionStatus === "ready") {
         return (
@@ -145,6 +273,9 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                         >
                             {isMicrophoneEnabled ? "Disable" : "Enable"} microphone
                         </button>
+                        <button data-testid="toggleRaisedHandBtn" onClick={() => toggleRaiseHand()}>
+                            {localParticipant?.stickyReaction ? "Lower" : "Raise"} hand
+                        </button>
                     </>
                 )}
                 <button data-testid="leaveRoomBtn" onClick={() => leaveRoom()}>
@@ -183,6 +314,11 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                                 <div data-testid="remoteParticipantAudioStatus">
                                     Audio is {r.isAudioEnabled ? "on" : "off"}
                                 </div>
+                                {r.stickyReaction && (
+                                    <div data-testid="remoteParticipantStickyReactionStatus">
+                                        {r.stickyReaction.reaction}
+                                    </div>
+                                )}
                                 <p>{r.displayName}</p>
                             </div>
                         ))}
@@ -232,6 +368,12 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 )}
             </div>
             <ChatInput sendChatMessage={sendChatMessage} />
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    className: "toaster",
+                }}
+            />
         </div>
     );
 };

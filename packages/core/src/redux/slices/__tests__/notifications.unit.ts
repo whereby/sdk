@@ -9,7 +9,7 @@ import {
 describe("notificationsSlice", () => {
     describe("reducers", () => {
         it("addNotification", () => {
-            const testNotification: NotificationEvent = {
+            const testNotification: NotificationEvent<unknown> = {
                 type: "micNotWorking",
                 message: "Problems with your microphone have been detected and it is not delivering input",
                 timestamp: Date.now(),
