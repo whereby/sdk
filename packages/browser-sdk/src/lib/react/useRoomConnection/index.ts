@@ -153,11 +153,10 @@ export function useRoomConnection(
         (enabled?: boolean) => store.dispatch(doSetLocalStickyReaction({ enabled })),
         [store],
     );
-    // TODO: Add host-only askToSpeak API
-    // const askToSpeak = React.useCallback(
-    //     (participantId: string) => store.dispatch(doAskToSpeak({ participantId })),
-    //     [store],
-    // );
+    const askToSpeak = React.useCallback(
+        (participantId: string) => store.dispatch(doRequestAudioEnable({ clientIds: [participantId], enable: true })),
+        [store],
+    );
     const acceptWaitingParticipant = React.useCallback(
         (participantId: string) => store.dispatch(doAcceptWaitingParticipant({ participantId })),
         [store],
@@ -196,6 +195,7 @@ export function useRoomConnection(
         actions: {
             toggleLowDataMode,
             toggleRaiseHand,
+            askToSpeak,
             acceptWaitingParticipant,
             knock,
             joinRoom,

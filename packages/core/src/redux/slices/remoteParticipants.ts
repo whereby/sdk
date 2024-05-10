@@ -6,7 +6,7 @@ import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
 import { createAppAuthorizedThunk } from "../thunk";
-import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
+import { selectIsAuthorizedToAskToSpeak, selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
@@ -283,6 +283,13 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToRequestAudioEnable(state),
     (payload: AudioEnableRequest) => (_, getState) => {
         const state = getState();
+        const canEnableRemoteAudio = selectIsAuthorizedToAskToSpeak(state);
+
+        if (payload.enable && !canEnableRemoteAudio) {
+            console.warn("Not authorized to perform this action");
+            return;
+        }
+
         const socket = selectSignalConnectionRaw(state).socket;
 
         socket?.emit("request_audio_enable", payload);

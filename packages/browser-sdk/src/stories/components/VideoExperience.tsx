@@ -52,6 +52,7 @@ export default function VideoExperience({
         toggleMicrophone,
         toggleLowDataMode,
         toggleRaiseHand,
+        askToSpeak,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
         startScreenshare,
@@ -118,8 +119,9 @@ export default function VideoExperience({
                     <div>
                         <button
                             onClick={() => {
-                                // TODO: Implement "Ask to speak" API
-                                // askToSpeak(props?.client?.id);
+                                if (props?.client?.id) {
+                                    askToSpeak(props.client.id);
+                                }
                                 toast.dismiss(t.id);
                             }}
                         >
