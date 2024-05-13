@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 2.13.0
+
+### Minor Changes
+
+- 12a5471: Add support for leave meeting command
+
 ## 2.12.3
 
 ### Patch Changes
