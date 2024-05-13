@@ -11,19 +11,23 @@ import { selectIsAuthorizedToAskToSpeak } from "../authorization";
 
 import {
     Notification,
-    NotificationEvents,
     NotificationEvent,
-    RequestAudioEvent,
-    ChatMessageEvent,
-    StickyReactionEvent,
+    NotificationEvents,
+    NotificationEventMap,
+    RequestAudioEventProps,
+    ChatMessageEventProps,
+    StickyReactionEventProps,
+    SignalStatusEventProps,
 } from "./events";
 export * from "./events";
 
-export type NotificationsEventEmitter = EventEmitter<NotificationEvents>;
+export type NotificationsEventEmitter = EventEmitter<NotificationEventMap>;
 
 const emitter: NotificationsEventEmitter = new EventEmitter();
 
-function createNotification<T>(payload: Notification<T>): NotificationEvent<T> {
+function createNotificationEvent<Type, PropsType>(
+    payload: Notification<Type, PropsType>,
+): NotificationEvent<Type, PropsType> {
     const notificationEvent = {
         ...payload,
         timestamp: Date.now(),
@@ -70,13 +74,13 @@ export const notificationsSlice = createSlice({
 
 export const { doClearNotifications } = notificationsSlice.actions;
 
-export const doSetNotification = createAppThunk((payload: NotificationEvent) => (dispatch, getState) => {
+export const doSetNotification = createAppThunk((payload: NotificationEvents) => (dispatch, getState) => {
     dispatch(notificationsSlice.actions.addNotification(payload));
 
     const state = getState();
     const emitter = selectNotificationsEmitter(state);
 
-    emitter.emit(payload.type as keyof NotificationEvents, payload);
+    emitter.emit(payload.type as keyof NotificationEventMap, payload);
     emitter.emit("*", payload); // also emit event to catch-all wildcard handlers
 });
 
@@ -105,7 +109,7 @@ startAppListening({
 
         dispatch(
             doSetNotification(
-                createNotification<ChatMessageEvent>({
+                createNotificationEvent<"chatMessageReceived", ChatMessageEventProps>({
                     type: "chatMessageReceived",
                     message: `${client.displayName} says: ${payload.text}`,
                     props: {
@@ -137,7 +141,7 @@ startAppListening({
 
         dispatch(
             doSetNotification(
-                createNotification<RequestAudioEvent>({
+                createNotificationEvent<"requestAudioEnable" | "requestAudioDisable", RequestAudioEventProps>({
                     type: enable ? "requestAudioEnable" : "requestAudioDisable",
                     message: enable
                         ? `${client.displayName} has requested for you to speak`
@@ -187,7 +191,7 @@ startAppListening({
 
         dispatch(
             doSetNotification(
-                createNotification<StickyReactionEvent>({
+                createNotificationEvent<"remoteHandRaised" | "remoteHandLowered", StickyReactionEventProps>({
                     type: stickyReaction ? "remoteHandRaised" : "remoteHandLowered",
                     message: `${client.displayName} ${stickyReaction ? "raised" : "lowered"} their hand`,
                     props: {
@@ -204,18 +208,20 @@ createReactor([selectSignalStatus], ({ dispatch }, signalStatus) => {
     if (signalStatus === "disconnected") {
         dispatch(
             doSetNotification(
-                createNotification<void>({
+                createNotificationEvent<"signalTrouble", SignalStatusEventProps>({
                     type: "signalTrouble",
                     message: `Network connection lost. Trying to reconnect you...`,
+                    props: {},
                 }),
             ),
         );
     } else {
         dispatch(
             doSetNotification(
-                createNotification<void>({
+                createNotificationEvent<"signalOk", SignalStatusEventProps>({
                     type: "signalOk",
                     message: `Network connection available`,
+                    props: {},
                 }),
             ),
         );

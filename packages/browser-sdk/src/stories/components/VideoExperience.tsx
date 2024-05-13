@@ -4,7 +4,13 @@ import toast, { Toaster } from "react-hot-toast";
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
-import { NotificationEvent, StickyReactionEvent } from "@whereby.com/core";
+import {
+    ChatMessageEvent,
+    RequestAudioEvent,
+    SignalStatusEvent,
+    StickyReactionEvent,
+    NotificationEvents,
+} from "@whereby.com/core";
 
 export default function VideoExperience({
     displayName,
@@ -60,13 +66,13 @@ export default function VideoExperience({
     } = actions;
     const { VideoView } = components;
 
-    function showIncomingChatMessageNotification(message: string) {
+    function showIncomingChatMessageNotification({ message }: ChatMessageEvent) {
         toast(message, {
             icon: "💬",
         });
     }
 
-    function showRequestAudioEnableNotification(message: string) {
+    function showRequestAudioEnableNotification({ message }: RequestAudioEvent) {
         toast(
             (t) => (
                 <div>
@@ -91,13 +97,13 @@ export default function VideoExperience({
         );
     }
 
-    function showRequestAudioDisableNotification(message: string) {
+    function showRequestAudioDisableNotification({ message }: RequestAudioEvent) {
         toast(message, {
             id: "requestAudioDisable",
         });
     }
 
-    function showSignalTroubleNotification(message: string) {
+    function showSignalTroubleNotification({ message }: SignalStatusEvent) {
         toast.error(message, {
             id: "signalTrouble",
             duration: Infinity,
@@ -108,7 +114,7 @@ export default function VideoExperience({
         toast.remove("signalTrouble");
     }
 
-    function showRemoteHandRaised(message: string, props?: StickyReactionEvent) {
+    function showRemoteHandRaised({ message, props }: StickyReactionEvent) {
         toast(
             (t) => (
                 <div>
@@ -116,7 +122,7 @@ export default function VideoExperience({
                     <div>
                         <button
                             onClick={() => {
-                                if (props?.client?.id) {
+                                if (props.client?.id) {
                                     askToSpeak(props.client.id);
                                 }
                                 toast.dismiss(t.id);
@@ -129,40 +135,40 @@ export default function VideoExperience({
                 </div>
             ),
             {
-                id: `remoteHandRaised-${props?.client?.id}`,
-                icon: props?.stickyReaction?.reaction,
+                id: `remoteHandRaised-${props.client?.id}`,
+                icon: props.stickyReaction?.reaction,
                 duration: Infinity,
             },
         );
     }
 
-    function hideRemoteHandRaised(props?: StickyReactionEvent) {
-        toast.remove(`remoteHandRaised-${props?.client?.id}`);
+    function hideRemoteHandRaised({ props }: StickyReactionEvent) {
+        toast.remove(`remoteHandRaised-${props.client?.id}`);
     }
 
     useEffect(() => {
-        const sdkEventHandler = ({ type, message, props }: NotificationEvent) => {
-            switch (type) {
+        const sdkEventHandler = (event: NotificationEvents) => {
+            switch (event.type) {
                 case "chatMessageReceived":
-                    showIncomingChatMessageNotification(message);
+                    showIncomingChatMessageNotification(event);
                     break;
                 case "requestAudioEnable":
-                    showRequestAudioEnableNotification(message);
+                    showRequestAudioEnableNotification(event);
                     break;
                 case "requestAudioDisable":
-                    showRequestAudioDisableNotification(message);
+                    showRequestAudioDisableNotification(event);
                     break;
                 case "signalTrouble":
-                    showSignalTroubleNotification(message);
+                    showSignalTroubleNotification(event);
                     break;
                 case "signalOk":
                     hideSignalTroublenNotification();
                     break;
                 case "remoteHandRaised":
-                    showRemoteHandRaised(message, props as StickyReactionEvent);
+                    showRemoteHandRaised(event);
                     break;
                 case "remoteHandLowered":
-                    hideRemoteHandRaised(props as StickyReactionEvent);
+                    hideRemoteHandRaised(event);
                     break;
             }
         };

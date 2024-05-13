@@ -1,40 +1,48 @@
 import { RemoteParticipant } from "../../../RoomParticipant";
 import { ChatMessage } from "../chat";
 
-export interface RequestAudioEvent {
-    client: RemoteParticipant;
-    enable: boolean;
-}
-
-export interface ChatMessageEvent {
-    client: RemoteParticipant;
-    chatMessage: ChatMessage;
-}
-
-export interface SignalStatusEvent {}
-
-export interface StickyReactionEvent {
-    client: RemoteParticipant;
-    stickyReaction?: { reaction: string; timestamp: string } | null;
-}
-
-export interface Notification<T = unknown> {
-    type: string;
+export interface NotificationEvent<Type = string, PropsType = unknown> {
+    type: Type;
     message: string;
-    props?: T;
-}
-
-export interface NotificationEvent<T = unknown> extends Notification<T> {
+    props: PropsType;
     timestamp: number;
 }
 
-export interface NotificationEvents {
-    "*": [NotificationEvent<unknown>];
-    requestAudioEnable: [NotificationEvent<RequestAudioEvent>];
-    requestAudioDisable: [NotificationEvent<RequestAudioEvent>];
-    chatMessageReceived: [NotificationEvent<ChatMessageEvent>];
-    remoteHandRaised: [NotificationEvent<StickyReactionEvent>];
-    remoteHandLowered: [NotificationEvent<StickyReactionEvent>];
-    signalTrouble: [NotificationEvent<SignalStatusEvent>];
-    signalOk: [NotificationEvent<SignalStatusEvent>];
+export type Notification<Type, PropsType> = Omit<NotificationEvent<Type, PropsType>, "timestamp">;
+
+export interface RequestAudioEventProps {
+    client: RemoteParticipant;
+    enable: boolean;
 }
+export type RequestAudioEvent = NotificationEvent<"requestAudioEnable" | "requestAudioDisable", RequestAudioEventProps>;
+
+export interface ChatMessageEventProps {
+    client: RemoteParticipant;
+    chatMessage: ChatMessage;
+}
+export type ChatMessageEvent = NotificationEvent<"chatMessageReceived", ChatMessageEventProps>;
+
+export interface SignalStatusEventProps {}
+export type SignalStatusEvent = NotificationEvent<"signalTrouble" | "signalOk", SignalStatusEventProps>;
+
+export interface StickyReactionEventProps {
+    client: RemoteParticipant;
+    stickyReaction?: { reaction: string; timestamp: string } | null;
+}
+export type StickyReactionEvent = NotificationEvent<"remoteHandRaised" | "remoteHandLowered", StickyReactionEventProps>;
+
+type NotificationEventTypes = {
+    ["requestAudioEnable"]: RequestAudioEvent;
+    ["requestAudioDisable"]: RequestAudioEvent;
+    ["chatMessageReceived"]: ChatMessageEvent;
+    ["remoteHandRaised"]: StickyReactionEvent;
+    ["remoteHandLowered"]: StickyReactionEvent;
+    ["signalTrouble"]: SignalStatusEvent;
+    ["signalOk"]: SignalStatusEvent;
+};
+
+export type NotificationEvents = NotificationEventTypes[keyof NotificationEventTypes];
+
+export type NotificationEventMap = { "*": [NotificationEvents] } & {
+    [Type in keyof NotificationEventTypes]: [NotificationEventTypes[Type]];
+};

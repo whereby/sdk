@@ -1,17 +1,18 @@
 import {
     notificationsSlice,
-    NotificationEvent,
     NotificationsState,
     doClearNotifications,
     initialNotificationsState,
+    SignalStatusEvent,
 } from "../notifications";
 
 describe("notificationsSlice", () => {
     describe("reducers", () => {
         it("addNotification", () => {
-            const testNotification: NotificationEvent<unknown> = {
-                type: "micNotWorking",
+            const testNotification: SignalStatusEvent = {
+                type: "signalOk",
                 message: "Problems with your microphone have been detected and it is not delivering input",
+                props: {},
                 timestamp: Date.now(),
             };
 
@@ -28,9 +29,10 @@ describe("notificationsSlice", () => {
         });
 
         it("doClearNotifications", () => {
-            const testNotification: NotificationEvent = {
-                type: "micNotWorking",
+            const testNotification: SignalStatusEvent = {
+                type: "signalOk",
                 message: "Problems with your microphone have been detected and it is not delivering input",
+                props: {},
                 timestamp: Date.now(),
             };
 

@@ -1,5 +1,5 @@
 import { createStore } from "../store.setup";
-import { NotificationEvent, NotificationsEventEmitter, doSetNotification } from "../../slices/notifications";
+import { NotificationsEventEmitter, SignalStatusEvent, doSetNotification } from "../../slices/notifications";
 import { diff } from "deep-object-diff";
 import { EventEmitter } from "events";
 
@@ -8,9 +8,10 @@ describe("actions", () => {
         const now = Date.now();
         jest.spyOn(global.Date, "now").mockImplementationOnce(() => now);
 
-        const testNotification: NotificationEvent = {
-            type: "micNotWorking",
+        const testNotification: SignalStatusEvent = {
+            type: "signalOk",
             message: "Problems with your microphone have been detected and it is not delivering input",
+            props: {},
             timestamp: now,
         };
 

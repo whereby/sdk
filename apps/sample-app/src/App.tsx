@@ -2,11 +2,11 @@ import React, { useEffect, useCallback, useState } from "react";
 import { useRoomConnection, useLocalMedia, UseLocalMediaResult } from "@whereby.com/browser-sdk/react";
 import {
     getFakeMediaStream,
-    NotificationEvent,
     ChatMessageEvent,
     RequestAudioEvent,
     SignalStatusEvent,
     StickyReactionEvent,
+    NotificationEvents,
 } from "@whereby.com/core";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -91,13 +91,13 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         setIsMicrophoneEnabled(localParticipant?.isAudioEnabled || false);
     }, [localParticipant?.isAudioEnabled]);
 
-    function showIncomingChatMessageNotification({ message }: NotificationEvent<ChatMessageEvent>) {
+    function showIncomingChatMessageNotification({ message }: ChatMessageEvent) {
         toast(message, {
             icon: "💬",
         });
     }
 
-    function showRequestAudioEnableNotification({ message }: NotificationEvent<RequestAudioEvent>) {
+    function showRequestAudioEnableNotification({ message }: RequestAudioEvent) {
         toast(
             (t) => (
                 <div>
@@ -123,13 +123,13 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         );
     }
 
-    function showRequestAudioDisableNotification({ message }: NotificationEvent<RequestAudioEvent>) {
+    function showRequestAudioDisableNotification({ message }: RequestAudioEvent) {
         toast(message, {
             id: "requestAudioDisable",
         });
     }
 
-    function showSignalTroubleNotification({ message }: NotificationEvent<SignalStatusEvent>) {
+    function showSignalTroubleNotification({ message }: SignalStatusEvent) {
         toast.error(message, {
             id: "signalTrouble",
             duration: Infinity,
@@ -140,7 +140,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         toast.remove("signalTrouble");
     }
 
-    function showRemoteHandRaised({ message, props }: NotificationEvent<StickyReactionEvent>) {
+    function showRemoteHandRaised({ message, props }: StickyReactionEvent) {
         toast(
             (t) => (
                 <div>
@@ -149,7 +149,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                         <button
                             data-testid="askToSpeakBtn"
                             onClick={() => {
-                                if (props?.client?.id) {
+                                if (props.client?.id) {
                                     askToSpeak(props.client.id);
                                 }
                                 toast.dismiss(t.id);
@@ -162,40 +162,40 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 </div>
             ),
             {
-                id: `remoteHandRaised-${props?.client?.id}`,
-                icon: props?.stickyReaction?.reaction,
+                id: `remoteHandRaised-${props.client?.id}`,
+                icon: props.stickyReaction?.reaction,
                 duration: Infinity,
             },
         );
     }
 
-    function hideRemoteHandRaised({ props }: NotificationEvent<StickyReactionEvent>) {
-        toast.remove(`remoteHandRaised-${props?.client?.id}`);
+    function hideRemoteHandRaised({ props }: StickyReactionEvent) {
+        toast.remove(`remoteHandRaised-${props.client?.id}`);
     }
 
     useEffect(() => {
-        const sdkEventHandler = (event: NotificationEvent) => {
+        const sdkEventHandler = (event: NotificationEvents) => {
             switch (event.type) {
                 case "chatMessageReceived":
-                    showIncomingChatMessageNotification(event as NotificationEvent<ChatMessageEvent>);
+                    showIncomingChatMessageNotification(event);
                     break;
                 case "requestAudioEnable":
-                    showRequestAudioEnableNotification(event as NotificationEvent<RequestAudioEvent>);
+                    showRequestAudioEnableNotification(event);
                     break;
                 case "requestAudioDisable":
-                    showRequestAudioDisableNotification(event as NotificationEvent<RequestAudioEvent>);
+                    showRequestAudioDisableNotification(event);
                     break;
                 case "signalTrouble":
-                    showSignalTroubleNotification(event as NotificationEvent<SignalStatusEvent>);
+                    showSignalTroubleNotification(event);
                     break;
                 case "signalOk":
                     hideSignalTroublenNotification();
                     break;
                 case "remoteHandRaised":
-                    showRemoteHandRaised(event as NotificationEvent<StickyReactionEvent>);
+                    showRemoteHandRaised(event);
                     break;
                 case "remoteHandLowered":
-                    hideRemoteHandRaised(event as NotificationEvent<StickyReactionEvent>);
+                    hideRemoteHandRaised(event);
                     break;
             }
         };
