@@ -162,8 +162,9 @@ export interface VideoEnabledEvent {
 }
 
 export interface ClientMetadataReceivedEvent {
-    type: string;
-    payload: { clientId: string; displayName: string };
+    error?: string;
+    type?: string;
+    payload?: { clientId: string; displayName: string };
 }
 
 export interface AudioEnableRequestedEvent {
