@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 0.15.2
+
+### Patch Changes
+
+- 50ce696: Handle case when invalid characters are provided in display name
+- Updated dependencies [50ce696]
+  - @whereby.com/media@1.4.1
+
 ## 0.15.1
 
 ### Patch Changes
