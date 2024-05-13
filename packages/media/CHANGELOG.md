@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.4.1
+
+### Patch Changes
+
+- 50ce696: Handle case when invalid characters are provided in display name
+
 ## 1.4.0
 
 ### Minor Changes
