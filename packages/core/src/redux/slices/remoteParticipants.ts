@@ -246,7 +246,14 @@ export const remoteParticipantsSlice = createSlice({
             });
         });
         builder.addCase(signalEvents.clientMetadataReceived, (state, action) => {
-            const { clientId, displayName } = action.payload.payload;
+            const { error, payload } = action.payload;
+
+            if (error || !payload) {
+                console.warn(error || "Client metadata error received");
+                return state;
+            }
+
+            const { clientId, displayName } = payload;
 
             return updateParticipant(state, clientId, {
                 displayName,

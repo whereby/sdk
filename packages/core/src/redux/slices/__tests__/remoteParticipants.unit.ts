@@ -153,6 +153,28 @@ describe("remoteParticipantsSlice", () => {
                     },
                 ]);
             });
+
+            it("should console.warn if a metadata error is returned", () => {
+                jest.spyOn(global.console, "warn");
+
+                const clientMetaDataError = "invalid_display_name";
+
+                const participant = randomRemoteParticipant();
+                const state = {
+                    remoteParticipants: [participant],
+                };
+
+                const result = remoteParticipantsSlice.reducer(
+                    state,
+                    signalEvents.clientMetadataReceived({
+                        error: clientMetaDataError,
+                    }),
+                );
+
+                expect(global.console.warn).toHaveBeenCalledWith(clientMetaDataError);
+
+                expect(result.remoteParticipants).toEqual([participant]);
+            });
         });
 
         describe("signalEvents.videoEnabled", () => {
