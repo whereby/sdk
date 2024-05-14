@@ -1,10 +1,10 @@
 import * as React from "react";
 
 import {
-    selectLocalParticipantView,
-    selectRemoteClientViews,
     selectNumParticipants,
     ClientView,
+    selectAllClientViews,
+    selectSpotlightedClientViews,
 } from "@whereby.com/core";
 import { useAppSelector } from "../Provider/hooks";
 import { ACTIVE_VIDEO_SUBGRID_TRIGGER, STAGE_PARTICIPANT_LIMIT } from "./contants";
@@ -13,25 +13,31 @@ export function calculateSubgridViews({
     clientViews,
     activeVideosSubgridTrigger,
     shouldShowSubgrid,
+    spotlightedParticipants,
 }: {
     clientViews: ClientView[];
     activeVideosSubgridTrigger: number;
     shouldShowSubgrid: boolean;
+    spotlightedParticipants: ClientView[];
 }) {
     if (!shouldShowSubgrid) {
         return [];
     }
+    const hasSpotlights = spotlightedParticipants.length > 0;
+    const hasPresentationStage = hasSpotlights;
 
-    const allClientViews = clientViews.filter((client) => !client.isPresentation);
-    const noVideoViews = allClientViews.filter((client) => !client.isVideoEnabled);
+    const notSpotlighted = clientViews.filter(
+        (client) => !client.isPresentation && !spotlightedParticipants.includes(client),
+    );
+    const noVideoViews = notSpotlighted.filter((client) => !client.isVideoEnabled);
     const videoLimitReached =
-        allClientViews.filter((client) => client.isVideoEnabled).length > activeVideosSubgridTrigger;
+        notSpotlighted.filter((client) => client.isVideoEnabled).length > activeVideosSubgridTrigger;
 
-    const unmutedVideos = allClientViews.filter((client) => !noVideoViews.includes(client) && client.isAudioEnabled);
-    const mutedVideos = allClientViews.filter((client) => !noVideoViews.includes(client) && !client.isAudioEnabled);
+    const unmutedVideos = notSpotlighted.filter((client) => !noVideoViews.includes(client) && client.isAudioEnabled);
+    const mutedVideos = notSpotlighted.filter((client) => !noVideoViews.includes(client) && !client.isAudioEnabled);
 
-    if (noVideoViews.length) {
-        return [...noVideoViews];
+    if (noVideoViews.length && hasPresentationStage) {
+        return [...mutedVideos, ...noVideoViews];
     }
 
     // If we reached the limit for active videos, and we have videos with muted audio,
@@ -62,33 +68,30 @@ function useGridParticipants({
     stageParticipantLimit = STAGE_PARTICIPANT_LIMIT,
     forceSubgrid = true,
 }: Props = {}) {
-    const localParticipantView = useAppSelector(selectLocalParticipantView);
-    const remoteClientViews = useAppSelector(selectRemoteClientViews);
+    const allClientViews = useAppSelector(selectAllClientViews);
+    const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
     const numParticipants = useAppSelector(selectNumParticipants);
 
     const shouldShowSubgrid = React.useMemo(() => {
         return forceSubgrid ? true : numParticipants > stageParticipantLimit;
     }, [forceSubgrid, numParticipants, stageParticipantLimit]);
 
-    const allClientViews = React.useMemo(() => {
-        return [localParticipantView, ...remoteClientViews];
-    }, [localParticipantView, remoteClientViews]);
-
     const clientViewsInSubgrid = React.useMemo(() => {
         return calculateSubgridViews({
             clientViews: allClientViews,
             activeVideosSubgridTrigger,
             shouldShowSubgrid,
+            spotlightedParticipants,
         });
-    }, [allClientViews, shouldShowSubgrid, activeVideosSubgridTrigger]);
+    }, [allClientViews, shouldShowSubgrid, activeVideosSubgridTrigger, spotlightedParticipants]);
 
     const clientViewsOnStage = React.useMemo(() => {
         return allClientViews.filter((client) => !clientViewsInSubgrid.includes(client));
     }, [allClientViews, clientViewsInSubgrid]);
 
     const clientViewsInPresentationGrid = React.useMemo(() => {
-        return allClientViews.filter((client) => client.isPresentation);
-    }, [allClientViews]);
+        return allClientViews.filter((client) => client.isPresentation).concat(spotlightedParticipants);
+    }, [allClientViews, spotlightedParticipants]);
 
     const clientViewsInGrid = React.useMemo(() => {
         return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));

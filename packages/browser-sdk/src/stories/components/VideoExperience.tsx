@@ -45,7 +45,14 @@ export default function VideoExperience({
         ...(Boolean(externalId) && { externalId }),
     });
 
-    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
+    const {
+        localParticipant,
+        remoteParticipants,
+        connectionStatus,
+        waitingParticipants,
+        screenshares,
+        spotlightedParticipants,
+    } = state;
     const {
         knock,
         sendChatMessage,
@@ -65,6 +72,8 @@ export default function VideoExperience({
         rejectWaitingParticipant,
         startScreenshare,
         stopScreenshare,
+        spotlightParticipant,
+        removeSpotlight,
     } = actions;
 
     useEffect(() => {
@@ -241,50 +250,57 @@ export default function VideoExperience({
                         </div>
                     )}
                     <div className="container">
-                        {[localParticipant, ...remoteParticipants].map((participant, i) => (
-                            <div className="participantWrapper" key={participant?.id || i}>
-                                {participant ? (
-                                    <>
-                                        <div
-                                            className="bouncingball"
-                                            style={{
-                                                animationDelay: `1000ms`,
-                                                ...(participant.isAudioEnabled
-                                                    ? {
-                                                          border: "2px solid grey",
-                                                      }
-                                                    : null),
-                                                ...(!participant.isVideoEnabled
-                                                    ? {
-                                                          backgroundColor: "green",
-                                                      }
-                                                    : null),
-                                            }}
-                                        >
-                                            {participant.stream && participant.isVideoEnabled && (
-                                                <VideoView
-                                                    muted={participant.isLocalParticipant}
-                                                    stream={participant.stream}
-                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                                />
-                                            )}
-                                        </div>
-                                        <div
-                                            className="displayName"
-                                            title={
-                                                "externalId" in participant
-                                                    ? participant.externalId || undefined
-                                                    : undefined
-                                            }
-                                        >
-                                            {participant.displayName || "Guest"}
-                                            {participant.stickyReaction && (
-                                                <div>{participant.stickyReaction?.reaction}</div>
-                                            )}
-                                            {showHostControls && participant.id !== localParticipant?.id ? (
-                                                <div>
-                                                    {" "}
-                                                    {participant.isAudioEnabled && (
+                        {[localParticipant, ...remoteParticipants].map((participant, i) => {
+                            const isSpotlighted = !!spotlightedParticipants.find((p) => p.id === participant?.id);
+
+                            return (
+                                <div className="participantWrapper" key={participant?.id || i}>
+                                    {participant ? (
+                                        <>
+                                            <div
+                                                className="bouncingball"
+                                                style={{
+                                                    animationDelay: `1000ms`,
+                                                    ...(participant.isAudioEnabled
+                                                        ? {
+                                                              border: "2px solid grey",
+                                                          }
+                                                        : null),
+                                                    ...(!participant.isVideoEnabled
+                                                        ? {
+                                                              backgroundColor: "green",
+                                                          }
+                                                        : null),
+                                                    ...(isSpotlighted
+                                                        ? {
+                                                              border: "2px solid blue",
+                                                          }
+                                                        : null),
+                                                }}
+                                            >
+                                                {participant.stream && participant.isVideoEnabled && (
+                                                    <VideoView
+                                                        muted={participant.isLocalParticipant}
+                                                        stream={participant.stream}
+                                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                    />
+                                                )}
+                                            </div>
+                                            <div
+                                                className="displayName"
+                                                title={
+                                                    "externalId" in participant
+                                                        ? participant.externalId || undefined
+                                                        : undefined
+                                                }
+                                            >
+                                                {participant.displayName || "Guest"}
+                                                {participant.stickyReaction && (
+                                                    <div>{participant.stickyReaction?.reaction}</div>
+                                                )}
+                                                {showHostControls && participant.id !== localParticipant?.id ? (
+                                                    <div>
+                                                        {" "}
                                                         <button
                                                             onClick={() => {
                                                                 muteParticipants([participant.id]);
@@ -296,11 +312,29 @@ export default function VideoExperience({
                                                             }
                                                         >
                                                             Mute
+                                                        </button>{" "}
+                                                        <button
+                                                            onClick={() => {
+                                                                kickParticipant(participant.id);
+                                                            }}
+                                                            className={
+                                                                localParticipant?.roleName !== "host"
+                                                                    ? "hostControlActionDisallowed"
+                                                                    : ""
+                                                            }
+                                                        >
+                                                            Kick
                                                         </button>
-                                                    )}{" "}
+                                                    </div>
+                                                ) : null}
+                                                {showHostControls ? (
                                                     <button
                                                         onClick={() => {
-                                                            kickParticipant(participant.id);
+                                                            if (isSpotlighted) {
+                                                                removeSpotlight(participant.id);
+                                                            } else {
+                                                                spotlightParticipant(participant.id);
+                                                            }
                                                         }}
                                                         className={
                                                             localParticipant?.roleName !== "host"
@@ -308,15 +342,16 @@ export default function VideoExperience({
                                                                 : ""
                                                         }
                                                     >
-                                                        Kick
+                                                        {isSpotlighted ? "Remove spotlight" : "Spotlight"}
                                                     </button>
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    </>
-                                ) : null}
-                            </div>
-                        ))}
+                                                ) : null}
+                                            </div>
+                                        </>
+                                    ) : null}
+                                </div>
+                            );
+                        })}
+
                         {screenshares.map(
                             (s) =>
                                 s.stream && (

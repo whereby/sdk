@@ -6,6 +6,7 @@ import {
     LocalMediaOptions,
     ConnectionStatus,
     NotificationsEventEmitter,
+    ClientView,
 } from "@whereby.com/core";
 
 import { RoleName } from "@whereby.com/media";
@@ -55,6 +56,7 @@ export interface RoomConnectionState {
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
     waitingParticipants: WaitingParticipantState[];
+    spotlightedParticipants: ClientView[];
 }
 
 export interface RoomConnectionOptions {
@@ -90,4 +92,6 @@ export interface RoomConnectionActions {
     stopScreenshare(): void;
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
+    spotlightParticipant(clientId: string): void;
+    removeSpotlight(clientId: string): void;
 }

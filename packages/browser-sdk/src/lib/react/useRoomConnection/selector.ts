@@ -10,6 +10,7 @@ import {
     selectLocalMediaStream,
     selectStreamingRaw,
     selectNotificationsEmitter,
+    selectSpotlightedClientViews,
 } from "@whereby.com/core";
 
 import { RoomConnectionState } from "./types";
@@ -25,6 +26,7 @@ export const selectRoomConnectionState = createSelector(
     selectStreamingRaw,
     selectWaitingParticipants,
     selectNotificationsEmitter,
+    selectSpotlightedClientViews,
     (
         chatMessages,
         cloudRecording,
@@ -36,6 +38,7 @@ export const selectRoomConnectionState = createSelector(
         streaming,
         waitingParticipants,
         notificationsEmitter,
+        spotlightedClientViews,
     ) => {
         const state: RoomConnectionState = {
             chatMessages,
@@ -53,6 +56,7 @@ export const selectRoomConnectionState = createSelector(
             remoteParticipants,
             screenshares,
             waitingParticipants,
+            spotlightedParticipants: spotlightedClientViews,
         };
 
         return state;

@@ -20,6 +20,8 @@ import {
     doLockRoom,
     doKickParticipant,
     doEndMeeting,
+    doSpotlightParticipant,
+    doRemoveSpotlight,
     NotificationsEventEmitter,
 } from "@whereby.com/core";
 
@@ -111,13 +113,21 @@ export function useRoomConnection(
     const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
     const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
     const muteParticipants = React.useCallback(
-        (clientIds: string[]) => {
-            dispatch(doRequestAudioEnable({ clientIds, enable: false }));
+        (participantIds: string[]) => {
+            dispatch(doRequestAudioEnable({ clientIds: participantIds, enable: false }));
         },
         [dispatch],
     );
+    const spotlightParticipant = React.useCallback(
+        (participantId: string) => dispatch(doSpotlightParticipant({ id: participantId })),
+        [dispatch],
+    );
+    const removeSpotlight = React.useCallback(
+        (participantId: string) => dispatch(doRemoveSpotlight({ id: participantId })),
+        [dispatch],
+    );
     const kickParticipant = React.useCallback(
-        (clientId: string) => dispatch(doKickParticipant({ clientId })),
+        (participantId: string) => dispatch(doKickParticipant({ clientId: participantId })),
         [dispatch],
     );
     const endMeeting = React.useCallback((stayBehind?: boolean) => dispatch(doEndMeeting({ stayBehind })), [dispatch]);
@@ -148,6 +158,8 @@ export function useRoomConnection(
             stopScreenshare,
             toggleCamera,
             toggleMicrophone,
+            spotlightParticipant,
+            removeSpotlight,
         },
     };
 }
