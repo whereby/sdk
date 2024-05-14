@@ -7,8 +7,8 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
 import { selectRemoteParticipants } from "../remoteParticipants";
 import { selectSignalStatus } from "../signalConnection";
+import { selectRoomConnectionStatus } from "../roomConnection";
 import { selectIsAuthorizedToAskToSpeak } from "../authorization";
-
 import {
     Notification,
     NotificationEvent,
@@ -204,7 +204,14 @@ startAppListening({
     },
 });
 
-createReactor([selectSignalStatus], ({ dispatch }, signalStatus) => {
+createReactor([selectSignalStatus], ({ dispatch, getState }, signalStatus) => {
+    const state = getState();
+    const roomConnectionStatus = selectRoomConnectionStatus(state);
+
+    if (["left", "kicked"].includes(roomConnectionStatus)) {
+        return;
+    }
+
     if (signalStatus === "disconnected") {
         dispatch(
             doSetNotification(
@@ -215,7 +222,7 @@ createReactor([selectSignalStatus], ({ dispatch }, signalStatus) => {
                 }),
             ),
         );
-    } else {
+    } else if (signalStatus === "connected") {
         dispatch(
             doSetNotification(
                 createNotificationEvent<"signalOk", SignalStatusEventProps>({
