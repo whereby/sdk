@@ -1,12 +1,12 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
-import { createAppAsyncThunk } from "../thunk";
+import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { LocalParticipant } from "../../RoomParticipant";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { doAppStart } from "./app";
 import { selectLocalMediaStream, toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
-import { startAppListening } from "../listenerMiddleware";
+import { createReactor, startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
 import { ClientView } from "../types";
 
@@ -26,55 +26,21 @@ const initialState: LocalParticipantState = {
     isScreenSharing: false,
     roleName: "none",
     clientClaim: undefined,
+    stickyReaction: undefined,
 };
 
-export const doEnableAudio = createAppAsyncThunk(
-    "localParticipant/doEnableAudio",
-    async (payload: { enabled: boolean }, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("enable_audio", { enabled: payload.enabled });
-
-        return payload.enabled;
-    },
-);
-
-export const doEnableVideo = createAppAsyncThunk(
-    "localParticipant/doEnableVideo",
-    async (payload: { enabled: boolean }, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("enable_video", { enabled: payload.enabled });
-
-        return payload.enabled;
-    },
-);
-
-export const doSetDisplayName = createAppAsyncThunk(
-    "localParticipant/doSetDisplayName",
-    async (payload: { displayName: string }, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("send_client_metadata", {
-            type: "UserData",
-            payload,
-        });
-
-        return payload.displayName;
-    },
-);
+/**
+ * Reducer
+ */
 
 export const localParticipantSlice = createSlice({
     name: "localParticipant",
     initialState,
     reducers: {
-        doSetLocalParticipant: (state, action: PayloadAction<LocalParticipant>) => {
+        doSetDisplayName: (state, action: PayloadAction<{ displayName: string }>) => {
             return {
                 ...state,
-                ...action.payload,
+                displayName: action.payload.displayName,
             };
         },
     },
@@ -98,10 +64,10 @@ export const localParticipantSlice = createSlice({
                 isVideoEnabled: action.payload,
             };
         });
-        builder.addCase(doSetDisplayName.fulfilled, (state, action) => {
+        builder.addCase(doSetLocalStickyReaction.fulfilled, (state, action) => {
             return {
                 ...state,
-                displayName: action.payload,
+                stickyReaction: action.payload,
             };
         });
         builder.addCase(signalEvents.roomJoined, (state, action) => {
@@ -116,12 +82,88 @@ export const localParticipantSlice = createSlice({
     },
 });
 
-export const { doSetLocalParticipant } = localParticipantSlice.actions;
+/**
+ * Action creators
+ */
+
+export const { doSetDisplayName } = localParticipantSlice.actions;
+
+export const doEnableAudio = createAppAsyncThunk(
+    "localParticipant/doEnableAudio",
+    async (payload: { enabled: boolean }, { dispatch, getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("enable_audio", { enabled: payload.enabled });
+
+        if (payload.enabled) {
+            dispatch(doSetLocalStickyReaction({ enabled: false }));
+        }
+
+        return payload.enabled;
+    },
+);
+
+export const doEnableVideo = createAppAsyncThunk(
+    "localParticipant/doEnableVideo",
+    async (payload: { enabled: boolean }, { getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("enable_video", { enabled: payload.enabled });
+
+        return payload.enabled;
+    },
+);
+
+export const doSetLocalStickyReaction = createAppAsyncThunk(
+    "localParticipant/doSetLocalStickyReaction",
+    async (payload: { enabled?: boolean }, { getState, rejectWithValue }) => {
+        const state = getState();
+
+        const currentStickyReaction = selectLocalParticipantStickyReaction(state);
+        const stickyReactionCurrentlyEnabled = Boolean(currentStickyReaction);
+        const enabled = payload.enabled ?? !stickyReactionCurrentlyEnabled;
+
+        if (enabled === stickyReactionCurrentlyEnabled) {
+            return rejectWithValue(currentStickyReaction);
+        }
+
+        const stickyReaction = enabled ? { reaction: "✋", timestamp: new Date().toISOString() } : null;
+
+        return stickyReaction;
+    },
+);
+
+export const doSendClientMetadata = createAppThunk(() => (_, getState) => {
+    const state = getState();
+    const socket = selectSignalConnectionRaw(state).socket;
+
+    const payload = {
+        displayName: selectLocalParticipantDisplayName(state),
+        stickyReaction: selectLocalParticipantStickyReaction(state),
+    };
+
+    socket?.emit("send_client_metadata", {
+        type: "UserData",
+        payload,
+    });
+});
+
+/**
+ * Selectors
+ */
 
 export const selectLocalParticipantRaw = (state: RootState) => state.localParticipant;
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
+export const selectLocalParticipantDisplayName = (state: RootState) => state.localParticipant.displayName;
 export const selectLocalParticipantClientClaim = (state: RootState) => state.localParticipant.clientClaim;
 export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
+export const selectLocalParticipantStickyReaction = (state: RootState) => state.localParticipant.stickyReaction;
+
+/**
+ * Reactors
+ */
 export const selectLocalParticipantView = createSelector(
     selectLocalParticipantRaw,
     selectLocalMediaStream,
@@ -158,4 +200,8 @@ startAppListening({
 
         dispatch(doEnableAudio({ enabled: enabled || !isAudioEnabled }));
     },
+});
+
+createReactor([selectLocalParticipantDisplayName, selectLocalParticipantStickyReaction], ({ dispatch }) => {
+    dispatch(doSendClientMetadata());
 });

@@ -1,7 +1,7 @@
 {
     "name": "@whereby.com/media",
     "description": "Media library for Whereby",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "license": "MIT",
     "homepage": "https://github.com/whereby/sdk",
     "repository": {
@@ -64,9 +64,6 @@
     "devDependencies": {
         "@babel/core": "^7.23.2",
         "@babel/preset-env": "^7.23.2",
-        "@types/sdp-transform": "^2.4.9",
-        "@types/uuid": "^9.0.8",
-        "@types/uuid-validate": "^0.0.3",
         "process": "^0.11.10"
     },
     "engines": {

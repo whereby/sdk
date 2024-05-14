@@ -5,6 +5,7 @@ import {
     Screenshare,
     LocalMediaOptions,
     ConnectionStatus,
+    NotificationsEventEmitter,
     ClientView,
 } from "@whereby.com/core";
 
@@ -45,14 +46,15 @@ export type LiveStreamState = {
 };
 
 export interface RoomConnectionState {
+    connectionStatus: ConnectionStatus;
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
+    events?: NotificationsEventEmitter;
+    liveStream?: LiveStreamState;
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
-    connectionStatus: ConnectionStatus;
-    liveStream?: LiveStreamState;
     waitingParticipants: WaitingParticipantState[];
     spotlightedParticipants: ClientView[];
 }
@@ -71,6 +73,8 @@ export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "l
 
 export interface RoomConnectionActions {
     toggleLowDataMode(enabled?: boolean): void;
+    toggleRaiseHand(enabled?: boolean): void;
+    askToSpeak(participantId: string): void;
     acceptWaitingParticipant(participantId: string): void;
     knock(): void;
     joinRoom(): void;

@@ -737,10 +737,8 @@ startAppListening({
     effect: ({ payload }, { dispatch }) => {
         const { enable } = payload;
 
-        if (enable) {
-            // Do nothing. We need a notification system
-        }
-
+        // Only handle disable audio case automatically.
+        // Enable audio case must be handled via `requestAudioEnable` notification
         if (!enable) {
             dispatch(toggleMicrophoneEnabled({ enabled: false }));
         }

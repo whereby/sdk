@@ -61,7 +61,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: () => ({}),
     },
     displayName: {
-        actions: [doSetDisplayName.fulfilled],
+        actions: [doSetDisplayName],
         rtcEventName: "displayName",
         getValue: (state: RootState) => selectAppDisplayName(state),
         getOutput: (value) => ({ displayName: value }),

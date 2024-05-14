@@ -73,7 +73,7 @@ export class ReconnectManager extends EventEmitter {
         if (!this._signalDisconnectTime) {
             this._resetClientState(payload);
             payload.room.clients = payload.room.clients.filter(
-                (c: any) => !(c.deviceId === myDeviceId && c.isPendingToLeave)
+                (c: any) => !(c.deviceId === myDeviceId && c.isPendingToLeave),
             );
             this.emit(PROTOCOL_RESPONSES.ROOM_JOINED, payload);
             return;
@@ -93,7 +93,7 @@ export class ReconnectManager extends EventEmitter {
 
         // Filter out our own pending client after page reload
         payload.room.clients = payload.room.clients.filter(
-            (c: any) => !(c.deviceId === myDeviceId && c.isPendingToLeave)
+            (c: any) => !(c.deviceId === myDeviceId && c.isPendingToLeave),
         );
 
         const allStats = await getUpdatedStats();

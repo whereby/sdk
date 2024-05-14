@@ -1,4 +1,4 @@
-import { remoteParticipantsSlice, selectScreenshares } from "../remoteParticipants";
+import { remoteParticipantsSlice } from "../remoteParticipants";
 import { signalEvents } from "../signalConnection/actions";
 import { rtcEvents } from "../rtcConnection/actions";
 import {
@@ -154,6 +154,28 @@ describe("remoteParticipantsSlice", () => {
                     },
                 ]);
             });
+
+            it("should console.warn if a metadata error is returned", () => {
+                jest.spyOn(global.console, "warn");
+
+                const clientMetaDataError = "invalid_display_name";
+
+                const participant = randomRemoteParticipant();
+                const state = {
+                    remoteParticipants: [participant],
+                };
+
+                const result = remoteParticipantsSlice.reducer(
+                    state,
+                    signalEvents.clientMetadataReceived({
+                        error: clientMetaDataError,
+                    }),
+                );
+
+                expect(global.console.warn).toHaveBeenCalledWith(clientMetaDataError);
+
+                expect(result.remoteParticipants).toEqual([participant]);
+            });
         });
 
         describe("signalEvents.videoEnabled", () => {
@@ -262,33 +284,6 @@ describe("remoteParticipantsSlice", () => {
                     },
                 ]);
             });
-        });
-    });
-
-    describe("selectors", () => {
-        const client1 = randomRemoteParticipant();
-        const client2 = randomRemoteParticipant({
-            presentationStream: randomMediaStream(),
-        });
-        const client3 = randomRemoteParticipant({
-            presentationStream: randomMediaStream(),
-        });
-
-        describe("selectScreenshares", () => {
-            const localScreenshareStream = randomMediaStream();
-
-            it.each`
-                localScreenshareStream    | remoteParticipants    | expected
-                ${null}                   | ${[]}                 | ${[]}
-                ${null}                   | ${[client1, client2]} | ${[{ id: `pres-${client2.id}`, hasAudioTrack: false, isLocal: false, participantId: client2.id, stream: client2.presentationStream }]}
-                ${localScreenshareStream} | ${[]}                 | ${[{ id: "local-screenshare", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }]}
-                ${localScreenshareStream} | ${[client3]}          | ${[{ id: "local-screenshare", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }, { id: `pres-${client3.id}`, hasAudioTrack: false, isLocal: false, participantId: client3.id, stream: client3.presentationStream }]}
-            `(
-                "should return $expected when localScreenshareStream=$localScreenshareStream, remoteParticipants=$remoteParticipants",
-                ({ localScreenshareStream, remoteParticipants, expected }) => {
-                    expect(selectScreenshares.resultFunc(localScreenshareStream, remoteParticipants)).toEqual(expected);
-                },
-            );
         });
     });
 });

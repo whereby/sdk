@@ -8,6 +8,7 @@ import {
     doRejectWaitingParticipant,
     doRequestAudioEnable,
     doSetDisplayName,
+    doSetLocalStickyReaction,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
     toggleLowDataModeEnabled,
@@ -21,6 +22,7 @@ import {
     doEndMeeting,
     doSpotlightParticipant,
     doRemoveSpotlight,
+    NotificationsEventEmitter,
 } from "@whereby.com/core";
 
 import { selectRoomConnectionState } from "./selector";
@@ -29,8 +31,9 @@ import { browserSdkVersion } from "../version";
 import { useAppDispatch, useAppSelector } from "../Provider/hooks";
 
 export type RoomConnectionRef = {
-    state: RoomConnectionState;
+    state: Omit<RoomConnectionState, "events">;
     actions: RoomConnectionActions;
+    events?: NotificationsEventEmitter;
 };
 
 const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
@@ -86,6 +89,14 @@ export function useRoomConnection(
         (enabled?: boolean) => dispatch(toggleLowDataModeEnabled({ enabled })),
         [dispatch],
     );
+    const toggleRaiseHand = React.useCallback(
+        (enabled?: boolean) => dispatch(doSetLocalStickyReaction({ enabled })),
+        [dispatch],
+    );
+    const askToSpeak = React.useCallback(
+        (participantId: string) => dispatch(doRequestAudioEnable({ clientIds: [participantId], enable: true })),
+        [dispatch],
+    );
     const acceptWaitingParticipant = React.useCallback(
         (participantId: string) => dispatch(doAcceptWaitingParticipant({ participantId })),
         [dispatch],
@@ -121,10 +132,15 @@ export function useRoomConnection(
     );
     const endMeeting = React.useCallback((stayBehind?: boolean) => dispatch(doEndMeeting({ stayBehind })), [dispatch]);
 
+    const { events, ...state } = roomConnectionState;
+
     return {
-        state: roomConnectionState,
+        state,
+        events,
         actions: {
             toggleLowDataMode,
+            toggleRaiseHand,
+            askToSpeak,
             acceptWaitingParticipant,
             knock,
             joinRoom,
