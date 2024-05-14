@@ -26,6 +26,9 @@ jobs:
                   cache-dependency-path: |
                       yarn.lock
 
+            - name: Install Dependencies
+              run: yarn install --frozen-lockfile
+
               # Check if pre.json file exists. The rest of the steps will only run if this file exists
             - name: Check for pre.json file existence
               id: check_files
@@ -36,7 +39,7 @@ jobs:
               # Exit prerelease mode
             - name: Exit prerelease mode
               if: steps.check_files.outputs.files_exists == 'true'
-              run: yarn changesets pre exit
+              run: yarn changeset pre exit
 
             - uses: stefanzweifel/git-auto-commit-action@v5
               if: steps.check_files.outputs.files_exists == 'true'
