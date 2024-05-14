@@ -25,6 +25,7 @@ import {
     doKickParticipant,
     doEndMeeting,
     doRtcReportStreamResolution,
+    NotificationsEventEmitter,
 } from "@whereby.com/core";
 
 import VideoView from "../VideoView";
@@ -47,9 +48,10 @@ interface RoomConnectionComponents {
 }
 
 export type RoomConnectionRef = {
-    state: RoomConnectionState;
+    state: Omit<RoomConnectionState, "events">;
     actions: RoomConnectionActions;
     components: RoomConnectionComponents;
+    events?: NotificationsEventEmitter;
     _ref: Store;
 };
 
@@ -190,8 +192,11 @@ export function useRoomConnection(
         [store],
     );
 
+    const { events, ...state } = roomConnectionState;
+
     return {
-        state: roomConnectionState,
+        state,
+        events,
         actions: {
             toggleLowDataMode,
             toggleRaiseHand,

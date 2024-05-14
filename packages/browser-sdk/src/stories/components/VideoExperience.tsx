@@ -32,7 +32,7 @@ export default function VideoExperience({
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const { state, actions, components } = useRoomConnection(roomName, {
+    const { state, actions, components, events } = useRoomConnection(roomName, {
         localMediaOptions: {
             audio: true,
             video: true,
@@ -43,7 +43,7 @@ export default function VideoExperience({
         ...(Boolean(externalId) && { externalId }),
     });
 
-    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares, events } = state;
+    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
     const {
         knock,
         sendChatMessage,

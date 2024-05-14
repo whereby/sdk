@@ -65,7 +65,6 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         cloudRecording,
         liveStream,
         screenshares,
-        events,
     } = roomConnection.state;
     const {
         acceptWaitingParticipant,
@@ -201,12 +200,12 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         };
 
         // Use wildcard to catch _all_ notifications
-        events?.on("*", sdkEventHandler);
+        roomConnection.events?.on("*", sdkEventHandler);
 
         return () => {
-            events?.off("*", sdkEventHandler);
+            roomConnection.events?.off("*", sdkEventHandler);
         };
-    }, [events]);
+    }, [roomConnection.events]);
 
     if (connectionStatus === "ready") {
         return (
