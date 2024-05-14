@@ -8,8 +8,6 @@ import { signalEvents } from "./signalConnection/actions";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToAskToSpeak, selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { selectLocalParticipantRaw } from "./localParticipant";
-import { ClientView } from "../types";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 

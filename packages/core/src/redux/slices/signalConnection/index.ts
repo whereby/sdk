@@ -28,6 +28,7 @@ import {
 import { Credentials } from "../../../api";
 import { selectAppIsActive } from "../app";
 import { signalEvents } from "./actions";
+export { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, UnknownAction>) {
     socket.on("room_joined", (payload: RoomJoinedEvent) => dispatch(signalEvents.roomJoined(payload)));
