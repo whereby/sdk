@@ -4,8 +4,8 @@
     "private": true,
     "type": "module",
     "dependencies": {
-        "@whereby.com/browser-sdk": "*",
-        "@whereby.com/core": "*",
+        "@whereby.com/browser-sdk": "3.0.0-beta.0",
+        "@whereby.com/core": "0.16.0-beta.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-hot-toast": "^2.4.1",

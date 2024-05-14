@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.4.2-beta.0
+
+### Patch Changes
+
+- a442c75: Add spotlight functionality
+
 ## 1.4.1
 
 ### Patch Changes
