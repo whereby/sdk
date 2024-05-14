@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from "react";
-import { useRoomConnection, useLocalMedia, UseLocalMediaResult } from "@whereby.com/browser-sdk/react";
+import { useRoomConnection, useLocalMedia, UseLocalMediaResult, VideoView } from "@whereby.com/browser-sdk/react";
 import {
     getFakeMediaStream,
     ChatMessageEvent,
@@ -80,7 +80,11 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         toggleRaiseHand,
         askToSpeak,
     } = roomConnection.actions;
-    const { VideoView } = roomConnection.components;
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     useEffect(() => {
         setIsCameraEnabled(localParticipant?.isVideoEnabled || false);

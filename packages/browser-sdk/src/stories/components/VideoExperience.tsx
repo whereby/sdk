@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
-
 import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
+import { VideoView } from "../../lib/react/VideoView";
 import {
     ChatMessageEvent,
     RequestAudioEvent,
@@ -20,6 +20,7 @@ export default function VideoExperience({
     externalId,
     showHostControls,
     hostOptions,
+    joinRoomOnLoad,
 }: {
     displayName?: string;
     roomName: string;
@@ -28,11 +29,12 @@ export default function VideoExperience({
     externalId?: string;
     showHostControls?: boolean;
     hostOptions?: Array<string>;
+    joinRoomOnLoad?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const { state, actions, components, events } = useRoomConnection(roomName, {
+    const { state, actions, events } = useRoomConnection(roomName, {
         localMediaOptions: {
             audio: true,
             video: true,
@@ -64,7 +66,13 @@ export default function VideoExperience({
         startScreenshare,
         stopScreenshare,
     } = actions;
-    const { VideoView } = components;
+
+    useEffect(() => {
+        if (!joinRoomOnLoad) return;
+
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     function showIncomingChatMessageNotification({ message }: ChatMessageEvent) {
         toast(message, {
@@ -183,6 +191,7 @@ export default function VideoExperience({
 
     return (
         <div>
+            {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
             {connectionStatus === "connecting" && <span>Connecting...</span>}
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>

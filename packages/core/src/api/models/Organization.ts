@@ -3,12 +3,12 @@ import { Json } from "../Response";
 
 import Account from "./Account";
 
-interface OrganizationPermissionAction {
+export interface OrganizationPermissionAction {
     isAllowed: boolean;
     isSupported: boolean;
 }
 
-interface FullOrganizationPermissions {
+export interface FullOrganizationPermissions {
     images: {
         logoImageUrl: {
             set: OrganizationPermissionAction;
@@ -55,16 +55,16 @@ interface FullOrganizationPermissions {
         install: OrganizationPermissionAction;
     };
 }
-type OrganizationPermissions = Partial<FullOrganizationPermissions>;
+export type OrganizationPermissions = Partial<FullOrganizationPermissions>;
 
-interface OrganizationLimits {
+export interface OrganizationLimits {
     maxNumberOfInvitationsAndUsers: number | null;
     maxNumberOfClaimedRooms: number | null;
     maxRoomLimitPerOrganization: number | null;
     trialMinutesLimit: number | null;
     includedUnits: number | null;
 }
-interface OrganizationOnboardingSurvey {
+export interface OrganizationOnboardingSurvey {
     name: string;
     value: unknown;
 }

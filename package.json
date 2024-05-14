@@ -36,6 +36,7 @@
     "@types/node": "^20.12.8",
     "@types/react": "^18.2.57",
     "@types/react-dom": "^18.2.24",
+    "@types/runes": "^0.4.3",
     "@types/sdp-transform": "^2.4.9",
     "@types/uuid": "^9.0.8",
     "@types/uuid-validate": "^0.0.3",

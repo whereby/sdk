@@ -1,4 +1,4 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest } from "@whereby.com/media";
 import { RemoteParticipant, StreamState } from "../../RoomParticipant";
@@ -8,6 +8,8 @@ import { signalEvents } from "./signalConnection/actions";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToAskToSpeak, selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
+import { selectLocalParticipantRaw } from "./localParticipant";
+import { ClientView } from "../types";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -28,6 +30,10 @@ function createRemoteParticipant(client: SignalClient, newJoiner = false): Remot
         newJoiner,
     };
 }
+
+// function isCaptionerClient(client: SignalClient) {
+//     return client.roleName === "captioner" || client.role?.roleName === "captioner";
+// }
 
 function findParticipant(state: RemoteParticipantState, participantId: string) {
     const index = state.remoteParticipants.findIndex((c) => c.id === participantId);
@@ -302,3 +308,8 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
+
+export const selectNumParticipants = createSelector(
+    selectRemoteParticipants,
+    (clients) => clients.filter((c) => !NON_PERSON_ROLES.includes(c.roleName)).length + 1,
+);

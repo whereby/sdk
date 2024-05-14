@@ -1,29 +1,7 @@
 import layoutConstants from "./layoutConstants";
+import { type Bounds, type Box, type Frame, type Origin } from "./types";
 
 const { DESKTOP_BREAKPOINT, TABLET_BREAKPOINT, PHONE_BREAKPOINT } = layoutConstants;
-
-// Types
-export type Box = {
-    top: number;
-    left: number;
-    bottom: number;
-    right: number;
-};
-
-export type Origin = {
-    top: number;
-    left: number;
-};
-
-export type Bounds = {
-    width: number;
-    height: number;
-};
-
-export type Frame = {
-    origin: Origin;
-    bounds: Bounds;
-};
 
 export function makeOrigin({ top = 0, left = 0 } = {}): Origin {
     return {
@@ -55,7 +33,7 @@ export function makeBox({ top = 0, left = 0, bottom = 0, right = 0 } = {}): Box 
     };
 }
 
-export function hasBounds(bounds: { width: number; height: number }): boolean {
+export function hasBounds(bounds: Bounds): boolean {
     if (!bounds) {
         return false;
     }
