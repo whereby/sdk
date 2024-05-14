@@ -121,6 +121,8 @@ export default function VideoExperience({
     }
 
     function showSignalTroubleNotification({ message }: SignalStatusEvent) {
+        toast.remove(); // clear notifications
+
         toast.error(message, {
             id: "signalTrouble",
             duration: Infinity,

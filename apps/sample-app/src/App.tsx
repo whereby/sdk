@@ -133,6 +133,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     }
 
     function showSignalTroubleNotification({ message }: SignalStatusEvent) {
+        toast.remove(); // clear notifications
+
         toast.error(message, {
             id: "signalTrouble",
             duration: Infinity,
