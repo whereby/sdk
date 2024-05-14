@@ -17,6 +17,7 @@ import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcAnalyticsSlice } from "./slices/rtcAnalytics";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
+import { spotlightsSlice } from "./slices/spotlights";
 import { streamingSlice } from "./slices/streaming";
 import { waitingParticipantsSlice } from "./slices/waitingParticipants";
 
@@ -38,6 +39,7 @@ const appReducer = combineReducers({
     rtcAnalytics: rtcAnalyticsSlice.reducer,
     rtcConnection: rtcConnectionSlice.reducer,
     signalConnection: signalConnectionSlice.reducer,
+    spotlights: spotlightsSlice.reducer,
     streaming: streamingSlice.reducer,
     waitingParticipants: waitingParticipantsSlice.reducer,
 });

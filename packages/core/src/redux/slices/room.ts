@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAuthorizedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
@@ -9,7 +9,8 @@ import {
     selectIsAuthorizedToEndMeeting,
 } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { selectRemoteParticipants } from "./remoteParticipants";
+import { selectRemoteClientViews, selectRemoteParticipants } from "./remoteParticipants";
+import { selectLocalParticipantView } from "./localParticipant";
 
 /**
  * Reducer
@@ -100,3 +101,10 @@ export const doEndMeeting = createAppAuthorizedThunk(
  */
 
 export const selectRoomIsLocked = (state: RootState) => state.room.isLocked;
+export const selectAllClientViews = createSelector(
+    selectLocalParticipantView,
+    selectRemoteClientViews,
+    (localParticipant, remoteParticipants) => {
+        return [localParticipant, ...remoteParticipants];
+    },
+);

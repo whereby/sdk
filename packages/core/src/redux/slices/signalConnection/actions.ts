@@ -19,6 +19,8 @@ import {
     VideoEnabledEvent,
     RoomSessionEndedEvent,
     AudioEnableRequestedEvent,
+    SpotlightAddedEvent,
+    SpotlightRemovedEvent,
 } from "@whereby.com/media";
 
 function createSignalEventAction<T>(name: string) {
@@ -45,6 +47,8 @@ export const signalEvents = {
     roomSessionEnded: createSignalEventAction<RoomSessionEndedEvent>("roomSessionEnded"),
     screenshareStarted: createSignalEventAction<ScreenshareStartedEvent>("screenshareStarted"),
     screenshareStopped: createSignalEventAction<ScreenshareStoppedEvent>("screenshareStopped"),
+    spotlightAdded: createSignalEventAction<SpotlightAddedEvent>("spotlightAdded"),
+    spotlightRemoved: createSignalEventAction<SpotlightRemovedEvent>("spotlightRemoved"),
     streamingStopped: createSignalEventAction<void>("streamingStopped"),
     videoEnabled: createSignalEventAction<VideoEnabledEvent>("videoEnabled"),
 };
