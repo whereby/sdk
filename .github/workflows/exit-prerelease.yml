@@ -36,7 +36,7 @@ jobs:
               # Exit prerelease mode
             - name: Exit prerelease mode
               if: steps.check_files.outputs.files_exists == 'true'
-              run: yarn changesets pre exit
+              run: yarn changeset pre exit
 
             - uses: stefanzweifel/git-auto-commit-action@v5
               if: steps.check_files.outputs.files_exists == 'true'
