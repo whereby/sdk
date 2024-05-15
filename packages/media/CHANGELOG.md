@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.5.0
+
+### Minor Changes
+
+- 8f146fb: media: Transfers features to sfu server
+
 ## 1.4.2
 
 ### Patch Changes
