@@ -10,12 +10,14 @@ interface Props {
     activeVideosSubgridTrigger?: number;
     forceSubgrid?: boolean;
     stageParticipantLimit?: number;
+    videoGridGap?: number;
 }
 
 function useGrid({
     activeVideosSubgridTrigger,
     forceSubgrid,
     stageParticipantLimit = STAGE_PARTICIPANT_LIMIT,
+    videoGridGap = 8,
 }: Props = {}) {
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
@@ -70,7 +72,7 @@ function useGrid({
             isConstrained: false,
             roomBounds: containerFrame.bounds,
             videos: cellViewsVideoGrid,
-            videoGridGap: 0,
+            videoGridGap,
             presentationVideos: cellViewsInPresentationGrid,
             subgridVideos: cellViewsInSubgrid,
         });
