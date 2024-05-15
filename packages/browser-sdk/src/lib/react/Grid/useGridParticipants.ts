@@ -90,8 +90,8 @@ function useGridParticipants({
     }, [allClientViews, clientViewsInSubgrid]);
 
     const clientViewsInPresentationGrid = React.useMemo(() => {
-        return allClientViews.filter((client) => client.isPresentation).concat(spotlightedParticipants);
-    }, [allClientViews, spotlightedParticipants]);
+        return spotlightedParticipants;
+    }, [spotlightedParticipants]);
 
     const clientViewsInGrid = React.useMemo(() => {
         return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));
