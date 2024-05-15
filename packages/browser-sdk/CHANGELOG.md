@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.0.1
+
+### Patch Changes
+
+- 465cf49: Fix small grid UI bugs
+
 ## 3.0.0
 
 ### Major Changes
