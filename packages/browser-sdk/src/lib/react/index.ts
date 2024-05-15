@@ -1,6 +1,8 @@
-export { default as VideoView } from "./VideoView";
+export { Provider as WherebyProvider } from "./Provider";
+export { VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { useLocalMedia } from "./useLocalMedia";
+export { Grid as VideoGrid } from "./Grid";
 
 export type { UseLocalMediaResult } from "./useLocalMedia/types";
 

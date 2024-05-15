@@ -1,3 +1,5 @@
+import { type CellView } from "./types";
+
 export function makeVideoCellView({
     aspectRatio,
     avatarSize,
@@ -6,15 +8,7 @@ export function makeVideoCellView({
     isDraggable = true,
     isPlaceholder = false,
     isSubgrid = false,
-}: {
-    aspectRatio?: number;
-    avatarSize?: number;
-    cellPaddings?: number;
-    client?: { id: string };
-    isDraggable?: boolean;
-    isPlaceholder?: boolean;
-    isSubgrid?: boolean;
-}) {
+}: Partial<CellView>): CellView {
     return {
         aspectRatio: aspectRatio || 16 / 9,
         avatarSize,

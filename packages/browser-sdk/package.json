@@ -55,10 +55,7 @@
     "@storybook/builder-vite": "^8.0.10",
     "@storybook/react-vite": "^8.0.10",
     "@testing-library/react": "^14.0.0",
-    "@types/chrome": "^0.0.210",
-    "@types/node": "^20.11.19",
-    "@types/react": "^18.2.57",
-    "@types/uuid": "^9.0.7",
+    "@types/runes": "^0.4.3",
     "@vitejs/plugin-react": "^4.2.1",
     "deep-object-diff": "^1.1.9",
     "dotenv": "^16.4.5",
@@ -66,6 +63,7 @@
     "lit-html": "^2.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
     "rimraf": "^5.0.5",
     "storybook": "^8.0.10",
     "tslib": "^2.4.1",
@@ -76,7 +74,9 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.3",
     "@whereby.com/core": "0.15.2",
-    "heresy": "^1.0.4"
+    "heresy": "^1.0.4",
+    "react-redux": "^9.1.1",
+    "runes": "^0.4.3"
   },
   "peerDependencies": {
     "react": "^18.2.0",

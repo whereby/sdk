@@ -1,0 +1,17 @@
+{
+  "mode": "exit",
+  "tag": "beta",
+  "initialVersions": {
+    "embed-element-app": "0.1.0",
+    "quiz-app": "0.1.0",
+    "sample-app": "0.1.0",
+    "telehealth-tutorial-app": "0.1.0",
+    "@whereby.com/browser-sdk": "2.6.0",
+    "@whereby.com/core": "0.8.0",
+    "@whereby.com/eslint-config": "0.1.0",
+    "@whereby.com/media": "1.2.0"
+  },
+  "changesets": [
+    "lazy-fans-flash"
+  ]
+}

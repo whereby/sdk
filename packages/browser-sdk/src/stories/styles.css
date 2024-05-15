@@ -48,6 +48,12 @@
     color: red;
 }
 
+.toaster {
+    border: 1px solid #713200;
+    padding: 16px;
+    color: #713200;
+}
+
 @keyframes bounce {
     0% {
         top: 25px;

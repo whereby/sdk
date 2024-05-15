@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
@@ -6,6 +6,8 @@ import { getFakeMediaStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Grid as VideoGrid } from "../lib/react/Grid";
+import { Provider as WherebyProvider } from "../lib/react/Provider";
+import { StoryFn } from "@storybook/react";
 
 const defaultArgs = {
     title: "Examples/Custom UI",
@@ -18,6 +20,13 @@ const defaultArgs = {
         displayName: "SDK",
         roomUrl: process.env.STORYBOOK_ROOM,
     },
+    decorators: [
+        (Story: StoryFn) => (
+            <WherebyProvider>
+                <Story />
+            </WherebyProvider>
+        ),
+    ],
 };
 
 export default defaultArgs;
@@ -55,6 +64,7 @@ export const RoomConnectionWithLocalMedia = ({
                     roomName={roomUrl}
                     localMedia={localMedia}
                     externalId={externalId}
+                    joinRoomOnLoad
                 />
             )}
         </div>
@@ -72,7 +82,15 @@ export const LocalMediaOnly = () => {
 };
 
 function CanvasInRoom({ localMedia, roomUrl }: { localMedia: UseLocalMediaResult; roomUrl: string }) {
-    const { state } = useRoomConnection(roomUrl, { localMedia });
+    const {
+        state,
+        actions: { joinRoom, leaveRoom },
+    } = useRoomConnection(roomUrl, { localMedia });
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     return <div>Room connection status: {state.connectionStatus}</div>;
 }
@@ -159,11 +177,13 @@ export const RoomConnectionWithHostControls = {
         roomUrl,
         roomKey,
         displayName,
+        roomOptions,
         hostOptions,
     }: {
         roomUrl: string;
         roomKey: string;
         displayName?: string;
+        roomOptions: Array<string>;
         hostOptions: Array<string>;
     }) => {
         if (!roomUrl || !roomUrl.match(roomRegEx)) {
@@ -177,17 +197,30 @@ export const RoomConnectionWithHostControls = {
                 roomKey={roomKey}
                 showHostControls
                 hostOptions={hostOptions}
+                joinRoomOnLoad={roomOptions.includes("joinRoomOnLoad")}
             />
         );
     },
     argTypes: {
         ...defaultArgs.argTypes,
         roomKey: { control: "text", type: { required: true } },
+        roomOptions: {
+            name: "Room options",
+            control: {
+                type: "check",
+                labels: {
+                    joinRoomOnLoad: "Join room when useRoomConnection is created",
+                },
+            },
+            options: ["joinRoomOnLoad"],
+        },
         hostOptions: {
             name: "Host options",
             control: {
                 type: "check",
-                labels: { stayBehind: "Stay behind after triggering meeting end" },
+                labels: {
+                    stayBehind: "Stay behind after triggering meeting end",
+                },
             },
             options: ["stayBehind"],
         },
@@ -195,6 +228,7 @@ export const RoomConnectionWithHostControls = {
     args: {
         ...defaultArgs.args,
         roomKey: process.env.STORYBOOK_ROOM_HOST_ROOMKEY || "[Host roomKey required]",
+        roomOptions: [],
         hostOptions: ["stayBehind"],
     },
 };
@@ -205,6 +239,15 @@ export const ResolutionReporting = ({ roomUrl }: { roomUrl: string; displayName?
     }
 
     const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
+
+    const {
+        actions: { joinRoom, leaveRoom },
+    } = roomConnection;
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     return <Grid roomConnection={roomConnection} />;
 };
@@ -233,58 +276,89 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
     if (!roomUrl || !roomUrl.match(roomRegEx)) {
         return <p>Set room url on the Controls panel</p>;
     }
+    const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+    const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+    const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     return (
-        <div style={{ height: "100vh" }}>
-            <VideoGrid roomConnection={roomConnection} videoGridGap={10} />
-        </div>
+        <>
+            <div className="controls">
+                <button onClick={() => toggleCamera()}>Toggle camera</button>
+                <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                <button
+                    onClick={() => {
+                        if (isLocalScreenshareActive) {
+                            stopScreenshare();
+                        } else {
+                            startScreenshare();
+                        }
+                        setIsLocalScreenshareActive((prev) => !prev);
+                    }}
+                >
+                    Toggle screenshare
+                </button>
+            </div>
+            <div style={{ height: "500px", width: "100%" }}>
+                <VideoGrid videoGridGap={10} stageParticipantLimit={3} />
+            </div>
+        </>
     );
 };
 
-export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
-    if (!roomUrl || !roomUrl.match(roomRegEx)) {
-        return <p>Set room url on the Controls panel</p>;
-    }
+// export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
+//     if (!roomUrl || !roomUrl.match(roomRegEx)) {
+//         return <p>Set room url on the Controls panel</p>;
+//     }
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+//     const {
+//         actions: { joinRoom, leaveRoom },
+//     } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
 
-    return (
-        <div style={{ height: "100vh" }}>
-            <VideoGrid
-                roomConnection={roomConnection}
-                videoGridGap={10}
-                renderParticipant={({ participant }) => {
-                    if (!participant.stream) {
-                        return null;
-                    }
+//     useEffect(() => {
+//         joinRoom();
+//         return () => leaveRoom();
+//     }, []);
 
-                    return (
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: "100%",
-                            }}
-                        >
-                            <VideoView
-                                style={{
-                                    border: "4px dashed red",
-                                    boxSizing: "border-box",
-                                    borderRadius: "100%",
-                                    objectFit: "cover",
-                                    width: "60%",
-                                }}
-                                stream={participant.stream}
-                            />
-                            <p>{participant.displayName}</p>
-                        </div>
-                    );
-                }}
-            />
-        </div>
-    );
-};
+//     return (
+//         <div style={{ height: "100vh" }}>
+//             <VideoGrid
+//                 videoGridGap={10}
+//                 renderParticipant={({ participant }) => {
+//                     if (!participant.stream) {
+//                         return null;
+//                     }
+
+//                     return (
+//                         <div
+//                             style={{
+//                                 display: "flex",
+//                                 flexDirection: "column",
+//                                 alignItems: "center",
+//                                 justifyContent: "center",
+//                                 height: "100%",
+//                             }}
+//                         >
+//                             <VideoView
+//                                 style={{
+//                                     border: "4px dashed red",
+//                                     boxSizing: "border-box",
+//                                     borderRadius: "100%",
+//                                     objectFit: "cover",
+//                                     width: "60%",
+//                                 }}
+//                                 stream={participant.stream}
+//                             />
+//                             <p>{participant.displayName}</p>
+//                         </div>
+//                     );
+//                 }}
+//             />
+//         </div>
+//     );
+// };

@@ -1,10 +1,6 @@
 import * as React from "react";
 import {
     AppConfig,
-    Store,
-    createStore,
-    observeStore,
-    createServices,
     doSendChatMessage,
     doStartCloudRecording,
     doStopCloudRecording,
@@ -12,6 +8,7 @@ import {
     doRejectWaitingParticipant,
     doRequestAudioEnable,
     doSetDisplayName,
+    doSetLocalStickyReaction,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
     toggleLowDataModeEnabled,
@@ -23,33 +20,20 @@ import {
     doLockRoom,
     doKickParticipant,
     doEndMeeting,
-    doRtcReportStreamResolution,
+    doSpotlightParticipant,
+    doRemoveSpotlight,
+    NotificationsEventEmitter,
 } from "@whereby.com/core";
 
-import VideoView from "../VideoView";
 import { selectRoomConnectionState } from "./selector";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
-
-const initialState: RoomConnectionState = {
-    chatMessages: [],
-    remoteParticipants: [],
-    connectionStatus: "ready",
-    screenshares: [],
-    waitingParticipants: [],
-};
-
-type VideoViewComponentProps = Omit<React.ComponentProps<typeof VideoView>, "onResize">;
-
-interface RoomConnectionComponents {
-    VideoView: (props: VideoViewComponentProps) => ReturnType<typeof VideoView>;
-}
+import { useAppDispatch, useAppSelector } from "../Provider/hooks";
 
 export type RoomConnectionRef = {
-    state: RoomConnectionState;
+    state: Omit<RoomConnectionState, "events">;
     actions: RoomConnectionActions;
-    components: RoomConnectionComponents;
-    _ref: Store;
+    events?: NotificationsEventEmitter;
 };
 
 const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
@@ -63,25 +47,15 @@ export function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions = defaultRoomConnectionOptions,
 ): RoomConnectionRef {
-    const [roomConfig, setRoomConfig] = React.useState<AppConfig>();
+    const dispatch = useAppDispatch();
+    const roomConnectionState = useAppSelector(selectRoomConnectionState);
 
-    const [store] = React.useState<Store>(() => {
-        if (roomConnectionOptions.localMedia) {
-            return roomConnectionOptions.localMedia.store;
-        }
-        const services = createServices();
-        return createStore({ injectServices: services });
-    });
-    const [boundVideoView, setBoundVideoView] = React.useState<(props: VideoViewComponentProps) => JSX.Element>();
-    const [roomConnectionState, setRoomConnectionState] = React.useState(initialState);
-
-    React.useEffect(() => {
-        const unsubscribe = observeStore(store, selectRoomConnectionState, setRoomConnectionState);
+    const roomConfig = React.useMemo((): AppConfig => {
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
         const roomKey = roomConnectionOptions.roomKey || searchParams.get("roomKey");
 
-        const roomConfig = {
+        return {
             displayName: roomConnectionOptions.displayName || "Guest",
             localMediaOptions: roomConnectionOptions.localMedia ? undefined : roomConnectionOptions.localMediaOptions,
             roomKey,
@@ -89,102 +63,84 @@ export function useRoomConnection(
             userAgent: `browser-sdk:${browserSdkVersion}`,
             externalId: roomConnectionOptions.externalId || null,
         };
+    }, [roomUrl, roomConnectionOptions]);
 
-        setRoomConfig(roomConfig);
-
-        // TODO: remove this in SDK v3. Require developers to call joinRoom() API explicitly instead.
-        store.dispatch(doAppStart(roomConfig));
-
+    React.useEffect(() => {
         return () => {
-            store.dispatch(doAppStop());
-            unsubscribe();
+            dispatch(doAppStop());
         };
     }, []);
 
-    React.useEffect(() => {
-        if (store && !boundVideoView) {
-            setBoundVideoView(() => (props: VideoViewComponentProps): JSX.Element => {
-                return React.createElement(
-                    VideoView as React.ComponentType<VideoViewComponentProps>,
-                    Object.assign({}, props, {
-                        onResize: ({
-                            stream,
-                            width,
-                            height,
-                        }: {
-                            stream: MediaStream;
-                            width: number;
-                            height: number;
-                        }) => {
-                            store.dispatch(
-                                doRtcReportStreamResolution({
-                                    streamId: stream.id,
-                                    width,
-                                    height,
-                                }),
-                            );
-                        },
-                    }),
-                );
-            });
-        }
-    }, [store, boundVideoView]);
-
-    const sendChatMessage = React.useCallback((text: string) => store.dispatch(doSendChatMessage({ text })), [store]);
-    const knock = React.useCallback(() => store.dispatch(doKnockRoom()), [store]);
+    const sendChatMessage = React.useCallback((text: string) => dispatch(doSendChatMessage({ text })), [dispatch]);
+    const knock = React.useCallback(() => dispatch(doKnockRoom()), [dispatch]);
     const setDisplayName = React.useCallback(
-        (displayName: string) => store.dispatch(doSetDisplayName({ displayName })),
-        [store],
+        (displayName: string) => dispatch(doSetDisplayName({ displayName })),
+        [dispatch],
     );
     const toggleCamera = React.useCallback(
-        (enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })),
-        [store],
+        (enabled?: boolean) => dispatch(toggleCameraEnabled({ enabled })),
+        [dispatch],
     );
     const toggleMicrophone = React.useCallback(
-        (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
-        [store],
+        (enabled?: boolean) => dispatch(toggleMicrophoneEnabled({ enabled })),
+        [dispatch],
     );
     const toggleLowDataMode = React.useCallback(
-        (enabled?: boolean) => store.dispatch(toggleLowDataModeEnabled({ enabled })),
-        [store],
+        (enabled?: boolean) => dispatch(toggleLowDataModeEnabled({ enabled })),
+        [dispatch],
+    );
+    const toggleRaiseHand = React.useCallback(
+        (enabled?: boolean) => dispatch(doSetLocalStickyReaction({ enabled })),
+        [dispatch],
+    );
+    const askToSpeak = React.useCallback(
+        (participantId: string) => dispatch(doRequestAudioEnable({ clientIds: [participantId], enable: true })),
+        [dispatch],
     );
     const acceptWaitingParticipant = React.useCallback(
-        (participantId: string) => store.dispatch(doAcceptWaitingParticipant({ participantId })),
-        [store],
+        (participantId: string) => dispatch(doAcceptWaitingParticipant({ participantId })),
+        [dispatch],
     );
     const rejectWaitingParticipant = React.useCallback(
-        (participantId: string) => store.dispatch(doRejectWaitingParticipant({ participantId })),
-        [store],
+        (participantId: string) => dispatch(doRejectWaitingParticipant({ participantId })),
+        [dispatch],
     );
-    const startCloudRecording = React.useCallback(() => store.dispatch(doStartCloudRecording()), [store]);
-    const startScreenshare = React.useCallback(() => store.dispatch(doStartScreenshare()), [store]);
-    const stopCloudRecording = React.useCallback(() => store.dispatch(doStopCloudRecording()), [store]);
-    const stopScreenshare = React.useCallback(() => store.dispatch(doStopScreenshare()), [store]);
-    const joinRoom = React.useCallback(
-        () => (roomConfig ? store.dispatch(doAppStart(roomConfig)) : () => {}),
-        [store, roomConfig],
-    );
-    const leaveRoom = React.useCallback(() => store.dispatch(doAppStop()), [store]);
-    const lockRoom = React.useCallback((locked: boolean) => store.dispatch(doLockRoom({ locked })), [store]);
+    const startCloudRecording = React.useCallback(() => dispatch(doStartCloudRecording()), [dispatch]);
+    const startScreenshare = React.useCallback(() => dispatch(doStartScreenshare()), [dispatch]);
+    const stopCloudRecording = React.useCallback(() => dispatch(doStopCloudRecording()), [dispatch]);
+    const stopScreenshare = React.useCallback(() => dispatch(doStopScreenshare()), [dispatch]);
+    const joinRoom = React.useCallback(() => dispatch(doAppStart(roomConfig)), [dispatch]);
+    const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
+    const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
     const muteParticipants = React.useCallback(
-        (clientIds: string[]) => {
-            store.dispatch(doRequestAudioEnable({ clientIds, enable: false }));
+        (participantIds: string[]) => {
+            dispatch(doRequestAudioEnable({ clientIds: participantIds, enable: false }));
         },
-        [store],
+        [dispatch],
+    );
+    const spotlightParticipant = React.useCallback(
+        (participantId: string) => dispatch(doSpotlightParticipant({ id: participantId })),
+        [dispatch],
+    );
+    const removeSpotlight = React.useCallback(
+        (participantId: string) => dispatch(doRemoveSpotlight({ id: participantId })),
+        [dispatch],
     );
     const kickParticipant = React.useCallback(
-        (clientId: string) => store.dispatch(doKickParticipant({ clientId })),
-        [store],
+        (participantId: string) => dispatch(doKickParticipant({ clientId: participantId })),
+        [dispatch],
     );
-    const endMeeting = React.useCallback(
-        (stayBehind?: boolean) => store.dispatch(doEndMeeting({ stayBehind })),
-        [store],
-    );
+    const endMeeting = React.useCallback((stayBehind?: boolean) => dispatch(doEndMeeting({ stayBehind })), [dispatch]);
+
+    const { events, ...state } = roomConnectionState;
 
     return {
-        state: roomConnectionState,
+        state,
+        events,
         actions: {
             toggleLowDataMode,
+            toggleRaiseHand,
+            askToSpeak,
             acceptWaitingParticipant,
             knock,
             joinRoom,
@@ -202,10 +158,8 @@ export function useRoomConnection(
             stopScreenshare,
             toggleCamera,
             toggleMicrophone,
+            spotlightParticipant,
+            removeSpotlight,
         },
-        components: {
-            VideoView: boundVideoView || VideoView,
-        },
-        _ref: store,
     };
 }

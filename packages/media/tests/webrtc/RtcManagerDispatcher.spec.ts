@@ -6,7 +6,7 @@ import * as mediasoupClient from "mediasoup-client";
 
 import { PROTOCOL_RESPONSES } from "../../src/model/protocol";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
 
 const originalMediasoupDevice = mediasoupClient.Device;
@@ -49,7 +49,7 @@ describe("RtcManagerDispatcher", () => {
         let emitted;
         emitter.on(
             CONNECTION_STATUS.EVENTS.RTC_MANAGER_CREATED,
-            ({ rtcManager }: { rtcManager: any }) => (emitted = rtcManager)
+            ({ rtcManager }: { rtcManager: any }) => (emitted = rtcManager),
         );
         serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.ROOM_JOINED, {
             selfId,
@@ -90,7 +90,7 @@ describe("RtcManagerDispatcher", () => {
     it("replaces RTC manager when switching room mode", () => {
         const messages: any[] = [];
         emitter.on(CONNECTION_STATUS.EVENTS.RTC_MANAGER_CREATED, ({ rtcManager }: { rtcManager: any }) =>
-            messages.push({ create: rtcManager })
+            messages.push({ create: rtcManager }),
         );
         emitter.on(CONNECTION_STATUS.EVENTS.RTC_MANAGER_DESTROYED, () => messages.push({ destroy: true }));
 

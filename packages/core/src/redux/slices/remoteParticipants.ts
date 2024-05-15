@@ -1,13 +1,12 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest } from "@whereby.com/media";
-import { RemoteParticipant, Screenshare, StreamState } from "../../RoomParticipant";
+import { RemoteParticipant, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
-import { selectLocalScreenshareStream } from "./localScreenshare";
 import { createAppAuthorizedThunk } from "../thunk";
-import { selectIsAuthorizedToRequestAudioEnable } from "./authorization";
+import { selectIsAuthorizedToAskToSpeak, selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
@@ -29,6 +28,10 @@ function createRemoteParticipant(client: SignalClient, newJoiner = false): Remot
         newJoiner,
     };
 }
+
+// function isCaptionerClient(client: SignalClient) {
+//     return client.roleName === "captioner" || client.role?.roleName === "captioner";
+// }
 
 function findParticipant(state: RemoteParticipantState, participantId: string) {
     const index = state.remoteParticipants.findIndex((c) => c.id === participantId);
@@ -253,10 +256,11 @@ export const remoteParticipantsSlice = createSlice({
                 return state;
             }
 
-            const { clientId, displayName } = payload;
+            const { clientId, displayName, stickyReaction } = payload;
 
             return updateParticipant(state, clientId, {
                 displayName,
+                stickyReaction,
             });
         });
         builder.addCase(signalEvents.screenshareStarted, (state, action) => {
@@ -283,6 +287,13 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToRequestAudioEnable(state),
     (payload: AudioEnableRequest) => (_, getState) => {
         const state = getState();
+        const canEnableRemoteAudio = selectIsAuthorizedToAskToSpeak(state);
+
+        if (payload.enable && !canEnableRemoteAudio) {
+            console.warn("Not authorized to perform this action");
+            return;
+        }
+
         const socket = selectSignalConnectionRaw(state).socket;
 
         socket?.emit("request_audio_enable", payload);
@@ -296,34 +307,7 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
 
-export const selectScreenshares = createSelector(
-    selectLocalScreenshareStream,
+export const selectNumParticipants = createSelector(
     selectRemoteParticipants,
-    (localScreenshareStream, remoteParticipants) => {
-        const screenshares: Screenshare[] = [];
-
-        if (localScreenshareStream) {
-            screenshares.push({
-                id: localScreenshareStream.id || "local-screenshare",
-                participantId: "local",
-                hasAudioTrack: localScreenshareStream.getTracks().some((track) => track.kind === "audio"),
-                stream: localScreenshareStream,
-                isLocal: true,
-            });
-        }
-
-        for (const participant of remoteParticipants) {
-            if (participant.presentationStream) {
-                screenshares.push({
-                    id: participant.presentationStream.id || `pres-${participant.id}`,
-                    participantId: participant.id,
-                    hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
-                    stream: participant.presentationStream,
-                    isLocal: false,
-                });
-            }
-        }
-
-        return screenshares;
-    },
+    (clients) => clients.filter((c) => !NON_PERSON_ROLES.includes(c.roleName)).length + 1,
 );

@@ -1,6 +1,7 @@
-import { Bounds, Frame, makeFrame } from "./layout";
+import { makeFrame } from "./helpers";
+import { type Bounds, type Frame } from "./types";
 
-export function fitToBounds(aspectRatio: number, containerSize: Bounds) {
+export function fitToBounds(aspectRatio: number, containerSize: Bounds): Bounds {
     const { width, height } = containerSize;
     const contentHeight = height;
     const contentWidth = contentHeight * aspectRatio;
@@ -16,7 +17,7 @@ export function fitToFrame({
 }: {
     contentAspectRatio: number;
     containerFrame: Frame;
-}) {
+}): Frame {
     const contentBounds = fitToBounds(contentAspectRatio, {
         width: containerFrame.bounds.width,
         height: containerFrame.bounds.height,

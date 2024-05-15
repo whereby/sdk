@@ -3,7 +3,7 @@ import { VideoView } from "../../lib/react";
 import { RoomConnectionRef } from "../../lib/react/useRoomConnection";
 
 export default function Grid({ roomConnection }: { roomConnection: RoomConnectionRef }) {
-    const { state, components } = roomConnection;
+    const { state } = roomConnection;
 
     const streams = state.remoteParticipants.filter((p) => !!p.stream).map((p) => p.stream);
 
@@ -11,7 +11,7 @@ export default function Grid({ roomConnection }: { roomConnection: RoomConnectio
         <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
             {streams.map((s) => {
                 if (!s) return;
-                return <Reporting key={s.id} stream={s} VW={components.VideoView} />;
+                return <Reporting key={s.id} stream={s} VW={VideoView} />;
             })}
         </div>
     );

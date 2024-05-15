@@ -57,6 +57,11 @@ export interface SignalClient {
     externalId: string | null;
 }
 
+export interface Spotlight {
+    clientId: string;
+    streamId: string;
+}
+
 export interface AudioEnabledEvent {
     clientId: string;
     isAudioEnabled: boolean;
@@ -119,6 +124,7 @@ export interface RoomJoinedEvent {
     room?: {
         clients: SignalClient[];
         knockers: SignalKnocker[];
+        spotlights: Spotlight[];
         session: {
             createdAt: string;
             id: string;
@@ -161,15 +167,37 @@ export interface VideoEnabledEvent {
     isVideoEnabled: boolean;
 }
 
+export interface ClientMetadataPayload {
+    displayName: string;
+    stickyReaction?: {
+        reaction: string;
+        timestamp: string;
+    } | null;
+}
+
 export interface ClientMetadataReceivedEvent {
     error?: string;
     type?: string;
-    payload?: { clientId: string; displayName: string };
+    payload?: ClientMetadataPayload & {
+        clientId: string;
+    };
 }
 
 export interface AudioEnableRequestedEvent {
     requestedByClientId: string;
     enable: boolean;
+}
+
+export interface SpotlightAddedEvent {
+    clientId: string;
+    streamId: string;
+    requestedByClientId: string;
+}
+
+export interface SpotlightRemovedEvent {
+    clientId: string;
+    streamId: string;
+    requestedByClientId: string;
 }
 
 export interface SignalEvents {
@@ -195,6 +223,8 @@ export interface SignalEvents {
     room_session_ended: RoomSessionEndedEvent;
     screenshare_started: ScreenshareStartedEvent;
     screenshare_stopped: ScreenshareStoppedEvent;
+    spotlight_added: SpotlightAddedEvent;
+    spotlight_removed: SpotlightRemovedEvent;
     streaming_stopped: void;
     video_enabled: VideoEnabledEvent;
 }
@@ -221,12 +251,28 @@ export interface KnockRoomRequest {
     roomName: string;
 }
 
+export interface SendClientMetadataRequest {
+    type: string;
+    payload: ClientMetadataPayload;
+}
+
 export interface AudioEnableRequest {
     clientIds: string[];
     enable: boolean;
 }
 
+export interface AddSpotlightRequest {
+    clientId: string;
+    streamId: string;
+}
+
+export interface RemoveSpotlightRequest {
+    clientId: string;
+    streamId: string;
+}
+
 export interface SignalRequests {
+    add_spotlight: AddSpotlightRequest;
     chat_message: { text: string };
     enable_audio: { enabled: boolean };
     enable_video: { enabled: boolean };
@@ -235,8 +281,9 @@ export interface SignalRequests {
     join_room: JoinRoomRequest;
     knock_room: KnockRoomRequest;
     leave_room: void;
+    remove_spotlight: RemoveSpotlightRequest;
     request_audio_enable: AudioEnableRequest;
-    send_client_metadata: { type: string; payload: { displayName?: string } };
+    send_client_metadata: { type: string; payload: { displayName?: string; stickyReaction?: unknown } };
     set_lock: { locked: boolean };
     start_recording: { recording: string };
     stop_recording: void;
