@@ -1,5 +1,20 @@
 # @whereby.com/core
 
+## 0.16.0
+
+### Minor Changes
+
+- a442c75: Add spotlight functionality
+- 4e48abd: Add video grid component
+- 9171216: Improve grid component
+- 869695f: Add ability to change speaker device
+- af71f4e: Add a notifications system to core and expose notifications in the useRoomConnection hook
+
+### Patch Changes
+
+- Updated dependencies [a442c75]
+  - @whereby.com/media@1.4.2
+
 ## 0.15.2
 
 ### Patch Changes

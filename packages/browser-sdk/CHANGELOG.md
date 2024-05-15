@@ -1,5 +1,31 @@
 # @whereby.com/browser-sdk
 
+## 3.0.0
+
+### Major Changes
+
+- 869695f: - Introduce Provider to the Whereby browser-sdk
+  - This is added so that we can have a shared state between all components and hooks
+  - All usage of the library needs to be wrapped in a Provider.
+- 6d30526: Breaking change: require call to joinRoom() before joining a room session
+
+### Minor Changes
+
+- a442c75: Add spotlight functionality
+- 9e19728: Rebase beta version on latest main
+- 4e48abd: Add video grid component
+- 9171216: Improve grid component
+- af71f4e: Add a notifications system to core and expose notifications in the useRoomConnection hook
+
+### Patch Changes
+
+- Updated dependencies [a442c75]
+- Updated dependencies [4e48abd]
+- Updated dependencies [9171216]
+- Updated dependencies [869695f]
+- Updated dependencies [af71f4e]
+  - @whereby.com/core@0.16.0
+
 ## 2.13.0
 
 ### Minor Changes
