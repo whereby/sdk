@@ -256,6 +256,9 @@ export default class VegaRtcManager implements RtcManager {
             roomName: this._room.name,
             eventClaim: this._room.isClaimed ? this._eventClaim : null,
             lowBw: "true",
+            ...Object.keys(this._features || {})
+                .filter((featureKey) => this._features[featureKey] && /^sfu/.test(featureKey))
+                .reduce((prev, current) => ({ ...prev, [current]: this._features[current] }), {}),
         });
         const queryString = searchParams.toString();
         const wsUrl = `wss://${host}?${queryString}`;
