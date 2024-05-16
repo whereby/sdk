@@ -5,7 +5,6 @@ import VideoExperience from "./components/VideoExperience";
 import { getFakeMediaStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
-import { Grid as VideoGrid } from "../lib/react/Grid";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
 import { StoryFn } from "@storybook/react";
 
@@ -271,94 +270,3 @@ RoomConnectionStrictMode.parameters = {
         },
     },
 };
-
-export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
-    if (!roomUrl || !roomUrl.match(roomRegEx)) {
-        return <p>Set room url on the Controls panel</p>;
-    }
-    const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
-
-    const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
-    const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
-
-    useEffect(() => {
-        joinRoom();
-        return () => leaveRoom();
-    }, []);
-
-    return (
-        <>
-            <div className="controls">
-                <button onClick={() => toggleCamera()}>Toggle camera</button>
-                <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
-                <button
-                    onClick={() => {
-                        if (isLocalScreenshareActive) {
-                            stopScreenshare();
-                        } else {
-                            startScreenshare();
-                        }
-                        setIsLocalScreenshareActive((prev) => !prev);
-                    }}
-                >
-                    Toggle screenshare
-                </button>
-            </div>
-            <div style={{ height: "500px", width: "100%" }}>
-                <VideoGrid videoGridGap={8} stageParticipantLimit={3} />
-            </div>
-        </>
-    );
-};
-
-// export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
-//     if (!roomUrl || !roomUrl.match(roomRegEx)) {
-//         return <p>Set room url on the Controls panel</p>;
-//     }
-
-//     const {
-//         actions: { joinRoom, leaveRoom },
-//     } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
-
-//     useEffect(() => {
-//         joinRoom();
-//         return () => leaveRoom();
-//     }, []);
-
-//     return (
-//         <div style={{ height: "100vh" }}>
-//             <VideoGrid
-//                 videoGridGap={10}
-//                 renderParticipant={({ participant }) => {
-//                     if (!participant.stream) {
-//                         return null;
-//                     }
-
-//                     return (
-//                         <div
-//                             style={{
-//                                 display: "flex",
-//                                 flexDirection: "column",
-//                                 alignItems: "center",
-//                                 justifyContent: "center",
-//                                 height: "100%",
-//                             }}
-//                         >
-//                             <VideoView
-//                                 style={{
-//                                     border: "4px dashed red",
-//                                     boxSizing: "border-box",
-//                                     borderRadius: "100%",
-//                                     objectFit: "cover",
-//                                     width: "60%",
-//                                 }}
-//                                 stream={participant.stream}
-//                             />
-//                             <p>{participant.displayName}</p>
-//                         </div>
-//                     );
-//                 }}
-//             />
-//         </div>
-//     );
-// };

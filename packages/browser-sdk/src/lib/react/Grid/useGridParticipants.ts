@@ -61,20 +61,25 @@ interface Props {
     activeVideosSubgridTrigger?: number;
     forceSubgrid?: boolean;
     stageParticipantLimit?: number;
+    enableSubgrid?: boolean;
 }
 
 function useGridParticipants({
     activeVideosSubgridTrigger = ACTIVE_VIDEO_SUBGRID_TRIGGER,
     stageParticipantLimit = STAGE_PARTICIPANT_LIMIT,
     forceSubgrid = true,
+    enableSubgrid = true,
 }: Props = {}) {
     const allClientViews = useAppSelector(selectAllClientViews);
     const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
     const numParticipants = useAppSelector(selectNumParticipants);
 
     const shouldShowSubgrid = React.useMemo(() => {
+        if (!enableSubgrid) {
+            return false;
+        }
         return forceSubgrid ? true : numParticipants > stageParticipantLimit;
-    }, [forceSubgrid, numParticipants, stageParticipantLimit]);
+    }, [forceSubgrid, numParticipants, stageParticipantLimit, enableSubgrid]);
 
     const clientViewsInSubgrid = React.useMemo(() => {
         return calculateSubgridViews({
