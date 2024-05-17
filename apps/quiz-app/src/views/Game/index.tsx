@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Flex, Box } from "@chakra-ui/react";
 import { useRoomConnection } from "@whereby.com/browser-sdk/react";
 
@@ -24,8 +24,9 @@ const Game = ({ localMedia, displayName, roomUrl }: GameProps) => {
         displayName,
     });
 
-    const { state: roomState } = roomConnection;
+    const { state: roomState, actions: roomActions } = roomConnection;
     const { remoteParticipants, localParticipant } = roomState;
+    const { joinRoom, leaveRoom } = roomActions;
 
     const { state: quizState, actions: quizActions } = useQuizGame(roomConnection, { isQuizMaster });
 
@@ -69,6 +70,11 @@ const Game = ({ localMedia, displayName, roomUrl }: GameProps) => {
             break;
         default:
     }
+
+    useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     return (
         <Flex flexDirection="column" height="100%" gap={["4", null]}>
