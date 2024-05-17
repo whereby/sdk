@@ -22,7 +22,8 @@ function App() {
 
     const { state, actions } = roomConnection;
     const { localParticipant, remoteParticipants, screenshares, chatMessages } = state;
-    const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, sendChatMessage } = actions;
+    const { joinRoom, leaveRoom, toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, sendChatMessage } =
+        actions;
 
     function getDisplayName(id: string) {
         return remoteParticipants.find((p) => p.id === id)?.displayName || "Guest";
@@ -31,6 +32,11 @@ function App() {
     function scrollToBottom() {
         chatMessageBottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
+
+    React.useEffect(() => {
+        joinRoom();
+        return () => leaveRoom();
+    }, []);
 
     React.useEffect(() => {
         scrollToBottom();
