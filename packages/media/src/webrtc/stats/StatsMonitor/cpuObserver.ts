@@ -1,6 +1,7 @@
 import { OriginTrial, registerOriginTrials } from "../../../utils/originTrial";
 
 interface CpuObserverOptions {
+    /** Sample rate, in seconds */
     sampleRate: number;
     originTrials: OriginTrial[];
 }
@@ -31,7 +32,7 @@ export function startCpuObserver(
 
     if ("PressureObserver" in window) {
         pressureObserver = new (window.PressureObserver as any)(cb, { sampleRate });
-        pressureObserver.observe("cpu");
+        pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 });
 
         return {
             stop: () => {

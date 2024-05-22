@@ -48,7 +48,7 @@ describe("startCpuObserver", () => {
             startCpuObserver(cb, { originTrials, sampleRate }, window);
 
             expect(window.PressureObserver).toHaveBeenCalled();
-            expect(observe).toHaveBeenCalledWith("cpu");
+            expect(observe).toHaveBeenCalledWith("cpu", { sampleInterval: sampleRate * 1000 });
         });
 
         it("should return stop function", () => {
