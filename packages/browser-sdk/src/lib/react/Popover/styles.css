@@ -1,0 +1,40 @@
+.popoverContent {
+    width: 200px;
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    color: #333;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+    z-index: 50;
+    outline: none;
+}
+
+.popoverContent[data-state='open'] {
+    animation: animate-in 0.2s ease-in-out;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.popoverContent[data-state='closed'] {
+    animation: animate-out 0.2s ease-in-out;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+
+@keyframes animate-in {
+    from {
+        opacity: 1;
+        transform: scale(0.95);
+    }
+}
+
+@keyframes animate-out {
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
