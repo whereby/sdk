@@ -1,13 +1,98 @@
 import * as React from "react";
 
+import cn from "clsx";
 import { VideoView, VideoViewProps, WherebyVideoElement } from "../VideoView";
-import { ClientView, debounce } from "@whereby.com/core";
+import { ClientView, debounce, selectSpotlightedClientViews } from "@whereby.com/core";
 import { CellView } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
 import { useGrid } from "./useGrid";
 import { VideoMutedIndicator } from "./VideoMutedIndicator";
-import { DefaultParticipantMenu } from "./DefaultParticipantMenu";
-import { GridCellContext, GridContext, useGridCell } from "./GridContext";
+import {
+    ParticipantMenu,
+    ParticipantMenuContent,
+    ParticipantMenuItem,
+    ParticipantMenuTrigger,
+} from "./ParticipantMenu";
+import { EllipsisIcon } from "../../EllipsisIcon";
+import { useAppSelector } from "../Provider/hooks";
+import { MaximizeOnIcon } from "../../MaximizeOnIcon";
+import { SpotlightIcon } from "../../SpotlightIcon";
+
+interface DefaultParticipantMenuProps {
+    participant: ClientView;
+}
+
+const DefaultParticipantMenu = ({ participant }: DefaultParticipantMenuProps) => {
+    const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
+    const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
+    const { isHovered } = useGridCell();
+
+    if (!isHovered) {
+        return null;
+    }
+
+    return (
+        <ParticipantMenu>
+            <ParticipantMenuTrigger
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "#fff",
+                    borderRadius: "6px",
+                    padding: "4px",
+                }}
+            >
+                <EllipsisIcon height={20} width={20} transform={"rotate(90)"} />
+            </ParticipantMenuTrigger>
+            <ParticipantMenuContent>
+                <ParticipantMenuItem
+                    participantAction={"maximize"}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                    }}
+                >
+                    <MaximizeOnIcon height={16} width={16} />
+                    Maximize
+                </ParticipantMenuItem>
+                <ParticipantMenuItem
+                    participantAction={"spotlight"}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                    }}
+                >
+                    <SpotlightIcon height={16} width={16} />
+                    {isSpotlighted ? "Remove spotlight" : "Spotlight"}
+                </ParticipantMenuItem>
+            </ParticipantMenuContent>
+        </ParticipantMenu>
+    );
+};
+
+type GridCellContextValue = {
+    participant: ClientView;
+    isHovered: boolean;
+};
+
+const GridCellContext = React.createContext<GridCellContextValue>({} as GridCellContextValue);
+
+const useGridCell = () => {
+    const gridContext = React.useContext(GridContext);
+    const gridVideoViewContext = React.useContext(GridCellContext);
+
+    if (!gridVideoViewContext) {
+        throw new Error("useGridVideoView must be used within a GridVideoView");
+    }
+
+    return {
+        ...gridContext,
+        ...gridVideoViewContext,
+    };
+};
 
 type GridCellSelfProps = {
     participant: ClientView;
@@ -15,7 +100,7 @@ type GridCellSelfProps = {
 
 type GridCellProps = GridCellSelfProps & React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
 
-const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, participant, children }, ref) => {
+const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, participant, ...rest }, ref) => {
     const [isHovered, setIsHovered] = React.useState(false);
 
     const handleMouseEnter = React.useCallback(() => {
@@ -28,9 +113,13 @@ const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, p
 
     return (
         <GridCellContext.Provider value={{ participant, isHovered }}>
-            <div ref={ref} className={className} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                {children}
-            </div>
+            <div
+                ref={ref}
+                className={cn("gridCell", className)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                {...rest}
+            />
         </GridCellContext.Provider>
     );
 });
@@ -41,43 +130,36 @@ type GridVideoViewProps = Omit<VideoViewProps, "stream" | "ref"> & {
     stream?: MediaStream;
 };
 
-const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(({ stream, style, ...rest }, ref) => {
-    const videoEl = React.useRef<WherebyVideoElement>(null);
-    const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
-    if (!participant) return null;
-    const aspectRatio = clientAspectRatios[participant.id];
+const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
+    ({ className, stream, ...rest }, ref) => {
+        const videoEl = React.useRef<WherebyVideoElement>(null);
+        const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
+        if (!participant) return null;
+        const aspectRatio = clientAspectRatios[participant.id];
 
-    React.useImperativeHandle(ref, () => {
-        return videoEl.current!;
-    });
+        React.useImperativeHandle(ref, () => {
+            return videoEl.current!;
+        });
 
-    const handleResize = React.useCallback(() => {
-        const ar = videoEl.current && videoEl.current.captureAspectRatio();
+        const handleResize = React.useCallback(() => {
+            const ar = videoEl.current && videoEl.current.captureAspectRatio();
 
-        if (ar && ar !== aspectRatio && participant.id) {
-            onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
+            if (ar && ar !== aspectRatio && participant.id) {
+                onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
+            }
+        }, [clientAspectRatios, participant.id, onSetClientAspectRatio]);
+
+        const s = stream || participant.stream;
+
+        if (!s) {
+            return null;
         }
-    }, [clientAspectRatios, participant.id, onSetClientAspectRatio]);
 
-    const s = stream || participant.stream;
-
-    if (!s) {
-        return null;
-    }
-
-    return (
-        <VideoView
-            ref={videoEl}
-            style={{
-                borderRadius: "8px",
-                ...style,
-            }}
-            {...rest}
-            stream={s}
-            onVideoResize={handleResize}
-        />
-    );
-});
+        return (
+            <VideoView ref={videoEl} className={cn("", className)} {...rest} stream={s} onVideoResize={handleResize} />
+        );
+    },
+);
 
 GridVideoView.displayName = "GridVideoView";
 
@@ -122,6 +204,16 @@ function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellV
             );
     }
 }
+
+type GridContextValue = {
+    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
+    cellViewsVideoGrid: CellView[];
+    cellViewsInPresentationGrid: CellView[];
+    cellViewsInSubgrid: CellView[];
+    clientAspectRatios: { [key: string]: number };
+};
+
+const GridContext = React.createContext<GridContextValue>({} as GridContextValue);
 
 interface GridProps {
     renderParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
