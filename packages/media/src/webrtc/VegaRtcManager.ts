@@ -1411,6 +1411,10 @@ export default class VegaRtcManager implements RtcManager {
             spatialLayer = 1;
         }
 
+        if (this._features?.uncappedSingleRemoteVideoOn && numberOfActiveVideos === 1) {
+            spatialLayer = 2;
+            temporalLayer = numberOfTemporalLayers - 1;
+        }
         if (consumer.appData.spatialLayer !== spatialLayer || consumer.appData.temporalLayer !== temporalLayer) {
             consumer.appData.spatialLayer = spatialLayer;
             consumer.appData.temporalLayer = temporalLayer;
