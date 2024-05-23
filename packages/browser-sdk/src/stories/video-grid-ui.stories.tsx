@@ -1,10 +1,16 @@
 import * as React from "react";
 
 import { StoryFn } from "@storybook/react";
-
+import "./styles.css";
 import { useRoomConnection } from "../lib/react";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
-import { Grid as VideoGrid, GridVideoCell } from "../lib/react/Grid";
+import { Grid as VideoGrid, GridCell, GridVideoView } from "../lib/react/Grid";
+import {
+    ParticipantMenu,
+    ParticipantMenuContent,
+    ParticipantMenuItem,
+    ParticipantMenuTrigger,
+} from "../lib/react/Grid/ParticipantMenu";
 
 const defaultArgs = {
     title: "Examples/Video Grid UI",
@@ -36,12 +42,14 @@ export const VideoGridStory = {
         gridGap,
         videoGridGap,
         enableSubgrid,
+        enableParticipantMenu,
     }: {
         displayName: string;
         roomUrl: string;
         gridGap?: number;
         videoGridGap?: number;
         enableSubgrid?: boolean;
+        enableParticipantMenu?: boolean;
     }) => {
         if (!roomUrl || !roomUrl.match(roomRegEx)) {
             return <p>Set room url on the Controls panel</p>;
@@ -80,6 +88,7 @@ export const VideoGridStory = {
                         videoGridGap={videoGridGap}
                         stageParticipantLimit={3}
                         enableSubgrid={enableSubgrid}
+                        enableParticipantMenu={enableParticipantMenu}
                     />
                 </div>
             </>
@@ -90,12 +99,14 @@ export const VideoGridStory = {
         gridGap: { control: "range", min: 0, max: 100 },
         videoGridGap: { control: "range", min: 0, max: 100 },
         enableSubgrid: { control: "boolean" },
+        enableParticipantMenu: { control: "boolean" },
     },
     args: {
         ...defaultArgs.args,
         gridGap: 8,
         videoGridGap: 8,
         enableSubgrid: true,
+        enableParticipantMenu: true,
     },
 };
 
@@ -147,17 +158,35 @@ export const VideoGridStoryCustom = {
                     <VideoGrid
                         gridGap={gridGap}
                         videoGridGap={videoGridGap}
-                        stageParticipantLimit={3}
                         enableSubgrid={enableSubgrid}
                         renderParticipant={({ participant }) => {
                             return (
-                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                                    <GridVideoView {...participant} />
-                                    {participant?.displayName}
-                                </div>
+                                <GridCell className={"gridCell"} participant={participant}>
+                                    <GridVideoView className={"videoView"} />
+                                    <ParticipantMenu>
+                                        <ParticipantMenuTrigger className={"participantMenuTrigger"}>
+                                            Actions
+                                        </ParticipantMenuTrigger>
+                                        <ParticipantMenuContent className={"participantMenuContent"}>
+                                            <ParticipantMenuItem
+                                                className={"participantMenuItem"}
+                                                participantAction={"maximize"}
+                                            >
+                                                Maximize
+                                            </ParticipantMenuItem>
+                                            <ParticipantMenuItem
+                                                className={"participantMenuItem"}
+                                                participantAction={"spotlight"}
+                                            >
+                                                Spotlight
+                                            </ParticipantMenuItem>
+                                        </ParticipantMenuContent>
+                                    </ParticipantMenu>
+                                    {participant.displayName}
+                                </GridCell>
                             );
                         }}
-                    ></VideoGrid>
+                    />
                 </div>
             </>
         );

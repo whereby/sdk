@@ -87,6 +87,7 @@ function useGrid({
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,
+        clientAspectRatios,
         videoStage,
         setContainerBounds,
         setClientAspectRatios,

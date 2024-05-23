@@ -16,7 +16,7 @@ export type WherebyVideoElement = HTMLVideoElement & {
     onVideoResize: ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => void;
 };
 
-type VideoViewProps = VideoViewSelfProps &
+export type VideoViewProps = VideoViewSelfProps &
     React.DetailedHTMLProps<React.VideoHTMLAttributes<WherebyVideoElement>, WherebyVideoElement>;
 
 type AudioElement = HTMLAudioElement & { setSinkId?: (deviceId: string) => void };
