@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 1.5.1
+
+### Patch Changes
+
+- 74f0c4c: Refactor StatsMonitor to allow for unit testing
+- b9013ce: Add sampleInterval to cpu observer
+
 ## 1.5.0
 
 ### Minor Changes
