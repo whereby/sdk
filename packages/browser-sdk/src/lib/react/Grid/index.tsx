@@ -41,36 +41,43 @@ type GridVideoViewProps = Omit<VideoViewProps, "stream" | "ref"> & {
     stream?: MediaStream;
 };
 
-const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
-    ({ className, stream, ...rest }, ref) => {
-        const videoEl = React.useRef<WherebyVideoElement>(null);
-        const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
-        if (!participant) return null;
-        const aspectRatio = clientAspectRatios[participant.id];
+const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(({ stream, style, ...rest }, ref) => {
+    const videoEl = React.useRef<WherebyVideoElement>(null);
+    const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
+    if (!participant) return null;
+    const aspectRatio = clientAspectRatios[participant.id];
 
-        React.useImperativeHandle(ref, () => {
-            return videoEl.current!;
-        });
+    React.useImperativeHandle(ref, () => {
+        return videoEl.current!;
+    });
 
-        const handleResize = React.useCallback(() => {
-            const ar = videoEl.current && videoEl.current.captureAspectRatio();
+    const handleResize = React.useCallback(() => {
+        const ar = videoEl.current && videoEl.current.captureAspectRatio();
 
-            if (ar && ar !== aspectRatio && participant.id) {
-                onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
-            }
-        }, [clientAspectRatios, participant.id, onSetClientAspectRatio]);
-
-        const s = stream || participant.stream;
-
-        if (!s) {
-            return null;
+        if (ar && ar !== aspectRatio && participant.id) {
+            onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
         }
+    }, [clientAspectRatios, participant.id, onSetClientAspectRatio]);
 
-        return (
-            <VideoView ref={videoEl} className={cn("", className)} {...rest} stream={s} onVideoResize={handleResize} />
-        );
-    },
-);
+    const s = stream || participant.stream;
+
+    if (!s) {
+        return null;
+    }
+
+    return (
+        <VideoView
+            ref={videoEl}
+            style={{
+                borderRadius: "8px",
+                ...style,
+            }}
+            {...rest}
+            stream={s}
+            onVideoResize={handleResize}
+        />
+    );
+});
 
 GridVideoView.displayName = "GridVideoView";
 
