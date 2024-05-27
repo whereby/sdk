@@ -8,11 +8,12 @@
   "scripts": {
     "build": "turbo build",
     "changeset": "changeset",
-    "dev": "turbo dev --filter=@whereby.com/browser-sdk",
+    "dev": "turbo storybook:dev",
     "dev:embed-element-app": "turbo dev --filter=embed-element-app",
     "dev:telehealth-app": "turbo dev --filter=telehealth-tutorial-app",
     "dev:quiz-app": "turbo dev --filter=quiz-app",
     "dev:sample-app": "turbo dev --filter=sample-app",
+    "storybook:dev": "turbo run storybook:dev --parallel",
     "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
