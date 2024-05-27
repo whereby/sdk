@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.6.0
+
+### Minor Changes
+
+- 80836f3: media: Allows uncapped 1:1 meetings on SFU
+
 ## 1.5.1
 
 ### Patch Changes
