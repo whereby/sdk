@@ -5,6 +5,7 @@ import { calculateLayout } from "./layout/stageLayout";
 import { makeVideoCellView } from "./layout/cellView";
 import { STAGE_PARTICIPANT_LIMIT } from "./contants";
 import { useGridParticipants } from "./useGridParticipants";
+import { ClientView } from "packages/core/dist";
 
 interface Props {
     activeVideosSubgridTrigger?: number;
@@ -25,11 +26,13 @@ function useGrid({
 }: Props = {}) {
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
+    const [maximizedParticipant, setMaximizedParticipant] = React.useState<ClientView | null>(null);
     const { clientViewsInGrid, clientViewsInPresentationGrid, clientViewsInSubgrid } = useGridParticipants({
         activeVideosSubgridTrigger,
         forceSubgrid,
         stageParticipantLimit,
         enableSubgrid,
+        maximizedParticipant,
     });
 
     const cellViewsVideoGrid = React.useMemo(() => {
@@ -91,6 +94,8 @@ function useGrid({
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
+        maximizedParticipant,
+        setMaximizedParticipant,
     };
 }
 

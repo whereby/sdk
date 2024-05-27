@@ -14,11 +14,13 @@ export function calculateSubgridViews({
     activeVideosSubgridTrigger,
     shouldShowSubgrid,
     spotlightedParticipants,
+    maximizedParticipant,
 }: {
     clientViews: ClientView[];
     activeVideosSubgridTrigger: number;
     shouldShowSubgrid: boolean;
     spotlightedParticipants: ClientView[];
+    maximizedParticipant?: ClientView | null;
 }) {
     if (!shouldShowSubgrid) {
         return [];
@@ -26,7 +28,11 @@ export function calculateSubgridViews({
     const hasSpotlights = spotlightedParticipants.length > 0;
     const hasPresentationStage = hasSpotlights;
 
-    const notSpotlighted = clientViews.filter(
+    const notMaximized = maximizedParticipant
+        ? clientViews.filter((client) => client.id !== maximizedParticipant.id)
+        : clientViews;
+
+    const notSpotlighted = notMaximized.filter(
         (client) => !client.isPresentation && !spotlightedParticipants.includes(client),
     );
     const noVideoViews = notSpotlighted.filter((client) => !client.isVideoEnabled);
@@ -62,6 +68,7 @@ interface Props {
     forceSubgrid?: boolean;
     stageParticipantLimit?: number;
     enableSubgrid?: boolean;
+    maximizedParticipant?: ClientView | null;
 }
 
 function useGridParticipants({
@@ -69,6 +76,7 @@ function useGridParticipants({
     stageParticipantLimit = STAGE_PARTICIPANT_LIMIT,
     forceSubgrid = true,
     enableSubgrid = true,
+    maximizedParticipant,
 }: Props = {}) {
     const allClientViews = useAppSelector(selectAllClientViews);
     const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
@@ -87,6 +95,7 @@ function useGridParticipants({
             activeVideosSubgridTrigger,
             shouldShowSubgrid,
             spotlightedParticipants,
+            maximizedParticipant,
         });
     }, [allClientViews, shouldShowSubgrid, activeVideosSubgridTrigger, spotlightedParticipants]);
 
@@ -95,8 +104,12 @@ function useGridParticipants({
     }, [allClientViews, clientViewsInSubgrid]);
 
     const clientViewsInPresentationGrid = React.useMemo(() => {
+        if (maximizedParticipant) {
+            return [maximizedParticipant];
+        }
+
         return spotlightedParticipants;
-    }, [spotlightedParticipants]);
+    }, [spotlightedParticipants, maximizedParticipant]);
 
     const clientViewsInGrid = React.useMemo(() => {
         return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));

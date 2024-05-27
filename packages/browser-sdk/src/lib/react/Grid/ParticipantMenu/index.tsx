@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "../../Popover";
-import { useGridCell } from "..";
+import { useGridCell } from "../GridContext";
 import { PopoverProps } from "@radix-ui/react-popover";
 import { useAppDispatch, useAppSelector } from "../../Provider/hooks";
 import { doRemoveSpotlight, doSpotlightParticipant, selectSpotlightedClientViews } from "@whereby.com/core";
@@ -95,27 +95,29 @@ const ParticipantMenuTrigger = React.forwardRef<
 ParticipantMenuTrigger.displayName = PopoverTrigger.displayName;
 
 type ParticipantMenuItemProps = React.ComponentPropsWithoutRef<"button"> & {
-    participantAction?: "maximize" | "minimize" | "spotlight";
+    participantAction?: "maximize" | "spotlight";
 };
 
 const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, ParticipantMenuItemProps>(
     ({ children, style, participantAction, ...props }, ref) => {
-        const { participant, setOpen } = useParticipantMenu();
+        const { participant, setOpen, maximizedParticipant, setMaximizedParticipant } = useParticipantMenu();
         const dispatch = useAppDispatch();
         const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
         const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
+        const isMaximized = maximizedParticipant?.id === participant.id;
 
         let onClick;
 
         switch (participantAction) {
             case "maximize":
                 onClick = () => {
-                    console.log("maximize", participant.id);
+                    if (isMaximized) {
+                        setMaximizedParticipant(null);
+                    } else {
+                        setMaximizedParticipant(participant);
+                    }
                     setOpen(false);
                 };
-                break;
-            case "minimize":
-                onClick = () => console.log("minimize", participant.id);
                 break;
             case "spotlight":
                 onClick = () => {

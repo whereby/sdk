@@ -1,97 +1,13 @@
 import * as React from "react";
 
 import { VideoView, VideoViewProps, WherebyVideoElement } from "../VideoView";
-import { ClientView, debounce, selectSpotlightedClientViews } from "@whereby.com/core";
+import { ClientView, debounce } from "@whereby.com/core";
 import { CellView } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
 import { useGrid } from "./useGrid";
 import { VideoMutedIndicator } from "./VideoMutedIndicator";
-import {
-    ParticipantMenu,
-    ParticipantMenuContent,
-    ParticipantMenuItem,
-    ParticipantMenuTrigger,
-} from "./ParticipantMenu";
-import { EllipsisIcon } from "../../EllipsisIcon";
-import { useAppSelector } from "../Provider/hooks";
-import { MaximizeOnIcon } from "../../MaximizeOnIcon";
-import { SpotlightIcon } from "../../SpotlightIcon";
-
-interface DefaultParticipantMenuProps {
-    participant: ClientView;
-}
-
-const DefaultParticipantMenu = ({ participant }: DefaultParticipantMenuProps) => {
-    const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
-    const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
-    const { isHovered } = useGridCell();
-
-    if (!isHovered) {
-        return null;
-    }
-
-    return (
-        <ParticipantMenu>
-            <ParticipantMenuTrigger
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: "#fff",
-                    borderRadius: "6px",
-                    padding: "4px",
-                }}
-            >
-                <EllipsisIcon height={20} width={20} transform={"rotate(90)"} />
-            </ParticipantMenuTrigger>
-            <ParticipantMenuContent>
-                <ParticipantMenuItem
-                    participantAction={"maximize"}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                    }}
-                >
-                    <MaximizeOnIcon height={16} width={16} />
-                    Maximize
-                </ParticipantMenuItem>
-                <ParticipantMenuItem
-                    participantAction={"spotlight"}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                    }}
-                >
-                    <SpotlightIcon height={16} width={16} />
-                    {isSpotlighted ? "Remove spotlight" : "Spotlight"}
-                </ParticipantMenuItem>
-            </ParticipantMenuContent>
-        </ParticipantMenu>
-    );
-};
-
-type GridCellContextValue = {
-    participant: ClientView;
-    isHovered: boolean;
-};
-
-const GridCellContext = React.createContext<GridCellContextValue>({} as GridCellContextValue);
-
-const useGridCell = () => {
-    const gridContext = React.useContext(GridContext);
-    const gridVideoViewContext = React.useContext(GridCellContext);
-
-    if (!gridVideoViewContext) {
-        throw new Error("useGridVideoView must be used within a GridVideoView");
-    }
-
-    return {
-        ...gridContext,
-        ...gridVideoViewContext,
-    };
-};
+import { DefaultParticipantMenu } from "./DefaultParticipantMenu";
+import { GridCellContext, GridContext, useGridCell } from "./GridContext";
 
 type GridCellSelfProps = {
     participant: ClientView;
@@ -200,16 +116,6 @@ function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellV
     }
 }
 
-type GridContextValue = {
-    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
-    cellViewsVideoGrid: CellView[];
-    cellViewsInPresentationGrid: CellView[];
-    cellViewsInSubgrid: CellView[];
-    clientAspectRatios: { [key: string]: number };
-};
-
-const GridContext = React.createContext<GridContextValue>({} as GridContextValue);
-
 interface GridProps {
     renderParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
     gridGap?: number;
@@ -237,6 +143,8 @@ function Grid({
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
+        maximizedParticipant,
+        setMaximizedParticipant,
     } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit, gridGap, videoGridGap, enableSubgrid });
 
     const handleSetClientAspectRatio = React.useCallback(
@@ -316,6 +224,8 @@ function Grid({
                 cellViewsInPresentationGrid,
                 cellViewsInSubgrid,
                 clientAspectRatios,
+                maximizedParticipant,
+                setMaximizedParticipant,
             }}
         >
             <div
