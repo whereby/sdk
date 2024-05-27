@@ -1,15 +1,15 @@
-import * as helpers from "./webRtcHelpers";
 import * as mediasoupClient from "mediasoup-client";
+
+import VegaRtcManager from "../";
+
+import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
+import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 
 jest.mock("webrtc-adapter", () => {
     return {
         browserDetails: { browser: "chrome" },
     };
 });
-
-import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
-import VegaRtcManager from "../../src/webrtc/VegaRtcManager";
-import { itShouldThrowIfMissing } from "../helpers";
 
 const originalNavigator = global.navigator;
 const originalMediasoupDevice = mediasoupClient.Device;
