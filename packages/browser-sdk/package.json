@@ -39,13 +39,13 @@
     "prebuild": "rimraf dist",
     "build": "rollup -c rollup.config.js",
     "build:storybook": "storybook build",
-    "dev": "storybook dev -p 6007",
+    "dev": "storybook dev -p 6006",
     "test": "yarn test:lint && yarn test:unit",
     "test:lint": "eslint src/",
     "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
     "test:attw": "attw --pack . -f table --ignore-rules fallback-condition unexpected-module-syntax",
-    "storybook:dev": "storybook dev -p 6007 --ci",
+    "storybook:dev": "npx wait-on http://localhost:6007 && storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
   "devDependencies": {
@@ -69,6 +69,7 @@
     "tslib": "^2.4.1",
     "uuid": "^9.0.1",
     "vite": "^5.0.13",
+    "wait-on": "^7.2.0",
     "yalc": "^1.0.0-pre.53"
   },
   "dependencies": {

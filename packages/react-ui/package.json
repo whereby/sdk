@@ -30,14 +30,14 @@
   },
   "scripts": {
     "prebuild": "rimraf dist",
-    "dev": "storybook dev -p 6008",
+    "dev": "storybook dev -p 6007",
     "build": "rollup -c rollup.config.js",
     "test": "yarn test:lint && yarn test:unit",
     "test:lint": "eslint src/",
     "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
     "test:attw": "attw --pack . -f table --ignore-rules fallback-condition unexpected-module-syntax",
-    "storybook:dev": "storybook dev -p 6008 --ci",
+    "storybook:dev": "storybook dev -p 6007 --ci",
     "build-storybook": "storybook build"
   },
   "publishConfig": {

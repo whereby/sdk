@@ -15,6 +15,12 @@ function getAbsolutePath(value: string): any {
 }
 const config: StorybookConfig = {
     stories: ["../src/**/*.stories.@(js|jsx|ts|tsx)"],
+    refs: {
+        "react-ui": {
+            title: "React UI",
+            url: "http://localhost:6007",
+        },
+    },
     addons: [getAbsolutePath("@storybook/addon-links"), getAbsolutePath("@storybook/addon-essentials")],
     framework: {
         name: getAbsolutePath("@storybook/react-vite"),
