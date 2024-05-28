@@ -211,7 +211,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         return () => {
             roomConnection.events?.off("*", sdkEventHandler);
         };
-    }, [roomConnection.events]);
+    }, [roomConnection.events, roomConnection.state, roomConnection.actions]);
 
     if (connectionStatus === "ready") {
         return (
