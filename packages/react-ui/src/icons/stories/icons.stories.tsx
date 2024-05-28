@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { css } from "@emotion/react";
+import { StoryFn } from "@storybook/react";
 
 import * as Icons from "..";
 import { IconProps } from "../base-icon";
@@ -71,7 +72,13 @@ function IconGrid({ variant, size, light }: IconProps & { light?: boolean }) {
 
 export default {
     title: "Icons",
-    decorators: [(story: any) => <span style={{ color: "purple" }}>{story()}</span>],
+    decorators: [
+        (Story: StoryFn) => (
+            <span style={{ color: "purple" }}>
+                <Story />
+            </span>
+        ),
+    ],
 };
 
 export const Default = () => <IconGrid />;
