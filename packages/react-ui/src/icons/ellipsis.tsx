@@ -1,10 +1,10 @@
 import * as React from "react";
 
-import { BaseIcon } from "./base-icon";
+import { BaseIcon, IconProps } from "./base-icon";
 
-function Ellipsis({ className, ...rest }: React.SVGProps<SVGSVGElement>) {
+function Ellipsis(props: IconProps) {
     return (
-        <BaseIcon className={className} {...rest}>
+        <BaseIcon {...props}>
             <g>
                 <circle cx={"6"} cy={"12"} r={"2"} />
                 <circle cx={"12"} cy={"12"} r={"2"} />
