@@ -55,9 +55,7 @@
     "@storybook/builder-vite": "^8.1.4",
     "@storybook/react-vite": "^8.1.4",
     "@testing-library/react": "^14.0.0",
-    "@types/runes": "^0.4.3",
     "@vitejs/plugin-react": "^4.2.1",
-    "deep-object-diff": "^1.1.9",
     "dotenv": "^16.4.5",
     "dotenv-run-script": "^0.4.1",
     "lit-html": "^2.5.0",
@@ -69,18 +67,15 @@
     "tslib": "^2.4.1",
     "uuid": "^9.0.1",
     "vite": "^5.0.13",
-    "wait-on": "^7.2.0",
-    "yalc": "^1.0.0-pre.53"
+    "wait-on": "^7.2.0"
   },
   "dependencies": {
-    "@radix-ui/react-popover": "^1.0.7",
     "@reduxjs/toolkit": "^2.2.3",
     "@whereby.com/core": "0.17.0",
     "@whereby.com/react-ui": "*",
     "clsx": "^2.1.1",
     "heresy": "^1.0.4",
-    "react-redux": "^9.1.1",
-    "runes": "^0.4.3"
+    "react-redux": "^9.1.1"
   },
   "peerDependencies": {
     "react": "^18.2.0",
