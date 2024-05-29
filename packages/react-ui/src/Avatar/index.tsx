@@ -3,7 +3,7 @@ import * as React from "react";
 import { css } from "@emotion/react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import runes from "runes";
-import { colors } from "../theme";
+import { borderRadius, colors } from "../theme";
 
 export const getInitialsFromName = (name = "") => {
     name = name.trim();
@@ -53,7 +53,7 @@ const variantStyles = {
         borderRadius: "50%",
     }),
     square: css({
-        borderRadius: "4px",
+        borderRadius: borderRadius.extraSmall,
     }),
 };
 

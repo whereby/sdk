@@ -35,4 +35,61 @@ const colors = {
     meetingRed: "#f26b4d",
 };
 
-export { colors };
+const fontWeights = {
+    normal: 400,
+    medium: 500,
+    bold: 600,
+};
+
+const fontSizes = {
+    extraSmall: "12px",
+    small: "14px",
+    normal: "16px",
+    large: "18px",
+    subHeadlineSmall: "24px",
+    subHeadlineNormal: "28px",
+    subHeadlineLarge: "46px",
+    headlineSmall: "40px",
+    headlineNormal: "80px",
+    headlineLarge: "120px",
+};
+
+const lineHeights = {
+    extraSmall: "18px",
+    small: "20px",
+    normal: "24px",
+    large: "26px",
+    subHeadlineSmall: "32px",
+    subHeadlineNormal: "38px",
+    subHeadlineLarge: "46px",
+    headlineSmall: "52px",
+    headlineNormal: "90px",
+    headlineLarge: "124px",
+};
+
+const borderRadius = {
+    extraSmall: "4px",
+    small: "8px",
+    large: "12px",
+    extraLarge: "16px",
+};
+
+const dropShadow = {
+    small: "0px 1px 4px rgba(0, 0, 0, 0.16)",
+    large: "0px 8px 16px rgba(0, 0, 0, 0.16), 0px 1px 4px rgba(0, 0, 0, 0.16)",
+};
+
+const spacing = {
+    1: "4px",
+    2: "8px",
+    3: "16px",
+    4: "24px",
+    5: "32px",
+    6: "40px",
+    7: "64px",
+    8: "96px",
+    9: "128px",
+    10: "192px",
+};
+
+export { colors, fontWeights, fontSizes, lineHeights, borderRadius, dropShadow, spacing };
