@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.1.0
+
+### Minor Changes
+
+- 4d38962: Add support for new commands: openBreakout, closeBreakout, and togglePeople. Syntax fix in toggleChat command definition
+
 ## 3.0.4
 
 ### Patch Changes
