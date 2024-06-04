@@ -113,10 +113,12 @@ interface WherebyEmbedElementCommands {
     stopRecording: () => void;
     startStreaming: () => void;
     stopStreaming: () => void;
+    toggleBreakout: (enabled?: boolean) => void;
     toggleCamera: (enabled?: boolean) => void;
     toggleMicrophone: (enabled?: boolean) => void;
+    togglePeople: (enabled?: boolean) => void;
     toggleScreenshare: (enabled?: boolean) => void;
-    toogleChat: (enabled?: boolean) => void;
+    toggleChat: (enabled?: boolean) => void;
 }
 
 export interface WherebyEmbedElement extends HTMLIFrameElement, WherebyEmbedElementCommands {
@@ -174,7 +176,7 @@ const boolAttrs = [
     "timer",
     "toolbarDarkText",
     "topToolbar",
-    "video"
+    "video",
 ];
 
 define("WherebyEmbed", {
@@ -243,11 +245,17 @@ define("WherebyEmbed", {
     stopStreaming() {
         this._postCommand("stop_streaming");
     },
+    toggleBreakout(open?: boolean) {
+        this._postCommand("toggle_breakout", [open]);
+    },
     toggleCamera(enabled?: boolean) {
         this._postCommand("toggle_camera", [enabled]);
     },
     toggleMicrophone(enabled?: boolean) {
         this._postCommand("toggle_microphone", [enabled]);
+    },
+    togglePeople(enabled?: boolean) {
+        this._postCommand("toggle_people", [enabled]);
     },
     toggleScreenshare(enabled?: boolean) {
         this._postCommand("toggle_screenshare", [enabled]);
