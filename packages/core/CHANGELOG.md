@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.17.0
+
+### Minor Changes
+
+- 1fcfa6b: Auto spotlight local screenshare
+
 ## 0.16.3
 
 ### Patch Changes
