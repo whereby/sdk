@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 3.2.0
+
+### Minor Changes
+
+- cb8e16e: Add participant menu for grid component
+
+### Patch Changes
+
+- Updated dependencies [1fcfa6b]
+  - @whereby.com/core@0.17.0
+
 ## 3.1.0
 
 ### Minor Changes
