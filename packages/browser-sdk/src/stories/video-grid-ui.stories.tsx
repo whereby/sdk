@@ -1,132 +1,206 @@
 import * as React from "react";
+
+import { StoryFn } from "@storybook/react";
 import "./styles.css";
+import { useRoomConnection } from "../lib/react";
+import { Provider as WherebyProvider } from "../lib/react/Provider";
+import { Grid as VideoGrid, GridCell, GridVideoView } from "../lib/react/Grid";
+import {
+    ParticipantMenu,
+    ParticipantMenuContent,
+    ParticipantMenuItem,
+    ParticipantMenuTrigger,
+} from "../lib/react/Grid/ParticipantMenu";
 
-import { VideoStageLayout } from "../lib/react/Grid/VideoStageLayout";
-import { useWindowSize } from "../lib/helpers/hooks/useWindowSize";
-import { makeFrame, makeBox } from "../lib/react/Grid/layout/helpers";
-import { calculateLayout } from "../lib/react/Grid/layout/stageLayout";
-
-import { createVideoCellViews, renderCellView, NORMAL, PORTRAIT, SQUARE, WIDE } from "./components/VideoGridTestData";
-
-interface Props {
-    count: number;
-    debug: boolean;
-    videoGridGap: number;
-    floatingAspectRatio: number;
-    isMaximizeMode: boolean;
-    numSubgridClients: number;
-    ratios: number[];
-    presAspectRatios: number[];
-    rebalanceLayout: boolean;
-    isXLMeetingSize: boolean;
-}
-
-function SizedVideoStageLayout({
-    count,
-    debug,
-    videoGridGap,
-    isXLMeetingSize,
-    numSubgridClients,
-    presAspectRatios = [],
-    ratios,
-    ...props
-}: Props) {
-    const { windowSize } = useWindowSize(false);
-    const windowFrame = makeFrame({
-        ...windowSize,
-        top: 0,
-        left: 0,
-    });
-
-    const isConstrained = window.screen.width < 500 || window.screen.height < 500;
-    const cellViewsVideoGrid = createVideoCellViews({ count, ratios });
-    const gridContent = cellViewsVideoGrid.map((cellView) => renderCellView({ cellView }));
-    const cellViewsSubgrid = createVideoCellViews({ count: numSubgridClients, isSubgrid: true, ratios: [WIDE] });
-    const subgridContent = cellViewsSubgrid.map((cellView) => renderCellView({ cellView }));
-    const cellViewsPresentationGrid = createVideoCellViews({
-        count: presAspectRatios.length,
-        ratios: presAspectRatios,
-    });
-    const presentationGridContent = cellViewsPresentationGrid.map((cellView) =>
-        renderCellView({ cellView, isPresentation: true }),
-    );
-
-    const gridGap = 30;
-
-    const videoStagePaddings = makeBox({
-        top: gridGap,
-        left: gridGap,
-        bottom: gridGap,
-        right: gridGap,
-    });
-
-    return (
-        <div>
-            <VideoStageLayout
-                {...props}
-                containerPaddings={videoStagePaddings}
-                debug={debug}
-                gridContent={gridContent}
-                isConstrained={isConstrained}
-                presentationGridContent={presentationGridContent}
-                subgridContent={subgridContent}
-                layoutVideoStage={calculateLayout({
-                    videoGridGap,
-                    frame: windowFrame,
-                    gridGap,
-                    isConstrained,
-                    isXLMeetingSize,
-                    paddings: videoStagePaddings,
-                    presentationVideos: cellViewsPresentationGrid,
-                    roomBounds: windowFrame.bounds,
-                    subgridVideos: cellViewsSubgrid,
-                    videos: cellViewsVideoGrid,
-                })}
-            />
-        </div>
-    );
-}
-
-export default {
-    title: "VideoStageLayout",
+const defaultArgs = {
+    title: "Examples/Video Grid UI",
     argTypes: {
-        count: {
-            control: { type: "range", min: 0, max: 24, step: 1 },
-        },
-        numSubgridClients: {
-            control: { type: "range", min: 0, max: 100, step: 1 },
-        },
-        videoGridGap: {
-            control: { type: "range", min: 0, max: 100, step: 1 },
-        },
-        ratios: { control: "multi-select", options: [NORMAL, WIDE, PORTRAIT] },
+        displayName: { control: "text" },
+        roomUrl: { control: "text", type: { required: true } },
+        externalId: { control: "text" },
     },
     args: {
-        count: 0,
-        videoGridGap: 30,
-        debug: false,
-        floatingAspectRatio: undefined,
-        numSubgridClients: 0,
-        ratios: [WIDE],
-        isXLMeetingSize: false,
+        displayName: "SDK",
+        roomUrl: process.env.STORYBOOK_ROOM,
+    },
+    decorators: [
+        (Story: StoryFn) => (
+            <WherebyProvider>
+                <Story />
+            </WherebyProvider>
+        ),
+    ],
+};
+
+export default defaultArgs;
+
+const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
+
+export const VideoGridStory = {
+    render: ({
+        roomUrl,
+        gridGap,
+        videoGridGap,
+        enableSubgrid,
+        enableParticipantMenu,
+    }: {
+        displayName: string;
+        roomUrl: string;
+        gridGap?: number;
+        videoGridGap?: number;
+        enableSubgrid?: boolean;
+        enableParticipantMenu?: boolean;
+    }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
+        const [isLocalScreenshareActive, setIsLocalScreenshareActive] = React.useState(false);
+
+        const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+        const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
+
+        React.useEffect(() => {
+            joinRoom();
+            return () => leaveRoom();
+        }, []);
+
+        return (
+            <>
+                <div className="controls">
+                    <button onClick={() => toggleCamera()}>Toggle camera</button>
+                    <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                    <button
+                        onClick={() => {
+                            if (isLocalScreenshareActive) {
+                                stopScreenshare();
+                            } else {
+                                startScreenshare();
+                            }
+                            setIsLocalScreenshareActive((prev) => !prev);
+                        }}
+                    >
+                        Toggle screenshare
+                    </button>
+                </div>
+                <div style={{ height: "500px", width: "100%" }}>
+                    <VideoGrid
+                        gridGap={gridGap}
+                        videoGridGap={videoGridGap}
+                        stageParticipantLimit={3}
+                        enableSubgrid={enableSubgrid}
+                        enableParticipantMenu={enableParticipantMenu}
+                    />
+                </div>
+            </>
+        );
+    },
+    argTypes: {
+        ...defaultArgs.argTypes,
+        gridGap: { control: "range", min: 0, max: 100 },
+        videoGridGap: { control: "range", min: 0, max: 100 },
+        enableSubgrid: { control: "boolean" },
+        enableParticipantMenu: { control: "boolean" },
+    },
+    args: {
+        ...defaultArgs.args,
+        gridGap: 8,
+        videoGridGap: 8,
+        enableSubgrid: true,
+        enableParticipantMenu: true,
     },
 };
 
-export const Empty = (args: Props) => <SizedVideoStageLayout {...args} />;
+export const VideoGridStoryCustom = {
+    render: ({
+        roomUrl,
+        gridGap,
+        videoGridGap,
+        enableSubgrid,
+    }: {
+        displayName: string;
+        roomUrl: string;
+        gridGap?: number;
+        videoGridGap?: number;
+        enableSubgrid?: boolean;
+    }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
+        const [isLocalScreenshareActive, setIsLocalScreenshareActive] = React.useState(false);
 
-export const TallSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[PORTRAIT]} />;
-TallSupersized.storyName = "Tall content supersized";
+        const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+        const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
 
-export const WideSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[WIDE]} />;
-WideSupersized.storyName = "Wide content supersized";
+        React.useEffect(() => {
+            joinRoom();
+            return () => leaveRoom();
+        }, []);
 
-export const SquareSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[SQUARE]} />;
-SquareSupersized.storyName = "Square content supersized";
-
-export const IntegrationSupersized = (args: Props) => <SizedVideoStageLayout {...args} presAspectRatios={[]} />;
-IntegrationSupersized.storyName = "Integration content supersized";
-
-export const PresentationGrid = (args: Props) => (
-    <SizedVideoStageLayout {...args} presAspectRatios={[WIDE, PORTRAIT]} />
-);
-PresentationGrid.storyName = "Presentation grid";
+        return (
+            <>
+                <div className="controls">
+                    <button onClick={() => toggleCamera()}>Toggle camera</button>
+                    <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                    <button
+                        onClick={() => {
+                            if (isLocalScreenshareActive) {
+                                stopScreenshare();
+                            } else {
+                                startScreenshare();
+                            }
+                            setIsLocalScreenshareActive((prev) => !prev);
+                        }}
+                    >
+                        Toggle screenshare
+                    </button>
+                </div>
+                <div style={{ height: "500px", width: "100%" }}>
+                    <VideoGrid
+                        gridGap={gridGap}
+                        videoGridGap={videoGridGap}
+                        enableSubgrid={enableSubgrid}
+                        renderParticipant={({ participant }) => {
+                            return (
+                                <GridCell className={"gridCell"} participant={participant}>
+                                    <GridVideoView className={"videoView"} />
+                                    <ParticipantMenu>
+                                        <ParticipantMenuTrigger className={"participantMenuTrigger"}>
+                                            Actions
+                                        </ParticipantMenuTrigger>
+                                        <ParticipantMenuContent className={"participantMenuContent"}>
+                                            <ParticipantMenuItem
+                                                className={"participantMenuItem"}
+                                                participantAction={"maximize"}
+                                            >
+                                                Maximize
+                                            </ParticipantMenuItem>
+                                            <ParticipantMenuItem
+                                                className={"participantMenuItem"}
+                                                participantAction={"spotlight"}
+                                            >
+                                                Spotlight
+                                            </ParticipantMenuItem>
+                                        </ParticipantMenuContent>
+                                    </ParticipantMenu>
+                                    {participant.displayName}
+                                </GridCell>
+                            );
+                        }}
+                    />
+                </div>
+            </>
+        );
+    },
+    argTypes: {
+        ...defaultArgs.argTypes,
+        gridGap: { control: "range", min: 0, max: 100 },
+        videoGridGap: { control: "range", min: 0, max: 100 },
+        enableSubgrid: { control: "boolean" },
+    },
+    args: {
+        ...defaultArgs.args,
+        gridGap: 8,
+        videoGridGap: 8,
+        enableSubgrid: true,
+    },
+};

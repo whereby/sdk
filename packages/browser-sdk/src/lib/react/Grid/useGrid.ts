@@ -5,26 +5,34 @@ import { calculateLayout } from "./layout/stageLayout";
 import { makeVideoCellView } from "./layout/cellView";
 import { STAGE_PARTICIPANT_LIMIT } from "./contants";
 import { useGridParticipants } from "./useGridParticipants";
+import { ClientView } from "packages/core/dist";
 
 interface Props {
     activeVideosSubgridTrigger?: number;
     forceSubgrid?: boolean;
     stageParticipantLimit?: number;
+    gridGap?: number;
     videoGridGap?: number;
+    enableSubgrid?: boolean;
 }
 
 function useGrid({
     activeVideosSubgridTrigger,
     forceSubgrid,
     stageParticipantLimit = STAGE_PARTICIPANT_LIMIT,
+    gridGap = 8,
     videoGridGap = 8,
+    enableSubgrid = true,
 }: Props = {}) {
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
+    const [maximizedParticipant, setMaximizedParticipant] = React.useState<ClientView | null>(null);
     const { clientViewsInGrid, clientViewsInPresentationGrid, clientViewsInSubgrid } = useGridParticipants({
         activeVideosSubgridTrigger,
         forceSubgrid,
         stageParticipantLimit,
+        enableSubgrid,
+        maximizedParticipant,
     });
 
     const cellViewsVideoGrid = React.useMemo(() => {
@@ -68,7 +76,7 @@ function useGrid({
     const videoStage = React.useMemo(() => {
         return calculateLayout({
             frame: containerFrame,
-            gridGap: 8,
+            gridGap,
             isConstrained: false,
             roomBounds: containerFrame.bounds,
             videos: cellViewsVideoGrid,
@@ -76,15 +84,18 @@ function useGrid({
             presentationVideos: cellViewsInPresentationGrid,
             subgridVideos: cellViewsInSubgrid,
         });
-    }, [containerFrame, cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid]);
+    }, [containerFrame, cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid, gridGap, videoGridGap]);
 
     return {
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,
+        clientAspectRatios,
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
+        maximizedParticipant,
+        setMaximizedParticipant,
     };
 }
 

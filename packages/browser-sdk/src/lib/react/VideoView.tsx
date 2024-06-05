@@ -16,7 +16,7 @@ export type WherebyVideoElement = HTMLVideoElement & {
     onVideoResize: ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => void;
 };
 
-type VideoViewProps = VideoViewSelfProps &
+export type VideoViewProps = VideoViewSelfProps &
     React.DetailedHTMLProps<React.VideoHTMLAttributes<WherebyVideoElement>, WherebyVideoElement>;
 
 type AudioElement = HTMLAudioElement & { setSinkId?: (deviceId: string) => void };
@@ -36,8 +36,8 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
                         return null;
                     }
 
-                    const h = videoEl.current.clientHeight;
-                    const w = videoEl.current.clientWidth;
+                    const h = videoEl.current.videoHeight;
+                    const w = videoEl.current.videoWidth;
 
                     if (w && h && w + h > 20) {
                         return w / h;

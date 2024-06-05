@@ -7,6 +7,8 @@ import { selectLocalParticipantRaw } from "./localParticipant";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToSpotlight } from "./authorization";
 import { selectAllClientViews } from "./room";
+import { doStartScreenshare, stopScreenshare } from "./localScreenshare";
+import { startAppListening } from "../listenerMiddleware";
 
 /**
  * State mapping utils
@@ -67,7 +69,24 @@ const initialState: SpotlightsState = {
 export const spotlightsSlice = createSlice({
     name: "spotlights",
     initialState,
-    reducers: {},
+    reducers: {
+        addSpotlight(state, action: { payload: { clientId: string; streamId: string } }) {
+            const { clientId, streamId } = action.payload;
+
+            return {
+                ...state,
+                sorted: mergeSpotlight(state.sorted, { clientId, streamId }),
+            };
+        },
+        removeSpotlight(state, action: { payload: { clientId: string; streamId: string } }) {
+            const { clientId, streamId } = action.payload;
+
+            return {
+                ...state,
+                sorted: state.sorted.filter((s) => !(s.clientId === clientId && s.streamId === streamId)),
+            };
+        },
+    },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
             if (!action.payload.room) {
@@ -108,6 +127,8 @@ export const spotlightsSlice = createSlice({
 /**
  * Action creators
  */
+
+export const { addSpotlight, removeSpotlight } = spotlightsSlice.actions;
 
 export const doSpotlightParticipant = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToSpotlight(state),
@@ -164,3 +185,39 @@ export const selectSpotlightedClientViews = createSelector(
         return mapSpotlightsToClientViews(spotlights, clientViews);
     },
 );
+
+/**
+ * Reactors
+ */
+
+startAppListening({
+    actionCreator: doStartScreenshare.fulfilled,
+    effect: ({ payload }, { getState, dispatch }) => {
+        const { stream } = payload;
+        const state = getState();
+
+        const localParticipant = selectLocalParticipantRaw(state);
+
+        if (!localParticipant) {
+            return;
+        }
+
+        dispatch(addSpotlight({ clientId: localParticipant.id, streamId: stream.id }));
+    },
+});
+
+startAppListening({
+    actionCreator: stopScreenshare,
+    effect: ({ payload }, { getState, dispatch }) => {
+        const { stream } = payload;
+        const state = getState();
+
+        const localParticipant = selectLocalParticipantRaw(state);
+
+        if (!localParticipant) {
+            return;
+        }
+
+        dispatch(removeSpotlight({ clientId: localParticipant.id, streamId: stream.id }));
+    },
+});

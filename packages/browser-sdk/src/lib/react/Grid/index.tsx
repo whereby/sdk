@@ -1,112 +1,176 @@
 import * as React from "react";
 
-import { VideoView, WherebyVideoElement } from "../VideoView";
-import { debounce } from "@whereby.com/core";
-import { CellView, Bounds, Origin } from "./layout/types";
+import { VideoView, VideoViewProps, WherebyVideoElement } from "../VideoView";
+import { ClientView, debounce } from "@whereby.com/core";
+import { CellView } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
 import { useGrid } from "./useGrid";
 import { VideoMutedIndicator } from "./VideoMutedIndicator";
+import { DefaultParticipantMenu } from "./DefaultParticipantMenu";
+import { GridCellContext, GridContext, useGridCell } from "./GridContext";
 
-interface RenderCellViewProps {
-    cellView: CellView;
-    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
-}
+type GridCellSelfProps = {
+    participant: ClientView;
+};
 
-function renderCellView({ cellView, onSetClientAspectRatio }: RenderCellViewProps) {
-    switch (cellView.type) {
-        case "video":
-            return (
-                <GridVideoCellView
-                    aspectRatio={cellView.aspectRatio}
-                    participant={cellView.client}
-                    isPlaceholder={cellView.isPlaceholder}
-                    isSubgrid={cellView.isSubgrid}
-                    key={cellView.clientId}
-                    onSetClientAspectRatio={onSetClientAspectRatio}
-                />
-            );
-    }
-}
+type GridCellProps = GridCellSelfProps & React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
 
-interface GridVideoCellViewProps {
-    aspectRatio?: number;
-    participant: CellView["client"];
-    isPlaceholder?: boolean;
-    isSubgrid?: boolean;
-    render?: () => React.ReactNode;
-    onSetClientAspectRatio: ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => void;
-}
+const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, participant, children }, ref) => {
+    const [isHovered, setIsHovered] = React.useState(false);
 
-function GridVideoCellView({ aspectRatio, participant, render }: GridVideoCellViewProps) {
+    const handleMouseEnter = React.useCallback(() => {
+        setIsHovered(true);
+    }, []);
+
+    const handleMouseLeave = React.useCallback(() => {
+        setIsHovered(false);
+    }, []);
+
+    return (
+        <GridCellContext.Provider value={{ participant, isHovered }}>
+            <div ref={ref} className={className} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                {children}
+            </div>
+        </GridCellContext.Provider>
+    );
+});
+
+GridCell.displayName = "GridCell";
+
+type GridVideoViewProps = Omit<VideoViewProps, "stream" | "ref"> & {
+    stream?: MediaStream;
+};
+
+const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(({ stream, style, ...rest }, ref) => {
     const videoEl = React.useRef<WherebyVideoElement>(null);
+    const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
+    if (!participant) return null;
+    const aspectRatio = clientAspectRatios[participant.id];
+
+    React.useImperativeHandle(ref, () => {
+        return videoEl.current!;
+    });
 
     const handleResize = React.useCallback(() => {
         const ar = videoEl.current && videoEl.current.captureAspectRatio();
 
-        if (ar && ar !== aspectRatio && participant?.id) {
-            // onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
+        if (ar && ar !== aspectRatio && participant.id) {
+            onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
         }
-    }, []);
+    }, [clientAspectRatios, participant.id, onSetClientAspectRatio]);
+
+    const s = stream || participant.stream;
+
+    if (!s) {
+        return null;
+    }
 
     return (
-        <div>
-            {render ? (
-                render()
-            ) : participant?.stream && participant.isVideoEnabled ? (
-                <VideoView
-                    ref={videoEl}
-                    stream={participant.stream}
-                    onVideoResize={handleResize}
-                    style={{
-                        borderRadius: "8px",
-                    }}
-                />
-            ) : (
-                <VideoMutedIndicator
-                    isSmallCell={false}
-                    displayName={participant?.displayName || "Guest"}
-                    withRoundedCorners
-                />
-            )}
-        </div>
+        <VideoView
+            ref={videoEl}
+            style={{
+                borderRadius: "8px",
+                ...style,
+            }}
+            {...rest}
+            stream={s}
+            onVideoResize={handleResize}
+        />
     );
+});
+
+GridVideoView.displayName = "GridVideoView";
+
+interface RenderCellViewProps {
+    cellView: CellView;
+    enableParticipantMenu?: boolean;
+    render?: ({ participant }: { participant: ClientView }) => React.ReactNode;
+}
+
+function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellViewProps) {
+    const participant = cellView.client;
+
+    if (!participant) {
+        return undefined;
+    }
+
+    switch (cellView.type) {
+        case "video":
+            return (
+                <GridCell participant={participant}>
+                    {participant.isVideoEnabled ? (
+                        <>
+                            {render ? (
+                                render({ participant })
+                            ) : (
+                                <>
+                                    <GridVideoView />
+                                    {enableParticipantMenu ? (
+                                        <DefaultParticipantMenu participant={participant} />
+                                    ) : null}
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        <VideoMutedIndicator
+                            isSmallCell={false}
+                            displayName={participant?.displayName || "Guest"}
+                            withRoundedCorners
+                        />
+                    )}
+                </GridCell>
+            );
+    }
 }
 
 interface GridProps {
-    renderParticipant?: ({
-        cell,
-        participant,
-    }: {
-        cell: { clientId: string; bounds: Bounds; origin: Origin };
-        participant: CellView["client"];
-    }) => React.ReactNode;
+    renderParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
+    gridGap?: number;
     videoGridGap?: number;
+    enableSubgrid?: boolean;
     stageParticipantLimit?: number;
+    enableParticipantMenu?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Grid({ renderParticipant, stageParticipantLimit, videoGridGap }: GridProps) {
+function Grid({
+    renderParticipant,
+    stageParticipantLimit,
+    gridGap,
+    videoGridGap,
+    enableSubgrid,
+    enableParticipantMenu,
+}: GridProps) {
     const gridRef = React.useRef<HTMLDivElement>(null);
 
     const {
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,
+        clientAspectRatios,
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
-    } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit, videoGridGap });
+        maximizedParticipant,
+        setMaximizedParticipant,
+    } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit, gridGap, videoGridGap, enableSubgrid });
+
+    const handleSetClientAspectRatio = React.useCallback(
+        ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => {
+            setClientAspectRatios((prev) => ({
+                ...prev,
+                [clientId]: aspectRatio,
+            }));
+        },
+        [setClientAspectRatios],
+    );
 
     const presentationGridContent = React.useMemo(
         () =>
             cellViewsInPresentationGrid.map((cellView) =>
                 renderCellView({
                     cellView,
-                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        setClientAspectRatios((prev) => ({
-                            ...prev,
-                            [clientId]: aspectRatio,
-                        })),
+                    enableParticipantMenu,
+                    ...(renderParticipant ? { render: ({ participant }) => renderParticipant({ participant }) } : {}),
                 }),
             ),
         [cellViewsInPresentationGrid],
@@ -117,11 +181,8 @@ function Grid({ renderParticipant, stageParticipantLimit, videoGridGap }: GridPr
             cellViewsVideoGrid.map((cellView) =>
                 renderCellView({
                     cellView,
-                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        setClientAspectRatios((prev) => ({
-                            ...prev,
-                            [clientId]: aspectRatio,
-                        })),
+                    enableParticipantMenu,
+                    ...(renderParticipant ? { render: ({ participant }) => renderParticipant({ participant }) } : {}),
                 }),
             ),
         [cellViewsVideoGrid],
@@ -132,11 +193,7 @@ function Grid({ renderParticipant, stageParticipantLimit, videoGridGap }: GridPr
             cellViewsInSubgrid.map((cellView) =>
                 renderCellView({
                     cellView,
-                    onSetClientAspectRatio: ({ aspectRatio, clientId }) =>
-                        setClientAspectRatios((prev) => ({
-                            ...prev,
-                            [clientId]: aspectRatio,
-                        })),
+                    enableParticipantMenu,
                 }),
             ),
         [cellViewsInSubgrid],
@@ -167,22 +224,34 @@ function Grid({ renderParticipant, stageParticipantLimit, videoGridGap }: GridPr
     }, []);
 
     return (
-        <div
-            ref={gridRef}
-            style={{
-                width: "100%",
-                height: "100%",
-                position: "relative",
+        <GridContext.Provider
+            value={{
+                onSetClientAspectRatio: handleSetClientAspectRatio,
+                cellViewsVideoGrid,
+                cellViewsInPresentationGrid,
+                cellViewsInSubgrid,
+                clientAspectRatios,
+                maximizedParticipant,
+                setMaximizedParticipant,
             }}
         >
-            <VideoStageLayout
-                layoutVideoStage={videoStage!}
-                presentationGridContent={presentationGridContent}
-                gridContent={gridContent}
-                subgridContent={subgridContent}
-            />
-        </div>
+            <div
+                ref={gridRef}
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    position: "relative",
+                }}
+            >
+                <VideoStageLayout
+                    layoutVideoStage={videoStage!}
+                    presentationGridContent={presentationGridContent}
+                    gridContent={gridContent}
+                    subgridContent={subgridContent}
+                />
+            </div>
+        </GridContext.Provider>
     );
 }
 
-export { Grid };
+export { Grid, GridCell, GridVideoView, useGridCell };
