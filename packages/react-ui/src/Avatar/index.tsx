@@ -1,9 +1,10 @@
-import * as React from "react";
+import React, { PropsWithChildren } from "react";
 
 import { css } from "@emotion/react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import runes from "runes";
-import { borderRadius, colors } from "../theme";
+import { useTheme } from "../theme";
+import { ProfileIcon } from "../icons";
 
 export const getInitialsFromName = (name = "") => {
     name = name.trim();
@@ -29,73 +30,98 @@ const Initials = ({ name }: { name?: string }) => {
 
     return (
         <svg viewBox={"-60 -60 120 120"} aria-hidden={"true"} css={initialsStyles}>
-            <text x={0} y={0} textAnchor={"middle"} dominantBaseline={"central"} fontSize={fontSize}>
+            <text
+                fill="currentcolor"
+                x={0}
+                y={0}
+                textAnchor={"middle"}
+                dominantBaseline={"central"}
+                fontSize={fontSize}
+            >
                 {initialsStr}
             </text>
         </svg>
     );
 };
 
-const avatarStyles = css({
-    display: "flex",
-    position: "relative",
-    objectFit: "cover",
-    maxWidth: "initial",
-    flexShrink: 0,
-    overflow: "hidden",
-});
-
-const variantStyles = {
-    outline: css({
-        boxShadow: "inset 0 0 0 1px rgba(0, 0, 0, 0.12)",
-    }),
-    round: css({
-        borderRadius: "50%",
-    }),
-    square: css({
-        borderRadius: borderRadius.extraSmall,
-    }),
-};
-
-const imageStyles = css({
-    height: "100%",
-    width: "100%",
-    maxWidth: "initial",
-    objectFit: "cover",
-});
-
-const fallbackStyles = css({
-    backgroundColor: colors.backgroundYellow,
-    overflow: "hidden",
-    userSelect: "none",
-});
-
-interface AvatarProps {
+type AvatarWrapperProps = PropsWithChildren<{
     avatarUrl?: string;
     className?: string;
-    variant?: "outline" | "round" | "square";
     name?: string;
-    size?: 32 | 36 | 40 | 60 | 80 | 200;
-}
+    size?: number;
+}>;
 
-function Avatar({ avatarUrl, className, size = 40, name, variant = "round", ...rest }: AvatarProps) {
+function AvatarWrapper({ className, size = 40, name, children }: AvatarWrapperProps) {
     return (
         <AvatarPrimitive.Root
-            css={[avatarStyles, variantStyles[variant]]}
-            className={className}
-            title={name}
-            style={{
+            css={{
+                display: "flex",
+                position: "relative",
+                objectFit: "cover",
+                maxWidth: "initial",
+                flexShrink: 0,
+                overflow: "hidden",
                 height: `${size}px`,
                 width: `${size}px`,
+                borderRadius: "15%",
             }}
-            {...rest}
+            className={className}
+            title={name}
         >
-            <AvatarPrimitive.Image css={imageStyles} src={avatarUrl} alt={name} />
-            <AvatarPrimitive.Fallback css={fallbackStyles}>
-                <Initials name={name} />
-            </AvatarPrimitive.Fallback>
+            {children}
         </AvatarPrimitive.Root>
     );
 }
 
-export { Avatar };
+interface AvatarImageProps {
+    className?: string;
+    name?: string;
+    avatarUrl?: string;
+}
+
+function AvatarImage({ className, name, avatarUrl }: AvatarImageProps) {
+    const theme = useTheme();
+    return (
+        <>
+            <AvatarPrimitive.Image
+                css={{
+                    height: "100%",
+                    width: "100%",
+                    maxWidth: "initial",
+                    objectFit: "cover",
+                }}
+                src={avatarUrl}
+                alt={name}
+                className={className}
+            />
+            <AvatarPrimitive.Fallback
+                css={{
+                    height: "100%",
+                    width: "100%",
+                    backgroundColor: theme.color.brand1000,
+                    color: theme.color.brand300,
+                    overflow: "hidden",
+                    userSelect: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+                className={className}
+            >
+                {name ? <Initials name={name} /> : <ProfileIcon css={{ height: "50%", width: "50%" }} />}
+            </AvatarPrimitive.Fallback>
+        </>
+    );
+}
+
+function Avatar({ className, name, avatarUrl, size }: AvatarWrapperProps & AvatarImageProps) {
+    return (
+        <div>
+            <AvatarWrapper size={size} name={name} className={className}>
+                <AvatarImage avatarUrl={avatarUrl} name={name} />
+            </AvatarWrapper>
+        </div>
+    );
+}
+
+export { Avatar, AvatarImage, AvatarWrapper };

@@ -48,7 +48,7 @@ const icons = Object.entries(Icons)
         return 0;
     });
 
-function IconGrid({ variant, size, light }: IconProps & { light?: boolean }) {
+function IconGrid({ size, light }: IconProps & { light?: boolean }) {
     return (
         <div css={[iconGridStyles]}>
             {icons.map(({ name, component: Component }) => (
@@ -63,7 +63,7 @@ function IconGrid({ variant, size, light }: IconProps & { light?: boolean }) {
                             : undefined
                     }
                 >
-                    <Component variant={variant} size={size} />
+                    <Component size={size} />
                 </IconCell>
             ))}
         </div>

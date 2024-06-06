@@ -1,4 +1,37 @@
-const colors = {
+import { useTheme as useEmotionTheme } from "@emotion/react";
+
+const color = {
+    brand100: "#E1D9F3",
+    brand200: "#C3B3E8",
+    brand300: "#A58DDC",
+    brand400: "#8766D1",
+    brand500: "#6941C6",
+    brand600: "#54349E",
+    brand700: "#3F2776",
+    brand800: "#2A1A4F",
+    brand900: "#1F133B",
+    brand1000: "#150D27",
+    neutral100: "#FFFFFF",
+    neutral200: "#F1F2F3",
+    neutral300: "#E4E6E8",
+    neutral400: "#BCC1C6",
+    neutral500: "#949CA3",
+    neutral600: "#616970",
+    neutral700: "#494F54",
+    neutral800: "#303438",
+    neutral900: "#181A1C",
+    neutral1000: "#000000",
+    feedback100: "#12B76A",
+    feedback200: "#D1FADF",
+    feedback300: "#3348FF",
+    feedback400: "#EBF1FF",
+    feedback500: "#E74ABB",
+    feedback600: "#FFCCE0",
+    feedback700: "#F79009",
+    feedback800: "#FEEFC6",
+    feedback900: "#F04438",
+    feedback1000: "#FEE4E2",
+
     blue: "#2b189b",
     blueLight: "#4141e1",
     blueTransparent: "rgba(43, 24, 155, 0.24)",
@@ -35,13 +68,13 @@ const colors = {
     meetingRed: "#f26b4d",
 };
 
-const fontWeights = {
+const fontWeight = {
     normal: 400,
     medium: 500,
     bold: 600,
 };
 
-const fontSizes = {
+const fontSize = {
     extraSmall: "12px",
     small: "14px",
     normal: "16px",
@@ -54,7 +87,7 @@ const fontSizes = {
     headlineLarge: "120px",
 };
 
-const lineHeights = {
+const lineHeight = {
     extraSmall: "18px",
     small: "20px",
     normal: "24px",
@@ -92,4 +125,19 @@ const spacing = {
     10: "192px",
 };
 
-export { colors, fontWeights, fontSizes, lineHeights, borderRadius, dropShadow, spacing };
+const useTheme = () => {
+    const theme = useEmotionTheme();
+
+    return {
+        color,
+        fontSize,
+        fontWeight,
+        lineHeight,
+        borderRadius,
+        dropShadow,
+        spacing,
+        ...theme,
+    };
+};
+
+export { color, fontWeight, fontSize, lineHeight, borderRadius, dropShadow, spacing, useTheme };
