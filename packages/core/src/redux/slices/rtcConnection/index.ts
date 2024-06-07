@@ -10,7 +10,7 @@ import {
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
-import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
+import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive } from "../app";
 import { Chrome111 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Chrome111.js";
@@ -215,7 +215,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
     dispatch(isAcceptingStreams(true));
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-    const remoteParticipants = selectRemoteParticipants(state);
+    const remoteClients = selectRemoteClients(state);
 
     if (!rtcManager) {
         throw new Error("No rtc manager");
@@ -227,7 +227,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
     const updates: StreamStatusUpdate[] = [];
 
     for (const { clientId, streamId, state } of payload) {
-        const participant = remoteParticipants.find((p) => p.id === clientId);
+        const participant = remoteClients.find((p) => p.id === clientId);
         if (!participant) continue;
         if (
             state === "to_accept" ||
@@ -421,7 +421,7 @@ createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) =
 // react accept streams
 export const selectStreamsToAccept = createSelector(
     selectRtcStatus,
-    selectRemoteParticipants,
+    selectRemoteClients,
     (rtcStatus, remoteParticipants) => {
         if (rtcStatus !== "ready") {
             return [];

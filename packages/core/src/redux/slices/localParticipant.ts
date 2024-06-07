@@ -9,6 +9,7 @@ import { selectLocalMediaStream, toggleCameraEnabled, toggleMicrophoneEnabled } 
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
 import { ClientView } from "../types";
+import { NON_PERSON_ROLES } from "../constants";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
@@ -177,6 +178,10 @@ export const selectLocalParticipantView = createSelector(
             isAudioEnabled: participant.isAudioEnabled,
             isVideoEnabled: participant.isVideoEnabled,
         };
+
+        if (NON_PERSON_ROLES.includes(participant.roleName)) {
+            return null;
+        }
 
         return clientView;
     },

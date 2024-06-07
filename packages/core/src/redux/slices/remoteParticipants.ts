@@ -8,8 +8,8 @@ import { signalEvents } from "./signalConnection/actions";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToAskToSpeak, selectIsAuthorizedToRequestAudioEnable } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
-
-const NON_PERSON_ROLES = ["recorder", "streamer"];
+import { NON_PERSON_ROLES } from "../constants";
+import { selectLocalParticipantRaw } from "./localParticipant";
 
 /**
  * State mapping utils
@@ -305,9 +305,19 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
  */
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
-export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
+export const selectRemoteClients = (state: RootState) => state.remoteParticipants.remoteParticipants;
 
+export const selectRemoteParticipants = createSelector(selectRemoteClients, (clients) =>
+    clients.filter((c) => !NON_PERSON_ROLES.includes(c.roleName)),
+);
+export const selectNumClients = createSelector(selectRemoteClients, (clients) => clients.length + 1);
 export const selectNumParticipants = createSelector(
     selectRemoteParticipants,
-    (clients) => clients.filter((c) => !NON_PERSON_ROLES.includes(c.roleName)).length + 1,
+    selectLocalParticipantRaw,
+    (clients, localParticipant) => {
+        if (NON_PERSON_ROLES.includes(localParticipant.roleName)) {
+            return clients.length;
+        }
+        return clients.length + 1;
+    },
 );
