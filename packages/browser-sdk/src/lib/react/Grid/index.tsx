@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import cn from "clsx";
 import { VideoView, VideoViewProps, WherebyVideoElement } from "../VideoView";
 import { ClientView, debounce } from "@whereby.com/core";
 import { CellView } from "./layout/types";
@@ -15,7 +16,7 @@ type GridCellSelfProps = {
 
 type GridCellProps = GridCellSelfProps & React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
 
-const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, participant, children }, ref) => {
+const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, participant, ...rest }, ref) => {
     const [isHovered, setIsHovered] = React.useState(false);
 
     const handleMouseEnter = React.useCallback(() => {
@@ -28,9 +29,13 @@ const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, p
 
     return (
         <GridCellContext.Provider value={{ participant, isHovered }}>
-            <div ref={ref} className={className} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                {children}
-            </div>
+            <div
+                ref={ref}
+                className={cn("gridCell", className)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                {...rest}
+            />
         </GridCellContext.Provider>
     );
 });
@@ -41,43 +46,36 @@ type GridVideoViewProps = Omit<VideoViewProps, "stream" | "ref"> & {
     stream?: MediaStream;
 };
 
-const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(({ stream, style, ...rest }, ref) => {
-    const videoEl = React.useRef<WherebyVideoElement>(null);
-    const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
-    if (!participant) return null;
-    const aspectRatio = clientAspectRatios[participant.id];
+const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
+    ({ className, stream, ...rest }, ref) => {
+        const videoEl = React.useRef<WherebyVideoElement>(null);
+        const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
+        if (!participant) return null;
+        const aspectRatio = clientAspectRatios[participant.id];
 
-    React.useImperativeHandle(ref, () => {
-        return videoEl.current!;
-    });
+        React.useImperativeHandle(ref, () => {
+            return videoEl.current!;
+        });
 
-    const handleResize = React.useCallback(() => {
-        const ar = videoEl.current && videoEl.current.captureAspectRatio();
+        const handleResize = React.useCallback(() => {
+            const ar = videoEl.current && videoEl.current.captureAspectRatio();
 
-        if (ar && ar !== aspectRatio && participant.id) {
-            onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
+            if (ar && ar !== aspectRatio && participant.id) {
+                onSetClientAspectRatio({ aspectRatio: ar, clientId: participant.id });
+            }
+        }, [clientAspectRatios, participant.id, onSetClientAspectRatio]);
+
+        const s = stream || participant.stream;
+
+        if (!s) {
+            return null;
         }
-    }, [clientAspectRatios, participant.id, onSetClientAspectRatio]);
 
-    const s = stream || participant.stream;
-
-    if (!s) {
-        return null;
-    }
-
-    return (
-        <VideoView
-            ref={videoEl}
-            style={{
-                borderRadius: "8px",
-                ...style,
-            }}
-            {...rest}
-            stream={s}
-            onVideoResize={handleResize}
-        />
-    );
-});
+        return (
+            <VideoView ref={videoEl} className={cn("", className)} {...rest} stream={s} onVideoResize={handleResize} />
+        );
+    },
+);
 
 GridVideoView.displayName = "GridVideoView";
 

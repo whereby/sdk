@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Avatar } from "../../Avatar";
+import { Avatar } from "@whereby.com/react-ui";
 
 interface Props {
     avatarUrl?: string;

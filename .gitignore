@@ -18,3 +18,5 @@ yalc.lock
 yarn-error.log
 
 test-report/
+
+*storybook.log

@@ -8,10 +8,8 @@ import {
     ParticipantMenuItem,
     ParticipantMenuTrigger,
 } from "../ParticipantMenu";
-import { EllipsisIcon } from "../../../EllipsisIcon";
+import { EllipsisIcon, MaximizeOnIcon, SpotlightIcon } from "@whereby.com/react-ui";
 import { useAppSelector } from "../../Provider/hooks";
-import { MaximizeOnIcon } from "../../../MaximizeOnIcon";
-import { SpotlightIcon } from "../../../SpotlightIcon";
 import { useGridCell } from "../GridContext";
 
 interface DefaultParticipantMenuProps {
@@ -40,7 +38,7 @@ function DefaultParticipantMenu({ participant }: DefaultParticipantMenuProps) {
                     padding: "4px",
                 }}
             >
-                <EllipsisIcon height={20} width={20} transform={"rotate(90)"} />
+                <EllipsisIcon height={20} width={20} transform={"rotate(90)"} variant={"dark"} />
             </ParticipantMenuTrigger>
             <ParticipantMenuContent>
                 <ParticipantMenuItem
@@ -51,7 +49,7 @@ function DefaultParticipantMenu({ participant }: DefaultParticipantMenuProps) {
                         gap: "10px",
                     }}
                 >
-                    <MaximizeOnIcon height={16} width={16} />
+                    <MaximizeOnIcon height={16} width={16} variant={"dark"} />
                     {isMaximized ? "Minimize" : "Maximize"}
                 </ParticipantMenuItem>
                 <ParticipantMenuItem
@@ -62,7 +60,7 @@ function DefaultParticipantMenu({ participant }: DefaultParticipantMenuProps) {
                         gap: "10px",
                     }}
                 >
-                    <SpotlightIcon height={16} width={16} />
+                    <SpotlightIcon height={16} width={16} variant={"dark"} />
                     {isSpotlighted ? "Remove spotlight" : "Spotlight"}
                 </ParticipantMenuItem>
             </ParticipantMenuContent>

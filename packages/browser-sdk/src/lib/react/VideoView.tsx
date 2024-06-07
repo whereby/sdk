@@ -68,8 +68,8 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
                             );
                             if (onVideoResize) {
                                 onVideoResize({
-                                    width,
-                                    height,
+                                    width: videoEl.current.videoWidth,
+                                    height: videoEl.current.videoHeight,
                                     stream,
                                 });
                             }

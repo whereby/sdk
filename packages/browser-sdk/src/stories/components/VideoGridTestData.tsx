@@ -1,6 +1,6 @@
 import * as React from "react";
 import { makeVideoCellView } from "../../lib/react/Grid/layout/cellView";
-import { Avatar } from "../../lib/react/Avatar";
+import { Avatar } from "@whereby.com/react-ui";
 import { CellView } from "../../lib/react/Grid/layout/types";
 
 export const NORMAL = 4 / 3;

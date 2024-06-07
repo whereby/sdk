@@ -9,6 +9,10 @@
             "cache": false,
             "persistent": true
         },
+        "storybook:dev": {
+            "cache": false,
+            "persistent": true
+        },
         "test:lint": {},
         "test:attw": {
             "dependsOn": ["build", "^build"]

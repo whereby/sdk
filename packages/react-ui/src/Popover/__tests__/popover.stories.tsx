@@ -1,9 +1,9 @@
 import * as React from "react";
 
-import { Popover, PopoverContent, PopoverTrigger } from "../lib/react/Popover";
+import { Popover, PopoverContent, PopoverTrigger } from "..";
 
 export default {
-    title: "Examples/Popover",
+    title: "Popover",
 };
 
 export const PopoverStory = () => {

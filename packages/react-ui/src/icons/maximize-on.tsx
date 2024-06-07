@@ -1,8 +1,10 @@
 import * as React from "react";
 
-function MaximizeOnIcon(props: React.SVGProps<SVGSVGElement>) {
+import { BaseIcon, IconProps } from "./base-icon";
+
+function MaximizeOn(props: IconProps) {
     return (
-        <svg width={"100%"} height={"100%"} viewBox={"0 0 24 24"} xmlns={"http://www.w3.org/2000/svg"} {...props}>
+        <BaseIcon {...props}>
             <path
                 fillRule={"evenodd"}
                 clipRule={"evenodd"}
@@ -10,8 +12,8 @@ function MaximizeOnIcon(props: React.SVGProps<SVGSVGElement>) {
                     "m13.875 3c0 .62132.5037 1.125 1.125 1.125h3.284l-4.0795 4.0795c-.4393.43934-.4393 1.15166 0 1.591.4393.4393 1.1517.4393 1.591 0l4.0795-4.07951v3.28401c0 .62132.5037 1.125 1.125 1.125s1.125-.50368 1.125-1.125v-6c0-.15254-.0304-.29799-.0854-.43063-.0536-.12968-.1326-.25135-.2368-.35749l-.0147-.01469c-.203-.19928-.4812-.32219-.7881-.32219h-6c-.6213 0-1.125.50368-1.125 1.125zm-9.75 12c0-.6213-.50368-1.125-1.125-1.125s-1.125.5037-1.125 1.125v6c0 .3069.12291.5851.32219.7881.00486.005.00975.0099.01469.0147.10614.1042.22781.1832.35749.2368.13264.055.27809.0854.43063.0854h6c.62132 0 1.125-.5037 1.125-1.125s-.50368-1.125-1.125-1.125h-3.28401l4.07951-4.0795c.4393-.4393.4393-1.1517 0-1.591-.43934-.4393-1.15166-.4393-1.591 0l-4.0795 4.0795z"
                 }
             />
-        </svg>
+        </BaseIcon>
     );
 }
 
-export { MaximizeOnIcon };
+export { MaximizeOn };

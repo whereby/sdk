@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Popover, PopoverContent, PopoverTrigger } from "../../Popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@whereby.com/react-ui";
 import { useGridCell } from "../GridContext";
 import { PopoverProps } from "@radix-ui/react-popover";
 import { useAppDispatch, useAppSelector } from "../../Provider/hooks";
