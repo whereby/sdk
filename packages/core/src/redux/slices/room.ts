@@ -9,7 +9,7 @@ import {
     selectIsAuthorizedToEndMeeting,
 } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { selectRemoteParticipants } from "./remoteParticipants";
+import { selectRemoteClients, selectRemoteParticipants } from "./remoteParticipants";
 import { selectLocalScreenshareStream } from "./localScreenshare";
 import { Screenshare, RemoteParticipant } from "../../RoomParticipant";
 import { selectLocalParticipantView, selectLocalParticipantRaw } from "./localParticipant";
@@ -93,7 +93,7 @@ export const doEndMeeting = createAppAuthorizedThunk(
     (payload: { stayBehind?: boolean }) => (dispatch, getState) => {
         const state = getState();
 
-        const clientsToKick = selectRemoteParticipants(state).map((c) => c.id);
+        const clientsToKick = selectRemoteClients(state).map((c) => c.id);
 
         if (clientsToKick.length) {
             const { socket } = selectSignalConnectionRaw(state);
@@ -206,6 +206,6 @@ export const selectAllClientViews = createSelector(
     selectLocalParticipantView,
     selectRemoteClientViews,
     (localParticipant, remoteParticipants) => {
-        return [localParticipant, ...remoteParticipants];
+        return [...(localParticipant ? [localParticipant] : []), ...remoteParticipants];
     },
 );
