@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.18.0
+
+### Minor Changes
+
+- 4b02a01: Exclude non person roles in participant selection
+
 ## 0.17.0
 
 ### Minor Changes
