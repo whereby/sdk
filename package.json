@@ -13,6 +13,7 @@
     "dev:telehealth-app": "turbo dev --filter=telehealth-tutorial-app",
     "dev:quiz-app": "turbo dev --filter=quiz-app",
     "dev:sample-app": "turbo dev --filter=sample-app",
+    "dev:nextjs-example": "turbo dev --filter=nextjs-example",
     "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
