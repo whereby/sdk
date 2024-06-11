@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.2.2
+
+### Patch Changes
+
+- 56fd200: Ensure that in-room actions can not be invoked when not in a room connected state
+
 ## 3.2.1
 
 ### Patch Changes
