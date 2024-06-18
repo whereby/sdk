@@ -90,6 +90,7 @@ interface WherebyEmbedElementEventMap {
     chat_toggle: CustomEvent<{ open: boolean }>;
     people_toggle: CustomEvent<{ open: boolean }>;
     pip_toggle: CustomEvent<{ open: boolean }>;
+    grant_device_permission: CustomEvent<{ granted: boolean}>;
     deny_device_permission: CustomEvent<{ denied: boolean }>;
     screenshare_toggle: CustomEvent<{ enabled: boolean }>;
     streaming_status_change: CustomEvent<{ status: string }>;

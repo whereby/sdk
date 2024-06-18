@@ -79,17 +79,25 @@ const WherebyEmbed = ({
     const elmRef = useRef<WherebyEmbedElement>(null);
     const [cameraEnabled, setCameraEnabled] = useState(video);
     const [meetingEnded, setMeetingEnded] = useState(false);
+    const [grantedDevicePermissions, setGrantedDevicePermissions] = useState(false);
 
     useEffect(() => {
         const element = elmRef.current;
 
         element?.addEventListener("camera_toggle", (e) => {
             const cameraEnabled = e.detail.enabled;
+            console.log(cameraEnabled);
             setCameraEnabled(cameraEnabled);
         });
 
         element?.addEventListener("meeting_end", () => {
             setMeetingEnded(true);
+        });
+
+        element?.addEventListener("grant_device_permission", (e) => {
+            const grantedDevicePermissions = e.detail.granted;
+            console.log(grantedDevicePermissions);
+            setGrantedDevicePermissions(true);
         });
     }, []);
 
@@ -97,6 +105,7 @@ const WherebyEmbed = ({
         <p>
             <p>Camera: {cameraEnabled ? "ENABLED" : "DISABLED"}</p>
             <p>Meeting ended: {meetingEnded ? "TRUE" : "FALSE"}</p>
+            <p>Camera is allowed: {grantedDevicePermissions ? "Allowed" : "Denied"}</p>
             <whereby-embed
                 audio={offOn(audio)}
                 avatarUrl={avatarUrl}
