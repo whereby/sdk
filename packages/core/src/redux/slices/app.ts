@@ -28,7 +28,7 @@ export interface AppState {
     initialConfig?: AppConfig;
 }
 
-const initialState: AppState = {
+export const initialState: AppState = {
     isNodeSdk: false,
     isActive: false,
     roomName: null,

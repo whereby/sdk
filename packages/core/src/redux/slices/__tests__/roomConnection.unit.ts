@@ -93,22 +93,20 @@ describe("roomConnectionSlice", () => {
             const x = () => oneOf(true, false);
 
             it.each`
-                appIsActive | organizationId | roomConnectionStatus | signalIdentified | localMediaStatus | isNodeSdk | expected
-                ${true}     | ${undefined}   | ${"ready"}           | ${x()}           | ${"started"}     | ${x()}    | ${false}
-                ${true}     | ${"orgId"}     | ${"ready"}           | ${true}          | ${"started"}     | ${false}  | ${true}
-                ${true}     | ${"orgId"}     | ${"connected"}       | ${x()}           | ${"started"}     | ${x()}    | ${false}
-                ${true}     | ${"orgId"}     | ${"ready"}           | ${false}         | ${"starting"}    | ${x()}    | ${false}
-                ${true}     | ${"orgId"}     | ${"ready"}           | ${x()}           | ${"error"}       | ${false}  | ${false}
-                ${true}     | ${"orgId"}     | ${"ready"}           | ${true}          | ${"error"}       | ${true}   | ${true}
+                appIsActive | organizationId | roomConnectionStatus | signalIdentified | localMediaStatus | expected
+                ${true}     | ${undefined}   | ${"ready"}           | ${x()}           | ${"started"}     | ${false}
+                ${true}     | ${"orgId"}     | ${"ready"}           | ${true}          | ${"started"}     | ${true}
+                ${true}     | ${"orgId"}     | ${"connected"}       | ${x()}           | ${"started"}     | ${false}
+                ${true}     | ${"orgId"}     | ${"ready"}           | ${false}         | ${"starting"}    | ${false}
+                ${true}     | ${"orgId"}     | ${"ready"}           | ${x()}           | ${"error"}       | ${false}
             `(
-                "Should return $expected when appIsActive=$appIsActive, organizationId=$organizationId, roomConnectionStatus=$roomConnectionStatus, signalIdentified=$signalIdentified, localMediaStatus=$localMediaStatus, isNodeSdk=$isNodeSdk",
+                "Should return $expected when appIsActive=$appIsActive, organizationId=$organizationId, roomConnectionStatus=$roomConnectionStatus, signalIdentified=$signalIdentified, localMediaStatus=$localMediaStatus",
                 ({
                     appIsActive,
                     organizationId,
                     roomConnectionStatus,
                     signalIdentified,
                     localMediaStatus,
-                    isNodeSdk,
                     expected,
                 }) => {
                     expect(
@@ -118,7 +116,6 @@ describe("roomConnectionSlice", () => {
                             roomConnectionStatus,
                             signalIdentified,
                             localMediaStatus,
-                            isNodeSdk,
                         ),
                     ).toEqual(expected);
                 },
