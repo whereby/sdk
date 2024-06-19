@@ -3,7 +3,7 @@ import { getStream, getUpdatedDevices, getDeviceData } from "@whereby.com/media"
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
-import { doAppStart, selectAppIsNodeSdk, selectAppIsActive } from "./app";
+import { doAppStart, selectAppIsActive } from "./app";
 import { debounce } from "../../utils";
 import { signalEvents } from "./signalConnection/actions";
 
@@ -613,9 +613,8 @@ export const selectLocalMediaShouldStartWithOptions = createSelector(
     selectAppIsActive,
     selectLocalMediaStatus,
     selectLocalMediaOptions,
-    selectAppIsNodeSdk,
-    (appIsActive, localMediaStatus, localMediaOptions, isNodeSdk) => {
-        if (appIsActive && ["inactive", "stopped"].includes(localMediaStatus) && !isNodeSdk && localMediaOptions) {
+    (appIsActive, localMediaStatus, localMediaOptions) => {
+        if (appIsActive && ["inactive", "stopped"].includes(localMediaStatus) && localMediaOptions) {
             return localMediaOptions;
         }
     },

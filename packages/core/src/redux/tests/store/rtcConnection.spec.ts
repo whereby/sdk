@@ -11,6 +11,7 @@ import MockMediaStream from "../../../__mocks__/MediaStream";
 import { RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
+import { coreVersion } from "../../../version";
 
 jest.mock("@whereby.com/media");
 
@@ -51,19 +52,56 @@ describe("actions", () => {
         expect(mockRtcManager.acceptNewStream).toHaveBeenCalledTimes(2);
     });
 
-    it("doConnectRtc", () => {
-        const store = createStore({ withSignalConnection: true });
+    describe("doConnectRtc", () => {
+        it("It initializes the RtcManagerDispatcher", () => {
+            const store = createStore({ withSignalConnection: true });
 
-        const before = store.getState().rtcConnection;
+            const before = store.getState().rtcConnection;
 
-        store.dispatch(doConnectRtc());
+            store.dispatch(doConnectRtc());
 
-        const after = store.getState().rtcConnection;
+            const after = store.getState().rtcConnection;
 
-        expect(RtcManagerDispatcher).toHaveBeenCalledTimes(1);
-        expect(diff(before, after)).toEqual({
-            dispatcherCreated: true,
-            rtcManagerDispatcher: expect.any(RtcManagerDispatcher),
+            expect(RtcManagerDispatcher).toHaveBeenCalledTimes(1);
+            expect(diff(before, after)).toEqual({
+                dispatcherCreated: true,
+                rtcManagerDispatcher: expect.any(RtcManagerDispatcher),
+            });
+        });
+
+        describe("when isNodeSdk is true", () => {
+            it("uses a custom mediasoup device", () => {
+                const store = createStore({
+                    withSignalConnection: true,
+                    initialState: {
+                        app: {
+                            isNodeSdk: true,
+                            isActive: false,
+                            roomName: null,
+                            roomUrl: null,
+                            displayName: null,
+                            userAgent: `core:${coreVersion}`,
+                            externalId: null,
+                        },
+                    },
+                });
+                const before = store.getState().rtcConnection;
+
+                store.dispatch(doConnectRtc());
+
+                const after = store.getState().rtcConnection;
+
+                expect(RtcManagerDispatcher).toHaveBeenCalledTimes(1);
+                expect(RtcManagerDispatcher).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        features: expect.objectContaining({ deviceHandlerFactory: expect.any(Function) }),
+                    }),
+                );
+                expect(diff(before, after)).toEqual({
+                    dispatcherCreated: true,
+                    rtcManagerDispatcher: expect.any(RtcManagerDispatcher),
+                });
+            });
         });
     });
 

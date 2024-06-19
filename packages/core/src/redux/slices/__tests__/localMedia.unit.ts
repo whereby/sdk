@@ -4,23 +4,21 @@ describe("localMediaSlice", () => {
     describe("reactors", () => {
         describe("reactLocalMediaStart", () => {
             it.each`
-                appIsActive | localMediaStatus | localMediaOptions               | isNodeSdk | expected
-                ${false}    | ${"inactive"}    | ${undefined}                    | ${false}  | ${undefined}
-                ${false}    | ${"started"}     | ${undefined}                    | ${false}  | ${undefined}
-                ${false}    | ${"started"}     | ${{ audio: true, video: true }} | ${false}  | ${undefined}
-                ${true}     | ${"started"}     | ${{ audio: true, video: true }} | ${false}  | ${undefined}
-                ${true}     | ${"inactive"}    | ${undefined}                    | ${false}  | ${undefined}
-                ${true}     | ${"inactive"}    | ${{ audio: true, video: true }} | ${true}   | ${undefined}
-                ${true}     | ${"inactive"}    | ${{ audio: true, video: true }} | ${false}  | ${{ audio: true, video: true }}
+                appIsActive | localMediaStatus | localMediaOptions               | expected
+                ${false}    | ${"inactive"}    | ${undefined}                    | ${undefined}
+                ${false}    | ${"started"}     | ${undefined}                    | ${undefined}
+                ${false}    | ${"started"}     | ${{ audio: true, video: true }} | ${undefined}
+                ${true}     | ${"started"}     | ${{ audio: true, video: true }} | ${undefined}
+                ${true}     | ${"inactive"}    | ${undefined}                    | ${undefined}
+                ${true}     | ${"inactive"}    | ${{ audio: true, video: true }} | ${{ audio: true, video: true }}
             `(
-                "expected $expected when appIsActive=$appIsActive, localMediaStatus=$localMediaStatus, localMediaOptions=$localMediaOptions, isNodeSdk=$isNodeSdk",
-                ({ appIsActive, localMediaStatus, localMediaOptions, isNodeSdk, expected }) => {
+                "expected $expected when appIsActive=$appIsActive, localMediaStatus=$localMediaStatus, localMediaOptions=$localMediaOptions",
+                ({ appIsActive, localMediaStatus, localMediaOptions, expected }) => {
                     expect(
                         selectLocalMediaShouldStartWithOptions.resultFunc(
                             appIsActive,
                             localMediaStatus,
                             localMediaOptions,
-                            isNodeSdk,
                         ),
                     ).toEqual(expected);
                 },
