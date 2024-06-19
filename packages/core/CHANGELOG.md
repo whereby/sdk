@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.19.0
+
+### Minor Changes
+
+- e06697c: Remove local media bypass logic for nodejs clients
+
 ## 0.18.0
 
 ### Minor Changes
