@@ -21,7 +21,7 @@ export interface RtcManager {
     addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean): void;
     disconnect(streamId: string, activeBreakout: boolean | null, eventClaim?: string): void;
     disconnectAll(): void;
-    replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack): void;
+    replaceTrack(oldTrack: CustomMediaStreamTrack, newTrack: CustomMediaStreamTrack): void;
     removeStream(streamId: string, _stream: MediaStream, requestedByClientId: string | null): void;
     shouldAcceptStreamsFromBothSides?: () => boolean;
     updateStreamResolution(streamId: string, ignored: null, resolution: { width: number; height: number }): void;
@@ -135,3 +135,7 @@ export type GetDeviceDataResult = {
         kind: string;
     };
 };
+
+export interface CustomMediaStreamTrack extends MediaStreamTrack {
+    replacement?: boolean,
+}

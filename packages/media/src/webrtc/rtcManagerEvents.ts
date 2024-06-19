@@ -8,6 +8,7 @@ export default {
     ICE_RESTART: "ice_restart",
     MICROPHONE_NOT_WORKING: "microphone_not_working",
     MICROPHONE_STOPPED_WORKING: "microphone_stopped_working",
+    CAMERA_STOPPED_WORKING: "camera_stopped_working",
     NEW_PC: "new_pc",
     SFU_CONNECTION_OPEN: "sfu_connection_open",
     SFU_CONNECTION_CLOSED: "sfu_connection_closed",

@@ -15,7 +15,7 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { RtcManager } from "./types";
+import { CustomMediaStreamTrack, RtcManager } from "./types";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -59,6 +59,7 @@ export default class P2pRtcManager implements RtcManager {
     };
     _pendingActionsForConnectedPeerConnections: any[];
     _audioTrackOnEnded: () => void;
+    _videoTrackOnEnded: () => void;
     totalSessionsCreated: number;
     _iceServers: any;
     _sfuServer: any;
@@ -115,6 +116,11 @@ export default class P2pRtcManager implements RtcManager {
             rtcStats.sendEvent("audio_ended", { unloading });
             this._emit(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
         };
+        
+        this._videoTrackOnEnded = () => {
+            rtcStats.sendEvent("video_ended", { unloading });
+            this._emit(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
+        };
 
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
@@ -153,8 +159,12 @@ export default class P2pRtcManager implements RtcManager {
         if (streamId === CAMERA_STREAM_ID) {
             this._addStreamToPeerConnections(stream);
             const [audioTrack] = stream.getAudioTracks();
+            const videoTrack = stream.getVideoTracks()[0] as CustomMediaStreamTrack
             if (audioTrack) {
                 this._startMonitoringAudioTrack(audioTrack);
+            }
+            if (videoTrack && !videoTrack.replacement) {
+                this._startMonitoringVideoTrack(videoTrack);
             }
 
             // This should not be needed, but checking nonetheless
@@ -182,12 +192,18 @@ export default class P2pRtcManager implements RtcManager {
         return;
     }
 
-    replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) {
+    replaceTrack(oldTrack: CustomMediaStreamTrack, newTrack: CustomMediaStreamTrack) {
         if (oldTrack && oldTrack.kind === "audio") {
             this._stopMonitoringAudioTrack(oldTrack);
         }
+        if (oldTrack && oldTrack.kind === "video" && !newTrack.replacement) {
+            this._stopMonitoringVideoTrack(oldTrack);
+        }
         if (newTrack && newTrack.kind === "audio") {
             this._startMonitoringAudioTrack(newTrack);
+        }
+        if (newTrack.kind === "video" && !newTrack.replacement) {
+            this._startMonitoringVideoTrack(newTrack)
         }
         return this._replaceTrackToPeerConnections(oldTrack, newTrack);
     }
@@ -849,6 +865,15 @@ export default class P2pRtcManager implements RtcManager {
     _stopMonitoringAudioTrack(track: any) {
         track.removeEventListener("ended", this._audioTrackOnEnded);
     }
+    
+    _startMonitoringVideoTrack(track: CustomMediaStreamTrack) {
+        track.addEventListener("ended", this._videoTrackOnEnded);
+    }
+
+    _stopMonitoringVideoTrack(track: CustomMediaStreamTrack) {
+        track.removeEventListener("ended", this._videoTrackOnEnded);
+    }
+
     _connect(clientId: string) {
         this.rtcStatsReconnect();
         const shouldAddLocalVideo = true;
@@ -1285,6 +1310,7 @@ export default class P2pRtcManager implements RtcManager {
             return;
         }
         if (enable === false) {
+            const stopCameraDelay = localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended" ? 0 : 5000
             // try to stop the local camera so the camera light goes off.
             setTimeout(() => {
                 localStream.getVideoTracks().forEach((track: any) => {
@@ -1299,7 +1325,7 @@ export default class P2pRtcManager implements RtcManager {
                         this._handleStopOrResumeVideo({ enable, track });
                     }
                 });
-            }, 5000);
+            }, stopCameraDelay);
         } else {
             if (localStream.getVideoTracks().length === 0) {
                 // re-enable the stream
@@ -1312,6 +1338,7 @@ export default class P2pRtcManager implements RtcManager {
                 navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
                     const track = stream.getVideoTracks()[0];
                     localStream.addTrack(track);
+                    this._startMonitoringVideoTrack(track)
                     this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {
                         streamId: localStream.id,
                         tracks: [track],
