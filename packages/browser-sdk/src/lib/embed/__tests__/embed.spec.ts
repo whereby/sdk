@@ -35,6 +35,7 @@ describe("@whereby/browser-sdk", () => {
                         "title",
                         "audio",
                         "background",
+                        "callqualitymonitoring",
                         "cameraaccess",
                         "chat",
                         "people",

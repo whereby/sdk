@@ -17,6 +17,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     background: string;
     bottomToolbar: string;
     breakout: string;
+    callQualityMonitoring: string;
     cameraAccess: string;
     cameraEffect: string;
     chat: string;
@@ -147,6 +148,7 @@ const boolAttrs = [
     "background",
     "bottomToolbar",
     "breakout",
+    "callQualityMonitoring",
     "cameraAccess",
     "chat",
     "embed",
