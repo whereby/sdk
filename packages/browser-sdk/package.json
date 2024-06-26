@@ -13,11 +13,11 @@
   "source": "src/index.js",
   "exports": {
     "./react": {
-      "import": "./dist/react/index.esm.js",
+      "default": "./dist/react/index.esm.js",
       "types": "./dist/react/index.d.ts"
     },
     "./embed": {
-      "import": "./dist/embed/index.esm.js",
+      "default": "./dist/embed/index.esm.js",
       "types": "./dist/embed/index.d.ts"
     }
   },
