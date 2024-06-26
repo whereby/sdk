@@ -95,7 +95,6 @@ const WherebyEmbed = ({
 
         element?.addEventListener("grant_device_permission", (e) => {
             const grantedDevicePermissions = e.detail.granted;
-            console.log(grantedDevicePermissions);
             setGrantedDevicePermissions(true);
         });
     }, []);
