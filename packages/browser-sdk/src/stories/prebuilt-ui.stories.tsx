@@ -86,7 +86,6 @@ const WherebyEmbed = ({
 
         element?.addEventListener("camera_toggle", (e) => {
             const cameraEnabled = e.detail.enabled;
-            console.log(cameraEnabled);
             setCameraEnabled(cameraEnabled);
         });
 
