@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.3.0
+
+### Minor Changes
+
+- fad538d: Add commonjs build
+
 ## 3.2.4
 
 ### Patch Changes
