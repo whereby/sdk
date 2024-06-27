@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 1.6.2
+
+### Patch Changes
+
+- 582dc14: Update mediasoup-client to 3.7.12
+- 319881b: Handle cam track ended event
+
 ## 1.6.1
 
 ### Patch Changes
