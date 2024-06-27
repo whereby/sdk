@@ -4,6 +4,7 @@ import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./constants";
 import Logger from "../utils/Logger";
+import rtcStats from "./rtcStatsService";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -287,28 +288,16 @@ export default class Session {
     }
 
     replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) {
+        if (!newTrack) {
+            rtcStats.sendEvent("replaceTrackP2P", { nullTrack: "newTrack", oldTrackKind: oldTrack?.kind })
+        }
         const pc = this.pc;
         // This shouldn't really happen
         if (!pc) return false;
         const senders = pc.getSenders();
-        function dbg(msg: string) {
-            const tr = (t: any) => t && `id:${t.id},kind:${t.kind},state:${t.readyState}`;
-            logger.warn(
-                `${msg}. newTrack:${tr(newTrack)}, oldTrack:${tr(oldTrack)}, sender tracks: ${JSON.stringify(
-                    senders.map((s: any) => `s ${tr(s.track)}`)
-                )}, sender first codecs: ${JSON.stringify(senders.map((s: any) => (s.getParameters().codecs || [])[0]))}`
-            );
-        }
-        if (!senders.length) {
-            dbg("No senders!");
-        }
         // If we didn't specify oldTrack, replace with first of its kind
         if (!oldTrack) {
             oldTrack = (senders.find((s: any) => s.track && s.track.kind === newTrack.kind) || {}).track;
-            if (!oldTrack) {
-                // odin: Temporary debug data, remove if you see after 2020-12-01
-                dbg("No sender with same kind! Add new track then.");
-            }
         }
         // Modern browsers makes things simple.
         // @ts-ignore
@@ -318,9 +307,8 @@ export default class Session {
                     for (let i = 0; i < senders.length; i++) {
                         const sender = senders[i];
                         const track = sender.track;
-                        if (!sender && !track) {
-                            // odin: Temporary debug data, remove if you see after 2020-12-01
-                            dbg("One of the tracks is null!");
+                        if (!track) {
+                            rtcStats.sendEvent("replaceTrackP2P", { nullTrack: "trackFromSender", oldTrackKind: oldTrack?.kind, newTrackKind: newTrack?.kind })
                         }
                         if (track.id === newTrack.id) {
                             return Promise.resolve(newTrack);
@@ -348,7 +336,6 @@ export default class Session {
                         if (3 < ++retried) {
                             clearInterval(timer);
                             timer = null;
-                            dbg("No sender track to replace");
                             reject("No sender track to replace");
                         }
                         return;
@@ -365,7 +352,6 @@ export default class Session {
             const stream =
                 this.streams.find((s) => s.getTracks().find((t: any) => t.id === newTrack.id)) || this.streams[0];
             if (!stream) {
-                dbg("No stream?");
                 return Promise.reject(new Error("replaceTrack: No stream?"));
             }
             // Let's just add the track if we couldn't figure out a better way.
