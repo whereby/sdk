@@ -50,6 +50,7 @@ export default class VegaRtcManager implements RtcManager {
     _receiveTransport: any;
     _clientStates: any;
     _streamIdToVideoConsumerId: any;
+    _streamIdToVideoResolution: Map<string, { width: number; height: number }>;
     _consumers: any;
     _dataConsumers: any;
     _localStreamDeregisterFunction: any;
@@ -134,6 +135,7 @@ export default class VegaRtcManager implements RtcManager {
 
         // Used for setting preferred layers based on streamId
         this._streamIdToVideoConsumerId = new Map();
+        this._streamIdToVideoResolution = new Map();
 
         // All consumers we have from the SFU
         this._consumers = new Map();
@@ -283,6 +285,8 @@ export default class VegaRtcManager implements RtcManager {
 
         // Clear all mappings we have
         this._streamIdToVideoConsumerId.clear();
+        this._streamIdToVideoResolution.clear();
+
         if (this._reconnect) {
             this._reconnectTimeOut = setTimeout(() => this._connect(), 1000);
         }
@@ -1381,7 +1385,10 @@ export default class VegaRtcManager implements RtcManager {
         const consumerId = this._streamIdToVideoConsumerId.get(streamId);
         const consumer = this._consumers.get(consumerId);
 
-        if (!consumer) return;
+        if (!consumer) {
+            this._streamIdToVideoResolution.set(streamId, { width, height });
+            return;
+        }
 
         const numberOfActiveVideos = getNumberOfActiveVideos(this._consumers);
         const numberOfTemporalLayers = getNumberOfTemporalLayers(consumer);
@@ -1558,6 +1565,13 @@ export default class VegaRtcManager implements RtcManager {
 
         stream.addTrack(consumer.track);
         this._syncIncomingStreamsWithPWA(clientId);
+
+        // Update resolution if we already have it
+        const resolution = this._streamIdToVideoResolution.get(stream.id);
+        if (resolution) {
+            this.updateStreamResolution(stream.id, null, resolution);
+            this._streamIdToVideoResolution.delete(stream.id);
+        }
     }
 
     async _onConsumerClosed({ consumerId, reason }: { consumerId: string; reason: string }) {
@@ -1666,6 +1680,7 @@ export default class VegaRtcManager implements RtcManager {
 
         if (stream.getTracks().length === 0) {
             this._streamIdToVideoConsumerId.delete(stream.id);
+            this._streamIdToVideoResolution.delete(stream.id);
 
             // We need to clean up our clientState
             // TODO: @geirbakke investigate missing mic audio if screenshare starts during reconnect
