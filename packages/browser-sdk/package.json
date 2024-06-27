@@ -1,6 +1,6 @@
 {
   "name": "@whereby.com/browser-sdk",
-  "version": "3.2.4",
+  "version": "3.3.0",
   "description": "Modules for integration Whereby video in web apps",
   "author": "Whereby AS",
   "license": "MIT",
