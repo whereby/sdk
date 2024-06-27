@@ -288,7 +288,7 @@ export default class Session {
     }
 
     replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) {
-        if (newTrack === null) {
+        if (!newTrack) {
             rtcStats.sendEvent("replaceTrackP2P", { nullTrack: "newTrack", oldTrackKind: oldTrack?.kind })
         }
         const pc = this.pc;
