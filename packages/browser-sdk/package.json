@@ -14,11 +14,15 @@
   "exports": {
     "./react": {
       "import": "./dist/react/index.esm.js",
-      "types": "./dist/react/index.d.ts"
+      "types": "./dist/react/index.d.ts",
+      "require": "./dist/react/index.cjs",
+      "default": "./dist/react/index.esm.js"
     },
     "./embed": {
       "import": "./dist/embed/index.esm.js",
-      "types": "./dist/embed/index.d.ts"
+      "types": "./dist/embed/index.d.ts",
+      "require": "./dist/embed/index.cjs",
+      "default": "./dist/embed/index.esm.js"
     }
   },
   "typesVersions": {

@@ -67,6 +67,28 @@ module.exports = [
         plugins,
     },
 
+    // CommonJS build of lib
+    {
+        input: "src/lib/react/index.ts",
+        output: {
+            exports: "named",
+            file: "dist/react/index.cjs",
+            format: "cjs",
+        },
+        external,
+        plugins,
+    },
+    {
+        input: "src/lib/embed/index.ts",
+        output: {
+            exports: "named",
+            file: "dist/embed/index.cjs",
+            format: "cjs",
+        },
+        external,
+        plugins,
+    },
+
     // CDN builds
     {
         input: "src/lib/embed/index.ts",
