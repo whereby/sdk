@@ -1,5 +1,12 @@
 # @whereby.com/browser-sdk
 
+## 3.2.4
+
+### Patch Changes
+
+- 3ac7fd8: adding callQualityMonitoring as an attribute
+  - @whereby.com/core@0.19.1
+
 ## 3.2.3
 
 ### Patch Changes

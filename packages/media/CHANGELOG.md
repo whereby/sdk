@@ -1,5 +1,13 @@
 # @whereby.com/media
 
+## 1.6.1
+
+### Patch Changes
+
+- 18ec086: Add tracking for replace track issue in P2P
+- 7320e54: Adjust SFU rtc manager folder structure to allow breaking it apart and testing
+  the units. Also adds test for setting spatial and temporal layers.
+
 ## 1.6.0
 
 ### Minor Changes
