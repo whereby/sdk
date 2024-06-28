@@ -84,6 +84,8 @@ export default class VegaRtcManager implements RtcManager {
     _iceServers: any;
     _sfuServer: any;
     _mediaserverConfigTtlSeconds: any;
+    _videoTrackBeingMonitored?: CustomMediaStreamTrack;
+    _audioTrackBeingMonitored?: CustomMediaStreamTrack;
 
     constructor({
         selfId,
@@ -1125,22 +1127,17 @@ export default class VegaRtcManager implements RtcManager {
      * @param {MediaStreamTrack} track
      */
     replaceTrack(oldTrack: CustomMediaStreamTrack | null, track: CustomMediaStreamTrack) {
-        if (oldTrack && oldTrack.kind === "audio") {
-            this._stopMonitoringAudioTrack(oldTrack);
-        }
-        if (oldTrack && oldTrack.kind === "video" && !track.replacement) {
-            this._stopMonitoringVideoTrack(oldTrack);
-        }
-
         if (track.kind === "audio") {
-            this._startMonitoringAudioTrack(track);
+            if (!track.effectTrack) {
+                this._monitorAudioTrack(track);
+            }
             this._micTrack = track;
             this._replaceMicTrack();
         }
 
         if (track.kind === "video") {
-            if (!track.replacement)  {
-                this._startMonitoringVideoTrack(track)
+            if (!track.effectTrack)  {
+                this._monitorVideoTrack(track)
             }
             this._webcamTrack = track;
             this._replaceWebcamTrack();
@@ -1192,24 +1189,34 @@ export default class VegaRtcManager implements RtcManager {
      * @param {string | "0"} streamId
      * @param {MediaStream} stream
      */
-    addNewStream(streamId: string, stream: MediaStream, audioPaused: boolean, videoPaused: boolean) {
+    addNewStream(streamId: string, stream: MediaStream, audioPaused: boolean, videoPaused: boolean, beforeEffectTracks: CustomMediaStreamTrack[] = []) {
         if (streamId === "0") {
             this._micPaused = audioPaused;
             this._webcamPaused = videoPaused;
 
             const videoTrack = stream.getVideoTracks()[0] as CustomMediaStreamTrack;
-            const audioTrack = stream.getAudioTracks()[0];
+            const audioTrack = stream.getAudioTracks()[0] as CustomMediaStreamTrack;
 
             if (videoTrack) {
                 this._sendWebcam(videoTrack);
-                if (!videoTrack.replacement) {
-                    this._startMonitoringVideoTrack(videoTrack);
+                if (!videoTrack.effectTrack) {
+                    this._monitorVideoTrack(videoTrack);
+                }
+                const beforeEffectTrack = beforeEffectTracks.find(t => t.kind === "video")
+                if (beforeEffectTrack) {
+                    this._monitorVideoTrack(beforeEffectTrack)
                 }
             }
             if (audioTrack) {
                 this._sendMic(audioTrack);
                 this._syncMicAnalyser();
-                this._startMonitoringAudioTrack(audioTrack);
+                if (!audioTrack.effectTrack) {
+                    this._monitorAudioTrack(audioTrack);
+                }
+                const beforeEffectTrack = beforeEffectTracks.find(t => t.kind === "audio")
+                if (beforeEffectTrack) {
+                    this._monitorAudioTrack(beforeEffectTrack)
+                }
             }
 
             // This should not be needed, but checking nonetheless
@@ -1332,7 +1339,7 @@ export default class VegaRtcManager implements RtcManager {
             navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
                 const track = stream.getVideoTracks()[0];
                 localStream.addTrack(track);
-                this._startMonitoringVideoTrack(track)
+                this._monitorVideoTrack(track)
 
                 this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                     streamId: localStream.id,
@@ -1490,20 +1497,20 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    _startMonitoringAudioTrack(track: MediaStreamTrack) {
+    _monitorAudioTrack(track: any) {
+        if (this._audioTrackBeingMonitored?.id === track.id) return;
+
+        this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded);
         track.addEventListener("ended", this._audioTrackOnEnded);
+        this._audioTrackBeingMonitored = track;
     }
 
-    _stopMonitoringAudioTrack(track: MediaStreamTrack) {
-        track.removeEventListener("ended", this._audioTrackOnEnded);
-    }
-    
-    _startMonitoringVideoTrack(track: CustomMediaStreamTrack) {
+    _monitorVideoTrack(track: CustomMediaStreamTrack) {
+        if (this._videoTrackBeingMonitored?.id === track.id) return;
+
+        this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
         track.addEventListener("ended", this._videoTrackOnEnded);
-    }
-
-    _stopMonitoringVideoTrack(track: CustomMediaStreamTrack) {
-        track.removeEventListener("ended", this._videoTrackOnEnded);
+        this._videoTrackBeingMonitored = track;
     }
 
     async _onMessage(message: any) {

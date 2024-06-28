@@ -72,6 +72,8 @@ export default class P2pRtcManager implements RtcManager {
     _lastReverseDirectionAttemptByClientId: any;
     _stoppedVideoTrack: any;
     icePublicIPGatheringTimeoutID: any;
+    _videoTrackBeingMonitored?: CustomMediaStreamTrack;
+    _audioTrackBeingMonitored?: CustomMediaStreamTrack;
 
     constructor({
         selfId,
@@ -147,7 +149,13 @@ export default class P2pRtcManager implements RtcManager {
         session.maybeRestrictRelayBandwidth();
     }
 
-    addNewStream(streamId: string, stream: MediaStream) {
+    addNewStream(
+        streamId: string,
+        stream: MediaStream,
+        audioPaused: boolean,
+        videoPaused: boolean,
+        beforeEffectTracks: CustomMediaStreamTrack[] = [],
+    ) {
         if (stream === this.localStreams[streamId]) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
@@ -158,13 +166,27 @@ export default class P2pRtcManager implements RtcManager {
 
         if (streamId === CAMERA_STREAM_ID) {
             this._addStreamToPeerConnections(stream);
-            const [audioTrack] = stream.getAudioTracks();
-            const videoTrack = stream.getVideoTracks()[0] as CustomMediaStreamTrack
+            const audioTrack = stream.getAudioTracks()[0] as CustomMediaStreamTrack;
+            const videoTrack = stream.getVideoTracks()[0] as CustomMediaStreamTrack;
             if (audioTrack) {
-                this._startMonitoringAudioTrack(audioTrack);
+                if (!audioTrack.effectTrack) {
+                    this._monitorAudioTrack(audioTrack);
+                }
+                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
+                if (beforeEffectTrack) {
+                    this._monitorAudioTrack(beforeEffectTrack);
+                }
             }
-            if (videoTrack && !videoTrack.replacement) {
-                this._startMonitoringVideoTrack(videoTrack);
+
+            if (videoTrack) {
+                if (!videoTrack.effectTrack) {
+                    this._monitorVideoTrack(videoTrack);
+                }
+
+                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
+                if (beforeEffectTrack) {
+                    this._monitorVideoTrack(beforeEffectTrack);
+                }
             }
 
             // This should not be needed, but checking nonetheless
@@ -192,18 +214,12 @@ export default class P2pRtcManager implements RtcManager {
         return;
     }
 
-    replaceTrack(oldTrack: CustomMediaStreamTrack, newTrack: CustomMediaStreamTrack) {
-        if (oldTrack && oldTrack.kind === "audio") {
-            this._stopMonitoringAudioTrack(oldTrack);
+    replaceTrack(oldTrack: CustomMediaStreamTrack | null, newTrack: CustomMediaStreamTrack) {
+        if (newTrack.kind === "audio" && !newTrack.effectTrack) {
+            this._monitorAudioTrack(newTrack);
         }
-        if (oldTrack && oldTrack.kind === "video" && !newTrack.replacement) {
-            this._stopMonitoringVideoTrack(oldTrack);
-        }
-        if (newTrack && newTrack.kind === "audio") {
-            this._startMonitoringAudioTrack(newTrack);
-        }
-        if (newTrack.kind === "video" && !newTrack.replacement) {
-            this._startMonitoringVideoTrack(newTrack)
+        if (newTrack.kind === "video" && !newTrack.effectTrack) {
+            this._monitorVideoTrack(newTrack);
         }
         return this._replaceTrackToPeerConnections(oldTrack, newTrack);
     }
@@ -858,20 +874,20 @@ export default class P2pRtcManager implements RtcManager {
         this._fetchMediaServersTimer = null;
     }
 
-    _startMonitoringAudioTrack(track: any) {
+    _monitorAudioTrack(track: any) {
+        if (this._audioTrackBeingMonitored?.id === track.id) return;
+
+        this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded);
         track.addEventListener("ended", this._audioTrackOnEnded);
+        this._audioTrackBeingMonitored = track;
     }
 
-    _stopMonitoringAudioTrack(track: any) {
-        track.removeEventListener("ended", this._audioTrackOnEnded);
-    }
-    
-    _startMonitoringVideoTrack(track: CustomMediaStreamTrack) {
+    _monitorVideoTrack(track: CustomMediaStreamTrack) {
+        if (this._videoTrackBeingMonitored?.id === track.id) return;
+        
+        this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
         track.addEventListener("ended", this._videoTrackOnEnded);
-    }
-
-    _stopMonitoringVideoTrack(track: CustomMediaStreamTrack) {
-        track.removeEventListener("ended", this._videoTrackOnEnded);
+        this._videoTrackBeingMonitored = track;
     }
 
     _connect(clientId: string) {
@@ -1310,7 +1326,10 @@ export default class P2pRtcManager implements RtcManager {
             return;
         }
         if (enable === false) {
-            const stopCameraDelay = localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended" ? 0 : 5000
+            const stopCameraDelay =
+                localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended"
+                    ? 0
+                    : 5000;
             // try to stop the local camera so the camera light goes off.
             setTimeout(() => {
                 localStream.getVideoTracks().forEach((track: any) => {
@@ -1338,7 +1357,7 @@ export default class P2pRtcManager implements RtcManager {
                 navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
                     const track = stream.getVideoTracks()[0];
                     localStream.addTrack(track);
-                    this._startMonitoringVideoTrack(track)
+                    this._monitorVideoTrack(track);
                     this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {
                         streamId: localStream.id,
                         tracks: [track],
