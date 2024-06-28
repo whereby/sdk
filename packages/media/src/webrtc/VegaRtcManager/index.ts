@@ -1494,8 +1494,6 @@ export default class VegaRtcManager implements RtcManager {
     _monitorAudioTrack(track: any) {
         if (this._audioTrackBeingMonitored?.id === track.id) return;
 
-        this._audioTrackBeingMonitored && console.log("stop monitoring", this._audioTrackBeingMonitored.label);
-        console.log("start monitoring", track.label);
         this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded);
         track.addEventListener("ended", this._audioTrackOnEnded);
         this._audioTrackBeingMonitored = track;
@@ -1504,9 +1502,7 @@ export default class VegaRtcManager implements RtcManager {
     _monitorVideoTrack(track: CustomMediaStreamTrack) {
         if (this._videoTrackBeingMonitored?.id === track.id) return;
 
-        this._videoTrackBeingMonitored && console.log("stop monitoring", this._videoTrackBeingMonitored.label);
         this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
-        console.log("start monitoring", track.label);
         track.addEventListener("ended", this._videoTrackOnEnded);
         this._videoTrackBeingMonitored = track;
     }
