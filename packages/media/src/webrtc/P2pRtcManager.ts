@@ -929,7 +929,7 @@ export default class P2pRtcManager implements RtcManager {
             this._negotiatePeerConnection(
                 clientId,
                 session,
-                Object.assign({}, this.offerOptions, { iceRestart: true }),
+                Object.assign({}, this.offerOptions, { iceRestart: true })
             );
         }
     }

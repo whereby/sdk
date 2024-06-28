@@ -17,7 +17,6 @@ import { getHandler } from "../../utils/getHandler";
 import { maybeTurnOnly } from "../../utils/transportSettings";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
-import { before } from "node:test";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
