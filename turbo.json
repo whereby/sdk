@@ -1,6 +1,6 @@
 {
     "$schema": "https://turbo.build/schema.json",
-    "pipeline": {
+    "tasks": {
         "build": {
             "dependsOn": ["^build"],
             "outputs": ["dist/**"]
@@ -18,7 +18,10 @@
         },
         "test:e2e": {
             "dependsOn": ["^build"],
-            "outputs": ["playwright-*"]
+            "outputs": ["playwright-*"],
+            "env": [
+                "WHEREBY_API_KEY"
+            ]
         }
     }
 }
