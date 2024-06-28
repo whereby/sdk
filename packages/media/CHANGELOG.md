@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.6.3
+
+### Patch Changes
+
+- a211453: Handle senders without tracks when replacing tracks
+
 ## 1.6.2
 
 ### Patch Changes
