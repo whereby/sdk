@@ -288,6 +288,7 @@ export default class Session {
     }
 
     replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) {
+        // Remove this when we stop seeing errors in this function about tracks being null.
         if (!newTrack) {
             rtcStats.sendEvent("replaceTrackP2P", { nullTrack: "newTrack", oldTrackKind: oldTrack?.kind })
         }
@@ -297,7 +298,7 @@ export default class Session {
         const senders = pc.getSenders();
         // If we didn't specify oldTrack, replace with first of its kind
         if (!oldTrack) {
-            oldTrack = (senders.find((s: any) => s.track && s.track.kind === newTrack.kind) || {}).track;
+            oldTrack = (senders.find((s: RTCRtpSender) => s.track && s.track.kind === newTrack.kind) || {}).track;
         }
         // Modern browsers makes things simple.
         // @ts-ignore
@@ -305,15 +306,16 @@ export default class Session {
             if (oldTrack) {
                 const process = () => {
                     for (let i = 0; i < senders.length; i++) {
-                        const sender = senders[i];
+                        const sender: RTCRtpSender = senders[i];
                         const track = sender.track;
+                        // Remove this when we stop seeing errors in this function about tracks being null.
                         if (!track) {
                             rtcStats.sendEvent("replaceTrackP2P", { nullTrack: "trackFromSender", oldTrackKind: oldTrack?.kind, newTrackKind: newTrack?.kind })
                         }
-                        if (track.id === newTrack.id) {
+                        if (track?.id === newTrack.id) {
                             return Promise.resolve(newTrack);
                         }
-                        if (track.id === oldTrack.id) {
+                        if (track?.id === oldTrack.id) {
                             return senders[i].replaceTrack(newTrack);
                         }
                     }
