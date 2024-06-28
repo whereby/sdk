@@ -7,7 +7,7 @@
     "dependencies": {
         "@chakra-ui/react": "^2.5.5",
         "@emotion/react": "^11.11.4",
-        "@emotion/styled": "^11.10.6",
+        "@emotion/styled": "^11.11.5",
         "@whereby.com/browser-sdk": "*",
         "framer-motion": "^11.0.3",
         "react": "^18.2.0",
