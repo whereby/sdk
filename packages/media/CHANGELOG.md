@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.6.5
+
+### Patch Changes
+
+- c2459a8: Improve handling of track ended listeners
+
 ## 1.6.4
 
 ### Patch Changes
