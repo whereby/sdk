@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.6.4
+
+### Patch Changes
+
+- cc38ede: Fix issue where stream resolution is not set, as the consumer is not ready at the time resolution is reported.
+
 ## 1.6.3
 
 ### Patch Changes
