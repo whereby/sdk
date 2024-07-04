@@ -120,7 +120,7 @@ describe("VegaRtcManager", () => {
 
     describe("addNewStream", () => {
         it("should not produce ended webcam track", async () => {
-            const localStream = helpers.createMockedMediaStream()
+            const localStream = helpers.createMockedMediaStream() as unknown as MediaStream
             jest.spyOn(mockSendTransport, "produce")
             localStream.getTracks().forEach(t => {
                 // @ts-ignore
@@ -141,7 +141,7 @@ describe("VegaRtcManager", () => {
         let newTrack: CustomMediaStreamTrack;
 
         beforeEach(() => {
-            localStream = helpers.createMockedMediaStream();
+            localStream = helpers.createMockedMediaStream() as unknown as MediaStream;
             newTrack = helpers.createMockedMediaStreamTrack({
                 id: "id",
                 kind: "video",

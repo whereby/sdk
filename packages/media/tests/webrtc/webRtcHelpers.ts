@@ -136,7 +136,7 @@ export function createMockedMediaStreamTrack({ id = randomString("track"), kind 
     return Object.assign(new EventTarget(), result);
 }
 
-export function createMockedMediaStream(existingTracks?: any): MediaStream {
+export function createMockedMediaStream(existingTracks?: any) {
     let tracks = existingTracks || [
         createMockedMediaStreamTrack({
             kind: "audio",
@@ -174,7 +174,7 @@ export function createMockedMediaStream(existingTracks?: any): MediaStream {
             return foundTracks[0];
         },
     };
-    return Object.assign(new EventTarget(), result) as unknown as MediaStream;
+    return Object.assign(new EventTarget(), result);
 }
 
 export class MockTransport {
