@@ -745,15 +745,17 @@ export default class VegaRtcManager implements RtcManager {
 
     async _internalSendWebcam() {
         logger.info("_internalSendWebcam()");
+        if (
+            !this._sendTransport ||
+            this._webcamProducer ||
+            this._webcamProducerPromise ||
+            this._webcamTrack?.readyState !== "live"
+        ) {
+            return;
+        }
 
         this._webcamProducerPromise = (async () => {
             try {
-                // Have any of our resources disappeared while we were waiting to be executed?
-                if (!this._webcamTrack || !this._sendTransport || this._webcamProducer) {
-                    this._webcamProducerPromise = null;
-                    return;
-                }
-
                 const currentPaused = this._webcamPaused;
 
                 const producer = await this._sendTransport.produce({
@@ -786,7 +788,10 @@ export default class VegaRtcManager implements RtcManager {
                 });
 
                 // Has someone replaced the track?
-                if (this._webcamTrack !== this._webcamProducer.track) await this._replaceWebcamTrack();
+                if (this._webcamTrack && this._webcamTrack !== this._webcamProducer?.track) {
+                    this._webcamProducerPromise = null;
+                    this._replaceWebcamTrack();
+                }
                 if (this._webcamPaused !== this._webcamProducer.paused) this._pauseResumeWebcam();
             } catch (error) {
                 logger.error("webcamProducer failed:%o", error);
@@ -795,7 +800,7 @@ export default class VegaRtcManager implements RtcManager {
 
                 // Has the track disappeared while we were waiting to be executed?
                 if (!this._webcamTrack) {
-                    await this._stopProducer(this._webcamProducer);
+                    this._stopProducer(this._webcamProducer);
                     this._webcamProducer = null;
                 }
             }
@@ -804,8 +809,14 @@ export default class VegaRtcManager implements RtcManager {
 
     async _replaceWebcamTrack() {
         logger.info("_replaceWebcamTrack()");
+        if (!this._sendTransport || !this._webcamTrack || this._webcamProducerPromise) return
 
-        if (!this._webcamTrack || !this._webcamProducer || this._webcamProducer.closed) return;
+        // if we attempted to produce an ended track earlier no producer would have been made
+        // so here, later, it will be replaced with a working track, and the producer needs to be created
+        if (!this._webcamProducer && this._webcamTrack.enabled) {
+            await this._internalSendWebcam();
+            return
+        }
 
         if (this._webcamProducer.track !== this._webcamTrack) {
             await this._webcamProducer.replaceTrack({ track: this._webcamTrack });

@@ -1,3 +1,5 @@
+import WS from "jest-websocket-mock";
+
 import { ServerSocket } from "../../src/utils/ServerSocket";
 jest.mock("../../src/utils/ServerSocket");
 
@@ -134,7 +136,7 @@ export function createMockedMediaStreamTrack({ id = randomString("track"), kind 
     return Object.assign(new EventTarget(), result);
 }
 
-export function createMockedMediaStream(existingTracks?: any) {
+export function createMockedMediaStream(existingTracks?: any): MediaStream {
     let tracks = existingTracks || [
         createMockedMediaStreamTrack({
             kind: "audio",
@@ -172,5 +174,88 @@ export function createMockedMediaStream(existingTracks?: any) {
             return foundTracks[0];
         },
     };
-    return Object.assign(new EventTarget(), result);
+    return Object.assign(new EventTarget(), result) as unknown as MediaStream;
 }
+
+export class MockTransport {
+    on = jest.fn().mockReturnValue({ on: jest.fn() });
+    observer = {
+        once: jest.fn(),
+    };
+    produce = ({ track }: { track: MediaStreamTrack }) => {
+        return new MockProducer({ kind: track.kind });
+    };
+    close = jest.fn();
+}
+
+export class MockProducer {
+    kind: string;
+
+    constructor({ kind }: { kind: string }) {
+        this.kind = kind;
+    }
+
+    id = "id";
+    resume = jest.fn();
+    pause = jest.fn();
+    observer = {
+        once: jest.fn(),
+    };
+    paused = false;
+    replaceTrack = ({ track }: { track: any }) => {
+        this.track = track;
+    };
+    track = undefined;
+}
+
+export const createSfuWebsocketServer = (): {
+    wss: WS;
+    url: string;
+} => {
+    const portsInUse = [];
+    const getPort = (exludePorts: number[]): number => {
+        let port;
+        do {
+            port = Math.floor(Math.random() * 64510) + 1024;
+        } while (exludePorts.includes(port));
+        return port;
+    };
+
+    let wss;
+    let port;
+    let url;
+    while (!wss || !url) {
+        try {
+            port = getPort(portsInUse);
+            url = "wss://localhost:" + port;
+            wss = new WS(url);
+
+            wss.on("connection", function connection(socket) {
+                socket.on("message", function message(message) {
+                    const { method, id } = JSON.parse(message.toString());
+                    if (method === "getCapabilities") {
+                        socket.send(
+                            JSON.stringify({ response: true, id, ok: true, })
+                        );
+                    }
+                    if (method === "createTransport") {
+                        socket.send(
+                            JSON.stringify({
+                                id,
+                                ok: true,
+                                response: true,
+                            })
+                        );
+                    }
+                });
+            });
+        } catch (e) {
+            if (port) portsInUse.push(port);
+            port = undefined;
+        }
+    }
+
+    url = url.split("wss://")[1];
+
+    return { wss, url };
+};
