@@ -80,6 +80,8 @@ export const PROTOCOL_RESPONSES = {
     USER_NOTIFIED: "user_notified",
     VIDEO_ENABLED: "video_enabled",
     CLIENT_UNABLE_TO_JOIN: "client_unable_to_join",
+    LIVE_TRANSCRIPTION_STARTED: "live_transcription_started",
+    LIVE_TRANSCRIPTION_STOPPED: "live_transcription_stopped",
 };
 
 export const PROTOCOL_ERRORS = {

@@ -10,6 +10,8 @@ import {
     KnockerLeftEvent,
     KnockAcceptedEvent,
     KnockRejectedEvent,
+    LiveTranscriptionStartedEvent,
+    LiveTranscriptionStoppedEvent,
     NewClientEvent,
     RoomJoinedEvent,
     RoomKnockedEvent,
@@ -51,4 +53,6 @@ export const signalEvents = {
     spotlightRemoved: createSignalEventAction<SpotlightRemovedEvent>("spotlightRemoved"),
     streamingStopped: createSignalEventAction<void>("streamingStopped"),
     videoEnabled: createSignalEventAction<VideoEnabledEvent>("videoEnabled"),
+    liveTranscriptionStarted: createSignalEventAction<LiveTranscriptionStartedEvent>("liveTranscriptionStarted"),
+    liveTranscriptionStopped: createSignalEventAction<LiveTranscriptionStoppedEvent>("liveTranscriptionStopped"),
 };

@@ -200,6 +200,15 @@ export interface SpotlightRemovedEvent {
     requestedByClientId: string;
 }
 
+export interface LiveTranscriptionStartedEvent {
+    startedAt: string;
+    transcriptionId: string;
+}
+
+export interface LiveTranscriptionStoppedEvent {
+    transcriptionId: string;
+}
+
 export interface SignalEvents {
     audio_enabled: AudioEnabledEvent;
     audio_enable_requested: AudioEnableRequestedEvent;
@@ -227,6 +236,8 @@ export interface SignalEvents {
     spotlight_removed: SpotlightRemovedEvent;
     streaming_stopped: void;
     video_enabled: VideoEnabledEvent;
+    live_transcription_started: LiveTranscriptionStartedEvent;
+    live_transcription_stopped: LiveTranscriptionStoppedEvent;
 }
 
 export interface IdentifyDeviceRequest {

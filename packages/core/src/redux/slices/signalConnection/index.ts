@@ -15,6 +15,8 @@ import {
     KnockAcceptedEvent,
     KnockRejectedEvent,
     KnockerLeftEvent,
+    LiveTranscriptionStartedEvent,
+    LiveTranscriptionStoppedEvent,
     NewClientEvent,
     RoomJoinedEvent,
     RoomKnockedEvent,
@@ -71,6 +73,12 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("spotlight_added", (payload: SpotlightAddedEvent) => dispatch(signalEvents.spotlightAdded(payload)));
     socket.on("spotlight_removed", (payload: SpotlightRemovedEvent) =>
         dispatch(signalEvents.spotlightRemoved(payload)),
+    );
+    socket.on("live_transcription_started", (payload: LiveTranscriptionStartedEvent) =>
+        dispatch(signalEvents.liveTranscriptionStarted(payload)),
+    );
+    socket.on("live_transcription_stopped", (payload: LiveTranscriptionStoppedEvent) =>
+        dispatch(signalEvents.liveTranscriptionStopped(payload)),
     );
 }
 
