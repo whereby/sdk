@@ -91,6 +91,7 @@ const WherebyEmbed = ({
         element?.addEventListener("meeting_end", () => {
             setMeetingEnded(true);
         });
+
     }, []);
 
     return (
