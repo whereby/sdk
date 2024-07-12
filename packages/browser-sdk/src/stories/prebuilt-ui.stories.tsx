@@ -116,6 +116,7 @@ const WherebyEmbed = ({
                 recording={offOn(recording)}
                 screenshare={offOn(screenshare)}
                 video={offOn(video)}
+                emojiSkinTone="3"
                 virtualBackgroundUrl={virtualBackgroundUrl}
                 room={room}
                 style={{ height: "100vh", width: "100%" }}
