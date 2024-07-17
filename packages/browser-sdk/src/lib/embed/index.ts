@@ -23,6 +23,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     chat: string;
     displayName: string;
     emptyRoomInvitation: string;
+    emojiSkinTone: string;
     externalId: string;
     floatSelf: string;
     groups: string;
@@ -46,6 +47,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     precallReview: string;
     precallPermissionsHelpLink: string;
     precallCeremonyCanSkip: string;
+    reactions: string;
     recording: string;
     room: string;
     /**
@@ -170,6 +172,7 @@ const boolAttrs = [
     "precallPermissionsHelpLink",
     "precallReview",
     "people",
+    "reactions",
     "recording",
     "roomIntegrations",
     "screenshare",
@@ -205,6 +208,7 @@ define("WherebyEmbed", {
         "externalId",
         "title",
         "cameraEffect",
+        "emojiSkinTone",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
     onattributechanged({ attributeName, oldValue }) {
@@ -285,6 +289,7 @@ define("WherebyEmbed", {
             avatarurl: avatarUrl,
             displayname: displayName,
             cameraeffect: cameraEffect,
+            emojiskintone: emojiSkinTone,
             lang,
             metadata,
             externalid: externalId,
@@ -311,6 +316,7 @@ define("WherebyEmbed", {
             ...(displayName && { displayName }),
             ...(lang && { lang: lang }),
             ...(metadata && { metadata: metadata }),
+            ...(emojiSkinTone && { emojiSkinTone }),
             ...(externalId && { externalId }),
             ...(groups && { groups: groups }),
             ...(virtualBackgroundUrl && { virtualBackgroundUrl: virtualBackgroundUrl }),
