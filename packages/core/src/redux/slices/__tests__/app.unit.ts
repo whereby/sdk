@@ -6,6 +6,7 @@ describe("appSlice", () => {
             it("should change the state", () => {
                 const initialConfig = {
                     isNodeSdk: true,
+                    isDialIn: true,
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
                     displayName: "displayName",
@@ -17,6 +18,7 @@ describe("appSlice", () => {
 
                 expect(result).toEqual({
                     isActive: true,
+                    isDialIn: true,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
@@ -41,6 +43,7 @@ describe("appSlice", () => {
 
                 expect(result).toEqual({
                     isActive: true,
+                    isDialIn: false,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",

@@ -10,6 +10,7 @@ import {
     selectAppUserAgent,
     selectAppExternalId,
     selectAppIsActive,
+    selectAppIsDialIn,
 } from "./app";
 import { selectRoomKey, setRoomKey } from "./authorization";
 
@@ -148,6 +149,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const roomName = selectAppRoomName(state);
     const roomKey = selectRoomKey(state);
     const displayName = selectAppDisplayName(state);
+    const isDialIn = selectAppIsDialIn(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
@@ -161,6 +163,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
         deviceCapabilities: { canScreenshare: true },
         displayName,
         isCoLocated: false,
+        isDialIn,
         isDevicePermissionDenied: false,
         kickFromOtherRooms: false,
         organizationId,
@@ -181,6 +184,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const displayName = selectAppDisplayName(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
+    const isDialIn = selectAppIsDialIn(state);
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
@@ -195,6 +199,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         deviceCapabilities: { canScreenshare: true },
         displayName,
         isCoLocated: false,
+        isDialIn,
         isDevicePermissionDenied: false,
         kickFromOtherRooms: false,
         organizationId,

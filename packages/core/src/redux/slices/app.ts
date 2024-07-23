@@ -9,6 +9,7 @@ import { coreVersion } from "../../version";
 
 export interface AppConfig {
     isNodeSdk?: boolean;
+    isDialIn?: boolean;
     displayName: string;
     localMediaOptions?: LocalMediaOptions;
     roomKey: string | null;
@@ -20,6 +21,7 @@ export interface AppConfig {
 export interface AppState {
     isNodeSdk: boolean;
     isActive: boolean;
+    isDialIn: boolean;
     roomUrl: string | null;
     roomName: string | null;
     displayName: string | null;
@@ -31,6 +33,7 @@ export interface AppState {
 export const initialState: AppState = {
     isNodeSdk: false,
     isActive: false,
+    isDialIn: false,
     roomName: null,
     roomUrl: null,
     displayName: null,
@@ -71,6 +74,7 @@ export const { doAppStop, doAppStart } = appSlice.actions;
 
 export const selectAppRaw = (state: RootState) => state.app;
 export const selectAppIsActive = (state: RootState) => state.app.isActive;
+export const selectAppIsDialIn = (state: RootState) => state.app.isDialIn;
 export const selectAppRoomName = (state: RootState) => state.app.roomName;
 export const selectAppRoomUrl = (state: RootState) => state.app.roomUrl;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;

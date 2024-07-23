@@ -77,6 +77,7 @@ describe("actions", () => {
                         app: {
                             isNodeSdk: true,
                             isActive: false,
+                            isDialIn: false,
                             roomName: null,
                             roomUrl: null,
                             displayName: null,
