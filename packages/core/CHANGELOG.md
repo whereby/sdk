@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.21.0
+
+### Minor Changes
+
+- 2eb29a9: Add live transcription events
+
+### Patch Changes
+
+- Updated dependencies [2eb29a9]
+  - @whereby.com/media@1.7.0
+
 ## 0.20.0
 
 ### Minor Changes
