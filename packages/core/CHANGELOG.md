@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.20.0
+
+### Minor Changes
+
+- 396251e: Add isDialIn property to the app config
+
 ## 0.19.5
 
 ### Patch Changes

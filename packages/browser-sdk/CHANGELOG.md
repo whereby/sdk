@@ -1,5 +1,17 @@
 # @whereby.com/browser-sdk
 
+## 3.4.0
+
+### Minor Changes
+
+- 1d7d9ed: adding attributes for changing emoji skin tones and disabling reactions
+
+### Patch Changes
+
+- 26e849b: Add a grant_device_permission event to embed element
+- Updated dependencies [396251e]
+  - @whereby.com/core@0.20.0
+
 ## 3.3.4
 
 ### Patch Changes
