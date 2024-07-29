@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.7.0
+
+### Minor Changes
+
+- 2eb29a9: Add live transcription events
+
 ## 1.6.5
 
 ### Patch Changes
