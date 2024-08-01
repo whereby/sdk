@@ -31,6 +31,7 @@ describe("remoteParticipantsSlice", () => {
                                     },
                                     startedCloudRecordingAt: null,
                                     externalId: null,
+                                    isDialIn: false,
                                 },
                             ],
                             knockers: [],
@@ -54,6 +55,7 @@ describe("remoteParticipantsSlice", () => {
                         startedCloudRecordingAt: null,
                         presentationStream: null,
                         externalId: null,
+                        isDialIn: false,
                     },
                 ]);
             });
@@ -83,6 +85,7 @@ describe("remoteParticipantsSlice", () => {
                     startedCloudRecordingAt: client.startedCloudRecordingAt,
                     presentationStream: null,
                     externalId: null,
+                    isDialIn: false,
                 },
             ]);
         });

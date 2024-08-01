@@ -55,6 +55,7 @@ export interface SignalClient {
     role: ClientRole;
     startedCloudRecordingAt: string | null;
     externalId: string | null;
+    isDialIn: boolean;
 }
 
 export interface Spotlight {

@@ -28,6 +28,7 @@ const initialState: LocalParticipantState = {
     roleName: "none",
     clientClaim: undefined,
     stickyReaction: undefined,
+    isDialIn: false,
 };
 
 /**
