@@ -49,6 +49,7 @@ describe("authorizationSlice", () => {
                                 },
                                 startedCloudRecordingAt: null,
                                 externalId: null,
+                                isDialIn: false,
                             },
                         ],
                         knockers: [],

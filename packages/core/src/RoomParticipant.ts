@@ -12,6 +12,7 @@ interface RoomParticipantData {
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
     stickyReaction?: StickyReaction | null;
+    isDialIn: boolean;
 }
 
 export default class RoomParticipant {
@@ -22,14 +23,24 @@ export default class RoomParticipant {
     public readonly isLocalParticipant: boolean = false;
     public readonly isVideoEnabled: boolean;
     public readonly stickyReaction?: StickyReaction | null;
+    public readonly isDialIn: boolean;
 
-    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction }: RoomParticipantData) {
+    constructor({
+        displayName,
+        id,
+        stream,
+        isAudioEnabled,
+        isVideoEnabled,
+        stickyReaction,
+        isDialIn,
+    }: RoomParticipantData) {
         this.displayName = displayName;
         this.id = id;
         this.stream = stream;
         this.isAudioEnabled = isAudioEnabled;
         this.isVideoEnabled = isVideoEnabled;
         this.stickyReaction = stickyReaction;
+        this.isDialIn = isDialIn;
     }
 }
 
@@ -65,13 +76,22 @@ export interface RemoteParticipant {
     presentationStream: (MediaStream & { inboundId?: string }) | null;
     externalId: string | null;
     stickyReaction?: StickyReaction | null;
+    isDialIn: boolean;
 }
 
 export class LocalParticipant extends RoomParticipant {
     public readonly isLocalParticipant = true;
 
-    constructor({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction }: RoomParticipantData) {
-        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction });
+    constructor({
+        displayName,
+        id,
+        stream,
+        isAudioEnabled,
+        isVideoEnabled,
+        stickyReaction,
+        isDialIn,
+    }: RoomParticipantData) {
+        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction, isDialIn });
     }
 }
 
