@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 0.22.0
+
+### Minor Changes
+
+- fb0db35: Add isDialIn property to room participants
+
+### Patch Changes
+
+- Updated dependencies [e299f5d]
+- Updated dependencies [fb0db35]
+  - @whereby.com/media@1.8.0
+
 ## 0.21.0
 
 ### Minor Changes

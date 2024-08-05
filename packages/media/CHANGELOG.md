@@ -1,5 +1,15 @@
 # @whereby.com/media
 
+## 1.8.0
+
+### Minor Changes
+
+- fb0db35: Add isDialIn property to room participants
+
+### Patch Changes
+
+- e299f5d: Update replace webcam track logic in vega rtcmanager
+
 ## 1.7.0
 
 ### Minor Changes
