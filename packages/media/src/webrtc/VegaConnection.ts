@@ -53,7 +53,7 @@ export default class VegaConnection extends EventEmitter {
         this.emit("open");
     }
 
-    _onMessage(event: any) {
+    _onMessage(event: MessageEvent) {
         const socketMessage = SfuV2Parser.parse(event.data);
 
         logger.info("Received message", socketMessage);

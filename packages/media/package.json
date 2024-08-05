@@ -64,6 +64,7 @@
     "devDependencies": {
         "@babel/core": "^7.23.2",
         "@babel/preset-env": "^7.23.2",
+        "jest-websocket-mock": "^2.5.0",
         "process": "^0.11.10"
     },
     "engines": {
