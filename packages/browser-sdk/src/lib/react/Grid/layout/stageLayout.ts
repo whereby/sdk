@@ -1141,6 +1141,9 @@ export function calculateLayout({
         floatingContent: {
             ...floatingLayout,
             ...floatingVideo,
+            origin: floatingLayout?.origin || makeOrigin(),
+            bounds: floatingLayout?.bounds || makeBounds(),
+            aspectRatio: floatingVideo?.aspectRatio || 1,
         },
     };
 }

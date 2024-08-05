@@ -27,13 +27,29 @@ function useGrid({
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
     const [maximizedParticipant, setMaximizedParticipant] = React.useState<ClientView | null>(null);
-    const { clientViewsInGrid, clientViewsInPresentationGrid, clientViewsInSubgrid } = useGridParticipants({
-        activeVideosSubgridTrigger,
-        forceSubgrid,
-        stageParticipantLimit,
-        enableSubgrid,
-        maximizedParticipant,
-    });
+    const [floatingParticipant, setFloatingParticipant] = React.useState<ClientView | null>(null);
+    const { clientViewsInGrid, clientViewsInPresentationGrid, clientViewsInSubgrid, floatingClientView } =
+        useGridParticipants({
+            activeVideosSubgridTrigger,
+            forceSubgrid,
+            stageParticipantLimit,
+            enableSubgrid,
+            maximizedParticipant,
+            floatingParticipant,
+        });
+
+    const cellViewsFloating = React.useMemo(() => {
+        return floatingClientView
+            ? [
+                  makeVideoCellView({
+                      client: floatingClientView,
+                      aspectRatio: clientAspectRatios[floatingClientView.id],
+                      avatarSize: 0,
+                      cellPaddings: { top: 0, right: 0 },
+                  }),
+              ]
+            : [];
+    }, [floatingClientView, clientAspectRatios]);
 
     const cellViewsVideoGrid = React.useMemo(() => {
         return clientViewsInGrid.map((client) => {
@@ -75,6 +91,7 @@ function useGrid({
 
     const videoStage = React.useMemo(() => {
         return calculateLayout({
+            floatingVideo: cellViewsFloating[0],
             frame: containerFrame,
             gridGap,
             isConstrained: false,
@@ -84,9 +101,19 @@ function useGrid({
             presentationVideos: cellViewsInPresentationGrid,
             subgridVideos: cellViewsInSubgrid,
         });
-    }, [containerFrame, cellViewsVideoGrid, cellViewsInPresentationGrid, cellViewsInSubgrid, gridGap, videoGridGap]);
+    }, [
+        containerFrame,
+        cellViewsFloating,
+        cellViewsVideoGrid,
+        cellViewsInPresentationGrid,
+        cellViewsInSubgrid,
+        gridGap,
+        videoGridGap,
+    ]);
 
     return {
+        containerFrame,
+        cellViewsFloating,
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,
@@ -96,6 +123,8 @@ function useGrid({
         setClientAspectRatios,
         maximizedParticipant,
         setMaximizedParticipant,
+        floatingParticipant,
+        setFloatingParticipant,
     };
 }
 
