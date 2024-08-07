@@ -26,7 +26,6 @@ export const PROTOCOL_REQUESTS = {
     STOP_URL_EMBED: "stop_url_embed",
     START_RECORDING: "start_recording",
     STOP_RECORDING: "stop_recording",
-    SFU_TOKEN: "sfu_token",
 };
 
 // Responses: messages from the server to the client, in response to requests
