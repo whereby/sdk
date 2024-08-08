@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.9.0
+
+### Minor Changes
+
+- 7a765e3: media: Updates rtcstats
+
 ## 1.8.0
 
 ### Minor Changes
