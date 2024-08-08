@@ -55,7 +55,7 @@
     "turbo": "^2.0.5"
   },
   "dependencies": {
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.4"
   },
   "engines": {
     "node": "^20"
