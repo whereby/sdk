@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.9.1
+
+### Patch Changes
+
+- 1656f43: Remove debug in p2p replacetrack function
+
 ## 1.9.0
 
 ### Minor Changes
