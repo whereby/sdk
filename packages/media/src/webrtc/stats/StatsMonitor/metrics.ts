@@ -24,6 +24,13 @@ export function captureCandidatePairInfoMetrics(
     const remote = report.get(currentCptats.remoteCandidateId);
     const local = report.get(currentCptats.localCandidateId);
 
+    cpMetrics.usingTurn = false;
+    if (local) {
+        if (/relay/i.test(local.candidateType || '')) {
+            cpMetrics.usingTurn = true;
+            cpMetrics.turnProtocol = local.relayProtocol;
+        }
+    }
     if (remote && local) {
         cpMetrics.localEp = `${local.protocol}:${local.address || local.ip}:${local.port} ${local.candidateType} (${
             local.networkType

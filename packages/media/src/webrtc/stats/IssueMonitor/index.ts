@@ -88,6 +88,18 @@ const metrics: Metric[] = [
             (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }) as any)[stats.pressure.state] || 0,
     },
     {
+        id: "turn-usage",
+        global: true,
+        enabled: ({ stats }) => !!Object.values(stats.candidatePairs).length,
+        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.usingTurn)
+    },
+    {
+        id: "turn-tls-usage",
+        global: true,
+        enabled: ({ stats }) => !!Object.values(stats.candidatePairs).length,
+        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.turnProtocol === 'tls')
+    },
+    {
         id: "concealment",
         enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
