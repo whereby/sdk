@@ -18,6 +18,7 @@ import {
     ChatMessageEventProps,
     StickyReactionEventProps,
     SignalStatusEventProps,
+    SignalClientEventProps,
 } from "./events";
 export * from "./events";
 
@@ -233,4 +234,21 @@ createReactor([selectSignalStatus], ({ dispatch, getState }, signalStatus) => {
             ),
         );
     }
+});
+
+startAppListening({
+    actionCreator: signalEvents.clientUnableToJoin,
+    effect: (action, { dispatch }) => {
+        if (action.payload?.error === "room_full") {
+            dispatch(
+                doSetNotification(
+                    createNotificationEvent<"clientUnableToJoinFullRoom", SignalClientEventProps>({
+                        type: "clientUnableToJoinFullRoom",
+                        message: "Someone tried to join but the room is full and at capacity.",
+                        props: {},
+                    }),
+                ),
+            );
+        }
+    },
 });
