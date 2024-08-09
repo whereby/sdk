@@ -7,7 +7,7 @@ import {
     selectSpotlightedClientViews,
 } from "@whereby.com/core";
 import { useAppSelector } from "../Provider/hooks";
-import { ACTIVE_VIDEO_SUBGRID_TRIGGER, STAGE_PARTICIPANT_LIMIT } from "./contants";
+import { ACTIVE_VIDEO_SUBGRID_TRIGGER, ACTIVE_VIDEOS_PHONE_LIMIT, STAGE_PARTICIPANT_LIMIT } from "./contants";
 
 export function calculateSubgridViews({
     clientViews,
@@ -15,12 +15,14 @@ export function calculateSubgridViews({
     shouldShowSubgrid,
     spotlightedParticipants,
     maximizedParticipant,
+    isPhoneResolution,
 }: {
     clientViews: ClientView[];
     activeVideosSubgridTrigger: number;
     shouldShowSubgrid: boolean;
     spotlightedParticipants: ClientView[];
     maximizedParticipant?: ClientView | null;
+    isPhoneResolution?: boolean;
 }) {
     if (!shouldShowSubgrid) {
         return [];
@@ -46,6 +48,17 @@ export function calculateSubgridViews({
         return [...mutedVideos, ...noVideoViews];
     }
 
+    if (isPhoneResolution && notSpotlighted.length > ACTIVE_VIDEOS_PHONE_LIMIT) {
+        const sorted = [...unmutedVideos, ...mutedVideos];
+        const inGrid = sorted.slice(0, ACTIVE_VIDEOS_PHONE_LIMIT);
+
+        if (inGrid.length <= ACTIVE_VIDEOS_PHONE_LIMIT) {
+            return [...sorted.filter((client) => !inGrid.includes(client)), ...noVideoViews];
+        } else {
+            return [...mutedVideos, ...noVideoViews];
+        }
+    }
+
     // If we reached the limit for active videos, and we have videos with muted audio,
     // prepend them to the subgrid:
     if (videoLimitReached && mutedVideos.length) {
@@ -69,6 +82,7 @@ interface Props {
     stageParticipantLimit?: number;
     enableSubgrid?: boolean;
     maximizedParticipant?: ClientView | null;
+    isConstrained?: boolean;
 }
 
 function useGridParticipants({
@@ -77,6 +91,7 @@ function useGridParticipants({
     forceSubgrid = true,
     enableSubgrid = true,
     maximizedParticipant,
+    isConstrained = false,
 }: Props = {}) {
     const allClientViews = useAppSelector(selectAllClientViews);
     const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
@@ -96,8 +111,9 @@ function useGridParticipants({
             shouldShowSubgrid,
             spotlightedParticipants,
             maximizedParticipant,
+            isPhoneResolution: isConstrained,
         });
-    }, [allClientViews, shouldShowSubgrid, activeVideosSubgridTrigger, spotlightedParticipants]);
+    }, [allClientViews, shouldShowSubgrid, activeVideosSubgridTrigger, spotlightedParticipants, isConstrained]);
 
     const clientViewsOnStage = React.useMemo(() => {
         return allClientViews.filter((client) => !clientViewsInSubgrid.includes(client));

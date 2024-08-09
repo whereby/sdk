@@ -61,29 +61,27 @@ function SizedVideoStageLayout({
     });
 
     return (
-        <div>
-            <VideoStageLayout
-                {...props}
-                containerPaddings={videoStagePaddings}
-                debug={debug}
-                gridContent={gridContent}
-                isConstrained={isConstrained}
-                presentationGridContent={presentationGridContent}
-                subgridContent={subgridContent}
-                layoutVideoStage={calculateLayout({
-                    videoGridGap,
-                    frame: windowFrame,
-                    gridGap,
-                    isConstrained,
-                    isXLMeetingSize,
-                    paddings: videoStagePaddings,
-                    presentationVideos: cellViewsPresentationGrid,
-                    roomBounds: windowFrame.bounds,
-                    subgridVideos: cellViewsSubgrid,
-                    videos: cellViewsVideoGrid,
-                })}
-            />
-        </div>
+        <VideoStageLayout
+            {...props}
+            containerPaddings={videoStagePaddings}
+            debug={debug}
+            gridContent={gridContent}
+            isConstrained={isConstrained}
+            presentationGridContent={presentationGridContent}
+            subgridContent={subgridContent}
+            layoutVideoStage={calculateLayout({
+                videoGridGap,
+                frame: windowFrame,
+                gridGap,
+                isConstrained,
+                isXLMeetingSize,
+                paddings: videoStagePaddings,
+                presentationVideos: cellViewsPresentationGrid,
+                roomBounds: windowFrame.bounds,
+                subgridVideos: cellViewsSubgrid,
+                videos: cellViewsVideoGrid,
+            })}
+        />
     );
 }
 

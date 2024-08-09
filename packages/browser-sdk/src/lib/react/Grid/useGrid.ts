@@ -14,6 +14,7 @@ interface Props {
     gridGap?: number;
     videoGridGap?: number;
     enableSubgrid?: boolean;
+    enableConstrainedGrid?: boolean;
 }
 
 function useGrid({
@@ -23,8 +24,10 @@ function useGrid({
     gridGap = 8,
     videoGridGap = 8,
     enableSubgrid = true,
+    enableConstrainedGrid = true,
 }: Props = {}) {
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
+    const [isConstrained, setIsConstrained] = React.useState(false);
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
     const [maximizedParticipant, setMaximizedParticipant] = React.useState<ClientView | null>(null);
     const { clientViewsInGrid, clientViewsInPresentationGrid, clientViewsInSubgrid } = useGridParticipants({
@@ -33,6 +36,7 @@ function useGrid({
         stageParticipantLimit,
         enableSubgrid,
         maximizedParticipant,
+        isConstrained: !!enableConstrainedGrid && !!isConstrained,
     });
 
     const cellViewsVideoGrid = React.useMemo(() => {
@@ -73,11 +77,19 @@ function useGrid({
         return makeFrame(containerBounds);
     }, [containerBounds]);
 
+    React.useEffect(() => {
+        if (!enableConstrainedGrid) {
+            return;
+        }
+
+        setIsConstrained(containerBounds.width < 500 || containerBounds.height < 500);
+    }, [containerBounds, enableConstrainedGrid]);
+
     const videoStage = React.useMemo(() => {
         return calculateLayout({
             frame: containerFrame,
             gridGap,
-            isConstrained: false,
+            isConstrained,
             roomBounds: containerFrame.bounds,
             videos: cellViewsVideoGrid,
             videoGridGap,
@@ -96,6 +108,7 @@ function useGrid({
         setClientAspectRatios,
         maximizedParticipant,
         setMaximizedParticipant,
+        isConstrained,
     };
 }
 

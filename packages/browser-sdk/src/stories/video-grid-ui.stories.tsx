@@ -43,6 +43,7 @@ export const VideoGridStory = {
         videoGridGap,
         enableSubgrid,
         enableParticipantMenu,
+        enableConstrainedGrid,
     }: {
         displayName: string;
         roomUrl: string;
@@ -50,6 +51,7 @@ export const VideoGridStory = {
         videoGridGap?: number;
         enableSubgrid?: boolean;
         enableParticipantMenu?: boolean;
+        enableConstrainedGrid?: boolean;
     }) => {
         if (!roomUrl || !roomUrl.match(roomRegEx)) {
             return <p>Set room url on the Controls panel</p>;
@@ -89,6 +91,7 @@ export const VideoGridStory = {
                         stageParticipantLimit={3}
                         enableSubgrid={enableSubgrid}
                         enableParticipantMenu={enableParticipantMenu}
+                        enableConstrainedGrid={enableConstrainedGrid}
                     />
                 </div>
             </>
@@ -100,6 +103,7 @@ export const VideoGridStory = {
         videoGridGap: { control: "range", min: 0, max: 100 },
         enableSubgrid: { control: "boolean" },
         enableParticipantMenu: { control: "boolean" },
+        enableConstrainedGrid: { control: "boolean" },
     },
     args: {
         ...defaultArgs.args,
@@ -107,6 +111,7 @@ export const VideoGridStory = {
         videoGridGap: 8,
         enableSubgrid: true,
         enableParticipantMenu: true,
+        enableConstrainedGrid: true,
     },
 };
 
@@ -199,8 +204,8 @@ export const VideoGridStoryCustom = {
     },
     args: {
         ...defaultArgs.args,
-        gridGap: 8,
-        videoGridGap: 8,
+        gridGap: 0,
+        videoGridGap: 0,
         enableSubgrid: true,
     },
 };
