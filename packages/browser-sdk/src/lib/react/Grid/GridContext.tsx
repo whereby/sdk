@@ -11,6 +11,7 @@ type GridContextValue = {
     clientAspectRatios: { [key: string]: number };
     maximizedParticipant: ClientView | null;
     setMaximizedParticipant: React.Dispatch<React.SetStateAction<ClientView | null>>;
+    isConstrained?: boolean;
 };
 
 const GridContext = React.createContext<GridContextValue>({} as GridContextValue);
