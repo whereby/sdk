@@ -64,6 +64,7 @@ function SizedVideoStageLayout({
         <div>
             <VideoStageLayout
                 {...props}
+                containerFrame={windowFrame}
                 containerPaddings={videoStagePaddings}
                 debug={debug}
                 gridContent={gridContent}

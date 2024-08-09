@@ -126,9 +126,9 @@ export type StageLayout = {
     floatingContent?: {
         clientId?: string;
         isDraggable?: boolean;
-        origin?: Origin;
-        bounds?: Bounds;
-        aspectRatio?: number;
+        origin: Origin;
+        bounds: Bounds;
+        aspectRatio: number;
         isSmallCell?: boolean;
     };
     subgrid: {

@@ -95,16 +95,24 @@ const ParticipantMenuTrigger = React.forwardRef<
 ParticipantMenuTrigger.displayName = PopoverTrigger.displayName;
 
 type ParticipantMenuItemProps = React.ComponentPropsWithoutRef<"button"> & {
-    participantAction?: "maximize" | "spotlight";
+    participantAction?: "maximize" | "spotlight" | "float";
 };
 
 const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, ParticipantMenuItemProps>(
     ({ children, style, participantAction, ...props }, ref) => {
-        const { participant, setOpen, maximizedParticipant, setMaximizedParticipant } = useParticipantMenu();
+        const {
+            participant,
+            setOpen,
+            maximizedParticipant,
+            setMaximizedParticipant,
+            setFloatingParticipant,
+            floatingParticipant,
+        } = useParticipantMenu();
         const dispatch = useAppDispatch();
         const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
         const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
         const isMaximized = maximizedParticipant?.id === participant.id;
+        const isFloating = floatingParticipant?.id === participant.id;
 
         let onClick;
 
@@ -125,6 +133,16 @@ const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, Partici
                         dispatch(doRemoveSpotlight({ id: participant.id }));
                     } else {
                         dispatch(doSpotlightParticipant({ id: participant.id }));
+                    }
+                    setOpen(false);
+                };
+                break;
+            case "float":
+                onClick = () => {
+                    if (isFloating) {
+                        setFloatingParticipant(null);
+                    } else {
+                        setFloatingParticipant(participant);
                     }
                     setOpen(false);
                 };

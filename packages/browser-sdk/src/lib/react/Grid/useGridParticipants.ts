@@ -69,6 +69,7 @@ interface Props {
     stageParticipantLimit?: number;
     enableSubgrid?: boolean;
     maximizedParticipant?: ClientView | null;
+    floatingParticipant?: ClientView | null;
 }
 
 function useGridParticipants({
@@ -77,10 +78,22 @@ function useGridParticipants({
     forceSubgrid = true,
     enableSubgrid = true,
     maximizedParticipant,
+    floatingParticipant,
 }: Props = {}) {
     const allClientViews = useAppSelector(selectAllClientViews);
     const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
     const numParticipants = useAppSelector(selectNumParticipants);
+
+    const floatingClientView = React.useMemo(() => {
+        return floatingParticipant;
+    }, [floatingParticipant]);
+
+    const clientViewsNotFloating = React.useMemo(() => {
+        if (floatingClientView) {
+            return allClientViews.filter((c) => c.id !== floatingClientView.id);
+        }
+        return allClientViews;
+    }, [allClientViews, floatingClientView]);
 
     const shouldShowSubgrid = React.useMemo(() => {
         if (!enableSubgrid) {
@@ -91,17 +104,17 @@ function useGridParticipants({
 
     const clientViewsInSubgrid = React.useMemo(() => {
         return calculateSubgridViews({
-            clientViews: allClientViews,
+            clientViews: clientViewsNotFloating,
             activeVideosSubgridTrigger,
             shouldShowSubgrid,
             spotlightedParticipants,
             maximizedParticipant,
         });
-    }, [allClientViews, shouldShowSubgrid, activeVideosSubgridTrigger, spotlightedParticipants]);
+    }, [clientViewsNotFloating, shouldShowSubgrid, activeVideosSubgridTrigger, spotlightedParticipants]);
 
     const clientViewsOnStage = React.useMemo(() => {
-        return allClientViews.filter((client) => !clientViewsInSubgrid.includes(client));
-    }, [allClientViews, clientViewsInSubgrid]);
+        return clientViewsNotFloating.filter((client) => !clientViewsInSubgrid.includes(client));
+    }, [clientViewsNotFloating, clientViewsInSubgrid]);
 
     const clientViewsInPresentationGrid = React.useMemo(() => {
         if (maximizedParticipant) {
@@ -116,6 +129,7 @@ function useGridParticipants({
     }, [clientViewsOnStage, clientViewsInPresentationGrid]);
 
     return {
+        floatingClientView,
         clientViewsInGrid,
         clientViewsInPresentationGrid,
         clientViewsInSubgrid,

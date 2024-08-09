@@ -193,7 +193,59 @@ function renderGridVideoCells({
     return gridVideoCells;
 }
 
+interface RenderFloatingVideoCellProps {
+    content: React.ReactElement;
+    containerFrame: Frame;
+    stageLayout: StageLayout;
+    withRoundedCorners: boolean;
+}
+
+function renderFloatingVideoCell({
+    content,
+    containerFrame,
+    stageLayout,
+    withRoundedCorners,
+}: RenderFloatingVideoCellProps) {
+    if (!stageLayout.floatingContent) {
+        return null;
+    }
+
+    const cell = stageLayout.floatingContent;
+
+    const origin = { top: cell.origin.top, left: cell.origin.left };
+    const style = {
+        width: Math.round(cell.bounds.width),
+        height: Math.round(cell.bounds.height),
+        // Convert coordinates from video stage to room layout space (to account for any safe area margins!)
+        transform: `translate3d(${Math.round(containerFrame.origin.left + origin.left)}px, ${Math.round(
+            containerFrame.origin.top + origin.top,
+        )}px, 0)`,
+        position: "fixed" as const,
+        top: cell.bounds.height / 2,
+        left: 0,
+        zIndex: 40,
+    };
+    const clientId = content.props.client?.id || "floating";
+    const childWithProps = React.cloneElement(content, {
+        isSmallCell: cell.isSmallCell,
+        isZoomedByDefault: false,
+        canZoom: false,
+        key: clientId,
+        isDraggable: false, // override
+    });
+
+    return renderVideoCell({
+        cell,
+        child: childWithProps,
+        clientId,
+        style,
+        withRoundedCorners,
+        withShadow: false,
+    });
+}
+
 interface VideoStageLayoutProps {
+    containerFrame: Frame;
     containerPaddings?: Box;
     debug?: boolean;
     featureRoundedCornersOff?: boolean;
@@ -209,8 +261,10 @@ interface VideoStageLayoutProps {
 }
 
 function VideoStageLayout({
+    containerFrame,
     debug = false,
     featureRoundedCornersOff = false,
+    floatingContent,
     gridContent = [],
     isConstrained = false,
     layoutOverflowBackdropFrame = makeFrame(),
@@ -245,6 +299,18 @@ function VideoStageLayout({
                 stageLayout,
                 withRoundedCorners,
                 withShadow: !isConstrained,
+            }),
+        );
+    }
+
+    // Floating:
+    if (floatingContent) {
+        cells.push(
+            renderFloatingVideoCell({
+                content: floatingContent,
+                containerFrame,
+                stageLayout,
+                withRoundedCorners: !featureRoundedCornersOff,
             }),
         );
     }
