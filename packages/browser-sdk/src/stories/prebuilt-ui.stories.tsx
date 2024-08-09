@@ -98,6 +98,9 @@ const WherebyEmbed = ({
         <p>
             <p>Camera: {cameraEnabled ? "ENABLED" : "DISABLED"}</p>
             <p>Meeting ended: {meetingEnded ? "TRUE" : "FALSE"}</p>
+            <button onClick={() => elmRef.current?.openSettings()}>
+                "Open Settings"
+            </button>
             <whereby-embed
                 audio={offOn(audio)}
                 avatarUrl={avatarUrl}
