@@ -1,6 +1,7 @@
 import { fitToBounds } from "./gridUtils";
 
 import * as centerGrid from "./centerGridLayout";
+import * as constrainedGrid from "./constrainedGridLayout";
 import * as subgrid from "./subgridLayout";
 
 import { makeOrigin, makeBounds, makeFrame, makeBox, insetBounds } from "./helpers";
@@ -13,6 +14,8 @@ import {
     type VideoContainerLayout,
     type GridLayout,
     type StageLayout,
+    CenterGridLayout,
+    ConstrainedGridLayout,
 } from "./types";
 import layoutConstants from "./layoutConstants";
 
@@ -541,42 +544,79 @@ function calculateGridLayout({
     const cappedWidth = maxGridWidth ? Math.min(width, maxGridWidth) : width;
     const cellCount = videos.length;
 
+    let gridLayout: CenterGridLayout | ConstrainedGridLayout | null = null;
     let videoCells = null;
 
-    const cellAspectRatios = videos.map((video) => video.aspectRatio || 1);
-    const minGridBounds = getMinGridBounds({ cellCount });
-    // Cap grid to a sane width (on very wide monitors)
-    const gridLayout = centerGrid.calculateLayout({
-        width: cappedWidth,
-        height,
-        cellCount,
-        gridGap,
-        cellAspectRatios,
-        paddings,
-    });
+    if (isConstrained) {
+        const constrainedGridLayout = constrainedGrid.calculateLayout({
+            width,
+            height,
+            cellCount,
+            gridGap,
+            paddings,
+        });
 
-    videoCells = videos.map((video, index) => {
-        const cellProps = centerGrid.getCellPropsAtIndexForLayout({ index, layout: gridLayout });
-        const isSmallCell = gridLayout.cellWidth < minGridBounds.width;
-        const shouldZoom = isConstrained || isSmallCell;
-        const aspectRatio = shouldZoom ? gridLayout.cellWidth / gridLayout.cellHeight : video.aspectRatio || 1;
+        const isSmallCell = cellCount > 4;
 
-        return {
-            clientId: video.clientId,
-            isDraggable: video.isDraggable,
-            origin: makeOrigin({
-                top: cellProps.top,
-                left: cellProps.left,
-            }),
-            bounds: makeBounds({
-                width: cellProps.width,
-                height: cellProps.height,
-            }),
-            aspectRatio,
-            isSmallCell,
-            type: "video",
-        };
-    });
+        videoCells = videos.map((video, index) => {
+            const cellProps = constrainedGrid.getCellPropsAtIndexForLayout({ index, layout: constrainedGridLayout });
+
+            return {
+                clientId: video.clientId,
+                isDraggable: video.isDraggable,
+                origin: makeOrigin({
+                    top: cellProps.top,
+                    left: cellProps.left,
+                }),
+                bounds: makeBounds({
+                    width: cellProps.width,
+                    height: cellProps.height,
+                }),
+                aspectRatio: cellProps.width / cellProps.height,
+                isSmallCell,
+                type: "video",
+            };
+        });
+        gridLayout = constrainedGridLayout;
+    } else {
+        const cellAspectRatios = videos.map((video) => video.aspectRatio || 1);
+        const minGridBounds = getMinGridBounds({ cellCount });
+        // Cap grid to a sane width (on very wide monitors)
+        const centerGridLayout = centerGrid.calculateLayout({
+            width: cappedWidth,
+            height,
+            cellCount,
+            gridGap,
+            cellAspectRatios,
+            paddings,
+        });
+
+        videoCells = videos.map((video, index) => {
+            const cellProps = centerGrid.getCellPropsAtIndexForLayout({ index, layout: centerGridLayout });
+            const isSmallCell = centerGridLayout.cellWidth < minGridBounds.width;
+            const shouldZoom = isConstrained || isSmallCell;
+            const aspectRatio = shouldZoom
+                ? centerGridLayout.cellWidth / centerGridLayout.cellHeight
+                : video.aspectRatio || 1;
+
+            return {
+                clientId: video.clientId,
+                isDraggable: video.isDraggable,
+                origin: makeOrigin({
+                    top: cellProps.top,
+                    left: cellProps.left,
+                }),
+                bounds: makeBounds({
+                    width: cellProps.width,
+                    height: cellProps.height,
+                }),
+                aspectRatio,
+                isSmallCell,
+                type: "video",
+            };
+        });
+        gridLayout = centerGridLayout;
+    }
 
     return {
         videoCells,
