@@ -4,7 +4,6 @@ import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./constants";
 import Logger from "../utils/Logger";
-import rtcStats from "./rtcStatsService";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -288,10 +287,6 @@ export default class Session {
     }
 
     replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) {
-        // Remove this when we stop seeing errors in this function about tracks being null.
-        if (!newTrack) {
-            rtcStats.sendEvent("replaceTrackP2P", { nullTrack: "newTrack", oldTrackKind: oldTrack?.kind })
-        }
         const pc = this.pc;
         // This shouldn't really happen
         if (!pc) return false;
@@ -308,10 +303,6 @@ export default class Session {
                     for (let i = 0; i < senders.length; i++) {
                         const sender: RTCRtpSender = senders[i];
                         const track = sender.track;
-                        // Remove this when we stop seeing errors in this function about tracks being null.
-                        if (!track) {
-                            rtcStats.sendEvent("replaceTrackP2P", { nullTrack: "trackFromSender", oldTrackKind: oldTrack?.kind, newTrackKind: newTrack?.kind })
-                        }
                         if (track?.id === newTrack.id) {
                             return Promise.resolve(newTrack);
                         }
