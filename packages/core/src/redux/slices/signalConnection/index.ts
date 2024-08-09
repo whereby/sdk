@@ -11,6 +11,7 @@ import {
     ClientKickedEvent,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
+    ClientUnableToJoinEvent,
     CloudRecordingStartedEvent,
     KnockAcceptedEvent,
     KnockRejectedEvent,
@@ -39,6 +40,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("new_client", (payload: NewClientEvent) => dispatch(signalEvents.newClient(payload)));
     socket.on("client_left", (payload: ClientLeftEvent) => dispatch(signalEvents.clientLeft(payload)));
     socket.on("client_kicked", (payload: ClientKickedEvent) => dispatch(signalEvents.clientKicked(payload)));
+    socket.on("client_unable_to_join", (payload: ClientUnableToJoinEvent) =>
+        dispatch(signalEvents.clientUnableToJoin(payload)),
+    );
     socket.on("audio_enabled", (payload: AudioEnabledEvent) => dispatch(signalEvents.audioEnabled(payload)));
     socket.on("video_enabled", (payload: VideoEnabledEvent) => dispatch(signalEvents.videoEnabled(payload)));
     socket.on("audio_enable_requested", (payload: AudioEnableRequestedEvent) =>

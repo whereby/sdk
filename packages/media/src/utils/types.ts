@@ -184,6 +184,13 @@ export interface ClientMetadataReceivedEvent {
     };
 }
 
+export interface ClientUnableToJoinEvent {
+    type?: string;
+    payload?: ClientMetadataPayload & {
+        error: string;
+    };
+}
+
 export interface AudioEnableRequestedEvent {
     requestedByClientId: string;
     enable: boolean;

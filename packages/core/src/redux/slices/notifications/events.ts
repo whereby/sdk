@@ -25,6 +25,9 @@ export type ChatMessageEvent = NotificationEvent<"chatMessageReceived", ChatMess
 export interface SignalStatusEventProps {}
 export type SignalStatusEvent = NotificationEvent<"signalTrouble" | "signalOk", SignalStatusEventProps>;
 
+export interface SignalClientEventProps {}
+export type SignalClientEvent = NotificationEvent<"clientUnableToJoinFullRoom", SignalClientEventProps>;
+
 export interface StickyReactionEventProps {
     client: RemoteParticipant;
     stickyReaction?: { reaction: string; timestamp: string } | null;
@@ -39,6 +42,7 @@ type NotificationEventTypes = {
     ["remoteHandLowered"]: StickyReactionEvent;
     ["signalTrouble"]: SignalStatusEvent;
     ["signalOk"]: SignalStatusEvent;
+    ["clientUnableToJoinFullRoom"]: SignalClientEvent;
 };
 
 export type NotificationEvents = NotificationEventTypes[keyof NotificationEventTypes];
