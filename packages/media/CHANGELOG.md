@@ -1,5 +1,15 @@
 # @whereby.com/media
 
+## 1.10.0
+
+### Minor Changes
+
+- 0b11d0d: media: Adds turn metrics to stats
+
+### Patch Changes
+
+- 1656f43: Remove debug in p2p replacetrack function
+
 ## 1.9.0
 
 ### Minor Changes
