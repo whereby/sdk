@@ -234,6 +234,7 @@ export const selectShouldConnectRoom = createSelector(
         selectRoomConnectionStatus,
         selectSignalConnectionDeviceIdentified,
         selectLocalMediaStatus,
+        selectRoomConnectionError,
     ],
     (
         appIsActive,
@@ -241,13 +242,15 @@ export const selectShouldConnectRoom = createSelector(
         roomConnectionStatus,
         signalConnectionDeviceIdentified,
         localMediaStatus,
+        roomConnectionError,
     ) => {
         if (
             appIsActive &&
             localMediaStatus === "started" &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
-            ["ready", "reconnecting", "disconnected"].includes(roomConnectionStatus)
+            ["ready", "reconnecting", "disconnected"].includes(roomConnectionStatus) &&
+            !roomConnectionError
         ) {
             return true;
         }
