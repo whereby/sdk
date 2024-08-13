@@ -19,7 +19,7 @@ runs:
           env:
               JSON: ${{ inputs.published_packages }}
           run: |
-              PACKAGES=$(echo "$JSON" | jq -r 'map(.name + "@" + .version) | join("\n")')
+              PACKAGES=$(echo "$JSON" | jq -r 'map(.name + "@" + .version) | join(", ")')
               echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
 
         - name: Send slack message
