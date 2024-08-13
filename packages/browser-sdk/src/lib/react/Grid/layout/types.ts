@@ -84,6 +84,24 @@ export type CenterGridLayout = {
     paddings: Box;
 };
 
+export type ConstrainedGridLayout = {
+    cellRects: {
+        origin: {
+            x: number;
+            y: number;
+        };
+        bounds: {
+            width: number;
+            height: number;
+        };
+    }[];
+    cellCount: number;
+    gridGap: number;
+    extraHorizontalPadding: number;
+    extraVerticalPadding: number;
+    paddings: Box;
+};
+
 export type SubgridLayout = {
     isPortrait: boolean;
     width: number;
@@ -138,4 +156,20 @@ export type StageLayout = {
         contentBounds: Bounds;
     };
     overflowNeedBounds?: Bounds;
+};
+
+export type ConstrainedLayout = {
+    cellRects: {
+        origin: {
+            top: number;
+            left: number;
+            y: number;
+            x: number;
+        };
+        bounds: Bounds;
+    }[];
+    layoutGrid: { lines: number[] };
+    width: number;
+    height: number;
+    gridGap: number;
 };

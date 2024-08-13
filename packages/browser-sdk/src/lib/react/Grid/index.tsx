@@ -28,7 +28,13 @@ const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, p
 
     return (
         <GridCellContext.Provider value={{ participant, isHovered }}>
-            <div ref={ref} className={className} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+            <div
+                ref={ref}
+                className={className}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                style={{ height: "100%", width: "100%" }}
+            >
                 {children}
             </div>
         </GridCellContext.Provider>
@@ -43,7 +49,7 @@ type GridVideoViewProps = Omit<VideoViewProps, "stream" | "ref"> & {
 
 const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(({ stream, style, ...rest }, ref) => {
     const videoEl = React.useRef<WherebyVideoElement>(null);
-    const { onSetClientAspectRatio, clientAspectRatios, participant } = useGridCell();
+    const { onSetClientAspectRatio, clientAspectRatios, participant, isConstrained } = useGridCell();
     if (!participant) return null;
     const aspectRatio = clientAspectRatios[participant.id];
 
@@ -69,7 +75,8 @@ const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
         <VideoView
             ref={videoEl}
             style={{
-                borderRadius: "8px",
+                borderRadius: isConstrained ? 0 : "8px",
+                ...(isConstrained ? { objectFit: "cover" } : {}),
                 ...style,
             }}
             {...rest}
@@ -131,6 +138,7 @@ interface GridProps {
     enableSubgrid?: boolean;
     stageParticipantLimit?: number;
     enableParticipantMenu?: boolean;
+    enableConstrainedGrid?: boolean;
 }
 
 function Grid({
@@ -141,6 +149,7 @@ function Grid({
     videoGridGap,
     enableSubgrid,
     enableParticipantMenu,
+    enableConstrainedGrid,
 }: GridProps) {
     const gridRef = React.useRef<HTMLDivElement>(null);
 
@@ -156,9 +165,17 @@ function Grid({
         setClientAspectRatios,
         maximizedParticipant,
         setMaximizedParticipant,
+        isConstrained,
         floatingParticipant,
         setFloatingParticipant,
-    } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit, gridGap, videoGridGap, enableSubgrid });
+    } = useGrid({
+        activeVideosSubgridTrigger: 12,
+        stageParticipantLimit,
+        gridGap,
+        videoGridGap,
+        enableSubgrid,
+        enableConstrainedGrid,
+    });
 
     const handleSetClientAspectRatio = React.useCallback(
         ({ aspectRatio, clientId }: { aspectRatio: number; clientId: string }) => {
@@ -251,6 +268,7 @@ function Grid({
                 setMaximizedParticipant,
                 floatingParticipant,
                 setFloatingParticipant,
+                isConstrained,
             }}
         >
             <div
