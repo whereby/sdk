@@ -1,5 +1,17 @@
 # @whereby.com/browser-sdk
 
+## 3.5.0
+
+### Minor Changes
+
+- 7281815: Add pop out local video cell to grid
+- c8e3c0f: Add constrained (mobile) grid to video grid
+
+### Patch Changes
+
+- Updated dependencies [d7bad4d]
+  - @whereby.com/core@0.23.0
+
 ## 3.4.4
 
 ### Patch Changes

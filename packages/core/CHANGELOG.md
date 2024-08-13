@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.23.0
+
+### Minor Changes
+
+- d7bad4d: Do not try to connect the room if there's a room connection error.
+
 ## 0.22.2
 
 ### Patch Changes
