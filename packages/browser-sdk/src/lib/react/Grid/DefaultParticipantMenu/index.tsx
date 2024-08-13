@@ -13,6 +13,8 @@ import { useAppSelector } from "../../Provider/hooks";
 import { MaximizeOnIcon } from "../../../MaximizeOnIcon";
 import { SpotlightIcon } from "../../../SpotlightIcon";
 import { useGridCell } from "../GridContext";
+import { PopOutIcon } from "../../../PopOutIcon";
+import { PopInIcon } from "../../../PopInIcon";
 
 interface DefaultParticipantMenuProps {
     participant: ClientView;
@@ -21,8 +23,9 @@ interface DefaultParticipantMenuProps {
 function DefaultParticipantMenu({ participant }: DefaultParticipantMenuProps) {
     const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
     const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
-    const { isHovered, maximizedParticipant } = useGridCell();
+    const { isHovered, maximizedParticipant, floatingParticipant } = useGridCell();
     const isMaximized = maximizedParticipant?.id === participant.id;
+    const isFloating = floatingParticipant?.id === participant.id;
 
     if (!isHovered) {
         return null;
@@ -43,6 +46,28 @@ function DefaultParticipantMenu({ participant }: DefaultParticipantMenuProps) {
                 <EllipsisIcon height={20} width={20} transform={"rotate(90)"} />
             </ParticipantMenuTrigger>
             <ParticipantMenuContent>
+                {participant.isLocalClient ? (
+                    <ParticipantMenuItem
+                        participantAction={"float"}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                        }}
+                    >
+                        {isFloating ? (
+                            <>
+                                <PopInIcon height={16} width={16} />
+                                Move to grid
+                            </>
+                        ) : (
+                            <>
+                                <PopOutIcon height={16} width={16} />
+                                Pop out
+                            </>
+                        )}
+                    </ParticipantMenuItem>
+                ) : null}
                 <ParticipantMenuItem
                     participantAction={"maximize"}
                     style={{

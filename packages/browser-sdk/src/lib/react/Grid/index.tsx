@@ -88,7 +88,7 @@ interface RenderCellViewProps {
 }
 
 function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellViewProps) {
-    const participant = cellView.client;
+    const participant = cellView?.client;
 
     if (!participant) {
         return undefined;
@@ -125,6 +125,7 @@ function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellV
 
 interface GridProps {
     renderParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
+    renderFloatingParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
     gridGap?: number;
     videoGridGap?: number;
     enableSubgrid?: boolean;
@@ -134,6 +135,7 @@ interface GridProps {
 
 function Grid({
     renderParticipant,
+    renderFloatingParticipant,
     stageParticipantLimit,
     gridGap,
     videoGridGap,
@@ -143,6 +145,8 @@ function Grid({
     const gridRef = React.useRef<HTMLDivElement>(null);
 
     const {
+        containerFrame,
+        cellViewsFloating,
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,
@@ -152,6 +156,8 @@ function Grid({
         setClientAspectRatios,
         maximizedParticipant,
         setMaximizedParticipant,
+        floatingParticipant,
+        setFloatingParticipant,
     } = useGrid({ activeVideosSubgridTrigger: 12, stageParticipantLimit, gridGap, videoGridGap, enableSubgrid });
 
     const handleSetClientAspectRatio = React.useCallback(
@@ -163,6 +169,16 @@ function Grid({
         },
         [setClientAspectRatios],
     );
+
+    const floatingContent = React.useMemo(() => {
+        return renderCellView({
+            cellView: cellViewsFloating[0],
+            enableParticipantMenu,
+            ...(renderFloatingParticipant
+                ? { render: ({ participant }) => renderFloatingParticipant({ participant }) }
+                : {}),
+        });
+    }, [cellViewsFloating]);
 
     const presentationGridContent = React.useMemo(
         () =>
@@ -233,6 +249,8 @@ function Grid({
                 clientAspectRatios,
                 maximizedParticipant,
                 setMaximizedParticipant,
+                floatingParticipant,
+                setFloatingParticipant,
             }}
         >
             <div
@@ -244,6 +262,8 @@ function Grid({
                 }}
             >
                 <VideoStageLayout
+                    containerFrame={containerFrame}
+                    floatingContent={floatingContent}
                     layoutVideoStage={videoStage!}
                     presentationGridContent={presentationGridContent}
                     gridContent={gridContent}
