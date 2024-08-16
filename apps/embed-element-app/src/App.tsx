@@ -35,7 +35,7 @@ const events = [
 ];
 
 function App() {
-    const roomUrl ="enter your room url here";
+    const roomUrl = "enter your room url here";
     const elmRef = useRef<HTMLIFrameElement>(null);
     const [eventLogEntries, setEventLogEntries] = useState<any[]>([]);
     const [initTime, setInitTime] = useState<number>(0);
@@ -43,23 +43,23 @@ function App() {
     function handleWherebyEvent(event: any) {
         setEventLogEntries((prev) => [...prev, event]);
     }
-    
-          useEffect(() => {
-              const element = elmRef.current;
-              if (element) {
-                  events.forEach((event) => {
-                      element.addEventListener(event, handleWherebyEvent);
-                  });
-                  setInitTime(Date.now());
-              }
-              return () => {
-                  if (element) {
-                      events.forEach((event) => {
-                          element.removeEventListener(event, handleWherebyEvent);
-                      });
-                  }
-              };
-          }, []);
+
+    useEffect(() => {
+        const element = elmRef.current;
+        if (element) {
+            events.forEach((event) => {
+                element.addEventListener(event, handleWherebyEvent);
+            });
+            setInitTime(Date.now());
+        }
+        return () => {
+            if (element) {
+                events.forEach((event) => {
+                    element.removeEventListener(event, handleWherebyEvent);
+                });
+            }
+        };
+    }, []);
     return (
         <div className="App">
             <div className="LeftSidebar">
