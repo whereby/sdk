@@ -94,8 +94,11 @@ export function captureCommonSsrcMetrics(
 
         const byteCountDiff = currentSsrcStats.bytesReceived - (prevSsrcStats?.bytesReceived || 0);
         ssrcMetrics.byteCount = (ssrcMetrics.byteCount || 0) + byteCountDiff;
-        const headerByteCountDiff = currentSsrcStats.headerBytesReceived - (prevSsrcStats?.headerBytesReceived || 0);
-        ssrcMetrics.headerByteCount = (ssrcMetrics.headerByteCount || 0) + headerByteCountDiff;
+        let headerByteCountDiff = 0;
+        if (currentSsrcStats.headerBytesReceived) {
+            headerByteCountDiff = currentSsrcStats.headerBytesReceived - (prevSsrcStats?.headerBytesReceived || 0);
+            ssrcMetrics.headerByteCount = (ssrcMetrics.headerByteCount || 0) + headerByteCountDiff;
+        }
         const totalBytesDiff = byteCountDiff + headerByteCountDiff;
         ssrcMetrics.bitrate = (8000 * totalBytesDiff) / timeDiff;
         ssrcMetrics.mediaRatio = byteCountDiff / totalBytesDiff;
@@ -117,8 +120,11 @@ export function captureCommonSsrcMetrics(
 
         const byteCountDiff = currentSsrcStats.bytesSent - (prevSsrcStats?.bytesSent || 0);
         ssrcMetrics.byteCount = (ssrcMetrics.byteCount || 0) + byteCountDiff;
-        const headerByteCountDiff = currentSsrcStats.headerBytesSent - (prevSsrcStats?.headerBytesSent || 0);
-        ssrcMetrics.headerByteCount = (ssrcMetrics.headerByteCount || 0) + headerByteCountDiff;
+        let headerByteCountDiff = 0;
+        if (currentSsrcStats.headerBytesSent) {
+            headerByteCountDiff = currentSsrcStats.headerBytesSent - (prevSsrcStats?.headerBytesSent || 0);
+            ssrcMetrics.headerByteCount = (ssrcMetrics.headerByteCount || 0) + headerByteCountDiff;
+        }
         const totalBytesDiff = byteCountDiff + headerByteCountDiff;
         ssrcMetrics.bitrate = (8000 * totalBytesDiff) / timeDiff;
         ssrcMetrics.mediaRatio = byteCountDiff / totalBytesDiff;
