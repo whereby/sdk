@@ -150,6 +150,18 @@ export async function collectStats(
                     // find the current client using this trackId, or default
                     const client = clients.find((c: any) => c[kind].track?.id === trackId) || defaultClient;
 
+                    // the track might have been replaced, but we don't always have access to mediaSourceId
+                    // on the rtcstats report, e.g. when mapping track to ssrc from rtpsenders and -receivers.
+                    if (
+                        !currentRtcStats.trackIdentifier && // if the report have a trackIdentifier we use it.
+                        pcData.ssrcToTrackId[ssrc] && // only update if we previously had a track id mapped to this ssrc.
+                        client[kind].track?.id &&
+                        client[kind].track.id !== pcData.ssrcToTrackId[ssrc]
+                    ) {
+                        trackId = client[kind].track.id;
+                        pcData.ssrcToTrackId[ssrc] = client[kind].track.id;
+                    }
+
                     pcData.currentSSRCs[ssrc] = client.id;
                     // we need to stats reset when selected candidate pair changes
                     // todo: metrics should += diff, not use count directly
