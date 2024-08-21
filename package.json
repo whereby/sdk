@@ -14,6 +14,7 @@
     "dev:quiz-app": "turbo dev --filter=quiz-app",
     "dev:sample-app": "turbo dev --filter=sample-app",
     "dev:nextjs-example": "turbo dev --filter=nextjs-example",
+    "dev:react-native-webview-example": "turbo dev --filter=react-native-webview-example",
     "release": "yarn build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
