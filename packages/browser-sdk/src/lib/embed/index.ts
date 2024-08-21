@@ -3,6 +3,8 @@ import { ReactHTMLElement } from "react";
 
 import { parseRoomUrlAndSubdomain } from "@whereby.com/core";
 
+type SettingsPane = "theme" | "integrations" | "streaming" | "effects" | "notifications" | "advanced" | "media" | null;
+
 interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     aec: string;
     agc: string;
@@ -85,15 +87,15 @@ interface WherebyEmbedElementEventMap {
     participantupdate: CustomEvent<{ count: number }>;
     join: CustomEvent;
     leave: CustomEvent<{ removed: boolean }>;
-    participant_join: CustomEvent<{ participant: { metadata: string | null, externalId: string | null } }>;
-    participant_leave: CustomEvent<{ participant: { metadata: string | null, externalId: string | null } }>;
+    participant_join: CustomEvent<{ participant: { metadata: string | null; externalId: string | null } }>;
+    participant_leave: CustomEvent<{ participant: { metadata: string | null; externalId: string | null } }>;
     meeting_end: CustomEvent;
     microphone_toggle: CustomEvent<{ enabled: boolean }>;
     camera_toggle: CustomEvent<{ enabled: boolean }>;
     chat_toggle: CustomEvent<{ open: boolean }>;
     people_toggle: CustomEvent<{ open: boolean }>;
     pip_toggle: CustomEvent<{ open: boolean }>;
-    grant_device_permission: CustomEvent<{ granted: boolean}>;
+    grant_device_permission: CustomEvent<{ granted: boolean }>;
     deny_device_permission: CustomEvent<{ denied: boolean }>;
     screenshare_toggle: CustomEvent<{ enabled: boolean }>;
     streaming_status_change: CustomEvent<{ status: string }>;
@@ -113,6 +115,7 @@ interface WherebyEmbedElementEventMap {
 interface WherebyEmbedElementCommands {
     endMeeting: () => void;
     leaveRoom: () => void;
+    openSettings: (settingsPane?: SettingsPane) => void;
     startRecording: () => void;
     stopRecording: () => void;
     startStreaming: () => void;
@@ -239,6 +242,9 @@ define("WherebyEmbed", {
     },
     leaveRoom() {
         this._postCommand("leave_room");
+    },
+    openSettings(settingsPane: SettingsPane = "media") {
+        this._postCommand("open_settings", [settingsPane]);
     },
     startRecording() {
         this._postCommand("start_recording");
