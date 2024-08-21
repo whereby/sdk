@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 1.10.1
+
+### Patch Changes
+
+- c936c88: Handle headerBytes missing from rtcstatsreport
+- 3662377: Handle new track when mediasourceid is missing in rtcstatsreport
+
 ## 1.10.0
 
 ### Minor Changes
