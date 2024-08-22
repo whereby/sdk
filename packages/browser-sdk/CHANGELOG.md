@@ -1,5 +1,15 @@
 # @whereby.com/browser-sdk
 
+## 3.6.0
+
+### Minor Changes
+
+- a5e705b: Add support for knock command
+
+### Patch Changes
+
+- 2609995: Added command to open the settings pane
+
 ## 3.5.1
 
 ### Patch Changes
