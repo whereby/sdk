@@ -121,6 +121,8 @@ interface WherebyEmbedElementCommands {
     stopRecording: () => void;
     startStreaming: () => void;
     stopStreaming: () => void;
+    startLiveTranscription: () => void;
+    stopLiveTranscription: () => void;
     toggleBreakout: (enabled?: boolean) => void;
     toggleCamera: (enabled?: boolean) => void;
     toggleMicrophone: (enabled?: boolean) => void;
@@ -261,6 +263,12 @@ define("WherebyEmbed", {
     },
     stopStreaming() {
         this._postCommand("stop_streaming");
+    },
+    startLiveTranscription() {
+        this._postCommand("start_live_transcription");
+    },
+    stopLiveTranscription() {
+        this._postCommand("stop_live_transcription");
     },
     toggleBreakout(open?: boolean) {
         this._postCommand("toggle_breakout", [open]);
