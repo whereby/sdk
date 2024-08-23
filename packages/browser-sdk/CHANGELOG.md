@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.7.0
+
+### Minor Changes
+
+- 7b8c1c3: Add start and stop transcription commands
+
 ## 3.6.0
 
 ### Minor Changes
