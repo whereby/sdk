@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { WherebyEmbed, WherebyEmbedRef } from "@whereby.com/react-native-sdk/embed";
-const ROOM_URL = "https://team.whereby.com/thomas";
+const ROOM_URL = "";
 const queryParams = "skipMediaPermissionPrompt";
 
 export default function Room() {
