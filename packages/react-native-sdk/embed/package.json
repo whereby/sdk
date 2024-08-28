@@ -1,0 +1,7 @@
+{
+    "main": "../dist/commonjs/embed/index.js",
+    "module": "../dist/module/embed/index.js",
+    "source": "../src/embed/index.tsx",
+    "types": "../dist/typescript/module/packages/react-native-sdk/src/embed/index.d.ts",
+    "@whereby.com/react-native-sdk": "../src/embed/index.tsx"
+}
