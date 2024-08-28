@@ -184,6 +184,11 @@ export interface ClientMetadataReceivedEvent {
     };
 }
 
+export interface ClientUnableToJoinEvent {
+    displayName: string;
+    error: string;
+}
+
 export interface AudioEnableRequestedEvent {
     requestedByClientId: string;
     enable: boolean;
@@ -216,6 +221,7 @@ export interface SignalEvents {
     client_left: ClientLeftEvent;
     client_kicked: ClientKickedEvent;
     client_metadata_received: ClientMetadataReceivedEvent;
+    client_unable_to_join: ClientUnableToJoinEvent;
     cloud_recording_started: CloudRecordingStartedEvent;
     cloud_recording_stopped: void;
     chat_message: ChatMessage;

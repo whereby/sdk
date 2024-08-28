@@ -7,6 +7,7 @@ import {
     SignalStatusEvent,
     StickyReactionEvent,
     NotificationEvents,
+    SignalClientEvent,
 } from "@whereby.com/core";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -178,6 +179,10 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         toast.remove(`remoteHandRaised-${props.client?.id}`);
     }
 
+    function showClientUnableToJoinFullRoom({ message, type }: SignalClientEvent) {
+        toast(message, { id: type, duration: Infinity });
+    }
+
     useEffect(() => {
         const sdkEventHandler = (event: NotificationEvents) => {
             switch (event.type) {
@@ -201,6 +206,9 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                     break;
                 case "remoteHandLowered":
                     hideRemoteHandRaised(event);
+                    break;
+                case "clientUnableToJoinFullRoom":
+                    showClientUnableToJoinFullRoom(event);
                     break;
             }
         };
