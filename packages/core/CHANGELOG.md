@@ -1,5 +1,18 @@
 # @whereby.com/core
 
+## 0.24.0
+
+### Minor Changes
+
+- ada15ac: Add notification for client unable to join full room
+
+### Patch Changes
+
+- 6b0db5a: Avoid filtering out non-human-role clients in remoteclients state
+- Updated dependencies [b5adf9d]
+- Updated dependencies [ada15ac]
+  - @whereby.com/media@1.11.0
+
 ## 0.23.1
 
 ### Patch Changes
