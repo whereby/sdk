@@ -211,10 +211,7 @@ export const remoteParticipantsSlice = createSlice({
 
             return {
                 ...state,
-                remoteParticipants: clients
-                    .filter((c) => c.id !== selfId)
-                    .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
-                    .map((c) => createRemoteParticipant(c)),
+                remoteParticipants: clients.filter((c) => c.id !== selfId).map((c) => createRemoteParticipant(c)),
             };
         });
         builder.addCase(rtcEvents.streamAdded, (state, action) => {
@@ -222,10 +219,6 @@ export const remoteParticipantsSlice = createSlice({
         });
         builder.addCase(signalEvents.newClient, (state, action) => {
             const { client } = action.payload;
-
-            if (NON_PERSON_ROLES.includes(client.role.roleName)) {
-                return state;
-            }
 
             return addParticipant(state, createRemoteParticipant(client, true));
         });
@@ -305,6 +298,10 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
  */
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
+
+/**
+ * This includes non human roles such as recorder.
+ */
 export const selectRemoteClients = (state: RootState) => state.remoteParticipants.remoteParticipants;
 
 export const selectRemoteParticipants = createSelector(selectRemoteClients, (clients) =>
