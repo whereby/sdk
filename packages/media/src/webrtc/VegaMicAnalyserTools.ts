@@ -33,7 +33,7 @@ export class KalmanFilter {
      * @param  {Number} u Control
      * @return {Number}
      */
-    filter(z: number, u: number = 0) {
+    filter(z: number, u = 0) {
         if (isNaN(this.x)) {
             this.x = (1 / this.C) * z;
             this.cov = (1 / this.C) * this.Q * (1 / this.C);

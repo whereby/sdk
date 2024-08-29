@@ -1,0 +1,7 @@
+{
+    "main": "../dist/commonjs/native/index.js",
+    "module": "../dist/module/native/index.js",
+    "source": "../src/native/index.tsx",
+    "types": "../dist/typescript/module/packages/react-native-sdk/src/native/index.d.ts",
+    "@whereby.com/react-native-sdk": "../src/native/index.tsx"
+}

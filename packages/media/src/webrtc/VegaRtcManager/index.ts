@@ -483,7 +483,7 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    async _restartIce(transport: any, retried: number = 0) {
+    async _restartIce(transport: any, retried = 0) {
         if (!transport || !("closed" in transport) || !("connectionState" in transport)) {
             logger.info("_restartIce: No transport or property closed or connectionState!");
             return;

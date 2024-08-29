@@ -118,7 +118,7 @@ export default class P2pRtcManager implements RtcManager {
             rtcStats.sendEvent("audio_ended", { unloading });
             this._emit(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
         };
-        
+
         this._videoTrackOnEnded = () => {
             rtcStats.sendEvent("video_ended", { unloading });
             this._emit(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
@@ -380,7 +380,7 @@ export default class P2pRtcManager implements RtcManager {
         this._forEachPeerConnection((session: any) => {
             if (session.hasConnectedPeerConnection()) {
                 this._withForcedRenegotiation(session, () =>
-                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds)
+                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds),
                 );
             }
         });
@@ -582,7 +582,7 @@ export default class P2pRtcManager implements RtcManager {
             )[this._features.useOnlyTURN];
             if (filter) {
                 peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.filter(
-                    (entry: any) => entry.url && entry.url.match(filter)
+                    (entry: any) => entry.url && entry.url.match(filter),
                 );
             }
         }
@@ -802,7 +802,7 @@ export default class P2pRtcManager implements RtcManager {
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
                 if (!pendingActions) {
                     logger.warn(
-                        `No pending action is created to repalce track, because the pending actions array is null`
+                        `No pending action is created to repalce track, because the pending actions array is null`,
                     );
                     return;
                 }
@@ -864,7 +864,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         this._fetchMediaServersTimer = setTimeout(
             () => this._emitServerEvent(PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG),
-            mediaserverConfigTtlSeconds * 1000
+            mediaserverConfigTtlSeconds * 1000,
         );
     }
 
@@ -884,7 +884,7 @@ export default class P2pRtcManager implements RtcManager {
 
     _monitorVideoTrack(track: CustomMediaStreamTrack) {
         if (this._videoTrackBeingMonitored?.id === track.id) return;
-        
+
         this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
         track.addEventListener("ended", this._videoTrackOnEnded);
         this._videoTrackBeingMonitored = track;
@@ -929,7 +929,7 @@ export default class P2pRtcManager implements RtcManager {
             this._negotiatePeerConnection(
                 clientId,
                 session,
-                Object.assign({}, this.offerOptions, { iceRestart: true })
+                Object.assign({}, this.offerOptions, { iceRestart: true }),
             );
         }
     }

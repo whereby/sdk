@@ -1,12 +1,11 @@
 import * as React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { WebView } from "react-native-webview";
-
+import { WherebyEmbed, WherebyEmbedRef } from "@whereby.com/react-native-sdk/embed";
 const ROOM_URL = "";
 const queryParams = "skipMediaPermissionPrompt";
 
 export default function Room() {
-    const wherebyRoomRef = React.useRef<WebView>(null);
+    const wherebyRoomRef = React.useRef<WherebyEmbedRef>(null);
     const scrollRef = React.useRef<ScrollView>(null);
     const [eventLogEntries, setEventLogEntries] = React.useState<any[]>([]);
 
@@ -23,20 +22,11 @@ export default function Room() {
                 ))}
             </ScrollView>
             <View style={{ flex: 1, height: "100%" }}>
-                <WebView
+                <WherebyEmbed
                     ref={wherebyRoomRef}
-                    startInLoadingState
-                    originWhitelist={["*"]}
                     style={styles.container}
-                    source={{
-                        uri: `${ROOM_URL}?${queryParams}`,
-                    }}
-                    mediaPlaybackRequiresUserAction={false}
-                    // iOS specific:
-                    allowsInlineMediaPlayback
-                    // Android specific:
-                    javaScriptEnabled
-                    domStorageEnabled
+                    roomUrl={ROOM_URL}
+                    queryParams={queryParams}
                     onMessage={(event) => {
                         handleWherebyEvent(event.nativeEvent.data);
                     }}

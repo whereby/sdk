@@ -21,7 +21,7 @@ export class ServerSocket {
     _wasConnectedUsingWebsocket?: boolean;
     disconnectTimestamp: number | undefined;
 
-    constructor(hostName: string, optionsOverrides?: any, glitchFree: boolean = false) {
+    constructor(hostName: string, optionsOverrides?: any, glitchFree = false) {
         this._wasConnectedUsingWebsocket = false;
         this._reconnectManager = null;
         this._socket = io(hostName, {

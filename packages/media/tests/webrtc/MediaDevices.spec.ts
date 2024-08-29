@@ -11,7 +11,7 @@ const GUM_ERRORS = {
 
 class MockError extends Error {
     constraint: undefined | string;
-    constructor(name: string, msg: string = "") {
+    constructor(name: string, msg = "") {
         super(msg);
         this.name = name;
     }
@@ -150,7 +150,7 @@ describe("getStream", () => {
                 videoId: vdev1.deviceId,
                 audioId: adev2.deviceId,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         // the tracks are stopped before GUM (before the promise)
@@ -172,7 +172,7 @@ describe("getStream", () => {
                 videoId: vdev1.deviceId,
                 audioId: false,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         expect(audioTrack1.stop).not.toHaveBeenCalled();
@@ -190,7 +190,7 @@ describe("getStream", () => {
                 videoId: false,
                 audioId: adev1.deviceId,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         expect(audioTrack1.stop).toHaveBeenCalledTimes(1);
@@ -211,7 +211,7 @@ describe("getStream", () => {
                 audioId: adev2.deviceId,
                 type,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         const c = expect.objectContaining;
@@ -219,7 +219,7 @@ describe("getStream", () => {
             c({
                 video: c({ deviceId: { [type]: vdev1.deviceId } }),
                 audio: c({ deviceId: { [type]: adev2.deviceId } }),
-            })
+            }),
         );
         expect(stream.removeTrack).toHaveBeenCalledWith(videoTrack1);
         expect(stream.removeTrack).toHaveBeenCalledWith(audioTrack1);
@@ -241,7 +241,7 @@ describe("getStream", () => {
                 audioId: adev1.deviceId,
                 type,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         const c = expect.objectContaining;
@@ -249,7 +249,7 @@ describe("getStream", () => {
             c({
                 video: c({ deviceId: { [type]: vdev2.deviceId } }),
                 audio: c({ deviceId: { [type]: adev1.deviceId } }),
-            })
+            }),
         );
         expect(stream.removeTrack).toHaveBeenCalledWith(videoTrack1);
         expect(stream.removeTrack).toHaveBeenCalledWith(audioTrack1);
@@ -277,7 +277,7 @@ describe("getStream", () => {
                 audioId: adev2.deviceId,
                 type,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         expect(result.error).toBe(e);
@@ -309,14 +309,14 @@ describe("getStream", () => {
                     audioId: false,
                     type,
                 },
-                { replaceStream: stream }
+                { replaceStream: stream },
             );
 
             expect(result.error).toBe(e);
             expect(result.stream).toBeDefined();
             expect(mockGUM.mock.calls[0][0].video.facingMode).toBeDefined();
             expect(mockGUM.mock.calls[1][0].video.facingMode).toBeUndefined();
-        }
+        },
     );
 
     it("should remove deviceId on OverconstrainedError.constraint = deviceid", async () => {
@@ -340,7 +340,7 @@ describe("getStream", () => {
                 audioId: adev2.deviceId,
                 type,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         expect(result.error).toBe(e);
@@ -371,7 +371,7 @@ describe("getStream", () => {
                 audioId: adev2.deviceId,
                 type,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
 
         expect(result.error).toBe(e);
@@ -403,7 +403,7 @@ describe("getStream", () => {
                 audioId: false,
                 type,
             },
-            { replaceStream: stream }
+            { replaceStream: stream },
         );
         expect(videoTrack1.stop).not.toHaveBeenCalled();
 
@@ -437,17 +437,17 @@ describe("getStream", () => {
                     audioId: adev2.deviceId,
                     type,
                 },
-                { replaceStream: stream }
+                { replaceStream: stream },
             );
 
             expect(result.error).toBe(e);
             expect(result.stream).toBeDefined();
             expect(mockGUM.mock.calls.length).toBe(3);
             expect(mockGUM.mock.calls[1][0][mediaKind].deviceId[type]).toBe(
-                mediaKind === "audio" ? adev2.deviceId : vdev2.deviceId
+                mediaKind === "audio" ? adev2.deviceId : vdev2.deviceId,
             );
             expect(mockGUM.mock.calls[2][0][mediaKind].deviceId).toBeUndefined();
-        }
+        },
     );
 
     it.each([[GUM_ERRORS.NOT_READABLE], [GUM_ERRORS.ABORT]])(
@@ -472,7 +472,7 @@ describe("getStream", () => {
                     audioId: adev2.deviceId,
                     type,
                 },
-                { replaceStream: stream }
+                { replaceStream: stream },
             );
 
             expect(result.error).toBe(e);
@@ -480,7 +480,7 @@ describe("getStream", () => {
             expect(mockGUM.mock.calls.length).toBe(4);
             expect(mockGUM.mock.calls[2][0].video).toBeUndefined();
             expect(mockGUM.mock.calls[3][0].audio).toBeUndefined();
-        }
+        },
     );
 
     it.each([
@@ -504,8 +504,8 @@ describe("getStream", () => {
                     audioId: adev2.deviceId,
                     type,
                 },
-                { replaceStream: stream }
-            )
+                { replaceStream: stream },
+            ),
         ).rejects.toThrow();
     });
 });
@@ -663,7 +663,7 @@ describe("compareLocalDevices", () => {
             const changesByKind = MediaDevices.compareLocalDevices(before, after);
 
             expect(changesByKind).toStrictEqual(changes);
-        }
+        },
     );
 });
 
@@ -709,6 +709,6 @@ describe("getUpdatedDevices", () => {
             });
 
             expect(updatedUserMediaConstraints).toStrictEqual(expectedChanges);
-        }
+        },
     );
 });
