@@ -1,5 +1,15 @@
 # @whereby.com/media
 
+## 1.11.0
+
+### Minor Changes
+
+- ada15ac: Add notification for client unable to join full room
+
+### Patch Changes
+
+- b5adf9d: Consider signal connection state on SFU reconnect
+
 ## 1.10.1
 
 ### Patch Changes
