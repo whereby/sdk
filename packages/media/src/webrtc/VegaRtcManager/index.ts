@@ -179,7 +179,7 @@ export default class VegaRtcManager implements RtcManager {
             rtcStats.sendEvent("audio_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
         };
-        
+
         this._videoTrackOnEnded = () => {
             rtcStats.sendEvent("video_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
@@ -470,7 +470,7 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    async _restartIce(transport: any, retried: number = 0) {
+    async _restartIce(transport: any, retried = 0) {
         if (!transport || !("closed" in transport) || !("connectionState" in transport)) {
             logger.info("_restartIce: No transport or property closed or connectionState!");
             return;
@@ -809,13 +809,13 @@ export default class VegaRtcManager implements RtcManager {
 
     async _replaceWebcamTrack() {
         logger.info("_replaceWebcamTrack()");
-        if (!this._sendTransport || !this._webcamTrack || this._webcamProducerPromise) return
+        if (!this._sendTransport || !this._webcamTrack || this._webcamProducerPromise) return;
 
         // if we attempted to produce an ended track earlier no producer would have been made
         // so here, later, it will be replaced with a working track, and the producer needs to be created
         if (!this._webcamProducer && this._webcamTrack.enabled) {
             await this._internalSendWebcam();
-            return
+            return;
         }
 
         if (this._webcamProducer.track !== this._webcamTrack) {
@@ -1147,8 +1147,8 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         if (track.kind === "video") {
-            if (!track.effectTrack)  {
-                this._monitorVideoTrack(track)
+            if (!track.effectTrack) {
+                this._monitorVideoTrack(track);
             }
             this._webcamTrack = track;
             this._replaceWebcamTrack();
@@ -1200,7 +1200,13 @@ export default class VegaRtcManager implements RtcManager {
      * @param {string | "0"} streamId
      * @param {MediaStream} stream
      */
-    addNewStream(streamId: string, stream: MediaStream, audioPaused: boolean, videoPaused: boolean, beforeEffectTracks: CustomMediaStreamTrack[] = []) {
+    addNewStream(
+        streamId: string,
+        stream: MediaStream,
+        audioPaused: boolean,
+        videoPaused: boolean,
+        beforeEffectTracks: CustomMediaStreamTrack[] = [],
+    ) {
         if (streamId === "0") {
             this._micPaused = audioPaused;
             this._webcamPaused = videoPaused;
@@ -1213,9 +1219,9 @@ export default class VegaRtcManager implements RtcManager {
                 if (!videoTrack.effectTrack) {
                     this._monitorVideoTrack(videoTrack);
                 }
-                const beforeEffectTrack = beforeEffectTracks.find(t => t.kind === "video")
+                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
                 if (beforeEffectTrack) {
-                    this._monitorVideoTrack(beforeEffectTrack)
+                    this._monitorVideoTrack(beforeEffectTrack);
                 }
             }
             if (audioTrack) {
@@ -1224,9 +1230,9 @@ export default class VegaRtcManager implements RtcManager {
                 if (!audioTrack.effectTrack) {
                     this._monitorAudioTrack(audioTrack);
                 }
-                const beforeEffectTrack = beforeEffectTracks.find(t => t.kind === "audio")
+                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
                 if (beforeEffectTrack) {
-                    this._monitorAudioTrack(beforeEffectTrack)
+                    this._monitorAudioTrack(beforeEffectTrack);
                 }
             }
 
@@ -1326,7 +1332,10 @@ export default class VegaRtcManager implements RtcManager {
         if (!enable) {
             clearTimeout(this._stopCameraTimeout);
 
-            const stopCameraDelay = localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended" ? 0 : 5000
+            const stopCameraDelay =
+                localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended"
+                    ? 0
+                    : 5000;
 
             // try to stop the local camera so the camera light goes off.
             this._stopCameraTimeout = setTimeout(() => {
@@ -1350,7 +1359,7 @@ export default class VegaRtcManager implements RtcManager {
             navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
                 const track = stream.getVideoTracks()[0];
                 localStream.addTrack(track);
-                this._monitorVideoTrack(track)
+                this._monitorVideoTrack(track);
 
                 this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                     streamId: localStream.id,

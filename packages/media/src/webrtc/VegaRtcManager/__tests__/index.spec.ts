@@ -120,21 +120,21 @@ describe("VegaRtcManager", () => {
 
     describe("addNewStream", () => {
         it("should not produce ended webcam track", async () => {
-            const localStream = helpers.createMockedMediaStream() as unknown as MediaStream
-            jest.spyOn(mockSendTransport, "produce")
-            localStream.getTracks().forEach(t => {
+            const localStream = helpers.createMockedMediaStream() as unknown as MediaStream;
+            jest.spyOn(mockSendTransport, "produce");
+            localStream.getTracks().forEach((t) => {
                 // @ts-ignore
-                if (t.kind === "video") t.readyState = "ended"
-                else localStream.removeTrack(t)
-            })
+                if (t.kind === "video") t.readyState = "ended";
+                else localStream.removeTrack(t);
+            });
             rtcManager.setupSocketListeners();
             rtcManager.addNewStream("0", localStream, false, false);
-            await setTimeout(100)
+            await setTimeout(100);
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(0);
             sfuWebsocketServer.close();
         });
-    })
+    });
 
     describe("replaceTrack", () => {
         let localStream: MediaStream;
@@ -152,12 +152,10 @@ describe("VegaRtcManager", () => {
             const oldTrack = localStream.getVideoTracks()[0];
             const mockVideoProducer = new MockProducer({ kind: "video" });
             jest.spyOn(mockVideoProducer, "replaceTrack");
-            jest.spyOn(mockSendTransport, "produce").mockImplementation(
-                ({ track }: { track: MediaStreamTrack }) => {
-                    if (track.kind === "video") return mockVideoProducer;
-                    else return new MockProducer({ kind: "audio" });
-                }
-            );
+            jest.spyOn(mockSendTransport, "produce").mockImplementation(({ track }: { track: MediaStreamTrack }) => {
+                if (track.kind === "video") return mockVideoProducer;
+                else return new MockProducer({ kind: "audio" });
+            });
 
             rtcManager.setupSocketListeners();
             rtcManager.addNewStream("0", localStream, false, false);
@@ -165,7 +163,7 @@ describe("VegaRtcManager", () => {
             await setTimeout(250);
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(2);
-            expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1)
+            expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledWith({ track: newTrack });
             sfuWebsocketServer.close();
         });
@@ -174,21 +172,19 @@ describe("VegaRtcManager", () => {
             const oldTrack = localStream.getVideoTracks()[0];
             const mockVideoProducer = new MockProducer({ kind: "video" });
             jest.spyOn(mockVideoProducer, "replaceTrack");
-            jest.spyOn(mockSendTransport, "produce").mockImplementation(
-                ({ track }: { track: MediaStreamTrack }) => {
-                    if (track.kind === "video") return mockVideoProducer;
-                    else return new MockProducer({ kind: "audio" });
-                }
-            );
+            jest.spyOn(mockSendTransport, "produce").mockImplementation(({ track }: { track: MediaStreamTrack }) => {
+                if (track.kind === "video") return mockVideoProducer;
+                else return new MockProducer({ kind: "audio" });
+            });
 
             rtcManager.addNewStream("0", localStream, false, false);
             rtcManager.replaceTrack(oldTrack, newTrack);
-            await setTimeout(100)
+            await setTimeout(100);
             rtcManager.setupSocketListeners();
             await setTimeout(250);
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(2);
-            expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1)
+            expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledWith({ track: newTrack });
             sfuWebsocketServer.close();
         });

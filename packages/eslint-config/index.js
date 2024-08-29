@@ -19,5 +19,7 @@ module.exports = {
         "no-console": ["error", { allow: ["warn", "error"] }],
         "@typescript-eslint/ban-ts-comment": 0,
         "@typescript-eslint/no-namespace": "off",
+        "@typescript-eslint/no-empty-interface": "off",
+        "@typescript-eslint/no-empty-function": "off",
     },
 };

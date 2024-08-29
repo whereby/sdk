@@ -20,7 +20,7 @@ export class ServerSocket {
     noopKeepaliveInterval: any;
     _wasConnectedUsingWebsocket?: boolean;
 
-    constructor(hostName: string, optionsOverrides?: any, glitchFree: boolean = false) {
+    constructor(hostName: string, optionsOverrides?: any, glitchFree = false) {
         this._wasConnectedUsingWebsocket = false;
         this._reconnectManager = null;
         this._socket = io(hostName, {
