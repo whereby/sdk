@@ -17,6 +17,7 @@ import { getHandler } from "../../utils/getHandler";
 import { maybeTurnOnly } from "../../utils/transportSettings";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
+import { ServerSocket } from "../../utils";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -37,7 +38,7 @@ export default class VegaRtcManager implements RtcManager {
     _room: any;
     _roomSessionId: any;
     _emitter: any;
-    _serverSocket: any;
+    _serverSocket: ServerSocket;
     _webrtcProvider: any;
     _features: any;
     _eventClaim?: any;
@@ -179,7 +180,6 @@ export default class VegaRtcManager implements RtcManager {
             rtcStats.sendEvent("audio_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
         };
-        
         this._videoTrackOnEnded = () => {
             rtcStats.sendEvent("video_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
@@ -248,6 +248,9 @@ export default class VegaRtcManager implements RtcManager {
             }),
             this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, () => {
                 if (this._screenVideoTrack) this._emitScreenshareStarted();
+                if (this._features.sfuReconnectV2On && !this._vegaConnection.isConnected() && this._reconnect) {
+                    this._connect();
+                }
             }),
         );
 
@@ -262,6 +265,21 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _connect() {
+        if (this._features.sfuReconnectV2On) {
+            if (!this._serverSocket.isConnected()) {
+                // Consider reconnecting to SFU within glitchfree reconnect threshold.
+                const reconnectThresholdInMs = this._serverSocket.getReconnectThreshold();
+                if (!reconnectThresholdInMs) return; // We're not using ReconnectManager and glitchfree reconnect.
+
+                // We don't have signal-server connection and it's too late to do glitchfree reconnect.
+                if (Date.now() > (this._serverSocket.disconnectTimestamp || 0) + reconnectThresholdInMs) return;
+            }
+
+            // This SFU connect attempt could have been triggered by a room_joined response from signal-server.
+            // If so, a reconnect might also have been scheduled, and we need to cancel it to avoid a loop.
+            if (this._reconnectTimeOut) clearTimeout(this._reconnectTimeOut);
+        } 
+
         const host = this._features.sfuServerOverrideHost || [this._sfuServer.url];
         const searchParams = new URLSearchParams({
             clientId: this._selfId,
