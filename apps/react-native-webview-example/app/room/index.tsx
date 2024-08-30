@@ -2,7 +2,6 @@ import * as React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { WherebyEmbed, WherebyEmbedRef } from "@whereby.com/react-native-sdk/embed";
 const ROOM_URL = "";
-const queryParams = "skipMediaPermissionPrompt";
 
 export default function Room() {
     const wherebyRoomRef = React.useRef<WherebyEmbedRef>(null);
@@ -25,8 +24,11 @@ export default function Room() {
                 <WherebyEmbed
                     ref={wherebyRoomRef}
                     style={styles.container}
-                    roomUrl={ROOM_URL}
-                    queryParams={queryParams}
+                    room={ROOM_URL}
+                    // Removes some UI elements. Useful for small screens.
+                    minimal={"on"}
+                    // Skips the media permission prompt.
+                    skipMediaPermissionPrompt={"on"}
                     onMessage={(event) => {
                         handleWherebyEvent(event.nativeEvent.data);
                     }}
