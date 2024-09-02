@@ -306,3 +306,5 @@ export interface SignalRequests {
     start_recording: { recording: string };
     stop_recording: void;
 }
+
+export type TurnTransportProtocol = "onlyudp" | "onlytcp" | "onlytls";
