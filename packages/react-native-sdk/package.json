@@ -1,6 +1,6 @@
 {
   "name": "@whereby.com/react-native-sdk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Modules for integration Whereby video in react native apps",
   "source": "./src/index.tsx",
   "exports": {
