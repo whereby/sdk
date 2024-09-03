@@ -14,7 +14,7 @@
     "devDependencies": {
         "@playwright/test": "^1.38.1",
         "@vitejs/plugin-react": "^4.2.1",
-        "vite": "^5.0.13"
+        "vite": "^5.4.3"
     },
     "scripts": {
         "clean": "rm -rf dist node_modules .turbo",
