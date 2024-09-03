@@ -1,13 +1,13 @@
 import * as React from "react";
-import { ScrollView, StyleSheet, Text, View, Alert, Platform } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Alert, Platform, Button } from "react-native";
 import { Audio } from "expo-av";
 import { Camera } from "expo-camera";
-import { WherebyEmbed, WherebyEmbedRef, WherebyEvent } from "@whereby.com/react-native-sdk/embed";
+import { WherebyEmbed, type WherebyWebView, WherebyEvent } from "@whereby.com/react-native-sdk/embed";
 
 const ROOM_URL = "";
 
 export default function Room() {
-    const wherebyRoomRef = React.useRef<WherebyEmbedRef>(null);
+    const wherebyRoomRef = React.useRef<WherebyWebView>(null);
     const scrollRef = React.useRef<ScrollView>(null);
     const [hasPermissionForAndroid, setHasPermissionForAndroid] = React.useState<boolean>(false);
     const [eventLogEntries, setEventLogEntries] = React.useState<WherebyEvent[]>([]);
@@ -46,6 +46,24 @@ export default function Room() {
                     </Text>
                 ))}
             </ScrollView>
+            <Button
+                onPress={() => {
+                    wherebyRoomRef.current?.knock();
+                }}
+                title="Knock"
+            />
+            <Button
+                onPress={() => {
+                    wherebyRoomRef.current?.openSettings("advanced");
+                }}
+                title="Open Settings"
+            />
+            <Button
+                onPress={() => {
+                    wherebyRoomRef.current?.toggleMicrophone();
+                }}
+                title="Toggle Microphone"
+            />
             <View style={{ flex: 1, height: "100%" }}>
                 <WherebyEmbed
                     ref={wherebyRoomRef}
