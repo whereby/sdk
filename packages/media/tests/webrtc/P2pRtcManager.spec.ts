@@ -589,7 +589,7 @@ describe("P2pRtcManager", () => {
         });
     });
 
-    describe("accept", () => {
+    describe("acceptNewStream", () => {
         it("registers a callback for oniceconnectionstatechange on the peer connection", async () => {
             const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
