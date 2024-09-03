@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.11.1
+
+### Patch Changes
+
+- d01aa03: Revert "media: consider signal connection state on sfu reconnect (#367)"
+
 ## 1.11.0
 
 ### Minor Changes

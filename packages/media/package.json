@@ -1,7 +1,7 @@
 {
     "name": "@whereby.com/media",
     "description": "Media library for Whereby",
-    "version": "1.11.0",
+    "version": "1.11.1",
     "license": "MIT",
     "homepage": "https://github.com/whereby/sdk",
     "repository": {
