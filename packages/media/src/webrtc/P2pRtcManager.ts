@@ -16,7 +16,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
-import { TurnTransportProtocol } from "../utils";
+import { NewClientEvent, TurnTransportProtocol } from "../utils";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -75,6 +75,7 @@ export default class P2pRtcManager implements RtcManager {
     icePublicIPGatheringTimeoutID: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
+    _nodeJsClients: string[];
 
     constructor({
         selfId,
@@ -110,6 +111,7 @@ export default class P2pRtcManager implements RtcManager {
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
+        this._nodeJsClients = [];
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -266,6 +268,12 @@ export default class P2pRtcManager implements RtcManager {
     setupSocketListeners() {
         this._socketListenerDeregisterFunctions = [
             () => this._clearMediaServersRefresh(),
+
+            this._serverSocket.on(PROTOCOL_RESPONSES.NEW_CLIENT, (data: NewClientEvent) => {
+                if (data.client.isDialIn && !this._nodeJsClients.includes(data.client.id)) {
+                    this._nodeJsClients.push(data.client.id);
+                }
+            }),
 
             this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data: any) => {
                 if (data.error) {
@@ -899,7 +907,14 @@ export default class P2pRtcManager implements RtcManager {
         } else {
             initialBandwidth = this._changeBandwidthForAllClients(true);
         }
-        session = this._createP2pSession({ clientId, initialBandwidth, shouldAddLocalVideo: true, isOfferer: true });
+        const enforceTurnProtocol = this._nodeJsClients.includes(clientId) ? "onlytls" : undefined;
+        session = this._createP2pSession({
+            clientId,
+            initialBandwidth,
+            shouldAddLocalVideo: true,
+            isOfferer: true,
+            enforceTurnProtocol,
+        });
         this._negotiatePeerConnection(clientId, session);
         return Promise.resolve(session);
     }
