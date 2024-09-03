@@ -17,7 +17,6 @@ import { getHandler } from "../../utils/getHandler";
 import { maybeTurnOnly } from "../../utils/transportSettings";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
-import { ServerSocket } from "../../utils";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -38,7 +37,7 @@ export default class VegaRtcManager implements RtcManager {
     _room: any;
     _roomSessionId: any;
     _emitter: any;
-    _serverSocket: ServerSocket;
+    _serverSocket: any;
     _webrtcProvider: any;
     _features: any;
     _eventClaim?: any;
@@ -180,7 +179,7 @@ export default class VegaRtcManager implements RtcManager {
             rtcStats.sendEvent("audio_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
         };
-
+        
         this._videoTrackOnEnded = () => {
             rtcStats.sendEvent("video_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
@@ -249,9 +248,6 @@ export default class VegaRtcManager implements RtcManager {
             }),
             this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, () => {
                 if (this._screenVideoTrack) this._emitScreenshareStarted();
-                if (!this._vegaConnection.isConnected() && this._reconnect) {
-                    this._connect();
-                }
             }),
         );
 
@@ -266,15 +262,6 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _connect() {
-        // If disconnected from signal-server, possibly wait for a new join eventClaim before reconnecting to SFU.
-        if (!this._serverSocket.isConnected()) {
-            // We might reconnect to the SFU if within glitchfree reconnect threshold
-            const reconnectThresholdInMs = this._serverSocket.getReconnectThreshold();
-            if (!reconnectThresholdInMs) return; // We're not using ReconnectManager and glitchfree reconnect.
-
-            if (Date.now() > (this._serverSocket.disconnectTimestamp || 0) + reconnectThresholdInMs) return;
-        }
-
         const host = this._features.sfuServerOverrideHost || [this._sfuServer.url];
         const searchParams = new URLSearchParams({
             clientId: this._selfId,
@@ -822,13 +809,13 @@ export default class VegaRtcManager implements RtcManager {
 
     async _replaceWebcamTrack() {
         logger.info("_replaceWebcamTrack()");
-        if (!this._sendTransport || !this._webcamTrack || this._webcamProducerPromise) return;
+        if (!this._sendTransport || !this._webcamTrack || this._webcamProducerPromise) return
 
         // if we attempted to produce an ended track earlier no producer would have been made
         // so here, later, it will be replaced with a working track, and the producer needs to be created
         if (!this._webcamProducer && this._webcamTrack.enabled) {
             await this._internalSendWebcam();
-            return;
+            return
         }
 
         if (this._webcamProducer.track !== this._webcamTrack) {
@@ -1160,8 +1147,8 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         if (track.kind === "video") {
-            if (!track.effectTrack) {
-                this._monitorVideoTrack(track);
+            if (!track.effectTrack)  {
+                this._monitorVideoTrack(track)
             }
             this._webcamTrack = track;
             this._replaceWebcamTrack();
@@ -1213,13 +1200,7 @@ export default class VegaRtcManager implements RtcManager {
      * @param {string | "0"} streamId
      * @param {MediaStream} stream
      */
-    addNewStream(
-        streamId: string,
-        stream: MediaStream,
-        audioPaused: boolean,
-        videoPaused: boolean,
-        beforeEffectTracks: CustomMediaStreamTrack[] = [],
-    ) {
+    addNewStream(streamId: string, stream: MediaStream, audioPaused: boolean, videoPaused: boolean, beforeEffectTracks: CustomMediaStreamTrack[] = []) {
         if (streamId === "0") {
             this._micPaused = audioPaused;
             this._webcamPaused = videoPaused;
@@ -1232,9 +1213,9 @@ export default class VegaRtcManager implements RtcManager {
                 if (!videoTrack.effectTrack) {
                     this._monitorVideoTrack(videoTrack);
                 }
-                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
+                const beforeEffectTrack = beforeEffectTracks.find(t => t.kind === "video")
                 if (beforeEffectTrack) {
-                    this._monitorVideoTrack(beforeEffectTrack);
+                    this._monitorVideoTrack(beforeEffectTrack)
                 }
             }
             if (audioTrack) {
@@ -1243,9 +1224,9 @@ export default class VegaRtcManager implements RtcManager {
                 if (!audioTrack.effectTrack) {
                     this._monitorAudioTrack(audioTrack);
                 }
-                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
+                const beforeEffectTrack = beforeEffectTracks.find(t => t.kind === "audio")
                 if (beforeEffectTrack) {
-                    this._monitorAudioTrack(beforeEffectTrack);
+                    this._monitorAudioTrack(beforeEffectTrack)
                 }
             }
 
@@ -1345,10 +1326,7 @@ export default class VegaRtcManager implements RtcManager {
         if (!enable) {
             clearTimeout(this._stopCameraTimeout);
 
-            const stopCameraDelay =
-                localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended"
-                    ? 0
-                    : 5000;
+            const stopCameraDelay = localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended" ? 0 : 5000
 
             // try to stop the local camera so the camera light goes off.
             this._stopCameraTimeout = setTimeout(() => {
@@ -1372,7 +1350,7 @@ export default class VegaRtcManager implements RtcManager {
             navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
                 const track = stream.getVideoTracks()[0];
                 localStream.addTrack(track);
-                this._monitorVideoTrack(track);
+                this._monitorVideoTrack(track)
 
                 this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                     streamId: localStream.id,

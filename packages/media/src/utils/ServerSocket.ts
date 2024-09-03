@@ -19,7 +19,6 @@ export class ServerSocket {
     _reconnectManager?: ReconnectManager | null;
     noopKeepaliveInterval: any;
     _wasConnectedUsingWebsocket?: boolean;
-    disconnectTimestamp: number | undefined;
 
     constructor(hostName: string, optionsOverrides?: any, glitchFree = false) {
         this._wasConnectedUsingWebsocket = false;
@@ -41,7 +40,7 @@ export class ServerSocket {
             if (this._wasConnectedUsingWebsocket) {
                 this._socket.io.opts.transports = ["websocket"];
                 // only fallback to polling if not safari
-                // safari doesn't support cross domain cookies making load-balancer stickiness not work
+                // safari doesn't support cross doamin cookies making load-balancer stickiness not work
                 // and if socket.io reconnects to another signal instance with polling it will fail
                 // remove if we move signal to a whereby.com subdomain
                 if (adapter.browserDetails.browser !== "safari") delete this._wasConnectedUsingWebsocket;
@@ -71,7 +70,6 @@ export class ServerSocket {
         });
 
         this._socket.on("disconnect", () => {
-            this.disconnectTimestamp = Date.now();
             if (this.noopKeepaliveInterval) {
                 clearInterval(this.noopKeepaliveInterval);
                 this.noopKeepaliveInterval = null;
@@ -127,11 +125,11 @@ export class ServerSocket {
         return this._socket.io;
     }
 
-    isConnecting(): boolean {
+    isConnecting() {
         return this._socket && this._socket.connecting;
     }
 
-    isConnected(): boolean {
+    isConnected() {
         return this._socket && this._socket.connected;
     }
 
@@ -196,9 +194,5 @@ export class ServerSocket {
 
     getGlitchFreeMetrics() {
         return this._reconnectManager?.metrics;
-    }
-
-    getReconnectThreshold(): number | undefined {
-        return this._reconnectManager?.reconnectThresholdInMs;
     }
 }
