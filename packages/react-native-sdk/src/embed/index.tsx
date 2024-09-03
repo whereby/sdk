@@ -1,5 +1,5 @@
 import * as React from "react";
-import { WebView, WebViewProps } from "react-native-webview";
+import { WebView, WebViewMessageEvent, WebViewProps } from "react-native-webview";
 
 interface WherebyEmbedElementAttributes {
     aec?: string;
@@ -72,8 +72,91 @@ interface WherebyEmbedElementAttributes {
     virtualBackgroundUrl?: string;
 }
 
+interface PrecallCheckCompletedStepResult {
+    status: "passed" | "failed";
+}
+
+const WHEREBY_EVENT_TYPES = [
+    "ready",
+    "knock",
+    "participantupdate",
+    "join",
+    "leave",
+    "participant_join",
+    "participant_leave",
+    "meeting_end",
+    "microphone_toggle",
+    "camera_toggle",
+    "chat_toggle",
+    "people_toggle",
+    "pip_toggle",
+    "grant_device_permission",
+    "deny_device_permission",
+    "screenshare_toggle",
+    "streaming_status_change",
+    "connection_status_change",
+    "precall_check_skipped",
+    "precall_check_completed",
+];
+
+export type WherebyEvent =
+    | { type: "ready"; payload: undefined }
+    | { type: "knock"; payload: undefined }
+    | { type: "participantupdate"; payload: { count: number } }
+    | { type: "join"; payload: undefined }
+    | { type: "leave"; payload: { removed: boolean } }
+    | { type: "participant_join"; payload: { participant: { metadata: string | null; externalId: string | null } } }
+    | { type: "participant_leave"; payload: { participant: { metadata: string | null; externalId: string | null } } }
+    | { type: "meeting_end"; payload: undefined }
+    | { type: "microphone_toggle"; payload: { enabled: boolean } }
+    | { type: "camera_toggle"; payload: { enabled: boolean } }
+    | { type: "chat_toggle"; payload: { open: boolean } }
+    | { type: "people_toggle"; payload: { open: boolean } }
+    | { type: "pip_toggle"; payload: { open: boolean } }
+    | { type: "grant_device_permission"; payload: { granted: boolean } }
+    | { type: "deny_device_permission"; payload: { denied: boolean } }
+    | { type: "screenshare_toggle"; payload: { enabled: boolean } }
+    | { type: "streaming_status_change"; payload: { status: string } }
+    | { type: "connection_status_change"; payload: { status: "stable" | "unstable" } }
+    | { type: "precall_check_skipped"; payload: undefined }
+    | {
+          type: "precall_check_completed";
+          payload: {
+              status: "passed" | "failed";
+              steps: {
+                  camera: PrecallCheckCompletedStepResult;
+                  speaker: PrecallCheckCompletedStepResult;
+                  microphone: PrecallCheckCompletedStepResult;
+                  bandwidth: PrecallCheckCompletedStepResult;
+              };
+          };
+      };
+
 interface WherebyEmbedProps extends WebViewProps, WherebyEmbedElementAttributes {
     room: string;
+    // Catch-all for any Whereby event
+    onWherebyMessage?: (data: WherebyEvent) => void;
+    // Specific callbacks for each Whereby event
+    onReady?: () => void;
+    onKnock?: () => void;
+    onParticipantUpdate?: (data: Extract<WherebyEvent, { type: "participantupdate" }>["payload"]) => void;
+    onJoin?: () => void;
+    onLeave?: (data: Extract<WherebyEvent, { type: "leave" }>["payload"]) => void;
+    onParticipantJoin?: (data: Extract<WherebyEvent, { type: "participant_join" }>["payload"]) => void;
+    onParticipantLeave?: (data: Extract<WherebyEvent, { type: "participant_leave" }>["payload"]) => void;
+    onMeetingEnd?: () => void;
+    onMicrophoneToggle?: (data: Extract<WherebyEvent, { type: "microphone_toggle" }>["payload"]) => void;
+    onCameraToggle?: (data: Extract<WherebyEvent, { type: "camera_toggle" }>["payload"]) => void;
+    onChatToggle?: (data: Extract<WherebyEvent, { type: "chat_toggle" }>["payload"]) => void;
+    onPeopleToggle?: (data: Extract<WherebyEvent, { type: "people_toggle" }>["payload"]) => void;
+    onPipToggle?: (data: Extract<WherebyEvent, { type: "pip_toggle" }>["payload"]) => void;
+    onGrantDevicePermission?: (data: Extract<WherebyEvent, { type: "grant_device_permission" }>["payload"]) => void;
+    onDenyDevicePermission?: (data: Extract<WherebyEvent, { type: "deny_device_permission" }>["payload"]) => void;
+    onScreenshareToggle?: (data: Extract<WherebyEvent, { type: "screenshare_toggle" }>["payload"]) => void;
+    onStreamingStatusChange?: (data: Extract<WherebyEvent, { type: "streaming_status_change" }>["payload"]) => void;
+    onConnectionStatusChange?: (data: Extract<WherebyEvent, { type: "connection_status_change" }>["payload"]) => void;
+    onPrecallCheckSkipped?: () => void;
+    onPrecallCheckCompleted?: (data: Extract<WherebyEvent, { type: "precall_check_completed" }>["payload"]) => void;
 }
 
 const WherebyEmbed = React.forwardRef<React.ElementRef<typeof WebView>, WherebyEmbedProps>(
@@ -149,6 +232,82 @@ const WherebyEmbed = React.forwardRef<React.ElementRef<typeof WebView>, WherebyE
             }
         });
 
+        const handleMessage = React.useCallback(
+            (event: WebViewMessageEvent) => {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.type && WHEREBY_EVENT_TYPES.includes(data.type)) {
+                    props.onWherebyMessage?.(data);
+
+                    switch (data.type) {
+                        case "ready":
+                            props.onReady?.();
+                            break;
+                        case "knock":
+                            props.onKnock?.();
+                            break;
+                        case "participantupdate":
+                            props.onParticipantUpdate?.(data.payload);
+                            break;
+                        case "join":
+                            props.onJoin?.();
+                            break;
+                        case "leave":
+                            props.onLeave?.(data.payload);
+                            break;
+                        case "participant_join":
+                            props.onParticipantJoin?.(data.payload);
+                            break;
+                        case "participant_leave":
+                            props.onParticipantLeave?.(data.payload);
+                            break;
+                        case "meeting_end":
+                            props.onMeetingEnd?.();
+                            break;
+                        case "microphone_toggle":
+                            props.onMicrophoneToggle?.(data.payload);
+                            break;
+                        case "camera_toggle":
+                            props.onCameraToggle?.(data.payload);
+                            break;
+                        case "chat_toggle":
+                            props.onChatToggle?.(data.payload);
+                            break;
+                        case "people_toggle":
+                            props.onPeopleToggle?.(data.payload);
+                            break;
+                        case "pip_toggle":
+                            props.onPipToggle?.(data.payload);
+                            break;
+                        case "grant_device_permission":
+                            props.onGrantDevicePermission?.(data.payload);
+                            break;
+                        case "deny_device_permission":
+                            props.onDenyDevicePermission?.(data.payload);
+                            break;
+                        case "screenshare_toggle":
+                            props.onScreenshareToggle?.(data.payload);
+                            break;
+                        case "streaming_status_change":
+                            props.onStreamingStatusChange?.(data.payload);
+                            break;
+                        case "connection_status_change":
+                            props.onConnectionStatusChange?.(data.payload);
+                            break;
+                        case "precall_check_skipped":
+                            props.onPrecallCheckSkipped?.();
+                            break;
+                        case "precall_check_completed":
+                            props.onPrecallCheckCompleted?.(data.payload);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                props.onMessage?.(event);
+            },
+            [props],
+        );
+
         return (
             <WebView
                 ref={ref}
@@ -160,6 +319,7 @@ const WherebyEmbed = React.forwardRef<React.ElementRef<typeof WebView>, WherebyE
                 javaScriptEnabled
                 domStorageEnabled
                 {...props}
+                onMessage={handleMessage}
             />
         );
     },

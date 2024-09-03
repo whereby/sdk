@@ -1,29 +1,29 @@
 import * as React from "react";
 import { ScrollView, StyleSheet, Text, View, Alert, Platform } from "react-native";
-import { WherebyEmbed, WherebyEmbedRef } from "@whereby.com/react-native-sdk/embed";
 import { Audio } from "expo-av";
-import { Camera } from 'expo-camera';
+import { Camera } from "expo-camera";
+import { WherebyEmbed, WherebyEmbedRef, WherebyEvent } from "@whereby.com/react-native-sdk/embed";
 
 const ROOM_URL = "";
 
 export default function Room() {
     const wherebyRoomRef = React.useRef<WherebyEmbedRef>(null);
     const scrollRef = React.useRef<ScrollView>(null);
-    const [eventLogEntries, setEventLogEntries] = React.useState<any[]>([]);
     const [hasPermissionForAndroid, setHasPermissionForAndroid] = React.useState<boolean>(false);
+    const [eventLogEntries, setEventLogEntries] = React.useState<WherebyEvent[]>([]);
 
-    function handleWherebyEvent(event: any) {
+    const handleWherebyEvent = (event: WherebyEvent) => {
         setEventLogEntries((prev) => [...prev, event]);
         scrollRef.current?.scrollToEnd({ animated: true });
-    }
+    };
 
     React.useEffect(() => {
         (async () => {
-            if (Platform.OS === 'android') {
+            if (Platform.OS === "android") {
                 const cameraStatus = await Camera.requestCameraPermissionsAsync();
                 const audioStatus = await Audio.requestPermissionsAsync();
 
-                if (cameraStatus.status === 'granted' && audioStatus.status === 'granted') {
+                if (cameraStatus.status === "granted" && audioStatus.status === "granted") {
                     setHasPermissionForAndroid(true);
                 } else {
                     Alert.alert("Permissions Required", "Camera and microphone permissions are required.");
@@ -33,7 +33,7 @@ export default function Room() {
         })();
     }, []);
 
-    if (Platform.OS === 'android' && !hasPermissionForAndroid) {
+    if (Platform.OS === "android" && !hasPermissionForAndroid) {
         return <View />;
     }
 
@@ -41,7 +41,9 @@ export default function Room() {
         <View style={{ flex: 1 }}>
             <ScrollView ref={scrollRef} style={{ height: 50, flexGrow: 0 }}>
                 {eventLogEntries.map((entry, index) => (
-                    <Text key={index}>{entry}</Text>
+                    <Text key={index}>
+                        {entry.type} {entry.payload ? JSON.stringify(entry.payload) : ""}
+                    </Text>
                 ))}
             </ScrollView>
             <View style={{ flex: 1, height: "100%" }}>
@@ -53,8 +55,14 @@ export default function Room() {
                     minimal={"on"}
                     // Skips the media permission prompt.
                     skipMediaPermissionPrompt={"on"}
-                    onMessage={(event) => {
-                        handleWherebyEvent(event.nativeEvent.data);
+                    // Catch-all for any Whereby event
+                    onWherebyMessage={(event) => {
+                        handleWherebyEvent(event);
+                    }}
+                    // Specific callbacks for each Whereby event
+                    onReady={() => {
+                        // eslint-disable-next-line no-console
+                        console.log("ready");
                     }}
                 />
             </View>
