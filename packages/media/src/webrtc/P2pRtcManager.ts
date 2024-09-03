@@ -907,7 +907,10 @@ export default class P2pRtcManager implements RtcManager {
         } else {
             initialBandwidth = this._changeBandwidthForAllClients(true);
         }
-        const enforceTurnProtocol = this._nodeJsClients.includes(clientId) ? "onlytls" : undefined;
+        let enforceTurnProtocol: TurnTransportProtocol | undefined;
+        if (this._nodeJsClients.includes(clientId)) {
+            enforceTurnProtocol = this._features.isNodeSdk ? "onlyudp" : "onlytls";
+        }
         session = this._createP2pSession({
             clientId,
             initialBandwidth,
