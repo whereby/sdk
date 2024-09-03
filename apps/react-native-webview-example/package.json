@@ -3,6 +3,7 @@
   "main": "index.js",
   "version": "1.0.0",
   "scripts": {
+    "clean": "rm -rf dist node_modules .turbo",
     "dev": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",

@@ -22,6 +22,10 @@
             "env": [
                 "WHEREBY_API_KEY"
             ]
+        },
+        "clean": {
+            "dependsOn": ["^clean"],
+            "cache": false
         }
     }
 }

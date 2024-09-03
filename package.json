@@ -19,7 +19,8 @@
     "test": "turbo test",
     "test:lint": "turbo test:lint",
     "test:e2e": "turbo test:e2e",
-    "test:attw": "turbo test:attw"
+    "test:attw": "turbo test:attw",
+    "clean": "turbo clean && rm -rf dist node_modules .turbo"
   },
   "workspaces": [
     "apps/*",

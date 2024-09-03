@@ -5,6 +5,7 @@
     "version": "0.24.1",
     "license": "MIT",
     "scripts": {
+        "clean": "rimraf dist node_modules .turbo",
         "build": "rimraf dist && rollup -c rollup.config.js",
         "test": "yarn test:lint && yarn test:unit",
         "test:lint": "eslint src/",

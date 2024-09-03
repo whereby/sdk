@@ -17,6 +17,7 @@
         "vite": "^5.0.13"
     },
     "scripts": {
+        "clean": "rm -rf dist node_modules .turbo",
         "dev": "vite",
         "build": "tsc && vite build",
         "test:e2e": "playwright test",
