@@ -12,6 +12,7 @@
         "url": "https://github.com/whereby/sdk/issues"
     },
     "scripts": {
+        "clean": "rimraf dist node_modules .turbo",
         "build": "rimraf dist && rollup -c rollup.config.js",
         "test": "npm run test:lint && npm run test:unit",
         "test:unit": "jest",

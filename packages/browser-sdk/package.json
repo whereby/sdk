@@ -40,6 +40,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
+    "clean": "rimraf dist node_modules .turbo",
     "prebuild": "rimraf dist",
     "build": "rollup -c rollup.config.js",
     "build:storybook": "storybook build",
