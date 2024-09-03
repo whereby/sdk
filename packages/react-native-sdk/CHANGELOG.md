@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.3.0
+
+### Minor Changes
+
+- c6bbc73: Add event listeners
+
 ## 0.2.1
 
 ### Patch Changes
