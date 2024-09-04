@@ -169,7 +169,7 @@ describe("P2pRtcManager", () => {
 
                 expect(serverSocket.on).toHaveBeenCalledWith(
                     RELAY_MESSAGES.READY_TO_RECEIVE_OFFER,
-                    expect.any(Function)
+                    expect.any(Function),
                 );
                 expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_OFFER, expect.any(Function));
                 expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_ANSWER, expect.any(Function));
@@ -293,7 +293,7 @@ describe("P2pRtcManager", () => {
                         expect(serverSocket.emit).toHaveBeenCalledWith(
                             PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
                             undefined,
-                            undefined
+                            undefined,
                         );
                     });
 
@@ -312,7 +312,7 @@ describe("P2pRtcManager", () => {
                         expect(serverSocket.emit).toHaveBeenCalledWith(
                             PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
                             undefined,
-                            undefined
+                            undefined,
                         );
                     });
 
@@ -328,35 +328,35 @@ describe("P2pRtcManager", () => {
             });
         });
 
-        describe("accept", () => {
+        describe("acceptNewStream", () => {
             it("creates a new peer connection", () => {
-                rtcManager.accept({ clientId });
+                rtcManager.acceptNewStream({ clientId, streamId: "0" });
 
                 // The object should be constructed with the given ice servers.
                 expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers, sdpSemantics: "unified-plan" });
             });
 
             it("stores the new peer connection", async () => {
-                const { pc } = await rtcManager.accept({ clientId });
+                const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: "0" });
 
                 // The pc should be added to list of peer connections.
                 expect(rtcManager.peerConnections[clientId].pc).toEqual(pc);
             });
 
             it("does not create an offer", async () => {
-                const { pc } = await rtcManager.accept({ clientId });
+                const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: "0" });
 
                 // An offer should not have been created yet.
                 expect(pc.createOffer).toHaveBeenCalledTimes(0);
             });
 
             it("emits READY_TO_RECEIVE_OFFER on the server socket", () => {
-                rtcManager.accept({ clientId });
+                rtcManager.acceptNewStream({ clientId, streamId: "0" });
 
                 expect(serverSocketStub.socket.emit).toHaveBeenCalledWith(
                     RELAY_MESSAGES.READY_TO_RECEIVE_OFFER,
                     { receiverId: clientId },
-                    undefined
+                    undefined,
                 );
             });
         });
@@ -366,7 +366,7 @@ describe("P2pRtcManager", () => {
                 const fakeStream = helpers.randomString("stream-");
                 const fakeTrack = helpers.randomString("track-");
                 it("broadcasts a STREAM_ADDED event on the root scope", async () => {
-                    const { pc } = await rtcManager.accept({ clientId });
+                    const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: "0" });
 
                     pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
 
@@ -377,7 +377,7 @@ describe("P2pRtcManager", () => {
                 });
 
                 it("does not call pc.addStream on camera/mic stream", async () => {
-                    const { pc } = await rtcManager.accept({ clientId });
+                    const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: "0" });
                     rtcManager.localStreams = { 0: fakeStream };
 
                     pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
@@ -386,7 +386,7 @@ describe("P2pRtcManager", () => {
                 });
 
                 it("does not call pc.addStream for remaining local streams if Firefox", async () => {
-                    const { pc } = await rtcManager.accept({ clientId });
+                    const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: "0" });
                     rtcManager.localStreams = { 1: fakeStream };
                     rtcManager.peerConnections[clientId].isFirefox = true;
 
@@ -409,7 +409,7 @@ describe("P2pRtcManager", () => {
                         const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
 
                         it("broadcasts when ice connection state becomes " + iceState, async () => {
-                            const { pc } = await rtcManager.accept({ clientId });
+                            const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: "0" });
 
                             pc.iceConnectionState = iceState;
                             pc.localDescription = { type: "offer" };
@@ -424,7 +424,7 @@ describe("P2pRtcManager", () => {
                                     clientId,
                                     streamIds: [],
                                     status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
-                                })
+                                }),
                             );
                         });
                     });
@@ -589,27 +589,27 @@ describe("P2pRtcManager", () => {
         });
     });
 
-    describe("accept", () => {
+    describe("acceptNewStream", () => {
         it("registers a callback for oniceconnectionstatechange on the peer connection", async () => {
-            const { pc } = await createRtcManager().accept({ clientId });
+            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.oniceconnectionstatechange).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onnegotiationneeded on the peer connection", async () => {
-            const { pc } = await createRtcManager().accept({ clientId });
+            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.onnegotiationneeded).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onicecandidate on the peer connection", async () => {
-            const { pc } = await createRtcManager().accept({ clientId });
+            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.onicecandidate).toEqual(expect.any(Function));
         });
 
         it("registers a callback for ontrack on the peer connection", async () => {
-            const { pc } = await createRtcManager().accept({ clientId });
+            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.ontrack).toEqual(expect.any(Function));
         });
@@ -618,7 +618,7 @@ describe("P2pRtcManager", () => {
     describe("peerConnection callback", () => {
         describe("onnegotiationneeded", () => {
             it("negotiates the peer connection after it is connected", async () => {
-                const { pc } = await createRtcManager().accept({ clientId });
+                const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
                 pc.iceConnectionState = "connected";
                 pc.oniceconnectionstatechange();
 
@@ -628,7 +628,7 @@ describe("P2pRtcManager", () => {
             });
 
             it('does not negotiate peer connection when iceConnectionState is "new"', async () => {
-                const { pc } = await createRtcManager().accept({ clientId });
+                const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
                 pc.iceConnectionState = "new";
                 pc.onnegotiationneeded();
@@ -637,7 +637,7 @@ describe("P2pRtcManager", () => {
             });
 
             it("does not re-negotiate peer connection during initial negotiation", async () => {
-                const { pc } = await createRtcManager().accept({ clientId });
+                const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
                 // during initial negotiation, iceConnectionState changes from "new" before the
                 // oniceconnectionstatechanged event is delivered
@@ -661,7 +661,7 @@ describe("P2pRtcManager", () => {
                         receiverId: clientId,
                         message: candidatePackage,
                     },
-                    undefined
+                    undefined,
                 );
             });
 
@@ -679,7 +679,7 @@ describe("P2pRtcManager", () => {
                         receiverId: clientId,
                         message: candidatePackage,
                     },
-                    undefined
+                    undefined,
                 );
             });
         });
@@ -811,7 +811,7 @@ describe("P2pRtcManager", () => {
                     const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
 
                     it("broadcasts when ice connection state becomes " + iceState, async () => {
-                        const { pc } = await createRtcManager().accept({ clientId });
+                        const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
                         pc.iceConnectionState = iceState;
                         pc.localDescription = { type: "offer" };
@@ -824,7 +824,7 @@ describe("P2pRtcManager", () => {
                                 clientId,
                                 streamIds: [],
                                 status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
-                            })
+                            }),
                         );
                     });
                 });

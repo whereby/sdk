@@ -16,6 +16,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
+import { NewClientEvent, TurnTransportProtocol } from "../utils";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -74,6 +75,7 @@ export default class P2pRtcManager implements RtcManager {
     icePublicIPGatheringTimeoutID: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
+    _nodeJsClients: string[];
 
     constructor({
         selfId,
@@ -109,6 +111,7 @@ export default class P2pRtcManager implements RtcManager {
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
+        this._nodeJsClients = [];
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -224,10 +227,6 @@ export default class P2pRtcManager implements RtcManager {
         return this._replaceTrackToPeerConnections(oldTrack, newTrack);
     }
 
-    accept({ clientId, shouldAddLocalVideo }: { clientId: string; shouldAddLocalVideo?: boolean }) {
-        return this.acceptNewStream({ streamId: clientId, clientId, shouldAddLocalVideo });
-    }
-
     disconnectAll() {
         Object.keys(this.peerConnections).forEach((peerConnectionId) => {
             this.disconnect(peerConnectionId);
@@ -269,6 +268,12 @@ export default class P2pRtcManager implements RtcManager {
     setupSocketListeners() {
         this._socketListenerDeregisterFunctions = [
             () => this._clearMediaServersRefresh(),
+
+            this._serverSocket.on(PROTOCOL_RESPONSES.NEW_CLIENT, (data: NewClientEvent) => {
+                if (data.client.isDialIn && !this._nodeJsClients.includes(data.client.id)) {
+                    this._nodeJsClients.push(data.client.id);
+                }
+            }),
 
             this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data: any) => {
                 if (data.error) {
@@ -526,12 +531,14 @@ export default class P2pRtcManager implements RtcManager {
         isOfferer,
         peerConnectionId,
         shouldAddLocalVideo,
+        enforceTurnProtocol,
     }: {
         clientId: string;
         initialBandwidth: any;
         isOfferer: any;
         peerConnectionId: string;
         shouldAddLocalVideo: boolean;
+        enforceTurnProtocol?: TurnTransportProtocol;
     }) {
         if (!peerConnectionId) {
             throw new Error("peerConnectionId is missing");
@@ -571,7 +578,7 @@ export default class P2pRtcManager implements RtcManager {
                 return entry;
             });
         }
-        if (this._features.useOnlyTURN) {
+        if (enforceTurnProtocol || this._features.useOnlyTURN) {
             peerConnectionConfig.iceTransportPolicy = "relay";
             const filter = (
                 {
@@ -579,7 +586,7 @@ export default class P2pRtcManager implements RtcManager {
                     onlytcp: /^turn:.*transport=tcp$/,
                     onlytls: /^turns:.*transport=tcp$/,
                 } as any
-            )[this._features.useOnlyTURN];
+            )[enforceTurnProtocol || this._features.useOnlyTURN];
             if (filter) {
                 peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.filter(
                     (entry: any) => entry.url && entry.url.match(filter),
@@ -892,16 +899,25 @@ export default class P2pRtcManager implements RtcManager {
 
     _connect(clientId: string) {
         this.rtcStatsReconnect();
-        const shouldAddLocalVideo = true;
         let session = this._getSession(clientId);
-        let bandwidth = (session && session.bandwidth) || 0;
+        let initialBandwidth = (session && session.bandwidth) || 0;
         if (session) {
             logger.warn("Replacing peer session", clientId);
             this._cleanup(clientId);
         } else {
-            bandwidth = this._changeBandwidthForAllClients(true);
+            initialBandwidth = this._changeBandwidthForAllClients(true);
         }
-        session = this._createP2pSession(clientId, bandwidth, shouldAddLocalVideo, true);
+        let enforceTurnProtocol: TurnTransportProtocol | undefined;
+        if (this._nodeJsClients.includes(clientId)) {
+            enforceTurnProtocol = this._features.isNodeSdk ? "onlyudp" : "onlytls";
+        }
+        session = this._createP2pSession({
+            clientId,
+            initialBandwidth,
+            shouldAddLocalVideo: true,
+            isOfferer: true,
+            enforceTurnProtocol,
+        });
         this._negotiatePeerConnection(clientId, session);
         return Promise.resolve(session);
     }
@@ -1060,7 +1076,7 @@ export default class P2pRtcManager implements RtcManager {
 
     // implements a strategy to change the bandwidth for all clients (without negotiation)
     // returns bandwidth so it can be used as initial bandwidth for new client.
-    _changeBandwidthForAllClients(isJoining: boolean) {
+    _changeBandwidthForAllClients(isJoining: boolean): number {
         let numPeers = this.numberOfPeerconnections();
         if (isJoining) {
             // client will be added to RTCManager.peerConnections afterwards
@@ -1119,13 +1135,26 @@ export default class P2pRtcManager implements RtcManager {
         return bandwidth;
     }
 
-    _createP2pSession(clientId: string, initialBandwidth: any, shouldAddLocalVideo: any, isOfferer?: any) {
+    _createP2pSession({
+        clientId,
+        initialBandwidth,
+        shouldAddLocalVideo = false,
+        isOfferer = false,
+        enforceTurnProtocol,
+    }: {
+        clientId: string;
+        initialBandwidth: number;
+        shouldAddLocalVideo: boolean;
+        isOfferer: boolean;
+        enforceTurnProtocol?: TurnTransportProtocol;
+    }) {
         const session = this._createSession({
             peerConnectionId: clientId,
             clientId,
             initialBandwidth,
             shouldAddLocalVideo,
             isOfferer,
+            enforceTurnProtocol,
         });
         const pc = session.pc;
 
@@ -1258,17 +1287,19 @@ export default class P2pRtcManager implements RtcManager {
         streamId,
         clientId,
         shouldAddLocalVideo,
+        enforceTurnProtocol,
     }: {
         streamId: string;
         clientId: string;
         shouldAddLocalVideo?: boolean;
+        enforceTurnProtocol?: TurnTransportProtocol;
     }) {
         let session = this._getSession(clientId);
         if (session && streamId !== clientId) {
             // we are adding a screenshare stream to existing session/pc
             return session;
         }
-        let bandwidth = (session && session.bandwidth) || 0;
+        let initialBandwidth: number = (session && session.bandwidth) || 0;
         if (session) {
             // this will happen on a signal-server reconnect
             // before we tried an ice-restart here, now we recreate the session/pc
@@ -1277,9 +1308,15 @@ export default class P2pRtcManager implements RtcManager {
         } else {
             // we adjust bandwidth based on number of sessions/pcs
             // so only needed when streamId === clientId (camera) and we're not replacing beacuse of reconnect
-            bandwidth = this._changeBandwidthForAllClients(true);
+            initialBandwidth = this._changeBandwidthForAllClients(true);
         }
-        session = this._createP2pSession(clientId, bandwidth, shouldAddLocalVideo);
+        session = this._createP2pSession({
+            clientId,
+            initialBandwidth,
+            shouldAddLocalVideo: !!shouldAddLocalVideo,
+            enforceTurnProtocol,
+            isOfferer: false,
+        });
         this._emitServerEvent(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
             receiverId: clientId,
         });
