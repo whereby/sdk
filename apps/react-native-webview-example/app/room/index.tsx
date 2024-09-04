@@ -70,9 +70,9 @@ export default function Room() {
                     style={styles.container}
                     room={ROOM_URL}
                     // Removes some UI elements. Useful for small screens.
-                    minimal={"on"}
+                    minimal
                     // Skips the media permission prompt.
-                    skipMediaPermissionPrompt={"on"}
+                    skipMediaPermissionPrompt
                     // Catch-all for any Whereby event
                     onWherebyMessage={(event) => {
                         handleWherebyEvent(event);

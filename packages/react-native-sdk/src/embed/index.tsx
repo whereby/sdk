@@ -9,73 +9,80 @@ function getInjectableJSMessage(command: string, args: unknown[]) {
 }
 
 interface WherebyEmbedElementAttributes {
-    aec?: string;
-    agc?: string;
-    audio?: string;
+    aec?: boolean;
+    agc?: boolean;
+    audio?: boolean;
     /**
      * Automatically spotlight the local participant on room join. Can only be used with users joining with host privileges.
      */
-    audioDenoiser?: string;
-    autoHideSelfView?: string;
-    autoSpotlight?: string;
+    audioDenoiser?: boolean;
+    autoHideSelfView?: boolean;
+    autoSpotlight?: boolean;
     avatarUrl?: string;
-    background?: string;
-    bottomToolbar?: string;
-    breakout?: string;
-    callQualityMonitoring?: string;
-    cameraAccess?: string;
-    cameraEffect?: string;
-    chat?: string;
+    background?: boolean;
+    bottomToolbar?: boolean;
+    breakout?: boolean;
+    callQualityMonitoring?: boolean;
+    cameraAccess?: boolean;
+    cameraEffect?:
+        | "slight-blur"
+        | "blur"
+        | "image-cabin"
+        | "image-concrete"
+        | "image-brick"
+        | "image-sunrise"
+        | "image-day"
+        | "image-night";
+    chat?: boolean;
     displayName?: string;
-    emptyRoomInvitation?: string;
+    emptyRoomInvitation?: boolean;
     emojiSkinTone?: string;
     externalId?: string;
-    floatSelf?: string;
+    floatSelf?: boolean;
     groups?: string;
-    help?: string;
-    lang?: string;
-    leaveButton?: string;
-    locking?: string;
-    localization?: string;
-    logo?: string;
-    lowData?: string;
+    help?: boolean;
+    lang?: "fr" | "it" | "de" | "nb" | "da" | "nl" | "pt" | "pl" | "es" | "hi" | "cs" | "zh-hant" | "jp";
+    leaveButton?: boolean;
+    locking?: boolean;
+    localization?: boolean;
+    logo?: boolean;
+    lowData?: boolean;
     metadata?: string;
-    minimal?: string;
-    moreButton?: string;
-    participantCount?: string;
-    people?: string;
-    pipButton?: string;
+    minimal?: boolean;
+    moreButton?: boolean;
+    participantCount?: boolean;
+    people?: boolean;
+    pipButton?: boolean;
     /**
      * Displays a device and connectivity test for the user. Is dependent on precallReview being enabled
      */
-    precallCeremony?: string;
-    precallReview?: string;
+    precallCeremony?: boolean;
+    precallReview?: boolean;
     precallPermissionsHelpLink?: string;
-    precallCeremonyCanSkip?: string;
-    reactions?: string;
-    recording?: string;
-    room?: string;
+    precallCeremonyCanSkip?: boolean;
+    reactions?: boolean;
+    recording?: boolean;
     /**
      * Enables the use of supported room integrations (Miro and YouTube)
      */
-    roomIntegrations?: string;
-    settingsButton?: string;
-    screenshare?: string;
+    roomIntegrations?: boolean;
+    settingsButton?: boolean;
+    screenshare?: boolean;
     /**
      * Skips the Whereby permissions UI and causes browser to automatically request device permissions. Required for Android app integrations.
      */
-    skipMediaPermissionPrompt?: string;
-    subgridLabels?: string;
-    timer?: string;
+    skipMediaPermissionPrompt?: boolean;
+    subgridLabels?: boolean;
+    timer?: boolean;
     title?: string;
     /**
      * Use dark text for bottom toolbar items.
      *
      * Use this attribute when the room background is light and the bottom toolbar items are hard to read.
      */
-    toolbarDarkText?: string;
-    topToolbar?: string;
-    video?: string;
+    toolbarDarkText?: boolean;
+    topToolbar?: boolean;
+    video?: boolean;
     virtualBackgroundUrl?: string;
 }
 
@@ -189,6 +196,8 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
     ({ room, ...props }: WherebyEmbedProps, ref) => {
         const webviewRef = React.useRef<WebView>(null);
         const roomUrl = new URL(room);
+        const ON = "on";
+        const OFF = "off";
 
         Object.entries({
             ...(props.displayName && { displayName: props.displayName }),
@@ -201,57 +210,61 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
             ...(props.avatarUrl && { avatarUrl: props.avatarUrl }),
             ...(props.cameraEffect && { cameraEffect: props.cameraEffect }),
             // the original ?embed name was confusing, so we give minimal
-            ...(props.minimal != null && { embed: props.minimal }),
-            ...(props.aec != null && { aec: props.aec }),
-            ...(props.agc != null && { agc: props.agc }),
-            ...(props.audio != null && { audio: props.audio }),
-            ...(props.audioDenoiser != null && { audioDenoiser: props.audioDenoiser }),
-            ...(props.autoHideSelfView != null && { autoHideSelfView: props.autoHideSelfView }),
-            ...(props.autoSpotlight != null && { autoSpotlight: props.autoSpotlight }),
-            ...(props.background != null && { background: props.background }),
-            ...(props.bottomToolbar != null && { bottomToolbar: props.bottomToolbar }),
-            ...(props.breakout != null && { breakout: props.breakout }),
-            ...(props.callQualityMonitoring != null && { callQualityMonitoring: props.callQualityMonitoring }),
-            ...(props.cameraAccess != null && { cameraAccess: props.cameraAccess }),
+            ...(props.minimal != null && { embed: props.minimal ? ON : OFF }),
+            ...(props.aec != null && { aec: props.aec ? ON : OFF }),
+            ...(props.agc != null && { agc: props.agc ? ON : OFF }),
+            ...(props.audio != null && { audio: props.audio ? ON : OFF }),
+            ...(props.audioDenoiser != null && { audioDenoiser: props.audioDenoiser ? ON : OFF }),
+            ...(props.autoHideSelfView != null && { autoHideSelfView: props.autoHideSelfView ? ON : OFF }),
+            ...(props.autoSpotlight != null && { autoSpotlight: props.autoSpotlight ? ON : OFF }),
+            ...(props.background != null && { background: props.background ? ON : OFF }),
+            ...(props.bottomToolbar != null && { bottomToolbar: props.bottomToolbar ? ON : OFF }),
+            ...(props.breakout != null && { breakout: props.breakout ? ON : OFF }),
+            ...(props.callQualityMonitoring != null && {
+                callQualityMonitoring: props.callQualityMonitoring ? ON : OFF,
+            }),
+            ...(props.cameraAccess != null && { cameraAccess: props.cameraAccess ? ON : OFF }),
             ...(props.cameraEffect != null && { cameraEffect: props.cameraEffect }),
-            ...(props.chat != null && { chat: props.chat }),
+            ...(props.chat != null && { chat: props.chat ? ON : OFF }),
             ...(props.displayName != null && { displayName: props.displayName }),
-            ...(props.emptyRoomInvitation != null && { emptyRoomInvitation: props.emptyRoomInvitation }),
+            ...(props.emptyRoomInvitation != null && { emptyRoomInvitation: props.emptyRoomInvitation ? ON : OFF }),
             ...(props.emojiSkinTone != null && { emojiSkinTone: props.emojiSkinTone }),
             ...(props.externalId != null && { externalId: props.externalId }),
-            ...(props.floatSelf != null && { floatSelf: props.floatSelf }),
+            ...(props.floatSelf != null && { floatSelf: props.floatSelf ? ON : OFF }),
             ...(props.groups != null && { groups: props.groups }),
-            ...(props.help != null && { help: props.help }),
+            ...(props.help != null && { help: props.help ? ON : OFF }),
             ...(props.lang != null && { lang: props.lang }),
-            ...(props.leaveButton != null && { leaveButton: props.leaveButton }),
-            ...(props.locking != null && { locking: props.locking }),
-            ...(props.localization != null && { localization: props.localization }),
-            ...(props.logo != null && { logo: props.logo }),
-            ...(props.lowData != null && { lowData: props.lowData }),
-            ...(props.moreButton != null && { moreButton: props.moreButton }),
-            ...(props.participantCount != null && { participantCount: props.participantCount }),
-            ...(props.people != null && { people: props.people }),
-            ...(props.pipButton != null && { pipButton: props.pipButton }),
-            ...(props.precallCeremony != null && { precallCeremony: props.precallCeremony }),
-            ...(props.precallReview != null && { precallReview: props.precallReview }),
+            ...(props.leaveButton != null && { leaveButton: props.leaveButton ? ON : OFF }),
+            ...(props.locking != null && { locking: props.locking ? ON : OFF }),
+            ...(props.localization != null && { localization: props.localization ? ON : OFF }),
+            ...(props.logo != null && { logo: props.logo ? ON : OFF }),
+            ...(props.lowData != null && { lowData: props.lowData ? ON : OFF }),
+            ...(props.moreButton != null && { moreButton: props.moreButton ? ON : OFF }),
+            ...(props.participantCount != null && { participantCount: props.participantCount ? ON : OFF }),
+            ...(props.people != null && { people: props.people ? ON : OFF }),
+            ...(props.pipButton != null && { pipButton: props.pipButton ? ON : OFF }),
+            ...(props.precallCeremony != null && { precallCeremony: props.precallCeremony ? ON : OFF }),
+            ...(props.precallReview != null && { precallReview: props.precallReview ? ON : OFF }),
             ...(props.precallPermissionsHelpLink != null && {
                 precallPermissionsHelpLink: props.precallPermissionsHelpLink,
             }),
-            ...(props.precallCeremonyCanSkip != null && { precallCeremonyCanSkip: props.precallCeremonyCanSkip }),
-            ...(props.reactions != null && { reactions: props.reactions }),
-            ...(props.recording != null && { recording: props.recording }),
-            ...(props.roomIntegrations != null && { roomIntegrations: props.roomIntegrations }),
-            ...(props.settingsButton != null && { settingsButton: props.settingsButton }),
-            ...(props.screenshare != null && { screenshare: props.screenshare }),
-            ...(props.skipMediaPermissionPrompt != null && {
-                skipMediaPermissionPrompt: props.skipMediaPermissionPrompt,
+            ...(props.precallCeremonyCanSkip != null && {
+                precallCeremonyCanSkip: props.precallCeremonyCanSkip ? ON : OFF,
             }),
-            ...(props.subgridLabels != null && { subgridLabels: props.subgridLabels }),
-            ...(props.timer != null && { timer: props.timer }),
+            ...(props.reactions != null && { reactions: props.reactions ? ON : OFF }),
+            ...(props.recording != null && { recording: props.recording ? ON : OFF }),
+            ...(props.roomIntegrations != null && { roomIntegrations: props.roomIntegrations ? ON : OFF }),
+            ...(props.settingsButton != null && { settingsButton: props.settingsButton ? ON : OFF }),
+            ...(props.screenshare != null && { screenshare: props.screenshare ? ON : OFF }),
+            ...(props.skipMediaPermissionPrompt != null && {
+                skipMediaPermissionPrompt: props.skipMediaPermissionPrompt ? ON : OFF,
+            }),
+            ...(props.subgridLabels != null && { subgridLabels: props.subgridLabels ? ON : OFF }),
+            ...(props.timer != null && { timer: props.timer ? ON : OFF }),
             ...(props.title != null && { title: props.title }),
-            ...(props.toolbarDarkText != null && { toolbarDarkText: props.toolbarDarkText }),
-            ...(props.topToolbar != null && { topToolbar: props.topToolbar }),
-            ...(props.video != null && { video: props.video }),
+            ...(props.toolbarDarkText != null && { toolbarDarkText: props.toolbarDarkText ? ON : OFF }),
+            ...(props.topToolbar != null && { topToolbar: props.topToolbar ? ON : OFF }),
+            ...(props.video != null && { video: props.video ? ON : OFF }),
             ...(props.virtualBackgroundUrl != null && { virtualBackgroundUrl: props.virtualBackgroundUrl }),
         }).forEach(([k, v]) => {
             if (!roomUrl.searchParams.has(k)) {
