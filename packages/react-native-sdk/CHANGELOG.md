@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.5.0
+
+### Minor Changes
+
+- cef8026: Change boolean preferences to true/false
+
 ## 0.4.0
 
 ### Minor Changes
