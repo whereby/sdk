@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.12.0
+
+### Minor Changes
+
+- 9ce30c8: Enable enforcing turn transport protocol in P2P
+
 ## 1.11.1
 
 ### Patch Changes
