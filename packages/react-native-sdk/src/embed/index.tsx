@@ -1,6 +1,13 @@
 import * as React from "react";
 import { WebView, WebViewMessageEvent, WebViewProps } from "react-native-webview";
 
+type SettingsPane = "theme" | "integrations" | "streaming" | "effects" | "notifications" | "advanced" | "media" | null;
+
+function getInjectableJSMessage(command: string, args: unknown[]) {
+    const parsedArgs = args.length === 1 && args[0] === undefined ? "" : `, args: ${JSON.stringify(args)}`;
+    return `(function() { window.postMessage({ command: ${JSON.stringify(command)}${parsedArgs} }) })()`;
+}
+
 interface WherebyEmbedElementAttributes {
     aec?: string;
     agc?: string;
@@ -132,6 +139,25 @@ export type WherebyEvent =
           };
       };
 
+type WherebyWebView = WebView & {
+    endMeeting: () => void;
+    knock: () => void;
+    leaveRoom: () => void;
+    openSettings: (settingsPane?: SettingsPane) => void;
+    startRecording: () => void;
+    stopRecording: () => void;
+    startStreaming: () => void;
+    stopStreaming: () => void;
+    startLiveTranscription: () => void;
+    stopLiveTranscription: () => void;
+    toggleBreakout: (enabled?: boolean) => void;
+    toggleCamera: (enabled?: boolean) => void;
+    toggleMicrophone: (enabled?: boolean) => void;
+    togglePeople: (enabled?: boolean) => void;
+    toggleScreenshare: (enabled?: boolean) => void;
+    toggleChat: (enabled?: boolean) => void;
+};
+
 interface WherebyEmbedProps extends WebViewProps, WherebyEmbedElementAttributes {
     room: string;
     // Catch-all for any Whereby event
@@ -159,8 +185,9 @@ interface WherebyEmbedProps extends WebViewProps, WherebyEmbedElementAttributes 
     onPrecallCheckCompleted?: (data: Extract<WherebyEvent, { type: "precall_check_completed" }>["payload"]) => void;
 }
 
-const WherebyEmbed = React.forwardRef<React.ElementRef<typeof WebView>, WherebyEmbedProps>(
+const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
     ({ room, ...props }: WherebyEmbedProps, ref) => {
+        const webviewRef = React.useRef<WebView>(null);
         const roomUrl = new URL(room);
 
         Object.entries({
@@ -230,6 +257,60 @@ const WherebyEmbed = React.forwardRef<React.ElementRef<typeof WebView>, WherebyE
             if (!roomUrl.searchParams.has(k)) {
                 roomUrl.searchParams.set(k, v);
             }
+        });
+
+        React.useImperativeHandle(ref, () => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return Object.assign(webviewRef.current!, {
+                endMeeting: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("end_meeting", []));
+                },
+                knock: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("knock", []));
+                },
+                leaveRoom: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("leave_room", []));
+                },
+                openSettings: (settingsPane: SettingsPane = "media") => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("open_settings", [settingsPane]));
+                },
+                startRecording: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("start_recording", []));
+                },
+                stopRecording: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("stop_recording", []));
+                },
+                startStreaming: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("start_streaming", []));
+                },
+                stopStreaming: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("stop_streaming", []));
+                },
+                startLiveTranscription: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("start_live_transcription", []));
+                },
+                stopLiveTranscription: () => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("stop_live_transcription", []));
+                },
+                toggleBreakout: (enabled?: boolean) => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("toggle_breakout", [enabled]));
+                },
+                toggleCamera: (enabled?: boolean) => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("toggle_camera", [enabled]));
+                },
+                toggleMicrophone: (enabled?: boolean) => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("toggle_microphone", [enabled]));
+                },
+                togglePeople: (enabled?: boolean) => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("toggle_people", [enabled]));
+                },
+                toggleScreenshare: (enabled?: boolean) => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("toggle_screenshare", [enabled]));
+                },
+                toggleChat: (enabled?: boolean) => {
+                    webviewRef.current?.injectJavaScript(getInjectableJSMessage("toggle_chat", [enabled]));
+                },
+            });
         });
 
         const handleMessage = React.useCallback(
@@ -310,7 +391,7 @@ const WherebyEmbed = React.forwardRef<React.ElementRef<typeof WebView>, WherebyE
 
         return (
             <WebView
-                ref={ref}
+                ref={webviewRef}
                 source={{ uri: roomUrl.href }}
                 startInLoadingState
                 originWhitelist={["*"]}
@@ -325,6 +406,4 @@ const WherebyEmbed = React.forwardRef<React.ElementRef<typeof WebView>, WherebyE
     },
 );
 
-type WherebyEmbedRef = React.ElementRef<typeof WebView>;
-
-export { WherebyEmbed, type WherebyEmbedRef };
+export { WherebyEmbed, type WherebyWebView };
