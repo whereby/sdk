@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.4.0
+
+### Minor Changes
+
+- 4377626: Add post commands
+
 ## 0.3.1
 
 ### Patch Changes
