@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 0.24.3
+
+### Patch Changes
+
+- 0d4385b: Enforce turn tls for dial-in peerconnections
+- Updated dependencies [0d4385b]
+  - @whereby.com/media@1.12.1
+
 ## 0.24.2
 
 ### Patch Changes

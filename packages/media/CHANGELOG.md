@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.12.1
+
+### Patch Changes
+
+- 0d4385b: Add property to acceptnewstream interface
+
 ## 1.12.0
 
 ### Minor Changes
