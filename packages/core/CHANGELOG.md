@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.25.0
+
+### Minor Changes
+
+- 58b9d4a: Close RtcStats connection when App is stopped
+
+### Patch Changes
+
+- Updated dependencies [58b9d4a]
+  - @whereby.com/media@1.12.2
+
 ## 0.24.3
 
 ### Patch Changes

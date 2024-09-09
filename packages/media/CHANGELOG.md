@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.12.2
+
+### Patch Changes
+
+- 58b9d4a: Close RtcStats connection when App is stopped
+
 ## 1.12.1
 
 ### Patch Changes
