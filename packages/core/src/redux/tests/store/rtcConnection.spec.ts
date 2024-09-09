@@ -5,6 +5,7 @@ import {
     doDisconnectRtc,
     doRtcReportStreamResolution,
     doRtcManagerInitialize,
+    selectRtcManager,
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
@@ -12,6 +13,7 @@ import { RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
+import { doAppStop } from "../../slices/app";
 
 jest.mock("@whereby.com/media");
 
@@ -161,5 +163,20 @@ describe("actions", () => {
         expect(mockRtcManager.addNewStream).toHaveBeenCalledTimes(1);
         expect(mockRtcManager.addNewStream).toHaveBeenCalledWith("0", store.getState().localMedia.stream, true, true);
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
+    });
+});
+
+describe("middleware", () => {
+    describe("doAppStop", () => {
+        it("closes the rtcstats connection", () => {
+            const store = createStore({
+                withRtcManager: true,
+            });
+            const rtcManager = selectRtcManager(store.getState());
+
+            store.dispatch(doAppStop());
+
+            expect(rtcManager?.rtcStatsDisconnect).toHaveBeenCalled();
+        });
     });
 });
