@@ -12,7 +12,7 @@ import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnec
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
-import { selectAppIsNodeSdk, selectAppIsActive } from "../app";
+import { selectAppIsNodeSdk, selectAppIsActive, doAppStop } from "../app";
 import { Chrome111 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Chrome111.js";
 import {
     selectIsCameraEnabled,
@@ -339,6 +339,15 @@ startAppListening({
         const { rtcManager } = selectRtcConnectionRaw(getState());
 
         rtcManager?.addNewStream(stream.id, stream, false, true);
+    },
+});
+
+startAppListening({
+    actionCreator: doAppStop,
+    effect: (_, { getState }) => {
+        const rtcManager = selectRtcManager(getState());
+
+        rtcManager?.rtcStatsDisconnect();
     },
 });
 
