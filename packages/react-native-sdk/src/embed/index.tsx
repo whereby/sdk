@@ -199,6 +199,8 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
         const ON = "on";
         const OFF = "off";
 
+        roomUrl.searchParams.set("sdkPlatform", "react-native-embed");
+
         Object.entries({
             ...(props.displayName && { displayName: props.displayName }),
             ...(props.lang && { lang: props.lang }),
