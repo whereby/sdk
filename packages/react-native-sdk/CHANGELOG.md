@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.6.0
+
+### Minor Changes
+
+- 1ebacf6: Add tracking for embed component
+
 ## 0.5.2
 
 ### Patch Changes
