@@ -56,6 +56,7 @@ export interface SignalClient {
     startedCloudRecordingAt: string | null;
     externalId: string | null;
     isDialIn: boolean;
+    isNodeSdk: boolean;
 }
 
 export interface Spotlight {

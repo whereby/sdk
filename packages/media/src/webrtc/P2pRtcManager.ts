@@ -270,7 +270,7 @@ export default class P2pRtcManager implements RtcManager {
             () => this._clearMediaServersRefresh(),
 
             this._serverSocket.on(PROTOCOL_RESPONSES.NEW_CLIENT, (data: NewClientEvent) => {
-                if (data.client.isDialIn && !this._nodeJsClients.includes(data.client.id)) {
+                if (data.client.isNodeSdk && !this._nodeJsClients.includes(data.client.id)) {
                     this._nodeJsClients.push(data.client.id);
                 }
             }),

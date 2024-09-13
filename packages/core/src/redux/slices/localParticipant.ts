@@ -29,6 +29,7 @@ const initialState: LocalParticipantState = {
     clientClaim: undefined,
     stickyReaction: undefined,
     isDialIn: false,
+    isNodeSdk: false,
 };
 
 /**

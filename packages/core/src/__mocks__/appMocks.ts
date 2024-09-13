@@ -85,6 +85,7 @@ export const randomSignalClient = ({
     startedCloudRecordingAt = null,
     externalId = null,
     isDialIn = false,
+    isNodeSdk = false,
 }: Partial<SignalClient> = {}): SignalClient => {
     return {
         displayName,
@@ -96,6 +97,7 @@ export const randomSignalClient = ({
         startedCloudRecordingAt,
         externalId,
         isDialIn,
+        isNodeSdk,
     };
 };
 
@@ -109,6 +111,7 @@ export const randomLocalParticipant = ({
     isScreenSharing = false,
     roleName = "visitor",
     isDialIn = false,
+    isNodeSdk = false,
 }: Partial<LocalParticipantState> = {}): LocalParticipantState => {
     return {
         id,
@@ -121,6 +124,7 @@ export const randomLocalParticipant = ({
         isScreenSharing,
         roleName,
         isDialIn,
+        isNodeSdk,
     };
 };
 
@@ -137,6 +141,7 @@ export const randomRemoteParticipant = ({
     presentationStream = null,
     externalId = null,
     isDialIn = false,
+    isNodeSdk = false,
 }: Partial<RemoteParticipant> = {}): RemoteParticipant => {
     return {
         id,
@@ -151,6 +156,7 @@ export const randomRemoteParticipant = ({
         presentationStream,
         externalId,
         isDialIn,
+        isNodeSdk,
     };
 };
 

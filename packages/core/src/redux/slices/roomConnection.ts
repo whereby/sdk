@@ -11,6 +11,7 @@ import {
     selectAppExternalId,
     selectAppIsActive,
     selectAppIsDialIn,
+    selectAppIsNodeSdk,
 } from "./app";
 import { selectRoomKey, setRoomKey } from "./authorization";
 
@@ -150,6 +151,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const roomKey = selectRoomKey(state);
     const displayName = selectAppDisplayName(state);
     const isDialIn = selectAppIsDialIn(state);
+    const isNodeSdk = selectAppIsNodeSdk(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
@@ -164,6 +166,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
         displayName,
         isCoLocated: false,
         isDialIn,
+        isNodeSdk,
         isDevicePermissionDenied: false,
         kickFromOtherRooms: false,
         organizationId,
@@ -185,11 +188,11 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
     const isDialIn = selectAppIsDialIn(state);
+    const isNodeSdk = selectAppIsNodeSdk(state);
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
     const clientClaim = selectLocalParticipantClientClaim(getState());
-
     socket?.emit("join_room", {
         avatarUrl: null,
         config: {
@@ -200,6 +203,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         displayName,
         isCoLocated: false,
         isDialIn,
+        isNodeSdk,
         isDevicePermissionDenied: false,
         kickFromOtherRooms: false,
         organizationId,
