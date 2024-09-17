@@ -137,7 +137,7 @@ export function useRoomConnection(
         [whenConnectedToRoom],
     );
     const joinRoom = React.useCallback(() => dispatch(doAppStart(roomConfig)), [dispatch]);
-    const leaveRoom = React.useCallback(() => whenConnectedToRoom(() => doAppStop()), [whenConnectedToRoom]);
+    const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
     const lockRoom = React.useCallback(
         (locked: boolean) => whenConnectedToRoom(() => doLockRoom({ locked })),
         [whenConnectedToRoom],

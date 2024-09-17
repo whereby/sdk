@@ -72,26 +72,26 @@ export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "l
 }
 
 export interface RoomConnectionActions {
-    toggleLowDataMode(enabled?: boolean): void;
-    toggleRaiseHand(enabled?: boolean): void;
-    askToSpeak(participantId: string): void;
-    acceptWaitingParticipant(participantId: string): void;
-    knock(): void;
-    joinRoom(): void;
-    leaveRoom(): void;
-    lockRoom(locked: boolean): void;
-    muteParticipants(clientIds: string[]): void;
-    kickParticipant(clientId: string): void;
-    endMeeting(stayBehind?: boolean): void;
-    rejectWaitingParticipant(participantId: string): void;
-    sendChatMessage(text: string): void;
-    setDisplayName(displayName: string): void;
-    startCloudRecording(): void;
-    startScreenshare(): void;
-    stopCloudRecording(): void;
-    stopScreenshare(): void;
-    toggleCamera(enabled?: boolean): void;
-    toggleMicrophone(enabled?: boolean): void;
-    spotlightParticipant(clientId: string): void;
-    removeSpotlight(clientId: string): void;
+    toggleLowDataMode: (enabled?: boolean) => void;
+    toggleRaiseHand: (enabled?: boolean) => void;
+    askToSpeak: (participantId: string) => void;
+    acceptWaitingParticipant: (participantId: string) => void;
+    knock: () => void;
+    joinRoom: () => void;
+    leaveRoom: () => void;
+    lockRoom: (locked: boolean) => void;
+    muteParticipants: (clientIds: string[]) => void;
+    kickParticipant: (clientId: string) => void;
+    endMeeting: (stayBehind?: boolean) => void;
+    rejectWaitingParticipant: (participantId: string) => void;
+    sendChatMessage: (text: string) => void;
+    setDisplayName: (displayName: string) => void;
+    startCloudRecording: () => void;
+    startScreenshare: () => void;
+    stopCloudRecording: () => void;
+    stopScreenshare: () => void;
+    toggleCamera: (enabled?: boolean) => void;
+    toggleMicrophone: (enabled?: boolean) => void;
+    spotlightParticipant: (clientId: string) => void;
+    removeSpotlight: (clientId: string) => void;
 }
