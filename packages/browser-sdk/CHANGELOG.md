@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.8.0
+
+### Minor Changes
+
+- d85d37b: Fix typings and leave room function dependencies
+
 ## 3.7.5
 
 ### Patch Changes
