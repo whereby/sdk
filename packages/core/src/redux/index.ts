@@ -7,6 +7,7 @@ export * from "./slices/app";
 export * from "./slices/authorization";
 export * from "./slices/chat";
 export * from "./slices/cloudRecording";
+export * from "./slices/connectionMonitor";
 export * from "./slices/deviceCredentials";
 export * from "./slices/localMedia";
 export * from "./slices/localParticipant";
