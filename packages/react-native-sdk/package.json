@@ -63,7 +63,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@whereby.com/core": "0.25.0"
+    "@whereby.com/core": "0.25.0",
+    "react-native-webview": "13.8.6"
   },
   "devDependencies": {
     "@react-native/eslint-config": "^0.73.1",
@@ -74,7 +75,6 @@
     "react": "18.2.0",
     "react-native": "0.74.5",
     "react-native-builder-bob": "^0.30.0",
-    "react-native-webview": "13.8.6",
     "typescript": "^5.2.2"
   },
   "resolutions": {
