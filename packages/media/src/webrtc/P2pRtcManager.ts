@@ -898,7 +898,6 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     _connect(clientId: string) {
-        this.rtcStatsReconnect();
         let session = this._getSession(clientId);
         let initialBandwidth = (session && session.bandwidth) || 0;
         if (session) {

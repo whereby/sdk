@@ -42,6 +42,10 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     const connection = {
         connected: false,
         trace: (...args: any) => {
+            if (!ws) {
+                return;
+            }
+
             args.push(Date.now());
 
             if (args[0] === "customEvent" && args[2].type === "roomSessionId") {
@@ -176,7 +180,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             };
         },
     };
-    connection.connect();
+
     return connection;
 }
 
