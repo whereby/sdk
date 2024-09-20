@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- e9877fc: Add react-native-webview as a dependency
+
 ## 0.6.0
 
 ### Minor Changes
