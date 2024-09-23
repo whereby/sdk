@@ -217,6 +217,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
     const remoteClients = selectRemoteClients(state);
+    const isNodeSdk = selectAppIsNodeSdk(state);
 
     if (!rtcManager) {
         throw new Error("No rtc manager");
@@ -235,7 +236,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
             (state === "new_accept" && shouldAcceptNewClients) ||
             (state === "old_accept" && !shouldAcceptNewClients) // these are done to enable broadcast in legacy/p2p
         ) {
-            const enforceTurnProtocol = participant.isDialIn ? "onlytls" : undefined;
+            const enforceTurnProtocol = isNodeSdk ? "onlyudp" : undefined;
             rtcManager.acceptNewStream({
                 streamId: streamId === "0" ? clientId : streamId,
                 clientId,
