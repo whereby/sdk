@@ -235,13 +235,11 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
             (state === "new_accept" && shouldAcceptNewClients) ||
             (state === "old_accept" && !shouldAcceptNewClients) // these are done to enable broadcast in legacy/p2p
         ) {
-            const enforceTurnProtocol = participant.isDialIn ? "onlytls" : undefined;
             rtcManager.acceptNewStream({
                 streamId: streamId === "0" ? clientId : streamId,
                 clientId,
                 shouldAddLocalVideo: streamId === "0",
                 activeBreakout,
-                enforceTurnProtocol,
             });
         } else if (state === "new_accept" || state === "old_accept") {
             // do nothing - let this be marked as done_accept as the rtcManager
@@ -277,7 +275,7 @@ export const doRtcReportStreamResolution = createAppThunk(
             }
 
             dispatch(resolutionReported({ streamId, width, height }));
-        },
+        }
 );
 
 export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch) => {
@@ -390,7 +388,7 @@ export const selectShouldConnectRtc = createSelector(
             return true;
         }
         return false;
-    },
+    }
 );
 
 createReactor([selectShouldConnectRtc], ({ dispatch }, shouldConnectRtc) => {
@@ -408,7 +406,7 @@ export const selectShouldInitializeRtc = createSelector(
             return true;
         }
         return false;
-    },
+    }
 );
 
 createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) => {
@@ -479,7 +477,7 @@ export const selectStreamsToAccept = createSelector(
             }
         }
         return upd;
-    },
+    }
 );
 
 createReactor(
@@ -488,5 +486,5 @@ createReactor(
         if (0 < streamsToAccept.length && !isAcceptingStreams) {
             dispatch(doHandleAcceptStreams(streamsToAccept));
         }
-    },
+    }
 );
