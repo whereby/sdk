@@ -23,7 +23,7 @@ let resetDelta = noop;
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
 function rtcStatsConnection(wsURL: string, logger: any = console) {
     const buffer: any = [];
-    let ws: any;
+    let ws: WebSocket;
     let organizationId: number;
     let clientId: string;
     let displayName: string;
@@ -42,10 +42,6 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     const connection = {
         connected: false,
         trace: (...args: any) => {
-            if (!ws) {
-                return;
-            }
-
             args.push(Date.now());
 
             if (args[0] === "customEvent" && args[2].type === "roomSessionId") {
@@ -60,10 +56,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 ) {
                     // roomSessionId was already sent. It may have been reset to null, but anything after should be part of the same
                     // session. Now it is something else, and we force a reconnect to start a new session
-                    if (ws) {
-                        ws.close();
-                        return;
-                    }
+                    ws?.close();
                 }
                 if (newRoomSessionIdValue) hasPassedOnRoomSessionId = true;
             } else if (args[0] === "customEvent" && args[2].type === "clientId") {
@@ -86,7 +79,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 featureFlags = args;
             }
 
-            if (ws.readyState === WebSocket.OPEN) {
+            if (ws?.readyState === WebSocket.OPEN) {
                 connectionAttempt = 0;
                 ws.send(JSON.stringify(args));
             } else if (args[0] === "getstats") {
@@ -104,7 +97,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             }
 
             // reconnect when closed by anything else than client
-            if (ws.readyState === WebSocket.CLOSED && connectionShouldBeOpen) {
+            if (ws?.readyState === WebSocket.CLOSED && connectionShouldBeOpen) {
                 setTimeout(() => {
                     if (ws.readyState === WebSocket.CLOSED && connectionShouldBeOpen) {
                         connection.connect();
@@ -114,24 +107,20 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
         },
         close: () => {
             connectionShouldBeOpen = false;
-            if (ws) {
-                ws.close();
-            }
+            ws?.close();
         },
         connect: () => {
             connectionShouldBeOpen = true;
             connectionAttempt += 1;
-            if (ws) {
-                ws.close();
-            }
+            ws?.close();
             connection.connected = true;
             ws = new WebSocket(wsURL + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
 
-            ws.onerror = (e: any) => {
+            ws.onerror = (e: Event) => {
                 connection.connected = false;
                 logger.warn(`[RTCSTATS] WebSocket error`, e);
             };
-            ws.onclose = (e: any) => {
+            ws.onclose = (e: CloseEvent) => {
                 connection.connected = false;
                 logger.info(`[RTCSTATS] Closed ${e.code}`);
                 resetDelta();
