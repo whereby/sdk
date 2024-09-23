@@ -35,10 +35,9 @@ export const connectionMonitorSlice = createSlice({
                 stopCallbackFunction: action.payload.stopIssueSubscription,
             };
         },
-        connectionMonitorStopped: (state) => {
+        connectionMonitorStopped: () => {
             return {
-                ...state,
-                running: false,
+                ...initialState,
             };
         },
     },
