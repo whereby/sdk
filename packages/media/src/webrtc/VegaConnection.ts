@@ -47,6 +47,10 @@ export default class VegaConnection extends EventEmitter {
         this.socket?.close();
     }
 
+    isConnected() {
+        return this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING;
+    }
+
     _onOpen() {
         logger.info("Connected");
 
