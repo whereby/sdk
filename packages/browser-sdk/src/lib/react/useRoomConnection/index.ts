@@ -7,6 +7,7 @@ import {
     doAcceptWaitingParticipant,
     doRejectWaitingParticipant,
     doRequestAudioEnable,
+    doRequestVideoEnable,
     doSetDisplayName,
     doSetLocalStickyReaction,
     toggleCameraEnabled,
@@ -112,6 +113,11 @@ export function useRoomConnection(
             whenConnectedToRoom(() => doRequestAudioEnable({ clientIds: [participantId], enable: true })),
         [whenConnectedToRoom],
     );
+    const askToTurnOnCamera = React.useCallback(
+        (participantId: string) =>
+            whenConnectedToRoom(() => doRequestVideoEnable({ clientIds: [participantId], enable: true })),
+        [whenConnectedToRoom],
+    );
     const acceptWaitingParticipant = React.useCallback(
         (participantId: string) => whenConnectedToRoom(() => doAcceptWaitingParticipant({ participantId })),
         [whenConnectedToRoom],
@@ -147,6 +153,11 @@ export function useRoomConnection(
             whenConnectedToRoom(() => doRequestAudioEnable({ clientIds: participantIds, enable: false })),
         [whenConnectedToRoom],
     );
+    const turnOffParticipantCameras = React.useCallback(
+        (participantIds: string[]) =>
+            whenConnectedToRoom(() => doRequestVideoEnable({ clientIds: participantIds, enable: false })),
+        [whenConnectedToRoom],
+    );
     const spotlightParticipant = React.useCallback(
         (participantId: string) => whenConnectedToRoom(() => doSpotlightParticipant({ id: participantId })),
         [whenConnectedToRoom],
@@ -173,12 +184,14 @@ export function useRoomConnection(
             toggleLowDataMode,
             toggleRaiseHand,
             askToSpeak,
+            askToTurnOnCamera,
             acceptWaitingParticipant,
             knock,
             joinRoom,
             leaveRoom,
             lockRoom,
             muteParticipants,
+            turnOffParticipantCameras,
             kickParticipant,
             endMeeting,
             rejectWaitingParticipant,

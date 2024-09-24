@@ -10,6 +10,7 @@ import {
     SignalStatusEvent,
     StickyReactionEvent,
     NotificationEvents,
+    RequestVideoEvent,
 } from "@whereby.com/core";
 
 export default function VideoExperience({
@@ -74,6 +75,8 @@ export default function VideoExperience({
         stopScreenshare,
         spotlightParticipant,
         removeSpotlight,
+        turnOffParticipantCameras,
+        askToTurnOnCamera,
     } = actions;
 
     useEffect(() => {
@@ -117,6 +120,37 @@ export default function VideoExperience({
     function showRequestAudioDisableNotification({ message }: RequestAudioEvent) {
         toast(message, {
             id: "requestAudioDisable",
+        });
+    }
+
+    function showRequestVideoEnableNotification({ message }: RequestVideoEvent) {
+        toast(
+            (t) => (
+                <div>
+                    {message}
+                    <div>
+                        <button
+                            onClick={() => {
+                                toggleCamera(true);
+                                toast.dismiss(t.id);
+                            }}
+                        >
+                            Start video
+                        </button>{" "}
+                        <button onClick={() => toast.dismiss(t.id)}>Got it</button>
+                    </div>
+                </div>
+            ),
+            {
+                id: "requestVideoEnable",
+                duration: Infinity,
+            },
+        );
+    }
+
+    function showRequestVideoDisableNotification({ message }: RequestVideoEvent) {
+        toast(message, {
+            id: "requestVideoDisable",
         });
     }
 
@@ -188,6 +222,12 @@ export default function VideoExperience({
                     break;
                 case "remoteHandLowered":
                     hideRemoteHandRaised(event);
+                    break;
+                case "requestVideoEnable":
+                    showRequestVideoEnableNotification(event);
+                    break;
+                case "requestVideoDisable":
+                    showRequestVideoDisableNotification(event);
                     break;
             }
         };
@@ -326,6 +366,22 @@ export default function VideoExperience({
                                                             }
                                                         >
                                                             Kick
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (participant.isVideoEnabled) {
+                                                                    turnOffParticipantCameras([participant.id]);
+                                                                } else {
+                                                                    askToTurnOnCamera(participant.id);
+                                                                }
+                                                            }}
+                                                            className={
+                                                                localParticipant?.roleName !== "host"
+                                                                    ? "hostControlActionDisallowed"
+                                                                    : ""
+                                                            }
+                                                        >
+                                                            Turn {participant.isVideoEnabled ? "off" : "on"} camera
                                                         </button>
                                                     </div>
                                                 ) : null}
