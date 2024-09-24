@@ -285,6 +285,10 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
                     return;
                 }
+                if (data.message.candidate.match(/relay/)) {
+                    console.debug("Discarding relay candidate", data.message.candidate);
+                    return;
+                }
                 session.addIceCandidate(data.message);
             }),
 
@@ -551,7 +555,7 @@ export default class P2pRtcManager implements RtcManager {
         constraints.optional.push({ rtcStatsConferenceId: this._roomName });
 
         const peerConnectionConfig: any = {
-            iceServers: this._iceServers,
+            iceServers: [],
         };
         if (this._features.turnServerOverrideHost) {
             const host = this._features.turnServerOverrideHost;
