@@ -7,6 +7,7 @@ import { doAppStart } from "./app";
 const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
     canRequestAudioEnable: ["host"],
+    canRequestVideoEnable: ["host"],
     canKickClient: ["host"],
     canEndMeeting: ["host"],
     canAskToSpeak: ["host"],
@@ -76,6 +77,10 @@ export const selectIsAuthorizedToLockRoom = createSelector(selectAuthorizationRo
 export const selectIsAuthorizedToRequestAudioEnable = createSelector(
     selectAuthorizationRoleName,
     (localParticipantRole) => ROOM_ACTION_PERMISSIONS_BY_ROLE.canRequestAudioEnable.includes(localParticipantRole),
+);
+export const selectIsAuthorizedToRequestVideoEnable = createSelector(
+    selectAuthorizationRoleName,
+    (localParticipantRole) => ROOM_ACTION_PERMISSIONS_BY_ROLE.canRequestVideoEnable.includes(localParticipantRole),
 );
 export const selectIsAuthorizedToKickClient = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
     ROOM_ACTION_PERMISSIONS_BY_ROLE.canKickClient.includes(localParticipantRole),

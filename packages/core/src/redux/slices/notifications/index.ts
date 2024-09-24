@@ -158,6 +158,36 @@ startAppListening({
 });
 
 startAppListening({
+    actionCreator: signalEvents.videoEnableRequested,
+    effect: ({ payload }, { dispatch, getState }) => {
+        const { enable, requestedByClientId } = payload;
+
+        const state = getState();
+        const client = selectRemoteParticipants(state).find(({ id }) => id === requestedByClientId);
+
+        if (!client) {
+            console.warn("Could not find remote client that requested a local video change");
+            return;
+        }
+
+        dispatch(
+            doSetNotification(
+                createNotificationEvent<"requestVideoEnable" | "requestVideoDisable", RequestAudioEventProps>({
+                    type: enable ? "requestVideoEnable" : "requestVideoDisable",
+                    message: enable
+                        ? `${client.displayName} has requested for you to start video`
+                        : `${client.displayName} has stopped your video`,
+                    props: {
+                        client,
+                        enable,
+                    },
+                }),
+            ),
+        );
+    },
+});
+
+startAppListening({
     actionCreator: signalEvents.clientMetadataReceived,
     effect: (action, { dispatch, getOriginalState, getState }) => {
         const { error, payload } = action.payload;

@@ -116,5 +116,20 @@ describe("authorizationSlice", () => {
                 },
             );
         });
+
+        describe("selectIsAuthorizedToRequestVideoEnable", () => {
+            it.each`
+                localParticipantRole | expectedResult
+                ${"visitor"}         | ${false}
+                ${"host"}            | ${true}
+            `(
+                "should return $expectedResult when localParticipantRole=$localParticipantRole",
+                ({ localParticipantRole, expectedResult }) => {
+                    expect(selectIsAuthorizedToRequestAudioEnable.resultFunc(localParticipantRole)).toEqual(
+                        expectedResult,
+                    );
+                },
+            );
+        });
     });
 });
