@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.13.0
+
+### Minor Changes
+
+- a200436: Add SfuReconnectV2 experiment
+
 ## 1.12.2
 
 ### Patch Changes
