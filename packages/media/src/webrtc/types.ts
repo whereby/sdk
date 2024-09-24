@@ -14,13 +14,11 @@ export interface RtcManager {
         clientId,
         shouldAddLocalVideo,
         streamId,
-        enforceTurnProtocol,
     }: {
         activeBreakout: boolean;
         clientId: string;
         shouldAddLocalVideo: boolean;
         streamId: string;
-        enforceTurnProtocol?: TurnTransportProtocol;
     }) => void;
     addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean): void;
     disconnect(streamId: string, activeBreakout: boolean | null, eventClaim?: string): void;
