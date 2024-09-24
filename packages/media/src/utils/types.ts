@@ -194,6 +194,11 @@ export interface AudioEnableRequestedEvent {
     enable: boolean;
 }
 
+export interface VideoEnableRequestedEvent {
+    requestedByClientId: string;
+    enable: boolean;
+}
+
 export interface SpotlightAddedEvent {
     clientId: string;
     streamId: string;
@@ -243,6 +248,7 @@ export interface SignalEvents {
     spotlight_removed: SpotlightRemovedEvent;
     streaming_stopped: void;
     video_enabled: VideoEnabledEvent;
+    video_enable_requested: VideoEnableRequestedEvent;
     live_transcription_started: LiveTranscriptionStartedEvent;
     live_transcription_stopped: LiveTranscriptionStoppedEvent;
 }
@@ -279,6 +285,11 @@ export interface AudioEnableRequest {
     enable: boolean;
 }
 
+export interface VideoEnableRequest {
+    clientIds: string[];
+    enable: boolean;
+}
+
 export interface AddSpotlightRequest {
     clientId: string;
     streamId: string;
@@ -301,6 +312,7 @@ export interface SignalRequests {
     leave_room: void;
     remove_spotlight: RemoveSpotlightRequest;
     request_audio_enable: AudioEnableRequest;
+    request_video_enable: VideoEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string; stickyReaction?: unknown } };
     set_lock: { locked: boolean };
     start_recording: { recording: string };
