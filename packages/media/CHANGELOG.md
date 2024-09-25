@@ -1,5 +1,15 @@
 # @whereby.com/media
 
+## 1.14.0
+
+### Minor Changes
+
+- 03c8fdf: Refactor RTCStats WebSocket connect timing
+
+### Patch Changes
+
+- 73c96f5: Add connection monitor rtc events handling
+
 ## 1.13.0
 
 ### Minor Changes
