@@ -380,11 +380,13 @@ startAppListening({
 });
 
 export const selectShouldConnectRtc = createSelector(
+    selectRtcStatus,
+    selectAppIsActive,
     selectRtcDispatcherCreated,
     selectRtcIsCreatingDispatcher,
     selectSignalConnectionSocket,
-    (dispatcherCreated, isCreatingDispatcher, signalSocket) => {
-        if (!dispatcherCreated && !isCreatingDispatcher && signalSocket) {
+    (rtcStatus, appIsActive, dispatcherCreated, isCreatingDispatcher, signalSocket) => {
+        if (appIsActive && rtcStatus === "inactive" && !dispatcherCreated && !isCreatingDispatcher && signalSocket) {
             return true;
         }
         return false;

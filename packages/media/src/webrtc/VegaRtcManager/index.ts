@@ -1397,9 +1397,6 @@ export default class VegaRtcManager implements RtcManager {
     acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
         logger.info("acceptNewStream()", { streamId, clientId });
 
-        // make sure we have rtcStats connection
-        this.rtcStatsReconnect();
-
         const clientState = this._getOrCreateClientState(clientId);
         const isScreenShare = streamId !== clientId;
 

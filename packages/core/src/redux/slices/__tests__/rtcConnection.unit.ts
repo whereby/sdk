@@ -13,16 +13,24 @@ describe("rtcConnectionSlice", () => {
             const x = () => oneOf(true, false);
 
             it.each`
-                dispatcherCreated | isCreatingDispatcher | signalSocket | expected
-                ${true}           | ${x()}               | ${{}}        | ${false}
-                ${x()}            | ${true}              | ${{}}        | ${false}
-                ${x()}            | ${x()}               | ${undefined} | ${false}
-                ${false}          | ${false}             | ${{}}        | ${true}
+                rtcStatus     | appIsActive | dispatcherCreated | isCreatingDispatcher | signalSocket | expected
+                ${"inactive"} | ${true}     | ${true}           | ${x()}               | ${{}}        | ${false}
+                ${"inactive"} | ${true}     | ${x()}            | ${true}              | ${{}}        | ${false}
+                ${"inactive"} | ${true}     | ${x()}            | ${x()}               | ${undefined} | ${false}
+                ${"active"}   | ${true}     | ${false}          | ${false}             | ${{}}        | ${false}
+                ${"inactive"} | ${false}    | ${false}          | ${false}             | ${{}}        | ${false}
+                ${"inactive"} | ${true}     | ${false}          | ${false}             | ${{}}        | ${true}
             `(
-                "should return $expected when rtcDispatcherCreated=$rtcDispatcherCreated, rtcIsCreatingDispatcher=$rtcIsCreatingDispatcher, signalSocket=$signalSocket",
-                ({ dispatcherCreated, isCreatingDispatcher, signalSocket, expected }) => {
+                "should return $expected when rtcStatus=$rtcStatus, appIsActive=$appIsActive dispatcherCreated=$dispatcherCreated, isCreatingDispatcher=$isCreatingDispatcher, signalSocket=$signalSocket",
+                ({ rtcStatus, appIsActive, dispatcherCreated, isCreatingDispatcher, signalSocket, expected }) => {
                     expect(
-                        selectShouldConnectRtc.resultFunc(dispatcherCreated, isCreatingDispatcher, signalSocket),
+                        selectShouldConnectRtc.resultFunc(
+                            rtcStatus,
+                            appIsActive,
+                            dispatcherCreated,
+                            isCreatingDispatcher,
+                            signalSocket,
+                        ),
                     ).toEqual(expected);
                 },
             );

@@ -64,6 +64,7 @@ describe("signalConnectionSlice", () => {
             expect(mockServerSocket.disconnect).toHaveBeenCalled();
             expect(diff(before, after)).toEqual({
                 deviceIdentified: false,
+                socket: null,
                 status: "disconnected",
             });
         });

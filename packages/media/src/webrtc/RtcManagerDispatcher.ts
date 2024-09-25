@@ -53,11 +53,12 @@ export default class RtcManagerDispatcher {
                 } else {
                     rtcManager = new P2pRtcManager(config);
                 }
+                rtcManager.rtcStatsReconnect();
                 rtcManager.setupSocketListeners();
                 emitter.emit(CONNECTION_STATUS.EVENTS.RTC_MANAGER_CREATED, { rtcManager });
                 this.currentManager = rtcManager;
                 serverSocket.setRtcManager(rtcManager);
-            }
+            },
         );
     }
 

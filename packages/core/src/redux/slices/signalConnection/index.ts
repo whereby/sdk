@@ -136,6 +136,7 @@ export const signalConnectionSlice = createSlice({
         socketDisconnected: (state) => {
             return {
                 ...state,
+                socket: null,
                 deviceIdentified: false,
                 status: "disconnected",
             };

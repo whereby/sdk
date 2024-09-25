@@ -1,6 +1,6 @@
 import { TurnTransportProtocol } from "../utils";
 
-/* 
+/*
     RTC
 */
 export enum RtcEventNames {
@@ -26,6 +26,7 @@ export interface RtcManager {
     disconnect(streamId: string, activeBreakout: boolean | null, eventClaim?: string): void;
     disconnectAll(): void;
     rtcStatsDisconnect(): void;
+    rtcStatsReconnect(): void;
     replaceTrack(oldTrack: CustomMediaStreamTrack, newTrack: CustomMediaStreamTrack): void;
     removeStream(streamId: string, _stream: MediaStream, requestedByClientId: string | null): void;
     shouldAcceptStreamsFromBothSides?: () => boolean;
@@ -76,7 +77,7 @@ export type RtcEvents = {
     remote_stream_track_removed: void;
 };
 
-/* 
+/*
     Media Devices
 */
 
