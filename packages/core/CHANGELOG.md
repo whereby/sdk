@@ -1,5 +1,18 @@
 # @whereby.com/core
 
+## 0.26.0
+
+### Minor Changes
+
+- 73c96f5: Add connection monitor rtc events handling
+
+### Patch Changes
+
+- 03c8fdf: Refactor RTCStats WebSocket connect timing
+- Updated dependencies [73c96f5]
+- Updated dependencies [03c8fdf]
+  - @whereby.com/media@1.14.0
+
 ## 0.25.1
 
 ### Patch Changes
