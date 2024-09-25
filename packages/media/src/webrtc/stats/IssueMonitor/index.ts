@@ -12,6 +12,77 @@ interface Metric {
     value: (checkData: IssueCheckData) => any;
 }
 
+interface MetricData {
+    ticks: number; // ticks being enabled
+    sum: number; // sum of metric
+    avg: number; // avg
+    min: number;
+    max: number;
+}
+
+interface MetricDataAggregated {
+    // all time
+    ticks: number;
+    sum: number;
+    min: number;
+    max: number;
+    avg: number;
+    // current / right now
+    curTicks: number;
+    curMin: number;
+    curMax: number;
+    curAvg: number;
+    curSum: number;
+    // total, sum of all concurrent
+    totTicks: number;
+    totMin: number;
+    totMax: number;
+    totAvg: number;
+    totSum: number; // same as sum
+}
+
+type AggregatedMetrics = {
+    [aggregatedMetricKey: string]: MetricDataAggregated;
+};
+
+interface IssueData {
+    active: boolean;
+    ticks: number; // ticks being enabled
+    registered: number; // ticks being registered (as an issue)
+    initial: number; // ticks being registered initially
+    periods: number; // number of periods this being registered
+    current: number; // current period this being registered ticks
+    longest: number; // longest number of period this being registered
+}
+
+interface IssueDataAggregated {
+    active: boolean;
+    ticks: number;
+    registered: number;
+    initial: number;
+    curTicks: number;
+    curRegistered: number;
+}
+
+type AggregatedIssues = {
+    [aggregatedIssueKey: string]: IssueDataAggregated;
+};
+
+type IssuesAndMetrics = {
+    issues: { [issueKey: string]: IssueData };
+    metrics: { [metricKey: string]: MetricData };
+};
+
+type IssuesAndMetricsAggregated = {
+    issues: AggregatedIssues;
+    metrics: AggregatedMetrics;
+};
+
+export type IssuesAndMetricsByView = {
+    [clientId: string]: IssuesAndMetrics | IssuesAndMetricsAggregated;
+    aggregated: IssuesAndMetricsAggregated;
+};
+
 const metrics: Metric[] = [
     {
         id: "bitrate",
@@ -26,7 +97,7 @@ const metrics: Metric[] = [
         value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce(
                 (sum: number, ssrc: any) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
-                0
+                0,
             ),
     },
     {
@@ -36,7 +107,7 @@ const metrics: Metric[] = [
         value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce(
                 (max: number, ssrc: any) => Math.max(max, ssrc.fps > 0 ? ssrc.height : 0),
-                0
+                0,
             ),
     },
     {
@@ -91,13 +162,13 @@ const metrics: Metric[] = [
         id: "turn-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats.candidatePairs).length,
-        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.usingTurn)
+        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.usingTurn),
     },
     {
         id: "turn-tls-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats.candidatePairs).length,
-        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.turnProtocol === 'tls')
+        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.turnProtocol === "tls"),
     },
     {
         id: "concealment",
@@ -141,9 +212,9 @@ const metrics: Metric[] = [
     },
 ];
 
-let aggregatedMetrics: any;
-let aggregatedIssues: any;
-let issuesAndMetricsByView: any;
+let aggregatedMetrics: AggregatedMetrics;
+let aggregatedIssues: AggregatedIssues;
+let issuesAndMetricsByView: IssuesAndMetricsByView;
 
 const initIssuesAndMetricsByView = () => {
     aggregatedMetrics = {};
@@ -164,7 +235,7 @@ export const getIssuesAndMetrics = () => {
 
 function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
     // reset aggregated current metrics
-    Object.values(aggregatedMetrics).forEach((metricData: any) => {
+    Object.values(aggregatedMetrics).forEach((metricData: MetricDataAggregated) => {
         metricData.curTicks = 0;
         metricData.curSum = 0;
         metricData.curMax = 0;
@@ -173,7 +244,7 @@ function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
     });
 
     // reset aggregated current issues
-    Object.values(aggregatedIssues).forEach((issueData: any) => {
+    Object.values(aggregatedIssues).forEach((issueData: IssueDataAggregated) => {
         issueData.curTicks = 0;
         issueData.curRegistered = 0;
         issueData.active = false;
@@ -203,7 +274,7 @@ function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
             const trackStats = track && stats && stats.tracks[track.id];
             const ssrcs = trackStats
                 ? Object.values(trackStats.ssrcs).sort(
-                      (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER)
+                      (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
                   )
                 : [];
             const ssrc0 = ssrcs[0];
@@ -238,7 +309,7 @@ function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
                     const value = metric.value(checkData);
                     if (!metricData) {
                         metricData = {
-                            ticks: 0, // ticks beeing enabled
+                            ticks: 0, // ticks being enabled
                             sum: 0, // sum of metric
                             avg: 0, // avg
                             min: value,
@@ -303,19 +374,19 @@ function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
 
                 const enabled = issueDetector.enabled(checkData);
 
-                let issueData = issuesAndMetrics.issues[issueKey];
-                let aggregatedIssueData = aggregatedIssues[issueKey];
+                let issueData = issuesAndMetrics.issues[issueKey] as IssueData;
+                let aggregatedIssueData = aggregatedIssues[issueKey] as IssueDataAggregated;
 
                 if (enabled) {
                     if (!issueData) {
                         issueData = {
                             active: false,
-                            ticks: 0, // ticks beeing enabled
-                            registered: 0, // ticks beeing registered (as an issue)
-                            initial: 0, // ticks beeing registered initially
-                            periods: 0, // number of periods this beeing registered
-                            current: 0, // current period this beeing registered ticks
-                            longest: 0, // longest number of period this beeing registered
+                            ticks: 0, // ticks being enabled
+                            registered: 0, // ticks being registered (as an issue)
+                            initial: 0, // ticks being registered initially
+                            periods: 0, // number of periods this being registered
+                            current: 0, // current period this being registered ticks
+                            longest: 0, // longest number of period this being registered
                         };
                         issuesAndMetrics.issues[issueKey] = issueData;
                     }
@@ -369,7 +440,7 @@ function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
         });
     });
 
-    Object.values(aggregatedMetrics).forEach((aggregatedMetricData: any) => {
+    Object.values(aggregatedMetrics).forEach((aggregatedMetricData: MetricDataAggregated) => {
         if (aggregatedMetricData.curTicks) {
             aggregatedMetricData.curAvg = aggregatedMetricData.curSum / aggregatedMetricData.curTicks;
 
@@ -385,18 +456,20 @@ function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
         }
     });
 
-    Object.values(aggregatedIssues).forEach((aggregateIssueData: any) => {
+    Object.values(aggregatedIssues).forEach((aggregateIssueData: IssueDataAggregated) => {
         if (aggregateIssueData.curTicks) {
             // todo: maybe calculate some concurrent info for this issue
         }
     });
 
     subscriptions.forEach((subscription) =>
-        subscription.onUpdatedIssues?.(issuesAndMetricsByView, statsByView, clients)
+        subscription.onUpdatedIssues?.(issuesAndMetricsByView, statsByView, clients),
     );
 }
 
-export function subscribeIssues(subscription: any) {
+export function subscribeIssues(subscription: {
+    onUpdatedIssues: (issuesAndMetricsByView: IssuesAndMetricsByView, statsByView: any, clients: any) => void;
+}): { stop: () => void } {
     subscriptions.push(subscription);
 
     // start the stats on first subscription
