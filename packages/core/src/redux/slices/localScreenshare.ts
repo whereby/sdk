@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { createAppAsyncThunk, createAppThunk } from "../thunk";
+import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../thunk";
 import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { localMediaStopped } from "./localMedia";
@@ -64,7 +64,7 @@ export const localScreenshareSlice = createSlice({
 
 export const { stopScreenshare } = localScreenshareSlice.actions;
 
-export const doStartScreenshare = createAppAsyncThunk(
+export const doStartScreenshare = createAsyncRoomConnectedThunk(
     "localScreenshare/doStartScreenshare",
     async (_, { dispatch, getState, rejectWithValue }) => {
         try {
@@ -96,7 +96,7 @@ export const doStartScreenshare = createAppAsyncThunk(
     },
 );
 
-export const doStopScreenshare = createAppThunk(() => (dispatch, getState) => {
+export const doStopScreenshare = createRoomConnectedThunk(() => (dispatch, getState) => {
     const state = getState();
     const screenshareStream = selectLocalScreenshareStream(state);
 

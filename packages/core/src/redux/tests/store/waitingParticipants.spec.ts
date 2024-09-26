@@ -4,7 +4,7 @@ import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "../../sl
 describe("actions", () => {
     it("doAcceptWaitingParticipant", async () => {
         const participantId = "participantId";
-        const store = createStore({ withSignalConnection: true });
+        const store = createStore({ withSignalConnection: true, connectToRoom: true });
 
         store.dispatch(doAcceptWaitingParticipant({ participantId }));
 
@@ -17,7 +17,7 @@ describe("actions", () => {
 
     it("doRejectWaitingParticipant", async () => {
         const participantId = "participantId";
-        const store = createStore({ withSignalConnection: true });
+        const store = createStore({ withSignalConnection: true, connectToRoom: true });
 
         store.dispatch(doRejectWaitingParticipant({ participantId }));
 

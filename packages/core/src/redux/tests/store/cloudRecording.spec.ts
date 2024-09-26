@@ -5,7 +5,7 @@ import { diff } from "deep-object-diff";
 describe("actions", () => {
     describe("doStartCloudRecording", () => {
         it("should start recording", () => {
-            const store = createStore({ withSignalConnection: true });
+            const store = createStore({ withSignalConnection: true, connectToRoom: true });
 
             const before = store.getState().cloudRecording;
 
@@ -24,6 +24,7 @@ describe("actions", () => {
         it("should not start recording if already recording", () => {
             const store = createStore({
                 withSignalConnection: true,
+                connectToRoom: true,
                 initialState: {
                     cloudRecording: {
                         ...initialCloudRecordingState,
@@ -42,6 +43,7 @@ describe("actions", () => {
     it("doStopCloudRecording", () => {
         const store = createStore({
             withSignalConnection: true,
+            connectToRoom: true,
             initialState: {
                 cloudRecording: {
                     ...initialCloudRecordingState,

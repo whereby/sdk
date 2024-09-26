@@ -6,7 +6,7 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { selectRtcConnectionRaw, selectRtcManagerInitialized, selectRtcStatus } from "./rtcConnection";
 import { selectAppDisplayName, selectAppExternalId } from "./app";
 import { selectOrganizationId } from "./organization";
-import { doEnableAudio, doEnableVideo, doSetDisplayName, selectSelfId } from "./localParticipant";
+import { doEnableAudio, doEnableVideo, selectSelfId, setDisplayName } from "./localParticipant";
 import { selectAuthorizationRoleName } from "./authorization";
 import { selectSignalStatus } from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
@@ -61,7 +61,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: () => ({}),
     },
     displayName: {
-        actions: [doSetDisplayName],
+        actions: [setDisplayName],
         rtcEventName: "displayName",
         getValue: (state: RootState) => selectAppDisplayName(state),
         getOutput: (value) => ({ displayName: value }),

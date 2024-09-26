@@ -5,7 +5,7 @@ import { RemoteParticipant, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
-import { createAppAuthorizedThunk } from "../thunk";
+import { createAuthorizedRoomConnectedThunk } from "../thunk";
 import {
     selectIsAuthorizedToAskToSpeak,
     selectIsAuthorizedToRequestAudioEnable,
@@ -280,7 +280,7 @@ export const remoteParticipantsSlice = createSlice({
 export const { participantStreamAdded, participantStreamIdAdded, streamStatusUpdated } =
     remoteParticipantsSlice.actions;
 
-export const doRequestAudioEnable = createAppAuthorizedThunk(
+export const doRequestAudioEnable = createAuthorizedRoomConnectedThunk(
     (state) => selectIsAuthorizedToRequestAudioEnable(state),
     (payload: AudioEnableRequest) => (_, getState) => {
         const state = getState();
@@ -297,7 +297,7 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
     },
 );
 
-export const doRequestVideoEnable = createAppAuthorizedThunk(
+export const doRequestVideoEnable = createAuthorizedRoomConnectedThunk(
     (state) => selectIsAuthorizedToRequestVideoEnable(state),
     (payload: VideoEnableRequest) => (_, getState) => {
         const state = getState();

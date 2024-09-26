@@ -9,6 +9,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: { authorization: { roomKey: null, roleName: "host" } },
                     withSignalConnection: true,
+                    connectToRoom: true,
                 });
                 const clientId = randomString();
 
@@ -26,6 +27,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: { authorization: { roomKey: null, roleName: "visitor" } },
                     withSignalConnection: true,
+                    connectToRoom: true,
                 });
                 const clientId = randomString();
 
@@ -44,6 +46,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: { authorization: { roomKey: null, roleName: "host" } },
                     withSignalConnection: true,
+                    connectToRoom: true,
                 });
                 const clientId = randomString();
 
@@ -61,6 +64,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: { authorization: { roomKey: null, roleName: "visitor" } },
                     withSignalConnection: true,
+                    connectToRoom: true,
                 });
                 const clientId = randomString();
 

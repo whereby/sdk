@@ -24,6 +24,7 @@ describe("actions", () => {
         mockedGetDisplayMedia.mockResolvedValue(stream);
         const store = createStore({
             withRtcManager: true,
+            connectToRoom: true,
         });
 
         const before = store.getState().localScreenshare;
@@ -44,6 +45,7 @@ describe("actions", () => {
         mockedGetDisplayMedia.mockResolvedValue(stream);
         const store = createStore({
             withRtcManager: true,
+            connectToRoom: true,
         });
 
         await store.dispatch(doStartScreenshare());

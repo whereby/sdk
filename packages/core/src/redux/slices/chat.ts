@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { ChatMessage as SignalChatMessage } from "@whereby.com/media";
 import { RootState } from "../store";
-import { createAppThunk } from "../thunk";
+import { createRoomConnectedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 
@@ -41,7 +41,7 @@ export const chatSlice = createSlice({
 /**
  * Action creators
  */
-export const doSendChatMessage = createAppThunk((payload: { text: string }) => (_, getState) => {
+export const doSendChatMessage = createRoomConnectedThunk((payload: { text: string }) => (_, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
 

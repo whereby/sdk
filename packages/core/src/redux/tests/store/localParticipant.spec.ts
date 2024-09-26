@@ -5,6 +5,7 @@ describe("actions", () => {
     it("doEnableAudio", async () => {
         const store = createStore({
             withSignalConnection: true,
+            connectToRoom: true,
         });
 
         await store.dispatch(doEnableAudio({ enabled: true }));
@@ -15,6 +16,7 @@ describe("actions", () => {
     it("doEnableVideo", async () => {
         const store = createStore({
             withSignalConnection: true,
+            connectToRoom: true,
         });
 
         await store.dispatch(doEnableVideo({ enabled: true }));
@@ -25,6 +27,7 @@ describe("actions", () => {
     it("doSetDisplayName", async () => {
         const store = createStore({
             withSignalConnection: true,
+            connectToRoom: true,
         });
 
         await store.dispatch(doSetDisplayName({ displayName: "display name" }));
