@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.27.0
+
+### Minor Changes
+
+- c149827: Add action to turn camera off for remote participants
+
+### Patch Changes
+
+- Updated dependencies [c149827]
+  - @whereby.com/media@1.14.1
+
 ## 0.26.0
 
 ### Minor Changes
