@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createAppThunk } from "../thunk";
+import { createRoomConnectedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 
@@ -76,7 +76,7 @@ export const cloudRecordingSlice = createSlice({
  */
 export const { recordingRequestStarted } = cloudRecordingSlice.actions;
 
-export const doStartCloudRecording = createAppThunk(() => (dispatch, getState) => {
+export const doStartCloudRecording = createRoomConnectedThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const status = selectCloudRecordingStatus(state);
@@ -92,7 +92,7 @@ export const doStartCloudRecording = createAppThunk(() => (dispatch, getState) =
     dispatch(recordingRequestStarted());
 });
 
-export const doStopCloudRecording = createAppThunk(() => (dispatch, getState) => {
+export const doStopCloudRecording = createRoomConnectedThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
 

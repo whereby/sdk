@@ -1,12 +1,16 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest } from "@whereby.com/media";
+import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest, VideoEnableRequest } from "@whereby.com/media";
 import { RemoteParticipant, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
-import { createAppAuthorizedThunk } from "../thunk";
-import { selectIsAuthorizedToAskToSpeak, selectIsAuthorizedToRequestAudioEnable } from "./authorization";
+import { createAuthorizedRoomConnectedThunk } from "../thunk";
+import {
+    selectIsAuthorizedToAskToSpeak,
+    selectIsAuthorizedToRequestAudioEnable,
+    selectIsAuthorizedToRequestVideoEnable,
+} from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { NON_PERSON_ROLES } from "../constants";
 import { selectLocalParticipantRaw } from "./localParticipant";
@@ -276,7 +280,7 @@ export const remoteParticipantsSlice = createSlice({
 export const { participantStreamAdded, participantStreamIdAdded, streamStatusUpdated } =
     remoteParticipantsSlice.actions;
 
-export const doRequestAudioEnable = createAppAuthorizedThunk(
+export const doRequestAudioEnable = createAuthorizedRoomConnectedThunk(
     (state) => selectIsAuthorizedToRequestAudioEnable(state),
     (payload: AudioEnableRequest) => (_, getState) => {
         const state = getState();
@@ -290,6 +294,17 @@ export const doRequestAudioEnable = createAppAuthorizedThunk(
         const socket = selectSignalConnectionRaw(state).socket;
 
         socket?.emit("request_audio_enable", payload);
+    },
+);
+
+export const doRequestVideoEnable = createAuthorizedRoomConnectedThunk(
+    (state) => selectIsAuthorizedToRequestVideoEnable(state),
+    (payload: VideoEnableRequest) => (_, getState) => {
+        const state = getState();
+
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("request_video_enable", payload);
     },
 );
 

@@ -743,3 +743,16 @@ startAppListening({
         }
     },
 });
+
+startAppListening({
+    actionCreator: signalEvents.videoEnableRequested,
+    effect: ({ payload }, { dispatch }) => {
+        const { enable } = payload;
+
+        // Only handle disable video case automatically.
+        // Enable video case must be handled via `requestVideoEnable` notification
+        if (!enable) {
+            dispatch(toggleCameraEnabled({ enabled: false }));
+        }
+    },
+});

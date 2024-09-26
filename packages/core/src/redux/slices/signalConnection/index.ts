@@ -29,6 +29,7 @@ import {
     SpotlightAddedEvent,
     SpotlightRemovedEvent,
     VideoEnabledEvent,
+    VideoEnableRequestedEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
 import { selectAppIsActive } from "../app";
@@ -83,6 +84,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     );
     socket.on("live_transcription_stopped", (payload: LiveTranscriptionStoppedEvent) =>
         dispatch(signalEvents.liveTranscriptionStopped(payload)),
+    );
+    socket.on("video_enable_requested", (payload: VideoEnableRequestedEvent) =>
+        dispatch(signalEvents.videoEnableRequested(payload)),
     );
 }
 

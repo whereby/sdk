@@ -7,6 +7,7 @@ import {
     doAcceptWaitingParticipant,
     doRejectWaitingParticipant,
     doRequestAudioEnable,
+    doRequestVideoEnable,
     doSetDisplayName,
     doSetLocalStickyReaction,
     toggleCameraEnabled,
@@ -23,9 +24,7 @@ import {
     doSpotlightParticipant,
     doRemoveSpotlight,
     NotificationsEventEmitter,
-    AppThunk,
 } from "@whereby.com/core";
-import { UnknownAction } from "@reduxjs/toolkit";
 
 import { selectRoomConnectionState } from "./selector";
 import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
@@ -73,96 +72,73 @@ export function useRoomConnection(
         };
     }, []);
 
-    const whenConnectedToRoom = React.useCallback(
-        (actionCreator: () => AppThunk | UnknownAction) => {
-            if (roomConnectionState.connectionStatus === "connected") {
-                dispatch(actionCreator());
-            } else {
-                console.warn("Action cannot be performed outside of a connected room");
-            }
-        },
-        [roomConnectionState.connectionStatus, dispatch],
-    );
-
-    const sendChatMessage = React.useCallback(
-        (text: string) => whenConnectedToRoom(() => doSendChatMessage({ text })),
-        [whenConnectedToRoom],
-    );
+    const sendChatMessage = React.useCallback((text: string) => dispatch(doSendChatMessage({ text })), [dispatch]);
     const knock = React.useCallback(() => dispatch(doKnockRoom()), [dispatch]);
-    const setDisplayName = (displayName: string) => whenConnectedToRoom(() => doSetDisplayName({ displayName }));
+    const setDisplayName = React.useCallback(
+        (displayName: string) => dispatch(doSetDisplayName({ displayName })),
+        [dispatch],
+    );
 
     const toggleCamera = React.useCallback(
-        (enabled?: boolean) => whenConnectedToRoom(() => toggleCameraEnabled({ enabled })),
-        [whenConnectedToRoom],
+        (enabled?: boolean) => dispatch(toggleCameraEnabled({ enabled })),
+        [dispatch],
     );
     const toggleMicrophone = React.useCallback(
-        (enabled?: boolean) => whenConnectedToRoom(() => toggleMicrophoneEnabled({ enabled })),
-        [whenConnectedToRoom],
+        (enabled?: boolean) => dispatch(toggleMicrophoneEnabled({ enabled })),
+        [dispatch],
     );
     const toggleLowDataMode = React.useCallback(
-        (enabled?: boolean) => whenConnectedToRoom(() => toggleLowDataModeEnabled({ enabled })),
-        [whenConnectedToRoom],
+        (enabled?: boolean) => dispatch(toggleLowDataModeEnabled({ enabled })),
+        [dispatch],
     );
     const toggleRaiseHand = React.useCallback(
-        (enabled?: boolean) => whenConnectedToRoom(() => doSetLocalStickyReaction({ enabled })),
-        [whenConnectedToRoom],
+        (enabled?: boolean) => dispatch(doSetLocalStickyReaction({ enabled })),
+        [dispatch],
     );
     const askToSpeak = React.useCallback(
-        (participantId: string) =>
-            whenConnectedToRoom(() => doRequestAudioEnable({ clientIds: [participantId], enable: true })),
-        [whenConnectedToRoom],
+        (participantId: string) => dispatch(doRequestAudioEnable({ clientIds: [participantId], enable: true })),
+        [dispatch],
+    );
+    const askToTurnOnCamera = React.useCallback(
+        (participantId: string) => dispatch(doRequestVideoEnable({ clientIds: [participantId], enable: true })),
+        [dispatch],
     );
     const acceptWaitingParticipant = React.useCallback(
-        (participantId: string) => whenConnectedToRoom(() => doAcceptWaitingParticipant({ participantId })),
-        [whenConnectedToRoom],
+        (participantId: string) => dispatch(doAcceptWaitingParticipant({ participantId })),
+        [dispatch],
     );
     const rejectWaitingParticipant = React.useCallback(
-        (participantId: string) => whenConnectedToRoom(() => doRejectWaitingParticipant({ participantId })),
-        [whenConnectedToRoom],
+        (participantId: string) => dispatch(doRejectWaitingParticipant({ participantId })),
+        [dispatch],
     );
-    const startCloudRecording = React.useCallback(
-        () => whenConnectedToRoom(() => doStartCloudRecording()),
-        [whenConnectedToRoom],
-    );
-    const startScreenshare = React.useCallback(
-        () => whenConnectedToRoom(() => doStartScreenshare()),
-        [whenConnectedToRoom],
-    );
-    const stopCloudRecording = React.useCallback(
-        () => whenConnectedToRoom(() => doStopCloudRecording()),
-        [whenConnectedToRoom],
-    );
-    const stopScreenshare = React.useCallback(
-        () => whenConnectedToRoom(() => doStopScreenshare()),
-        [whenConnectedToRoom],
-    );
+    const startCloudRecording = React.useCallback(() => dispatch(doStartCloudRecording()), [dispatch]);
+    const startScreenshare = React.useCallback(() => dispatch(doStartScreenshare()), [dispatch]);
+    const stopCloudRecording = React.useCallback(() => dispatch(doStopCloudRecording()), [dispatch]);
+    const stopScreenshare = React.useCallback(() => dispatch(doStopScreenshare()), [dispatch]);
     const joinRoom = React.useCallback(() => dispatch(doAppStart(roomConfig)), [dispatch]);
     const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
-    const lockRoom = React.useCallback(
-        (locked: boolean) => whenConnectedToRoom(() => doLockRoom({ locked })),
-        [whenConnectedToRoom],
-    );
+    const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
     const muteParticipants = React.useCallback(
-        (participantIds: string[]) =>
-            whenConnectedToRoom(() => doRequestAudioEnable({ clientIds: participantIds, enable: false })),
-        [whenConnectedToRoom],
+        (participantIds: string[]) => dispatch(doRequestAudioEnable({ clientIds: participantIds, enable: false })),
+        [dispatch],
+    );
+    const turnOffParticipantCameras = React.useCallback(
+        (participantIds: string[]) => dispatch(doRequestVideoEnable({ clientIds: participantIds, enable: false })),
+        [dispatch],
     );
     const spotlightParticipant = React.useCallback(
-        (participantId: string) => whenConnectedToRoom(() => doSpotlightParticipant({ id: participantId })),
-        [whenConnectedToRoom],
+        (participantId: string) => dispatch(doSpotlightParticipant({ id: participantId })),
+        [dispatch],
     );
     const removeSpotlight = React.useCallback(
-        (participantId: string) => whenConnectedToRoom(() => doRemoveSpotlight({ id: participantId })),
-        [whenConnectedToRoom],
+        (participantId: string) => dispatch(doRemoveSpotlight({ id: participantId })),
+        [dispatch],
     );
     const kickParticipant = React.useCallback(
-        (participantId: string) => whenConnectedToRoom(() => doKickParticipant({ clientId: participantId })),
-        [whenConnectedToRoom],
+        (participantId: string) => dispatch(doKickParticipant({ clientId: participantId })),
+        [dispatch],
     );
-    const endMeeting = React.useCallback(
-        (stayBehind?: boolean) => whenConnectedToRoom(() => doEndMeeting({ stayBehind })),
-        [whenConnectedToRoom],
-    );
+    const endMeeting = React.useCallback((stayBehind?: boolean) => dispatch(doEndMeeting({ stayBehind })), [dispatch]);
 
     const { events, ...state } = roomConnectionState;
 
@@ -173,12 +149,14 @@ export function useRoomConnection(
             toggleLowDataMode,
             toggleRaiseHand,
             askToSpeak,
+            askToTurnOnCamera,
             acceptWaitingParticipant,
             knock,
             joinRoom,
             leaveRoom,
             lockRoom,
             muteParticipants,
+            turnOffParticipantCameras,
             kickParticipant,
             endMeeting,
             rejectWaitingParticipant,

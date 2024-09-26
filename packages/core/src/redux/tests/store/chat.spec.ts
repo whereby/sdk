@@ -3,7 +3,7 @@ import { doSendChatMessage } from "../../slices/chat";
 
 describe("actions", () => {
     it("doSendChatMessage", () => {
-        const store = createStore({ withSignalConnection: true });
+        const store = createStore({ withSignalConnection: true, connectToRoom: true });
 
         store.dispatch(doSendChatMessage({ text: "text" }));
 

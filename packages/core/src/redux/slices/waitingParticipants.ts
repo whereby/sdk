@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { WaitingParticipant } from "../../RoomParticipant";
-import { createAppThunk } from "../thunk";
+import { createRoomConnectedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionSocket } from "./signalConnection";
 
@@ -56,7 +56,7 @@ export const waitingParticipantsSlice = createSlice({
  * Action creators
  */
 
-export const doAcceptWaitingParticipant = createAppThunk(
+export const doAcceptWaitingParticipant = createRoomConnectedThunk(
     (payload: { participantId: string }) => (dispatch, getState) => {
         const { participantId } = payload;
         const state = getState();
@@ -70,7 +70,7 @@ export const doAcceptWaitingParticipant = createAppThunk(
     },
 );
 
-export const doRejectWaitingParticipant = createAppThunk(
+export const doRejectWaitingParticipant = createRoomConnectedThunk(
     (payload: { participantId: string }) => (dispatch, getState) => {
         const { participantId } = payload;
         const state = getState();

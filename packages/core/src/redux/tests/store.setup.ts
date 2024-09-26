@@ -57,6 +57,7 @@ type StoreOptions = {
     initialState?: Partial<RootState>;
     withSignalConnection?: boolean;
     withRtcManager?: boolean;
+    connectToRoom?: boolean;
 };
 
 export const mockServices = {
@@ -74,7 +75,7 @@ export const mockServices = {
     fetchOrganizationFromRoomUrl: jest.fn(),
 };
 
-export function createStore({ initialState, withSignalConnection, withRtcManager }: StoreOptions = {}) {
+export function createStore({ initialState, withSignalConnection, withRtcManager, connectToRoom }: StoreOptions = {}) {
     initialState = initialState || {};
 
     if (withSignalConnection) {
@@ -84,6 +85,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             status: "connected",
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             socket: mockServerSocket as any,
+            ...initialState.signalConnection,
         };
     }
 
@@ -100,6 +102,16 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rtcManager: mockRtcManager as any,
             isAcceptingStreams: false,
+            ...initialState.rtcConnection,
+        };
+    }
+
+    if (connectToRoom) {
+        initialState.roomConnection = {
+            session: null,
+            error: null,
+            status: "connected",
+            ...initialState.roomConnection,
         };
     }
 

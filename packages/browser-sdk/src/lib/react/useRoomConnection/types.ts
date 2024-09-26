@@ -75,12 +75,14 @@ export interface RoomConnectionActions {
     toggleLowDataMode: (enabled?: boolean) => void;
     toggleRaiseHand: (enabled?: boolean) => void;
     askToSpeak: (participantId: string) => void;
+    askToTurnOnCamera: (participantId: string) => void;
     acceptWaitingParticipant: (participantId: string) => void;
     knock: () => void;
     joinRoom: () => void;
     leaveRoom: () => void;
     lockRoom: (locked: boolean) => void;
     muteParticipants: (clientIds: string[]) => void;
+    turnOffParticipantCameras: (clientIds: string[]) => void;
     kickParticipant: (clientId: string) => void;
     endMeeting: (stayBehind?: boolean) => void;
     rejectWaitingParticipant: (participantId: string) => void;

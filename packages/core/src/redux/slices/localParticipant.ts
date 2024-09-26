@@ -1,7 +1,7 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
-import { createAppAsyncThunk, createAppThunk } from "../thunk";
+import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../thunk";
 import { LocalParticipant } from "../../RoomParticipant";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { doAppStart } from "./app";
@@ -39,7 +39,7 @@ export const localParticipantSlice = createSlice({
     name: "localParticipant",
     initialState,
     reducers: {
-        doSetDisplayName: (state, action: PayloadAction<{ displayName: string }>) => {
+        setDisplayName: (state, action: PayloadAction<{ displayName: string }>) => {
             return {
                 ...state,
                 displayName: action.payload.displayName,
@@ -88,9 +88,21 @@ export const localParticipantSlice = createSlice({
  * Action creators
  */
 
-export const { doSetDisplayName } = localParticipantSlice.actions;
+export const { setDisplayName } = localParticipantSlice.actions;
 
-export const doEnableAudio = createAppAsyncThunk(
+export const doSetDisplayName = createRoomConnectedThunk((payload: { displayName: string }) => (dispatch, getState) => {
+    const state = getState();
+    const socket = selectSignalConnectionRaw(state).socket;
+
+    socket?.emit("send_client_metadata", {
+        type: "UserData",
+        payload: { displayName: payload.displayName },
+    });
+
+    dispatch(setDisplayName({ displayName: payload.displayName }));
+});
+
+export const doEnableAudio = createAsyncRoomConnectedThunk(
     "localParticipant/doEnableAudio",
     async (payload: { enabled: boolean }, { dispatch, getState }) => {
         const state = getState();
@@ -106,7 +118,7 @@ export const doEnableAudio = createAppAsyncThunk(
     },
 );
 
-export const doEnableVideo = createAppAsyncThunk(
+export const doEnableVideo = createAsyncRoomConnectedThunk(
     "localParticipant/doEnableVideo",
     async (payload: { enabled: boolean }, { getState }) => {
         const state = getState();
@@ -118,7 +130,7 @@ export const doEnableVideo = createAppAsyncThunk(
     },
 );
 
-export const doSetLocalStickyReaction = createAppAsyncThunk(
+export const doSetLocalStickyReaction = createAsyncRoomConnectedThunk(
     "localParticipant/doSetLocalStickyReaction",
     async (payload: { enabled?: boolean }, { getState, rejectWithValue }) => {
         const state = getState();
@@ -137,7 +149,7 @@ export const doSetLocalStickyReaction = createAppAsyncThunk(
     },
 );
 
-export const doSendClientMetadata = createAppThunk(() => (_, getState) => {
+export const doSendClientMetadata = createRoomConnectedThunk(() => (_, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
 

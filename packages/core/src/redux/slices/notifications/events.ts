@@ -16,6 +16,13 @@ export interface RequestAudioEventProps {
 }
 export type RequestAudioEvent = NotificationEvent<"requestAudioEnable" | "requestAudioDisable", RequestAudioEventProps>;
 
+export interface RequestVideoEventProps {
+    client: RemoteParticipant;
+    enable: boolean;
+}
+
+export type RequestVideoEvent = NotificationEvent<"requestVideoEnable" | "requestVideoDisable", RequestVideoEventProps>;
+
 export interface ChatMessageEventProps {
     client: RemoteParticipant;
     chatMessage: ChatMessage;
@@ -43,6 +50,8 @@ type NotificationEventTypes = {
     ["signalTrouble"]: SignalStatusEvent;
     ["signalOk"]: SignalStatusEvent;
     ["clientUnableToJoinFullRoom"]: SignalClientEvent;
+    ["requestVideoEnable"]: RequestVideoEvent;
+    ["requestVideoDisable"]: RequestVideoEvent;
 };
 
 export type NotificationEvents = NotificationEventTypes[keyof NotificationEventTypes];

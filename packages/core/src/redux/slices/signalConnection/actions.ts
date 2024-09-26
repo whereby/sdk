@@ -24,6 +24,7 @@ import {
     AudioEnableRequestedEvent,
     SpotlightAddedEvent,
     SpotlightRemovedEvent,
+    VideoEnableRequestedEvent,
 } from "@whereby.com/media";
 
 function createSignalEventAction<T>(name: string) {
@@ -55,6 +56,7 @@ export const signalEvents = {
     spotlightRemoved: createSignalEventAction<SpotlightRemovedEvent>("spotlightRemoved"),
     streamingStopped: createSignalEventAction<void>("streamingStopped"),
     videoEnabled: createSignalEventAction<VideoEnabledEvent>("videoEnabled"),
+    videoEnableRequested: createSignalEventAction<VideoEnableRequestedEvent>("videoEnableRequested"),
     liveTranscriptionStarted: createSignalEventAction<LiveTranscriptionStartedEvent>("liveTranscriptionStarted"),
     liveTranscriptionStopped: createSignalEventAction<LiveTranscriptionStoppedEvent>("liveTranscriptionStopped"),
 };
