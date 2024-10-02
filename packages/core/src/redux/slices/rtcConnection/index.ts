@@ -13,7 +13,7 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive, doAppStop } from "../app";
-import { Chrome111 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Chrome111.js";
+import { Safari12 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Safari12.js";
 import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
@@ -235,13 +235,11 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
             (state === "new_accept" && shouldAcceptNewClients) ||
             (state === "old_accept" && !shouldAcceptNewClients) // these are done to enable broadcast in legacy/p2p
         ) {
-            const enforceTurnProtocol = participant.isDialIn ? "onlytls" : undefined;
             rtcManager.acceptNewStream({
                 streamId: streamId === "0" ? clientId : streamId,
                 clientId,
                 shouldAddLocalVideo: streamId === "0",
                 activeBreakout,
-                enforceTurnProtocol,
             });
         } else if (state === "new_accept" || state === "old_accept") {
             // do nothing - let this be marked as done_accept as the rtcManager

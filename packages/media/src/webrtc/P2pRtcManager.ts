@@ -16,7 +16,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
-import { NewClientEvent, TurnTransportProtocol } from "../utils";
+import { TurnTransportProtocol } from "../utils";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -75,7 +75,6 @@ export default class P2pRtcManager implements RtcManager {
     icePublicIPGatheringTimeoutID: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
-    _nodeJsClients: string[];
 
     constructor({
         selfId,
@@ -111,7 +110,6 @@ export default class P2pRtcManager implements RtcManager {
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
-        this._nodeJsClients = [];
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -157,7 +155,7 @@ export default class P2pRtcManager implements RtcManager {
         stream: MediaStream,
         audioPaused: boolean,
         videoPaused: boolean,
-        beforeEffectTracks: CustomMediaStreamTrack[] = [],
+        beforeEffectTracks: CustomMediaStreamTrack[] = []
     ) {
         if (stream === this.localStreams[streamId]) {
             // this can happen after reconnect. We do not want to add the stream to the
@@ -269,12 +267,6 @@ export default class P2pRtcManager implements RtcManager {
         this._socketListenerDeregisterFunctions = [
             () => this._clearMediaServersRefresh(),
 
-            this._serverSocket.on(PROTOCOL_RESPONSES.NEW_CLIENT, (data: NewClientEvent) => {
-                if (data.client.isDialIn && !this._nodeJsClients.includes(data.client.id)) {
-                    this._nodeJsClients.push(data.client.id);
-                }
-            }),
-
             this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data: any) => {
                 if (data.error) {
                     logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
@@ -385,7 +377,7 @@ export default class P2pRtcManager implements RtcManager {
         this._forEachPeerConnection((session: any) => {
             if (session.hasConnectedPeerConnection()) {
                 this._withForcedRenegotiation(session, () =>
-                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds),
+                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds)
                 );
             }
         });
@@ -531,14 +523,12 @@ export default class P2pRtcManager implements RtcManager {
         isOfferer,
         peerConnectionId,
         shouldAddLocalVideo,
-        enforceTurnProtocol,
     }: {
         clientId: string;
         initialBandwidth: any;
         isOfferer: any;
         peerConnectionId: string;
         shouldAddLocalVideo: boolean;
-        enforceTurnProtocol?: TurnTransportProtocol;
     }) {
         if (!peerConnectionId) {
             throw new Error("peerConnectionId is missing");
@@ -578,7 +568,8 @@ export default class P2pRtcManager implements RtcManager {
                 return entry;
             });
         }
-        if (enforceTurnProtocol || this._features.useOnlyTURN) {
+
+        if (this._features.useOnlyTURN) {
             peerConnectionConfig.iceTransportPolicy = "relay";
             const filter = (
                 {
@@ -586,10 +577,10 @@ export default class P2pRtcManager implements RtcManager {
                     onlytcp: /^turn:.*transport=tcp$/,
                     onlytls: /^turns:.*transport=tcp$/,
                 } as any
-            )[enforceTurnProtocol || this._features.useOnlyTURN];
+            )[this._features.useOnlyTURN];
             if (filter) {
                 peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.filter(
-                    (entry: any) => entry.url && entry.url.match(filter),
+                    (entry: any) => entry.url && entry.url.match(filter)
                 );
             }
         }
@@ -809,7 +800,7 @@ export default class P2pRtcManager implements RtcManager {
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
                 if (!pendingActions) {
                     logger.warn(
-                        `No pending action is created to repalce track, because the pending actions array is null`,
+                        `No pending action is created to repalce track, because the pending actions array is null`
                     );
                     return;
                 }
@@ -871,7 +862,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         this._fetchMediaServersTimer = setTimeout(
             () => this._emitServerEvent(PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG),
-            mediaserverConfigTtlSeconds * 1000,
+            mediaserverConfigTtlSeconds * 1000
         );
     }
 
@@ -906,16 +897,12 @@ export default class P2pRtcManager implements RtcManager {
         } else {
             initialBandwidth = this._changeBandwidthForAllClients(true);
         }
-        let enforceTurnProtocol: TurnTransportProtocol | undefined;
-        if (this._nodeJsClients.includes(clientId)) {
-            enforceTurnProtocol = this._features.isNodeSdk ? "onlyudp" : "onlytls";
-        }
+
         session = this._createP2pSession({
             clientId,
             initialBandwidth,
             shouldAddLocalVideo: true,
             isOfferer: true,
-            enforceTurnProtocol,
         });
         this._negotiatePeerConnection(clientId, session);
         return Promise.resolve(session);
@@ -944,7 +931,7 @@ export default class P2pRtcManager implements RtcManager {
             this._negotiatePeerConnection(
                 clientId,
                 session,
-                Object.assign({}, this.offerOptions, { iceRestart: true }),
+                Object.assign({}, this.offerOptions, { iceRestart: true })
             );
         }
     }
@@ -1139,13 +1126,11 @@ export default class P2pRtcManager implements RtcManager {
         initialBandwidth,
         shouldAddLocalVideo = false,
         isOfferer = false,
-        enforceTurnProtocol,
     }: {
         clientId: string;
         initialBandwidth: number;
         shouldAddLocalVideo: boolean;
         isOfferer: boolean;
-        enforceTurnProtocol?: TurnTransportProtocol;
     }) {
         const session = this._createSession({
             peerConnectionId: clientId,
@@ -1153,7 +1138,6 @@ export default class P2pRtcManager implements RtcManager {
             initialBandwidth,
             shouldAddLocalVideo,
             isOfferer,
-            enforceTurnProtocol,
         });
         const pc = session.pc;
 
@@ -1286,12 +1270,10 @@ export default class P2pRtcManager implements RtcManager {
         streamId,
         clientId,
         shouldAddLocalVideo,
-        enforceTurnProtocol,
     }: {
         streamId: string;
         clientId: string;
         shouldAddLocalVideo?: boolean;
-        enforceTurnProtocol?: TurnTransportProtocol;
     }) {
         let session = this._getSession(clientId);
         if (session && streamId !== clientId) {
@@ -1313,7 +1295,6 @@ export default class P2pRtcManager implements RtcManager {
             clientId,
             initialBandwidth,
             shouldAddLocalVideo: !!shouldAddLocalVideo,
-            enforceTurnProtocol,
             isOfferer: false,
         });
         this._emitServerEvent(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
