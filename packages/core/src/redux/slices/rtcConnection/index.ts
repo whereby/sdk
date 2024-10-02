@@ -13,7 +13,7 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive, doAppStop } from "../app";
-import { Chrome111 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Chrome111.js";
+import { Safari12 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Safari12.js";
 import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
@@ -275,7 +275,7 @@ export const doRtcReportStreamResolution = createAppThunk(
             }
 
             dispatch(resolutionReported({ streamId, width, height }));
-        }
+        },
 );
 
 export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch) => {
@@ -388,7 +388,7 @@ export const selectShouldConnectRtc = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldConnectRtc], ({ dispatch }, shouldConnectRtc) => {
@@ -406,7 +406,7 @@ export const selectShouldInitializeRtc = createSelector(
             return true;
         }
         return false;
-    }
+    },
 );
 
 createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) => {
@@ -477,7 +477,7 @@ export const selectStreamsToAccept = createSelector(
             }
         }
         return upd;
-    }
+    },
 );
 
 createReactor(
@@ -486,5 +486,5 @@ createReactor(
         if (0 < streamsToAccept.length && !isAcceptingStreams) {
             dispatch(doHandleAcceptStreams(streamsToAccept));
         }
-    }
+    },
 );
