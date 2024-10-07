@@ -6417,10 +6417,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/chrome@^0.0.210":
-  version "0.0.210"
-  resolved "https://registry.yarnpkg.com/@types/chrome/-/chrome-0.0.210.tgz#6bc137e111cf42857af5012d47c036adc079616e"
-  integrity sha512-VSjQu1k6a/rAfuqR1Gi/oxHZj4+t6+LG+GobNI3ZWI6DQ+fmphNSF6TrLHG6BYK2bXc9Gb4c1uXFKRRVLaGl5Q==
+"@types/chrome@^0.0.277":
+  version "0.0.277"
+  resolved "https://registry.yarnpkg.com/@types/chrome/-/chrome-0.0.277.tgz#96a2e29948d390c0aa6d20a0beaae1d343f4a8fb"
+  integrity sha512-qoTgBcDWblSsX+jvFnpUlLUE3LAuOhZfBh9MyMWMQHDsQiYVgBvdZWu9COrdB9+aNnInEyXcFgfc2HE16sdSYQ==
   dependencies:
     "@types/filesystem" "*"
     "@types/har-format" "*"
