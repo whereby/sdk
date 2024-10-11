@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.14.2
+
+### Patch Changes
+
+- ad22d11: Fix reconnect loop in sfuReconnectV2 experiment
+
 ## 1.14.1
 
 ### Patch Changes
