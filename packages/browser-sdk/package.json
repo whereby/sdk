@@ -37,7 +37,8 @@
   },
   "files": [
     "dist/**/*.js",
-    "dist/**/*.d.ts"
+    "dist/**/*.d.ts",
+    "dist/**/*.cjs"
   ],
   "scripts": {
     "clean": "rimraf dist node_modules .turbo",
