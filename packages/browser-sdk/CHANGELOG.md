@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.9.2
+
+### Patch Changes
+
+- 6050243: add .cjs to files
+
 ## 3.9.1
 
 ### Patch Changes
