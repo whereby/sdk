@@ -1,5 +1,12 @@
 # @whereby.com/browser-sdk
 
+## 3.9.3
+
+### Patch Changes
+
+- Updated dependencies [fedea8c]
+  - @whereby.com/core@0.28.0
+
 ## 3.9.2
 
 ### Patch Changes

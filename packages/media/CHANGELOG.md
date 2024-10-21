@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.15.0
+
+### Minor Changes
+
+- fedea8c: Remove TURN enforcement, change node mediasoup device handler
+
 ## 1.14.2
 
 ### Patch Changes
