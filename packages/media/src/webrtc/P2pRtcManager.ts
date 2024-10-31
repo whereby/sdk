@@ -7,7 +7,7 @@ import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RtcStream } from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
-import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap } from "./sdpModifier";
+import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
@@ -70,7 +70,6 @@ export default class P2pRtcManager implements RtcManager {
     ipv6HostCandidateTeredoSeen: any;
     ipv6HostCandidate6to4Seen: any;
     mdnsHostCandidateSeen: any;
-    _lastReverseDirectionAttemptByClientId: any;
     _stoppedVideoTrack: any;
     icePublicIPGatheringTimeoutID: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
@@ -310,7 +309,10 @@ export default class P2pRtcManager implements RtcManager {
                         receiverId: data.clientId,
                         message: this._transformOutgoingSdp(answer),
                     });
+                }).catch?.((e: any) => {
+                    this._emit(rtcManagerEvents.PC_ON_OFFER_FAILURE, e);
                 });
+
             }),
 
             // when a new SDP answer is received from another client
@@ -321,7 +323,9 @@ export default class P2pRtcManager implements RtcManager {
                     return;
                 }
                 const answer = this._transformIncomingSdp(data.message, session.pc);
-                session.handleAnswer(answer);
+                session.handleAnswer(answer)?.catch?.((e: any) => {
+                    this._emit(rtcManagerEvents.PC_ON_ANSWER_FAILURE, e);
+                });
             }),
 
             // if this is a reconnect to signal-server during screen-share we must let signal-server know
@@ -999,7 +1003,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn } = this._features;
+        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         // Set codec preferences to video transceivers
         if (vp9On || av1On || redOn) {
@@ -1015,35 +1019,26 @@ export default class P2pRtcManager implements RtcManager {
                     offer.sdp = setCodecPreferenceSDP(offer.sdp, vp9On, redOn);
                 }
 
-                this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
-                    receiverId: clientId,
-                    message: this._transformOutgoingSdp(offer),
-                });
+                // workaround for two different browser bugs:
+                // chrome can modify existing transceiver(m section) adding duplicate payload types
+                // firefox seems to sometime break sdp (maybe duplicate payload types here as well)
+                //  when running setCodecPreferences on existing tranceivers.
+                // (preventing setCodecPreferences on existing tranceivers, limiting to new only
+                // , might be a better fix for firefox, but does not apply to chrome)
+                if (cleanSdpOn) offer.sdp = cleanSdp(offer.sdp);
 
-                // workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1394602
-                // make Chrome send media later when there are two (more more?) video tracks.
-                if (
-                    browserName === "chrome" &&
-                    pc.getSenders().filter((sender: any) => sender.track && sender.track.kind === "video").length >= 2
-                ) {
-                    session.pendingOffer = offer;
-                    return;
-                }
                 pc.setLocalDescription(offer).catch((e: any) => {
                     logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
 
-                    // we failed to create a valid offer so try having the other side create it, without looping
-                    if (this._features.reverseOfferOnFailure) {
-                        if (!this._lastReverseDirectionAttemptByClientId)
-                            this._lastReverseDirectionAttemptByClientId = {};
-                        if (
-                            !this._lastReverseDirectionAttemptByClientId[clientId] ||
-                            this._lastReverseDirectionAttemptByClientId[clientId] < Date.now() - 10000
-                        ) {
-                            this.acceptNewStream({ clientId, streamId: clientId, shouldAddLocalVideo: true });
-                            this._lastReverseDirectionAttemptByClientId[clientId] = Date.now();
-                        }
-                    }
+                    // let app track this error
+                    this._emit(rtcManagerEvents.PC_SLD_FAILURE, e);
+
+                    throw e;
+                }).then(() => {
+                    this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
+                        receiverId: clientId,
+                        message: this._transformOutgoingSdp(offer),
+                    });
                 });
             })
             .catch((e: any) => {

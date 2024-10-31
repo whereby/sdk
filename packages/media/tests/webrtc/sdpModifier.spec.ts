@@ -391,4 +391,78 @@ describe("sdpModifier", () => {
             );
         });
     });
+
+    describe("cleanSdp", () => {
+        const sdp =
+            "v=0\r\n" +
+            "o=- 166855176514521964 2 IN IP4 127.0.0.1\r\n" +
+            "s=-\r\n" +
+            "t=0 0\r\n" +
+            "a=group:BUNDLE a v1 v2\r\n" +
+            "m=audio 9 UDP/TLS/RTP/SAVPF 111\r\n" +
+            "a=mid:audio\r\n" +
+            "a=msid:stream1 audiotrack\r\n" +
+            "a=ssrc:1001 cname:some\r\n" +
+            "m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93 92 93\r\n" +
+            "a=mid:video\r\n" +
+            "a=msid:stream1 videotrack\r\n" +
+            "a=ssrc:1002 cname:some\r\n" +
+            "a=rtpmap:90 H264/90000\r\n" +
+            "a=rtpmap:91 VP8/90000\r\n" +
+            "a=rtpmap:92 h264/90000\r\n" +
+            "a=rtpmap:93 vp9/90000\r\n" +
+            "a=fmtp:93 minptime=10;useinbandfec=1\r\n" +
+            "a=fmtp:93 minptime=10;useinbandfec=2\r\n" +
+            "a=rtcp-fb:93 goog-remb\r\n" +
+            "a=rtcp-fb:93 santa\r\n" +
+            "a=rtpmap:92 h264/90001\r\n" +
+            "a=rtpmap:93 vp9/90001\r\n" +
+            "a=rtcp-fb:93 goog-remb\r\n" +
+            "a=rtpmap:88 vp9/90000\r\n" +
+            "a=fmtp:88 minptime=10;useinbandfec=1\r\n" +
+            "a=rtcp-fb:88 goog-remb\r\n" +
+            "a=rtpmap:89 vp9/90000\r\n" +
+            "m=video 9 UDP/TLS/RTP/SAVPF 111\r\n" +
+            "a=mid:screen\r\n" +
+            "a=msid:stream2 screentrack\r\n" +
+            "a=ssrc:1003 cname:some\r\n";
+
+        it("removes duplicate payload types in m-line", () => {
+            const modifedSdp = sdpModifier.cleanSdp(sdp);
+            expect(modifedSdp).toContain("m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93\r\n");
+        });
+
+        it("removes duplicate rtpmap", () => {
+            const modifedSdp = sdpModifier.cleanSdp(sdp);
+            expect(modifedSdp).not.toContain("a=rtpmap:92 h264/90001");
+            expect(modifedSdp).not.toContain("a=rtpmap:93 vp9/90001");
+        });
+        
+        it("keeps the first rtpmap of each payload", () => {
+            const modifedSdp = sdpModifier.cleanSdp(sdp);
+            expect(modifedSdp).toContain("a=rtpmap:92 h264/90000");
+            expect(modifedSdp).toContain("a=rtpmap:93 vp9/90000");
+        });
+
+        it("removes duplicate fmtp, keeps first", () => {
+            const modifedSdp = sdpModifier.cleanSdp(sdp);
+            expect(modifedSdp).toContain("a=fmtp:93 minptime=10;useinbandfec=1");
+            expect(modifedSdp).not.toContain("a=fmtp:93 minptime=10;useinbandfec=2");
+        });
+        
+        it("removes duplicate rtcb-fb", () => {
+            const modifedSdp = sdpModifier.cleanSdp(sdp);
+            expect(modifedSdp).toContain("a=rtcp-fb:93 goog-remb");
+            expect(modifedSdp).toContain("a=rtcp-fb:93 santa");
+            expect(modifedSdp?.match(/a=rtcp-fb:93 goog-remb/gi)?.length).toEqual(1);
+        });
+
+        it("removes rtpmap, fmtp and rtcb-fb of payloads not listed in m-line", () => {
+            const modifedSdp = sdpModifier.cleanSdp(sdp);
+            expect(modifedSdp).not.toContain("a=rtpmap:88 vp9/90000");
+            expect(modifedSdp).not.toContain("a=fmtp:88 minptime=10;useinbandfec=1");
+            expect(modifedSdp).not.toContain("a=rtcp-fb:88 goog-remb");
+            expect(modifedSdp).not.toContain("a=rtpmap:89 vp9/90000");
+        });
+    });
 });

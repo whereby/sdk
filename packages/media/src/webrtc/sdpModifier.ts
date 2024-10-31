@@ -51,6 +51,27 @@ export function setCodecPreferenceSDP(sdp: any, vp9On: any, redOn: any) {
         logger.error("setCodecPreferenceSDP error:", error);
     }
 }
+
+// Cleans sdp from duplicate payloads and payload specs for non existent payloads
+export function cleanSdp(sdp: string) {
+    try {
+        const sdpObject = sdpTransform.parse(sdp);
+        sdpObject.media.forEach(mediaObject => {
+            const usedPayloads = {} as Record<string, boolean>;
+            if (mediaObject.payloads) mediaObject.payloads = ("" + mediaObject.payloads).split(' ').filter(p => !usedPayloads[p] && (usedPayloads[p] = true)).join(' ');
+            const usedRtps = {} as Record<string, boolean>;
+            mediaObject.rtp = mediaObject.rtp.filter(p => !p.payload || (usedPayloads[p.payload] && !usedRtps[p.payload] && (usedRtps[p.payload] = true)));
+            const usedFmtps = {} as Record<string, boolean>;
+            if (mediaObject.fmtp) mediaObject.fmtp = mediaObject.fmtp.filter(p => !p.payload || (usedPayloads[p.payload] && !usedFmtps[p.payload] && (usedFmtps[p.payload] = true)));
+            const usedRtcpFb = {} as Record<string, boolean>;
+            if (mediaObject.rtcpFb) mediaObject.rtcpFb = mediaObject.rtcpFb.filter(p => !p.payload || (usedPayloads[p.payload] && !usedRtcpFb[p.payload+p.type] && (usedRtcpFb[p.payload+p.type] = true)));
+        })
+        return sdpTransform.write(sdpObject);
+
+    } catch (_) {}
+    return sdp;
+}
+
 // Safari does not like VP8-only offers
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=4957
 // This sets the m-line as rejected.

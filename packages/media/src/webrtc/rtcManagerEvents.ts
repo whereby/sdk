@@ -14,4 +14,7 @@ export default {
     SFU_CONNECTION_CLOSED: "sfu_connection_closed",
     COLOCATION_SPEAKER: "colocation_speaker",
     DOMINANT_SPEAKER: "dominant_speaker",
+    PC_SLD_FAILURE: "pc_sld_failure",
+    PC_ON_ANSWER_FAILURE: "pc_on_answer_failure",
+    PC_ON_OFFER_FAILURE: "pc_on_offer_failure",
 };
