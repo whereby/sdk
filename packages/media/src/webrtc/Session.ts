@@ -38,7 +38,6 @@ export default class Session {
     shouldAddLocalVideo: any;
     signalingState: any;
     srdComplete: any;
-    pendingOffer: any;
 
     constructor({
         peerConnectionId,
@@ -218,15 +217,7 @@ export default class Session {
     }
 
     handleAnswer(message: any) {
-        // workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1394602
-        if (this.pendingOffer) {
-            const pendingOffer = this.pendingOffer;
-            delete this.pendingOffer;
-            return this.pc.setLocalDescription(pendingOffer).then(() => this.handleAnswer(message));
-        }
-        let sdp = message.sdp;
-
-        sdp = sdpModifier.filterMsidSemantic(sdp);
+        const sdp = sdpModifier.filterMsidSemantic(message.sdp);
 
         const desc = { type: message.type, sdp };
         return this._setRemoteDescription(desc).then(
