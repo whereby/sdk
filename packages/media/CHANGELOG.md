@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.16.0
+
+### Minor Changes
+
+- 0fa77c4: media: Workround for some sdp errors
+
 ## 1.15.0
 
 ### Minor Changes
