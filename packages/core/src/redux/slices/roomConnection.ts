@@ -153,6 +153,12 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
+    const connectionStatus = selectRoomConnectionStatus(state);
+
+    if (connectionStatus !== "room_locked") {
+        console.warn("Room is not locked, knock aborted");
+        return;
+    }
 
     socket?.emit("knock_room", {
         avatarUrl: null,
