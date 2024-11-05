@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.28.2
+
+### Patch Changes
+
+- 30f1c57: Do not allow knocking if room is not locked
+
 ## 0.28.1
 
 ### Patch Changes
