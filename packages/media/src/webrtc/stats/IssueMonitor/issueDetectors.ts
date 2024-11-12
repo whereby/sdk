@@ -30,11 +30,7 @@ export const periodicPacketLossDetector: IssueDetector = {
         return client.isLocalClient && hasLiveTrack && ssrc0.direction === "out" && ssrc0.bitrate;
     },
     check: ({ ssrc0 }) => {
-        // Simulate periodic packet loss for PR review.
-        const seconds = new Date().getSeconds();
-        const packetLoss = seconds < 10 || (seconds > 30 && seconds < 40) ? 0.06 : ssrc0.fractionLost || 0;
-
-        packetLossAnalyser.addPacketLossMeasurement(ssrc0.ssrc, packetLoss /* ssrc0.fractionLost || 0 */, Date.now());
+        packetLossAnalyser.addPacketLossMeasurement(ssrc0.ssrc, ssrc0.fractionLost || 0, Date.now());
         if (packetLossAnalyser.hasPeriodicPacketLoss(ssrc0.ssrc)) return true;
         return false;
     },
