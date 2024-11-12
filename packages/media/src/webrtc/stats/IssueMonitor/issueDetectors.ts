@@ -1,4 +1,5 @@
 import { StatsClient } from "../types";
+import { PacketLossAnalyser } from "./packetLossAnalyser";
 
 interface IssueDetector {
     id: string;
@@ -20,6 +21,20 @@ export interface IssueCheckData {
     issues: any;
     metrics: any;
 }
+
+const packetLossAnalyser = new PacketLossAnalyser();
+
+export const periodicPacketLossDetector: IssueDetector = {
+    id: "periodic-packet-loss",
+    enabled: ({ client, hasLiveTrack, ssrc0 }) => {
+        return client.isLocalClient && hasLiveTrack && ssrc0.direction === "out" && ssrc0.bitrate;
+    },
+    check: ({ ssrc0 }) => {
+        packetLossAnalyser.addPacketLossMeasurement(ssrc0.ssrc, ssrc0.fractionLost || 0, Date.now());
+        if (packetLossAnalyser.hasPeriodicPacketLoss(ssrc0.ssrc)) return true;
+        return false;
+    },
+};
 
 export const badNetworkIssueDetector: IssueDetector = {
     id: "bad-network",
@@ -222,6 +237,7 @@ export const issueDetectors: IssueDetector[] = [
         check: ({ ssrc0 }) => ssrc0.fps < 10,
     },
     badNetworkIssueDetector,
+    periodicPacketLossDetector,
     {
         id: "cpu-pressure-serious",
         global: true,

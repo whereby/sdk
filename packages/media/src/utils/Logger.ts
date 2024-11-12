@@ -1,8 +1,12 @@
 const debugOn = process.env.NODE_ENV === "development" || new URLSearchParams(window.location.search).has("debug");
 
+export interface Debugger {
+    print: (...args: any[]) => void;
+}
+
 class Logger {
     _isEnabled = false;
-    _debugger: any = null;
+    _debugger?: Debugger;
 
     constructor() {
         this._isEnabled = debugOn;
@@ -42,7 +46,7 @@ class Logger {
         return console.error(...params);
     }
 
-    withDebugLogger(myDebugger = null) {
+    withDebugLogger(myDebugger: Debugger) {
         this._debugger = myDebugger;
         return this;
     }
