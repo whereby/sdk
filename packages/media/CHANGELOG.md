@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.16.1
+
+### Patch Changes
+
+- b9aff12: Add periodic packet loss detection
+
 ## 1.16.0
 
 ### Minor Changes
