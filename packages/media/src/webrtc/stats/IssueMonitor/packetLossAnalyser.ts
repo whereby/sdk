@@ -25,7 +25,7 @@ export class PacketLossAnalyser {
     private PACKET_LOSS_PERIOD_THRESHOLD = 0.03;
     private INTERVAL_DIFF_THRESHOLD_MS = 5000;
     private STALE_MEASUREMENT_TIMEOUT_MS = 10000;
-    ssrcsHistory = new Map<string, PacketLossHistory>();
+    private ssrcsHistory = new Map<string, PacketLossHistory>();
     private staleMeasurementTimeouts = new Map<string, NodeJS.Timeout>();
 
     addPacketLossMeasurement(id: string, packetLoss: number, timestamp: number) {
