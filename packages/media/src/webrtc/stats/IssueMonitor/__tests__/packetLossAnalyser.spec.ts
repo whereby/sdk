@@ -1,20 +1,20 @@
 import { PacketLossAnalyser } from "../packetLossAnalyser";
 
 /**
- * Add periodic packet loss at 30s intervals.
+ * Add periodic packet loss.
  */
-const addPeriodicPacketLoss = (pla: PacketLossAnalyser, ssrcId: string) => {
+const addPeriodicPacketLoss = (pla: PacketLossAnalyser, ssrcId: string, interval: number) => {
     let timestamp = Date.now();
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
     pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 4000);
 
-    timestamp += 30000; // Next packet loss period 30s after previous.
+    timestamp += interval * 1000;
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
     pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 4000);
 
-    timestamp += 30000; // Next packet loss period 30s after previous.
+    timestamp += interval * 1000;
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
     pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 4000);
@@ -35,18 +35,8 @@ describe("PacketLossAnalyser", () => {
     });
 
     it("reports periodic packet loss for 3 periods with equal interval", () => {
-        let timestamp = Date.now();
-        pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
-        pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 2000);
-
-        timestamp += 60000; // Next packet loss period 60s after previous.
-        pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
-        pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 2000);
-
-        timestamp += 60000; // Next packet loss period 60s after previous.
-        pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
-        pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 2000);
-        expect(pla.hasPeriodicPacketLoss(ssrcId, timestamp + 2000)).toBe(true);
+        const lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId, 60);
+        expect(pla.hasPeriodicPacketLoss(ssrcId, lastPeriodTimestamp)).toBe(true);
     });
 
     it("reports periodic packet loss for 3 periods with some variation in interval", () => {
@@ -55,19 +45,19 @@ describe("PacketLossAnalyser", () => {
         pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
         pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 4000);
 
-        timestamp += 30000; // Next packet loss period 30s after previous.
+        timestamp += 60000; // Next packet loss period 60s after previous.
         pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
         pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
         pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 4000);
 
-        timestamp += 32000; // Next packet loss period 32s after previous.
+        timestamp += 61000; // Next packet loss period 61s after previous.
         pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
         pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
         pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 4000);
 
         expect(pla.hasPeriodicPacketLoss(ssrcId, timestamp + 4000)).toBe(true);
 
-        timestamp += 28000; // Next packet loss period 28s after previous.
+        timestamp += 59000; // Next packet loss period 59s after previous.
         pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
         pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
         pla.addPacketLossMeasurement(ssrcId, 0, timestamp + 4000);
@@ -75,11 +65,11 @@ describe("PacketLossAnalyser", () => {
         expect(pla.hasPeriodicPacketLoss(ssrcId, timestamp + 4000)).toBe(true);
     });
 
-    it("reports no periodic packet loss on interval change from 30s to 15s", () => {
-        let lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId);
+    it("reports no periodic packet loss on interval change from 60s to 40s", () => {
+        let lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId, 60);
         expect(pla.hasPeriodicPacketLoss(ssrcId, lastPeriodTimestamp)).toBe(true);
 
-        lastPeriodTimestamp += 15000; // Begin new packet loss period 15s after previous period.
+        lastPeriodTimestamp += 40000; // Begin new packet loss period 40s after previous period.
         pla.addPacketLossMeasurement(ssrcId, 0.05, lastPeriodTimestamp);
         pla.addPacketLossMeasurement(ssrcId, 0, lastPeriodTimestamp + 2000);
 
@@ -88,7 +78,7 @@ describe("PacketLossAnalyser", () => {
 
     it("reports no periodic packet loss after a while when there are no new measurements", () => {
         jest.useFakeTimers();
-        const lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId);
+        const lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId, 60);
         expect(pla.hasPeriodicPacketLoss(ssrcId, lastPeriodTimestamp)).toBe(true);
 
         jest.runAllTimers();
@@ -98,11 +88,16 @@ describe("PacketLossAnalyser", () => {
     });
 
     it("reports no periodic packet loss when previous interval is exceeded", () => {
-        let lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId); // 30s interval
+        let lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId, 60);
         expect(pla.hasPeriodicPacketLoss(ssrcId, lastPeriodTimestamp)).toBe(true);
 
-        lastPeriodTimestamp += 40000; // Past the 30s interval + our accepted diff.
+        lastPeriodTimestamp += 70000; // Past the 60s interval + our accepted diff.
 
+        expect(pla.hasPeriodicPacketLoss(ssrcId, lastPeriodTimestamp)).toBe(false);
+    });
+
+    it("reports no periodic packet loss for intervals shorter than 30s", () => {
+        const lastPeriodTimestamp = addPeriodicPacketLoss(pla, ssrcId, 29);
         expect(pla.hasPeriodicPacketLoss(ssrcId, lastPeriodTimestamp)).toBe(false);
     });
 });
