@@ -17,7 +17,7 @@ type PacketLossHistory = {
 const logger = new Logger();
 const debugLogger = {
     // eslint-disable-next-line no-console
-    print: (...args: any[]) => console.log(args[0], ...args.slice(1)),
+    print: (...args: any[]) => console.debug(args[0], ...args.slice(1)),
 };
 logger.withDebugLogger(debugLogger);
 
@@ -29,7 +29,6 @@ export class PacketLossAnalyser {
     private staleMeasurementTimeouts = new Map<string, NodeJS.Timeout>();
 
     addPacketLossMeasurement(id: string, packetLoss: number, timestamp: number) {
-        logger.debug("addPacketLossMeasurement() [ssrcId: %s, loss: %s, timestamp: %s]", id, packetLoss, timestamp);
         this.handleStaleMeasurements(id);
         const hasPacketLoss = packetLoss > this.PACKET_LOSS_PERIOD_THRESHOLD;
 
@@ -63,8 +62,24 @@ export class PacketLossAnalyser {
         }
     }
 
-    hasPeriodicPacketLoss(id: string) {
-        return this.ssrcsHistory.get(id)?.hasPeriodicPacketLoss || false;
+    hasPeriodicPacketLoss(id: string, timestamp: number) {
+        const history = this.ssrcsHistory.get(id);
+
+        // Reset state for ssrc if interval is exceeded.
+        if (history && this.intervalExceeded(history, timestamp)) {
+            this.ssrcsHistory.delete(history.id);
+            return false;
+        }
+        return history?.hasPeriodicPacketLoss || false;
+    }
+
+    private intervalExceeded(history: PacketLossHistory, timestamp: number) {
+        if (history.prevPeriod && history.prevIntervalInMs) {
+            const intervalLimitTimestamp =
+                this.calculatePeriodCenterTimestamp(history.prevPeriod) + history.prevIntervalInMs;
+            return timestamp > intervalLimitTimestamp;
+        }
+        return false;
     }
 
     private handleStaleMeasurements(id: string) {

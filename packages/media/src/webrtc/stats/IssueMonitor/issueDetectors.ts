@@ -31,8 +31,7 @@ export const periodicPacketLossDetector: IssueDetector = {
     },
     check: ({ ssrc0 }) => {
         packetLossAnalyser.addPacketLossMeasurement(ssrc0.ssrc, ssrc0.fractionLost || 0, Date.now());
-        if (packetLossAnalyser.hasPeriodicPacketLoss(ssrc0.ssrc)) return true;
-        return false;
+        return packetLossAnalyser.hasPeriodicPacketLoss(ssrc0.ssrc, Date.now());
     },
 };
 
