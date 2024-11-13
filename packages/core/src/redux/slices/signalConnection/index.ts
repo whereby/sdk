@@ -7,6 +7,7 @@ import { selectDeviceCredentialsRaw } from "../deviceCredentials";
 import {
     AudioEnableRequestedEvent,
     AudioEnabledEvent,
+    BreakoutGroupJoinedEvent,
     ChatMessage,
     ClientKickedEvent,
     ClientLeftEvent,
@@ -87,6 +88,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     );
     socket.on("video_enable_requested", (payload: VideoEnableRequestedEvent) =>
         dispatch(signalEvents.videoEnableRequested(payload)),
+    );
+    socket.on("breakout_group_joined", (payload: BreakoutGroupJoinedEvent) =>
+        dispatch(signalEvents.breakoutGroupJoined(payload)),
     );
 }
 

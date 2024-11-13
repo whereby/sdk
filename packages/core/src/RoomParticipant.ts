@@ -11,6 +11,7 @@ interface RoomParticipantData {
     stream?: MediaStream;
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
+    breakoutGroup: string | null;
     stickyReaction?: StickyReaction | null;
     isDialIn: boolean;
 }
@@ -22,6 +23,7 @@ export default class RoomParticipant {
     public readonly isAudioEnabled: boolean;
     public readonly isLocalParticipant: boolean = false;
     public readonly isVideoEnabled: boolean;
+    public readonly breakoutGroup;
     public readonly stickyReaction?: StickyReaction | null;
     public readonly isDialIn: boolean;
 
@@ -31,6 +33,7 @@ export default class RoomParticipant {
         stream,
         isAudioEnabled,
         isVideoEnabled,
+        breakoutGroup,
         stickyReaction,
         isDialIn,
     }: RoomParticipantData) {
@@ -39,6 +42,7 @@ export default class RoomParticipant {
         this.stream = stream;
         this.isAudioEnabled = isAudioEnabled;
         this.isVideoEnabled = isVideoEnabled;
+        this.breakoutGroup = breakoutGroup;
         this.stickyReaction = stickyReaction;
         this.isDialIn = isDialIn;
     }
@@ -70,6 +74,7 @@ export interface RemoteParticipant {
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
     isLocalParticipant: boolean;
+    breakoutGroup: string | null;
     stream: (MediaStream & { inboundId?: string }) | null;
     streams: Stream[];
     newJoiner: boolean;
@@ -88,10 +93,11 @@ export class LocalParticipant extends RoomParticipant {
         stream,
         isAudioEnabled,
         isVideoEnabled,
+        breakoutGroup,
         stickyReaction,
         isDialIn,
     }: RoomParticipantData) {
-        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled, stickyReaction, isDialIn });
+        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled, breakoutGroup, stickyReaction, isDialIn });
     }
 }
 

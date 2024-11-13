@@ -34,6 +34,7 @@ describe("authorizationSlice", () => {
                 undefined,
                 signalEvents.roomJoined({
                     selfId: "selfId",
+                    breakoutGroup: null,
                     clientClaim: "clientClaim",
                     isLocked: false,
                     room: {
@@ -44,6 +45,7 @@ describe("authorizationSlice", () => {
                                 streams: [],
                                 isAudioEnabled: true,
                                 isVideoEnabled: true,
+                                breakoutGroup: null,
                                 role: {
                                     roleName: "host",
                                 },

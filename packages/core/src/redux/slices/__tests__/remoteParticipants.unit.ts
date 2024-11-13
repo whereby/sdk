@@ -1,8 +1,9 @@
-import { remoteParticipantsSlice } from "../remoteParticipants";
+import { remoteParticipantsSlice, createRemoteParticipant } from "../remoteParticipants";
 import { signalEvents } from "../signalConnection/actions";
 import { rtcEvents } from "../rtcConnection/actions";
 import {
     randomSignalClient,
+    randomLocalParticipant,
     randomRemoteParticipant,
     randomString,
     randomMediaStream,
@@ -12,28 +13,22 @@ describe("remoteParticipantsSlice", () => {
     describe("reducers", () => {
         describe("signalEvents.roomJoined", () => {
             it("should update state", () => {
+                const localClient = randomSignalClient();
+                const localParticipant = randomLocalParticipant({
+                    id: localClient.id,
+                });
+
+                const remoteClient = randomSignalClient({ breakoutGroup: "b" });
+                const remoteParticipant = createRemoteParticipant(remoteClient);
+
                 const result = remoteParticipantsSlice.reducer(
                     undefined,
                     signalEvents.roomJoined({
+                        ...localParticipant,
                         isLocked: false,
-                        selfId: "selfId",
-                        clientClaim: "clientClaim",
+                        selfId: localClient.id,
                         room: {
-                            clients: [
-                                {
-                                    displayName: "displayName",
-                                    id: "id",
-                                    streams: [],
-                                    isAudioEnabled: true,
-                                    isVideoEnabled: true,
-                                    role: {
-                                        roleName: "visitor",
-                                    },
-                                    startedCloudRecordingAt: null,
-                                    externalId: null,
-                                    isDialIn: false,
-                                },
-                            ],
+                            clients: [localClient, remoteClient],
                             knockers: [],
                             spotlights: [],
                             session: null,
@@ -41,28 +36,12 @@ describe("remoteParticipantsSlice", () => {
                     }),
                 );
 
-                expect(result.remoteParticipants).toEqual([
-                    {
-                        displayName: "displayName",
-                        id: "id",
-                        streams: [],
-                        isAudioEnabled: true,
-                        isVideoEnabled: true,
-                        isLocalParticipant: false,
-                        stream: null,
-                        newJoiner: false,
-                        roleName: "visitor",
-                        startedCloudRecordingAt: null,
-                        presentationStream: null,
-                        externalId: null,
-                        isDialIn: false,
-                    },
-                ]);
+                expect(result.remoteParticipants).toEqual([remoteParticipant]);
             });
         });
 
         it("signalEvents.newClient", () => {
-            const client = randomSignalClient();
+            const client = randomSignalClient({ breakoutGroup: "a" });
 
             const result = remoteParticipantsSlice.reducer(
                 undefined,
@@ -71,23 +50,7 @@ describe("remoteParticipantsSlice", () => {
                 }),
             );
 
-            expect(result.remoteParticipants).toEqual([
-                {
-                    id: client.id,
-                    displayName: client.displayName,
-                    isAudioEnabled: client.isAudioEnabled,
-                    isVideoEnabled: client.isVideoEnabled,
-                    isLocalParticipant: false,
-                    stream: null,
-                    streams: [],
-                    newJoiner: true,
-                    roleName: client.role.roleName,
-                    startedCloudRecordingAt: client.startedCloudRecordingAt,
-                    presentationStream: null,
-                    externalId: null,
-                    isDialIn: false,
-                },
-            ]);
+            expect(result.remoteParticipants).toEqual([createRemoteParticipant(client, true)]);
         });
 
         it("signalEvents.clientLeft", () => {
@@ -201,6 +164,31 @@ describe("remoteParticipantsSlice", () => {
                     {
                         ...participant,
                         isVideoEnabled,
+                    },
+                ]);
+            });
+        });
+
+        describe("signalEvents.breakoutGroupJoined", () => {
+            it("should update the participant", () => {
+                const breakoutGroupId = "test_breakout_group";
+                const participant = randomRemoteParticipant();
+                const state = {
+                    remoteParticipants: [participant],
+                };
+
+                const result = remoteParticipantsSlice.reducer(
+                    state,
+                    signalEvents.breakoutGroupJoined({
+                        clientId: participant.id,
+                        group: breakoutGroupId,
+                    }),
+                );
+
+                expect(result.remoteParticipants).toEqual([
+                    {
+                        ...participant,
+                        breakoutGroup: breakoutGroupId,
                     },
                 ]);
             });

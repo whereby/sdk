@@ -2,6 +2,7 @@ import { createAction } from "@reduxjs/toolkit";
 
 import {
     AudioEnabledEvent,
+    BreakoutGroupJoinedEvent,
     ChatMessage,
     ClientLeftEvent,
     ClientKickedEvent,
@@ -34,6 +35,7 @@ function createSignalEventAction<T>(name: string) {
 export const signalEvents = {
     audioEnabled: createSignalEventAction<AudioEnabledEvent>("audioEnabled"),
     audioEnableRequested: createSignalEventAction<AudioEnableRequestedEvent>("audioEnableRequested"),
+    breakoutGroupJoined: createSignalEventAction<BreakoutGroupJoinedEvent>("breakoutGroupJoined"),
     chatMessage: createSignalEventAction<ChatMessage>("chatMessage"),
     clientLeft: createSignalEventAction<ClientLeftEvent>("clientLeft"),
     clientKicked: createSignalEventAction<ClientKickedEvent>("clientKicked"),

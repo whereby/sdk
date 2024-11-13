@@ -19,8 +19,8 @@ import { selectLocalParticipantRaw } from "./localParticipant";
  * State mapping utils
  */
 
-function createRemoteParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
-    const { streams, role, ...rest } = client;
+export function createRemoteParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
+    const { streams, role, breakoutGroup, ...rest } = client;
 
     return {
         ...rest,
@@ -29,6 +29,7 @@ function createRemoteParticipant(client: SignalClient, newJoiner = false): Remot
         isLocalParticipant: false,
         roleName: role?.roleName || "none",
         presentationStream: null,
+        breakoutGroup: breakoutGroup || null,
         newJoiner,
     };
 }
@@ -258,6 +259,13 @@ export const remoteParticipantsSlice = createSlice({
             return updateParticipant(state, clientId, {
                 displayName,
                 stickyReaction,
+            });
+        });
+        builder.addCase(signalEvents.breakoutGroupJoined, (state, action) => {
+            const { clientId, group } = action.payload;
+
+            return updateParticipant(state, clientId, {
+                breakoutGroup: group || null,
             });
         });
         builder.addCase(signalEvents.screenshareStarted, (state, action) => {

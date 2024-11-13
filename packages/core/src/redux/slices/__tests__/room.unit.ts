@@ -9,6 +9,7 @@ describe("roomSlice", () => {
                 undefined,
                 signalEvents.roomJoined({
                     selfId: "selfId",
+                    breakoutGroup: "",
                     clientClaim: "clientClaim",
                     isLocked: true,
                 }),

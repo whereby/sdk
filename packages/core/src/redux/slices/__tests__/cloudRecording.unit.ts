@@ -35,6 +35,7 @@ describe("cloudRecordingSlice", () => {
                         streams: [],
                         isAudioEnabled: true,
                         isVideoEnabled: false,
+                        breakoutGroup: null,
                         id: "id",
                         role: {
                             roleName: "recorder",

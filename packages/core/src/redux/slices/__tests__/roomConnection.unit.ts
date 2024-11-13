@@ -11,6 +11,7 @@ describe("roomConnectionSlice", () => {
                     signalEvents.roomJoined({
                         error: "room_locked",
                         selfId: "selfId",
+                        breakoutGroup: "",
                         clientClaim: "clientClaim",
                         isLocked: true,
                     }),
@@ -28,6 +29,7 @@ describe("roomConnectionSlice", () => {
                     undefined,
                     signalEvents.roomJoined({
                         selfId: "selfId",
+                        breakoutGroup: "",
                         clientClaim: "clientClaim",
                         isLocked: false,
                     }),
@@ -46,6 +48,7 @@ describe("roomConnectionSlice", () => {
                     signalEvents.roomJoined({
                         error: "room_full",
                         selfId: "selfId",
+                        breakoutGroup: "",
                         isLocked: false,
                     }),
                 );
