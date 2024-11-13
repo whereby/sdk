@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.16.2
+
+### Patch Changes
+
+- b5ec7b9: Extend PacketLossAnalyser to support additional scenario
+
 ## 1.16.1
 
 ### Patch Changes
