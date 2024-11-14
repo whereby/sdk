@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.16.3
+
+### Patch Changes
+
+- eaf5096: Improve periodic packet loss detection
+
 ## 1.16.2
 
 ### Patch Changes
