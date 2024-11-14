@@ -22,23 +22,25 @@ const debugLogger = {
 logger.withDebugLogger(debugLogger);
 
 export class PacketLossAnalyser {
-    private PACKET_LOSS_PERIOD_THRESHOLD = 0.03;
-    private INTERVAL_DIFF_THRESHOLD_MS = 5000;
+    private BEGIN_PACKET_LOSS_PERIOD_THRESHOLD = 0.04;
+    private END_PACKET_LOSS_PERIOD_THRESHOLD = 0.005;
+    private INTERVAL_DIFF_THRESHOLD_MS = 4000;
     private STALE_MEASUREMENT_TIMEOUT_MS = 10000;
+    private MINIMUM_INTERVAL_MS = 30000;
     private ssrcsHistory = new Map<string, PacketLossHistory>();
     private staleMeasurementTimeouts = new Map<string, NodeJS.Timeout>();
 
     addPacketLossMeasurement(id: string, packetLoss: number, timestamp: number) {
         this.handleStaleMeasurements(id);
-        const hasPacketLoss = packetLoss > this.PACKET_LOSS_PERIOD_THRESHOLD;
+        const beginNewPacketLossPeriod = packetLoss > this.BEGIN_PACKET_LOSS_PERIOD_THRESHOLD;
 
         let history = this.ssrcsHistory.get(id);
         if (!history) {
             // This is the first time we see this ssrc.
             history = {
                 id,
-                hasActivePacketLoss: hasPacketLoss,
-                currPeriod: hasPacketLoss ? { begin: timestamp } : undefined,
+                hasActivePacketLoss: beginNewPacketLossPeriod,
+                currPeriod: beginNewPacketLossPeriod ? { begin: timestamp } : undefined,
                 hasPeriodicPacketLoss: false,
             };
             this.ssrcsHistory.set(id, history);
@@ -46,14 +48,17 @@ export class PacketLossAnalyser {
         }
 
         if (history.hasActivePacketLoss) {
-            if (!hasPacketLoss) {
-                // Record the end of active ssrc packet loss period.
+            if (packetLoss < this.END_PACKET_LOSS_PERIOD_THRESHOLD) {
                 this.endPacketLossPeriod(history, timestamp);
+                if (history.prevIntervalInMs && history.prevIntervalInMs < this.MINIMUM_INTERVAL_MS) {
+                    // Too short interval, delete measurements for ssrc and start over.
+                    this.ssrcsHistory.delete(id);
+                }
             }
             return;
         }
 
-        if (hasPacketLoss) {
+        if (beginNewPacketLossPeriod) {
             // Record the beginning of a new ssrc packet loss period.
             history.hasActivePacketLoss = true;
             history.currPeriod = {
@@ -65,18 +70,20 @@ export class PacketLossAnalyser {
     hasPeriodicPacketLoss(id: string, timestamp: number) {
         const history = this.ssrcsHistory.get(id);
 
-        // Reset state for ssrc if interval is exceeded.
-        if (history && this.intervalExceeded(history, timestamp)) {
+        // Reset state for ssrc if previous interval was exceeded.
+        if (history && this.prevIntervalExceeded(history, timestamp)) {
             this.ssrcsHistory.delete(history.id);
             return false;
         }
         return history?.hasPeriodicPacketLoss || false;
     }
 
-    private intervalExceeded(history: PacketLossHistory, timestamp: number) {
+    private prevIntervalExceeded(history: PacketLossHistory, timestamp: number) {
         if (history.prevPeriod && history.prevIntervalInMs) {
             const intervalLimitTimestamp =
-                this.calculatePeriodCenterTimestamp(history.prevPeriod) + history.prevIntervalInMs;
+                this.calculatePeriodCenterTimestamp(history.prevPeriod) +
+                history.prevIntervalInMs +
+                this.INTERVAL_DIFF_THRESHOLD_MS;
             return timestamp > intervalLimitTimestamp;
         }
         return false;
@@ -90,7 +97,7 @@ export class PacketLossAnalyser {
         this.staleMeasurementTimeouts.set(
             id,
             setTimeout(() => {
-                logger.debug("Invalidating measurements for ssrc: %s", id);
+                logger.debug("handleStaleMeasurements() [measurements invalid for ssrc: %s]", id);
                 this.ssrcsHistory.delete(id);
             }, this.STALE_MEASUREMENT_TIMEOUT_MS),
         );
