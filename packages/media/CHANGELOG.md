@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.0
+
+### Minor Changes
+
+- 76616f0: media: Option for adding google and cloudflare stun servers
+
 ## 1.16.3
 
 ### Patch Changes

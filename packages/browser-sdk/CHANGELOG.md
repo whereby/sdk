@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.9.9
+
+### Patch Changes
+
+- @whereby.com/core@0.28.6
+
 ## 3.9.8
 
 ### Patch Changes
