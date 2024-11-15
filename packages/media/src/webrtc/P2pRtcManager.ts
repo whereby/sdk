@@ -154,7 +154,7 @@ export default class P2pRtcManager implements RtcManager {
         stream: MediaStream,
         audioPaused: boolean,
         videoPaused: boolean,
-        beforeEffectTracks: CustomMediaStreamTrack[] = []
+        beforeEffectTracks: CustomMediaStreamTrack[] = [],
     ) {
         if (stream === this.localStreams[streamId]) {
             // this can happen after reconnect. We do not want to add the stream to the
@@ -304,15 +304,17 @@ export default class P2pRtcManager implements RtcManager {
                     return;
                 }
                 const offer = this._transformIncomingSdp(data.message, session.pc);
-                session.handleOffer(offer).then((answer: any) => {
-                    this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
-                        receiverId: data.clientId,
-                        message: this._transformOutgoingSdp(answer),
+                session
+                    .handleOffer(offer)
+                    .then((answer: any) => {
+                        this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
+                            receiverId: data.clientId,
+                            message: this._transformOutgoingSdp(answer),
+                        });
+                    })
+                    .catch?.((e: any) => {
+                        this._emit(rtcManagerEvents.PC_ON_OFFER_FAILURE, e);
                     });
-                }).catch?.((e: any) => {
-                    this._emit(rtcManagerEvents.PC_ON_OFFER_FAILURE, e);
-                });
-
             }),
 
             // when a new SDP answer is received from another client
@@ -381,7 +383,7 @@ export default class P2pRtcManager implements RtcManager {
         this._forEachPeerConnection((session: any) => {
             if (session.hasConnectedPeerConnection()) {
                 this._withForcedRenegotiation(session, () =>
-                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds)
+                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds),
                 );
             }
         });
@@ -573,6 +575,21 @@ export default class P2pRtcManager implements RtcManager {
             });
         }
 
+        if (this._features.addGoogleStunServers) {
+            peerConnectionConfig.iceServers = [
+                ...peerConnectionConfig.iceServers,
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun2.l.google.com:19302" },
+            ];
+        }
+        if (this._features.addCloudflareStunServers) {
+            peerConnectionConfig.iceServers = [
+                ...peerConnectionConfig.iceServers,
+                { urls: "stun:stun.cloudflare.com:3478" },
+                { urls: "stun:stun.cloudflare.com:53" },
+            ];
+        }
+
         if (this._features.useOnlyTURN) {
             peerConnectionConfig.iceTransportPolicy = "relay";
             const filter = (
@@ -584,7 +601,7 @@ export default class P2pRtcManager implements RtcManager {
             )[this._features.useOnlyTURN];
             if (filter) {
                 peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.filter(
-                    (entry: any) => entry.url && entry.url.match(filter)
+                    (entry: any) => entry.url && entry.url.match(filter),
                 );
             }
         }
@@ -804,7 +821,7 @@ export default class P2pRtcManager implements RtcManager {
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
                 if (!pendingActions) {
                     logger.warn(
-                        `No pending action is created to repalce track, because the pending actions array is null`
+                        `No pending action is created to repalce track, because the pending actions array is null`,
                     );
                     return;
                 }
@@ -866,7 +883,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         this._fetchMediaServersTimer = setTimeout(
             () => this._emitServerEvent(PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG),
-            mediaserverConfigTtlSeconds * 1000
+            mediaserverConfigTtlSeconds * 1000,
         );
     }
 
@@ -935,7 +952,7 @@ export default class P2pRtcManager implements RtcManager {
             this._negotiatePeerConnection(
                 clientId,
                 session,
-                Object.assign({}, this.offerOptions, { iceRestart: true })
+                Object.assign({}, this.offerOptions, { iceRestart: true }),
             );
         }
     }
@@ -1027,19 +1044,21 @@ export default class P2pRtcManager implements RtcManager {
                 // , might be a better fix for firefox, but does not apply to chrome)
                 if (cleanSdpOn) offer.sdp = cleanSdp(offer.sdp);
 
-                pc.setLocalDescription(offer).catch((e: any) => {
-                    logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
+                pc.setLocalDescription(offer)
+                    .catch((e: any) => {
+                        logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
 
-                    // let app track this error
-                    this._emit(rtcManagerEvents.PC_SLD_FAILURE, e);
+                        // let app track this error
+                        this._emit(rtcManagerEvents.PC_SLD_FAILURE, e);
 
-                    throw e;
-                }).then(() => {
-                    this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
-                        receiverId: clientId,
-                        message: this._transformOutgoingSdp(offer),
+                        throw e;
+                    })
+                    .then(() => {
+                        this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
+                            receiverId: clientId,
+                            message: this._transformOutgoingSdp(offer),
+                        });
                     });
-                });
             })
             .catch((e: any) => {
                 logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
