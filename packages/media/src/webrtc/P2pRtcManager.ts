@@ -1185,7 +1185,8 @@ export default class P2pRtcManager implements RtcManager {
                             !session.relayCandidateSeen &&
                             !session.serverReflexiveCandidateSeen
                         ) {
-                            this._emit(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED_3SEC);
+                            if (pc.iceConnectionState !== "connected" || pc.iceConnectionState !== "completed")
+                                this._emit(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED_3SEC);
                         }
                     }, ICE_PUBLIC_IP_GATHERING_TIMEOUT);
                     break;
@@ -1253,7 +1254,9 @@ export default class P2pRtcManager implements RtcManager {
                 if (
                     !session.publicHostCandidateSeen &&
                     !session.relayCandidateSeen &&
-                    !session.serverReflexiveCandidateSeen
+                    !session.serverReflexiveCandidateSeen &&
+                    pc.iceConnectionState !== "connected" &&
+                    pc.iceConnectionState !== "completed"
                 ) {
                     this._emit(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED);
                 }
