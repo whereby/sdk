@@ -1,6 +1,6 @@
 import { roomSlice, selectScreenshares } from "../room";
 import { signalEvents } from "../signalConnection/actions";
-import { randomRemoteParticipant, randomMediaStream } from "../../../__mocks__/appMocks";
+import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
 
 describe("roomSlice", () => {
     describe("reducers", () => {
@@ -35,21 +35,30 @@ describe("roomSlice", () => {
         });
         const client3 = randomRemoteParticipant({
             presentationStream: randomMediaStream(),
+            breakoutGroup: "a",
         });
 
         describe("selectScreenshares", () => {
+            const breakoutGroup = "b";
+            const localParticipant = randomLocalParticipant({
+                roleName: "viewer",
+                breakoutGroup,
+            });
+
             const localScreenshareStream = randomMediaStream();
 
             it.each`
                 localScreenshareStream    | remoteParticipants    | expected
                 ${null}                   | ${[]}                 | ${[]}
-                ${null}                   | ${[client1, client2]} | ${[{ id: `pres-${client2.id}`, hasAudioTrack: false, isLocal: false, participantId: client2.id, stream: client2.presentationStream }]}
-                ${localScreenshareStream} | ${[]}                 | ${[{ id: "local-screenshare", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }]}
-                ${localScreenshareStream} | ${[client3]}          | ${[{ id: "local-screenshare", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }, { id: `pres-${client3.id}`, hasAudioTrack: false, isLocal: false, participantId: client3.id, stream: client3.presentationStream }]}
+                ${null}                   | ${[client1, client2]} | ${[{ id: `pres-${client2.id}`, hasAudioTrack: false, breakoutGroup: null, isLocal: false, participantId: client2.id, stream: client2.presentationStream }]}
+                ${localScreenshareStream} | ${[]}                 | ${[{ id: "local-screenshare", hasAudioTrack: false, breakoutGroup, isLocal: true, participantId: "local", stream: localScreenshareStream }]}
+                ${localScreenshareStream} | ${[client3]}          | ${[{ id: "local-screenshare", hasAudioTrack: false, breakoutGroup, isLocal: true, participantId: "local", stream: localScreenshareStream }, { id: `pres-${client3.id}`, hasAudioTrack: false, breakoutGroup: "a", isLocal: false, participantId: client3.id, stream: client3.presentationStream }]}
             `(
                 "should return $expected when localScreenshareStream=$localScreenshareStream, remoteParticipants=$remoteParticipants",
                 ({ localScreenshareStream, remoteParticipants, expected }) => {
-                    expect(selectScreenshares.resultFunc(localScreenshareStream, remoteParticipants)).toEqual(expected);
+                    expect(
+                        selectScreenshares.resultFunc(localScreenshareStream, localParticipant, remoteParticipants),
+                    ).toEqual(expected);
                 },
             );
         });
