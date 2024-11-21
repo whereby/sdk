@@ -58,7 +58,7 @@ export const VideoGridStory = {
         }
         const [isLocalScreenshareActive, setIsLocalScreenshareActive] = React.useState(false);
 
-        const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+        const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: true, video: true } });
         const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
 
         React.useEffect(() => {
