@@ -115,8 +115,9 @@ export const selectRoomIsLocked = (state: RootState) => state.room.isLocked;
 
 export const selectScreenshares = createSelector(
     selectLocalScreenshareStream,
+    selectLocalParticipantRaw,
     selectRemoteParticipants,
-    (localScreenshareStream, remoteParticipants) => {
+    (localScreenshareStream, localParticipant, remoteParticipants) => {
         const screenshares: Screenshare[] = [];
 
         if (localScreenshareStream) {
@@ -124,6 +125,7 @@ export const selectScreenshares = createSelector(
                 id: localScreenshareStream.id || "local-screenshare",
                 participantId: "local",
                 hasAudioTrack: localScreenshareStream.getTracks().some((track) => track.kind === "audio"),
+                breakoutGroup: localParticipant.breakoutGroup,
                 stream: localScreenshareStream,
                 isLocal: true,
             });
@@ -135,6 +137,7 @@ export const selectScreenshares = createSelector(
                     id: participant.presentationStream.id || `pres-${participant.id}`,
                     participantId: participant.id,
                     hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
+                    breakoutGroup: participant.breakoutGroup,
                     stream: participant.presentationStream,
                     isLocal: false,
                 });

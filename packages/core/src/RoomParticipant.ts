@@ -110,6 +110,7 @@ export interface Screenshare {
     participantId: string;
     id: string;
     hasAudioTrack: boolean;
+    breakoutGroup: string | null;
     stream?: MediaStream;
     isLocal: boolean;
 }
