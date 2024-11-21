@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 0.29.0
+
+### Minor Changes
+
+- 392e210: Add missing `breakoutGroup` property to all in-room participants
+- 34c8ba4: Add missing `breakoutGroup` property to all in-room screenshares
+
+### Patch Changes
+
+- Updated dependencies [392e210]
+  - @whereby.com/media@1.17.2
+
 ## 0.28.7
 
 ### Patch Changes

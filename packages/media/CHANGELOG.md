@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.2
+
+### Patch Changes
+
+- 392e210: Add missing `breakoutGroup` property to all in-room participants
+
 ## 1.17.1
 
 ### Patch Changes
