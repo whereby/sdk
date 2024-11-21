@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.1
+
+### Patch Changes
+
+- f393639: Add low bandwidth mode
+
 ## 1.17.0
 
 ### Minor Changes
