@@ -54,6 +54,7 @@ export interface SignalClient {
     isVideoEnabled: boolean;
     role: ClientRole;
     startedCloudRecordingAt: string | null;
+    breakoutGroup: string | null;
     externalId: string | null;
     isDialIn: boolean;
 }
@@ -66,6 +67,11 @@ export interface Spotlight {
 export interface AudioEnabledEvent {
     clientId: string;
     isAudioEnabled: boolean;
+}
+
+export interface BreakoutGroupJoinedEvent {
+    clientId: string;
+    group: string;
 }
 
 export interface ChatMessage {
@@ -132,6 +138,7 @@ export interface RoomJoinedEvent {
         } | null;
     };
     selfId: string;
+    breakoutGroup: string | null;
     clientClaim?: string;
 }
 
@@ -223,6 +230,7 @@ export interface LiveTranscriptionStoppedEvent {
 export interface SignalEvents {
     audio_enabled: AudioEnabledEvent;
     audio_enable_requested: AudioEnableRequestedEvent;
+    breakout_group_joined: BreakoutGroupJoinedEvent;
     client_left: ClientLeftEvent;
     client_kicked: ClientKickedEvent;
     client_metadata_received: ClientMetadataReceivedEvent;

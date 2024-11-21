@@ -20,6 +20,7 @@ export interface LocalParticipantState extends LocalParticipant {
 const initialState: LocalParticipantState = {
     displayName: "",
     id: "",
+    breakoutGroup: null,
     isAudioEnabled: true,
     isVideoEnabled: true,
     isLocalParticipant: true,
@@ -79,6 +80,17 @@ export const localParticipantSlice = createSlice({
                 id: action.payload.selfId,
                 roleName: client?.role.roleName || "none",
                 clientClaim: action.payload.clientClaim,
+                breakoutGroup: client?.breakoutGroup || null,
+            };
+        });
+        builder.addCase(signalEvents.breakoutGroupJoined, (state, action) => {
+            if (action.payload?.clientId !== state.id) {
+                return state;
+            }
+
+            return {
+                ...state,
+                breakoutGroup: action.payload?.group,
             };
         });
     },
