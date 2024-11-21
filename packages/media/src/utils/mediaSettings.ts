@@ -34,8 +34,24 @@ const VIDEO_SETTINGS_VP9 = {
     encodings: [{ scalabilityMode: "L3T2_KEY" }],
 };
 
+const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
+    codecOptions: {
+        videoGoogleStartBitrate: 500,
+    },
+    encodings: [{ scalabilityMode: "L2T2_KEY", maxBitrate: 800000 }],
+};
+
 const SCREEN_SHARE_SETTINGS = {
     encodings: [{}],
+};
+
+const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
+    encodings: [
+        {
+            maxBitrate: 600000,
+            maxFramerate: 2,
+        },
+    ],
 };
 
 const SCREEN_SHARE_SIMULCAST_SETTINGS = {
@@ -50,18 +66,23 @@ const SCREEN_SHARE_SETTINGS_VP9 = {
 };
 
 export const getMediaSettings = (kind: string, isScreenShare: boolean, features: any) => {
-    const { lowDataModeEnabled, simulcastScreenshareOn, vp9On } = features;
+    const { lowDataModeEnabled, simulcastScreenshareOn, vp9On, lowBandwidth } = features;
 
     if (kind === "audio") {
         return AUDIO_SETTINGS;
     }
 
     if (isScreenShare) {
+        if (lowBandwidth && !vp9On) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
         if (vp9On) return SCREEN_SHARE_SETTINGS_VP9;
         if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
 
         return SCREEN_SHARE_SETTINGS;
     } else {
+        if (lowBandwidth) {
+            if (vp9On) return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH;
+            return VIDEO_SETTINGS_SD;
+        }
         if (vp9On) return VIDEO_SETTINGS_VP9;
         if (lowDataModeEnabled) return VIDEO_SETTINGS_SD;
 

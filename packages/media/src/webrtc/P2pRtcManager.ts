@@ -821,7 +821,7 @@ export default class P2pRtcManager implements RtcManager {
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
                 if (!pendingActions) {
                     logger.warn(
-                        `No pending action is created to repalce track, because the pending actions array is null`,
+                        `No pending action is created to replace track, because the pending actions array is null`,
                     );
                     return;
                 }
@@ -1097,9 +1097,9 @@ export default class P2pRtcManager implements RtcManager {
         let bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
-                  1: 0,
-                  2: this._features.highP2PBandwidth ? 768 : 384,
-                  3: this._features.highP2PBandwidth ? 512 : 256,
+                  1: this._features.lowBandwidth ? 768 : 0,
+                  2: this._features.highP2PBandwidth && !this._features.lowBandwidth ? 768 : 384,
+                  3: this._features.highP2PBandwidth && !this._features.lowBandwidth ? 512 : 256,
                   4: 192,
                   5: 128,
                   6: 128,
@@ -1124,7 +1124,7 @@ export default class P2pRtcManager implements RtcManager {
             }
         }
 
-        if (this._features.higherP2PBitrates) {
+        if (this._features.higherP2PBitrates && !this._features.lowBandwidth) {
             bandwidth = bandwidth * 1.5;
         }
 
