@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.3
+
+### Patch Changes
+
+- 89c008e: Remove getstream2 experiment
+
 ## 1.17.2
 
 ### Patch Changes

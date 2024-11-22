@@ -1,5 +1,14 @@
 # @whereby.com/browser-sdk
 
+## 3.9.12
+
+### Patch Changes
+
+- ad21973: Auto mute video cell of local participant in video grid
+- eaacf54: Show placeholder cell when there's no stream
+- Updated dependencies [3a9396f]
+  - @whereby.com/core@0.29.1
+
 ## 3.9.11
 
 ### Patch Changes
