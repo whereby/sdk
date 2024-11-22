@@ -1,3 +1,4 @@
+import { ssrcStats } from "../StatsMonitor";
 import { StatsClient } from "../types";
 import { PacketLossAnalyser } from "./packetLossAnalyser";
 
@@ -16,7 +17,7 @@ export interface IssueCheckData {
     trackStats: any;
     stats: any;
     hasLiveTrack: boolean;
-    ssrc0: any;
+    ssrc0?: ssrcStats;
     ssrcs: any;
     issues: any;
     metrics: any;
@@ -27,9 +28,16 @@ const packetLossAnalyser = new PacketLossAnalyser();
 export const periodicPacketLossDetector: IssueDetector = {
     id: "periodic-packet-loss",
     enabled: ({ client, hasLiveTrack, ssrc0 }) => {
-        return client.isLocalClient && hasLiveTrack && ssrc0.direction === "out" && ssrc0.bitrate;
+        return (
+            client.isLocalClient &&
+            hasLiveTrack &&
+            !!ssrc0?.ssrc &&
+            ssrc0?.direction === "out" &&
+            (ssrc0?.bitrate || 0) > 0
+        );
     },
     check: ({ ssrc0 }) => {
+        if (!ssrc0 || !ssrc0.ssrc) return false;
         packetLossAnalyser.addPacketLossMeasurement(ssrc0.ssrc, ssrc0.fractionLost || 0, Date.now());
         return packetLossAnalyser.hasPeriodicPacketLoss(ssrc0.ssrc, Date.now());
     },
@@ -172,8 +180,11 @@ export const issueDetectors: IssueDetector[] = [
     {
         id: "low-layer0-bitrate",
         enabled: ({ hasLiveTrack, ssrc0, kind, client }) =>
-            hasLiveTrack && kind === "video" && ssrc0 && ssrc0.height && !client.isPresentation,
-        check: ({ ssrc0 }) => ssrc0.height < 200 && ssrc0.bitrate < 30000,
+            hasLiveTrack && kind === "video" && !!ssrc0 && !!ssrc0?.height && !client.isPresentation,
+        check: ({ ssrc0 }) => {
+            if (!ssrc0?.bitrate) return false;
+            return (ssrc0?.height || 0) < 200 && ssrc0.bitrate < 30000;
+        },
     },
     {
         id: "quality-limitation-bw",
@@ -195,45 +206,45 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "high-plirate",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.height,
-        check: ({ ssrc0 }) => ssrc0.pliRate > 2,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.height,
+        check: ({ ssrc0 }) => (ssrc0?.pliRate || 0) > 2,
     },
     {
         id: "extreme-plirate",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.height,
-        check: ({ ssrc0 }) => ssrc0.pliRate > 5,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.height,
+        check: ({ ssrc0 }) => (ssrc0?.pliRate || 0) > 5,
     },
     {
         id: "high-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.direction === "in",
-        check: ({ ssrc0 }) => ssrc0.lossRatio > 0.02,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "in",
+        check: ({ ssrc0 }) => (ssrc0?.lossRatio || 0) > 0.02,
     },
     {
         id: "extreme-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.direction === "in",
-        check: ({ ssrc0 }) => ssrc0.lossRatio > 0.1,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "in",
+        check: ({ ssrc0 }) => (ssrc0?.lossRatio || 0) > 0.1,
     },
     {
         id: "high-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.direction === "out",
-        check: ({ ssrc0 }) => (ssrc0.fractionLost || 0) > 0.02,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "out",
+        check: ({ ssrc0 }) => (ssrc0?.fractionLost || 0) > 0.02,
     },
     {
         id: "extreme-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.direction === "out",
-        check: ({ ssrc0 }) => (ssrc0.fractionLost || 0) > 0.1,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "out",
+        check: ({ ssrc0 }) => (ssrc0?.fractionLost || 0) > 0.1,
     },
     {
         id: "fps-below-20",
         enabled: ({ hasLiveTrack, ssrc0, kind, client }) =>
-            hasLiveTrack && ssrc0 && ssrc0.height && kind === "video" && !client.isPresentation,
-        check: ({ ssrc0 }) => ssrc0.height > 180 && ssrc0.fps < 20,
+            hasLiveTrack && !!ssrc0 && !!ssrc0.height && kind === "video" && !client.isPresentation,
+        check: ({ ssrc0 }) => (ssrc0?.height || 0) > 180 && (ssrc0?.fps || 0) < 20,
     },
     {
         id: "fps-below-10",
         enabled: ({ hasLiveTrack, ssrc0, kind, client }) =>
-            hasLiveTrack && ssrc0 && ssrc0.height && kind === "video" && !client.isPresentation,
-        check: ({ ssrc0 }) => ssrc0.fps < 10,
+            hasLiveTrack && !!ssrc0 && !!ssrc0.height && kind === "video" && !client.isPresentation,
+        check: ({ ssrc0 }) => (ssrc0?.fps || 0) < 10,
     },
     badNetworkIssueDetector,
     periodicPacketLossDetector,
@@ -251,21 +262,30 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "concealed",
-        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && ssrc0 && kind === "audio",
+        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio",
         check: ({ ssrc0 }) =>
-            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioConcealment >= 0.1,
+            !!ssrc0?.bitrate &&
+            ssrc0?.direction === "in" &&
+            (ssrc0?.audioLevel || 0) >= 0.001 &&
+            (ssrc0?.audioConcealment || 0) >= 0.1,
     },
     {
         id: "decelerated",
-        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && ssrc0 && kind === "audio",
+        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio",
         check: ({ ssrc0 }) =>
-            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioDeceleration >= 0.1,
+            !!ssrc0?.bitrate &&
+            ssrc0.direction === "in" &&
+            (ssrc0.audioLevel || 0) >= 0.001 &&
+            (ssrc0?.audioDeceleration || 0) >= 0.1,
     },
     {
         id: "accelerated",
-        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && ssrc0 && kind === "audio",
+        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio",
         check: ({ ssrc0 }) =>
-            ssrc0.bitrate && ssrc0.direction === "in" && ssrc0.audioLevel >= 0.001 && ssrc0.audioAcceleration >= 0.1,
+            !!ssrc0?.bitrate &&
+            ssrc0.direction === "in" &&
+            (ssrc0.audioLevel || 0) >= 0.001 &&
+            (ssrc0.audioAcceleration || 0) >= 0.1,
     },
     // todo:
     // jitter/congestion - increasing jitter for several "ticks"
