@@ -68,7 +68,13 @@ const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
     const s = stream || participant.stream;
 
     if (!s) {
-        return null;
+        return (
+            <VideoMutedIndicator
+                isSmallCell={false}
+                displayName={participant?.displayName || "Guest"}
+                withRoundedCorners
+            />
+        );
     }
 
     return (
