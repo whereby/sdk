@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 0.29.1
+
+### Patch Changes
+
+- 3a9396f: Add .js files to the files array in package.json
+- Updated dependencies [89c008e]
+  - @whereby.com/media@1.17.3
+
 ## 0.29.0
 
 ### Minor Changes
