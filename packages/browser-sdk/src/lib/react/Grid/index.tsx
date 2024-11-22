@@ -79,6 +79,7 @@ const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
                 ...(isConstrained ? { objectFit: "cover" } : {}),
                 ...style,
             }}
+            muted={participant.isLocalClient}
             {...rest}
             stream={s}
             onVideoResize={handleResize}
