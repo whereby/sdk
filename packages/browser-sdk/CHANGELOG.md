@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.10.0
+
+### Minor Changes
+
+- 2fc5bdc: Add custom redux context
+
 ## 3.9.12
 
 ### Patch Changes
