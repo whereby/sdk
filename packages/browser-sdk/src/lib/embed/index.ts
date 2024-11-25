@@ -1,7 +1,7 @@
 import { define, ref } from "heresy";
 import { ReactHTMLElement } from "react";
 
-import { parseRoomUrlAndSubdomain } from "@whereby.com/core";
+import { parseRoomUrlAndSubdomain } from "./roomUrl";
 
 type SettingsPane = "theme" | "integrations" | "streaming" | "effects" | "notifications" | "advanced" | "media" | null;
 
