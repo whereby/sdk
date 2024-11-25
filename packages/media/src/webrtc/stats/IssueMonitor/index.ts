@@ -3,7 +3,7 @@ import { StatsClient } from "../types";
 import { IssueCheckData, issueDetectors } from "./issueDetectors";
 
 let subscriptions: any[] = [];
-let stopStats: any = null;
+let stopStats: (() => void) | null = null;
 
 interface Metric {
     id: string;

@@ -3,22 +3,24 @@ import { collectStats } from "./collectStats";
 import { startCpuObserver } from "./cpuObserver";
 
 interface StatsMonitor {
-    getUpdatedStats: () => any;
+    getUpdatedStats: () => Promise<Record<string, ViewStats> | undefined>;
     stop: () => void;
 }
 
-interface StatsSubscription {
+export interface StatsSubscription {
     onUpdatedStats: (statsByView: any, clients: any) => void;
 }
+
 export interface StatsMonitorState {
     currentMonitor: StatsMonitor | null;
     getClients: () => any[];
     lastPressureObserverRecord?: any;
     lastUpdateTime: number;
-    nextTimeout?: NodeJS.Timeout;
+    nextTimeout?: number;
     pressureObserver?: any;
-    statsByView: any;
+    statsByView: Record<string, ViewStats>;
     subscriptions: StatsSubscription[];
+    numFailedStatsReports: number;
 }
 
 export interface StatsMonitorOptions {
@@ -33,8 +35,10 @@ export interface TrackStats {
 }
 
 export interface ViewStats {
-    startTime: number;
-    updated: number;
+    startTime?: number;
+    updated?: number;
+    pressure?: number | null;
+    candidatePairs?: any;
     tracks: Record<string, TrackStats>;
 }
 
@@ -90,6 +94,7 @@ const STATE: StatsMonitorState = {
     lastUpdateTime: 0,
     statsByView: {},
     subscriptions: [],
+    numFailedStatsReports: 0,
 };
 
 const OPTIONS: StatsMonitorOptions = {
@@ -99,6 +104,10 @@ const OPTIONS: StatsMonitorOptions = {
 
 export const getStats = () => {
     return { ...STATE.statsByView };
+};
+
+export const getNumFailedStatsReports = () => {
+    return STATE.numFailedStatsReports;
 };
 
 export const getUpdatedStats = () => STATE.currentMonitor?.getUpdatedStats();

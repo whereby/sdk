@@ -18,6 +18,7 @@ describe("subscribeStats", () => {
             lastUpdateTime: 0,
             statsByView: {},
             subscriptions: [],
+            numFailedStatsReports: 0,
         };
         options = { interval: 2000, logger: { debug: jest.fn(), error: jest.fn(), info: jest.fn(), warn: jest.fn() } };
     });
