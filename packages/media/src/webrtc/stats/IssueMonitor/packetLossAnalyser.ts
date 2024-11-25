@@ -6,7 +6,7 @@ type PacketLossPeriod = {
 };
 
 type PacketLossHistory = {
-    id: string;
+    id: number;
     hasPeriodicPacketLoss: boolean;
     hasActivePacketLoss: boolean;
     currPeriod?: PacketLossPeriod;
@@ -27,10 +27,10 @@ export class PacketLossAnalyser {
     private INTERVAL_DIFF_THRESHOLD_MS = 4000;
     private STALE_MEASUREMENT_TIMEOUT_MS = 10000;
     private MINIMUM_INTERVAL_MS = 30000;
-    private ssrcsHistory = new Map<string, PacketLossHistory>();
-    private staleMeasurementTimeouts = new Map<string, NodeJS.Timeout>();
+    private ssrcsHistory = new Map<number, PacketLossHistory>();
+    private staleMeasurementTimeouts = new Map<number, NodeJS.Timeout>();
 
-    addPacketLossMeasurement(id: string, packetLoss: number, timestamp: number) {
+    addPacketLossMeasurement(id: number, packetLoss: number, timestamp: number) {
         this.handleStaleMeasurements(id);
         const beginNewPacketLossPeriod = packetLoss > this.BEGIN_PACKET_LOSS_PERIOD_THRESHOLD;
 
@@ -67,7 +67,7 @@ export class PacketLossAnalyser {
         }
     }
 
-    hasPeriodicPacketLoss(id: string, timestamp: number) {
+    hasPeriodicPacketLoss(id: number, timestamp: number) {
         const history = this.ssrcsHistory.get(id);
 
         // Reset state for ssrc if previous interval was exceeded.
@@ -89,7 +89,7 @@ export class PacketLossAnalyser {
         return false;
     }
 
-    private handleStaleMeasurements(id: string) {
+    private handleStaleMeasurements(id: number) {
         const staleMeasurementTimeout = this.staleMeasurementTimeouts.get(id);
         if (staleMeasurementTimeout) {
             clearTimeout(staleMeasurementTimeout);

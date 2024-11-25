@@ -1,4 +1,4 @@
-import { StatsMonitorOptions, StatsMonitorState } from ".";
+import { StatsMonitorOptions, StatsMonitorState, ViewStats } from ".";
 import {
     captureSsrcInfo,
     captureCommonSsrcMetrics,
@@ -10,11 +10,11 @@ import { getPeerConnectionsWithStatsReports } from "./peerConnection";
 import { getPeerConnectionIndex, removePeerConnection } from "./peerConnectionTracker";
 
 const getOrCreateSsrcMetricsContainer = (
-    statsByView: any,
+    statsByView: Record<string, ViewStats>,
     time: number,
     pcIndex: any,
     clientId: string,
-    trackId: any,
+    trackId: string,
     ssrc: any,
 ) => {
     let viewStats = statsByView[clientId];

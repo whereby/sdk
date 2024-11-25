@@ -3,7 +3,7 @@ import { PacketLossAnalyser } from "../packetLossAnalyser";
 /**
  * Add periodic packet loss.
  */
-const addPeriodicPacketLoss = (pla: PacketLossAnalyser, ssrcId: string, interval: number) => {
+const addPeriodicPacketLoss = (pla: PacketLossAnalyser, ssrcId: number, interval: number) => {
     let timestamp = Date.now();
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp);
     pla.addPacketLossMeasurement(ssrcId, 0.05, timestamp + 2000);
@@ -24,7 +24,7 @@ const addPeriodicPacketLoss = (pla: PacketLossAnalyser, ssrcId: string, interval
 
 describe("PacketLossAnalyser", () => {
     let pla: PacketLossAnalyser;
-    const ssrcId = "id";
+    const ssrcId = 12345;
 
     beforeEach(() => {
         pla = new PacketLossAnalyser();

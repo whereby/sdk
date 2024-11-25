@@ -29,7 +29,7 @@ function makeCheckData(args?: Partial<IssueCheckData>): IssueCheckData {
         trackStats: {},
         stats: {},
         hasLiveTrack: true,
-        ssrc0: {},
+        ssrc0: {} as any,
         ssrcs: {},
         issues: {},
         metrics: {},

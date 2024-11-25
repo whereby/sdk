@@ -26,6 +26,64 @@ export interface StatsMonitorOptions {
     logger: Pick<Logger, "debug" | "error" | "info" | "warn">;
 }
 
+export interface TrackStats {
+    startTime: number;
+    updated: number;
+    ssrcs: Record<number, ssrcStats>;
+}
+
+export interface ViewStats {
+    startTime: number;
+    updated: number;
+    tracks: Record<string, TrackStats>;
+}
+
+export interface ssrcStats {
+    startTime: number;
+    updated: number;
+    pcIndex: number;
+    direction?: string;
+    bitrate?: number;
+    fractionLost?: number;
+    height?: number;
+    lossRatio?: number;
+    pliRate?: number;
+    fps?: number;
+    audioLevel?: number;
+    audioConcealment?: number;
+    audioDeceleration?: number;
+    audioAcceleration?: number;
+    sourceHeight?: number;
+    jitter?: number;
+    roundTripTime?: number;
+    codec?: string;
+    byteCount?: number;
+    kind?: string;
+    ssrc?: number;
+    mid?: number;
+    rid?: string;
+    nackCount?: number;
+    nackRate?: number;
+    packetCount?: number;
+    packetRate?: number;
+    headerByteCount?: number;
+    mediaRatio?: number;
+    sendDelay?: number;
+    retransRatio?: number;
+    width?: number;
+    qualityLimitationReason?: string;
+    pliCount?: number;
+    firCount?: number;
+    firRate?: number;
+    kfCount?: number;
+    kfRate?: number;
+    frameCount?: number;
+    qpf?: number;
+    encodeTime?: number;
+    sourceWidth?: number;
+    sourceFps?: number;
+}
+
 const STATE: StatsMonitorState = {
     currentMonitor: null,
     getClients: () => [],

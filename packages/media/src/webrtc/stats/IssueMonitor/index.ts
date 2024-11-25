@@ -1,4 +1,4 @@
-import { subscribeStats } from "../StatsMonitor";
+import { subscribeStats, ViewStats } from "../StatsMonitor";
 import { StatsClient } from "../types";
 import { IssueCheckData, issueDetectors } from "./issueDetectors";
 
@@ -86,14 +86,14 @@ export type IssuesAndMetricsByView = {
 const metrics: Metric[] = [
     {
         id: "bitrate",
-        enabled: ({ hasLiveTrack, track, ssrc0 }) => hasLiveTrack && track && ssrc0,
+        enabled: ({ hasLiveTrack, track, ssrc0 }) => hasLiveTrack && !!track && !!ssrc0,
         value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce((sum: number, ssrc: any) => sum + ssrc.bitrate, 0),
     },
     {
         id: "pixelrate",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
-            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
+            hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce(
                 (sum: number, ssrc: any) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
@@ -103,7 +103,7 @@ const metrics: Metric[] = [
     {
         id: "height",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
-            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
+            hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce(
                 (max: number, ssrc: any) => Math.max(max, ssrc.fps > 0 ? ssrc.height : 0),
@@ -113,28 +113,28 @@ const metrics: Metric[] = [
     {
         id: "sourceHeight",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
-            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.sourceHeight && ssrc0.direction === "out",
-        value: ({ ssrc0 }) => ssrc0.sourceHeight,
+            hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.sourceHeight && ssrc0.direction === "out",
+        value: ({ ssrc0 }) => ssrc0?.sourceHeight,
     },
     {
         id: "packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.bitrate,
-        value: ({ ssrc0 }) => (ssrc0.direction === "in" ? ssrc0.lossRatio : ssrc0.fractionLost) || 0,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.bitrate,
+        value: ({ ssrc0 }) => (ssrc0?.direction === "in" ? ssrc0.lossRatio : ssrc0?.fractionLost) || 0,
     },
     {
         id: "jitter",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.bitrate && ssrc0.direction === "in",
-        value: ({ ssrc0 }) => ssrc0.jitter,
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.bitrate && ssrc0.direction === "in",
+        value: ({ ssrc0 }) => ssrc0?.jitter,
     },
     {
         // https://www.pingman.com/kb/article/how-is-mos-calculated-in-pingplotter-pro-50.html
         // I'm sceptical of this, we should validate this number makes sense, if not remove it
         id: "mos",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && ssrc0 && ssrc0.bitrate && ssrc0.direction === "out",
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.bitrate && ssrc0.direction === "out",
         value: ({ ssrc0 }) => {
-            const averageLatency = ssrc0.roundTripTime || 0;
-            const jitter = ssrc0.jitter || 0;
-            const packetLoss = (ssrc0.fractionLost || 0) * 100;
+            const averageLatency = ssrc0?.roundTripTime || 0;
+            const jitter = ssrc0?.jitter || 0;
+            const packetLoss = (ssrc0?.fractionLost || 0) * 100;
 
             const effectiveLatency = averageLatency + jitter * 2 + 10;
             let r = effectiveLatency < 160 ? 93.2 - effectiveLatency / 40 : 93.2 - (effectiveLatency - 120) / 10;
@@ -174,39 +174,39 @@ const metrics: Metric[] = [
         id: "concealment",
         enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
-            ssrc0 &&
-            ssrc0.bitrate &&
+            !!ssrc0 &&
+            !!ssrc0.bitrate &&
             ssrc0.direction === "in" &&
             kind === "audio" &&
-            ssrc0.audioLevel >= 0.001,
-        value: ({ ssrc0 }) => ssrc0.audioConcealment,
+            (ssrc0.audioLevel || 0) >= 0.001,
+        value: ({ ssrc0 }) => ssrc0?.audioConcealment,
     },
     {
         id: "deceleration",
         enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
-            ssrc0 &&
-            ssrc0.bitrate &&
+            !!ssrc0 &&
+            !!ssrc0.bitrate &&
             ssrc0.direction === "in" &&
             kind === "audio" &&
-            ssrc0.audioLevel >= 0.001,
-        value: ({ ssrc0 }) => ssrc0.audioDeceleration,
+            (ssrc0.audioLevel || 0) >= 0.001,
+        value: ({ ssrc0 }) => ssrc0?.audioDeceleration,
     },
     {
         id: "acceleration",
         enabled: ({ hasLiveTrack, ssrc0, kind }) =>
             hasLiveTrack &&
-            ssrc0 &&
-            ssrc0.bitrate &&
+            !!ssrc0 &&
+            !!ssrc0.bitrate &&
             ssrc0.direction === "in" &&
             kind === "audio" &&
-            ssrc0.audioLevel >= 0.001,
-        value: ({ ssrc0 }) => ssrc0.audioAcceleration,
+            (ssrc0.audioLevel || 0) >= 0.001,
+        value: ({ ssrc0 }) => ssrc0?.audioAcceleration,
     },
     {
         id: "qpf",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
-            hasLiveTrack && kind === "video" && track && ssrc0 && ssrc0.height,
+            hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
             Object.values(trackStats.ssrcs).reduce((sum: number, ssrc: any) => sum + (ssrc.qpf || 0), 0),
     },
@@ -233,7 +233,7 @@ export const getIssuesAndMetrics = () => {
     return { ...issuesAndMetricsByView };
 };
 
-function onUpdatedStats(statsByView: any, clients: StatsClient[]) {
+function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsClient[]) {
     // reset aggregated current metrics
     Object.values(aggregatedMetrics).forEach((metricData: MetricDataAggregated) => {
         metricData.curTicks = 0;
