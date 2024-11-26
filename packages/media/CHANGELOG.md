@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 1.17.4
+
+### Patch Changes
+
+- dc6bd5c: Add typing to stats collection
+- 6ca79b8: Add tracking for stats report parsing
+
 ## 1.17.3
 
 ### Patch Changes
