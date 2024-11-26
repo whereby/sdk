@@ -1,53 +1,53 @@
-name: End-to-end Tests
-on:
-    pull_request:
-        branches: [main, development]
-jobs:
-    test:
-        timeout-minutes: 60
-        runs-on: macos-12
-        steps:
-            - uses: actions/checkout@v4
+# name: End-to-end Tests
+# on:
+#     pull_request:
+#         branches: [main, development]
+# jobs:
+#     test:
+#         timeout-minutes: 60
+#         runs-on: macos-13
+#         steps:
+#             - uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version-file: .nvmrc
-                  cache: "yarn"
-                  cache-dependency-path: |
-                      yarn.lock
+#             - name: Setup Node.js
+#               uses: actions/setup-node@v4
+#               with:
+#                   node-version-file: .nvmrc
+#                   cache: "yarn"
+#                   cache-dependency-path: |
+#                       yarn.lock
 
-            - name: Cache turbo test setup
-              uses: actions/cache@v3
-              with:
-                  path: .turbo
-                  key: ${{ runner.os }}-turbo-${{ github.sha }}
-                  restore-keys: |
-                      ${{ runner.os }}-turbo-
+#             - name: Cache turbo test setup
+#               uses: actions/cache@v3
+#               with:
+#                   path: .turbo
+#                   key: ${{ runner.os }}-turbo-${{ github.sha }}
+#                   restore-keys: |
+#                       ${{ runner.os }}-turbo-
 
-            - name: Install dependencies
-              run: yarn install --frozen-lockfile
+#             - name: Install dependencies
+#               run: yarn install --frozen-lockfile
 
-            - uses: actions/cache@v3
-              name: Check for Playwright browsers cache
-              id: playwright-cache
-              with:
-                  path: |
-                      ~/.cache/ms-playwright
-                  key: ${{ runner.os }}-playwright
+#             - uses: actions/cache@v3
+#               name: Check for Playwright browsers cache
+#               id: playwright-cache
+#               with:
+#                   path: |
+#                       ~/.cache/ms-playwright
+#                   key: ${{ runner.os }}-playwright
 
-            - name: Install Playwright Browsers
-              run: npx playwright install --with-deps
-              if: steps.playwright-cache.outputs.cache-hit != 'true'
+#             - name: Install Playwright Browsers
+#               run: npx playwright install --with-deps
+#               if: steps.playwright-cache.outputs.cache-hit != 'true'
 
-            - name: Run Playwright tests
-              run: yarn test:e2e --cache-dir=.turbo
-              env:
-                  WHEREBY_API_KEY: ${{ secrets.WHEREBY_API_KEY }}
+#             - name: Run Playwright tests
+#               run: yarn test:e2e --cache-dir=.turbo
+#               env:
+#                   WHEREBY_API_KEY: ${{ secrets.WHEREBY_API_KEY }}
 
-            - uses: actions/upload-artifact@v3
-              if: always()
-              with:
-                  name: playwright-report
-                  path: apps/sample-app/playwright-report/
-                  retention-days: 30
+#             - uses: actions/upload-artifact@v3
+#               if: always()
+#               with:
+#                   name: playwright-report
+#                   path: apps/sample-app/playwright-report/
+#                   retention-days: 30

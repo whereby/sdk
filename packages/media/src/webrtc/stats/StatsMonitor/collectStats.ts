@@ -1,4 +1,5 @@
-import { StatsMonitorOptions, StatsMonitorState, ViewStats } from ".";
+import { StatsMonitorOptions, StatsMonitorState, StatsSubscription, ViewStats } from ".";
+import rtcStats from "../../rtcStatsService";
 import {
     captureSsrcInfo,
     captureCommonSsrcMetrics,
@@ -42,7 +43,7 @@ const getOrCreateSsrcMetricsContainer = (
     return ssrcStats;
 };
 
-const removeNonUpdatedStats = (statsByView: any, time: number) => {
+const removeNonUpdatedStats = (statsByView: Record<string, ViewStats>, time: number) => {
     Object.entries(statsByView).forEach(([viewId, viewStats]: any) => {
         if (viewStats.updated < time) {
             delete statsByView[viewId];
@@ -65,8 +66,8 @@ const removeNonUpdatedStats = (statsByView: any, time: number) => {
 export async function collectStats(
     state: StatsMonitorState,
     { logger, interval }: StatsMonitorOptions,
-    immediate: any,
-) {
+    immediate: boolean,
+): Promise<Record<string, ViewStats> | undefined> {
     const collectStatsBound = collectStats.bind(null, state, { interval, logger });
 
     try {
@@ -251,8 +252,14 @@ export async function collectStats(
                 subscription.onUpdatedStats?.(state.statsByView, clients),
             );
         }
-    } catch (ex) {
-        logger.warn(ex);
+    } catch (e: any) {
+        logger.warn(e);
+        state.numFailedStatsReports++;
+        rtcStats.sendEvent("collectStatsFailed", {
+            name: e?.name,
+            cause: e?.cause,
+            message: e?.message,
+        });
     }
 
     state.nextTimeout = setTimeout(collectStatsBound, interval);
