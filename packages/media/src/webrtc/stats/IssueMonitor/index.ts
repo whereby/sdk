@@ -1,4 +1,4 @@
-import { subscribeStats, ViewStats } from "../StatsMonitor";
+import { StatsSubscription, subscribeStats, ViewStats } from "../StatsMonitor";
 import { StatsClient } from "../types";
 import { IssueCheckData, issueDetectors } from "./issueDetectors";
 
@@ -88,24 +88,24 @@ const metrics: Metric[] = [
         id: "bitrate",
         enabled: ({ hasLiveTrack, track, ssrc0 }) => hasLiveTrack && !!track && !!ssrc0,
         value: ({ trackStats }) =>
-            Object.values(trackStats.ssrcs).reduce((sum: number, ssrc: any) => sum + ssrc.bitrate, 0),
+            Object.values(trackStats?.ssrcs || {}).reduce((sum: number, ssrc) => sum + (ssrc?.bitrate || 0), 0),
     },
     {
         id: "pixelrate",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
             hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
-            Object.values(trackStats.ssrcs).reduce(
+            Object.values(trackStats?.ssrcs || {}).reduce(
                 (sum: number, ssrc: any) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
                 0,
             ),
     },
     {
         id: "height",
-        enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
-            hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
+        enabled: ({ hasLiveTrack, track, trackStats, ssrc0, kind }) =>
+            hasLiveTrack && kind === "video" && !!trackStats && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
-            Object.values(trackStats.ssrcs).reduce(
+            Object.values(trackStats?.ssrcs || {}).reduce(
                 (max: number, ssrc: any) => Math.max(max, ssrc.fps > 0 ? ssrc.height : 0),
                 0,
             ),
@@ -156,19 +156,19 @@ const metrics: Metric[] = [
         global: true,
         enabled: ({ stats }) => stats?.pressure?.source === "cpu",
         value: ({ stats }) =>
-            (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }) as any)[stats.pressure.state] || 0,
+            (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }) as any)[stats?.pressure?.state || ""] || 0,
     },
     {
         id: "turn-usage",
         global: true,
-        enabled: ({ stats }) => !!Object.values(stats.candidatePairs).length,
-        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.usingTurn),
+        enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
+        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.usingTurn),
     },
     {
         id: "turn-tls-usage",
         global: true,
-        enabled: ({ stats }) => !!Object.values(stats.candidatePairs).length,
-        value: ({ stats }) => Object.values(stats.candidatePairs).some((cp: any) => cp.turnProtocol === "tls"),
+        enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
+        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.turnProtocol === "tls"),
     },
     {
         id: "concealment",
@@ -208,7 +208,7 @@ const metrics: Metric[] = [
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
             hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
-            Object.values(trackStats.ssrcs).reduce((sum: number, ssrc: any) => sum + (ssrc.qpf || 0), 0),
+            Object.values(trackStats?.ssrcs || {}).reduce((sum: number, ssrc) => sum + (ssrc.qpf || 0), 0),
     },
 ];
 

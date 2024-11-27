@@ -1,4 +1,4 @@
-import { ssrcStats } from "../StatsMonitor";
+import { ssrcStats, TrackStats, ViewStats } from "../StatsMonitor";
 import { StatsClient } from "../types";
 import { PacketLossAnalyser } from "./packetLossAnalyser";
 
@@ -14,11 +14,11 @@ export interface IssueCheckData {
     clients: StatsClient[];
     kind: string;
     track: MediaStreamTrack | undefined;
-    trackStats: any;
-    stats: any;
+    trackStats?: TrackStats;
+    stats?: ViewStats;
     hasLiveTrack: boolean;
     ssrc0?: ssrcStats;
-    ssrcs: any;
+    ssrcs: ssrcStats[];
     issues: any;
     metrics: any;
 }
@@ -47,13 +47,13 @@ export const badNetworkIssueDetector: IssueDetector = {
     id: "bad-network",
     enabled: ({ hasLiveTrack, ssrcs }) => hasLiveTrack && ssrcs.length > 0,
     check: ({ client, clients, kind, ssrcs }) => {
-        const hasPositiveBitrate = ssrcs.some((ssrc: any) => ssrc.bitrate > 0);
+        const hasPositiveBitrate = ssrcs.some((ssrc) => (ssrc?.bitrate || 0) > 0);
 
         if (!hasPositiveBitrate && client.isLocalClient && kind === "video") {
             const remoteClients = clients.filter((c) => !c.isLocalClient);
 
             if (remoteClients.length > 0) {
-                return !remoteClients.every((c: any) => c.isAudioOnlyModeEnabled);
+                return !remoteClients.every((c) => c.isAudioOnlyModeEnabled);
             }
         }
 
@@ -64,10 +64,10 @@ export const badNetworkIssueDetector: IssueDetector = {
 
         return (
             ssrc0.bitrate === 0 ||
-            ssrc0.lossRatio > 0.03 ||
+            (ssrc0.lossRatio || 0) > 0.03 ||
             (ssrc0.fractionLost || 0) > 0.03 ||
-            (!client.isPresentation && kind === "video" && ssrc0.bitrate < 30000) ||
-            (ssrc0.direction === "in" && ssrc0.pliRate > 2)
+            (!client.isPresentation && kind === "video" && !!ssrc0?.bitrate && ssrc0.bitrate < 30000) ||
+            (ssrc0.direction === "in" && !!ssrc0.pliRate && ssrc0.pliRate > 2)
         );
     },
 };
@@ -96,8 +96,8 @@ export const dryTrackIssueDetector: IssueDetector = {
          */
         let hasPositiveBitrate = false;
 
-        ssrcs.forEach((ssrc: any) => {
-            hasPositiveBitrate = hasPositiveBitrate || ssrc.bitrate > 0;
+        ssrcs.forEach((ssrc) => {
+            hasPositiveBitrate = hasPositiveBitrate || (ssrc?.bitrate || 0) > 0;
         });
 
         if (!hasPositiveBitrate && client.isLocalClient) {
@@ -153,17 +153,20 @@ export const issueDetectors: IssueDetector[] = [
                 Object.keys(stats.tracks).length > 1
             );
         },
-        check: ({ stats: { tracks } }) => {
+        check: ({ stats }) => {
+            if (!stats) return false;
             const jitter = {
                 audio: 0,
                 video: 0,
             };
 
-            Object.values(tracks)
-                .flatMap((t: any) => Object.values(t.ssrcs))
-                .forEach((ssrc: any) => {
-                    if (ssrc.kind === "audio" && ssrc.jitter > jitter.audio) jitter.audio = ssrc.jitter;
-                    if (ssrc.kind === "video" && ssrc.jitter > jitter.video) jitter.video = ssrc.jitter;
+            Object.values(stats.tracks)
+                .flatMap((t) => Object.values(t.ssrcs))
+                .forEach((ssrc) => {
+                    if (ssrc.kind === "audio" && !!ssrc.jitter && ssrc.jitter > jitter.audio)
+                        jitter.audio = ssrc.jitter;
+                    if (ssrc.kind === "video" && !!ssrc.jitter && ssrc.jitter > jitter.video)
+                        jitter.video = ssrc.jitter;
                 });
             const diff = Math.abs(jitter.audio * 1000 - jitter.video * 1000); // diff in ms
             return diff > 500;
@@ -189,20 +192,24 @@ export const issueDetectors: IssueDetector[] = [
     {
         id: "quality-limitation-bw",
         enabled: ({ hasLiveTrack, stats, client, kind }) =>
-            hasLiveTrack && client.isLocalClient && kind === "video" && stats,
-        check: ({ stats }) =>
-            !!Object.values(stats.tracks).find((track: any) =>
-                Object.values(track.ssrcs).find((ssrc: any) => ssrc.qualityLimitationReason === "bandwidth"),
-            ),
+            hasLiveTrack && client.isLocalClient && kind === "video" && !!stats,
+        check: ({ stats }) => {
+            if (!stats) return false;
+            return !!Object.values(stats.tracks).find((track) =>
+                Object.values(track.ssrcs).find((ssrc) => ssrc.qualityLimitationReason === "bandwidth"),
+            );
+        },
     },
     {
         id: "quality-limitation-cpu",
         enabled: ({ hasLiveTrack, stats, client, kind }) =>
-            hasLiveTrack && client.isLocalClient && kind === "video" && stats,
-        check: ({ stats }) =>
-            !!Object.values(stats.tracks).find((track: any) =>
-                Object.values(track.ssrcs).find((ssrc: any) => ssrc.qualityLimitationReason === "cpu"),
-            ),
+            hasLiveTrack && client.isLocalClient && kind === "video" && !!stats,
+        check: ({ stats }) => {
+            if (!stats) return false;
+            return !!Object.values(stats.tracks).find((track) =>
+                Object.values(track.ssrcs).find((ssrc) => ssrc.qualityLimitationReason === "cpu"),
+            );
+        },
     },
     {
         id: "high-plirate",
@@ -252,13 +259,13 @@ export const issueDetectors: IssueDetector[] = [
         id: "cpu-pressure-serious",
         global: true,
         enabled: ({ stats }) => stats?.pressure?.source === "cpu",
-        check: ({ stats }) => stats.pressure.state === "serious",
+        check: ({ stats }) => stats?.pressure?.state === "serious",
     },
     {
         id: "cpu-pressure-critical",
         global: true,
         enabled: ({ stats }) => stats?.pressure?.source === "cpu",
-        check: ({ stats }) => stats.pressure.state === "critical",
+        check: ({ stats }) => stats?.pressure?.state === "critical",
     },
     {
         id: "concealed",

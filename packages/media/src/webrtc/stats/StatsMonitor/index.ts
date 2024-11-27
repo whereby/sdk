@@ -1,6 +1,7 @@
 import Logger from "../../../utils/Logger";
 import { collectStats } from "./collectStats";
-import { startCpuObserver } from "./cpuObserver";
+import { PressureObserver, PressureRecord, startCpuObserver } from "./cpuObserver";
+import { numFailedTrackSsrcLookups, numMissingTrackSsrcLookups } from "./peerConnection";
 
 interface StatsMonitor {
     getUpdatedStats: () => Promise<Record<string, ViewStats> | undefined>;
@@ -8,16 +9,16 @@ interface StatsMonitor {
 }
 
 export interface StatsSubscription {
-    onUpdatedStats: (statsByView: any, clients: any) => void;
+    onUpdatedStats: (statsByView: Record<string, ViewStats>, clients: any) => void;
 }
 
 export interface StatsMonitorState {
     currentMonitor: StatsMonitor | null;
     getClients: () => any[];
-    lastPressureObserverRecord?: any;
+    lastPressureObserverRecord?: PressureRecord;
     lastUpdateTime: number;
     nextTimeout?: number;
-    pressureObserver?: any;
+    pressureObserver?: PressureObserver;
     statsByView: Record<string, ViewStats>;
     subscriptions: StatsSubscription[];
     numFailedStatsReports: number;
@@ -37,7 +38,7 @@ export interface TrackStats {
 export interface ViewStats {
     startTime?: number;
     updated?: number;
-    pressure?: number | null;
+    pressure?: PressureRecord | null;
     candidatePairs?: any;
     tracks: Record<string, TrackStats>;
 }
@@ -109,6 +110,8 @@ export const getStats = () => {
 export const getNumFailedStatsReports = () => {
     return STATE.numFailedStatsReports;
 };
+export const getNumMissingTrackSsrcLookups = () => numMissingTrackSsrcLookups;
+export const getNumFailedTrackSsrcLookups = () => numFailedTrackSsrcLookups;
 
 export const getUpdatedStats = () => STATE.currentMonitor?.getUpdatedStats();
 

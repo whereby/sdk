@@ -1,7 +1,10 @@
-import { getCurrentPeerConnections, getPeerConnectionIndex, removePeerConnection } from "./peerConnectionTracker";
+import rtcStats from "../../rtcStatsService";
+import { getCurrentPeerConnections } from "./peerConnectionTracker";
 
 // peer connection related data
 const pcDataByPc = new WeakMap();
+export let numMissingTrackSsrcLookups = 0;
+export let numFailedTrackSsrcLookups = 0;
 
 export const getPeerConnectionsWithStatsReports = () =>
     Promise.all(
@@ -62,13 +65,20 @@ export const getPeerConnectionsWithStatsReports = () =>
 
                     // create fake track ids for anything not found
                     missingSsrcs.forEach((ssrc: any) => {
+                        numMissingTrackSsrcLookups++;
                         if (!pcData.ssrcToTrackId[ssrc]) {
                             pcData.ssrcToTrackId[ssrc] = "?" + ssrc;
                         }
                     });
                 }
                 return [pc, report, pcData];
-            } catch (ex) {
+            } catch (e: any) {
+                rtcStats.sendEvent("trackSsrcLookupFailed", {
+                    name: e?.name,
+                    cause: e?.cause,
+                    message: e?.message,
+                });
+                numFailedTrackSsrcLookups++;
                 return [pc, [], pcData];
             }
         }),
