@@ -19,7 +19,12 @@ roomModes.forEach((roomMode) => {
             await deleteTransientRoom(meetingId);
         });
 
-        test("screen share is visible", async ({ page }) => {
+        test("screen share is visible", async ({ page, browserName }) => {
+            // skip in WebKit for normal mode.
+            test.skip(
+                browserName === "webkit" && roomMode === "normal",
+                "WebKit has issues with fake streams in normal mode.",
+            );
             const participant1 = page;
             await joinRoom({ page, roomUrl });
 
