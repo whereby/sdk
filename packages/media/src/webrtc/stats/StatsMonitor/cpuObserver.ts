@@ -6,6 +6,17 @@ interface CpuObserverOptions {
     originTrials: OriginTrial[];
 }
 
+export interface PressureObserver {
+    observe: (source: string, options: { sampleInterval: number }) => Promise<undefined>;
+    unobserve: (source: string) => undefined;
+}
+
+export type PressureRecord = {
+    source: string;
+    state: string;
+    time: number;
+};
+
 const CPU_OBSERVER_OPTIONS: CpuObserverOptions = {
     sampleRate: 1,
     // these tokens expire May 29th 2024
@@ -22,16 +33,16 @@ const CPU_OBSERVER_OPTIONS: CpuObserverOptions = {
 };
 
 export function startCpuObserver(
-    cb: (records: any) => void,
+    cb: (records: PressureObserver[]) => void,
     { sampleRate, originTrials }: CpuObserverOptions = CPU_OBSERVER_OPTIONS,
     window: Window = globalThis.window,
 ) {
     registerOriginTrials(originTrials);
 
-    let pressureObserver: any;
+    let pressureObserver: PressureObserver;
 
     if ("PressureObserver" in window) {
-        pressureObserver = new (window.PressureObserver as any)(cb, { sampleRate });
+        pressureObserver = new (window.PressureObserver as any)(cb, { sampleRate }) as PressureObserver;
         pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 });
 
         return {

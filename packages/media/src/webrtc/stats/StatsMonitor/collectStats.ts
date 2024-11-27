@@ -230,7 +230,7 @@ export async function collectStats(
         removeNonUpdatedStats(state.statsByView, state.lastUpdateTime);
 
         // mark candidatepairs as active/inactive
-        Object.entries(defaultViewStats.candidatePairs).forEach(([cpKey, cp]: any) => {
+        Object.entries(defaultViewStats?.candidatePairs || {}).forEach(([cpKey, cp]: any) => {
             const active = cp.lastRtcStatsTime === state.lastUpdateTime;
             cp.active = active;
             if (!active) {
@@ -248,9 +248,7 @@ export async function collectStats(
         if (immediate) {
             return state.statsByView;
         } else {
-            state.subscriptions.forEach((subscription: any) =>
-                subscription.onUpdatedStats?.(state.statsByView, clients),
-            );
+            state.subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(state.statsByView, clients));
         }
     } catch (e: any) {
         logger.warn(e);

@@ -1,3 +1,4 @@
+import { ssrcStats, TrackStats, ViewStats } from "../../StatsMonitor";
 import { StatsClient } from "../../types";
 import {
     badNetworkIssueDetector,
@@ -26,11 +27,11 @@ function makeCheckData(args?: Partial<IssueCheckData>): IssueCheckData {
         clients: [makeStatsClient(), makeStatsClient()],
         kind: "audio",
         track: undefined,
-        trackStats: {},
-        stats: {},
+        trackStats: {} as TrackStats,
+        stats: {} as ViewStats,
         hasLiveTrack: true,
-        ssrc0: {} as any,
-        ssrcs: {},
+        ssrc0: {} as ssrcStats,
+        ssrcs: {} as ssrcStats[],
         issues: {},
         metrics: {},
         ...args,
@@ -77,7 +78,7 @@ describe("badNetworkIssueDetector", () => {
                 });
 
                 expect(badNetworkIssueDetector.check(checkData)).toEqual(expected);
-            }
+            },
         );
     });
 });
@@ -121,7 +122,7 @@ describe("dryTrackIssueDetector", () => {
                     });
 
                     expect(dryTrackIssueDetector.check(checkData)).toEqual(expected);
-                }
+                },
             );
         });
     });
@@ -147,7 +148,7 @@ describe("noTrackIssueDetector", () => {
                     });
 
                     expect(noTrackIssueDetector.check(checkData)).toEqual(expected);
-                }
+                },
             );
         });
 
@@ -169,7 +170,7 @@ describe("noTrackIssueDetector", () => {
                     });
 
                     expect(noTrackIssueDetector.check(checkData)).toEqual(expected);
-                }
+                },
             );
         });
     });
@@ -209,7 +210,7 @@ describe("noTrackStatsIssueDetector", () => {
                     });
 
                     expect(noTrackStatsIssueDetector.check(checkData)).toEqual(expected);
-                }
+                },
             );
         });
 
@@ -231,7 +232,7 @@ describe("noTrackStatsIssueDetector", () => {
                     });
 
                     expect(noTrackStatsIssueDetector.check(checkData)).toEqual(expected);
-                }
+                },
             );
         });
     });
