@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 1.17.5
+
+### Patch Changes
+
+- d144d34: Improve stats collection and add tracking
+- 65c020b: Only emit NO_PUBLIC_IP_GATHERED if ICE Agent not connected.
+
 ## 1.17.4
 
 ### Patch Changes
