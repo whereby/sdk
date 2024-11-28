@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.30.0
+
+### Minor Changes
+
+- afe0308: Remove parseRoomUrlAndSubdomain fn
+
 ## 0.29.3
 
 ### Patch Changes
