@@ -1,5 +1,13 @@
 # @whereby.com/browser-sdk
 
+## 3.10.3
+
+### Patch Changes
+
+- afe0308: embed: Remove use of core library
+- Updated dependencies [afe0308]
+  - @whereby.com/core@0.30.0
+
 ## 3.10.2
 
 ### Patch Changes
