@@ -4,6 +4,8 @@ import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import { getHandler } from "../utils/getHandler";
 import Logger from "../utils/Logger";
+import { Safari17 } from "../utils/Safari17Handler";
+import { BuiltinHandlerName } from "mediasoup-client/lib/types";
 
 const logger = new Logger();
 
@@ -37,7 +39,14 @@ export default class BandwidthTester extends EventEmitter {
 
         this._vegaConnection = null;
 
-        this._mediasoupDevice = new Device({ handlerName: getHandler() });
+        const handlerName = getHandler(this._features);
+        if (handlerName === "Safari17") {
+            // Patched Safari handler to fix simulcast bandwith limits
+            this._mediasoupDevice = new Device({ handlerFactory: Safari17.createFactory() });
+        } else {
+            this._mediasoupDevice = new Device({ handlerName: handlerName as BuiltinHandlerName });
+        }
+
         this._routerRtpCapabilities = null;
 
         this._sendTransport = null;
@@ -184,7 +193,7 @@ export default class BandwidthTester extends EventEmitter {
                 () => {
                     this._reportResults();
                 },
-                this._runTime * 1000 - this._mediaEstablishedTime
+                this._runTime * 1000 - this._mediaEstablishedTime,
             );
         } catch (error) {
             logger.error("_start() [error:%o]", error);

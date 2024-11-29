@@ -10,6 +10,11 @@ import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
 
+jest.mock("../../../utils/getHandler");
+jest.mock("../../../utils/Safari17Handler");
+const { getHandler } = jest.requireMock("../../../utils/getHandler");
+const { Safari17 } = jest.requireMock("../../../utils/Safari17Handler");
+
 const logger = new Logger();
 
 jest.mock("webrtc-adapter", () => {
@@ -115,6 +120,23 @@ describe("VegaRtcManager", () => {
                 deviceHandlerFactory,
             });
             expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: deviceHandlerFactory });
+        });
+
+        it("uses the custom Safari17 handler", () => {
+            getHandler.mockImplementation(() => "Safari17");
+            const factory = jest.fn();
+            Safari17.createFactory.mockImplementation(() => factory);
+
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                selfId,
+                room,
+                emitter,
+                serverSocket,
+                webrtcProvider,
+            });
+
+            expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: factory });
         });
     });
 

@@ -18,6 +18,8 @@ import { maybeTurnOnly } from "../../utils/transportSettings";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ServerSocket } from "../../utils";
+import { Safari17 } from "../../utils/Safari17Handler";
+import { BuiltinHandlerName } from "mediasoup-client/lib/types";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -124,10 +126,17 @@ export default class VegaRtcManager implements RtcManager {
         this._micAnalyser = null;
         this._micAnalyserDebugger = null;
 
+        const handlerName = getHandler(this._features);
+
+        if (handlerName === "Safari17" && !deviceHandlerFactory) {
+            // Patched Safari12 handler to fix simulcast bandwith limitsp
+            deviceHandlerFactory = Safari17.createFactory();
+        }
+
         if (deviceHandlerFactory) {
             this._mediasoupDevice = new Device({ handlerFactory: deviceHandlerFactory });
         } else {
-            this._mediasoupDevice = new Device({ handlerName: getHandler() });
+            this._mediasoupDevice = new Device({ handlerName: handlerName as BuiltinHandlerName });
         }
 
         this._routerRtpCapabilities = null;
@@ -1213,7 +1222,7 @@ export default class VegaRtcManager implements RtcManager {
         this._stopProducer(this._screenAudioProducer);
         this._screenAudioProducer = null;
         this._screenAudioTrack = null;
-                
+
         if (this._features.lowBandwidth) {
             this._webcamProducer?.setMaxSpatialLayer(Number.MAX_VALUE);
         }
