@@ -12,7 +12,7 @@ import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
 import checkIp from "check-ip";
-import validate from "uuid-validate";
+import { validate } from "uuid";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
@@ -1221,7 +1221,7 @@ export default class P2pRtcManager implements RtcManager {
                                 }
                             } else {
                                 const uuidv4 = address.replace(/.local/, "");
-                                if (uuidv4 && validate(uuidv4, 4)) {
+                                if (uuidv4 && validate(uuidv4)) {
                                     session.mdnsHostCandidateSeen = true;
                                 }
                             }

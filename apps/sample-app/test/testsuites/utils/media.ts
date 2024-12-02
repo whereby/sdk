@@ -18,21 +18,37 @@ export type CountFramesFunction = (
 ) => Promise<Array<Sample>>;
 
 export const countFrames: CountFramesFunction = async (element, interval, numOfSamples) => {
-    return new Promise((resolve) => {
-        const samples: Sample[] = [];
-        const sampleInterval = setInterval(() => {
-            // @ts-ignore - mozPaintedFrames and webkitDecodedFrameCount are
-            // not in the HTMLVideoElement interface as they are not standard.
-            const frameCount = element.webkitDecodedFrameCount || element.mozPaintedFrames;
+    const isWebkit = navigator.userAgent.match(/safari|webkit/i);
+    if (isWebkit) {
+        return new Promise((resolve) => {
+            const start = performance.now();
+            const samples: Sample[] = [];
 
-            samples.push([Date.now(), frameCount]);
+            element.requestVideoFrameCallback(function counter(now: number, metadata: VideoFrameCallbackMetadata) {
+                samples.push([now, metadata.presentedFrames]);
+                if (now - start > interval) {
+                    resolve(samples);
+                } else {
+                    element.requestVideoFrameCallback(counter);
+                }
+            });
+        });
+    } else {
+        return new Promise((resolve) => {
+            const samples: Sample[] = [];
+            const sampleInterval = setInterval(() => {
+                // @ts-ignore - mozPaintedFrames and webkitDecodedFrameCount are
+                // not in the HTMLVideoElement interface as they are not standard.
+                const frameCount = element.webkitDecodedFrameCount || element.mozPaintedFrames;
+                samples.push([Date.now(), frameCount]);
 
-            if (samples.length === numOfSamples) {
-                clearInterval(sampleInterval);
-                resolve(samples);
-            }
-        }, interval);
-    });
+                if (samples.length === numOfSamples) {
+                    clearInterval(sampleInterval);
+                    resolve(samples);
+                }
+            }, interval);
+        });
+    }
 };
 
 export type FrameStatistics = {

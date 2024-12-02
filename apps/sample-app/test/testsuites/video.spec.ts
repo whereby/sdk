@@ -25,12 +25,7 @@ roomModes.forEach((roomMode) => {
             await deleteTransientRoom(meetingId);
         });
 
-        test("gets remote participant's stream", async ({ page, browserName }) => {
-            // skip in WebKit for normal mode.
-            test.skip(
-                browserName === "webkit" && roomMode === "normal",
-                "WebKit has issues with fake streams in normal mode.",
-            );
+        test("gets remote participant's stream", async ({ page }) => {
             const participant1 = page;
             await joinRoom({ page, roomUrl, withFakeAudioStream: true });
 
