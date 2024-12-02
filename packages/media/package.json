@@ -52,7 +52,7 @@
         "check-ip": "^1.1.1",
         "events": "^3.3.0",
         "ip-address": "^9.0.5",
-        "mediasoup-client": "3.7.12",
+        "mediasoup-client": "3.7.18",
         "rtcstats": "github:whereby/rtcstats#5.4.1",
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
@@ -60,7 +60,7 @@
         "typescript": "^5.3.3",
         "uuid": "^9.0.1",
         "uuid-validate": "^0.0.3",
-        "webrtc-adapter": "^8.2.3"
+        "webrtc-adapter": "^9.0.1"
     },
     "devDependencies": {
         "@babel/core": "^7.23.2",
