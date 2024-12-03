@@ -37,6 +37,7 @@ export default class RtcManagerDispatcher {
                     deviceHandlerFactory: features?.deviceHandlerFactory,
                 };
                 const isSfu = !!room.sfuServer;
+                roomMode = isSfu ? "group" : "normal";
                 if (this.currentManager) {
                     if (this.currentManager.isInitializedWith({ selfId, roomName: room.name, isSfu })) {
                         if (this.currentManager.setEventClaim && eventClaim) {
@@ -69,3 +70,8 @@ export default class RtcManagerDispatcher {
         }
     }
 }
+
+let roomMode = "";
+export const getRoomMode = () => {
+    return roomMode;
+};
