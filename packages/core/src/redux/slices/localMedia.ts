@@ -437,7 +437,10 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 
 export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
-    async ({ audioId, videoId }: { audioId?: string; videoId?: string }, { dispatch, getState, rejectWithValue }) => {
+    async (
+        { audioId, videoId }: { audioId?: string | null; videoId?: string | null },
+        { dispatch, getState, rejectWithValue },
+    ) => {
         const state = getState();
         const replaceStream = selectLocalMediaStream(state);
         const constraintsOptions = selectLocalMediaConstraintsOptions(state);
