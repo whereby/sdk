@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.6
+
+### Patch Changes
+
+- 482c96d: Update dependencies
+
 ## 1.17.5
 
 ### Patch Changes
