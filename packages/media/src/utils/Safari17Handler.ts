@@ -185,7 +185,7 @@ export class Safari17 extends HandlerInterface {
                 rtcpMuxPolicy: "require",
                 ...additionalSettings,
             },
-            proprietaryConstraints
+            proprietaryConstraints,
         );
 
         this._pc.addEventListener("icegatheringstatechange", () => {
@@ -329,18 +329,31 @@ export class Safari17 extends HandlerInterface {
         }
 
         const sendingRemoteRtpParameters = utils.clone<RtpParameters>(
-            this._sendingRemoteRtpParametersByKind![track.kind]
+            this._sendingRemoteRtpParametersByKind![track.kind],
         );
 
         // This may throw.
         sendingRemoteRtpParameters.codecs = ortc.reduceCodecs(sendingRemoteRtpParameters.codecs, codec);
 
         const mediaSectionIdx = this._remoteSdp!.getNextMediaSectionIdx();
-        const transceiver = this._pc.addTransceiver(track, {
-            direction: "sendonly",
-            streams: [this._sendStream],
-            sendEncodings: encodings,
-        });
+        let transceiver: RTCRtpTransceiver;
+        try {
+            transceiver = this._pc.addTransceiver(track, {
+                direction: "sendonly",
+                streams: [this._sendStream],
+                sendEncodings: encodings,
+            });
+        } catch (e) {
+            if ((e as Error).message === "Type error") {
+                console.warn("PeerConnection::addTransceiver with encodings failed, retrying without encodings");
+                transceiver = this._pc.addTransceiver(track, {
+                    direction: "sendonly",
+                    streams: [this._sendStream],
+                });
+            } else {
+                throw e;
+            }
+        }
 
         if (onRtpSender) {
             onRtpSender(transceiver.sender);
@@ -363,7 +376,7 @@ export class Safari17 extends HandlerInterface {
         await this._pc.setLocalDescription(offer);
 
         // We can now get the transceiver.mid.
-        const localId = transceiver.mid;
+        const localId = transceiver.mid!;
 
         // Set MID.
         sendingRtpParameters.mid = localId;

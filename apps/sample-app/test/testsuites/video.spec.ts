@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, ConsoleMessage } from "@playwright/test";
 import { createTransientRoom, deleteTransientRoom, joinRoom, RoomMode } from "./utils/room";
 import {
     countFrames,
@@ -31,8 +31,29 @@ roomModes.forEach((roomMode) => {
                 browserName === "webkit" && roomMode === "normal",
                 "WebKit has issues with fake streams in normal mode.",
             );
+
             const participant1 = page;
-            await joinRoom({ page, roomUrl, withFakeAudioStream: true });
+            const joinRoomPromise = joinRoom({ page, roomUrl, withFakeAudioStream: true });
+            if (browserName === "webkit") {
+                await new Promise<void>((resolve) => {
+                    page.on("console", (msg: ConsoleMessage) => {
+                        if (
+                            msg.type() === "warning" &&
+                            msg.text() ===
+                                "PeerConnection::addTransceiver with encodings failed, retrying without encodings"
+                        ) {
+                            // Our custom Safari17 handler tries to fix an issue with the mediasoup-client Safari12 handler where
+                            // provided video stream encodings are ignored. However, the Webkit browser Playwright uses doesn't like
+                            // our provided encodings and throws a TypeError, implying it thinks they are malformed.
+                            // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addTransceiver#exceptions
+                            //
+                            // If they ever fix that, this check will fail and we can remove it.
+                            resolve();
+                        }
+                    });
+                });
+            }
+            await joinRoomPromise;
 
             const participant2 = await page.context().newPage();
             await joinRoom({ page: participant2, roomUrl });
