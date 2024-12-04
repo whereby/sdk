@@ -1,6 +1,5 @@
 import rtcStats from "./rtcStatsService";
 import Session from "./Session";
-import { ServerSocket } from "../utils/ServerSocket";
 import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED, MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
@@ -16,7 +15,6 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
-import { TurnTransportProtocol } from "../utils";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
