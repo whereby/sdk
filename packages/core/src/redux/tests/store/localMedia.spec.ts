@@ -355,6 +355,7 @@ describe("actions", () => {
             jest.spyOn(MediaDevices, "getUpdatedDevices").mockImplementationOnce(() => ({
                 addedDevices: {},
                 changedDevices: { videoinput: dev2 },
+                removedDevices: {},
             }));
 
             mockedEnumerateDevices.mockImplementationOnce(() => Promise.resolve([dev1]));
@@ -430,6 +431,7 @@ describe("actions", () => {
             jest.spyOn(MediaDevices, "getUpdatedDevices").mockImplementationOnce(() => ({
                 addedDevices: {},
                 changedDevices: { videoinput: dev3 },
+                removedDevices: {},
             }));
 
             mockedEnumerateDevices.mockImplementationOnce(() => Promise.resolve([dev1, dev2]));

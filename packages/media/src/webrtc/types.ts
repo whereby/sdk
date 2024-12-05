@@ -1,5 +1,3 @@
-import { TurnTransportProtocol } from "../utils";
-
 /*
     RTC
 */
@@ -114,17 +112,22 @@ export type GetStreamResult = {
     stream: MediaStream;
 };
 
+export type UpdatedDeviceInfo = {
+    deviceId?: string | null;
+    kind?: MediaDeviceKind;
+    label?: string;
+};
+
+export type UpdatedDevicesInfo = {
+    audioinput?: UpdatedDeviceInfo;
+    videoinput?: UpdatedDeviceInfo;
+    audiooutput?: UpdatedDeviceInfo;
+};
+
 export type GetUpdatedDevicesResult = {
-    addedDevices: {
-        audioinput?: { deviceId: string; label: string; kind: string };
-        videoinput?: { deviceId: string; label: string; kind: string };
-        audiooutput?: { deviceId: string; label: string; kind: string };
-    };
-    changedDevices: {
-        audioinput?: { deviceId: string; label: string; kind: string };
-        videoinput?: { deviceId: string; label: string; kind: string };
-        audiooutput?: { deviceId: string; label: string; kind: string };
-    };
+    addedDevices: UpdatedDevicesInfo;
+    changedDevices: UpdatedDevicesInfo;
+    removedDevices: UpdatedDevicesInfo;
 };
 
 export type GetDeviceDataResult = {

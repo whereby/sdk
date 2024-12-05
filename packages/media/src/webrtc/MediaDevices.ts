@@ -1,6 +1,12 @@
 import getConstraints from "./mediaConstraints";
 import Logger from "../utils/Logger";
-import { GetDeviceDataResult, GetStreamOptions, GetStreamResult, GetUpdatedDevicesResult } from "./types";
+import {
+    GetDeviceDataResult,
+    GetStreamOptions,
+    GetStreamResult,
+    GetUpdatedDevicesResult,
+    UpdatedDevicesInfo,
+} from "./types";
 
 const logger = new Logger();
 
@@ -16,7 +22,7 @@ export class NoDevicesError extends Error {
 function removeDuplicates(devices: any) {
     return devices.filter(
         (device: any, i: number, self: any) =>
-            i === self.findIndex((d: any) => d.deviceId === device.deviceId && d.kind === device.kind)
+            i === self.findIndex((d: any) => d.deviceId === device.deviceId && d.kind === device.kind),
     );
 }
 
@@ -76,7 +82,7 @@ function getSettingsFromTrack(
     kind: string,
     track?: MediaStreamTrack | null,
     devices?: MediaDeviceInfo[],
-    lastUsedId?: string
+    lastUsedId?: string,
 ) {
     let settings: any = { deviceId: null };
 
@@ -194,7 +200,7 @@ export function replaceTracksInStream(stream: MediaStream, newStream: MediaStrea
  */
 export async function getStream(
     constraintOpt: any,
-    { replaceStream, fallback = true }: GetStreamOptions = {}
+    { replaceStream, fallback = true }: GetStreamOptions = {},
 ): Promise<GetStreamResult> {
     let error: any;
     let newConstraints: any;
@@ -269,7 +275,7 @@ export async function getStream(
                 // OverconstrainedError in many cases, let's try with laxer constraints
                 try {
                     stream = await getUserMedia(
-                        getConstraints({ ...constraintOpt, options: { ...constraintOpt.options, lax: true } })
+                        getConstraints({ ...constraintOpt, options: { ...constraintOpt.options, lax: true } }),
                     );
                 } catch (e2) {
                     logger.warn(`Tried getting stream again with laxer constraints, but failed: ${"" + e2}`);
@@ -351,7 +357,7 @@ const defaultDisplayMediaConstraints = {
  */
 export function getDisplayMedia(
     constraints = defaultDisplayMediaConstraints,
-    contentHint = "detail" // "detail" | "motion" | "text"
+    contentHint = "detail", // "detail" | "motion" | "text"
 ) {
     return global.navigator.mediaDevices.getDisplayMedia(constraints).then((stream) => {
         // Support for video content hint
@@ -365,7 +371,7 @@ export function getDisplayMedia(
     });
 }
 
-export function compareLocalDevices(before: any, after: any) {
+export function compareLocalDevices(before: MediaDeviceInfo[], after: MediaDeviceInfo[]) {
     const [beforeByKind, afterByKind] = [before, after].map((list) =>
         list
             .filter((device: any) => device.kind && device.deviceId)
@@ -374,8 +380,8 @@ export function compareLocalDevices(before: any, after: any) {
                     ...result,
                     [device.kind]: { ...result[device.kind], [device.deviceId]: device },
                 }),
-                {}
-            )
+                {},
+            ),
     );
     const changesByKind: any = {};
     // find devices removed
@@ -416,14 +422,15 @@ export function getUpdatedDevices({
     currentSpeakerId?: string | undefined;
 }): GetUpdatedDevicesResult {
     const changesByKind = compareLocalDevices(oldDevices, newDevices);
-    const changedDevices: any = {};
-    const addedDevices: any = {};
-    [
+    const removedDevices: UpdatedDevicesInfo = {};
+    const changedDevices: UpdatedDevicesInfo = {};
+    const addedDevices: UpdatedDevicesInfo = {};
+    const kindToDeviceIdMappings: [MediaDeviceKind, string?][] = [
         ["audioinput", currentAudioId],
         ["videoinput", currentVideoId],
         ["audiooutput", currentSpeakerId],
-    ].forEach(([kind, currentDeviceId]) => {
-        kind = kind || "";
+    ];
+    kindToDeviceIdMappings.forEach(([kind, currentDeviceId]) => {
         const changes = changesByKind[kind];
         if (!changes) {
             return;
@@ -443,13 +450,18 @@ export function getUpdatedDevices({
             }
         }
         // request new device if added
-        if (Object.keys(changes.added).length) {
+        if (Object.keys(changes.added).length > 0) {
             const [deviceAdded] = Object.keys(changes.added).slice(0, 1);
             const add = changes.added[deviceAdded];
-            // device props are not enumerable (used in notificatio
+            // device props are not enumerable (used in notification)
             addedDevices[kind] = { deviceId: add.deviceId, label: add.label, kind: add.kind };
+        }
+        // report removed device
+        if (Object.keys(changes.removed).length > 0) {
+            const [deviceRemoved] = Object.keys(changes.removed).slice(0, 1);
+            removedDevices[kind] = changes.removed[deviceRemoved];
         }
     });
 
-    return { addedDevices, changedDevices };
+    return { addedDevices, changedDevices, removedDevices };
 }
