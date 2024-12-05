@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.7
+
+### Patch Changes
+
+- 2d9abec: Expose removed devices in getUpdatedDevices
+
 ## 1.17.6
 
 ### Patch Changes
