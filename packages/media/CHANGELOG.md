@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.8
+
+### Patch Changes
+
+- 2d5bf4e: Fix quality-limitation-bw issue P2P audio-only mode
+
 ## 1.17.7
 
 ### Patch Changes
