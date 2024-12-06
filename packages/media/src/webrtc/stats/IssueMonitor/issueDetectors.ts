@@ -1,3 +1,4 @@
+import { getRoomMode } from "../../RtcManagerDispatcher";
 import { ssrcStats, TrackStats, ViewStats } from "../StatsMonitor";
 import { StatsClient } from "../types";
 import { PacketLossAnalyser } from "./packetLossAnalyser";
@@ -191,8 +192,17 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "quality-limitation-bw",
-        enabled: ({ hasLiveTrack, stats, client, kind }) =>
-            hasLiveTrack && client.isLocalClient && kind === "video" && !!stats,
+        enabled: ({ hasLiveTrack, stats, client, clients, kind }) => {
+            // This issue will be stuck active forever in P2P with a remote audio-only participant.
+            const roomMode = getRoomMode();
+            if (roomMode === "normal") {
+                const remoteClients = clients.filter((c) => !c.isLocalClient);
+
+                if (remoteClients.some((c) => c.isAudioOnlyModeEnabled)) return false;
+            }
+
+            return hasLiveTrack && client.isLocalClient && kind === "video" && !!stats;
+        },
         check: ({ stats }) => {
             if (!stats) return false;
             return !!Object.values(stats.tracks).find((track) =>
