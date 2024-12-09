@@ -14,12 +14,14 @@ export interface OrganizationState {
     data: Organization | null | undefined;
     isFetching: boolean;
     error: unknown;
+    fetchedAt: number | null;
 }
 
 const initialState: OrganizationState = {
     data: null,
     isFetching: false,
     error: null,
+    fetchedAt: null,
 };
 
 export const organizationSlice = createSlice({
@@ -39,6 +41,7 @@ export const organizationSlice = createSlice({
                 ...state,
                 isFetching: false,
                 data: action.payload,
+                fetchedAt: Date.now(),
             };
         });
         builder.addCase(doOrganizationFetch.rejected, (state) => {
