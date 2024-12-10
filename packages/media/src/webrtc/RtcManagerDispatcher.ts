@@ -34,7 +34,6 @@ export default class RtcManagerDispatcher {
                     webrtcProvider,
                     features,
                     eventClaim,
-                    deviceHandlerFactory: features?.deviceHandlerFactory,
                 };
                 const isSfu = !!room.sfuServer;
                 if (this.currentManager) {

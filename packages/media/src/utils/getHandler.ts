@@ -1,8 +1,14 @@
 import { detectDevice } from "mediasoup-client";
+import { BuiltinHandlerName } from "mediasoup-client/lib/types";
 import { UAParser } from "ua-parser-js";
 
-export const getHandler = (features: Record<string, boolean | undefined>) => {
-    let handlerName =
+type SupportedDevice = BuiltinHandlerName | "NodeJS" | "Safari17" | undefined;
+export const getHandler = (features: Record<string, boolean | undefined>): SupportedDevice => {
+    if (features.isNodeSdk) {
+        return "NodeJS";
+    }
+
+    let handlerName: SupportedDevice =
         detectDevice() || (/applecoremedia|applewebkit|safari/i.test(navigator.userAgent) ? "Safari17" : undefined);
 
     if (handlerName === "Safari12" && typeof navigator === "object" && typeof navigator.userAgent === "string") {

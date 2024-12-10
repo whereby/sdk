@@ -1,6 +1,8 @@
 import { Device } from "mediasoup-client";
 import adapterRaw from "webrtc-adapter";
 import { v4 as uuidv4 } from "uuid";
+// of the provided ones, this seems to work best in NodeJS
+import { Safari12 as NodeDeviceHandler } from "mediasoup-client/lib/handlers/Safari12.js";
 
 import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
@@ -99,7 +101,6 @@ export default class VegaRtcManager implements RtcManager {
         webrtcProvider,
         features,
         eventClaim,
-        deviceHandlerFactory,
     }: {
         selfId: any;
         room: any;
@@ -108,7 +109,6 @@ export default class VegaRtcManager implements RtcManager {
         webrtcProvider: any;
         features?: any;
         eventClaim?: string;
-        deviceHandlerFactory?: any;
     }) {
         const { session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
@@ -128,15 +128,13 @@ export default class VegaRtcManager implements RtcManager {
 
         const handlerName = getHandler(this._features);
 
-        if (handlerName === "Safari17" && !deviceHandlerFactory) {
-            // Patched Safari12 handler to fix simulcast bandwith limitsp
-            deviceHandlerFactory = Safari17.createFactory();
-        }
-
-        if (deviceHandlerFactory) {
-            this._mediasoupDevice = new Device({ handlerFactory: deviceHandlerFactory });
+        if (handlerName === "Safari17") {
+            // Patched Safari12 handler to fix simulcast bandwith limits
+            this._mediasoupDevice = new Device({ handlerFactory: Safari17.createFactory() });
+        } else if (handlerName === "NodeJS") {
+            this._mediasoupDevice = new Device({ handlerFactory: NodeDeviceHandler.createFactory() });
         } else {
-            this._mediasoupDevice = new Device({ handlerName: handlerName as BuiltinHandlerName });
+            this._mediasoupDevice = new Device({ handlerName });
         }
 
         this._routerRtpCapabilities = null;

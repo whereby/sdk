@@ -1,4 +1,4 @@
-import * as mediasoupClient from "mediasoup-client";
+const mediasoupClient = jest.requireActual("mediasoup-client");
 
 import VegaRtcManager from "../";
 
@@ -10,10 +10,18 @@ import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
 
-jest.mock("../../../utils/getHandler");
 jest.mock("../../../utils/Safari17Handler");
-const { getHandler } = jest.requireMock("../../../utils/getHandler");
 const { Safari17 } = jest.requireMock("../../../utils/Safari17Handler");
+jest.mock("mediasoup-client/lib/handlers/Safari12");
+const { Safari12 } = jest.requireMock("mediasoup-client/lib/handlers/Safari12");
+jest.mock("../../../utils/getHandler");
+const { getHandler } = jest.requireMock("../../../utils/getHandler");
+
+jest.mock("mediasoup-client", () => ({
+    ...mediasoupClient,
+    Device: jest.fn(),
+}));
+const mediasoupClientMock = jest.requireMock("mediasoup-client");
 
 const logger = new Logger();
 
@@ -24,7 +32,6 @@ jest.mock("webrtc-adapter", () => {
 });
 
 const originalNavigator = global.navigator;
-const originalMediasoupDevice = mediasoupClient.Device;
 
 describe("VegaRtcManager", () => {
     let navigator: any;
@@ -67,16 +74,12 @@ describe("VegaRtcManager", () => {
             value: navigator,
         });
 
-        Object.defineProperty(mediasoupClient, "Device", {
-            value: jest.fn().mockImplementation(() => {
-                return {
-                    load: jest.fn(),
-                    rtpCapabilities: {},
-                    createSendTransport: () => mockSendTransport,
-                    createRecvTransport: () => new MockTransport(),
-                };
-            }),
-        });
+        mediasoupClientMock.Device.mockImplementation(() => ({
+            load: jest.fn(),
+            rtpCapabilities: {},
+            createSendTransport: () => mockSendTransport,
+            createRecvTransport: () => new MockTransport(),
+        }));
 
         rtcManager = new VegaRtcManager({
             selfId: helpers.randomString("client-"),
@@ -99,32 +102,15 @@ describe("VegaRtcManager", () => {
         Object.defineProperty(global, "navigator", {
             value: originalNavigator,
         });
-        Object.defineProperty(mediasoupClient, "Device", {
-            value: originalMediasoupDevice,
-        });
     });
 
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
         const room = { name: helpers.randomString("/room-"), iceServers: {} };
 
-        it("handles custom device handler factories", () => {
-            const deviceHandlerFactory = function () {};
-            //eslint-disable-next-line no-new
-            new VegaRtcManager({
-                selfId,
-                room,
-                emitter,
-                serverSocket,
-                webrtcProvider,
-                deviceHandlerFactory,
-            });
-            expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: deviceHandlerFactory });
-        });
-
         it("uses the custom Safari17 handler", () => {
-            getHandler.mockImplementation(() => "Safari17");
             const factory = jest.fn();
+            getHandler.mockImplementation(() => "Safari17");
             Safari17.createFactory.mockImplementation(() => factory);
 
             //eslint-disable-next-line no-new
@@ -136,7 +122,25 @@ describe("VegaRtcManager", () => {
                 webrtcProvider,
             });
 
-            expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: factory });
+            expect(mediasoupClientMock.Device).toHaveBeenCalledWith({ handlerFactory: factory });
+        });
+
+        it("uses the nodejs handler when isNodeJs", () => {
+            getHandler.mockImplementation(() => "NodeJS");
+            const factory = jest.fn();
+            Safari12.createFactory.mockImplementation(() => factory);
+
+            //eslint-disable-next-line no-new
+            new VegaRtcManager({
+                selfId,
+                room,
+                emitter,
+                serverSocket,
+                webrtcProvider,
+                features: { isNodeSdk: true },
+            });
+
+            expect(mediasoupClientMock.Device).toHaveBeenCalledWith({ handlerFactory: factory });
         });
     });
 
