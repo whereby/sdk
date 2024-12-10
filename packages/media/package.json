@@ -58,6 +58,7 @@
         "sdp-transform": "^2.14.2",
         "socket.io-client": "4.7.2",
         "typescript": "^5.3.3",
+        "ua-parser-js": "^1.0.38",
         "uuid": "^9.0.1",
         "uuid-validate": "^0.0.3",
         "webrtc-adapter": "^9.0.1"
@@ -65,6 +66,7 @@
     "devDependencies": {
         "@babel/core": "^7.23.2",
         "@babel/preset-env": "^7.23.2",
+        "@types/ua-parser-js": "^0.7.39",
         "jest-websocket-mock": "^2.5.0",
         "process": "^0.11.10"
     },

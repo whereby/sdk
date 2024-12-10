@@ -13,7 +13,7 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive, doAppStop } from "../app";
-import { Safari12 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Safari12.js";
+
 import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
@@ -197,7 +197,6 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
             vp9On: false,
             h264On: false,
             simulcastScreenshareOn: false,
-            deviceHandlerFactory: isNodeSdk ? MediasoupDeviceHandler.createFactory() : undefined,
         },
     });
 
