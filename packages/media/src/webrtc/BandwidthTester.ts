@@ -80,7 +80,7 @@ export default class BandwidthTester extends EventEmitter {
         this._runTime = runTime;
         this._startTime = Date.now();
 
-        const host = this._features.sfuServerOverrideHost || "any.sfu.whereby.com";
+        const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
         const wsUrl = `wss://${host}`;
 
         this._vegaConnection = new VegaConnection(wsUrl, "whereby-sfu#bw-test-v1");
@@ -211,7 +211,7 @@ export default class BandwidthTester extends EventEmitter {
             preferUdp: true,
         });
 
-        transportOptions.iceServers = [{ urls: "stun:any.turn.whereby.com" }];
+        transportOptions.iceServers = [{ urls: "stun:any.turn.svc.whereby.com" }];
 
         const transport = this._mediasoupDevice[creator](transportOptions);
 
