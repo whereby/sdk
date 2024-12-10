@@ -7,7 +7,7 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
 import { selectRemoteParticipants } from "../remoteParticipants";
 import { selectSignalStatus } from "../signalConnection";
-import { selectRoomConnectionStatus } from "../roomConnection";
+import { selectRoomConnectionStatus } from "../roomConnection/selectors";
 import { selectIsAuthorizedToAskToSpeak } from "../authorization";
 import {
     Notification,

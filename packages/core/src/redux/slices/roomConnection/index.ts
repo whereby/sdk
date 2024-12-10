@@ -1,8 +1,8 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 
-import { createReactor, startAppListening } from "../listenerMiddleware";
-import { RootState } from "../store";
-import { createAppThunk } from "../thunk";
+import { createReactor, startAppListening } from "../../listenerMiddleware";
+import { selectRoomConnectionError, selectRoomConnectionStatus } from "./selectors";
+import { createAppThunk } from "../../thunk";
 import {
     doAppStop,
     selectAppDisplayName,
@@ -11,19 +11,19 @@ import {
     selectAppExternalId,
     selectAppIsActive,
     selectAppIsDialIn,
-} from "./app";
-import { selectRoomKey, setRoomKey } from "./authorization";
+} from "../app";
+import { selectRoomKey, setRoomKey } from "../authorization";
 
-import { selectOrganizationId } from "./organization";
-import { signalEvents } from "./signalConnection/actions";
+import { selectOrganizationId } from "../organization";
+import { signalEvents } from "../signalConnection/actions";
 import {
     doSignalDisconnect,
     selectSignalConnectionDeviceIdentified,
     selectSignalConnectionRaw,
     socketReconnecting,
-} from "./signalConnection";
-import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
-import { selectSelfId, selectLocalParticipantClientClaim } from "./localParticipant";
+} from "../signalConnection";
+import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "../localMedia";
+import { selectSelfId, selectLocalParticipantClientClaim } from "../localParticipant";
 
 export type ConnectionStatus =
     | "ready"
@@ -218,16 +218,6 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
 
     dispatch(connectionStatusChanged("connecting"));
 });
-
-/**
- * Selectors
- */
-
-export const selectRoomConnectionRaw = (state: RootState) => state.roomConnection;
-export const selectRoomConnectionSession = (state: RootState) => state.roomConnection.session;
-export const selectRoomConnectionSessionId = (state: RootState) => state.roomConnection.session?.id;
-export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
-export const selectRoomConnectionError = (state: RootState) => state.roomConnection.error;
 
 /**
  * Reactors
