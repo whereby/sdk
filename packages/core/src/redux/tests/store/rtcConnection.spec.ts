@@ -72,7 +72,7 @@ describe("actions", () => {
         });
 
         describe("when isNodeSdk is true", () => {
-            it("uses a custom mediasoup device", () => {
+            it("initializes the RtcManagerDispatcher with that feature", () => {
                 const store = createStore({
                     withSignalConnection: true,
                     initialState: {
@@ -97,7 +97,7 @@ describe("actions", () => {
                 expect(RtcManagerDispatcher).toHaveBeenCalledTimes(1);
                 expect(RtcManagerDispatcher).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        features: expect.objectContaining({ deviceHandlerFactory: expect.any(Function) }),
+                        features: expect.objectContaining({ isNodeSdk: true }),
                     }),
                 );
                 expect(diff(before, after)).toEqual({

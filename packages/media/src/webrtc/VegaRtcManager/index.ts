@@ -1,6 +1,8 @@
 import { Device } from "mediasoup-client";
 import adapterRaw from "webrtc-adapter";
 import { v4 as uuidv4 } from "uuid";
+// of the provided ones, this seems to work best in NodeJS
+import { Safari12 as NodeDeviceHandler } from "mediasoup-client/lib/handlers/Safari12.js";
 
 import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
@@ -13,13 +15,11 @@ import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
 import { PROTOCOL_EVENTS, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../model/protocol";
 import * as CONNECTION_STATUS from "../../model/connectionStatusConstants";
 import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSettings";
-import { getHandler } from "../../utils/getHandler";
+import { getMediasoupDevice } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly } from "../../utils/transportSettings";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ServerSocket } from "../../utils";
-import { Safari17 } from "../../utils/Safari17Handler";
-import { BuiltinHandlerName } from "mediasoup-client/lib/types";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -47,7 +47,7 @@ export default class VegaRtcManager implements RtcManager {
     _vegaConnection: any;
     _micAnalyser: any;
     _micAnalyserDebugger: any;
-    _mediasoupDevice: any;
+    _mediasoupDevice: Device | null;
     _routerRtpCapabilities: any;
     _sendTransport: any;
     _receiveTransport: any;
@@ -99,7 +99,6 @@ export default class VegaRtcManager implements RtcManager {
         webrtcProvider,
         features,
         eventClaim,
-        deviceHandlerFactory,
     }: {
         selfId: any;
         room: any;
@@ -108,7 +107,6 @@ export default class VegaRtcManager implements RtcManager {
         webrtcProvider: any;
         features?: any;
         eventClaim?: string;
-        deviceHandlerFactory?: any;
     }) {
         const { session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
@@ -126,18 +124,7 @@ export default class VegaRtcManager implements RtcManager {
         this._micAnalyser = null;
         this._micAnalyserDebugger = null;
 
-        const handlerName = getHandler(this._features);
-
-        if (handlerName === "Safari17" && !deviceHandlerFactory) {
-            // Patched Safari12 handler to fix simulcast bandwith limitsp
-            deviceHandlerFactory = Safari17.createFactory();
-        }
-
-        if (deviceHandlerFactory) {
-            this._mediasoupDevice = new Device({ handlerFactory: deviceHandlerFactory });
-        } else {
-            this._mediasoupDevice = new Device({ handlerName: handlerName as BuiltinHandlerName });
-        }
+        this._mediasoupDevice = getMediasoupDevice(features);
 
         this._routerRtpCapabilities = null;
 
@@ -348,11 +335,11 @@ export default class VegaRtcManager implements RtcManager {
                 modifyMediaCapabilities(routerRtpCapabilities, this._features);
 
                 this._routerRtpCapabilities = routerRtpCapabilities;
-                await this._mediasoupDevice.load({ routerRtpCapabilities });
+                await this._mediasoupDevice?.load({ routerRtpCapabilities });
             }
 
             this._vegaConnection.message("setCapabilities", {
-                rtpCapabilities: this._mediasoupDevice.rtpCapabilities,
+                rtpCapabilities: this._mediasoupDevice?.rtpCapabilities,
             });
 
             if (this._colocation) this._vegaConnection.message("setColocation", { colocation: this._colocation });
@@ -401,7 +388,7 @@ export default class VegaRtcManager implements RtcManager {
 
         maybeTurnOnly(transportOptions, this._features);
 
-        const transport = this._mediasoupDevice[creator](transportOptions);
+        const transport = this._mediasoupDevice?.[creator](transportOptions);
         const onConnectionStateListener = async (connectionState: any) => {
             logger.info(`Transport ConnectionStateChanged ${connectionState}`);
             if (connectionState !== "disconnected" && connectionState !== "failed") {
@@ -424,7 +411,7 @@ export default class VegaRtcManager implements RtcManager {
             }
         };
         transport
-            .on("connect", ({ dtlsParameters }: { dtlsParameters: any }, callback: any) => {
+            ?.on("connect", ({ dtlsParameters }: { dtlsParameters: any }, callback: any) => {
                 this._vegaConnection?.message("connectTransport", {
                     transportId: transport.id,
                     dtlsParameters,
@@ -434,12 +421,12 @@ export default class VegaRtcManager implements RtcManager {
             })
             .on("connectionstatechange", onConnectionStateListener);
 
-        transport.observer.once("close", () => {
-            transport.removeListener(onConnectionStateListener);
+        transport?.observer.once("close", () => {
+            transport.removeListener("connectionstatechange", onConnectionStateListener);
         });
 
         if (send) {
-            transport.on(
+            transport?.on(
                 "produce",
                 async (
                     {
@@ -471,7 +458,7 @@ export default class VegaRtcManager implements RtcManager {
                     }
                 },
             );
-            transport.on(
+            transport?.on(
                 "producedata",
                 async (
                     {

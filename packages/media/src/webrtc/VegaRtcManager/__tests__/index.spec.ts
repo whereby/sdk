@@ -1,5 +1,3 @@
-import * as mediasoupClient from "mediasoup-client";
-
 import VegaRtcManager from "../";
 
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
@@ -10,10 +8,8 @@ import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
 
-jest.mock("../../../utils/getHandler");
-jest.mock("../../../utils/Safari17Handler");
-const { getHandler } = jest.requireMock("../../../utils/getHandler");
-const { Safari17 } = jest.requireMock("../../../utils/Safari17Handler");
+jest.mock("../../../utils/getMediasoupDevice");
+const { getMediasoupDevice } = jest.requireMock("../../../utils/getMediasoupDevice");
 
 const logger = new Logger();
 
@@ -24,7 +20,6 @@ jest.mock("webrtc-adapter", () => {
 });
 
 const originalNavigator = global.navigator;
-const originalMediasoupDevice = mediasoupClient.Device;
 
 describe("VegaRtcManager", () => {
     let navigator: any;
@@ -67,16 +62,12 @@ describe("VegaRtcManager", () => {
             value: navigator,
         });
 
-        Object.defineProperty(mediasoupClient, "Device", {
-            value: jest.fn().mockImplementation(() => {
-                return {
-                    load: jest.fn(),
-                    rtpCapabilities: {},
-                    createSendTransport: () => mockSendTransport,
-                    createRecvTransport: () => new MockTransport(),
-                };
-            }),
-        });
+        getMediasoupDevice.mockImplementation(() => ({
+            load: jest.fn(),
+            rtpCapabilities: {},
+            createSendTransport: () => mockSendTransport,
+            createRecvTransport: () => new MockTransport(),
+        }));
 
         rtcManager = new VegaRtcManager({
             selfId: helpers.randomString("client-"),
@@ -99,44 +90,28 @@ describe("VegaRtcManager", () => {
         Object.defineProperty(global, "navigator", {
             value: originalNavigator,
         });
-        Object.defineProperty(mediasoupClient, "Device", {
-            value: originalMediasoupDevice,
-        });
     });
 
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
         const room = { name: helpers.randomString("/room-"), iceServers: {} };
 
-        it("handles custom device handler factories", () => {
-            const deviceHandlerFactory = function () {};
+        it("gets a mediasoup device", () => {
+            const device = jest.fn();
+            getMediasoupDevice.mockImplementation(() => device);
+
             //eslint-disable-next-line no-new
-            new VegaRtcManager({
+            const rtcManager = new VegaRtcManager({
                 selfId,
                 room,
                 emitter,
                 serverSocket,
                 webrtcProvider,
-                deviceHandlerFactory,
-            });
-            expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: deviceHandlerFactory });
-        });
-
-        it("uses the custom Safari17 handler", () => {
-            getHandler.mockImplementation(() => "Safari17");
-            const factory = jest.fn();
-            Safari17.createFactory.mockImplementation(() => factory);
-
-            //eslint-disable-next-line no-new
-            new VegaRtcManager({
-                selfId,
-                room,
-                emitter,
-                serverSocket,
-                webrtcProvider,
+                features: { isNodeSdk: true },
             });
 
-            expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: factory });
+            expect(getMediasoupDevice).toHaveBeenCalledWith({ isNodeSdk: true });
+            expect(rtcManager._mediasoupDevice).toEqual(device);
         });
     });
 
