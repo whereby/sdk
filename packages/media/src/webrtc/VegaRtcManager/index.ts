@@ -126,10 +126,10 @@ export default class VegaRtcManager implements RtcManager {
         this._micAnalyser = null;
         this._micAnalyserDebugger = null;
 
-        const handlerName = getHandler();
+        const handlerName = getHandler(this._features);
 
         if (handlerName === "Safari17" && !deviceHandlerFactory) {
-            // Patched Safari12 handler to fix simulcast bandwith limits
+            // Patched Safari12 handler to fix simulcast bandwith limitsp
             deviceHandlerFactory = Safari17.createFactory();
         }
 

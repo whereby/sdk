@@ -39,7 +39,7 @@ export default class BandwidthTester extends EventEmitter {
 
         this._vegaConnection = null;
 
-        const handlerName = getHandler();
+        const handlerName = getHandler(this._features);
         if (handlerName === "Safari17") {
             // Patched Safari handler to fix simulcast bandwith limits
             this._mediasoupDevice = new Device({ handlerFactory: Safari17.createFactory() });
@@ -189,9 +189,12 @@ export default class BandwidthTester extends EventEmitter {
             }
 
             // We have established media, start timer to report results and close the test
-            this._resultTimeout = setTimeout(() => {
-                this._reportResults();
-            }, this._runTime * 1000 - this._mediaEstablishedTime);
+            this._resultTimeout = setTimeout(
+                () => {
+                    this._reportResults();
+                },
+                this._runTime * 1000 - this._mediaEstablishedTime,
+            );
         } catch (error) {
             logger.error("_start() [error:%o]", error);
 
