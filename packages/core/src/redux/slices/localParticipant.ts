@@ -6,10 +6,11 @@ import { LocalParticipant } from "../../RoomParticipant";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { doAppStart } from "./app";
 import { selectLocalMediaStream, toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
-import { createReactor, startAppListening } from "../listenerMiddleware";
+import { startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
 import { ClientView } from "../types";
 import { NON_PERSON_ROLES } from "../constants";
+import { selectRoomConnectionStatus } from "./roomConnection/selectors";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
@@ -217,7 +218,11 @@ startAppListening({
     effect: ({ payload }, { dispatch, getState }) => {
         const { enabled } = payload;
         const { isVideoEnabled } = selectLocalParticipantRaw(getState());
+        const roomConnectionStatus = selectRoomConnectionStatus(getState());
 
+        if (roomConnectionStatus !== "connected") {
+            return;
+        }
         dispatch(doEnableVideo({ enabled: enabled || !isVideoEnabled }));
     },
 });
@@ -227,11 +232,11 @@ startAppListening({
     effect: ({ payload }, { dispatch, getState }) => {
         const { enabled } = payload;
         const { isAudioEnabled } = selectLocalParticipantRaw(getState());
+        const roomConnectionStatus = selectRoomConnectionStatus(getState());
 
+        if (roomConnectionStatus !== "connected") {
+            return;
+        }
         dispatch(doEnableAudio({ enabled: enabled || !isAudioEnabled }));
     },
-});
-
-createReactor([selectLocalParticipantDisplayName, selectLocalParticipantStickyReaction], ({ dispatch }) => {
-    dispatch(doSendClientMetadata());
 });

@@ -3,7 +3,7 @@ import { setClientProvider, subscribeIssues } from "@whereby.com/media";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 import { createReactor } from "../listenerMiddleware";
-import { selectRoomConnectionStatus } from "./roomConnection";
+import { selectRoomConnectionStatus } from "./roomConnection/selectors";
 import { selectRtcManager } from "./rtcConnection";
 import { selectAllClientViews } from "./room";
 
