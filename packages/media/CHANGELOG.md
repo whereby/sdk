@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.9
+
+### Patch Changes
+
+- 1b6e43c: Fix bandwidth tester sfu url
+
 ## 1.17.8
 
 ### Patch Changes
