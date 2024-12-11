@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.10
+
+### Patch Changes
+
+- 9304948: Handle failed SFU connection in bwtester
+
 ## 1.17.9
 
 ### Patch Changes
