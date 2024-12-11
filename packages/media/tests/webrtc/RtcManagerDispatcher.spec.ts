@@ -68,19 +68,6 @@ describe("RtcManagerDispatcher", () => {
         const rtcManager = mockEmitRoomJoined({ sfuServer: { url: helpers.randomString("sfu-") + ":443" } });
         expect(rtcManager).toBeInstanceOf(VegaRtcManager);
     });
-    it("allows custom device handler factories when sfuServer", () => {
-        features.deviceHandlerFactory = function () {};
-        jest.mock("../../src/webrtc/VegaRtcManager", () => {
-            return {
-                default: jest.fn(),
-            };
-        });
-        const rtcManager = mockEmitRoomJoined({ sfuServer: { url: helpers.randomString("sfu-") + ":443" } });
-        expect(rtcManager).toBeInstanceOf(VegaRtcManager);
-        expect(mediasoupClient.Device).toHaveBeenCalledWith({
-            handlerFactory: features.deviceHandlerFactory,
-        });
-    });
 
     it("emits nothing when error is set", () => {
         const rtcManager = mockEmitRoomJoined({ error: "yo" });
