@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.31.0
+
+### Minor Changes
+
+- 0f0fa89: Do not send client metadata before connecting to room
+
 ## 0.30.4
 
 ### Patch Changes
