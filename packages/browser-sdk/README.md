@@ -67,7 +67,10 @@ The `useRoomConnection` hook provides a way to connect participants in a given
 room, subscribe to state updates, and perform actions on the connection, like
 toggling camera or microphone.
 
+Note: from V3 this requires the `WherebyProvder` as a parent of this component. See [the docs](https://docs.whereby.com/reference/react-hooks-reference/guides-and-concepts/migrate-from-version-2.x-to-3) for details 
+
 ```js
+import { useEffect } from "react"
 import { useRoomConnection } from "@whereby.com/browser-sdk/react";
 
 function MyCallUX( { roomUrl, localStream }) {
@@ -83,8 +86,14 @@ function MyCallUX( { roomUrl, localStream }) {
     );
 
     const { connectionState, remoteParticipants } = state;
-    const { toggleCamera, toggleMicrophone } = actions;
+    const { toggleCamera, toggleMicrophone, joinRoom, leaveRoom } = actions;
     const { VideoView } = components;
+    
+    useEffect(() => {
+        /* join the room when this component renders */
+        joinRoom()
+        return () => leaveRoom()
+    }, [])
 
     return <div className="videoGrid">
         { /* Render any UI, making use of state */ }
@@ -178,3 +187,12 @@ web component. The following changes are necessary when upgrading to v2:
 The functionality of the web component should be exactly as the latest version
 on the v1 branch, but a TypeScript definition is now available for projects
 using this language.
+
+## Migrating from version v2.x to v3
+
+Version 3 of the browser-sdk contains three breaking changes:
+- WherebyProvider is now required to be rendered, and all usage of browser-sdk needs to be in children of the provider.
+- useRoomConnection does not automatically join the room any longer. It's required to manually call joinRoom() from useRoomConnection.actions
+- useRoomConnection.components is deprecated.
+
+See [here](https://docs.whereby.com/reference/react-hooks-reference/guides-and-concepts/migrate-from-version-2.x-to-3) for more details
