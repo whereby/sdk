@@ -25,8 +25,7 @@ export default class BandwidthTester extends EventEmitter {
     _timeout: any;
     _canvas: any;
     _drawInterval: any;
-    _resultTimeout: any;
-    _reportTimeout: any;
+    _resultTimeout: NodeJS.Timeout | null;
 
     constructor({ features }: { features?: any } = {}) {
         super();
@@ -97,6 +96,12 @@ export default class BandwidthTester extends EventEmitter {
 
         this.closed = true;
 
+        // If this happens, the websocket connection to SFU probably failed right away.
+        if (!!this._timeout || Date.now() - this._startTime < 750) {
+            this.emit("result", {
+                error: true,
+            });
+        }
         this._clearTimeouts();
 
         clearInterval(this._drawInterval);
@@ -184,7 +189,7 @@ export default class BandwidthTester extends EventEmitter {
                 () => {
                     this._reportResults();
                 },
-                this._runTime * 1000 - this._mediaEstablishedTime
+                this._runTime * 1000 - this._mediaEstablishedTime,
             );
         } catch (error) {
             logger.error("_start() [error:%o]", error);
@@ -477,7 +482,5 @@ export default class BandwidthTester extends EventEmitter {
     _clearTimeouts() {
         clearTimeout(this._timeout);
         this._timeout = null;
-        clearTimeout(this._reportTimeout);
-        this._reportTimeout = null;
     }
 }
