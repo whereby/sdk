@@ -12,7 +12,7 @@ import { selectSignalStatus } from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
 import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
 import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "./localScreenshare";
-import { selectRoomConnectionSessionId } from "./roomConnection";
+import { selectRoomConnectionSessionId } from "./roomConnection/selectors";
 import { signalEvents } from "./signalConnection/actions";
 
 type RtcAnalyticsCustomEvent = {
