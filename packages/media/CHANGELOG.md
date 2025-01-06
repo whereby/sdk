@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.11
+
+### Patch Changes
+
+- d46c94f: Add custom Safari17 mediasoup device hanlder
+
 ## 1.17.10
 
 ### Patch Changes
