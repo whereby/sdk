@@ -4,6 +4,7 @@ import { createServices } from "../services";
 
 import { appSlice, doAppStart } from "./slices/app";
 import { authorizationSlice } from "./slices/authorization";
+import { breakoutSlice } from "./slices/breakout";
 import { chatSlice } from "./slices/chat";
 import { cloudRecordingSlice } from "./slices/cloudRecording";
 import { connectionMonitorSlice } from "./slices/connectionMonitor";
@@ -28,6 +29,7 @@ const IS_DEV = process.env.REACT_APP_IS_DEV === "true" ?? false;
 const appReducer = combineReducers({
     app: appSlice.reducer,
     authorization: authorizationSlice.reducer,
+    breakout: breakoutSlice.reducer,
     chat: chatSlice.reducer,
     cloudRecording: cloudRecordingSlice.reducer,
     connectionMonitor: connectionMonitorSlice.reducer,
