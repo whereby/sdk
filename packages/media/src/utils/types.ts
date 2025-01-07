@@ -125,6 +125,33 @@ export interface KnockRejectedEvent {
     resolution: "rejected";
 }
 
+export interface BreakoutConfig {
+    assignments?: {
+        [key: string]: string;
+    } | null;
+    autoMoveToGroup?: boolean;
+    autoMoveToMain?: boolean;
+    breakoutEnabledAt?: string | null;
+    breakoutNotification?: string | null;
+    breakoutTimerDuration?: number;
+    breakoutStartedAt?: string | null;
+    breakoutEndedAt?: string | null;
+    breakoutTimerSetting?: boolean;
+    moveToGroupGracePeriod?: number | null;
+    moveToMainGracePeriod?: number | null;
+    enforceAssignment?: boolean;
+    groups?: {
+        [key: string]: string;
+    } | null;
+    initiatedBy?: {
+        clientId: string;
+        userId: string;
+        deviceId: string;
+        active: boolean;
+    } | null;
+    startedAt?: Date | null;
+}
+
 export interface RoomJoinedEvent {
     error?: string;
     isLocked: boolean;
@@ -140,7 +167,10 @@ export interface RoomJoinedEvent {
     selfId: string;
     breakoutGroup: string | null;
     clientClaim?: string;
+    breakout?: BreakoutConfig;
 }
+
+export interface BreakoutSessionUpdatedEvent extends BreakoutConfig {}
 
 export interface RoomKnockedEvent {
     clientId: string;
@@ -231,6 +261,7 @@ export interface SignalEvents {
     audio_enabled: AudioEnabledEvent;
     audio_enable_requested: AudioEnableRequestedEvent;
     breakout_group_joined: BreakoutGroupJoinedEvent;
+    breakout_session_updated: BreakoutSessionUpdatedEvent;
     client_left: ClientLeftEvent;
     client_kicked: ClientKickedEvent;
     client_metadata_received: ClientMetadataReceivedEvent;
