@@ -26,6 +26,7 @@ import {
     SpotlightAddedEvent,
     SpotlightRemovedEvent,
     VideoEnableRequestedEvent,
+    BreakoutSessionUpdatedEvent,
 } from "@whereby.com/media";
 
 function createSignalEventAction<T>(name: string) {
@@ -36,6 +37,7 @@ export const signalEvents = {
     audioEnabled: createSignalEventAction<AudioEnabledEvent>("audioEnabled"),
     audioEnableRequested: createSignalEventAction<AudioEnableRequestedEvent>("audioEnableRequested"),
     breakoutGroupJoined: createSignalEventAction<BreakoutGroupJoinedEvent>("breakoutGroupJoined"),
+    breakoutSessionUpdated: createSignalEventAction<BreakoutSessionUpdatedEvent>("breakoutSessionUpdated"),
     chatMessage: createSignalEventAction<ChatMessage>("chatMessage"),
     clientLeft: createSignalEventAction<ClientLeftEvent>("clientLeft"),
     clientKicked: createSignalEventAction<ClientKickedEvent>("clientKicked"),

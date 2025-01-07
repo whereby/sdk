@@ -31,6 +31,7 @@ import {
     SpotlightRemovedEvent,
     VideoEnabledEvent,
     VideoEnableRequestedEvent,
+    BreakoutSessionUpdatedEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
 import { selectAppIsActive } from "../app";
@@ -91,6 +92,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     );
     socket.on("breakout_group_joined", (payload: BreakoutGroupJoinedEvent) =>
         dispatch(signalEvents.breakoutGroupJoined(payload)),
+    );
+    socket.on("breakout_session_updated", (payload: BreakoutSessionUpdatedEvent) =>
+        dispatch(signalEvents.breakoutSessionUpdated(payload)),
     );
 }
 
