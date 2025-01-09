@@ -26,8 +26,9 @@ import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
-import { selectBreakoutActive } from "../breakout";
+import { selectBreakoutActive, selectBreakoutCurrentId } from "../breakout";
 import { selectLocalParticipantRaw } from "../localParticipant/selectors";
+import { selectSpotlights } from "../spotlights";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -465,16 +466,19 @@ createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) =
 export const selectStreamsToAccept = createSelector(
     selectRtcStatus,
     selectRemoteClients,
-    (rtcStatus, remoteParticipants) => {
+    selectBreakoutCurrentId,
+    selectSpotlights,
+    (rtcStatus, remoteParticipants, breakoutCurrentId, spotlights) => {
         if (rtcStatus !== "ready") {
             return [];
         }
 
-        const shouldAcceptStreams = true;
         const upd = [];
         // This should actually use remoteClientViews for its handling
         for (const client of remoteParticipants) {
             const { streams, id: clientId, newJoiner } = client;
+
+            const clientSpotlight = spotlights.find((s) => s.clientId === client.id && s.streamId === "0");
 
             for (let i = 0; i < streams.length; i++) {
                 let streamId = streams[i].id;
@@ -492,7 +496,11 @@ export const selectStreamsToAccept = createSelector(
                     }
                 }
 
-                if (shouldAcceptStreams) {
+                if (
+                    (!client.breakoutGroup && !breakoutCurrentId) || // Accept when both in falsy group
+                    client.breakoutGroup === breakoutCurrentId || // Accept all in same breakout group
+                    ("" === client.breakoutGroup && clientSpotlight) // Accept remote spotlights outside groups
+                ) {
                     // Already connected
                     if (state === "done_accept") continue;
                     upd.push({
