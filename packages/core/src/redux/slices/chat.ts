@@ -4,6 +4,7 @@ import { RootState } from "../store";
 import { createRoomConnectedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
+import { selectBreakoutCurrentId } from "./breakout";
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
 
@@ -41,12 +42,19 @@ export const chatSlice = createSlice({
 /**
  * Action creators
  */
-export const doSendChatMessage = createRoomConnectedThunk((payload: { text: string }) => (_, getState) => {
-    const state = getState();
-    const socket = selectSignalConnectionRaw(state).socket;
+export const doSendChatMessage = createRoomConnectedThunk(
+    (payload: { text: string; isBroadcast?: boolean }) => (_, getState) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+        const breakoutCurrentId = selectBreakoutCurrentId(state);
 
-    socket?.emit("chat_message", { text: payload.text });
-});
+        socket?.emit("chat_message", {
+            text: payload.text,
+            ...(breakoutCurrentId && { breakoutGroup: breakoutCurrentId }),
+            ...(payload.isBroadcast && { broadcast: true }),
+        });
+    },
+);
 
 /**
  * Selectors
