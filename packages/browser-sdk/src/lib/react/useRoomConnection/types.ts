@@ -96,4 +96,6 @@ export interface RoomConnectionActions {
     toggleMicrophone: (enabled?: boolean) => void;
     spotlightParticipant: (clientId: string) => void;
     removeSpotlight: (clientId: string) => void;
+    joinBreakoutGroup: (group: string) => void;
+    joinBreakoutMainRoom: () => void;
 }
