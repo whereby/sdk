@@ -70,6 +70,7 @@ interface Stream {
 export interface RemoteParticipant {
     id: string;
     displayName: string;
+    deviceId: string;
     roleName: RoleName;
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;

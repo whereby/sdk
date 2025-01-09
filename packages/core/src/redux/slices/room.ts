@@ -14,6 +14,7 @@ import { selectLocalScreenshareStream } from "./localScreenshare";
 import { Screenshare, RemoteParticipant } from "../../RoomParticipant";
 import { selectLocalParticipantView, selectLocalParticipantRaw } from "./localParticipant/selectors";
 import { ClientView } from "../types";
+import { selectBreakoutActive, selectBreakoutAssignments, selectBreakoutCurrentId } from "./breakout";
 
 function isStreamerClient(client: RemoteParticipant) {
     return client.roleName === "streamer";
@@ -152,7 +153,9 @@ export const selectRemoteClientViews = createSelector(
     selectLocalScreenshareStream,
     selectLocalParticipantRaw,
     selectRemoteParticipants,
-    (localScreenshareStream, localParticipant, remoteParticipants) => {
+    selectBreakoutCurrentId,
+    selectBreakoutAssignments,
+    (localScreenshareStream, localParticipant, remoteParticipants, breakoutCurrentId, breakoutAssignments) => {
         const views: ClientView[] = [];
 
         if (localScreenshareStream) {
@@ -167,6 +170,7 @@ export const selectRemoteClientViews = createSelector(
                 isPresentation: true,
                 isVideoEnabled: true,
                 stream: localScreenshareStream,
+                breakoutGroup: breakoutCurrentId || "",
             });
         }
         for (const c of remoteParticipants) {
@@ -182,6 +186,7 @@ export const selectRemoteClientViews = createSelector(
             const isVideoEnabled = c.isVideoEnabled;
             views.push({
                 ...clientView,
+                breakoutGroupAssigned: breakoutAssignments?.[c.deviceId] || "",
                 clientId: c.id,
                 displayName,
                 hasActivePresentation: !!isPresentationActive,
@@ -210,5 +215,23 @@ export const selectAllClientViews = createSelector(
     selectRemoteClientViews,
     (localParticipant, remoteParticipants) => {
         return [...(localParticipant ? [localParticipant] : []), ...remoteParticipants];
+    },
+);
+
+export const selectAllClientViewsInCurrentGroup = createSelector(
+    selectAllClientViews,
+    selectBreakoutActive,
+    selectBreakoutCurrentId,
+    (allClientViews, breakoutActive, breakoutCurrentId) => {
+        if (!breakoutActive || !breakoutCurrentId) {
+            return allClientViews;
+        }
+
+        return allClientViews.filter(
+            (client) =>
+                client.isLocalClient ||
+                client.breakoutGroup === (breakoutCurrentId || "") ||
+                (client.breakoutGroupAssigned && client.breakoutGroupAssigned === breakoutCurrentId),
+        );
     },
 );

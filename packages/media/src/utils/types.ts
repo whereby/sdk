@@ -50,6 +50,7 @@ export interface SignalClient {
     displayName: string;
     id: string;
     streams: string[];
+    deviceId: string;
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
     role: ClientRole;
