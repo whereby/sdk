@@ -13,7 +13,7 @@ import {
 } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { NON_PERSON_ROLES } from "../constants";
-import { selectLocalParticipantRaw } from "./localParticipant";
+import { selectLocalParticipantRaw } from "./localParticipant/selectors";
 
 /**
  * State mapping utils

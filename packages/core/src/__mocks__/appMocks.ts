@@ -127,6 +127,7 @@ export const randomLocalParticipant = ({
         roleName,
         stickyReaction,
         isDialIn,
+        breakoutGroupAssigned: "",
     };
 };
 

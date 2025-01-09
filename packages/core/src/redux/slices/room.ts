@@ -12,7 +12,7 @@ import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRemoteClients, selectRemoteParticipants } from "./remoteParticipants";
 import { selectLocalScreenshareStream } from "./localScreenshare";
 import { Screenshare, RemoteParticipant } from "../../RoomParticipant";
-import { selectLocalParticipantView, selectLocalParticipantRaw } from "./localParticipant";
+import { selectLocalParticipantView, selectLocalParticipantRaw } from "./localParticipant/selectors";
 import { ClientView } from "../types";
 
 function isStreamerClient(client: RemoteParticipant) {

@@ -12,6 +12,7 @@ export * from "./slices/connectionMonitor";
 export * from "./slices/deviceCredentials";
 export * from "./slices/localMedia";
 export * from "./slices/localParticipant";
+export * from "./slices/localParticipant/selectors";
 export * from "./slices/localScreenshare";
 export * from "./slices/notifications";
 export * from "./slices/organization";

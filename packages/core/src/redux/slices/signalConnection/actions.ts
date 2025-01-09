@@ -37,6 +37,8 @@ export const signalEvents = {
     audioEnabled: createSignalEventAction<AudioEnabledEvent>("audioEnabled"),
     audioEnableRequested: createSignalEventAction<AudioEnableRequestedEvent>("audioEnableRequested"),
     breakoutGroupJoined: createSignalEventAction<BreakoutGroupJoinedEvent>("breakoutGroupJoined"),
+    breakoutMoveToGroup: createSignalEventAction<void>("breakoutMoveToGroup"),
+    breakoutMoveToMain: createSignalEventAction<void>("breakoutMoveToMain"),
     breakoutSessionUpdated: createSignalEventAction<BreakoutSessionUpdatedEvent>("breakoutSessionUpdated"),
     chatMessage: createSignalEventAction<ChatMessage>("chatMessage"),
     clientLeft: createSignalEventAction<ClientLeftEvent>("clientLeft"),

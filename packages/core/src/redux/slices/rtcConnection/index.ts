@@ -26,6 +26,8 @@ import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
+import { selectBreakoutActive } from "../breakout";
+import { selectLocalParticipantRaw } from "../localParticipant/selectors";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -36,6 +38,8 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
                 dispatch(rtcEvents.streamAdded(data as RtcStreamAddedPayload));
             } else if (eventName === "rtc_manager_destroyed") {
                 dispatch(rtcManagerDestroyed());
+            } else if (eventName === "client_connection_status_changed") {
+                dispatch(rtcEvents.clientConnectionStatusChanged());
             } else {
                 //console.log(`Unhandled RTC event ${eventName}`);
             }
@@ -131,6 +135,19 @@ export const rtcConnectionSlice = createSlice({
                 rtcManagerInitialized: true,
             };
         },
+        rtcClientConnectionStatusChanged: {
+            reducer: (state) => {
+                return state;
+            },
+            prepare: (payload: { localParticipantId: string }) => {
+                return {
+                    payload: {},
+                    meta: {
+                        localParticipantId: payload.localParticipantId,
+                    },
+                };
+            },
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(socketReconnecting, (state) => {
@@ -160,6 +177,7 @@ export const {
     rtcManagerDestroyed,
     rtcManagerInitialized,
     isAcceptingStreams,
+    rtcClientConnectionStatusChanged,
 } = rtcConnectionSlice.actions;
 
 export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
@@ -211,6 +229,13 @@ export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
     dispatch(rtcDisconnected());
 });
 
+export const doRtcClientConnectionStatusChanged = createAppThunk(() => (dispatch, getState) => {
+    const state = getState();
+    const localParticipantId = selectLocalParticipantRaw(state);
+
+    dispatch(rtcClientConnectionStatusChanged({ localParticipantId: localParticipantId.id }));
+});
+
 export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
     dispatch(isAcceptingStreams(true));
     const state = getState();
@@ -221,7 +246,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         throw new Error("No rtc manager");
     }
 
-    const activeBreakout = false;
+    const activeBreakout = selectBreakoutActive(state);
     const shouldAcceptNewClients = rtcManager.shouldAcceptStreamsFromBothSides?.();
 
     const updates: StreamStatusUpdate[] = [];
@@ -373,6 +398,13 @@ startAppListening({
                 replace(t.kind, t);
             });
         }
+    },
+});
+
+startAppListening({
+    actionCreator: rtcEvents.clientConnectionStatusChanged,
+    effect: ({ payload }, { dispatch }) => {
+        dispatch(doRtcClientConnectionStatusChanged());
     },
 });
 

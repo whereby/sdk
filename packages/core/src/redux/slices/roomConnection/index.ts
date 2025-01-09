@@ -23,7 +23,7 @@ import {
     socketReconnecting,
 } from "../signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "../localMedia";
-import { selectSelfId, selectLocalParticipantClientClaim } from "../localParticipant";
+import { selectSelfId, selectLocalParticipantClientClaim } from "../localParticipant/selectors";
 
 export type ConnectionStatus =
     | "ready"

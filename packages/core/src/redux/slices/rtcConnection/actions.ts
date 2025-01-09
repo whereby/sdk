@@ -9,4 +9,5 @@ export const rtcEvents = {
     rtcManagerCreated: createRtcEventAction<RtcManagerCreatedPayload>("rtcManagerCreated"),
     rtcManagerDestroyed: createRtcEventAction<void>("rtcManagerDestroyed"),
     streamAdded: createRtcEventAction<RtcStreamAddedPayload>("streamAdded"),
+    clientConnectionStatusChanged: createRtcEventAction<void>("clientConnectionStatusChanged"),
 };
