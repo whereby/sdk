@@ -83,6 +83,8 @@ export interface ChatMessage {
     text: string;
     timestamp: string;
     userId: string;
+    breakoutGroup?: string;
+    broadcast?: boolean;
 }
 
 export interface CloudRecordingStartedEvent {
