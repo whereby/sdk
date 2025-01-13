@@ -7,11 +7,12 @@ import {
     RtcEvents,
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
+    RtcClientConnectionStatusChangedPayload,
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
-import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
-import { StreamState } from "../../../RoomParticipant";
+import { selectRemoteClients, selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
+import { RemoteParticipant, StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive, doAppStop } from "../app";
 
 import {
@@ -30,6 +31,17 @@ import { selectBreakoutActive, selectBreakoutCurrentId } from "../breakout";
 import { selectLocalParticipantRaw } from "../localParticipant/selectors";
 import { selectSpotlights } from "../spotlights";
 
+function isDeferrable({ client, breakoutCurrentId }: { client?: RemoteParticipant; breakoutCurrentId: string }) {
+    if (!client) return false;
+    // We defer every client inside a breakoutgroup when we ourselves
+    // are in the lobby. That is because it'll have the effect of us
+    // not subscribing to these people when we broadcast.
+    if (!breakoutCurrentId && client.breakoutGroup) return true;
+    // Defer connecting to silent clients.
+    if (!client.isAudioEnabled && !client.isVideoEnabled) return true;
+    return false;
+}
+
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
         emit: (eventName: keyof RtcEvents, data: RtcEvents[keyof RtcEvents]) => {
@@ -40,7 +52,7 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
             } else if (eventName === "rtc_manager_destroyed") {
                 dispatch(rtcManagerDestroyed());
             } else if (eventName === "client_connection_status_changed") {
-                dispatch(rtcEvents.clientConnectionStatusChanged());
+                dispatch(rtcEvents.clientConnectionStatusChanged(data as RtcClientConnectionStatusChangedPayload));
             } else {
                 //console.log(`Unhandled RTC event ${eventName}`);
             }
@@ -198,8 +210,11 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
             audio: isMicrophoneEnabled,
             video: isCameraEnabled,
         }),
+
         deferrable(clientId: string) {
-            return !clientId;
+            const client = selectRemoteParticipants(getState()).find((p) => p.id === clientId);
+            const breakoutCurrentId = selectBreakoutCurrentId(getState()) || "";
+            return isDeferrable({ client, breakoutCurrentId });
         },
     };
 
@@ -228,13 +243,6 @@ export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
         rtcManager.disconnectAll();
     }
     dispatch(rtcDisconnected());
-});
-
-export const doRtcClientConnectionStatusChanged = createAppThunk(() => (dispatch, getState) => {
-    const state = getState();
-    const localParticipantId = selectLocalParticipantRaw(state);
-
-    dispatch(rtcClientConnectionStatusChanged({ localParticipantId: localParticipantId.id }));
 });
 
 export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
@@ -404,8 +412,10 @@ startAppListening({
 
 startAppListening({
     actionCreator: rtcEvents.clientConnectionStatusChanged,
-    effect: ({ payload }, { dispatch }) => {
-        dispatch(doRtcClientConnectionStatusChanged());
+    effect: (_, { dispatch, getState }) => {
+        const localParticipant = selectLocalParticipantRaw(getState());
+
+        dispatch(rtcClientConnectionStatusChanged({ localParticipantId: localParticipant.id }));
     },
 });
 

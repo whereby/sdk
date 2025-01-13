@@ -74,10 +74,7 @@ export const breakoutSlice = createSlice({
         });
         builder.addCase(signalEvents.breakoutGroupJoined, (state, action) => {
             // @ts-ignore
-            console.log("action.meta", action.meta);
-            console.log("action.payload", action.payload);
-            // @ts-ignore
-            if (action.meta?.participantId !== action.payload.clientId) {
+            if (action.meta?.localParticipantId !== action.payload.clientId) {
                 return state;
             }
             return {
