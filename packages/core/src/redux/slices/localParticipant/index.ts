@@ -232,7 +232,7 @@ createReactor(
 createReactor(
     [selectBreakoutAssignments, selectDeviceId, selectLocalParticipantRaw],
     ({ dispatch }, breakoutAssignments, deviceId, localParticipant) => {
-        const breakoutGroupAssigned = breakoutAssignments[deviceId || ""] || "";
+        const breakoutGroupAssigned = breakoutAssignments?.[deviceId || ""] || "";
 
         if (localParticipant.breakoutGroupAssigned === breakoutGroupAssigned) {
             return;

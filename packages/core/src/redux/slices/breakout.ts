@@ -98,13 +98,24 @@ export const doBreakoutJoin = createAppThunk((payload: { group: string }) => (_,
 export const selectBreakoutRaw = (state: RootState) => state.breakout;
 export const selectBreakoutInitiatedBy = (state: RootState) => state.breakout.initiatedBy;
 export const selectBreakoutActive = (state: RootState) => !!state.breakout.startedAt;
-export const selectBreakoutAssignments = (state: RootState) => state.breakout.assignments || {};
+export const selectBreakoutAssignments = (state: RootState) => state.breakout.assignments;
+export const selectBreakoutGroups = (state: RootState) => state.breakout.groups;
 
 export const selectBreakoutCurrentId = createSelector(
     selectBreakoutRaw,
     selectLocalParticipantBreakoutGroup,
     (raw, localParticipantBreakoutGroup) => {
-        return raw.groupId ?? localParticipantBreakoutGroup;
+        return raw.groupId || localParticipantBreakoutGroup || "";
+    },
+);
+
+export const selectBreakoutCurrentGroup = createSelector(
+    selectBreakoutRaw,
+    selectBreakoutCurrentId,
+    (raw, breakoutCurrentId) => {
+        const name = raw.groups?.[breakoutCurrentId];
+        if (!name) return null;
+        return { id: breakoutCurrentId, name };
     },
 );
 

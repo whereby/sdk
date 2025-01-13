@@ -25,6 +25,7 @@ export const selectLocalParticipantView = createSelector(
         const clientView: ClientView = {
             id: participant.id,
             clientId: participant.id,
+            breakoutGroup: participant.breakoutGroup,
             displayName: participant.displayName,
             stream: localStream,
             isLocalClient: true,

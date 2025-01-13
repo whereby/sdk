@@ -14,7 +14,12 @@ import { selectLocalScreenshareStream } from "./localScreenshare";
 import { Screenshare, RemoteParticipant } from "../../RoomParticipant";
 import { selectLocalParticipantView, selectLocalParticipantRaw } from "./localParticipant/selectors";
 import { ClientView } from "../types";
-import { selectBreakoutActive, selectBreakoutAssignments, selectBreakoutCurrentId } from "./breakout";
+import {
+    selectBreakoutActive,
+    selectBreakoutAssignments,
+    selectBreakoutCurrentId,
+    selectBreakoutGroups,
+} from "./breakout";
 
 function isStreamerClient(client: RemoteParticipant) {
     return client.roleName === "streamer";
@@ -233,5 +238,28 @@ export const selectAllClientViewsInCurrentGroup = createSelector(
                 client.breakoutGroup === (breakoutCurrentId || "") ||
                 (client.breakoutGroupAssigned && client.breakoutGroupAssigned === breakoutCurrentId),
         );
+    },
+);
+
+export const selectBreakoutGroupedParticipants = createSelector(
+    selectAllClientViews,
+    selectBreakoutActive,
+    selectBreakoutGroups,
+    (clientViews, breakoutActive, breakoutGroups) => {
+        if (!breakoutActive || !breakoutGroups) return [];
+
+        const clientsInMainRoom = clientViews.filter((client) => !client.breakoutGroup || client.breakoutGroup === "");
+
+        const mainRoom = {
+            clients: clientsInMainRoom,
+            group: { id: "", name: "" },
+        };
+
+        const groups = Object.entries(breakoutGroups).map(([id, name]) => ({
+            clients: clientViews.filter((client) => !client.isPresentation && client.breakoutGroup === id),
+            group: { id, name },
+        }));
+
+        return [mainRoom, ...groups];
     },
 );
