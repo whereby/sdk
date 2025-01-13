@@ -270,3 +270,12 @@ RoomConnectionStrictMode.parameters = {
         },
     },
 };
+
+
+export const RoomConnectionWithBreakoutGroups = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    return <VideoExperience displayName={displayName} roomName={roomUrl} showBreakoutGroups />;
+};

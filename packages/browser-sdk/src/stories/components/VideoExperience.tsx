@@ -22,6 +22,7 @@ export default function VideoExperience({
     showHostControls,
     hostOptions,
     joinRoomOnLoad,
+    showBreakoutGroups,
 }: {
     displayName?: string;
     roomName: string;
@@ -31,6 +32,7 @@ export default function VideoExperience({
     showHostControls?: boolean;
     hostOptions?: Array<string>;
     joinRoomOnLoad?: boolean;
+    showBreakoutGroups?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
@@ -53,6 +55,7 @@ export default function VideoExperience({
         waitingParticipants,
         screenshares,
         spotlightedParticipants,
+        breakout,
     } = state;
     const {
         knock,
@@ -77,6 +80,8 @@ export default function VideoExperience({
         removeSpotlight,
         turnOffParticipantCameras,
         askToTurnOnCamera,
+        joinBreakoutGroup,
+        joinBreakoutMainRoom,
     } = actions;
 
     useEffect(() => {
@@ -240,6 +245,7 @@ export default function VideoExperience({
         };
     }, [events]);
 
+
     return (
         <div>
             {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
@@ -291,6 +297,44 @@ export default function VideoExperience({
                             </button>
                         </div>
                     )}
+                    {showBreakoutGroups ? (
+                        <div>
+                            <h3>Breakout is {breakout.isActive ? "active" : "inactive"}</h3>
+                            {breakout.isActive ? <h2>Breakout groups</h2> : null}
+                            {breakout.isActive ? <h3>Current group: {breakout.currentGroup?.name}</h3> : null}
+                            {breakout.groupedParticipants.map((group) => {
+                                // main room
+                                if (group.group?.id === "") {
+                                    return null;
+                                }
+                                return (
+
+                                    <div key={group.group?.id}>
+                                        <h3>{group.group?.name}</h3>
+                                        {group.clients.map((p) => (
+                                            <div key={p.id}>
+                                                {p.displayName || "Guest"}
+                                            </div>
+                                        ))}
+                                        <button onClick={() => joinBreakoutGroup(group.group?.id || "")}>Join</button>
+                                    </div>
+                                )
+                            })}
+                            {breakout.isActive ? <h2>Main room</h2> : null}
+                            {breakout.groupedParticipants.map((p) => {
+                                if (p.group?.id === "") {
+                                    return p.clients.map((p) => (
+                                        <div key={p.id}>
+                                            {p.displayName || "Guest"}
+                                        </div>
+                                    ));
+                                }
+                                return null;
+                            })}
+                            {breakout.isActive ? <button onClick={() => joinBreakoutMainRoom()}>Join main room</button> : null}
+                        </div>
+                    ) : null}
+
                     <div className="container">
                         {[localParticipant, ...remoteParticipants].map((participant, i) => {
                             const isSpotlighted = !!spotlightedParticipants.find((p) => p.id === participant?.id);
@@ -305,18 +349,18 @@ export default function VideoExperience({
                                                     animationDelay: `1000ms`,
                                                     ...(participant.isAudioEnabled
                                                         ? {
-                                                              border: "2px solid grey",
-                                                          }
+                                                            border: "2px solid grey",
+                                                        }
                                                         : null),
                                                     ...(!participant.isVideoEnabled
                                                         ? {
-                                                              backgroundColor: "green",
-                                                          }
+                                                            backgroundColor: "green",
+                                                        }
                                                         : null),
                                                     ...(isSpotlighted
                                                         ? {
-                                                              border: "2px solid blue",
-                                                          }
+                                                            border: "2px solid blue",
+                                                        }
                                                         : null),
                                                 }}
                                             >
