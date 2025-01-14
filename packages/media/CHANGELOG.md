@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.13
+
+### Patch Changes
+
+- cc22bea: Fix Safari17 Mediasoup handler selection logic
+
 ## 1.17.12
 
 ### Patch Changes
