@@ -36,7 +36,7 @@ export default class BandwidthTester extends EventEmitter {
 
         this._vegaConnection = null;
 
-        this._mediasoupDevice = getMediasoupDevice(features);
+        this._mediasoupDevice = getMediasoupDevice(this._features);
 
         this._routerRtpCapabilities = null;
 
