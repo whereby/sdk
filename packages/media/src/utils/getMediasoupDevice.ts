@@ -12,7 +12,7 @@ export const getMediasoupDevice = (features: Record<string, boolean | undefined>
     }
 
     let handlerName: SupportedDevice =
-        detectDevice() || (/applecoremedia|applewebkit|safari/i.test(navigator.userAgent) ? "Safari17" : undefined);
+        detectDevice() || (/applecoremedia|applewebkit|safari/i.test(navigator.userAgent) ? "Safari12" : undefined);
 
     if (handlerName === "Safari12" && typeof navigator === "object" && typeof navigator.userAgent === "string") {
         const uaParser = new UAParser(navigator.userAgent);
@@ -26,7 +26,13 @@ export const getMediasoupDevice = (features: Record<string, boolean | undefined>
 
     // Since custom browsers on iOS/iPadOS are using webkit under the hood, we must use
     // the Safari handler even if detected as something else (like Chrome)
-    if (/iphone|ipad/i.test(navigator.userAgent)) handlerName = "Safari17";
+    if (/iphone|ipad/i.test(navigator.userAgent)) {
+        if (features.safari17HandlerOn) {
+            handlerName = "Safari17";
+        } else {
+            handlerName = "Safari12";
+        }
+    }
 
     if (handlerName === "Safari17") {
         // we use a custom patched version of the Safari handler that fixes simulcast bandwidth limiting
