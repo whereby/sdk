@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.12
+
+### Patch Changes
+
+- c4b4a83: Fix property access of undefined bug in BandwidthTester
+
 ## 1.17.11
 
 ### Patch Changes
