@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.32.0
+
+### Minor Changes
+
+- 5476530: Add basic breakout groups support
+
+### Patch Changes
+
+- Updated dependencies [5476530]
+  - @whereby.com/media@1.17.14
+
 ## 0.31.4
 
 ### Patch Changes

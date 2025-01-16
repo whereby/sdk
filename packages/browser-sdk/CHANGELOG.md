@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 3.11.0
+
+### Minor Changes
+
+- 5476530: Add basic breakout groups support
+
+### Patch Changes
+
+- Updated dependencies [5476530]
+  - @whereby.com/core@0.32.0
+
 ## 3.10.12
 
 ### Patch Changes
