@@ -32,6 +32,7 @@ describe("cloudRecordingSlice", () => {
                 signalEvents.newClient({
                     client: {
                         displayName: "recorder",
+                        deviceId: "deviceId",
                         streams: [],
                         isAudioEnabled: true,
                         isVideoEnabled: false,

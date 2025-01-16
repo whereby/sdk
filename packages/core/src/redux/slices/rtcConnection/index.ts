@@ -7,11 +7,12 @@ import {
     RtcEvents,
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
+    RtcClientConnectionStatusChangedPayload,
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
-import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
-import { StreamState } from "../../../RoomParticipant";
+import { selectRemoteClients, selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
+import { RemoteParticipant, StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive, doAppStop } from "../app";
 
 import {
@@ -26,6 +27,20 @@ import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
+import { selectBreakoutActive, selectBreakoutCurrentId } from "../breakout";
+import { selectLocalParticipantRaw } from "../localParticipant/selectors";
+import { selectSpotlights } from "../spotlights";
+
+function isDeferrable({ client, breakoutCurrentId }: { client?: RemoteParticipant; breakoutCurrentId: string }) {
+    if (!client) return false;
+    // We defer every client inside a breakoutgroup when we ourselves
+    // are in the lobby. That is because it'll have the effect of us
+    // not subscribing to these people when we broadcast.
+    if (!breakoutCurrentId && client.breakoutGroup) return true;
+    // Defer connecting to silent clients.
+    if (!client.isAudioEnabled && !client.isVideoEnabled) return true;
+    return false;
+}
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -36,6 +51,8 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
                 dispatch(rtcEvents.streamAdded(data as RtcStreamAddedPayload));
             } else if (eventName === "rtc_manager_destroyed") {
                 dispatch(rtcManagerDestroyed());
+            } else if (eventName === "client_connection_status_changed") {
+                dispatch(rtcEvents.clientConnectionStatusChanged(data as RtcClientConnectionStatusChangedPayload));
             } else {
                 //console.log(`Unhandled RTC event ${eventName}`);
             }
@@ -131,6 +148,19 @@ export const rtcConnectionSlice = createSlice({
                 rtcManagerInitialized: true,
             };
         },
+        rtcClientConnectionStatusChanged: {
+            reducer: (state) => {
+                return state;
+            },
+            prepare: (payload: { localParticipantId: string }) => {
+                return {
+                    payload: {},
+                    meta: {
+                        localParticipantId: payload.localParticipantId,
+                    },
+                };
+            },
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(socketReconnecting, (state) => {
@@ -160,6 +190,7 @@ export const {
     rtcManagerDestroyed,
     rtcManagerInitialized,
     isAcceptingStreams,
+    rtcClientConnectionStatusChanged,
 } = rtcConnectionSlice.actions;
 
 export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
@@ -179,8 +210,11 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
             audio: isMicrophoneEnabled,
             video: isCameraEnabled,
         }),
+
         deferrable(clientId: string) {
-            return !clientId;
+            const client = selectRemoteParticipants(getState()).find((p) => p.id === clientId);
+            const breakoutCurrentId = selectBreakoutCurrentId(getState()) || "";
+            return isDeferrable({ client, breakoutCurrentId });
         },
     };
 
@@ -221,7 +255,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         throw new Error("No rtc manager");
     }
 
-    const activeBreakout = false;
+    const activeBreakout = selectBreakoutActive(state);
     const shouldAcceptNewClients = rtcManager.shouldAcceptStreamsFromBothSides?.();
 
     const updates: StreamStatusUpdate[] = [];
@@ -376,6 +410,15 @@ startAppListening({
     },
 });
 
+startAppListening({
+    actionCreator: rtcEvents.clientConnectionStatusChanged,
+    effect: (_, { dispatch, getState }) => {
+        const localParticipant = selectLocalParticipantRaw(getState());
+
+        dispatch(rtcClientConnectionStatusChanged({ localParticipantId: localParticipant.id }));
+    },
+});
+
 export const selectShouldConnectRtc = createSelector(
     selectRtcStatus,
     selectAppIsActive,
@@ -433,16 +476,19 @@ createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) =
 export const selectStreamsToAccept = createSelector(
     selectRtcStatus,
     selectRemoteClients,
-    (rtcStatus, remoteParticipants) => {
+    selectBreakoutCurrentId,
+    selectSpotlights,
+    (rtcStatus, remoteParticipants, breakoutCurrentId, spotlights) => {
         if (rtcStatus !== "ready") {
             return [];
         }
 
-        const shouldAcceptStreams = true;
         const upd = [];
         // This should actually use remoteClientViews for its handling
         for (const client of remoteParticipants) {
             const { streams, id: clientId, newJoiner } = client;
+
+            const clientSpotlight = spotlights.find((s) => s.clientId === client.id && s.streamId === "0");
 
             for (let i = 0; i < streams.length; i++) {
                 let streamId = streams[i].id;
@@ -460,7 +506,11 @@ export const selectStreamsToAccept = createSelector(
                     }
                 }
 
-                if (shouldAcceptStreams) {
+                if (
+                    (!client.breakoutGroup && !breakoutCurrentId) || // Accept when both in falsy group
+                    client.breakoutGroup === breakoutCurrentId || // Accept all in same breakout group
+                    ("" === client.breakoutGroup && clientSpotlight) // Accept remote spotlights outside groups
+                ) {
                     // Already connected
                     if (state === "done_accept") continue;
                     upd.push({

@@ -78,6 +78,7 @@ export const randomDeviceCredentials = ({
 export const randomSignalClient = ({
     displayName = randomString(),
     id = randomString(),
+    deviceId = randomString(),
     streams = [],
     isAudioEnabled = true,
     isVideoEnabled = true,
@@ -90,6 +91,7 @@ export const randomSignalClient = ({
     return {
         displayName,
         id,
+        deviceId,
         streams,
         isAudioEnabled,
         isVideoEnabled,
@@ -127,12 +129,14 @@ export const randomLocalParticipant = ({
         roleName,
         stickyReaction,
         isDialIn,
+        breakoutGroupAssigned: "",
     };
 };
 
 export const randomRemoteParticipant = ({
     id = randomString(),
     displayName = randomString(),
+    deviceId = randomString(),
     roleName = "visitor",
     isAudioEnabled = true,
     isVideoEnabled = true,
@@ -148,6 +152,7 @@ export const randomRemoteParticipant = ({
     return {
         id,
         displayName,
+        deviceId,
         roleName,
         isAudioEnabled,
         isVideoEnabled,

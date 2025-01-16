@@ -74,26 +74,32 @@ describe("rtcConnectionSlice", () => {
 
         describe("selectStreamsToAccept", () => {
             const x = () => oneOf<{ id: number } | "x" | null | undefined>({ id: 1 }, "x", null, undefined);
-            const c = (id: string, streamStates: StreamState[]) =>
+            const c = (id: string, streamStates: StreamState[], breakoutGroup = "") =>
                 randomRemoteParticipant({
                     id,
                     streams: streamStates.map((s, i) => ({ id: `${i}`, state: s })),
+                    breakoutGroup,
                 });
 
             it.each`
-                rtcStatus     | remoteParticipants                                      | expected
-                ${"inactive"} | ${[x(), x()]}                                           | ${[]}
-                ${"ready"}    | ${[c("id0", ["to_accept"])]}                            | ${[{ clientId: "id0", streamId: "0", state: "to_accept" }]}
-                ${"inactive"} | ${[c("id1", ["to_accept"])]}                            | ${[]}
-                ${"ready"}    | ${[c("id2", ["to_unaccept"])]}                          | ${[{ clientId: "id2", streamId: "0", state: "to_accept" }]}
-                ${"ready"}    | ${[c("id3", ["done_accept"])]}                          | ${[]}
-                ${"ready"}    | ${[c("id4", ["to_accept", "done_accept"])]}             | ${[{ clientId: "id4", streamId: "0", state: "to_accept" }]}
-                ${"ready"}    | ${[c("id5", ["to_accept"]), c("id6", ["done_accept"])]} | ${[{ clientId: "id5", streamId: "0", state: "to_accept" }]}
-                ${"ready"}    | ${[c("id7", ["to_accept", "to_accept"])]}               | ${[{ clientId: "id7", streamId: "0", state: "to_accept" }, { clientId: "id7", streamId: "1", state: "to_accept" }]}
+                breakoutCurrentId | rtcStatus     | remoteParticipants                                                | expected
+                ${""}             | ${"inactive"} | ${[x(), x()]}                                                     | ${[]}
+                ${""}             | ${"ready"}    | ${[c("id0", ["to_accept"])]}                                      | ${[{ clientId: "id0", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"inactive"} | ${[c("id1", ["to_accept"])]}                                      | ${[]}
+                ${""}             | ${"ready"}    | ${[c("id2", ["to_unaccept"])]}                                    | ${[{ clientId: "id2", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"ready"}    | ${[c("id3", ["done_accept"])]}                                    | ${[]}
+                ${""}             | ${"ready"}    | ${[c("id4", ["to_accept", "done_accept"])]}                       | ${[{ clientId: "id4", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"ready"}    | ${[c("id5", ["to_accept"]), c("id6", ["done_accept"])]}           | ${[{ clientId: "id5", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"ready"}    | ${[c("id7", ["to_accept", "to_accept"])]}                         | ${[{ clientId: "id7", streamId: "0", state: "to_accept" }, { clientId: "id7", streamId: "1", state: "to_accept" }]}
+                ${"b"}            | ${"ready"}    | ${[c("id8", ["to_accept"], "a"), c("id9", ["to_accept"], "b")]}   | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
+                ${"b"}            | ${"ready"}    | ${[c("id8", ["done_accept"], "a"), c("id9", ["to_accept"], "b")]} | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
+                ${"b"}            | ${"ready"}    | ${[c("id8", ["to_accept"], "a"), c("id9", ["to_unaccept"], "b")]} | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
             `(
-                "should return $expected when rtcStatus=$rtcStatus, remoteParticipants=$remoteParticipants",
-                ({ rtcStatus, remoteParticipants, expected }) => {
-                    expect(selectStreamsToAccept.resultFunc(rtcStatus, remoteParticipants)).toEqual(expected);
+                "should return $expected when breakoutCurrentId=$breakoutCurrentId, rtcStatus=$rtcStatus, remoteParticipants=$remoteParticipants",
+                ({ breakoutCurrentId, rtcStatus, remoteParticipants, expected }) => {
+                    expect(
+                        selectStreamsToAccept.resultFunc(rtcStatus, remoteParticipants, breakoutCurrentId, []),
+                    ).toEqual(expected);
                 },
             );
         });

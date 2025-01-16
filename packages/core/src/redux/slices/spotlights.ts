@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { ClientView } from "../types";
 import { AddSpotlightRequest, type RemoveSpotlightRequest, type Spotlight } from "@whereby.com/media";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
-import { selectLocalParticipantRaw } from "./localParticipant";
+import { selectLocalParticipantRaw } from "./localParticipant/selectors";
 import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToSpotlight } from "./authorization";
 import { selectAllClientViews } from "./room";

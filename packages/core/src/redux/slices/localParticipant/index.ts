@@ -1,27 +1,33 @@
-import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RoleName } from "@whereby.com/media";
-import { RootState } from "../store";
-import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../thunk";
-import { LocalParticipant } from "../../RoomParticipant";
-import { selectSignalConnectionRaw } from "./signalConnection";
-import { doAppStart } from "./app";
-import { selectLocalMediaStream, toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
-import { createReactor, startAppListening } from "../listenerMiddleware";
-import { signalEvents } from "./signalConnection/actions";
-import { ClientView } from "../types";
-import { NON_PERSON_ROLES } from "../constants";
-import { selectRoomConnectionStatus } from "./roomConnection/selectors";
+import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../../thunk";
+import { LocalParticipant } from "../../../RoomParticipant";
+import { selectSignalConnectionRaw } from "../signalConnection";
+import { doAppStart } from "../app";
+import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../localMedia";
+import { createReactor, startAppListening } from "../../listenerMiddleware";
+import { signalEvents } from "../signalConnection/actions";
+import { selectRoomConnectionStatus } from "../roomConnection/selectors";
+import { selectBreakoutAssignments } from "../breakout";
+import { selectDeviceId } from "../deviceCredentials";
+import {
+    selectLocalParticipantDisplayName,
+    selectLocalParticipantRaw,
+    selectLocalParticipantStickyReaction,
+} from "./selectors";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
     roleName: RoleName;
     clientClaim?: string;
+    breakoutGroupAssigned: string;
 }
 
 const initialState: LocalParticipantState = {
     displayName: "",
     id: "",
     breakoutGroup: null,
+    breakoutGroupAssigned: "",
     isAudioEnabled: true,
     isVideoEnabled: true,
     isLocalParticipant: true,
@@ -45,6 +51,12 @@ export const localParticipantSlice = createSlice({
             return {
                 ...state,
                 displayName: action.payload.displayName,
+            };
+        },
+        setBreakoutGroupAssigned: (state, action: PayloadAction<{ breakoutGroupAssigned: string }>) => {
+            return {
+                ...state,
+                breakoutGroupAssigned: action.payload.breakoutGroupAssigned,
             };
         },
     },
@@ -101,7 +113,7 @@ export const localParticipantSlice = createSlice({
  * Action creators
  */
 
-export const { setDisplayName } = localParticipantSlice.actions;
+export const { setDisplayName, setBreakoutGroupAssigned } = localParticipantSlice.actions;
 
 export const doSetDisplayName = createRoomConnectedThunk((payload: { displayName: string }) => (dispatch, getState) => {
     const state = getState();
@@ -176,42 +188,9 @@ export const doSendClientMetadata = createRoomConnectedThunk(() => (_, getState)
         payload,
     });
 });
-
-/**
- * Selectors
- */
-
-export const selectLocalParticipantRaw = (state: RootState) => state.localParticipant;
-export const selectSelfId = (state: RootState) => state.localParticipant.id;
-export const selectLocalParticipantDisplayName = (state: RootState) => state.localParticipant.displayName;
-export const selectLocalParticipantClientClaim = (state: RootState) => state.localParticipant.clientClaim;
-export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
-export const selectLocalParticipantStickyReaction = (state: RootState) => state.localParticipant.stickyReaction;
-
 /**
  * Reactors
  */
-export const selectLocalParticipantView = createSelector(
-    selectLocalParticipantRaw,
-    selectLocalMediaStream,
-    (participant, localStream) => {
-        const clientView: ClientView = {
-            id: participant.id,
-            clientId: participant.id,
-            displayName: participant.displayName,
-            stream: localStream,
-            isLocalClient: true,
-            isAudioEnabled: participant.isAudioEnabled,
-            isVideoEnabled: participant.isVideoEnabled,
-        };
-
-        if (NON_PERSON_ROLES.includes(participant.roleName)) {
-            return null;
-        }
-
-        return clientView;
-    },
-);
 
 startAppListening({
     actionCreator: toggleCameraEnabled,
@@ -247,5 +226,18 @@ createReactor(
         if (roomConnectionStatus === "connected") {
             dispatch(doSendClientMetadata());
         }
+    },
+);
+
+createReactor(
+    [selectBreakoutAssignments, selectDeviceId, selectLocalParticipantRaw],
+    ({ dispatch }, breakoutAssignments, deviceId, localParticipant) => {
+        const breakoutGroupAssigned = breakoutAssignments?.[deviceId || ""] || "";
+
+        if (localParticipant.breakoutGroupAssigned === breakoutGroupAssigned) {
+            return;
+        }
+
+        dispatch(setBreakoutGroupAssigned({ breakoutGroupAssigned }));
     },
 );

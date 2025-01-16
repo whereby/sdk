@@ -24,6 +24,7 @@ import {
     doSpotlightParticipant,
     doRemoveSpotlight,
     NotificationsEventEmitter,
+    doBreakoutJoin,
 } from "@whereby.com/core";
 
 import { selectRoomConnectionState } from "./selector";
@@ -140,6 +141,10 @@ export function useRoomConnection(
     );
     const endMeeting = React.useCallback((stayBehind?: boolean) => dispatch(doEndMeeting({ stayBehind })), [dispatch]);
 
+    const joinBreakoutGroup = React.useCallback((group: string) => dispatch(doBreakoutJoin({ group })), [dispatch]);
+
+    const joinBreakoutMainRoom = React.useCallback(() => dispatch(doBreakoutJoin({ group: "" })), [dispatch]);
+
     const { events, ...state } = roomConnectionState;
 
     return {
@@ -170,6 +175,8 @@ export function useRoomConnection(
             toggleMicrophone,
             spotlightParticipant,
             removeSpotlight,
+            joinBreakoutGroup,
+            joinBreakoutMainRoom,
         },
     };
 }

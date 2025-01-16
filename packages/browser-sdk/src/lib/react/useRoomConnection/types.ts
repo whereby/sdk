@@ -45,10 +45,27 @@ export type LiveStreamState = {
     startedAt?: number;
 };
 
+export type BreakoutState = {
+    isActive: boolean;
+    currentGroup: {
+        id: string | null;
+        name: string;
+    } | null;
+    groupedParticipants: {
+        clients: ClientView[];
+        group: {
+            id: string;
+            name: string;
+        } | null;
+    }[];
+    participantsInCurrentGroup: ClientView[];
+};
+
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
+    breakout: BreakoutState;
     events?: NotificationsEventEmitter;
     liveStream?: LiveStreamState;
     localScreenshareStatus?: LocalScreenshareStatus;
@@ -96,4 +113,6 @@ export interface RoomConnectionActions {
     toggleMicrophone: (enabled?: boolean) => void;
     spotlightParticipant: (clientId: string) => void;
     removeSpotlight: (clientId: string) => void;
+    joinBreakoutGroup: (group: string) => void;
+    joinBreakoutMainRoom: () => void;
 }

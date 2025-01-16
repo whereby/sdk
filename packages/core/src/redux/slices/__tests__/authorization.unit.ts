@@ -42,6 +42,7 @@ describe("authorizationSlice", () => {
                             {
                                 displayName: "displayName",
                                 id: "selfId",
+                                deviceId: "deviceId",
                                 streams: [],
                                 isAudioEnabled: true,
                                 isVideoEnabled: true,
