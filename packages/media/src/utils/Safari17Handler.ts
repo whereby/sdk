@@ -1,5 +1,5 @@
 import * as sdpTransform from "sdp-transform";
-import { Logger } from "mediasoup-client/lib/Logger";
+import { Logger } from "mediasoup-client/lib/Logger.js";
 import * as utils from "mediasoup-client/lib/utils";
 import * as ortc from "mediasoup-client/lib/ortc";
 import * as sdpCommonUtils from "mediasoup-client/lib/handlers/sdp/commonUtils";
