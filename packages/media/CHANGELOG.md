@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.14
+
+### Patch Changes
+
+- 5476530: Add basic breakout groups support
+
 ## 1.17.13
 
 ### Patch Changes
