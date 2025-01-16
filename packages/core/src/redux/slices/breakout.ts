@@ -138,3 +138,19 @@ startAppListening({
         dispatch(doBreakoutJoin({ group: "" }));
     },
 });
+
+startAppListening({
+    actionCreator: signalEvents.breakoutSessionUpdated,
+    effect: ({ payload }, { dispatch, getState }) => {
+        const state = getState();
+        const autoMoveToMain = selectBreakoutRaw(state).autoMoveToMain;
+
+        // Special case for the SDK. If the breakout is ended, but there's no config to auto move back to main, we do the auto move here anyways.
+        // This is because we don't have any visual hints, to tell the users to move back to the main room after the breakout is ended.
+        if (payload.initiatedBy?.active === false) {
+            if (!autoMoveToMain) {
+                dispatch(doBreakoutJoin({ group: "" }));
+            }
+        }
+    },
+});

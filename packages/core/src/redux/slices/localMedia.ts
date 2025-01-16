@@ -759,3 +759,13 @@ startAppListening({
         }
     },
 });
+
+startAppListening({
+    actionCreator: signalEvents.breakoutSessionUpdated,
+    effect: ({ payload }, { dispatch }) => {
+        // Since all SDK users are pushed to the main room when the breakout is ended, we mute all microphones
+        if (payload.initiatedBy?.active === false) {
+            dispatch(toggleMicrophoneEnabled({ enabled: false }));
+        }
+    },
+});
