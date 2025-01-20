@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.15
+
+### Patch Changes
+
+- cdd379c: Fix Safari17 mediasoup handler
+
 ## 1.17.14
 
 ### Patch Changes
