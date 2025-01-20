@@ -1,9 +1,8 @@
 import * as sdpTransform from "sdp-transform";
-import { Logger } from "mediasoup-client/lib/Logger";
+import { Logger } from "mediasoup-client/lib/Logger.js";
 import * as utils from "mediasoup-client/lib/utils";
 import * as ortc from "mediasoup-client/lib/ortc";
 import * as sdpCommonUtils from "mediasoup-client/lib/handlers/sdp/commonUtils";
-import * as sdpUnifiedPlanUtils from "mediasoup-client/lib/handlers/sdp/unifiedPlanUtils";
 import * as ortcUtils from "mediasoup-client/lib/handlers/ortc/utils";
 import { InvalidStateError } from "mediasoup-client/lib/errors";
 import {
@@ -185,7 +184,7 @@ export class Safari17 extends HandlerInterface {
                 rtcpMuxPolicy: "require",
                 ...additionalSettings,
             },
-            proprietaryConstraints
+            proprietaryConstraints,
         );
 
         this._pc.addEventListener("icegatheringstatechange", () => {
@@ -304,103 +303,28 @@ export class Safari17 extends HandlerInterface {
         // This may throw.
         sendingRtpParameters.codecs = ortc.reduceCodecs(sendingRtpParameters.codecs, codec);
 
-        if (encodings && encodings.length > 1) {
-            // Set rid and verify scalabilityMode in each encoding.
-            // NOTE: Even if WebRTC allows different scalabilityMode (different number
-            // of temporal layers) per simulcast stream, we need that those are the
-            // same in all them, so let's pick up the highest value.
-            // NOTE: If scalabilityMode is not given, Chrome will use L1T3.
-            let maxTemporalLayers = 1;
+        // set simulcast rid if it's missing, we can't update this after it's passed to `addTransceiver`.
+        // not required if there's only one encoding
+        if (encodings && encodings.length > 1 && encodings.every(({ rid }) => !rid)) {
+            encodings = encodings.map((e, i) => {
+                e.rid = `r${i}`;
+                return e;
+            });
+        }
 
-            for (const encoding of encodings) {
-                const temporalLayers = encoding.scalabilityMode
-                    ? parseScalabilityMode(encoding.scalabilityMode).temporalLayers
-                    : 3;
-
-                if (temporalLayers > maxTemporalLayers) {
-                    maxTemporalLayers = temporalLayers;
-                }
+        // Complete encodings with given values.
+        if (encodings) {
+            if (!sendingRtpParameters.encodings) {
+                sendingRtpParameters.encodings = [];
             }
-
-            encodings.forEach((encoding, idx: number) => {
-                encoding.rid = `r${idx}`;
-                encoding.scalabilityMode = `L1T${maxTemporalLayers}`;
-            });
-        }
-
-        const sendingRemoteRtpParameters = utils.clone<RtpParameters>(
-            this._sendingRemoteRtpParametersByKind![track.kind]
-        );
-
-        // This may throw.
-        sendingRemoteRtpParameters.codecs = ortc.reduceCodecs(sendingRemoteRtpParameters.codecs, codec);
-
-        const mediaSectionIdx = this._remoteSdp!.getNextMediaSectionIdx();
-        const transceiver = this._pc.addTransceiver(track, {
-            direction: "sendonly",
-            streams: [this._sendStream],
-            sendEncodings: encodings,
-        });
-
-        if (onRtpSender) {
-            onRtpSender(transceiver.sender);
-        }
-
-        const offer = await this._pc.createOffer();
-        let localSdpObject = sdpTransform.parse(offer.sdp);
-
-        if (!this._transportReady) {
-            await this.setupTransport({
-                localDtlsRole: this._forcedLocalDtlsRole ?? "client",
-                localSdpObject,
-            });
+            Object.assign(sendingRtpParameters.encodings, encodings);
         }
 
         const layers = parseScalabilityMode((encodings ?? [{}])[0].scalabilityMode);
-
-        logger.debug("send() | calling pc.setLocalDescription() [offer:%o]", offer);
-
-        await this._pc.setLocalDescription(offer);
-
-        // We can now get the transceiver.mid.
-        const localId = transceiver.mid;
-
-        // Set MID.
-        sendingRtpParameters.mid = localId;
-
-        localSdpObject = sdpTransform.parse(this._pc.localDescription.sdp);
-        const offerMediaObject = localSdpObject.media[mediaSectionIdx.idx];
-
-        // Set RTCP CNAME.
-        sendingRtpParameters.rtcp!.cname = sdpCommonUtils.getCname({
-            offerMediaObject,
-        });
-
-        // Set RTP encodings by parsing the SDP offer if no encodings are given.
-        if (!encodings) {
-            sendingRtpParameters.encodings = sdpUnifiedPlanUtils.getRtpEncodings({
-                offerMediaObject,
-            });
-        }
-        // Set RTP encodings by parsing the SDP offer and complete them with given
-        // one if just a single encoding has been given.
-        else if (encodings.length === 1) {
-            const newEncodings = sdpUnifiedPlanUtils.getRtpEncodings({
-                offerMediaObject,
-            });
-
-            Object.assign(newEncodings[0], encodings[0]);
-
-            sendingRtpParameters.encodings = newEncodings;
-        }
-        // Otherwise if more than 1 encoding are given use them verbatim.
-        else {
-            sendingRtpParameters.encodings = encodings;
-        }
-
         // If VP8 or H264 and there is effective simulcast, add scalabilityMode to
         // each encoding.
         if (
+            sendingRtpParameters.encodings &&
             sendingRtpParameters.encodings.length > 1 &&
             (sendingRtpParameters.codecs[0].mimeType.toLowerCase() === "video/vp8" ||
                 sendingRtpParameters.codecs[0].mimeType.toLowerCase() === "video/h264")
@@ -413,6 +337,53 @@ export class Safari17 extends HandlerInterface {
                 }
             }
         }
+
+        const sendingRemoteRtpParameters = utils.clone<RtpParameters>(
+            this._sendingRemoteRtpParametersByKind![track.kind],
+        );
+
+        // This may throw.
+        sendingRemoteRtpParameters.codecs = ortc.reduceCodecs(sendingRemoteRtpParameters.codecs, codec);
+
+        const mediaSectionIdx = this._remoteSdp!.getNextMediaSectionIdx();
+
+        const transceiver = this._pc.addTransceiver(track, {
+            direction: "sendonly",
+            streams: [this._sendStream],
+            sendEncodings: track.kind === "video" ? encodings : undefined,
+        });
+
+        if (onRtpSender) {
+            onRtpSender(transceiver.sender);
+        }
+
+        const offer = await this._pc.createOffer();
+        const localSdpObject = sdpTransform.parse(offer.sdp);
+        let offerMediaObject = localSdpObject.media[mediaSectionIdx.idx];
+
+        if (!this._transportReady) {
+            await this.setupTransport({
+                localDtlsRole: this._forcedLocalDtlsRole ?? "client",
+                localSdpObject,
+            });
+        }
+
+        logger.debug("send() | calling pc.setLocalDescription() [offer:%o]", offer);
+
+        await this._pc.setLocalDescription(offer);
+
+        // We can now get the transceiver.mid.
+        const localId = transceiver.mid;
+
+        // Set MID.
+        sendingRtpParameters.mid = localId;
+
+        offerMediaObject = localSdpObject.media[mediaSectionIdx.idx];
+
+        // Set RTCP CNAME.
+        sendingRtpParameters.rtcp!.cname = sdpCommonUtils.getCname({
+            offerMediaObject,
+        });
 
         this._remoteSdp!.send({
             offerMediaObject,
