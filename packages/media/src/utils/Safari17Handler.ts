@@ -1,10 +1,10 @@
 import * as sdpTransform from "sdp-transform";
 import { Logger } from "mediasoup-client/lib/Logger.js";
-import * as utils from "mediasoup-client/lib/utils";
-import * as ortc from "mediasoup-client/lib/ortc";
-import * as sdpCommonUtils from "mediasoup-client/lib/handlers/sdp/commonUtils";
-import * as ortcUtils from "mediasoup-client/lib/handlers/ortc/utils";
-import { InvalidStateError } from "mediasoup-client/lib/errors";
+import * as utils from "mediasoup-client/lib/utils.js";
+import * as ortc from "mediasoup-client/lib/ortc.js";
+import * as sdpCommonUtils from "mediasoup-client/lib/handlers/sdp/commonUtils.js";
+import * as ortcUtils from "mediasoup-client/lib/handlers/ortc/utils.js";
+import { InvalidStateError } from "mediasoup-client/lib/errors.js";
 import {
     HandlerFactory,
     HandlerInterface,
@@ -17,12 +17,12 @@ import {
     HandlerSendDataChannelResult,
     HandlerReceiveDataChannelOptions,
     HandlerReceiveDataChannelResult,
-} from "mediasoup-client/lib/handlers/HandlerInterface";
-import { RemoteSdp } from "mediasoup-client/lib/handlers/sdp/RemoteSdp";
-import { parse as parseScalabilityMode } from "mediasoup-client/lib/scalabilityModes";
-import { IceParameters, DtlsRole } from "mediasoup-client/lib/Transport";
-import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
-import { SctpCapabilities, SctpStreamParameters } from "mediasoup-client/lib/SctpParameters";
+} from "mediasoup-client/lib/handlers/HandlerInterface.js";
+import { RemoteSdp } from "mediasoup-client/lib/handlers/sdp/RemoteSdp.js";
+import { parse as parseScalabilityMode } from "mediasoup-client/lib/scalabilityModes.js";
+import { IceParameters, DtlsRole } from "mediasoup-client/lib/Transport.js";
+import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters.js";
+import { SctpCapabilities, SctpStreamParameters } from "mediasoup-client/lib/SctpParameters.js";
 
 const logger = new Logger("Safari17");
 
