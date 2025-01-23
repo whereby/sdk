@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.17.16
+
+### Patch Changes
+
+- 692ed26: Fix mediasoup client imports in Safari17Handler
+
 ## 1.17.15
 
 ### Patch Changes
