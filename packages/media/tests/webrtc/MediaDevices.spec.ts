@@ -351,9 +351,102 @@ describe("getStream", () => {
         expect(mockGUM.mock.calls[1][0].audio.deviceId).toBeUndefined();
     });
 
-    it("should retry video and audio seperately on NotFoundError", async () => {
+    it("should retry video and audio seperately on NotFoundError - audioTrack not found", async () => {
         let callCount = 0;
         const e = new MockError(GUM_ERRORS.NOT_FOUND);
+        const mockGUM: any = jest.fn(() => {
+            if (callCount === 1) return Promise.resolve(helpers.createMockedMediaStream([videoTrack1]));
+            else {
+                callCount++;
+                return Promise.reject(e);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        const result = await MediaDevices.getStream(
+            {
+                devices,
+                videoId: vdev2.deviceId,
+                audioId: adev2.deviceId,
+                type,
+            },
+            { replaceStream: stream },
+        );
+
+        expect(result.error).toBe(e);
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[0][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined();
+        expect(mockGUM.mock.calls[1][0].video).toEqual(expect.any(Object));
+    });
+    it("should retry video and audio seperately on NotFoundError - videoTrack not found", async () => {
+        let callCount = 0;
+        const e = new MockError(GUM_ERRORS.NOT_FOUND);
+        const mockGUM: any = jest.fn(() => {
+            if (callCount === 2) return Promise.resolve(helpers.createMockedMediaStream([audioTrack1]));
+            else {
+                callCount++;
+                return Promise.reject(e);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        const result = await MediaDevices.getStream(
+            {
+                devices,
+                videoId: vdev2.deviceId,
+                audioId: adev2.deviceId,
+                type,
+            },
+            { replaceStream: stream },
+        );
+
+        expect(result.error).toBe(e);
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[0][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined();
+        expect(mockGUM.mock.calls[1][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[2][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[2][0].video).toBeUndefined();
+    });
+
+    it("should retry video and audio seperately on NotAllowedError - audio not allowed", async () => {
+        let callCount = 0;
+        const e = new MockError(GUM_ERRORS.NOT_ALLOWED);
+        const mockGUM: any = jest.fn(() => {
+            if (callCount === 1) return Promise.resolve(helpers.createMockedMediaStream([videoTrack1]));
+            else {
+                callCount++;
+                return Promise.reject(e);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        const result = await MediaDevices.getStream(
+            {
+                devices,
+                videoId: vdev2.deviceId,
+                audioId: adev2.deviceId,
+                type,
+            },
+            { replaceStream: stream },
+        );
+
+        expect(result.error).toBe(e);
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[0][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined();
+        expect(mockGUM.mock.calls[1][0].video).toEqual(expect.any(Object));
+    });
+    it("should retry video and audio seperately on NotAllowedError - video not allowed", async () => {
+        let callCount = 0;
+        const e = new MockError(GUM_ERRORS.NOT_ALLOWED);
         const mockGUM: any = jest.fn(() => {
             if (callCount === 2) return Promise.resolve(helpers.createMockedMediaStream([audioTrack1]));
             else {
