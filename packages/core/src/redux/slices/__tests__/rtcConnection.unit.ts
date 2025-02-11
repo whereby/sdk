@@ -4,7 +4,7 @@ import {
     selectShouldDisconnectRtc,
     selectStreamsToAccept,
 } from "../rtcConnection";
-import { oneOf, randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { oneOf, randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
 import { StreamState } from "../../../RoomParticipant";
 
 describe("rtcConnectionSlice", () => {
@@ -82,23 +82,30 @@ describe("rtcConnectionSlice", () => {
                 });
 
             it.each`
-                breakoutCurrentId | rtcStatus     | remoteParticipants                                                | expected
-                ${""}             | ${"inactive"} | ${[x(), x()]}                                                     | ${[]}
-                ${""}             | ${"ready"}    | ${[c("id0", ["to_accept"])]}                                      | ${[{ clientId: "id0", streamId: "0", state: "to_accept" }]}
-                ${""}             | ${"inactive"} | ${[c("id1", ["to_accept"])]}                                      | ${[]}
-                ${""}             | ${"ready"}    | ${[c("id2", ["to_unaccept"])]}                                    | ${[{ clientId: "id2", streamId: "0", state: "to_accept" }]}
-                ${""}             | ${"ready"}    | ${[c("id3", ["done_accept"])]}                                    | ${[]}
-                ${""}             | ${"ready"}    | ${[c("id4", ["to_accept", "done_accept"])]}                       | ${[{ clientId: "id4", streamId: "0", state: "to_accept" }]}
-                ${""}             | ${"ready"}    | ${[c("id5", ["to_accept"]), c("id6", ["done_accept"])]}           | ${[{ clientId: "id5", streamId: "0", state: "to_accept" }]}
-                ${""}             | ${"ready"}    | ${[c("id7", ["to_accept", "to_accept"])]}                         | ${[{ clientId: "id7", streamId: "0", state: "to_accept" }, { clientId: "id7", streamId: "1", state: "to_accept" }]}
-                ${"b"}            | ${"ready"}    | ${[c("id8", ["to_accept"], "a"), c("id9", ["to_accept"], "b")]}   | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
-                ${"b"}            | ${"ready"}    | ${[c("id8", ["done_accept"], "a"), c("id9", ["to_accept"], "b")]} | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
-                ${"b"}            | ${"ready"}    | ${[c("id8", ["to_accept"], "a"), c("id9", ["to_unaccept"], "b")]} | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
+                breakoutCurrentId | rtcStatus     | remoteParticipants                                                | appIgnoreBreakoutGroups | expected
+                ${""}             | ${"inactive"} | ${[x(), x()]}                                                     | ${false}                | ${[]}
+                ${""}             | ${"ready"}    | ${[c("id0", ["to_accept"])]}                                      | ${false}                | ${[{ clientId: "id0", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"inactive"} | ${[c("id1", ["to_accept"])]}                                      | ${false}                | ${[]}
+                ${""}             | ${"ready"}    | ${[c("id2", ["to_unaccept"])]}                                    | ${false}                | ${[{ clientId: "id2", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"ready"}    | ${[c("id3", ["done_accept"])]}                                    | ${false}                | ${[]}
+                ${""}             | ${"ready"}    | ${[c("id4", ["to_accept", "done_accept"])]}                       | ${false}                | ${[{ clientId: "id4", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"ready"}    | ${[c("id5", ["to_accept"]), c("id6", ["done_accept"])]}           | ${false}                | ${[{ clientId: "id5", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"ready"}    | ${[c("id7", ["to_accept", "to_accept"])]}                         | ${false}                | ${[{ clientId: "id7", streamId: "0", state: "to_accept" }, { clientId: "id7", streamId: "1", state: "to_accept" }]}
+                ${"b"}            | ${"ready"}    | ${[c("id8", ["to_accept"], "a"), c("id9", ["to_accept"], "b")]}   | ${false}                | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
+                ${"b"}            | ${"ready"}    | ${[c("id8", ["done_accept"], "a"), c("id9", ["to_accept"], "b")]} | ${false}                | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
+                ${"b"}            | ${"ready"}    | ${[c("id8", ["to_accept"], "a"), c("id9", ["to_unaccept"], "b")]} | ${false}                | ${[{ clientId: "id8", streamId: "0", state: "to_unaccept" }, { clientId: "id9", streamId: "0", state: "to_accept" }]}
+                ${""}             | ${"ready"}    | ${[c("id10", ["to_accept"], "a"), c("id11", ["to_accept"], "b")]} | ${true}                 | ${[{ clientId: "id10", streamId: "0", state: "to_accept" }, { clientId: "id11", streamId: "0", state: "to_accept" }]}
             `(
-                "should return $expected when breakoutCurrentId=$breakoutCurrentId, rtcStatus=$rtcStatus, remoteParticipants=$remoteParticipants",
-                ({ breakoutCurrentId, rtcStatus, remoteParticipants, expected }) => {
+                "should return $expected when breakoutCurrentId=$breakoutCurrentId, rtcStatus=$rtcStatus, remoteParticipants=$remoteParticipants, appIgnoreBreakoutGroups=$appIgnoreBreakoutGroups",
+                ({ breakoutCurrentId, rtcStatus, remoteParticipants, appIgnoreBreakoutGroups, expected }) => {
                     expect(
-                        selectStreamsToAccept.resultFunc(rtcStatus, remoteParticipants, breakoutCurrentId, []),
+                        selectStreamsToAccept.resultFunc(
+                            rtcStatus,
+                            remoteParticipants,
+                            breakoutCurrentId,
+                            [],
+                            appIgnoreBreakoutGroups,
+                        ),
                     ).toEqual(expected);
                 },
             );
