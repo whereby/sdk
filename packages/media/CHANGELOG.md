@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.18.0
+
+### Minor Changes
+
+- 36ffa21: media: Adds vega connection manager
+
 ## 1.17.16
 
 ### Patch Changes
