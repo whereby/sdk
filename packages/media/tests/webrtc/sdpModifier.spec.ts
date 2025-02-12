@@ -403,7 +403,7 @@ describe("sdpModifier", () => {
             "a=mid:audio\r\n" +
             "a=msid:stream1 audiotrack\r\n" +
             "a=ssrc:1001 cname:some\r\n" +
-            "m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93 92 93\r\n" +
+            "m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93 92 93 122\r\n" +
             "a=mid:video\r\n" +
             "a=msid:stream1 videotrack\r\n" +
             "a=ssrc:1002 cname:some\r\n" +
@@ -411,25 +411,32 @@ describe("sdpModifier", () => {
             "a=rtpmap:91 VP8/90000\r\n" +
             "a=rtpmap:92 h264/90000\r\n" +
             "a=rtpmap:93 vp9/90000\r\n" +
+            "a=rtpmap:122 red/90000\r\n" +
             "a=fmtp:93 minptime=10;useinbandfec=1\r\n" +
             "a=fmtp:93 minptime=10;useinbandfec=2\r\n" +
             "a=rtcp-fb:93 goog-remb\r\n" +
             "a=rtcp-fb:93 santa\r\n" +
             "a=rtpmap:92 h264/90001\r\n" +
             "a=rtpmap:93 vp9/90001\r\n" +
-            "a=rtcp-fb:93 goog-remb\r\n" +
             "a=rtpmap:88 vp9/90000\r\n" +
             "a=fmtp:88 minptime=10;useinbandfec=1\r\n" +
             "a=rtcp-fb:88 goog-remb\r\n" +
             "a=rtpmap:89 vp9/90000\r\n" +
+            "a=rtcp-fb:122 nack\r\n" +
+            "a=rtcp-fb:122 nack\r\n" +
+            "a=rtcp-fb:122 nack pli\r\n" +
+            "a=rtcp-fb:122 nack pli\r\n" +
+            "a=rtcp-fb:122 ccm fir\r\n" +
+            "a=rtcp-fb:122 goog-remb\r\n" +
+            "a=rtcp-fb:122 transport-cc\r\n" +
             "m=video 9 UDP/TLS/RTP/SAVPF 111\r\n" +
             "a=mid:screen\r\n" +
             "a=msid:stream2 screentrack\r\n" +
-            "a=ssrc:1003 cname:some\r\n";
+            "a=ssrc:1003 cname:some\r\n" +
 
         it("removes duplicate payload types in m-line", () => {
             const modifedSdp = sdpModifier.cleanSdp(sdp);
-            expect(modifedSdp).toContain("m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93\r\n");
+            expect(modifedSdp).toContain("m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93 122\r\n");
         });
 
         it("removes duplicate rtpmap", () => {
@@ -456,6 +463,14 @@ describe("sdpModifier", () => {
             expect(modifedSdp).toContain("a=rtcp-fb:93 santa");
             expect(modifedSdp?.match(/a=rtcp-fb:93 goog-remb/gi)?.length).toEqual(1);
         });
+
+        it("removes duplicate rtcb-fb with subtypes", () => {
+            const modifedSdp = sdpModifier.cleanSdp(sdp);
+            expect(modifedSdp).toContain("a=rtcp-fb:122 nack\r\n");
+            expect(modifedSdp).toContain("a=rtcp-fb:122 nack pli\r\n");
+            expect(modifedSdp?.match(/a=rtcp-fb:122 nack(?!\spli)/gi)?.length).toEqual(1);
+            expect(modifedSdp?.match(/a=rtcp-fb:122 nack pli/gi)?.length).toEqual(1);
+        })
 
         it("removes rtpmap, fmtp and rtcb-fb of payloads not listed in m-line", () => {
             const modifedSdp = sdpModifier.cleanSdp(sdp);

@@ -64,7 +64,7 @@ export function cleanSdp(sdp: string) {
             const usedFmtps = {} as Record<string, boolean>;
             if (mediaObject.fmtp) mediaObject.fmtp = mediaObject.fmtp.filter(p => !p.payload || (usedPayloads[p.payload] && !usedFmtps[p.payload] && (usedFmtps[p.payload] = true)));
             const usedRtcpFb = {} as Record<string, boolean>;
-            if (mediaObject.rtcpFb) mediaObject.rtcpFb = mediaObject.rtcpFb.filter(p => !p.payload || (usedPayloads[p.payload] && !usedRtcpFb[p.payload+p.type] && (usedRtcpFb[p.payload+p.type] = true)));
+            if (mediaObject.rtcpFb) mediaObject.rtcpFb = mediaObject.rtcpFb.filter(p => !p.payload || (usedPayloads[p.payload] && !usedRtcpFb[p.payload+p.type+p.subtype] && (usedRtcpFb[p.payload+p.type+p.subtype] = true)));
         })
         return sdpTransform.write(sdpObject);
 
