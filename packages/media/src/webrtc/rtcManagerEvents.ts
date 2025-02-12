@@ -12,6 +12,7 @@ export default {
     NEW_PC: "new_pc",
     SFU_CONNECTION_OPEN: "sfu_connection_open",
     SFU_CONNECTION_CLOSED: "sfu_connection_closed",
+    SFU_CONNECTION_INFO: "sfu_connection_info",
     COLOCATION_SPEAKER: "colocation_speaker",
     DOMINANT_SPEAKER: "dominant_speaker",
     PC_SLD_FAILURE: "pc_sld_failure",

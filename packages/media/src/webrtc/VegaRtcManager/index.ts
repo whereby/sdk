@@ -20,6 +20,7 @@ import { maybeTurnOnly } from "../../utils/transportSettings";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ServerSocket } from "../../utils";
+import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -86,10 +87,14 @@ export default class VegaRtcManager implements RtcManager {
     _fetchMediaServersTimer: any;
     _iceServers: any;
     _sfuServer: any;
+    _sfuServers?: HostListEntryOptionalDC[];
     _mediaserverConfigTtlSeconds: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
     _hasVegaConnection: boolean;
+    _isConnectingOrConnected: boolean;
+    _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
+    _networkIsDetectedUpBySignal: boolean;
 
     constructor({
         selfId,
@@ -108,7 +113,7 @@ export default class VegaRtcManager implements RtcManager {
         features?: any;
         eventClaim?: string;
     }) {
-        const { session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
+        const { session, iceServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
         this._room = room;
@@ -184,6 +189,7 @@ export default class VegaRtcManager implements RtcManager {
 
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
+            sfuServers,
             iceServers: iceServers.iceServers || [],
             mediaserverConfigTtlSeconds,
         });
@@ -194,25 +200,48 @@ export default class VegaRtcManager implements RtcManager {
         this._reconnect = true;
         this._reconnectTimeOut = null;
         this._hasVegaConnection = false;
+        this._isConnectingOrConnected = false;
 
         this._qualityMonitor = new VegaMediaQualityMonitor();
         this._qualityMonitor.on(PROTOCOL_EVENTS.MEDIA_QUALITY_CHANGED, (payload: any) => {
             this._emitToPWA(PROTOCOL_EVENTS.MEDIA_QUALITY_CHANGED, payload);
         });
+
+        this._networkIsDetectedUpBySignal = false;
     }
 
     _updateAndScheduleMediaServersRefresh({
         iceServers,
         sfuServer,
+        sfuServers,
         mediaserverConfigTtlSeconds,
     }: {
         iceServers: any;
         sfuServer: any;
+        sfuServers: any;
         mediaserverConfigTtlSeconds: any;
     }) {
         this._iceServers = iceServers;
         this._sfuServer = sfuServer;
+        this._sfuServers = sfuServers;
+
+        // support packing list of sfuServers inside existing sfuServer prop
+        if (!sfuServers && sfuServer?.fallbackServers) {
+            this._sfuServers = sfuServer.fallbackServers.map((entry: any) => ({
+                host: entry.host || entry.fqdn,
+                dc: entry.dc,
+            }));
+        }
+
         this._mediaserverConfigTtlSeconds = mediaserverConfigTtlSeconds;
+
+        // update vega connection manager if exists
+        this._vegaConnectionManager?.updateHostList(
+            this._features.sfuServersOverride ||
+                this._sfuServers ||
+                this._features.sfuServerOverrideHost ||
+                sfuServer.url,
+        );
 
         this._sendTransport?.updateIceServers({ iceServers: this._iceServers });
         this._receiveTransport?.updateIceServers({ iceServers: this._iceServers });
@@ -233,6 +262,20 @@ export default class VegaRtcManager implements RtcManager {
         this._fetchMediaServersTimer = null;
     }
 
+    _onNetworkIsDetectedUpBySignal() {
+        if (!this._networkIsDetectedUpBySignal) {
+            this._networkIsDetectedUpBySignal = true;
+            this._vegaConnectionManager?.networkIsUp();
+        }
+    }
+
+    _onNetworkIsDetectedPossiblyDownBySignal() {
+        if (this._networkIsDetectedUpBySignal) {
+            this._networkIsDetectedUpBySignal = false;
+            this._vegaConnectionManager?.networkIsPossiblyDown();
+        }
+    }
+
     setupSocketListeners() {
         this._socketListenerDeregisterFunctions.push(
             () => this._clearMediaServersRefresh(),
@@ -250,6 +293,11 @@ export default class VegaRtcManager implements RtcManager {
                     this._connect();
                 }
             }),
+
+            // use signal server to learn if network is up or possibly down
+            this._serverSocket.on("connect", () => this._onNetworkIsDetectedUpBySignal()),
+            this._serverSocket.onEngineEvent("packet", () => this._onNetworkIsDetectedUpBySignal()),
+            this._serverSocket.on("disconnect", () => this._onNetworkIsDetectedPossiblyDownBySignal()),
         );
 
         this._connect();
@@ -263,6 +311,8 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _connect() {
+        if (this._features.sfuConnectionManagerOn) return this._connect_v2();
+
         if (this._features.sfuReconnectV2On) {
             if (this._hasVegaConnection) return;
 
@@ -299,6 +349,72 @@ export default class VegaRtcManager implements RtcManager {
         this._vegaConnection.on("open", () => this._join());
         this._vegaConnection.on("close", () => this._onClose());
         this._vegaConnection.on("message", (message: any) => this._onMessage(message));
+    }
+
+    // if everything works we can replace the old connect with this new one
+    // for now we test by gradual rollout of sfuConnectionManagerOn flag
+    _connect_v2() {
+        if (this._features.sfuReconnectV2On) {
+            if (this._isConnectingOrConnected) return;
+
+            if (!this._serverSocket.isConnected()) {
+                // Consider reconnecting to SFU within glitchfree reconnect threshold.
+                const reconnectThresholdInMs = this._serverSocket.getReconnectThreshold();
+                if (!reconnectThresholdInMs) return; // We're not using ReconnectManager and glitchfree reconnect.
+
+                // We don't have signal-server connection and it's too late to do glitchfree reconnect.
+                if (Date.now() > (this._serverSocket.disconnectTimestamp || 0) + reconnectThresholdInMs) return;
+            }
+
+            // This SFU connect attempt could have been triggered by a room_joined response from signal-server.
+            // If so, a reconnect might also have been scheduled, and we need to cancel it to avoid a loop.
+            if (this._reconnectTimeOut) clearTimeout(this._reconnectTimeOut);
+        }
+
+        if (!this._vegaConnectionManager) {
+            const hostList =
+                this._features.sfuServersOverride ||
+                this._sfuServers ||
+                this._features.sfuServerOverrideHost ||
+                this._sfuServer.url;
+
+            this._vegaConnectionManager = createVegaConnectionManager({
+                initialHostList: hostList,
+                getUrlForHost: (host) => {
+                    const searchParams = new URLSearchParams({
+                        clientId: this._selfId,
+                        organizationId: this._room.organizationId,
+                        roomName: this._room.name,
+                        eventClaim: this._room.isClaimed ? this._eventClaim : null,
+                        lowBw: "true",
+                        ...Object.keys(this._features || {})
+                            .filter((featureKey) => this._features[featureKey] && /^sfu/.test(featureKey))
+                            .reduce((prev, current) => ({ ...prev, [current]: this._features[current] }), {}),
+                    });
+                    const queryString = searchParams.toString();
+                    const wsUrl = `wss://${host}?${queryString}`;
+                    return wsUrl;
+                },
+                onConnected: (vegaConnection, info) => {
+                    this._vegaConnection = vegaConnection;
+                    this._vegaConnection.on("message", (message: any) => this._onMessage(message));
+                    this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_INFO, info);
+                    this._join();
+                },
+                onDisconnected: () => {
+                    this._vegaConnection = null;
+                    this._isConnectingOrConnected = false;
+                    this._onClose();
+                },
+                onFailed: () => {
+                    this._vegaConnection = null;
+                    this._isConnectingOrConnected = false;
+                    this._onClose();
+                },
+            });
+        }
+        this._vegaConnectionManager.connect();
+        this._isConnectingOrConnected = true;
     }
 
     _onClose() {

@@ -161,6 +161,13 @@ export class ServerSocket {
         };
     }
 
+    onEngineEvent(eventName: string, handler: Function) {
+        this._socket.io?.on(eventName, handler);
+        return () => {
+            this._socket.io?.off(eventName, handler);
+        };
+    }
+
     /**
      * Register a new event handler to be triggered only once.
      *
