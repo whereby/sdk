@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.19.0
+
+### Minor Changes
+
+- 9bd1e91: Fix setCodecPreferences in Chrome on Mac
+
 ## 1.18.1
 
 ### Patch Changes
