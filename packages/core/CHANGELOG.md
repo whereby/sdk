@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 0.32.4
+
+### Patch Changes
+
+- 47f1b36: Exclude captioner in breakout groups
+- Updated dependencies [144c274]
+- Updated dependencies [47f1b36]
+  - @whereby.com/media@1.18.1
+
 ## 0.32.3
 
 ### Patch Changes
