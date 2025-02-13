@@ -127,3 +127,31 @@ export const modifyMediaCapabilities = (routerRtpCapabilities: any, features: an
         );
     }
 };
+
+function getPreferredOrder(availableCodecs: string[], { vp9On, av1On }: { vp9On?: boolean, av1On?: boolean }) {
+    if (vp9On) {
+        availableCodecs.unshift("video/vp9")
+    }
+
+    if (av1On) {
+        availableCodecs.unshift("video/av1")
+    }
+    return availableCodecs
+}
+
+export interface Codec { clockRate: number; mimeType: string; sdpFmtpLine?: string }
+
+export function sortCodecsByMimeType(
+    codecs: Codec[],
+    features: { vp9On?: boolean, av1On?: boolean }
+) {
+    const availableCodecs = codecs.map(({ mimeType }) => mimeType).filter((value, index, array) => array.indexOf(value) === index)
+    const preferredOrder = getPreferredOrder(availableCodecs, features)
+    return codecs.sort((a, b) => {
+        const indexA = preferredOrder.indexOf(a.mimeType.toLowerCase());
+        const indexB = preferredOrder.indexOf(b.mimeType.toLowerCase());
+        const orderA = indexA >= 0 ? indexA : Number.MAX_VALUE;
+        const orderB = indexB >= 0 ? indexB : Number.MAX_VALUE;
+        return orderA - orderB;
+    });
+}

@@ -15,6 +15,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
+import { sortCodecsByMimeType } from "../utils";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -955,7 +956,14 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _setCodecPreferences(pc: any, vp9On: any, av1On: any, redOn: any) {
+    _setCodecPreferences(
+        pc: RTCPeerConnection,
+        { vp9On, av1On, redOn }: { 
+            vp9On?: boolean, 
+            av1On?: boolean, 
+            redOn?: boolean, 
+        }
+    ) {
         try {
             // audio
             const audioTransceivers = pc
@@ -983,18 +991,12 @@ export default class P2pRtcManager implements RtcManager {
 
             videoTransceivers.forEach((videoTransceiver: any) => {
                 // If not implemented return
-                if (RTCRtpSender.getCapabilities === undefined) return;
-                const capabilities: any = RTCRtpSender.getCapabilities("video");
-                for (let i = 0; i < capabilities.codecs.length; i++) {
-                    if (vp9On && capabilities.codecs[i].mimeType.toLowerCase() === "video/vp9") {
-                        capabilities.codecs.unshift(capabilities.codecs.splice(i, 1)[0]);
-                        break;
-                    }
-                    if (av1On && capabilities.codecs[i].mimeType.toLowerCase() === "video/av1") {
-                        capabilities.codecs.unshift(capabilities.codecs.splice(i, 1)[0]);
-                        break;
-                    }
+                if (RTCRtpReceiver.getCapabilities === undefined) return;
+                const capabilities: any = RTCRtpReceiver.getCapabilities("video");
+                if (vp9On || av1On) {
+                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On })
                 }
+
                 // If not implemented return
                 if (videoTransceiver.setCodecPreferences === undefined) return;
                 videoTransceiver.setCodecPreferences(capabilities.codecs);
@@ -1022,7 +1024,7 @@ export default class P2pRtcManager implements RtcManager {
 
         // Set codec preferences to video transceivers
         if (vp9On || av1On || redOn) {
-            this._setCodecPreferences(pc, vp9On, av1On, redOn);
+            this._setCodecPreferences(pc, { vp9On, av1On, redOn });
         }
         pc.createOffer(constraints || this.offerOptions)
             .then((offer: any) => {
