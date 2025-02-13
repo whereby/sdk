@@ -7,6 +7,7 @@ describe("appSlice", () => {
                 const initialConfig = {
                     isNodeSdk: true,
                     isDialIn: true,
+                    ignoreBreakoutGroups: true,
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
                     displayName: "displayName",
@@ -19,6 +20,7 @@ describe("appSlice", () => {
                 expect(result).toEqual({
                     isActive: true,
                     isDialIn: true,
+                    ignoreBreakoutGroups: true,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
@@ -44,6 +46,7 @@ describe("appSlice", () => {
                 expect(result).toEqual({
                     isActive: true,
                     isDialIn: false,
+                    ignoreBreakoutGroups: false,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",

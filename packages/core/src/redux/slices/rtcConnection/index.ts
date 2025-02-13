@@ -13,7 +13,7 @@ import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnec
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { RemoteParticipant, StreamState } from "../../../RoomParticipant";
-import { selectAppIsNodeSdk, selectAppIsActive, doAppStop } from "../app";
+import { selectAppIsNodeSdk, selectAppIsActive, doAppStop, selectAppIgnoreBreakoutGroups } from "../app";
 
 import {
     selectIsCameraEnabled,
@@ -478,7 +478,8 @@ export const selectStreamsToAccept = createSelector(
     selectRemoteClients,
     selectBreakoutCurrentId,
     selectSpotlights,
-    (rtcStatus, remoteParticipants, breakoutCurrentId, spotlights) => {
+    selectAppIgnoreBreakoutGroups,
+    (rtcStatus, remoteParticipants, breakoutCurrentId, spotlights, ignoreBreakoutGroups) => {
         if (rtcStatus !== "ready") {
             return [];
         }
@@ -509,7 +510,8 @@ export const selectStreamsToAccept = createSelector(
                 if (
                     (!client.breakoutGroup && !breakoutCurrentId) || // Accept when both in falsy group
                     client.breakoutGroup === breakoutCurrentId || // Accept all in same breakout group
-                    ("" === client.breakoutGroup && clientSpotlight) // Accept remote spotlights outside groups
+                    ("" === client.breakoutGroup && clientSpotlight) || // Accept remote spotlights outside groups
+                    ignoreBreakoutGroups // Accept all when ignoring breakout groups
                 ) {
                     // Already connected
                     if (state === "done_accept") continue;

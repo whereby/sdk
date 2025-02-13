@@ -31,7 +31,8 @@ export type RoleName =
     | "granted_viewer"
     | "host"
     | "recorder"
-    | "streamer";
+    | "streamer"
+    | "captioner";
 
 export interface ClientRole {
     roleName: RoleName;
