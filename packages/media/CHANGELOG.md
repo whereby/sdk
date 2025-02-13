@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 1.18.1
+
+### Patch Changes
+
+- 144c274: Fix cleanSdp bug that would remove payloads with subtypes where the type matched another payload
+- 47f1b36: Exclude captioner in breakout groups
+
 ## 1.18.0
 
 ### Minor Changes
