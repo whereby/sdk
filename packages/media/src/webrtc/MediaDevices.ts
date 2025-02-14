@@ -224,6 +224,28 @@ export async function getStream(
         };
         return err;
     };
+
+    const getSingleStream = async (e?: any) => {
+        if (constraints.audio && constraints.video) {
+            // Since we requested both audio and video, there's
+            // a chance only one of the devices are NotFound or NotAllowed,
+            // let's try to only get one of them.
+
+            try {
+                stream = await getUserMedia(getConstraints({ ...constraintOpt, audioId: false }));
+            } catch (e2: any) {
+                if (e2.name !== "NotFoundError") {
+                     addDetails(e2, e);
+                }
+            }
+            try {
+                if (!stream) stream = await getUserMedia(getConstraints({ ...constraintOpt, videoId: false }));
+            } catch (e2) {
+                 addDetails(e2, e);
+            }
+        }
+    };
+
     if (stopTracks && replaceStream) stopStreamTracks(replaceStream, only);
     try {
         stream = await getUserMedia(constraints);
@@ -241,23 +263,7 @@ export async function getStream(
             } as any;
             retryConstraintOpt = laxConstraints[e.constraint || ""];
         } else if (e.name === "NotFoundError") {
-            if (constraints.audio && constraints.video) {
-                // Since we requested both audio and video, there's
-                // a chance only one of the devices are NotFound,
-                // let's try to only get one of them.
-                try {
-                    stream = await getUserMedia(getConstraints({ ...constraintOpt, audioId: false }));
-                } catch (e2: any) {
-                    if (e2.name !== "NotFoundError") {
-                        throw addDetails(e2, e);
-                    }
-                }
-                try {
-                    if (!stream) stream = await getUserMedia(getConstraints({ ...constraintOpt, videoId: false }));
-                } catch (e2) {
-                    throw addDetails(e2, e);
-                }
-            }
+            await getSingleStream(e);
         } else if (e.name === "NotAllowedError" || e.name === "NotReadableError" || e.name === "AbortError") {
             // NotAllowedError - User didn't allow us
             // NotReadableError - OS can't read
@@ -267,6 +273,9 @@ export async function getStream(
                 // We didn't stop the tracks, so let's do that and retry
                 stopStreamTracks(replaceStream, only);
                 retryConstraintOpt = constraintOpt;
+            }
+            if (e.name === "NotAllowedError") {
+                await getSingleStream(e);
             }
             // No existing stream, try to get a new stream
             // if we weren't explicitly disallowed.
