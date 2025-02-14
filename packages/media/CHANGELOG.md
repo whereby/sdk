@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.20.0
+
+### Minor Changes
+
+- 595a889: Refactor getStream to allow single device
+
 ## 1.19.0
 
 ### Minor Changes
