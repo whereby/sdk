@@ -67,6 +67,24 @@ describe("sdpModifier", () => {
         });
     });
 
+    describe("enableIceRenomination", () => {
+        it("returns the original sdp if it has no ice-options:tickle", () => {
+            const sdp = getVideoSdpString();
+
+            const modifiedSdp = sdpModifier.enableIceRenomination(sdp);
+
+            expect(modifiedSdp).toEqual(sdp);
+        });
+
+        it("appends renomination to ice-options:tickle in the sdp", () => {
+            const sdp = getVideoSdpString() + "a=ice-options:trickle\r\n";
+
+            const modifiedSdp = sdpModifier.enableIceRenomination(sdp);
+
+            expect(modifiedSdp).toEqual(getVideoSdpString() + "a=ice-options:trickle renomination\r\n");
+        });
+    });
+
     describe("add RTP Header Extension", () => {
         const createSdpFromExtmap = (extmap: any) => {
             return (
