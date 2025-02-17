@@ -6,7 +6,7 @@ import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RtcStream } from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
-import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
+import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp, enableIceRenomination } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
@@ -958,11 +958,15 @@ export default class P2pRtcManager implements RtcManager {
 
     _setCodecPreferences(
         pc: RTCPeerConnection,
-        { vp9On, av1On, redOn }: { 
-            vp9On?: boolean, 
-            av1On?: boolean, 
-            redOn?: boolean, 
-        }
+        {
+            vp9On,
+            av1On,
+            redOn,
+        }: {
+            vp9On?: boolean;
+            av1On?: boolean;
+            redOn?: boolean;
+        },
     ) {
         try {
             // audio
@@ -994,7 +998,7 @@ export default class P2pRtcManager implements RtcManager {
                 if (RTCRtpReceiver.getCapabilities === undefined) return;
                 const capabilities: any = RTCRtpReceiver.getCapabilities("video");
                 if (vp9On || av1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On })
+                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On });
                 }
 
                 // If not implemented return
@@ -1020,7 +1024,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn, iceRenominationOn } = this._features;
 
         // Set codec preferences to video transceivers
         if (vp9On || av1On || redOn) {
@@ -1034,6 +1038,10 @@ export default class P2pRtcManager implements RtcManager {
                 // Only vp9 because FF does not support AV1 yet
                 if ((vp9On || redOn) && browserName === "firefox") {
                     offer.sdp = setCodecPreferenceSDP(offer.sdp, vp9On, redOn);
+                }
+
+                if (iceRenominationOn) {
+                    offer.sdp = enableIceRenomination(offer.sdp);
                 }
 
                 // workaround for two different browser bugs:
