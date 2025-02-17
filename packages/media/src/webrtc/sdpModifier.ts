@@ -56,18 +56,35 @@ export function setCodecPreferenceSDP(sdp: any, vp9On: any, redOn: any) {
 export function cleanSdp(sdp: string) {
     try {
         const sdpObject = sdpTransform.parse(sdp);
-        sdpObject.media.forEach(mediaObject => {
+        sdpObject.media.forEach((mediaObject) => {
             const usedPayloads = {} as Record<string, boolean>;
-            if (mediaObject.payloads) mediaObject.payloads = ("" + mediaObject.payloads).split(' ').filter(p => !usedPayloads[p] && (usedPayloads[p] = true)).join(' ');
+            if (mediaObject.payloads)
+                mediaObject.payloads = ("" + mediaObject.payloads)
+                    .split(" ")
+                    .filter((p) => !usedPayloads[p] && (usedPayloads[p] = true))
+                    .join(" ");
             const usedRtps = {} as Record<string, boolean>;
-            mediaObject.rtp = mediaObject.rtp.filter(p => !p.payload || (usedPayloads[p.payload] && !usedRtps[p.payload] && (usedRtps[p.payload] = true)));
+            mediaObject.rtp = mediaObject.rtp.filter(
+                (p) => !p.payload || (usedPayloads[p.payload] && !usedRtps[p.payload] && (usedRtps[p.payload] = true)),
+            );
             const usedFmtps = {} as Record<string, boolean>;
-            if (mediaObject.fmtp) mediaObject.fmtp = mediaObject.fmtp.filter(p => !p.payload || (usedPayloads[p.payload] && !usedFmtps[p.payload] && (usedFmtps[p.payload] = true)));
+            if (mediaObject.fmtp)
+                mediaObject.fmtp = mediaObject.fmtp.filter(
+                    (p) =>
+                        !p.payload ||
+                        (usedPayloads[p.payload] && !usedFmtps[p.payload] && (usedFmtps[p.payload] = true)),
+                );
             const usedRtcpFb = {} as Record<string, boolean>;
-            if (mediaObject.rtcpFb) mediaObject.rtcpFb = mediaObject.rtcpFb.filter(p => !p.payload || (usedPayloads[p.payload] && !usedRtcpFb[p.payload+p.type+p.subtype] && (usedRtcpFb[p.payload+p.type+p.subtype] = true)));
-        })
+            if (mediaObject.rtcpFb)
+                mediaObject.rtcpFb = mediaObject.rtcpFb.filter(
+                    (p) =>
+                        !p.payload ||
+                        (usedPayloads[p.payload] &&
+                            !usedRtcpFb[p.payload + p.type + p.subtype] &&
+                            (usedRtcpFb[p.payload + p.type + p.subtype] = true)),
+                );
+        });
         return sdpTransform.write(sdpObject);
-
     } catch (_) {}
     return sdp;
 }
