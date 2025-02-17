@@ -33,6 +33,7 @@ export default class Session {
     registerConnected: any;
     offerOptions: { offerToReceiveAudio: boolean; offerToReceiveVideo: boolean };
     _deprioritizeH264Encoding: any;
+    _iceRenominationOn: boolean;
     clientId: any;
     peerConnectionConfig: any;
     shouldAddLocalVideo: any;
@@ -44,11 +45,13 @@ export default class Session {
         bandwidth,
         maximumTurnBandwidth,
         deprioritizeH264Encoding,
+        iceRenominationOn,
     }: {
         peerConnectionId: any;
         bandwidth: any;
         maximumTurnBandwidth: any;
         deprioritizeH264Encoding: any;
+        iceRenominationOn: boolean;
     }) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
@@ -78,6 +81,7 @@ export default class Session {
         });
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._deprioritizeH264Encoding = deprioritizeH264Encoding;
+        this._iceRenominationOn = iceRenominationOn;
     }
 
     setAndGetPeerConnection({
@@ -195,6 +199,7 @@ export default class Session {
 
         sdp = sdpModifier.filterMidExtension(sdp);
         sdp = sdpModifier.filterMsidSemantic(sdp);
+        if (this._iceRenominationOn) sdp = sdpModifier.enableIceRenomination(sdp);
 
         const desc = { type: message.type, sdp };
         // Create an answer to send to the client that sent the offer
@@ -206,6 +211,7 @@ export default class Session {
             })
             .then((answer: any) => {
                 answerToSignal = answer;
+                if (this._iceRenominationOn) answer.sdp = sdpModifier.enableIceRenomination(answer.sdp);
                 return this.pc.setLocalDescription(answer);
             })
             .then(() => {
@@ -217,7 +223,8 @@ export default class Session {
     }
 
     handleAnswer(message: any) {
-        const sdp = sdpModifier.filterMsidSemantic(message.sdp);
+        let sdp = sdpModifier.filterMsidSemantic(message.sdp);
+        if (this._iceRenominationOn) sdp = sdpModifier.enableIceRenomination(sdp);
 
         const desc = { type: message.type, sdp };
         return this._setRemoteDescription(desc).then(
@@ -226,7 +233,7 @@ export default class Session {
             },
             (e: any) => {
                 logger.warn("Could not set remote description from remote answer: ", e);
-            }
+            },
         );
     }
 
@@ -376,6 +383,7 @@ export default class Session {
                 })
                 .then((answer: any) => {
                     answer.sdp = sdpModifier.replaceSSRCs(pc.localDescription.sdp, answer.sdp);
+                    if (this._iceRenominationOn) answer.sdp = sdpModifier.enableIceRenomination(answer.sdp);
                     return pc.setLocalDescription(answer);
                 });
         }
@@ -428,7 +436,7 @@ export default class Session {
                     videoTransceiver?.direction !== "recvonly" &&
                     videoTransceiver?.receiver?.track?.kind === "video" &&
                     !excludedTrackIds.includes(videoTransceiver?.receiver?.track?.id) &&
-                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id)
+                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id),
             )
             .forEach((videoTransceiver: any) => {
                 videoTransceiver.direction = enable ? "sendonly" : "sendrecv";

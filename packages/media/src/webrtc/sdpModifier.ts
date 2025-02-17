@@ -151,6 +151,22 @@ export function deprioritizeH264(sdp: any) {
         .join("");
 }
 
+// replace `a=ice-options:trickle` with `a=ice-options:trickle renomination`
+// https://datatracker.ietf.org/doc/html/draft-thatcher-ice-renomination-00
+export function enableIceRenomination(sdp: any) {
+    const renominationRegex = /a=ice-options:.*renomination/;
+    const isRenominationAlreadyEnabled = SDPUtils.splitLines(sdp.trim()).some((line) => renominationRegex.test(line));
+    if (isRenominationAlreadyEnabled) {
+        return sdp;
+    }
+
+    return (
+        SDPUtils.splitLines(sdp.trim())
+            .map((line) => (line === "a=ice-options:trickle" ? "a=ice-options:trickle renomination" : line))
+            .join("\r\n") + "\r\n"
+    );
+}
+
 // TODO: currently assumes video, look at track.kind
 // ensures that SSRCs in new description match ssrcs in old description
 export function replaceSSRCs(currentDescription: any, newDescription: any) {
