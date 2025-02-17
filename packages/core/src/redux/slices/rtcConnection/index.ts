@@ -23,7 +23,6 @@ import {
     doSetDevice,
     doSwitchLocalStream,
 } from "../localMedia";
-import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
@@ -41,6 +40,8 @@ function isDeferrable({ client, breakoutCurrentId }: { client?: RemoteParticipan
     if (!client.isAudioEnabled && !client.isVideoEnabled) return true;
     return false;
 }
+import { rtcEvents } from "./actions";
+export { rtcEvents } from "./actions";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
