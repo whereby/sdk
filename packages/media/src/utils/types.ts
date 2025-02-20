@@ -259,6 +259,7 @@ export interface LiveTranscriptionStartedEvent {
 
 export interface LiveTranscriptionStoppedEvent {
     transcriptionId: string;
+    endDate: number;
 }
 
 export interface SignalEvents {
