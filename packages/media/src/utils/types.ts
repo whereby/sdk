@@ -253,13 +253,13 @@ export interface SpotlightRemovedEvent {
 }
 
 export interface LiveTranscriptionStartedEvent {
-    startedAt: string;
     transcriptionId: string;
+    startedAt: string;
 }
 
 export interface LiveTranscriptionStoppedEvent {
     transcriptionId: string;
-    endDate: number;
+    endedAt: string;
 }
 
 export interface SignalEvents {
