@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.12.0
+
+### Minor Changes
+
+- 5fc0360: Add cancel knock event - embed element
+
 ## 3.11.7
 
 ### Patch Changes
