@@ -84,6 +84,7 @@ interface PrecallCheckCompletedStepResult {
 interface WherebyEmbedElementEventMap {
     ready: CustomEvent;
     knock: CustomEvent;
+    cancel_knock: CustomEvent;
     participantupdate: CustomEvent<{ count: number }>;
     join: CustomEvent;
     leave: CustomEvent<{ removed: boolean }>;
@@ -115,6 +116,7 @@ interface WherebyEmbedElementEventMap {
 interface WherebyEmbedElementCommands {
     endMeeting: () => void;
     knock: () => void;
+    cancelKnock: () => void;
     leaveRoom: () => void;
     openSettings: (settingsPane?: SettingsPane) => void;
     startRecording: () => void;
