@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
-- 79350ae: Add endDate parameter to LiveTranscriptionStoppedEvent typescript definition
+- 79350ae: Add endedAt parameter to LiveTranscriptionStoppedEvent typescript definition
 
 ## 1.20.0
 
