@@ -7,6 +7,6 @@ export * from "./mediaSettings";
 export * from "./optimalBitrate";
 export * from "./ReconnectManager";
 export * from "./ServerSocket";
-export * from "./transportSettings";
+export * from "./iceServers";
 export * from "./types";
 export * from "./urls";
