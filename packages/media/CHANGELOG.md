@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.20.1
+
+### Patch Changes
+
+- 79350ae: Add endDate parameter to LiveTranscriptionStoppedEvent typescript definition
+
 ## 1.20.0
 
 ### Minor Changes
