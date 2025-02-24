@@ -958,10 +958,10 @@ export default class P2pRtcManager implements RtcManager {
 
     _setCodecPreferences(
         pc: RTCPeerConnection,
-        { vp9On, av1On, redOn }: { 
-            vp9On?: boolean, 
-            av1On?: boolean, 
-            redOn?: boolean, 
+        { vp9On, av1On, redOn }: {
+            vp9On?: boolean,
+            av1On?: boolean,
+            redOn?: boolean,
         }
     ) {
         try {
