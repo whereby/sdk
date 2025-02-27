@@ -67,6 +67,41 @@ describe("sdpModifier", () => {
         });
     });
 
+    describe("enableIceRenomination", () => {
+        afterEach(() => {
+            jest.resetModules();
+        });
+
+        it("returns the original sdp if the browserName is firefox", () => {
+            jest.mock("webrtc-adapter", () => ({
+                browserDetails: {
+                    browser: "firefox",
+                },
+            }));
+            const sdp = getVideoSdpString();
+
+            const modifiedSdp = sdpModifier.enableIceRenomination(sdp);
+
+            expect(modifiedSdp).toEqual(sdp);
+        });
+
+        it("returns the original sdp if it has no ice-options:tickle", () => {
+            const sdp = getVideoSdpString();
+
+            const modifiedSdp = sdpModifier.enableIceRenomination(sdp);
+
+            expect(modifiedSdp).toEqual(sdp);
+        });
+
+        it("appends renomination to ice-options:tickle in the sdp", () => {
+            const sdp = getVideoSdpString() + "a=ice-options:trickle\r\n";
+
+            const modifiedSdp = sdpModifier.enableIceRenomination(sdp);
+
+            expect(modifiedSdp).toEqual(getVideoSdpString() + "a=ice-options:trickle renomination\r\n");
+        });
+    });
+
     describe("add RTP Header Extension", () => {
         const createSdpFromExtmap = (extmap: any) => {
             return (
@@ -131,7 +166,7 @@ describe("sdpModifier", () => {
                 createSdpFromExtmap(extmap),
                 "http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time",
                 true,
-                false
+                false,
             );
             const sections = SDPUtils.splitSections(modifedSdp);
             sections.forEach((mediaSection) => {
@@ -140,12 +175,12 @@ describe("sdpModifier", () => {
                     if (kind === media) {
                         if (kind === "audio") {
                             expect(mediaSection).toContain(
-                                "a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                                "a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                             );
                         }
                         if (kind === "video") {
                             expect(mediaSection).not.toContain(
-                                "a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                                "a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                             );
                         }
                         (extmap as any)[media].forEach((extmap: any) => {
@@ -164,7 +199,7 @@ describe("sdpModifier", () => {
                 const kind = SDPUtils.getKind(mediaSection);
                 if (kind === "audio" || kind === "video") {
                     expect(mediaSection).toContain(
-                        "a=extmap:1 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                        "a=extmap:1 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                     );
                 }
             });
@@ -199,7 +234,7 @@ describe("sdpModifier", () => {
                 ["audio", "video"].forEach((media) => {
                     if (kind === media) {
                         expect(mediaSection).toContain(
-                            "a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                            "a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                         );
                         (extmap as any)[media].forEach((extmap: any) => {
                             expect(mediaSection).toContain(extmap);
@@ -238,7 +273,7 @@ describe("sdpModifier", () => {
                 ["audio", "video"].forEach((media) => {
                     if (kind === media) {
                         expect(mediaSection).toContain(
-                            "a=extmap:12 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                            "a=extmap:12 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                         );
                         (extmap as any)[media].forEach((extmap: any) => {
                             expect(mediaSection).toContain(extmap);
@@ -278,7 +313,7 @@ describe("sdpModifier", () => {
                 ["audio", "video"].forEach((media) => {
                     if (kind === media) {
                         expect(mediaSection).toContain(
-                            "a=extmap:16 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                            "a=extmap:16 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                         );
                         (extmap as any)[media].forEach((extmap: any) => {
                             expect(mediaSection).toContain(extmap);
@@ -319,7 +354,7 @@ describe("sdpModifier", () => {
                 ["audio", "video"].forEach((media) => {
                     if (kind === media) {
                         expect(mediaSection).toContain(
-                            "a=extmap:17 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                            "a=extmap:17 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                         );
                         (extmap as any)[media].forEach((extmap: any) => {
                             expect(mediaSection).toContain(extmap);
@@ -360,7 +395,7 @@ describe("sdpModifier", () => {
                 ["audio", "video"].forEach((media) => {
                     if (kind === media) {
                         expect(mediaSection).toContain(
-                            "a=extmap:6 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n"
+                            "a=extmap:6 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time\r\n",
                         );
                         (extmap as any)[media].forEach((extmap: any) => {
                             expect(mediaSection).toContain(extmap);
@@ -387,7 +422,7 @@ describe("sdpModifier", () => {
                 () => {
                     const modifedSdp = sdpModifier.addAbsCaptureTimeExtMap(sdp);
                     expect(modifedSdp).toEqual(sdp);
-                }
+                },
             );
         });
     });
@@ -433,18 +468,17 @@ describe("sdpModifier", () => {
             "a=mid:screen\r\n" +
             "a=msid:stream2 screentrack\r\n" +
             "a=ssrc:1003 cname:some\r\n" +
-
-        it("removes duplicate payload types in m-line", () => {
-            const modifedSdp = sdpModifier.cleanSdp(sdp);
-            expect(modifedSdp).toContain("m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93 122\r\n");
-        });
+            it("removes duplicate payload types in m-line", () => {
+                const modifedSdp = sdpModifier.cleanSdp(sdp);
+                expect(modifedSdp).toContain("m=video 9 UDP/TLS/RTP/SAVPF 90 91 92 93 122\r\n");
+            });
 
         it("removes duplicate rtpmap", () => {
             const modifedSdp = sdpModifier.cleanSdp(sdp);
             expect(modifedSdp).not.toContain("a=rtpmap:92 h264/90001");
             expect(modifedSdp).not.toContain("a=rtpmap:93 vp9/90001");
         });
-        
+
         it("keeps the first rtpmap of each payload", () => {
             const modifedSdp = sdpModifier.cleanSdp(sdp);
             expect(modifedSdp).toContain("a=rtpmap:92 h264/90000");
@@ -456,7 +490,7 @@ describe("sdpModifier", () => {
             expect(modifedSdp).toContain("a=fmtp:93 minptime=10;useinbandfec=1");
             expect(modifedSdp).not.toContain("a=fmtp:93 minptime=10;useinbandfec=2");
         });
-        
+
         it("removes duplicate rtcb-fb", () => {
             const modifedSdp = sdpModifier.cleanSdp(sdp);
             expect(modifedSdp).toContain("a=rtcp-fb:93 goog-remb");
@@ -470,7 +504,7 @@ describe("sdpModifier", () => {
             expect(modifedSdp).toContain("a=rtcp-fb:122 nack pli\r\n");
             expect(modifedSdp?.match(/a=rtcp-fb:122 nack(?!\spli)/gi)?.length).toEqual(1);
             expect(modifedSdp?.match(/a=rtcp-fb:122 nack pli/gi)?.length).toEqual(1);
-        })
+        });
 
         it("removes rtpmap, fmtp and rtcb-fb of payloads not listed in m-line", () => {
             const modifedSdp = sdpModifier.cleanSdp(sdp);
