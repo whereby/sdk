@@ -68,6 +68,23 @@ describe("sdpModifier", () => {
     });
 
     describe("enableIceRenomination", () => {
+        afterEach(() => {
+            jest.resetModules();
+        });
+
+        it("returns the original sdp if the browserName is firefox", () => {
+            jest.mock("webrtc-adapter", () => ({
+                browserDetails: {
+                    browser: "firefox",
+                },
+            }));
+            const sdp = getVideoSdpString();
+
+            const modifiedSdp = sdpModifier.enableIceRenomination(sdp);
+
+            expect(modifiedSdp).toEqual(sdp);
+        });
+
         it("returns the original sdp if it has no ice-options:tickle", () => {
             const sdp = getVideoSdpString();
 

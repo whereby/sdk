@@ -210,8 +210,10 @@ export default class Session {
                 return this.pc.createAnswer();
             })
             .then((answer: any) => {
+                answerToSignal = { ...answer };
+                // Do not include the renegotiation flag in the signaling
+                // message as it may not be supported by the other side.
                 if (this._iceRenominationOn) answer.sdp = sdpModifier.enableIceRenomination(answer.sdp);
-                answerToSignal = answer;
                 return this.pc.setLocalDescription(answer);
             })
             .then(() => {

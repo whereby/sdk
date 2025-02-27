@@ -1025,7 +1025,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn, iceRenominationOn } = this._features;
+        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         // Set codec preferences to video transceivers
         if (vp9On || av1On || redOn) {
@@ -1039,10 +1039,6 @@ export default class P2pRtcManager implements RtcManager {
                 // Only vp9 because FF does not support AV1 yet
                 if ((vp9On || redOn) && browserName === "firefox") {
                     offer.sdp = setCodecPreferenceSDP(offer.sdp, vp9On, redOn);
-                }
-
-                if (iceRenominationOn) {
-                    offer.sdp = enableIceRenomination(offer.sdp);
                 }
 
                 // workaround for two different browser bugs:

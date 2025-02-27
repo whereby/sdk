@@ -154,6 +154,10 @@ export function deprioritizeH264(sdp: any) {
 // replace `a=ice-options:trickle` with `a=ice-options:trickle renomination`
 // https://datatracker.ietf.org/doc/html/draft-thatcher-ice-renomination-00
 export function enableIceRenomination(sdp: any) {
+    if (browserName === "firefox") {
+        return sdp;
+    }
+
     return (
         SDPUtils.splitLines(sdp.trim())
             .map((line) => (line === "a=ice-options:trickle" ? "a=ice-options:trickle renomination" : line))
