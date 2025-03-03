@@ -63,7 +63,7 @@ export default class P2pRtcManager implements RtcManager {
     _videoTrackOnEnded: () => void;
     totalSessionsCreated: number;
     _iceServers: any;
-    _nIceServers: any;
+    _turnServers: any;
     _sfuServer: any;
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: any;
@@ -91,7 +91,7 @@ export default class P2pRtcManager implements RtcManager {
         webrtcProvider: any;
         features: any;
     }) {
-        const { name, session, iceServers, nIceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
+        const { name, session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
         this._roomName = name;
@@ -128,7 +128,7 @@ export default class P2pRtcManager implements RtcManager {
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
             iceServers: iceServers || [],
-            nIceServers: nIceServers || [],
+            turnServers: turnServers || [],
             mediaserverConfigTtlSeconds,
         });
 
@@ -559,7 +559,7 @@ export default class P2pRtcManager implements RtcManager {
         constraints.optional.push({ rtcStatsConferenceId: this._roomName });
 
         const peerConnectionConfig: any = {
-            iceServers: this._features.nIceServersOn ? this._nIceServers : this._iceServers,
+            iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
         };
         if (this._features.turnServerOverrideHost) {
             const host = this._features.turnServerOverrideHost;
@@ -578,7 +578,7 @@ export default class P2pRtcManager implements RtcManager {
         }
 
         external_stun_servers(peerConnectionConfig.iceServers, this._features);
-        maybeTurnOnly(peerConnectionConfig, this._features)
+        maybeTurnOnly(peerConnectionConfig, this._features);
 
         if (browserName === "chrome") {
             peerConnectionConfig.sdpSemantics = "unified-plan";
@@ -846,9 +846,9 @@ export default class P2pRtcManager implements RtcManager {
         this._deleteEnabledLocalStreamId(streamId);
     }
 
-    _updateAndScheduleMediaServersRefresh({ iceServers, nIceServers, sfuServer, mediaserverConfigTtlSeconds }: any) {
+    _updateAndScheduleMediaServersRefresh({ iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds }: any) {
         this._iceServers = iceServers;
-        this._nIceServers = nIceServers
+        this._turnServers = turnServers;
         this._sfuServer = sfuServer;
         this._mediaserverConfigTtlSeconds = mediaserverConfigTtlSeconds;
 
@@ -934,11 +934,15 @@ export default class P2pRtcManager implements RtcManager {
 
     _setCodecPreferences(
         pc: RTCPeerConnection,
-        { vp9On, av1On, redOn }: {
-            vp9On?: boolean,
-            av1On?: boolean,
-            redOn?: boolean,
-        }
+        {
+            vp9On,
+            av1On,
+            redOn,
+        }: {
+            vp9On?: boolean;
+            av1On?: boolean;
+            redOn?: boolean;
+        },
     ) {
         try {
             // audio
@@ -970,7 +974,7 @@ export default class P2pRtcManager implements RtcManager {
                 if (RTCRtpReceiver.getCapabilities === undefined) return;
                 const capabilities: any = RTCRtpReceiver.getCapabilities("video");
                 if (vp9On || av1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On })
+                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On });
                 }
 
                 // If not implemented return

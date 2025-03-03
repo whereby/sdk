@@ -86,7 +86,7 @@ export default class VegaRtcManager implements RtcManager {
     _qualityMonitor: any;
     _fetchMediaServersTimer: any;
     _iceServers: any;
-    _nIceServers: any;
+    _turnServers: any;
     _sfuServer: any;
     _sfuServers?: HostListEntryOptionalDC[];
     _mediaserverConfigTtlSeconds: any;
@@ -114,7 +114,7 @@ export default class VegaRtcManager implements RtcManager {
         features?: any;
         eventClaim?: string;
     }) {
-        const { session, iceServers, nIceServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
+        const { session, iceServers, turnServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
         this._room = room;
@@ -192,7 +192,7 @@ export default class VegaRtcManager implements RtcManager {
             sfuServer,
             sfuServers,
             iceServers: iceServers.iceServers || [],
-            nIceServers: nIceServers || [],
+            turnServers: turnServers || [],
             mediaserverConfigTtlSeconds,
         });
 
@@ -214,19 +214,19 @@ export default class VegaRtcManager implements RtcManager {
 
     _updateAndScheduleMediaServersRefresh({
         iceServers,
-        nIceServers,
+        turnServers,
         sfuServer,
         sfuServers,
         mediaserverConfigTtlSeconds,
     }: {
         iceServers: any;
-        nIceServers: any;
+        turnServers: any;
         sfuServer: any;
         sfuServers: any;
         mediaserverConfigTtlSeconds: any;
     }) {
         this._iceServers = iceServers;
-        this._nIceServers = nIceServers;
+        this._turnServers = turnServers;
         this._sfuServer = sfuServer;
         this._sfuServers = sfuServers;
 
@@ -248,7 +248,7 @@ export default class VegaRtcManager implements RtcManager {
                 sfuServer.url,
         );
 
-        const iceServersList = { iceServers: this._features.nIceServersOn ? this._nIceServers : this._iceServers }
+        const iceServersList = { iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers };
         external_stun_servers(iceServersList.iceServers, this._features);
 
         this._sendTransport?.updateIceServers(iceServersList);
@@ -508,7 +508,7 @@ export default class VegaRtcManager implements RtcManager {
             },
         });
 
-        transportOptions.iceServers = this._features.nIceServersOn ? this._nIceServers : this._iceServers;
+        transportOptions.iceServers = this._features.turnServersOn ? this._turnServers : this._iceServers;
 
         maybeTurnOnly(transportOptions, this._features);
 
