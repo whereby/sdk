@@ -6,7 +6,7 @@ import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RtcStream } from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
-import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
+import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp, enableIceRenomination } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
@@ -490,6 +490,7 @@ export default class P2pRtcManager implements RtcManager {
                     ? MAXIMUM_TURN_BANDWIDTH_UNLIMITED
                     : MAXIMUM_TURN_BANDWIDTH,
                 deprioritizeH264Encoding,
+                iceRenominationOn: this._features.iceRenominationOn,
             });
 
             this.totalSessionsCreated++;
@@ -958,11 +959,15 @@ export default class P2pRtcManager implements RtcManager {
 
     _setCodecPreferences(
         pc: RTCPeerConnection,
-        { vp9On, av1On, redOn }: { 
-            vp9On?: boolean, 
-            av1On?: boolean, 
-            redOn?: boolean, 
-        }
+        {
+            vp9On,
+            av1On,
+            redOn,
+        }: {
+            vp9On?: boolean;
+            av1On?: boolean;
+            redOn?: boolean;
+        },
     ) {
         try {
             // audio
@@ -994,7 +999,7 @@ export default class P2pRtcManager implements RtcManager {
                 if (RTCRtpReceiver.getCapabilities === undefined) return;
                 const capabilities: any = RTCRtpReceiver.getCapabilities("video");
                 if (vp9On || av1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On })
+                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On });
                 }
 
                 // If not implemented return
