@@ -562,7 +562,10 @@ export default class P2pRtcManager implements RtcManager {
             iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
         };
 
-        peerConnectionConfig.iceServers = turnServerOverride(peerConnectionConfig.iceServers, this._features.turnServerOverrideHost)
+        peerConnectionConfig.iceServers = turnServerOverride(
+            peerConnectionConfig.iceServers,
+            this._features.turnServerOverrideHost,
+        );
 
         external_stun_servers(peerConnectionConfig, this._features);
         maybeTurnOnly(peerConnectionConfig, this._features);
@@ -922,11 +925,11 @@ export default class P2pRtcManager implements RtcManager {
     _setCodecPreferences(
         pc: RTCPeerConnection,
         {
-            vp9On,
+            p2pVp9On,
             av1On,
             redOn,
         }: {
-            vp9On?: boolean;
+            p2pVp9On?: boolean;
             av1On?: boolean;
             redOn?: boolean;
         },
@@ -960,8 +963,8 @@ export default class P2pRtcManager implements RtcManager {
                 // If not implemented return
                 if (RTCRtpReceiver.getCapabilities === undefined) return;
                 const capabilities: any = RTCRtpReceiver.getCapabilities("video");
-                if (vp9On || av1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On });
+                if (p2pVp9On || av1On) {
+                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On: p2pVp9On, av1On });
                 }
 
                 // If not implemented return
@@ -987,11 +990,11 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { vp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { p2pVp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         // Set codec preferences to video transceivers
-        if (vp9On || av1On || redOn) {
-            this._setCodecPreferences(pc, { vp9On, av1On, redOn });
+        if (p2pVp9On || av1On || redOn) {
+            this._setCodecPreferences(pc, { p2pVp9On, av1On, redOn });
         }
         pc.createOffer(constraints || this.offerOptions)
             .then((offer: any) => {
@@ -999,8 +1002,8 @@ export default class P2pRtcManager implements RtcManager {
                 if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
                 // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
                 // Only vp9 because FF does not support AV1 yet
-                if ((vp9On || redOn) && browserName === "firefox") {
-                    offer.sdp = setCodecPreferenceSDP(offer.sdp, vp9On, redOn);
+                if ((p2pVp9On || redOn) && browserName === "firefox") {
+                    offer.sdp = setCodecPreferenceSDP(offer.sdp, p2pVp9On, redOn);
                 }
 
                 // workaround for two different browser bugs:

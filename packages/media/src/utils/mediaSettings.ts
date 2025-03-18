@@ -65,8 +65,8 @@ const SCREEN_SHARE_SETTINGS_VP9 = {
     encodings: [{ dtx: true }],
 };
 
-export const getMediaSettings = (kind: string, isScreenShare: boolean, features: any) => {
-    const { lowDataModeEnabled, simulcastScreenshareOn, vp9On, lowBandwidth } = features;
+export const getMediaSettings = (kind: string, isScreenShare: boolean, features: { lowDataModeEnabled?: boolean, simulcastScreenshareOn?: boolean, lowBandwidth?: boolean, vp9On?: boolean }) => {
+    const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On } = features;
 
     if (kind === "audio") {
         return AUDIO_SETTINGS;
@@ -90,7 +90,7 @@ export const getMediaSettings = (kind: string, isScreenShare: boolean, features:
     }
 };
 
-export const modifyMediaCapabilities = (routerRtpCapabilities: any, features: any) => {
+export const modifyMediaCapabilities = (routerRtpCapabilities: any, features: { vp9On?: boolean , h264On?: boolean }) => {
     const { vp9On, h264On } = features;
 
     if (vp9On) {
