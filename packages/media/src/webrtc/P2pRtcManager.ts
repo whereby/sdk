@@ -6,7 +6,7 @@ import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RtcStream } from "../model/RtcStream";
 import { getOptimalBitrate } from "../utils/optimalBitrate";
-import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
+import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp, enableIceRenomination } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
 import { Address6 } from "ip-address";
@@ -493,6 +493,7 @@ export default class P2pRtcManager implements RtcManager {
                     ? MAXIMUM_TURN_BANDWIDTH_UNLIMITED
                     : MAXIMUM_TURN_BANDWIDTH,
                 deprioritizeH264Encoding,
+                iceRenominationOn: this._features.iceRenominationOn,
             });
 
             this.totalSessionsCreated++;
