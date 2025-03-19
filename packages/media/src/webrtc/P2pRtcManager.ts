@@ -926,11 +926,11 @@ export default class P2pRtcManager implements RtcManager {
         pc: RTCPeerConnection,
         {
             p2pVp9On,
-            av1On,
+            p2pAv1On,
             redOn,
         }: {
             p2pVp9On?: boolean;
-            av1On?: boolean;
+            p2pAv1On?: boolean;
             redOn?: boolean;
         },
     ) {
@@ -963,8 +963,11 @@ export default class P2pRtcManager implements RtcManager {
                 // If not implemented return
                 if (RTCRtpReceiver.getCapabilities === undefined) return;
                 const capabilities: any = RTCRtpReceiver.getCapabilities("video");
-                if (p2pVp9On || av1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On: p2pVp9On, av1On });
+                if (p2pVp9On || p2pAv1On) {
+                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, {
+                        vp9On: p2pVp9On,
+                        av1On: p2pAv1On,
+                    });
                 }
 
                 // If not implemented return
@@ -990,11 +993,11 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { p2pVp9On, av1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { p2pVp9On, p2pAv1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         // Set codec preferences to video transceivers
-        if (p2pVp9On || av1On || redOn) {
-            this._setCodecPreferences(pc, { p2pVp9On, av1On, redOn });
+        if (p2pVp9On || p2pAv1On || redOn) {
+            this._setCodecPreferences(pc, { p2pVp9On, p2pAv1On, redOn });
         }
         pc.createOffer(constraints || this.offerOptions)
             .then((offer: any) => {
