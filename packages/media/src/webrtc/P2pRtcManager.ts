@@ -16,6 +16,7 @@ import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
 import { sortCodecsByMimeType } from "../utils";
+import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -62,6 +63,7 @@ export default class P2pRtcManager implements RtcManager {
     _videoTrackOnEnded: () => void;
     totalSessionsCreated: number;
     _iceServers: any;
+    _turnServers: any;
     _sfuServer: any;
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: any;
@@ -89,7 +91,7 @@ export default class P2pRtcManager implements RtcManager {
         webrtcProvider: any;
         features: any;
     }) {
-        const { name, session, iceServers, sfuServer, mediaserverConfigTtlSeconds } = room;
+        const { name, session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
         this._roomName = name;
@@ -125,7 +127,8 @@ export default class P2pRtcManager implements RtcManager {
 
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
-            iceServers: iceServers.iceServers || [],
+            iceServers: iceServers?.iceServers || [],
+            turnServers: turnServers || [],
             mediaserverConfigTtlSeconds,
         });
 
@@ -556,54 +559,13 @@ export default class P2pRtcManager implements RtcManager {
         constraints.optional.push({ rtcStatsConferenceId: this._roomName });
 
         const peerConnectionConfig: any = {
-            iceServers: this._iceServers,
+            iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
         };
-        if (this._features.turnServerOverrideHost) {
-            const host = this._features.turnServerOverrideHost;
-            const port = host.indexOf(":") > 0 ? "" : ":443";
-            const override = ":" + host + port;
-            peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.map((original: any) => {
-                const entry = Object.assign({}, original);
-                if (entry.url) {
-                    entry.url = entry.url.replace(/:[^?]*/, override);
-                }
-                if (entry.urls) {
-                    entry.urls = entry.urls.map((url: string) => url.replace(/:[^?]*/, override));
-                }
-                return entry;
-            });
-        }
 
-        if (this._features.addGoogleStunServers) {
-            peerConnectionConfig.iceServers = [
-                ...peerConnectionConfig.iceServers,
-                { urls: "stun:stun.l.google.com:19302" },
-                { urls: "stun:stun2.l.google.com:19302" },
-            ];
-        }
-        if (this._features.addCloudflareStunServers) {
-            peerConnectionConfig.iceServers = [
-                ...peerConnectionConfig.iceServers,
-                { urls: "stun:stun.cloudflare.com:3478" },
-                { urls: "stun:stun.cloudflare.com:53" },
-            ];
-        }
+        peerConnectionConfig.iceServers = turnServerOverride(peerConnectionConfig.iceServers, this._features.turnServerOverrideHost)
 
-        if (this._features.useOnlyTURN) {
-            peerConnectionConfig.iceTransportPolicy = "relay";
-            const filter = (
-                {
-                    onlyudp: /^turn:.*transport=udp$/,
-                    onlytcp: /^turn:.*transport=tcp$/,
-                    onlytls: /^turns:.*transport=tcp$/,
-                } as any
-            )[this._features.useOnlyTURN];
-            if (filter) {
-                peerConnectionConfig.iceServers = peerConnectionConfig.iceServers.filter(
-                    (entry: any) => entry.url && entry.url.match(filter),
-                );
-            }
-        }
+        external_stun_servers(peerConnectionConfig, this._features);
+        maybeTurnOnly(peerConnectionConfig, this._features);
 
         if (browserName === "chrome") {
             peerConnectionConfig.sdpSemantics = "unified-plan";
@@ -871,8 +833,9 @@ export default class P2pRtcManager implements RtcManager {
         this._deleteEnabledLocalStreamId(streamId);
     }
 
-    _updateAndScheduleMediaServersRefresh({ iceServers, sfuServer, mediaserverConfigTtlSeconds }: any) {
+    _updateAndScheduleMediaServersRefresh({ iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds }: any) {
         this._iceServers = iceServers;
+        this._turnServers = turnServers;
         this._sfuServer = sfuServer;
         this._mediaserverConfigTtlSeconds = mediaserverConfigTtlSeconds;
 
@@ -958,11 +921,15 @@ export default class P2pRtcManager implements RtcManager {
 
     _setCodecPreferences(
         pc: RTCPeerConnection,
-        { vp9On, av1On, redOn }: { 
-            vp9On?: boolean, 
-            av1On?: boolean, 
-            redOn?: boolean, 
-        }
+        {
+            vp9On,
+            av1On,
+            redOn,
+        }: {
+            vp9On?: boolean;
+            av1On?: boolean;
+            redOn?: boolean;
+        },
     ) {
         try {
             // audio
@@ -994,7 +961,7 @@ export default class P2pRtcManager implements RtcManager {
                 if (RTCRtpReceiver.getCapabilities === undefined) return;
                 const capabilities: any = RTCRtpReceiver.getCapabilities("video");
                 if (vp9On || av1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On })
+                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, { vp9On, av1On });
                 }
 
                 // If not implemented return

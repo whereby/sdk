@@ -16,7 +16,7 @@ import { PROTOCOL_EVENTS, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../mo
 import * as CONNECTION_STATUS from "../../model/connectionStatusConstants";
 import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSettings";
 import { getMediasoupDevice } from "../../utils/getMediasoupDevice";
-import { maybeTurnOnly } from "../../utils/transportSettings";
+import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ServerSocket } from "../../utils";
@@ -86,6 +86,7 @@ export default class VegaRtcManager implements RtcManager {
     _qualityMonitor: any;
     _fetchMediaServersTimer: any;
     _iceServers: any;
+    _turnServers: any;
     _sfuServer: any;
     _sfuServers?: HostListEntryOptionalDC[];
     _mediaserverConfigTtlSeconds: any;
@@ -113,7 +114,7 @@ export default class VegaRtcManager implements RtcManager {
         features?: any;
         eventClaim?: string;
     }) {
-        const { session, iceServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
+        const { session, iceServers, turnServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
         this._room = room;
@@ -190,7 +191,8 @@ export default class VegaRtcManager implements RtcManager {
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
             sfuServers,
-            iceServers: iceServers.iceServers || [],
+            iceServers: iceServers?.iceServers || [],
+            turnServers: turnServers || [],
             mediaserverConfigTtlSeconds,
         });
 
@@ -212,16 +214,19 @@ export default class VegaRtcManager implements RtcManager {
 
     _updateAndScheduleMediaServersRefresh({
         iceServers,
+        turnServers,
         sfuServer,
         sfuServers,
         mediaserverConfigTtlSeconds,
     }: {
         iceServers: any;
+        turnServers: any;
         sfuServer: any;
         sfuServers: any;
         mediaserverConfigTtlSeconds: any;
     }) {
         this._iceServers = iceServers;
+        this._turnServers = turnServers;
         this._sfuServer = sfuServer;
         this._sfuServers = sfuServers;
 
@@ -243,8 +248,14 @@ export default class VegaRtcManager implements RtcManager {
                 sfuServer.url,
         );
 
-        this._sendTransport?.updateIceServers({ iceServers: this._iceServers });
-        this._receiveTransport?.updateIceServers({ iceServers: this._iceServers });
+        const iceServersList = {
+            iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
+        };
+
+        iceServersList.iceServers = turnServerOverride(iceServersList.iceServers, this._features.turnServerOverrideHost)
+
+        this._sendTransport?.updateIceServers(iceServersList);
+        this._receiveTransport?.updateIceServers(iceServersList);
 
         this._clearMediaServersRefresh();
         if (!mediaserverConfigTtlSeconds) {
@@ -500,7 +511,7 @@ export default class VegaRtcManager implements RtcManager {
             },
         });
 
-        transportOptions.iceServers = this._iceServers;
+        transportOptions.iceServers = turnServerOverride(this._features.turnServersOn ? this._turnServers : this._iceServers, this._features.turnServerOverrideHost);
 
         maybeTurnOnly(transportOptions, this._features);
 
