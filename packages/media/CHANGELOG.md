@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.21.0
+
+### Minor Changes
+
+- 8d9a19d: media: optionally use fallback turn servers
+
 ## 1.20.1
 
 ### Patch Changes
