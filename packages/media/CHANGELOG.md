@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.21.1
+
+### Patch Changes
+
+- 775c2f1: Split vp9On and av1On flags to separate P2P and SFU flags
+
 ## 1.21.0
 
 ### Minor Changes
