@@ -15,7 +15,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
-import { sortCodecsByMimeType } from "../utils";
+import { sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 
 // @ts-ignore
@@ -922,16 +922,18 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _setCodecPreferences(
+    async _setCodecPreferences(
         pc: RTCPeerConnection,
         {
             p2pVp9On,
             p2pAv1On,
             redOn,
+            preferHardwareDecodingOn,
         }: {
             p2pVp9On?: boolean;
             p2pAv1On?: boolean;
             redOn?: boolean;
+            preferHardwareDecodingOn: boolean;
         },
     ) {
         try {
@@ -964,7 +966,7 @@ export default class P2pRtcManager implements RtcManager {
                 if (RTCRtpReceiver.getCapabilities === undefined) return;
                 const capabilities: any = RTCRtpReceiver.getCapabilities("video");
                 if (p2pVp9On || p2pAv1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, {
+                    capabilities.codecs = await sortCodecs(capabilities.codecs, {
                         vp9On: p2pVp9On,
                         av1On: p2pAv1On,
                     });
@@ -993,13 +995,14 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { p2pVp9On, p2pAv1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { p2pVp9On, p2pAv1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn, preferHardwareDecodingOn } = this._features;
 
+        let setCodecPreferencesPromise = Promise.resolve()
         // Set codec preferences to video transceivers
-        if (p2pVp9On || p2pAv1On || redOn) {
-            this._setCodecPreferences(pc, { p2pVp9On, p2pAv1On, redOn });
+        if (p2pVp9On || p2pAv1On || redOn || preferHardwareDecodingOn) {
+            setCodecPreferencesPromise = this._setCodecPreferences(pc, { p2pVp9On, p2pAv1On, redOn, preferHardwareDecodingOn })
         }
-        pc.createOffer(constraints || this.offerOptions)
+        setCodecPreferencesPromise.then(() => pc.createOffer(constraints || this.offerOptions)
             .then((offer: any) => {
                 // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
                 if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
@@ -1035,8 +1038,9 @@ export default class P2pRtcManager implements RtcManager {
             })
             .catch((e: any) => {
                 logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
-            });
+            }))
     }
+}
 
     _withForcedRenegotiation(session: any, action: any) {
         const pc = session.pc;
