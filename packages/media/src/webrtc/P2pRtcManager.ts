@@ -562,7 +562,10 @@ export default class P2pRtcManager implements RtcManager {
             iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
         };
 
-        peerConnectionConfig.iceServers = turnServerOverride(peerConnectionConfig.iceServers, this._features.turnServerOverrideHost)
+        peerConnectionConfig.iceServers = turnServerOverride(
+            peerConnectionConfig.iceServers,
+            this._features.turnServerOverrideHost,
+        );
 
         external_stun_servers(peerConnectionConfig, this._features);
         maybeTurnOnly(peerConnectionConfig, this._features);
@@ -591,9 +594,11 @@ export default class P2pRtcManager implements RtcManager {
             // ontrack fires for each track of a stream. Emulate old onaddstream behaviour.
             if (session.streamIds.indexOf(stream.id) === -1) {
                 session.streamIds.push(stream.id);
-                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
+                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                     clientId,
                     stream,
+                    streamId: stream.id,
+                    streamType: "webcam",
                 });
 
                 // when adding a new stream to an already established connection
