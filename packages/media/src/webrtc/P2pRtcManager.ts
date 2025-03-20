@@ -15,7 +15,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
-import { sortCodecsByMimeType } from "../utils";
+import { sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 
 // @ts-ignore
@@ -922,18 +922,11 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _setCodecPreferences(
-        pc: RTCPeerConnection,
-        {
-            p2pVp9On,
-            p2pAv1On,
-            redOn,
-        }: {
-            p2pVp9On?: boolean;
-            p2pAv1On?: boolean;
-            redOn?: boolean;
-        },
-    ) {
+    async _setCodecPreferences(pc: RTCPeerConnection) {
+        const { p2pVp9On, p2pAv1On, redOn, preferHardwareDecodingOn } = this._features;
+        if (!(p2pVp9On || p2pAv1On || redOn || preferHardwareDecodingOn)) {
+            return;
+        }
         try {
             // audio
             const audioTransceivers = pc
@@ -957,23 +950,26 @@ export default class P2pRtcManager implements RtcManager {
             // video
             const videoTransceivers = pc
                 .getTransceivers()
-                .filter((transceiver: any) => transceiver?.sender?.track?.kind === "video");
+                .filter((transceiver) => transceiver?.sender?.track?.kind === "video");
 
-            videoTransceivers.forEach((videoTransceiver: any) => {
-                // If not implemented return
-                if (RTCRtpReceiver.getCapabilities === undefined) return;
-                const capabilities: any = RTCRtpReceiver.getCapabilities("video");
-                if (p2pVp9On || p2pAv1On) {
-                    capabilities.codecs = sortCodecsByMimeType(capabilities.codecs, {
-                        vp9On: p2pVp9On,
-                        av1On: p2pAv1On,
-                    });
-                }
+            await Promise.all(
+                videoTransceivers.map(async (videoTransceiver) => {
+                    // If not implemented return
+                    if (RTCRtpReceiver.getCapabilities === undefined) return;
+                    if (videoTransceiver.setCodecPreferences === undefined) return;
 
-                // If not implemented return
-                if (videoTransceiver.setCodecPreferences === undefined) return;
-                videoTransceiver.setCodecPreferences(capabilities.codecs);
-            });
+                    const capabilities: any = RTCRtpReceiver.getCapabilities("video");
+                    if (p2pVp9On || p2pAv1On || preferHardwareDecodingOn) {
+                        capabilities.codecs = await sortCodecs(capabilities.codecs, {
+                            vp9On: p2pVp9On,
+                            av1On: p2pAv1On,
+                            preferHardwareDecodingOn,
+                        });
+                    }
+
+                    videoTransceiver.setCodecPreferences(capabilities.codecs);
+                }),
+            );
         } catch (error) {
             logger.error("Error during setting setCodecPreferences:", error);
         }
@@ -993,49 +989,48 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { p2pVp9On, p2pAv1On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { p2pVp9On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
-        // Set codec preferences to video transceivers
-        if (p2pVp9On || p2pAv1On || redOn) {
-            this._setCodecPreferences(pc, { p2pVp9On, p2pAv1On, redOn });
-        }
-        pc.createOffer(constraints || this.offerOptions)
-            .then((offer: any) => {
-                // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
-                if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
-                // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
-                // Only vp9 because FF does not support AV1 yet
-                if ((p2pVp9On || redOn) && browserName === "firefox") {
-                    offer.sdp = setCodecPreferenceSDP(offer.sdp, p2pVp9On, redOn);
-                }
+        this._setCodecPreferences(pc).then(() =>
+            pc
+                .createOffer(constraints || this.offerOptions)
+                .then((offer: any) => {
+                    // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
+                    if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
+                    // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
+                    // Only vp9 because FF does not support AV1 yet
+                    if ((p2pVp9On || redOn) && browserName === "firefox") {
+                        offer.sdp = setCodecPreferenceSDP(offer.sdp, p2pVp9On, redOn);
+                    }
 
-                // workaround for two different browser bugs:
-                // chrome can modify existing transceiver(m section) adding duplicate payload types
-                // firefox seems to sometime break sdp (maybe duplicate payload types here as well)
-                //  when running setCodecPreferences on existing tranceivers.
-                // (preventing setCodecPreferences on existing tranceivers, limiting to new only
-                // , might be a better fix for firefox, but does not apply to chrome)
-                if (cleanSdpOn) offer.sdp = cleanSdp(offer.sdp);
+                    // workaround for two different browser bugs:
+                    // chrome can modify existing transceiver(m section) adding duplicate payload types
+                    // firefox seems to sometime break sdp (maybe duplicate payload types here as well)
+                    //  when running setCodecPreferences on existing tranceivers.
+                    // (preventing setCodecPreferences on existing tranceivers, limiting to new only
+                    // , might be a better fix for firefox, but does not apply to chrome)
+                    if (cleanSdpOn) offer.sdp = cleanSdp(offer.sdp);
 
-                pc.setLocalDescription(offer)
-                    .catch((e: any) => {
-                        logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
+                    pc.setLocalDescription(offer)
+                        .catch((e: any) => {
+                            logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
 
-                        // let app track this error
-                        this._emit(rtcManagerEvents.PC_SLD_FAILURE, e);
+                            // let app track this error
+                            this._emit(rtcManagerEvents.PC_SLD_FAILURE, e);
 
-                        throw e;
-                    })
-                    .then(() => {
-                        this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
-                            receiverId: clientId,
-                            message: this._transformOutgoingSdp(offer),
+                            throw e;
+                        })
+                        .then(() => {
+                            this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
+                                receiverId: clientId,
+                                message: this._transformOutgoingSdp(offer),
+                            });
                         });
-                    });
-            })
-            .catch((e: any) => {
-                logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
-            });
+                })
+                .catch((e: any) => {
+                    logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
+                }),
+        );
     }
 
     _withForcedRenegotiation(session: any, action: any) {
