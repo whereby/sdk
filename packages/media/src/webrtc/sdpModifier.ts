@@ -10,7 +10,7 @@ const logger = new Logger();
 const browserName = adapter.browserDetails.browser;
 const browserVersion = adapter.browserDetails.version;
 
-export function setCodecPreferenceSDP(sdp: any, vp9On: any, redOn: any) {
+export function setCodecPreferenceSDP(sdp: any, vp9On?: boolean, redOn?: boolean) {
     try {
         const sdpObject = sdpTransform.parse(sdp);
         if (Array.isArray(sdpObject?.media)) {
