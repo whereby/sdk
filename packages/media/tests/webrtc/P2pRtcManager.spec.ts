@@ -373,6 +373,8 @@ describe("P2pRtcManager", () => {
                     expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                         clientId,
                         stream: fakeStream,
+                        streamId: "0",
+                        streamType: "webcam",
                     });
                 });
 
@@ -1005,7 +1007,7 @@ describe("P2pRtcManager", () => {
                 const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
                 localStream.dispatchEvent(
-                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } })
+                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } }),
                 );
 
                 expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, newTrack);
