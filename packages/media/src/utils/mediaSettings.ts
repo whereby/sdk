@@ -195,13 +195,14 @@ async function sortCodecsByPowerEfficiency(codecs: Codec[]) {
         ),
     );
     const codecPowerEfficiencies = Object.fromEntries(codecPowerEfficiencyEntries);
-    console.log(codecPowerEfficiencies);
-    return codecs.sort((a, b) => {
+
+    const sorted = codecs.sort((a, b) => {
         const aPowerEfficient = codecPowerEfficiencies[a.mimeType];
         const bPowerEfficient = codecPowerEfficiencies[b.mimeType];
-        const both = aPowerEfficient && bPowerEfficient;
-        return both ? 0 : aPowerEfficient ? 1 : bPowerEfficient ? -1 : 0;
+        return aPowerEfficient === bPowerEfficient ? 0 : aPowerEfficient ? -1 : 1;
     });
+
+    return sorted;
 }
 
 export async function sortCodecs(
@@ -211,5 +212,6 @@ export async function sortCodecs(
     if (features.preferHardwareDecodingOn) {
         codecs = await sortCodecsByPowerEfficiency(codecs);
     }
+
     return sortCodecsByMimeType(codecs, features);
 }
