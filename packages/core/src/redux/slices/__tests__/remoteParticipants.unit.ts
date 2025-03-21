@@ -21,7 +21,7 @@ describe("remoteParticipantsSlice", () => {
                     const result = remoteParticipantsSlice.reducer(
                         undefined,
                         signalEvents.roomJoined({
-                            error: "some_error",
+                            error: "internal_server_error",
                         }),
                     );
                     expect(result).toEqual(remoteParticipantsSliceInitialState);
@@ -42,13 +42,16 @@ describe("remoteParticipantsSlice", () => {
                         undefined,
                         signalEvents.roomJoined({
                             ...localParticipant,
-                            isLocked: false,
                             selfId: localClient.id,
+                            clientClaim: "clientClaim",
                             room: {
+                                mode: "group",
                                 clients: [localClient, remoteClient],
                                 knockers: [],
                                 spotlights: [],
                                 session: null,
+                                isClaimed: true,
+                                isLocked: false,
                             },
                         }),
                     );

@@ -58,11 +58,11 @@ export const breakoutSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, breakout } = action.payload || {};
-
-            if (error) {
+            if ("error" in action.payload) {
                 return state;
             }
+
+            const { breakout } = action.payload || {};
 
             if (breakout) {
                 return {

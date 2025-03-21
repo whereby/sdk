@@ -48,11 +48,11 @@ export const authorizationSlice = createSlice({
         });
 
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, room, selfId } = action.payload || {};
-
-            if (error) {
+            if ("error" in action.payload) {
                 return state;
             }
+
+            const { room, selfId } = action.payload || {};
 
             const client = room?.clients.find((c) => c.id === selfId);
 

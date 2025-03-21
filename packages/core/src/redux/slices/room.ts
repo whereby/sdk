@@ -47,15 +47,22 @@ export const roomSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, isLocked } = action.payload || {};
+            if ("error" in action.payload) {
+                if (action.payload.error === "room_locked") {
+                    return {
+                        ...state,
+                        isLocked: Boolean(action.payload.isLocked),
+                    };
+                }
 
-            if (error) {
                 return state;
             }
 
+            const { room } = action.payload;
+
             return {
                 ...state,
-                isLocked: Boolean(isLocked),
+                isLocked: Boolean(room.isLocked),
             };
         });
 

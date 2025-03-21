@@ -31,7 +31,7 @@ describe("breakoutSlice", () => {
                     const result = breakoutSlice.reducer(
                         undefined,
                         signalEvents.roomJoined({
-                            error: "some_error",
+                            error: "internal_server_error",
                         }),
                     );
                     expect(result).toEqual(breakoutSliceInitialState);
@@ -51,13 +51,17 @@ describe("breakoutSlice", () => {
                         undefined,
                         signalEvents.roomJoined({
                             ...localParticipant,
-                            isLocked: false,
-                            selfId: localClient.id,
+                            selfId: "selfId",
+                            breakoutGroup: null,
+                            clientClaim: "clientClaim",
                             room: {
+                                mode: "normal",
                                 clients: [localClient, remoteClient],
                                 knockers: [],
                                 spotlights: [],
                                 session: null,
+                                isClaimed: true,
+                                isLocked: false,
                             },
                             breakout: breakoutConfig,
                         }),

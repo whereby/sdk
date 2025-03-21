@@ -36,7 +36,7 @@ describe("authorizationSlice", () => {
                     const result = authorizationSlice.reducer(
                         undefined,
                         signalEvents.roomJoined({
-                            error: "some_error",
+                            error: "internal_server_error",
                         }),
                     );
                     expect(result).toEqual(authorizationSliceInitialState);
@@ -51,8 +51,8 @@ describe("authorizationSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: null,
                             clientClaim: "clientClaim",
-                            isLocked: false,
                             room: {
+                                mode: "normal",
                                 clients: [
                                     {
                                         displayName: "displayName",
@@ -73,6 +73,8 @@ describe("authorizationSlice", () => {
                                 knockers: [],
                                 spotlights: [],
                                 session: null,
+                                isClaimed: true,
+                                isLocked: true,
                             },
                         }),
                     );

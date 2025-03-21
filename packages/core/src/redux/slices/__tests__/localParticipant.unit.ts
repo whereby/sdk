@@ -12,6 +12,8 @@ describe("localParticipantSlice", () => {
                         signalEvents.roomJoined({
                             error: "room_locked",
                             selfId: "selfId",
+                            isClaimed: true,
+                            isLocked: true,
                         }),
                     );
 
@@ -19,7 +21,7 @@ describe("localParticipantSlice", () => {
                         ...localParticipantSliceInitialState,
                         id: "selfId",
                         roleName: "none",
-                        clientClaim: "",
+                        clientClaim: undefined,
                         breakoutGroup: null,
                     });
                 });
@@ -40,14 +42,17 @@ describe("localParticipantSlice", () => {
                         undefined,
                         signalEvents.roomJoined({
                             ...localParticipant,
-                            isLocked: false,
                             selfId: localClient.id,
                             room: {
+                                mode: "group",
                                 clients: [remoteClient, localClient],
                                 knockers: [],
                                 spotlights: [],
                                 session: null,
+                                isClaimed: true,
+                                isLocked: true,
                             },
+                            clientClaim: localParticipant.clientClaim as string,
                         }),
                     );
 

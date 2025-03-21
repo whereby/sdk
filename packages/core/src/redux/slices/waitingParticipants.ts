@@ -22,13 +22,13 @@ export const waitingParticipantsSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, room } = action.payload || {};
-
-            if (error) {
+            if ("error" in action.payload) {
                 return state;
             }
 
-            if (room?.knockers.length) {
+            const { room } = action.payload;
+
+            if (room.knockers.length) {
                 return {
                     ...state,
                     waitingParticipants: room.knockers.map((knocker) => ({

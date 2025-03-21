@@ -8,7 +8,7 @@ describe("reducer", () => {
                 const result = waitingParticipantsSlice.reducer(
                     undefined,
                     signalEvents.roomJoined({
-                        error: "some_error",
+                        error: "internal_server_error",
                     }),
                 );
                 expect(result).toEqual(waitingParticipantsSliceInitialState);
@@ -23,11 +23,11 @@ describe("reducer", () => {
                 const state = waitingParticipantsSlice.reducer(
                     undefined,
                     signalEvents.roomJoined({
-                        isLocked: true,
                         selfId: "self-id",
                         breakoutGroup: null,
                         clientClaim: "client-claim",
                         room: {
+                            mode: "normal",
                             clients: [],
                             knockers: [
                                 {
@@ -41,6 +41,8 @@ describe("reducer", () => {
                             ],
                             spotlights: [],
                             session: null,
+                            isClaimed: true,
+                            isLocked: true,
                         },
                     }),
                 );

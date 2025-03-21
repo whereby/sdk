@@ -87,15 +87,26 @@ export const localParticipantSlice = createSlice({
             };
         });
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { room, selfId = "", clientClaim = "" } = action.payload || {};
+            if ("error" in action.payload) {
+                if (action.payload.error === "room_locked") {
+                    return {
+                        ...state,
+                        id: action.payload.selfId,
+                    };
+                }
 
-            const client = room?.clients.find((c) => c.id === selfId);
+                return state;
+            }
+
+            const { room, selfId, clientClaim } = action.payload || {};
+
+            const client = room.clients.find((c) => c.id === selfId);
 
             return {
                 ...state,
                 id: selfId,
                 roleName: client?.role?.roleName || "none",
-                clientClaim: clientClaim,
+                clientClaim,
                 breakoutGroup: client?.breakoutGroup || null,
             };
         });

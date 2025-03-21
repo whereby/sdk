@@ -89,11 +89,11 @@ export const spotlightsSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, room } = action.payload || {};
-
-            if (error) {
+            if ("error" in action.payload) {
                 return state;
             }
+
+            const { room } = action.payload || {};
 
             if (room) {
                 return {

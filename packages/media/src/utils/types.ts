@@ -66,6 +66,8 @@ export interface Spotlight {
     streamId: string;
 }
 
+export type RoomMode = "normal" | "group";
+
 export interface AudioEnabledEvent {
     clientId: string;
     isAudioEnabled: boolean;
@@ -156,10 +158,77 @@ export interface BreakoutConfig {
     startedAt?: Date | null;
 }
 
-export interface RoomJoinedEvent {
-    error?: string;
-    isLocked?: boolean;
-    room?: {
+export interface RoomLockedError {
+    error: "room_locked";
+    isClaimed: boolean;
+    isLocked: boolean;
+    selfId: string;
+    logoUrl?: string;
+    knockPageBackgroundImageUrl?: string;
+}
+
+export interface RoomFullError {
+    error: "room_full";
+    isClaimed: boolean;
+}
+
+export interface RoomConcurrencyControlsError {
+    error: "room_concurrency_control_error";
+}
+
+export interface CannotJoinUnclaimedRoomError {
+    error: "room_unclaimed";
+}
+
+export interface OrganizationPlanExhaustedError {
+    error: "free_tier_exhausted";
+}
+
+export interface RoomMeetingTimeExhaustedError {
+    error: "room_meeting_time_exhausted";
+}
+
+export interface MaxViewerLimitReachedError {
+    error: "max_viewer_limit_reached";
+    isClaimed: boolean;
+}
+
+export interface HostPresenceControlsError {
+    error: "host_presence_controls_error";
+}
+
+export interface InternalServerError {
+    error: "internal_server_error";
+}
+
+export type ForbiddenErrorNames =
+    | "missing_parameters"
+    | "invalid_parameters"
+    | "invalid_room_name"
+    | "invalid_key"
+    | "invalid_avatar";
+
+export interface ForbiddenError {
+    error: ForbiddenErrorNames;
+}
+
+export type RoomJoinedErrors =
+    | RoomLockedError
+    | RoomFullError
+    | RoomConcurrencyControlsError
+    | CannotJoinUnclaimedRoomError
+    | OrganizationPlanExhaustedError
+    | RoomMeetingTimeExhaustedError
+    | MaxViewerLimitReachedError
+    | HostPresenceControlsError
+    | ForbiddenError
+    | InternalServerError;
+
+export interface RoomJoinedSuccess {
+    room: {
+        mode: RoomMode;
+        isClaimed: boolean;
+        isLocked: boolean;
         clients: SignalClient[];
         knockers: SignalKnocker[];
         spotlights: Spotlight[];
@@ -168,11 +237,13 @@ export interface RoomJoinedEvent {
             id: string;
         } | null;
     };
-    selfId?: string;
+    selfId: string;
     breakoutGroup?: string | null;
-    clientClaim?: string;
+    clientClaim: string;
     breakout?: BreakoutConfig;
 }
+
+export type RoomJoinedEvent = RoomJoinedErrors | RoomJoinedSuccess;
 
 export interface BreakoutSessionUpdatedEvent extends BreakoutConfig {}
 

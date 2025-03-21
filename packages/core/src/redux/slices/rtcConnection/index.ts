@@ -171,9 +171,7 @@ export const rtcConnectionSlice = createSlice({
             };
         });
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error } = action.payload || {};
-
-            if (error) {
+            if ("error" in action.payload) {
                 return state;
             }
 

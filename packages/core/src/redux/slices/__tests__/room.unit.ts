@@ -10,7 +10,7 @@ describe("roomSlice", () => {
                     const result = roomSlice.reducer(
                         undefined,
                         signalEvents.roomJoined({
-                            error: "some_error",
+                            error: "internal_server_error",
                         }),
                     );
                     expect(result).toEqual(roomSliceInitialState);
@@ -25,7 +25,15 @@ describe("roomSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: "",
                             clientClaim: "clientClaim",
-                            isLocked: true,
+                            room: {
+                                mode: "normal",
+                                clients: [],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                                isClaimed: true,
+                                isLocked: true,
+                            },
                         }),
                     );
                     expect(result.isLocked).toEqual(true);

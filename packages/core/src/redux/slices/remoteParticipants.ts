@@ -210,11 +210,11 @@ export const remoteParticipantsSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, room, selfId } = action.payload || {};
-
-            if (error) {
+            if ("error" in action.payload) {
                 return state;
             }
+
+            const { room, selfId } = action.payload || {};
 
             if (room?.clients) {
                 return {
