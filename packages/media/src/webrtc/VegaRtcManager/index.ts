@@ -252,7 +252,10 @@ export default class VegaRtcManager implements RtcManager {
             iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
         };
 
-        iceServersList.iceServers = turnServerOverride(iceServersList.iceServers, this._features.turnServerOverrideHost)
+        iceServersList.iceServers = turnServerOverride(
+            iceServersList.iceServers,
+            this._features.turnServerOverrideHost,
+        );
 
         this._sendTransport?.updateIceServers(iceServersList);
         this._receiveTransport?.updateIceServers(iceServersList);
@@ -298,7 +301,11 @@ export default class VegaRtcManager implements RtcManager {
                 }
                 this._updateAndScheduleMediaServersRefresh(data);
             }),
-            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, () => {
+            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: any) => {
+                if (payload?.error) {
+                    return;
+                }
+
                 if (this._screenVideoTrack) this._emitScreenshareStarted();
                 if (this._features.sfuReconnectV2On && !this._hasVegaConnection && this._reconnect) {
                     this._connect();
@@ -511,7 +518,10 @@ export default class VegaRtcManager implements RtcManager {
             },
         });
 
-        transportOptions.iceServers = turnServerOverride(this._features.turnServersOn ? this._turnServers : this._iceServers, this._features.turnServerOverrideHost);
+        transportOptions.iceServers = turnServerOverride(
+            this._features.turnServersOn ? this._turnServers : this._iceServers,
+            this._features.turnServerOverrideHost,
+        );
 
         maybeTurnOnly(transportOptions, this._features);
 
@@ -711,7 +721,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._micTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
-                    ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On } ),
+                    ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_CAM_OUTBOUND_STREAM_ID,
                         sourceClientId: this._selfId,
@@ -1113,7 +1123,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenAudioTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
-                    ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On } ),
+                    ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
                         sourceClientId: this._selfId,

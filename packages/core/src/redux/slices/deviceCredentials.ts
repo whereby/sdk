@@ -14,14 +14,14 @@ export interface DeviceCredentialsState {
     data?: Credentials | null;
 }
 
-const initialState: DeviceCredentialsState = {
+export const deviceCredentialsSliceInitialState: DeviceCredentialsState = {
     isFetching: false,
     data: null,
 };
 
 export const deviceCredentialsSlice = createSlice({
     name: "deviceCredentials",
-    initialState,
+    initialState: deviceCredentialsSliceInitialState,
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(doGetDeviceCredentials.pending, (state) => {

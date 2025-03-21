@@ -54,8 +54,7 @@ export class ReconnectManager extends EventEmitter {
     async _onRoomJoined(payload: any) {
         this.reconnectThresholdInMs = (payload.disconnectTimeout || 0) * 0.8; // Exposing this since ServerSocket needs it for SFU reconnect
 
-        // We might have gotten an error
-        if (!payload.room?.clients) {
+        if (payload?.error) {
             this.emit(PROTOCOL_RESPONSES.ROOM_JOINED, payload);
             return;
         }

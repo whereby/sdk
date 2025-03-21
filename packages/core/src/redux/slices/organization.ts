@@ -16,15 +16,15 @@ export interface OrganizationState {
     error: unknown;
 }
 
-const initialState: OrganizationState = {
+export const organizationSliceInitialState: OrganizationState = {
     data: null,
     isFetching: false,
     error: null,
 };
 
 export const organizationSlice = createSlice({
-    initialState,
     name: "organization",
+    initialState: organizationSliceInitialState,
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(doOrganizationFetch.pending, (state) => {

@@ -178,13 +178,13 @@ export interface RemoteParticipantState {
     remoteParticipants: RemoteParticipant[];
 }
 
-const initialState: RemoteParticipantState = {
+export const remoteParticipantsSliceInitialState: RemoteParticipantState = {
     remoteParticipants: [],
 };
 
 export const remoteParticipantsSlice = createSlice({
     name: "remoteParticipants",
-    initialState,
+    initialState: remoteParticipantsSliceInitialState,
     reducers: {
         streamStatusUpdated: (state, action: PayloadAction<StreamStatusUpdate[]>) => {
             let newState = state;
@@ -210,14 +210,22 @@ export const remoteParticipantsSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            if (!action.payload?.room) return state;
-            const selfId = action.payload.selfId;
-            const { clients } = action.payload.room;
+            if ("error" in action.payload) {
+                return state;
+            }
 
-            return {
-                ...state,
-                remoteParticipants: clients.filter((c) => c.id !== selfId).map((c) => createRemoteParticipant(c)),
-            };
+            const { room, selfId } = action.payload || {};
+
+            if (room?.clients) {
+                return {
+                    ...state,
+                    remoteParticipants: room.clients
+                        .filter((c) => c.id !== selfId)
+                        .map((c) => createRemoteParticipant(c)),
+                };
+            }
+
+            return state;
         });
         builder.addCase(rtcEvents.streamAdded, (state, action) => {
             return addStream(state, action.payload);

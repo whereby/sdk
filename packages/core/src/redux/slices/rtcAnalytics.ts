@@ -146,13 +146,13 @@ export interface rtcAnalyticsState {
     reportedValues: { [key: string]: unknown };
 }
 
-const initialState: rtcAnalyticsState = {
+export const rtcAnalyticsSliceInitialState: rtcAnalyticsState = {
     reportedValues: {},
 };
 
 export const rtcAnalyticsSlice = createSlice({
-    initialState,
     name: "rtcAnalytics",
+    initialState: rtcAnalyticsSliceInitialState,
     reducers: {
         updateReportedValues(state, action: PayloadAction<{ rtcEventName: string; value: unknown }>) {
             return {

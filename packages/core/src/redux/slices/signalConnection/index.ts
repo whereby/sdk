@@ -123,7 +123,7 @@ export interface SignalConnectionState {
     socket: ServerSocket | null;
 }
 
-const initialState: SignalConnectionState = {
+export const signalConnectionSliceInitialState: SignalConnectionState = {
     deviceIdentified: false,
     isIdentifyingDevice: false,
     status: "ready",
@@ -132,7 +132,7 @@ const initialState: SignalConnectionState = {
 
 export const signalConnectionSlice = createSlice({
     name: "signalConnection",
-    initialState,
+    initialState: signalConnectionSliceInitialState,
     reducers: {
         socketConnecting: (state) => {
             return {
