@@ -65,7 +65,16 @@ const SCREEN_SHARE_SETTINGS_VP9 = {
     encodings: [{ dtx: true }],
 };
 
-export const getMediaSettings = (kind: string, isScreenShare: boolean, features: { lowDataModeEnabled?: boolean, simulcastScreenshareOn?: boolean, lowBandwidth?: boolean, vp9On?: boolean }) => {
+export const getMediaSettings = (
+    kind: string,
+    isScreenShare: boolean,
+    features: {
+        lowDataModeEnabled?: boolean;
+        simulcastScreenshareOn?: boolean;
+        lowBandwidth?: boolean;
+        vp9On?: boolean;
+    },
+) => {
     const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On } = features;
 
     if (kind === "audio") {
@@ -90,63 +99,72 @@ export const getMediaSettings = (kind: string, isScreenShare: boolean, features:
     }
 };
 
-export const modifyMediaCapabilities = (routerRtpCapabilities: any, features: { vp9On?: boolean , h264On?: boolean }) => {
+export const modifyMediaCapabilities = (
+    routerRtpCapabilities: any,
+    features: { vp9On?: boolean; h264On?: boolean },
+) => {
     const { vp9On, h264On } = features;
 
     if (vp9On) {
         const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) => codec.mimeType.toLowerCase() === "video/vp9"
+            (codec: any) => codec.mimeType.toLowerCase() === "video/vp9",
         );
 
         const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
             (codec: any) =>
-                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType
+                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType,
         );
 
         routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
             (codec: any) =>
                 codec.kind === "audio" ||
                 codec.preferredPayloadType === preferredPayloadType ||
-                codec.preferredPayloadType === aptPreferredPayloadType
+                codec.preferredPayloadType === aptPreferredPayloadType,
         );
     } else if (h264On) {
         const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) => codec.mimeType.toLowerCase() === "video/h264"
+            (codec: any) => codec.mimeType.toLowerCase() === "video/h264",
         );
 
         const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
             (codec: any) =>
-                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType
+                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType,
         );
 
         routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
             (codec: any) =>
                 codec.kind === "audio" ||
                 codec.preferredPayloadType === preferredPayloadType ||
-                codec.preferredPayloadType === aptPreferredPayloadType
+                codec.preferredPayloadType === aptPreferredPayloadType,
         );
     }
 };
 
-function getPreferredOrder(availableCodecs: string[], { vp9On, av1On }: { vp9On?: boolean, av1On?: boolean }) {
+function getPreferredOrder(availableCodecs: string[], { vp9On, av1On }: { vp9On?: boolean; av1On?: boolean }) {
     if (vp9On) {
-        availableCodecs.unshift("video/vp9")
+        availableCodecs.unshift("video/vp9");
     }
 
     if (av1On) {
-        availableCodecs.unshift("video/av1")
+        availableCodecs.unshift("video/av1");
     }
-    return availableCodecs
+    return availableCodecs;
 }
 
-export interface Codec { clockRate: number; mimeType: string; sdpFmtpLine?: string }
+export interface Codec {
+    clockRate: number;
+    mimeType: string;
+    sdpFmtpLine?: string;
+}
 
-export function sortCodecsByMimeType(
+function sortCodecsByMimeType(
     codecs: Codec[],
-    features: { vp9On?: boolean, av1On?: boolean }
+    features: { vp9On?: boolean; av1On?: boolean; preferHardwareDecodingOn?: boolean },
 ) {
-    const availableCodecs = codecs.map(({ mimeType }) => mimeType).filter((value, index, array) => array.indexOf(value) === index)
-    const preferredOrder = getPreferredOrder(availableCodecs, features)
+    const availableCodecs = codecs
+        .map(({ mimeType }) => mimeType)
+        .filter((value, index, array) => array.indexOf(value) === index);
+    const preferredOrder = getPreferredOrder(availableCodecs, features);
     return codecs.sort((a, b) => {
         const indexA = preferredOrder.indexOf(a.mimeType.toLowerCase());
         const indexB = preferredOrder.indexOf(b.mimeType.toLowerCase());
@@ -154,4 +172,46 @@ export function sortCodecsByMimeType(
         const orderB = indexB >= 0 ? indexB : Number.MAX_VALUE;
         return orderA - orderB;
     });
+}
+
+async function getIsCodecDecodingPowerEfficient(codec: string) {
+    const { powerEfficient } = await navigator.mediaCapabilities.decodingInfo({
+        type: "webrtc",
+        video: {
+            width: 1280,
+            height: 720,
+            bitrate: 2580,
+            framerate: 24,
+            contentType: codec,
+        },
+    });
+    return powerEfficient;
+}
+
+async function sortCodecsByPowerEfficiency(codecs: Codec[]) {
+    const codecPowerEfficiencyEntries: [string, boolean][] = await Promise.all(
+        codecs.map(({ mimeType }) =>
+            getIsCodecDecodingPowerEfficient(mimeType).then((val): [string, boolean] => [mimeType, val]),
+        ),
+    );
+    const codecPowerEfficiencies = Object.fromEntries(codecPowerEfficiencyEntries);
+
+    const sorted = codecs.sort((a, b) => {
+        const aPowerEfficient = codecPowerEfficiencies[a.mimeType];
+        const bPowerEfficient = codecPowerEfficiencies[b.mimeType];
+        return aPowerEfficient === bPowerEfficient ? 0 : aPowerEfficient ? -1 : 1;
+    });
+
+    return sorted;
+}
+
+export async function sortCodecs(
+    codecs: Codec[],
+    features: { vp9On?: boolean; av1On?: boolean; preferHardwareDecodingOn?: boolean },
+) {
+    if (features.preferHardwareDecodingOn) {
+        codecs = await sortCodecsByPowerEfficiency(codecs);
+    }
+
+    return sortCodecsByMimeType(codecs, features);
 }
