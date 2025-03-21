@@ -11,7 +11,7 @@ export interface StreamingState {
     startedAt?: number;
 }
 
-const initialState: StreamingState = {
+export const streamingSliceInitialState: StreamingState = {
     isStreaming: false,
     error: null,
     startedAt: undefined,
@@ -19,7 +19,7 @@ const initialState: StreamingState = {
 
 export const streamingSlice = createSlice({
     name: "streaming",
-    initialState,
+    initialState: streamingSliceInitialState,
     reducers: {
         doHandleStreamingStarted: (state) => {
             return {

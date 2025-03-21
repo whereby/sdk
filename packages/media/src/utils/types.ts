@@ -158,7 +158,7 @@ export interface BreakoutConfig {
 
 export interface RoomJoinedEvent {
     error?: string;
-    isLocked: boolean;
+    isLocked?: boolean;
     room?: {
         clients: SignalClient[];
         knockers: SignalKnocker[];
@@ -168,8 +168,8 @@ export interface RoomJoinedEvent {
             id: string;
         } | null;
     };
-    selfId: string;
-    breakoutGroup: string | null;
+    selfId?: string;
+    breakoutGroup?: string | null;
     clientClaim?: string;
     breakout?: BreakoutConfig;
 }

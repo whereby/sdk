@@ -23,14 +23,14 @@ export interface AuthorizationState {
     roleName: RoleName;
 }
 
-const initialState: AuthorizationState = {
+export const authorizationSliceInitialState: AuthorizationState = {
     roomKey: null,
     roleName: "none",
 };
 
 export const authorizationSlice = createSlice({
     name: "authorization",
-    initialState,
+    initialState: authorizationSliceInitialState,
     reducers: {
         setRoomKey: (state, action: PayloadAction<string | null>) => {
             return {
@@ -48,11 +48,22 @@ export const authorizationSlice = createSlice({
         });
 
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const client = action.payload?.room?.clients.find((c) => c.id === action.payload?.selfId);
-            return {
-                ...state,
-                roleName: client?.role.roleName || "none",
-            };
+            const { error, room, selfId } = action.payload || {};
+
+            if (error) {
+                return state;
+            }
+
+            const client = room?.clients.find((c) => c.id === selfId);
+
+            if (client) {
+                return {
+                    ...state,
+                    roleName: client?.role.roleName || "none",
+                };
+            }
+
+            return state;
         });
     },
 });

@@ -10,7 +10,7 @@ export interface LocalScreenshareState {
     error: unknown | null;
 }
 
-const initialState: LocalScreenshareState = {
+export const localScreenshareSliceInitialState: LocalScreenshareState = {
     status: "inactive",
     stream: null,
     error: null,
@@ -22,7 +22,7 @@ const initialState: LocalScreenshareState = {
 
 export const localScreenshareSlice = createSlice({
     name: "localScreenshare",
-    initialState,
+    initialState: localScreenshareSliceInitialState,
     reducers: {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {

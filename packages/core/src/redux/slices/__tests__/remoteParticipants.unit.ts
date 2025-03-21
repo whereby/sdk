@@ -1,4 +1,8 @@
-import { remoteParticipantsSlice, createRemoteParticipant } from "../remoteParticipants";
+import {
+    remoteParticipantsSlice,
+    remoteParticipantsSliceInitialState,
+    createRemoteParticipant,
+} from "../remoteParticipants";
 import { signalEvents } from "../signalConnection/actions";
 import { rtcEvents } from "../rtcConnection/actions";
 import {
@@ -12,31 +16,45 @@ import {
 describe("remoteParticipantsSlice", () => {
     describe("reducers", () => {
         describe("signalEvents.roomJoined", () => {
-            it("should update state", () => {
-                const localClient = randomSignalClient();
-                const localParticipant = randomLocalParticipant({
-                    id: localClient.id,
+            describe("on error", () => {
+                it("should return default state", () => {
+                    const result = remoteParticipantsSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            error: "some_error",
+                        }),
+                    );
+                    expect(result).toEqual(remoteParticipantsSliceInitialState);
                 });
+            });
 
-                const remoteClient = randomSignalClient({ breakoutGroup: "b" });
-                const remoteParticipant = createRemoteParticipant(remoteClient);
+            describe("on success", () => {
+                it("should update state", () => {
+                    const localClient = randomSignalClient();
+                    const localParticipant = randomLocalParticipant({
+                        id: localClient.id,
+                    });
 
-                const result = remoteParticipantsSlice.reducer(
-                    undefined,
-                    signalEvents.roomJoined({
-                        ...localParticipant,
-                        isLocked: false,
-                        selfId: localClient.id,
-                        room: {
-                            clients: [localClient, remoteClient],
-                            knockers: [],
-                            spotlights: [],
-                            session: null,
-                        },
-                    }),
-                );
+                    const remoteClient = randomSignalClient({ breakoutGroup: "b" });
+                    const remoteParticipant = createRemoteParticipant(remoteClient);
 
-                expect(result.remoteParticipants).toEqual([remoteParticipant]);
+                    const result = remoteParticipantsSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            ...localParticipant,
+                            isLocked: false,
+                            selfId: localClient.id,
+                            room: {
+                                clients: [localClient, remoteClient],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                            },
+                        }),
+                    );
+
+                    expect(result.remoteParticipants).toEqual([remoteParticipant]);
+                });
             });
         });
 

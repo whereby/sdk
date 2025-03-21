@@ -37,17 +37,17 @@ export interface RoomState {
     isLocked: boolean;
 }
 
-const initialState: RoomState = {
+export const roomSliceInitialState: RoomState = {
     isLocked: false,
 };
 
 export const roomSlice = createSlice({
     name: "room",
-    initialState,
+    initialState: roomSliceInitialState,
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, isLocked } = action.payload;
+            const { error, isLocked } = action.payload || {};
 
             if (error) {
                 return state;

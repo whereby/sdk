@@ -1,4 +1,4 @@
-import { breakoutSlice } from "../breakout";
+import { breakoutSlice, breakoutSliceInitialState } from "../breakout";
 import { signalEvents } from "../signalConnection";
 import { randomLocalParticipant, randomSignalClient } from "../../../__mocks__/appMocks";
 
@@ -26,31 +26,45 @@ const breakoutConfig = {
 describe("breakoutSlice", () => {
     describe("reducers", () => {
         describe("signalEvents.roomJoined", () => {
-            it("should update state if payload.breakout exists", () => {
-                const localClient = randomSignalClient();
-                const localParticipant = randomLocalParticipant({
-                    id: localClient.id,
+            describe("on error", () => {
+                it("should return default state", () => {
+                    const result = breakoutSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            error: "some_error",
+                        }),
+                    );
+                    expect(result).toEqual(breakoutSliceInitialState);
                 });
+            });
 
-                const remoteClient = randomSignalClient({ breakoutGroup: "b" });
+            describe("on success", () => {
+                it("should update state if payload.breakout exists", () => {
+                    const localClient = randomSignalClient();
+                    const localParticipant = randomLocalParticipant({
+                        id: localClient.id,
+                    });
 
-                const result = breakoutSlice.reducer(
-                    undefined,
-                    signalEvents.roomJoined({
-                        ...localParticipant,
-                        isLocked: false,
-                        selfId: localClient.id,
-                        room: {
-                            clients: [localClient, remoteClient],
-                            knockers: [],
-                            spotlights: [],
-                            session: null,
-                        },
-                        breakout: breakoutConfig,
-                    }),
-                );
+                    const remoteClient = randomSignalClient({ breakoutGroup: "b" });
 
-                expect(result).toEqual(breakoutConfig);
+                    const result = breakoutSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            ...localParticipant,
+                            isLocked: false,
+                            selfId: localClient.id,
+                            room: {
+                                clients: [localClient, remoteClient],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                            },
+                            breakout: breakoutConfig,
+                        }),
+                    );
+
+                    expect(result).toEqual(breakoutConfig);
+                });
             });
         });
         describe("signalEvents.breakoutSessionUpdated", () => {

@@ -333,7 +333,13 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // if this is a reconnect to signal-server during screen-share we must let signal-server know
-            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, ({ room: { sfuServer: isSfu } }: any) => {
+            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: any) => {
+                if (payload?.error) {
+                    return;
+                }
+
+                const isSfu = payload?.room?.sfuServer ?? false;
+
                 if (isSfu || !this._wasScreenSharing) return;
 
                 const screenShareStreamId = Object.keys(this.localStreams).find((id) => id !== CAMERA_STREAM_ID);

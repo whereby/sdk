@@ -48,15 +48,15 @@ export interface RoomConnectionState {
     error: string | null;
 }
 
-const initialState: RoomConnectionState = {
+export const roomConnectionSliceInitialState: RoomConnectionState = {
     session: null,
     status: "ready",
     error: null,
 };
 
 export const roomConnectionSlice = createSlice({
-    initialState,
     name: "roomConnection",
+    initialState: roomConnectionSliceInitialState,
     reducers: {
         connectionStatusChanged: (state, action: PayloadAction<ConnectionStatus>) => {
             return {
@@ -67,7 +67,7 @@ export const roomConnectionSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const { error, isLocked } = action.payload;
+            const { error, isLocked, room } = action.payload || {};
 
             if (error === "room_locked" && isLocked) {
                 return {
@@ -87,7 +87,7 @@ export const roomConnectionSlice = createSlice({
             return {
                 ...state,
                 status: "connected",
-                session: action.payload.room?.session ?? null,
+                session: room?.session ?? null,
             };
         });
         builder.addCase(signalEvents.disconnect, (state) => {

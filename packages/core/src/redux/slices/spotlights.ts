@@ -62,13 +62,13 @@ export interface SpotlightsState {
     sorted: { clientId: string; streamId: string }[];
 }
 
-const initialState: SpotlightsState = {
+export const spotlightsSliceInitialState: SpotlightsState = {
     sorted: [],
 };
 
 export const spotlightsSlice = createSlice({
     name: "spotlights",
-    initialState,
+    initialState: spotlightsSliceInitialState,
     reducers: {
         addSpotlight(state, action: { payload: { clientId: string; streamId: string } }) {
             const { clientId, streamId } = action.payload;
@@ -89,16 +89,20 @@ export const spotlightsSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            if (!action.payload.room) {
+            const { error, room } = action.payload || {};
+
+            if (error) {
                 return state;
             }
 
-            const { spotlights } = action.payload.room;
+            if (room) {
+                return {
+                    ...state,
+                    sorted: room.spotlights ?? state.sorted,
+                };
+            }
 
-            return {
-                ...state,
-                sorted: spotlights,
-            };
+            return state;
         });
         builder.addCase(signalEvents.spotlightAdded, (state, action) => {
             const { clientId, streamId } = action.payload;

@@ -23,7 +23,7 @@ export interface LocalParticipantState extends LocalParticipant {
     breakoutGroupAssigned: string;
 }
 
-const initialState: LocalParticipantState = {
+export const localParticipantSliceInitialState: LocalParticipantState = {
     displayName: "",
     id: "",
     breakoutGroup: null,
@@ -45,7 +45,7 @@ const initialState: LocalParticipantState = {
 
 export const localParticipantSlice = createSlice({
     name: "localParticipant",
-    initialState,
+    initialState: localParticipantSliceInitialState,
     reducers: {
         setDisplayName: (state, action: PayloadAction<{ displayName: string }>) => {
             return {
@@ -87,12 +87,15 @@ export const localParticipantSlice = createSlice({
             };
         });
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            const client = action.payload?.room?.clients.find((c) => c.id === action.payload?.selfId);
+            const { room, selfId = "", clientClaim = "" } = action.payload || {};
+
+            const client = room?.clients.find((c) => c.id === selfId);
+
             return {
                 ...state,
-                id: action.payload.selfId,
-                roleName: client?.role.roleName || "none",
-                clientClaim: action.payload.clientClaim,
+                id: selfId,
+                roleName: client?.role?.roleName || "none",
+                clientClaim: clientClaim,
                 breakoutGroup: client?.breakoutGroup || null,
             };
         });

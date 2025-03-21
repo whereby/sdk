@@ -12,27 +12,33 @@ export interface WaitingParticipantsState {
     waitingParticipants: WaitingParticipant[];
 }
 
-const initialState: WaitingParticipantsState = {
+export const waitingParticipantsSliceInitialState: WaitingParticipantsState = {
     waitingParticipants: [],
 };
 
 export const waitingParticipantsSlice = createSlice({
     name: "waitingParticipants",
-    initialState,
+    initialState: waitingParticipantsSliceInitialState,
     reducers: {},
     extraReducers: (builder) => {
-        builder.addCase(signalEvents.roomJoined, (state, { payload }) => {
-            if (payload.room?.knockers.length) {
+        builder.addCase(signalEvents.roomJoined, (state, action) => {
+            const { error, room } = action.payload || {};
+
+            if (error) {
+                return state;
+            }
+
+            if (room?.knockers.length) {
                 return {
                     ...state,
-                    waitingParticipants: payload.room.knockers.map((knocker) => ({
+                    waitingParticipants: room.knockers.map((knocker) => ({
                         id: knocker.clientId,
                         displayName: knocker.displayName,
                     })),
                 };
-            } else {
-                return state;
             }
+
+            return state;
         });
 
         builder.addCase(signalEvents.roomKnocked, (state, action) => {
