@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.22.0
+
+### Minor Changes
+
+- 3e1acc3: Add option to sort codecs by power efficiency
+
 ## 1.21.1
 
 ### Patch Changes
