@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.23.0
+
+### Minor Changes
+
+- e9ae7dc: Handle all cases where signalEvents.roomJoined returns error
+
 ## 1.22.0
 
 ### Minor Changes

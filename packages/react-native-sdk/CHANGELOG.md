@@ -1,5 +1,12 @@
 # @whereby.com/react-native-sdk
 
+## 0.7.39
+
+### Patch Changes
+
+- Updated dependencies [e9ae7dc]
+  - @whereby.com/core@0.33.0
+
 ## 0.7.38
 
 ### Patch Changes

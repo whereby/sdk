@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 0.33.0
+
+### Minor Changes
+
+- e9ae7dc: Handle all cases where signalEvents.roomJoined returns error
+
+### Patch Changes
+
+- Updated dependencies [e9ae7dc]
+  - @whereby.com/media@1.23.0
+
 ## 0.32.11
 
 ### Patch Changes
