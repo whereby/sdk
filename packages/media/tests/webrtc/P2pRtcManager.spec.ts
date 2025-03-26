@@ -624,6 +624,9 @@ describe("P2pRtcManager", () => {
 
                 pc.onnegotiationneeded();
 
+                // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
+                await new Promise(process.nextTick);
+
                 expect(pc.createOffer).toHaveBeenCalledWith(expect.anything());
             });
 
@@ -632,6 +635,9 @@ describe("P2pRtcManager", () => {
 
                 pc.iceConnectionState = "new";
                 pc.onnegotiationneeded();
+
+                // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
+                await new Promise(process.nextTick);
 
                 expect(pc.createOffer).toHaveBeenCalledTimes(0);
             });
@@ -643,6 +649,9 @@ describe("P2pRtcManager", () => {
                 // oniceconnectionstatechanged event is delivered
                 pc.iceConnectionState = "checking";
                 pc.onnegotiationneeded();
+
+                // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
+                await new Promise(process.nextTick);
 
                 expect(pc.createOffer).toHaveBeenCalledTimes(0);
             });
@@ -1005,7 +1014,7 @@ describe("P2pRtcManager", () => {
                 const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
                 localStream.dispatchEvent(
-                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } })
+                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } }),
                 );
 
                 expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, newTrack);
