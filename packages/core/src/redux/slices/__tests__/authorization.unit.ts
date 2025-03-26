@@ -1,5 +1,6 @@
 import {
     authorizationSlice,
+    authorizationSliceInitialState,
     selectIsAuthorizedToLockRoom,
     selectIsAuthorizedToKickClient,
     selectIsAuthorizedToEndMeeting,
@@ -29,39 +30,57 @@ describe("authorizationSlice", () => {
             expect(result.roomKey).toEqual("roomKey");
         });
 
-        it("signalEvents.roomJoined", () => {
-            const result = authorizationSlice.reducer(
-                undefined,
-                signalEvents.roomJoined({
-                    selfId: "selfId",
-                    breakoutGroup: null,
-                    clientClaim: "clientClaim",
-                    isLocked: false,
-                    room: {
-                        clients: [
-                            {
-                                displayName: "displayName",
-                                id: "selfId",
-                                deviceId: "deviceId",
-                                streams: [],
-                                isAudioEnabled: true,
-                                isVideoEnabled: true,
-                                breakoutGroup: null,
-                                role: {
-                                    roleName: "host",
-                                },
-                                startedCloudRecordingAt: null,
-                                externalId: null,
-                                isDialIn: false,
+        describe("signalEvents.roomJoined", () => {
+            describe("on error", () => {
+                it("should return default state", () => {
+                    const result = authorizationSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            error: "internal_server_error",
+                        }),
+                    );
+                    expect(result).toEqual(authorizationSliceInitialState);
+                });
+            });
+
+            describe("on success", () => {
+                it("should update state", () => {
+                    const result = authorizationSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            selfId: "selfId",
+                            breakoutGroup: null,
+                            clientClaim: "clientClaim",
+                            room: {
+                                mode: "normal",
+                                clients: [
+                                    {
+                                        displayName: "displayName",
+                                        id: "selfId",
+                                        deviceId: "deviceId",
+                                        streams: [],
+                                        isAudioEnabled: true,
+                                        isVideoEnabled: true,
+                                        breakoutGroup: null,
+                                        role: {
+                                            roleName: "host",
+                                        },
+                                        startedCloudRecordingAt: null,
+                                        externalId: null,
+                                        isDialIn: false,
+                                    },
+                                ],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                                isClaimed: true,
+                                isLocked: true,
                             },
-                        ],
-                        knockers: [],
-                        spotlights: [],
-                        session: null,
-                    },
-                }),
-            );
-            expect(result.roleName).toEqual("host");
+                        }),
+                    );
+                    expect(result.roleName).toEqual("host");
+                });
+            });
         });
     });
 

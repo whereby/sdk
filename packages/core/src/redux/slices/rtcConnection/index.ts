@@ -85,7 +85,7 @@ export interface RtcConnectionState {
     isAcceptingStreams: boolean;
 }
 
-const initialState: RtcConnectionState = {
+export const rtcConnectionSliceInitialState: RtcConnectionState = {
     dispatcherCreated: false,
     error: null,
     isCreatingDispatcher: false,
@@ -99,7 +99,7 @@ const initialState: RtcConnectionState = {
 
 export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",
-    initialState,
+    initialState: rtcConnectionSliceInitialState,
     reducers: {
         isAcceptingStreams: (state, action: PayloadAction<boolean>) => {
             return {
@@ -120,7 +120,7 @@ export const rtcConnectionSlice = createSlice({
         },
         rtcDisconnected: () => {
             return {
-                ...initialState,
+                ...rtcConnectionSliceInitialState,
             };
         },
         rtcDispatcherCreated: (state, action: PayloadAction<RtcManagerDispatcher>) => {
@@ -170,7 +170,11 @@ export const rtcConnectionSlice = createSlice({
                 status: "reconnecting",
             };
         });
-        builder.addCase(signalEvents.roomJoined, (state) => {
+        builder.addCase(signalEvents.roomJoined, (state, action) => {
+            if ("error" in action.payload) {
+                return state;
+            }
+
             return {
                 ...state,
                 status: state.status === "reconnecting" ? "ready" : state.status,

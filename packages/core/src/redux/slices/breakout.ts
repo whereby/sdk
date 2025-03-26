@@ -47,23 +47,30 @@ export interface BreakoutState extends BreakoutConfig {
     groupId: string | null;
 }
 
-const initialState: BreakoutState = {
+export const breakoutSliceInitialState: BreakoutState = {
     ...createBreakout(),
     groupId: null,
 };
 
 export const breakoutSlice = createSlice({
     name: "breakout",
-    initialState,
+    initialState: breakoutSliceInitialState,
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
-            if (action.payload.breakout) {
+            if ("error" in action.payload) {
+                return state;
+            }
+
+            const { breakout } = action.payload || {};
+
+            if (breakout) {
                 return {
                     ...state,
-                    ...createBreakout(action.payload.breakout),
+                    ...createBreakout(breakout),
                 };
             }
+
             return state;
         });
         builder.addCase(signalEvents.breakoutSessionUpdated, (state, action) => {

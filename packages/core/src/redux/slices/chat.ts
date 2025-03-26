@@ -15,13 +15,13 @@ export interface ChatState {
     chatMessages: ChatMessage[];
 }
 
-const initialState: ChatState = {
+export const chatSliceInitialState: ChatState = {
     chatMessages: [],
 };
 
 export const chatSlice = createSlice({
     name: "chat",
-    initialState,
+    initialState: chatSliceInitialState,
     reducers: {},
     extraReducers(builder) {
         builder.addCase(signalEvents.chatMessage, (state, action) => {

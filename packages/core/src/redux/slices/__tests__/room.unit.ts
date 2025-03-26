@@ -1,20 +1,44 @@
-import { roomSlice, selectScreenshares } from "../room";
+import { roomSlice, roomSliceInitialState, selectScreenshares } from "../room";
 import { signalEvents } from "../signalConnection/actions";
 import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
 
 describe("roomSlice", () => {
     describe("reducers", () => {
-        it("signalEvents.roomJoined", () => {
-            const result = roomSlice.reducer(
-                undefined,
-                signalEvents.roomJoined({
-                    selfId: "selfId",
-                    breakoutGroup: "",
-                    clientClaim: "clientClaim",
-                    isLocked: true,
-                }),
-            );
-            expect(result.isLocked).toEqual(true);
+        describe("signalEvents.roomJoined", () => {
+            describe("on error", () => {
+                it("should return default state", () => {
+                    const result = roomSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            error: "internal_server_error",
+                        }),
+                    );
+                    expect(result).toEqual(roomSliceInitialState);
+                });
+            });
+
+            describe("on success", () => {
+                it("should update state", () => {
+                    const result = roomSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            selfId: "selfId",
+                            breakoutGroup: "",
+                            clientClaim: "clientClaim",
+                            room: {
+                                mode: "normal",
+                                clients: [],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                                isClaimed: true,
+                                isLocked: true,
+                            },
+                        }),
+                    );
+                    expect(result.isLocked).toEqual(true);
+                });
+            });
         });
 
         it("signalEvents.roomLocked", () => {

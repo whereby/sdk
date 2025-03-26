@@ -5,58 +5,67 @@ import { signalEvents } from "../signalConnection/actions";
 describe("roomConnectionSlice", () => {
     describe("reducers", () => {
         describe("signalEvents.roomJoined", () => {
-            it("should set status to room_locked if the room is locked", () => {
-                const result = roomConnectionSlice.reducer(
-                    undefined,
-                    signalEvents.roomJoined({
-                        error: "room_locked",
-                        selfId: "selfId",
-                        breakoutGroup: "",
-                        clientClaim: "clientClaim",
-                        isLocked: true,
-                    }),
-                );
+            describe("on error", () => {
+                it("should set status to room_locked if the room is locked", () => {
+                    const result = roomConnectionSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            error: "room_locked",
+                            selfId: "selfId",
+                            isClaimed: true,
+                            isLocked: true,
+                        }),
+                    );
 
-                expect(result).toEqual({
-                    status: "room_locked",
-                    session: null,
-                    error: null,
+                    expect(result).toEqual({
+                        status: "room_locked",
+                        session: null,
+                        error: null,
+                    });
                 });
-            });
 
-            it("should set status to connected if the room is not locked", () => {
-                const result = roomConnectionSlice.reducer(
-                    undefined,
-                    signalEvents.roomJoined({
-                        selfId: "selfId",
-                        breakoutGroup: "",
-                        clientClaim: "clientClaim",
-                        isLocked: false,
-                    }),
-                );
+                it("should set status to disconnected and populate the error if error is not room_locked", () => {
+                    const result = roomConnectionSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            error: "room_full",
+                            isClaimed: true,
+                        }),
+                    );
 
-                expect(result).toEqual({
-                    status: "connected",
-                    session: null,
-                    error: null,
-                });
-            });
-
-            it("should set status to disconnected and populate the error if the there is an error", () => {
-                const result = roomConnectionSlice.reducer(
-                    undefined,
-                    signalEvents.roomJoined({
+                    expect(result).toEqual({
+                        status: "disconnected",
+                        session: null,
                         error: "room_full",
-                        selfId: "selfId",
-                        breakoutGroup: "",
-                        isLocked: false,
-                    }),
-                );
+                    });
+                });
+            });
 
-                expect(result).toEqual({
-                    status: "disconnected",
-                    session: null,
-                    error: "room_full",
+            describe("on success", () => {
+                it("should set status to connected if the room is not locked", () => {
+                    const result = roomConnectionSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            selfId: "selfId",
+                            breakoutGroup: "",
+                            clientClaim: "clientClaim",
+                            room: {
+                                mode: "group",
+                                clients: [],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                                isClaimed: true,
+                                isLocked: false,
+                            },
+                        }),
+                    );
+
+                    expect(result).toEqual({
+                        status: "connected",
+                        session: null,
+                        error: null,
+                    });
                 });
             });
         });

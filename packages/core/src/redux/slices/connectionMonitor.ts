@@ -20,13 +20,13 @@ export interface ConnectionMonitorState {
     stopCallbackFunction?: () => void;
 }
 
-const initialState: ConnectionMonitorState = {
+export const connectionMonitorSliceInitialState: ConnectionMonitorState = {
     running: false,
 };
 
 export const connectionMonitorSlice = createSlice({
     name: "connectionMonitor",
-    initialState,
+    initialState: connectionMonitorSliceInitialState,
     reducers: {
         connectionMonitorStarted: (state, action: PayloadAction<ConnectionMonitorStart>) => {
             return {
@@ -37,7 +37,7 @@ export const connectionMonitorSlice = createSlice({
         },
         connectionMonitorStopped: () => {
             return {
-                ...initialState,
+                ...connectionMonitorSliceInitialState,
             };
         },
     },
