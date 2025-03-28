@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.23.1
+
+### Patch Changes
+
+- c0d4b36: Fix getMediaSettings call for vega screenshares
+
 ## 1.23.0
 
 ### Minor Changes
