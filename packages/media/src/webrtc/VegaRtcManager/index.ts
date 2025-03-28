@@ -1038,7 +1038,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenVideoTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
-                    ...getMediaSettings("video", false, { ...this._features, vp9On: this._features.sfuVp9On }),
+                    ...getMediaSettings("video", true, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
                         sourceClientId: this._selfId,
@@ -1123,7 +1123,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenAudioTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
-                    ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On }),
+                    ...getMediaSettings("audio", true, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
                         sourceClientId: this._selfId,
