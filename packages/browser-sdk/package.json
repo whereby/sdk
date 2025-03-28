@@ -62,7 +62,7 @@
     "@storybook/react-vite": "^8.0.10",
     "@testing-library/react": "^14.0.0",
     "@types/runes": "^0.4.3",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^4.3.4",
     "deep-object-diff": "^1.1.9",
     "dotenv": "^16.4.5",
     "dotenv-run-script": "^0.4.1",
