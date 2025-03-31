@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.23.2
+
+### Patch Changes
+
+- e19d99a: Fix vp9On flag in modifyMediaCapabilities
+
 ## 1.23.1
 
 ### Patch Changes
