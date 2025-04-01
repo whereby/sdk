@@ -157,10 +157,7 @@ export interface Codec {
     sdpFmtpLine?: string;
 }
 
-function sortCodecsByMimeType(
-    codecs: Codec[],
-    features: { vp9On?: boolean; av1On?: boolean; preferHardwareDecodingOn?: boolean },
-) {
+function sortCodecsByMimeType(codecs: Codec[], features: { vp9On?: boolean; av1On?: boolean }) {
     const availableCodecs = codecs
         .map(({ mimeType }) => mimeType)
         .filter((value, index, array) => array.indexOf(value) === index);

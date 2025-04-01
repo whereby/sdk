@@ -929,8 +929,8 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     async _setCodecPreferences(pc: RTCPeerConnection) {
-        const { p2pVp9On, p2pAv1On, redOn, preferHardwareDecodingOn } = this._features;
-        if (!(p2pVp9On || p2pAv1On || redOn || preferHardwareDecodingOn)) {
+        const { p2pVp9On, p2pAv1On, redOn, preferP2pHardwareDecodingOn } = this._features;
+        if (!(p2pVp9On || p2pAv1On || redOn || preferP2pHardwareDecodingOn)) {
             return;
         }
         try {
@@ -965,11 +965,11 @@ export default class P2pRtcManager implements RtcManager {
                     if (videoTransceiver.setCodecPreferences === undefined) return;
 
                     const capabilities: any = RTCRtpReceiver.getCapabilities("video");
-                    if (p2pVp9On || p2pAv1On || preferHardwareDecodingOn) {
+                    if (p2pVp9On || p2pAv1On || preferP2pHardwareDecodingOn) {
                         capabilities.codecs = await sortCodecs(capabilities.codecs, {
                             vp9On: p2pVp9On,
                             av1On: p2pAv1On,
-                            preferHardwareDecodingOn,
+                            preferHardwareDecodingOn: preferP2pHardwareDecodingOn,
                         });
                     }
 
