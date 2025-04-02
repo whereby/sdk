@@ -1,7 +1,7 @@
 import * as React from "react";
 import { debounce, doRtcReportStreamResolution } from "@whereby.com/core";
-import { selectCurrentSpeakerDeviceId } from "@whereby.com/core";
-import { useAppDispatch, useAppSelector } from "./Provider/hooks";
+import { useAppDispatch } from "./Provider/hooks";
+import { useAudioElement } from "./hooks/useAudioElement";
 
 interface VideoViewSelfProps {
     stream: MediaStream;
@@ -19,15 +19,12 @@ export type WherebyVideoElement = HTMLVideoElement & {
 export type VideoViewProps = VideoViewSelfProps &
     React.DetailedHTMLProps<React.VideoHTMLAttributes<WherebyVideoElement>, WherebyVideoElement>;
 
-type AudioElement = HTMLAudioElement & { setSinkId?: (deviceId: string) => void };
-
 export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
     ({ muted, mirror = false, stream, onVideoResize, ...rest }, ref) => {
         const dispatch = useAppDispatch();
-        const currentSpeakerId = useAppSelector(selectCurrentSpeakerDeviceId);
 
         const videoEl = React.useRef<WherebyVideoElement>(null);
-        const audioEl = React.useRef<AudioElement>(null);
+        const audioEl = useAudioElement({ muted, stream });
 
         React.useImperativeHandle(ref, () => {
             return Object.assign(videoEl.current!, {
@@ -101,20 +98,6 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
                 videoEl.current.muted = Boolean(muted);
             }
         }, [muted, stream, videoEl]);
-
-        React.useEffect(() => {
-            if (!audioEl.current || muted || !stream || !currentSpeakerId) {
-                return;
-            }
-
-            if (audioEl.current.srcObject !== stream) {
-                audioEl.current.srcObject = stream;
-            }
-
-            if (audioEl.current.setSinkId) {
-                audioEl.current.setSinkId(currentSpeakerId);
-            }
-        }, [stream, audioEl, currentSpeakerId, muted]);
 
         return (
             <>
