@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.23.3
+
+### Patch Changes
+
+- bd95d49: Rename preferHardwareDecodingOn flag to preferP2pHardwareDecodingOn
+
 ## 1.23.2
 
 ### Patch Changes
