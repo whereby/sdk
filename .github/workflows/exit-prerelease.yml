@@ -32,7 +32,7 @@ jobs:
               # Check if pre.json file exists. The rest of the steps will only run if this file exists
             - name: Check for pre.json file existence
               id: check_files
-              uses: andstor/file-existence-action@v3.0.0
+              uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6
               with:
                   files: ".changeset/pre.json"
 
