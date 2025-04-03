@@ -67,12 +67,14 @@ const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
 
     const s = stream || participant.stream;
 
-    if (!s) {
+    if (!s || !participant.isVideoEnabled) {
         return (
             <VideoMutedIndicator
                 isSmallCell={false}
                 displayName={participant?.displayName || "Guest"}
                 withRoundedCorners
+                muted={participant.isLocalClient}
+                stream={participant.stream}
             />
         );
     }
@@ -112,26 +114,16 @@ function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellV
         case "video":
             return (
                 <GridCell participant={participant}>
-                    {participant.isVideoEnabled ? (
-                        <>
-                            {render ? (
-                                render({ participant })
-                            ) : (
-                                <>
-                                    <GridVideoView />
-                                    {enableParticipantMenu ? (
-                                        <DefaultParticipantMenu participant={participant} />
-                                    ) : null}
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        <VideoMutedIndicator
-                            isSmallCell={false}
-                            displayName={participant?.displayName || "Guest"}
-                            withRoundedCorners
-                        />
-                    )}
+                    <>
+                        {render ? (
+                            render({ participant })
+                        ) : (
+                            <>
+                                <GridVideoView />
+                                {enableParticipantMenu ? <DefaultParticipantMenu participant={participant} /> : null}
+                            </>
+                        )}
+                    </>
                 </GridCell>
             );
     }
