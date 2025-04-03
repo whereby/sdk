@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.12.9
+
+### Patch Changes
+
+- b917183: Fix VideoGrid missing audio when remote participant video is disabled
+
 ## 3.12.8
 
 ### Patch Changes
