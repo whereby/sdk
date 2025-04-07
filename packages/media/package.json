@@ -59,7 +59,7 @@
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
         "socket.io-client": "4.7.2",
-        "typescript": "^5.3.3",
+        "typescript": "^5.8.3",
         "ua-parser-js": "^1.0.38",
         "uuid": "^9.0.1",
         "uuid-validate": "^0.0.3",
