@@ -163,25 +163,25 @@ describe("sortCodecs", () => {
     });
 
     describe("with preferHardwareDecodingOn enabled", () => {
+        const codecs = [
+            {
+                clockRate: 90000,
+                mimeType: "video/VP8",
+            },
+            {
+                clockRate: 90000,
+                mimeType: "video/VP9",
+            },
+            {
+                clockRate: 90000,
+                mimeType: "video/AV1",
+            },
+            {
+                clockRate: 90000,
+                mimeType: "video/H264",
+            },
+        ];
         it("puts hardware decodable codecs first", async () => {
-            const codecs = [
-                {
-                    clockRate: 90000,
-                    mimeType: "video/VP8",
-                },
-                {
-                    clockRate: 90000,
-                    mimeType: "video/VP9",
-                },
-                {
-                    clockRate: 90000,
-                    mimeType: "video/AV1",
-                },
-                {
-                    clockRate: 90000,
-                    mimeType: "video/H264",
-                },
-            ];
             const decodingInfo = jest.fn();
             decodingInfo.mockImplementation((config: { video: { contentType: string } }) => {
                 return {
@@ -210,6 +210,40 @@ describe("sortCodecs", () => {
                     mimeType: "video/VP8",
                 },
             ]);
+        });
+
+        describe("with vp9On", () => {
+            it("puts hardware decodable codecs first, prioritising VP9 otherwise", async () => {
+                const decodingInfo = jest.fn();
+                decodingInfo.mockImplementation((config: { video: { contentType: string } }) => {
+                    return {
+                        powerEfficient:
+                            config.video.contentType !== "video/VP8" && config.video.contentType !== "video/VP9",
+                    };
+                });
+                Object.assign(globalThis.navigator, { mediaCapabilities: { decodingInfo } });
+
+                const sorted = await sortCodecs(codecs, { preferHardwareDecodingOn: true, vp9On: true });
+
+                expect(sorted).toEqual([
+                    {
+                        clockRate: 90000,
+                        mimeType: "video/AV1",
+                    },
+                    {
+                        clockRate: 90000,
+                        mimeType: "video/H264",
+                    },
+                    {
+                        clockRate: 90000,
+                        mimeType: "video/VP9",
+                    },
+                    {
+                        clockRate: 90000,
+                        mimeType: "video/VP8",
+                    },
+                ]);
+            });
         });
     });
 });

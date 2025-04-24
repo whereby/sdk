@@ -969,7 +969,7 @@ export default class P2pRtcManager implements RtcManager {
                         capabilities.codecs = await sortCodecs(capabilities.codecs, {
                             vp9On: p2pVp9On,
                             av1On: p2pAv1On,
-                            preferHardwareDecodingOn: preferP2pHardwareDecodingOn,
+                            preferHardwareDecodingOn: p2pVp9On || preferP2pHardwareDecodingOn,
                         });
                     }
 
