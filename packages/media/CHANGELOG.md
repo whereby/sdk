@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.24.0
+
+### Minor Changes
+
+- 794fea1: Prioritise power efficiency when sorting codecs
+
 ## 1.23.3
 
 ### Patch Changes
