@@ -206,9 +206,10 @@ export async function sortCodecs(
     codecs: Codec[],
     features: { vp9On?: boolean; av1On?: boolean; preferHardwareDecodingOn?: boolean },
 ) {
+    codecs = sortCodecsByMimeType(codecs, features);
     if (features.preferHardwareDecodingOn) {
         codecs = await sortCodecsByPowerEfficiency(codecs);
     }
 
-    return sortCodecsByMimeType(codecs, features);
+    return codecs;
 }
