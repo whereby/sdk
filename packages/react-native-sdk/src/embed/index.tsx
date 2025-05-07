@@ -8,22 +8,33 @@ function getInjectableJSMessage(command: string, args: unknown[]) {
     return `(function() { window.postMessage({ command: ${JSON.stringify(command)}${parsedArgs} }) })()`;
 }
 
+function handleBooleanAttribute(attr?: boolean | "on" | "off") {
+    if (attr === true || attr === "on") {
+        return "on";
+    }
+    if (attr === false || attr === "off") {
+        return "off";
+    }
+
+    return undefined;
+}
+
 interface WherebyEmbedElementAttributes {
-    aec?: boolean;
-    agc?: boolean;
-    audio?: boolean;
+    aec?: boolean | "on" | "off";
+    agc?: boolean | "on" | "off";
+    audio?: boolean | "on" | "off";
     /**
      * Automatically spotlight the local participant on room join. Can only be used with users joining with host privileges.
      */
-    audioDenoiser?: boolean;
-    autoHideSelfView?: boolean;
-    autoSpotlight?: boolean;
+    audioDenoiser?: boolean | "on" | "off";
+    autoHideSelfView?: boolean | "on" | "off";
+    autoSpotlight?: boolean | "on" | "off";
     avatarUrl?: string;
-    background?: boolean;
-    bottomToolbar?: boolean;
-    breakout?: boolean;
-    callQualityMonitoring?: boolean;
-    cameraAccess?: boolean;
+    background?: boolean | "on" | "off";
+    bottomToolbar?: boolean | "on" | "off";
+    breakout?: boolean | "on" | "off";
+    callQualityMonitoring?: boolean | "on" | "off";
+    cameraAccess?: boolean | "on" | "off";
     cameraEffect?:
         | "slight-blur"
         | "blur"
@@ -33,56 +44,56 @@ interface WherebyEmbedElementAttributes {
         | "image-sunrise"
         | "image-day"
         | "image-night";
-    chat?: boolean;
+    chat?: boolean | "on" | "off";
     displayName?: string;
-    emptyRoomInvitation?: boolean;
+    emptyRoomInvitation?: boolean | "on" | "off";
     emojiSkinTone?: string;
     externalId?: string;
-    floatSelf?: boolean;
+    floatSelf?: boolean | "on" | "off";
     groups?: string;
-    help?: boolean;
+    help?: boolean | "on" | "off";
     lang?: "fr" | "it" | "de" | "nb" | "da" | "nl" | "pt" | "pl" | "es" | "hi" | "cs" | "zh-hant" | "jp";
-    leaveButton?: boolean;
-    locking?: boolean;
-    localization?: boolean;
-    logo?: boolean;
-    lowData?: boolean;
+    leaveButton?: boolean | "on" | "off";
+    locking?: boolean | "on" | "off";
+    localization?: boolean | "on" | "off";
+    logo?: boolean | "on" | "off";
+    lowData?: boolean | "on" | "off";
     metadata?: string;
-    minimal?: boolean;
-    moreButton?: boolean;
-    participantCount?: boolean;
-    people?: boolean;
-    pipButton?: boolean;
+    minimal?: boolean | "on" | "off";
+    moreButton?: boolean | "on" | "off";
+    participantCount?: boolean | "on" | "off";
+    people?: boolean | "on" | "off";
+    pipButton?: boolean | "on" | "off";
     /**
      * Displays a device and connectivity test for the user. Is dependent on precallReview being enabled
      */
-    precallCeremony?: boolean;
-    precallReview?: boolean;
+    precallCeremony?: boolean | "on" | "off";
+    precallReview?: boolean | "on" | "off";
     precallPermissionsHelpLink?: string;
-    precallCeremonyCanSkip?: boolean;
-    reactions?: boolean;
-    recording?: boolean;
+    precallCeremonyCanSkip?: boolean | "on" | "off";
+    reactions?: boolean | "on" | "off";
+    recording?: boolean | "on" | "off";
     /**
      * Enables the use of supported room integrations (Miro and YouTube)
      */
-    roomIntegrations?: boolean;
-    settingsButton?: boolean;
-    screenshare?: boolean;
+    roomIntegrations?: boolean | "on" | "off";
+    settingsButton?: boolean | "on" | "off";
+    screenshare?: boolean | "on" | "off";
     /**
      * Skips the Whereby permissions UI and causes browser to automatically request device permissions. Required for Android app integrations.
      */
-    skipMediaPermissionPrompt?: boolean;
-    subgridLabels?: boolean;
-    timer?: boolean;
+    skipMediaPermissionPrompt?: boolean | "on" | "off";
+    subgridLabels?: boolean | "on" | "off";
+    timer?: boolean | "on" | "off";
     title?: string;
     /**
      * Use dark text for bottom toolbar items.
      *
      * Use this attribute when the room background is light and the bottom toolbar items are hard to read.
      */
-    toolbarDarkText?: boolean;
-    topToolbar?: boolean;
-    video?: boolean;
+    toolbarDarkText?: boolean | "on" | "off";
+    topToolbar?: boolean | "on" | "off";
+    video?: boolean | "on" | "off";
     virtualBackgroundUrl?: string;
 }
 
@@ -196,8 +207,6 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
     ({ room, ...props }: WherebyEmbedProps, ref) => {
         const webviewRef = React.useRef<WebView>(null);
         const roomUrl = new URL(room);
-        const ON = "on";
-        const OFF = "off";
 
         roomUrl.searchParams.set("sdkPlatform", "react-native-embed");
 
@@ -212,61 +221,63 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
             ...(props.avatarUrl && { avatarUrl: props.avatarUrl }),
             ...(props.cameraEffect && { cameraEffect: props.cameraEffect }),
             // the original ?embed name was confusing, so we give minimal
-            ...(props.minimal != null && { embed: props.minimal ? ON : OFF }),
-            ...(props.aec != null && { aec: props.aec ? ON : OFF }),
-            ...(props.agc != null && { agc: props.agc ? ON : OFF }),
-            ...(props.audio != null && { audio: props.audio ? ON : OFF }),
-            ...(props.audioDenoiser != null && { audioDenoiser: props.audioDenoiser ? ON : OFF }),
-            ...(props.autoHideSelfView != null && { autoHideSelfView: props.autoHideSelfView ? ON : OFF }),
-            ...(props.autoSpotlight != null && { autoSpotlight: props.autoSpotlight ? ON : OFF }),
-            ...(props.background != null && { background: props.background ? ON : OFF }),
-            ...(props.bottomToolbar != null && { bottomToolbar: props.bottomToolbar ? ON : OFF }),
-            ...(props.breakout != null && { breakout: props.breakout ? ON : OFF }),
+            ...(props.minimal != null && { embed: handleBooleanAttribute(props.minimal) }),
+            ...(props.aec != null && { aec: handleBooleanAttribute(props.aec) }),
+            ...(props.agc != null && { agc: handleBooleanAttribute(props.agc) }),
+            ...(props.audio != null && { audio: handleBooleanAttribute(props.audio) }),
+            ...(props.audioDenoiser != null && { audioDenoiser: handleBooleanAttribute(props.audioDenoiser) }),
+            ...(props.autoHideSelfView != null && { autoHideSelfView: handleBooleanAttribute(props.autoHideSelfView) }),
+            ...(props.autoSpotlight != null && { autoSpotlight: handleBooleanAttribute(props.autoSpotlight) }),
+            ...(props.background != null && { background: handleBooleanAttribute(props.background) }),
+            ...(props.bottomToolbar != null && { bottomToolbar: handleBooleanAttribute(props.bottomToolbar) }),
+            ...(props.breakout != null && { breakout: handleBooleanAttribute(props.breakout) }),
             ...(props.callQualityMonitoring != null && {
-                callQualityMonitoring: props.callQualityMonitoring ? ON : OFF,
+                callQualityMonitoring: handleBooleanAttribute(props.callQualityMonitoring),
             }),
-            ...(props.cameraAccess != null && { cameraAccess: props.cameraAccess ? ON : OFF }),
+            ...(props.cameraAccess != null && { cameraAccess: handleBooleanAttribute(props.cameraAccess) }),
             ...(props.cameraEffect != null && { cameraEffect: props.cameraEffect }),
-            ...(props.chat != null && { chat: props.chat ? ON : OFF }),
+            ...(props.chat != null && { chat: handleBooleanAttribute(props.chat) }),
             ...(props.displayName != null && { displayName: props.displayName }),
-            ...(props.emptyRoomInvitation != null && { emptyRoomInvitation: props.emptyRoomInvitation ? ON : OFF }),
+            ...(props.emptyRoomInvitation != null && {
+                emptyRoomInvitation: handleBooleanAttribute(props.emptyRoomInvitation),
+            }),
             ...(props.emojiSkinTone != null && { emojiSkinTone: props.emojiSkinTone }),
             ...(props.externalId != null && { externalId: props.externalId }),
-            ...(props.floatSelf != null && { floatSelf: props.floatSelf ? ON : OFF }),
+            ...(props.floatSelf != null && { floatSelf: handleBooleanAttribute(props.floatSelf) }),
             ...(props.groups != null && { groups: props.groups }),
-            ...(props.help != null && { help: props.help ? ON : OFF }),
+            ...(props.help != null && { help: handleBooleanAttribute(props.help) }),
             ...(props.lang != null && { lang: props.lang }),
-            ...(props.leaveButton != null && { leaveButton: props.leaveButton ? ON : OFF }),
-            ...(props.locking != null && { locking: props.locking ? ON : OFF }),
-            ...(props.localization != null && { localization: props.localization ? ON : OFF }),
-            ...(props.logo != null && { logo: props.logo ? ON : OFF }),
-            ...(props.lowData != null && { lowData: props.lowData ? ON : OFF }),
-            ...(props.moreButton != null && { moreButton: props.moreButton ? ON : OFF }),
-            ...(props.participantCount != null && { participantCount: props.participantCount ? ON : OFF }),
-            ...(props.people != null && { people: props.people ? ON : OFF }),
-            ...(props.pipButton != null && { pipButton: props.pipButton ? ON : OFF }),
-            ...(props.precallCeremony != null && { precallCeremony: props.precallCeremony ? ON : OFF }),
-            ...(props.precallReview != null && { precallReview: props.precallReview ? ON : OFF }),
+            ...(props.leaveButton != null && { leaveButton: handleBooleanAttribute(props.leaveButton) }),
+            ...(props.locking != null && { locking: handleBooleanAttribute(props.locking) }),
+            ...(props.localization != null && { localization: handleBooleanAttribute(props.localization) }),
+            ...(props.logo != null && { logo: handleBooleanAttribute(props.logo) }),
+            ...(props.lowData != null && { lowData: handleBooleanAttribute(props.lowData) }),
+            ...(props.moreButton != null && { moreButton: handleBooleanAttribute(props.moreButton) }),
+            ...(props.participantCount != null && { participantCount: handleBooleanAttribute(props.participantCount) }),
+            ...(props.people != null && { people: handleBooleanAttribute(props.people) }),
+            ...(props.pipButton != null && { pipButton: handleBooleanAttribute(props.pipButton) }),
+            ...(props.precallCeremony != null && { precallCeremony: handleBooleanAttribute(props.precallCeremony) }),
+            ...(props.precallReview != null && { precallReview: handleBooleanAttribute(props.precallReview) }),
             ...(props.precallPermissionsHelpLink != null && {
                 precallPermissionsHelpLink: props.precallPermissionsHelpLink,
             }),
             ...(props.precallCeremonyCanSkip != null && {
-                precallCeremonyCanSkip: props.precallCeremonyCanSkip ? ON : OFF,
+                precallCeremonyCanSkip: handleBooleanAttribute(props.precallCeremonyCanSkip),
             }),
-            ...(props.reactions != null && { reactions: props.reactions ? ON : OFF }),
-            ...(props.recording != null && { recording: props.recording ? ON : OFF }),
-            ...(props.roomIntegrations != null && { roomIntegrations: props.roomIntegrations ? ON : OFF }),
-            ...(props.settingsButton != null && { settingsButton: props.settingsButton ? ON : OFF }),
-            ...(props.screenshare != null && { screenshare: props.screenshare ? ON : OFF }),
+            ...(props.reactions != null && { reactions: handleBooleanAttribute(props.reactions) }),
+            ...(props.recording != null && { recording: handleBooleanAttribute(props.recording) }),
+            ...(props.roomIntegrations != null && { roomIntegrations: handleBooleanAttribute(props.roomIntegrations) }),
+            ...(props.settingsButton != null && { settingsButton: handleBooleanAttribute(props.settingsButton) }),
+            ...(props.screenshare != null && { screenshare: handleBooleanAttribute(props.screenshare) }),
             ...(props.skipMediaPermissionPrompt != null && {
-                skipMediaPermissionPrompt: props.skipMediaPermissionPrompt ? ON : OFF,
+                skipMediaPermissionPrompt: handleBooleanAttribute(props.skipMediaPermissionPrompt),
             }),
-            ...(props.subgridLabels != null && { subgridLabels: props.subgridLabels ? ON : OFF }),
-            ...(props.timer != null && { timer: props.timer ? ON : OFF }),
+            ...(props.subgridLabels != null && { subgridLabels: handleBooleanAttribute(props.subgridLabels) }),
+            ...(props.timer != null && { timer: handleBooleanAttribute(props.timer) }),
             ...(props.title != null && { title: props.title }),
-            ...(props.toolbarDarkText != null && { toolbarDarkText: props.toolbarDarkText ? ON : OFF }),
-            ...(props.topToolbar != null && { topToolbar: props.topToolbar ? ON : OFF }),
-            ...(props.video != null && { video: props.video ? ON : OFF }),
+            ...(props.toolbarDarkText != null && { toolbarDarkText: handleBooleanAttribute(props.toolbarDarkText) }),
+            ...(props.topToolbar != null && { topToolbar: handleBooleanAttribute(props.topToolbar) }),
+            ...(props.video != null && { video: handleBooleanAttribute(props.video) }),
             ...(props.virtualBackgroundUrl != null && { virtualBackgroundUrl: props.virtualBackgroundUrl }),
         }).forEach(([k, v]) => {
             if (!roomUrl.searchParams.has(k)) {
