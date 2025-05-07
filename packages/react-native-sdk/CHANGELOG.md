@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.7.44
+
+### Patch Changes
+
+- c818f4d: Accept on/off string values for boolean attributes - react native sdk
+
 ## 0.7.43
 
 ### Patch Changes
