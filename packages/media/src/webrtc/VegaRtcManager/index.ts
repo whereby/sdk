@@ -1196,6 +1196,10 @@ export default class VegaRtcManager implements RtcManager {
         producer.close();
     }
 
+    _getIsSomeoneAlreadyPresenting() {
+        return !!this._clientStates.values().find((state: any) => state.hasAcceptedScreenStream && state.screenStream);
+    }
+
     /**
      * This is called from the RTCDispatcher when the signal socket reconnects to
      * verify that the RTCManager is still valid.
