@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.12.11
+
+### Patch Changes
+
+- f6cc0f9: Export additional room connection types
+
 ## 3.12.10
 
 ### Patch Changes
