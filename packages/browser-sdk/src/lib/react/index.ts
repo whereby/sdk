@@ -14,9 +14,14 @@ export type { UseLocalMediaResult } from "./useLocalMedia/types";
 
 export type {
     ChatMessageState as ChatMessage,
+    CloudRecordingState as CloudRecording,
+    LiveStreamState as LiveStreaming,
+    BreakoutState as Breakout,
     LocalParticipantState as LocalParticipant,
     RemoteParticipantState as RemoteParticipant,
     RoomConnectionState as RoomConnection,
     ScreenshareState as Screenshare,
     WaitingParticipantState as WaitingParticipant,
+    RoomConnectionActions,
+    RoomConnectionOptions,
 } from "./useRoomConnection/types";
