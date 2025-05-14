@@ -61,6 +61,18 @@ const SCREEN_SHARE_SIMULCAST_SETTINGS = {
     ],
 };
 
+const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
+    encodings: [
+        { scaleResolutionDownBy: 4, dtx: true, maxBitrate: 150000 },
+        { scaleResolutionDownBy: 2, dtx: true, maxBitrate: 500000 },
+        { scaleResolutionDownBy: 1, dtx: true, maxBitrate: 1500000 },
+    ],
+};
+
+const ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9 = {
+    encodings: [{ scalabilityMode: "L2T2_KEY", dtx: true, maxBitrate: 1500000 }],
+};
+
 const SCREEN_SHARE_SETTINGS_VP9 = {
     encodings: [{ dtx: true }],
 };
@@ -74,6 +86,7 @@ export const getMediaSettings = (
         lowBandwidth?: boolean;
         vp9On?: boolean;
     },
+    isSomeoneAlreadyPresenting = false,
 ) => {
     const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On } = features;
 
@@ -82,6 +95,10 @@ export const getMediaSettings = (
     }
 
     if (isScreenShare) {
+        if (isSomeoneAlreadyPresenting) {
+            if (vp9On) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
+            return ADDITIONAL_SCREEN_SHARE_SETTINGS;
+        }
         if (lowBandwidth && !vp9On) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
         if (vp9On) return SCREEN_SHARE_SETTINGS_VP9;
         if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;

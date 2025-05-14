@@ -36,6 +36,19 @@ const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 
 if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
+type MediaSteamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
+
+type ClientState = {
+    hasAcceptedWebcamStream: Boolean;
+    hasAcceptedScreenStream: Boolean;
+    hasEmittedWebcamStream: Boolean;
+    hasEmittedScreenStream: Boolean;
+    webcamStream?: MediaSteamWhichMayHaveInboundId;
+    screenStream?: MediaSteamWhichMayHaveInboundId;
+    screenShareStreamId?: string;
+    camStreamId?: string;
+};
+
 export default class VegaRtcManager implements RtcManager {
     _selfId: any;
     _room: any;
@@ -52,7 +65,7 @@ export default class VegaRtcManager implements RtcManager {
     _routerRtpCapabilities: any;
     _sendTransport: any;
     _receiveTransport: any;
-    _clientStates: any;
+    _clientStates: Map<string, ClientState>;
     _streamIdToVideoConsumerId: any;
     _streamIdToVideoResolution: Map<string, { width: number; height: number }>;
     _consumers: any;
@@ -1038,7 +1051,12 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenVideoTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
-                    ...getMediaSettings("video", true, { ...this._features, vp9On: this._features.sfuVp9On }),
+                    ...getMediaSettings(
+                        "video",
+                        true,
+                        { ...this._features, vp9On: this._features.sfuVp9On },
+                        this._getIsSomeoneAlreadyPresenting(),
+                    ),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
                         sourceClientId: this._selfId,
@@ -1196,6 +1214,10 @@ export default class VegaRtcManager implements RtcManager {
         producer.close();
     }
 
+    _getIsSomeoneAlreadyPresenting() {
+        return !![...this._clientStates.values()].find((state) => state.hasAcceptedScreenStream && state.screenStream);
+    }
+
     /**
      * This is called from the RTCDispatcher when the signal socket reconnects to
      * verify that the RTCManager is still valid.
@@ -1276,10 +1298,9 @@ export default class VegaRtcManager implements RtcManager {
     disconnect(clientIdOrStreamId: string, _activeBreakout: any, eventClaim?: string) {
         logger.info("disconnect() [clientIdOrStreamId:%s, eventClaim:%s]", clientIdOrStreamId, eventClaim);
 
-        if (this._clientStates.has(clientIdOrStreamId)) {
+        const clientState = this._clientStates.get(clientIdOrStreamId);
+        if (clientState) {
             // In this case this is a disconnect from an actual client, not just a screen share.
-
-            const clientState = this._clientStates.get(clientIdOrStreamId);
 
             clientState.hasAcceptedWebcamStream = false;
             clientState.hasAcceptedScreenStream = false;
@@ -1908,13 +1929,13 @@ export default class VegaRtcManager implements RtcManager {
             // We need to clean up our clientState
             // TODO: @geirbakke investigate missing mic audio if screenshare starts during reconnect
             if (screenShare) {
-                clientState.screenStream = null;
+                clientState.screenStream = undefined;
                 clientState.hasEmittedScreenStream = false;
-                clientState.screenShareStreamId = null;
+                clientState.screenShareStreamId = undefined;
             } else {
                 // We never reset the webcam stream
                 clientState.hasEmittedWebcamStream = false;
-                clientState.camStreamId = null;
+                clientState.camStreamId = undefined;
             }
         }
     }
@@ -2004,10 +2025,6 @@ export default class VegaRtcManager implements RtcManager {
                 hasAcceptedScreenStream: false,
                 hasEmittedWebcamStream: false,
                 hasEmittedScreenStream: false,
-                webcamStream: null,
-                screenStream: null,
-                screenShareStreamId: null,
-                camStreamId: null,
             };
 
             this._clientStates.set(clientId, clientState);
