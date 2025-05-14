@@ -4,6 +4,16 @@ import { useRoomConnection, VideoView } from "@whereby.com/browser-sdk/react";
 import IconButton from "./IconButton";
 import ChatInput from "./ChatInput";
 
+const WaitingArea = ({ knock }: { knock: () => void }) => {
+    return (
+        <div>
+            <h1>Room locked</h1>
+            <p>Waiting for host to let you in</p>
+            <button onClick={knock}>Knock</button>
+        </div>
+    );
+};
+
 // Replace this with your own Whereby room URL
 const ROOM_URL = "";
 
@@ -12,6 +22,10 @@ function App() {
     const [isMicrophoneActive, setIsMicrophoneActive] = React.useState(true);
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = React.useState(false);
     const chatMessageBottomRef = React.useRef<HTMLDivElement>(null);
+
+    if (!ROOM_URL) {
+        return <div>No room URL provided</div>;
+    }
 
     const roomConnection = useRoomConnection(ROOM_URL, {
         localMediaOptions: {
@@ -22,8 +36,16 @@ function App() {
 
     const { state, actions } = roomConnection;
     const { localParticipant, remoteParticipants, screenshares, chatMessages } = state;
-    const { joinRoom, leaveRoom, toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, sendChatMessage } =
-        actions;
+    const {
+        joinRoom,
+        leaveRoom,
+        toggleCamera,
+        toggleMicrophone,
+        startScreenshare,
+        stopScreenshare,
+        sendChatMessage,
+        knock,
+    } = actions;
 
     function getDisplayName(id: string) {
         return remoteParticipants.find((p) => p.id === id)?.displayName || "Guest";
@@ -34,13 +56,36 @@ function App() {
     }
 
     React.useEffect(() => {
-        joinRoom();
-        return () => leaveRoom();
-    }, []);
-
-    React.useEffect(() => {
         scrollToBottom();
     }, [chatMessages]);
+
+    if (state.connectionStatus === "connecting" || state.connectionStatus === "ready") {
+        return (
+            <button data-testid="joinRoomBtn" onClick={() => joinRoom()}>
+                Join room
+            </button>
+        );
+    }
+
+    if (state.connectionStatus === "left" || state.connectionStatus === "kicked") {
+        return (
+            <button data-testid="rejoinRoomBtn" onClick={() => joinRoom()}>
+                Re-join {state.connectionStatus} room
+            </button>
+        );
+    }
+
+    if (state.connectionStatus === "room_locked") {
+        return <WaitingArea knock={knock} />;
+    }
+
+    if (state.connectionStatus === "knocking") {
+        return <p>Knocking...</p>;
+    }
+
+    if (state.connectionStatus === "knock_rejected") {
+        return <p data-testid="knockRejectedMessage">You have been rejected access</p>;
+    }
 
     return (
         <div className="App">
