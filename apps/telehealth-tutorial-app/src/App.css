@@ -13,9 +13,10 @@
 }
 
 .self-view-wrapper video {
-  border-radius: 800px;
+  border-radius: 800px !important;
   position: absolute;
-  width: 180px;
+  width: 180px !important;
+  height: 120px !important;
   bottom: 50px;
   left: 10px;
 }

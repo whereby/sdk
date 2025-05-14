@@ -3,6 +3,7 @@
 Monorepo for Whereby SDKs.
 
 ## Local development
+Run `yarn install` and `yarn build` in the root folder.
 You can run each of the example apps by running `yarn dev:name-of-app` in the root folder. For example, to run the `sample-app` example app, you would run `yarn dev:sample-app`.
 To set up local development against a local Whereby room, you can create a `.env` file in the root folder. Look at the `.env.example` file for the fields you need to set.
 
