@@ -20,6 +20,16 @@ const clientInfo = {
 const noop = () => {};
 let resetDelta = noop;
 
+const formatCustomEventData = (type: string, value: any) => {
+    return {
+        type,
+        value: {
+            [type]: value,
+            _time: Date.now(),
+        },
+    };
+};
+
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
 function rtcStatsConnection(wsURL: string, logger: any = console) {
     const buffer: any = [];
@@ -60,23 +70,23 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 }
                 if (newRoomSessionIdValue) hasPassedOnRoomSessionId = true;
             } else if (args[0] === "customEvent" && args[2].type === "clientId") {
-                clientId = args;
+                clientId = args[2].value.clientId;
             } else if (args[0] === "customEvent" && args[2].type === "organizationId") {
-                organizationId = args;
+                organizationId = args[2].value.organizationId;
             } else if (args[0] === "customEvent" && args[2].type === "displayName") {
-                displayName = args;
+                displayName = args[2].value.displayName;
             } else if (args[0] === "customEvent" && args[2].type === "userRole") {
-                userRole = args;
+                userRole = args[2].value.userRole;
             } else if (args[0] === "customEvent" && args[2].type === "deviceId") {
-                deviceId = args;
+                deviceId = args[2].value.deviceId;
             } else if (args[0] === "customEvent" && args[2].type === "roomProduct") {
-                roomProduct = args;
+                roomProduct = args[2].value.roomProduct;
             } else if (args[0] === "customEvent" && args[2].type === "roomMode") {
-                roomMode = args;
+                roomMode = args[2].value.roomMode;
             } else if (args[0] === "customEvent" && args[2].type === "sfuServer") {
-                sfuServer = args;
+                sfuServer = args[2].value.sfuServer;
             } else if (args[0] === "customEvent" && args[2].type === "featureFlags") {
-                featureFlags = args;
+                featureFlags = args[2].value.featureFlags;
             }
 
             if (ws?.readyState === WebSocket.OPEN) {
@@ -131,34 +141,34 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 ws.send(JSON.stringify(["clientInfo", null, clientInfo]));
 
                 if (organizationId) {
-                    ws.send(JSON.stringify(organizationId));
+                    ws.send(JSON.stringify(formatCustomEventData("organizationId", organizationId)));
                 }
                 if (clientId) {
-                    ws.send(JSON.stringify(clientId));
+                    ws.send(JSON.stringify(formatCustomEventData("clientId", clientId)));
                 }
                 if (roomSessionId) {
-                    ws.send(JSON.stringify(roomSessionId));
+                    ws.send(JSON.stringify(formatCustomEventData("roomSessionId", roomSessionId)));
                 }
                 if (displayName) {
-                    ws.send(JSON.stringify(displayName));
+                    ws.send(JSON.stringify(formatCustomEventData("displayName", displayName)));
                 }
                 if (userRole) {
-                    ws.send(JSON.stringify(userRole));
+                    ws.send(JSON.stringify(formatCustomEventData("userRole", userRole)));
                 }
                 if (deviceId) {
-                    ws.send(JSON.stringify(deviceId));
+                    ws.send(JSON.stringify(formatCustomEventData("deviceId", deviceId)));
                 }
                 if (roomMode) {
-                    ws.send(JSON.stringify(roomMode));
+                    ws.send(JSON.stringify(formatCustomEventData("roomMode", roomMode)));
                 }
                 if (roomProduct) {
-                    ws.send(JSON.stringify(roomProduct));
+                    ws.send(JSON.stringify(formatCustomEventData("roomProduct", roomProduct)));
                 }
                 if (sfuServer) {
-                    ws.send(JSON.stringify(sfuServer));
+                    ws.send(JSON.stringify(formatCustomEventData("sfuServer", sfuServer)));
                 }
                 if (featureFlags) {
-                    ws.send(JSON.stringify(featureFlags));
+                    ws.send(JSON.stringify(formatCustomEventData("featureFlags", featureFlags)));
                 }
 
                 // send buffered events
