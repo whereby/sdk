@@ -15,8 +15,8 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.0.13"
+    "@vitejs/plugin-react": "^4.4.1",
+    "vite": "^6.3.5"
   },
   "scripts": {
     "clean": "rm -rf dist node_modules .turbo",
