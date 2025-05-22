@@ -356,6 +356,48 @@ describe("createVegaConnectionManager", () => {
         expect(VegaConnection).toHaveBeenCalledTimes(6); // 3 more connection are tested
     });
 
+    it("will abort scheduled connection attempts when network is seemingly down, so client can start on top of list again", () => {
+        const onConnected = jest.fn();
+        const onDisconnected = jest.fn();
+        const onFailed = jest.fn();
+
+        const { connect, updateHostList, networkIsPossiblyDown, networkIsUp } = createVegaConnectionManager({
+            initialHostList: [
+                { host: "badhost1 close:1000", dc: "a" }, // this is "simulating" the network problem
+                { host: "goodhost1 open:2000", dc: "b" },
+                { host: "goodhost2 open:3000", dc: "c" },
+                { host: "goodhost3 open:3000", dc: "c" },
+                { host: "goodhost4 open:3000", dc: "c" },
+                { host: "goodhost5 open:3000", dc: "c" },
+                { host: "goodhost6 open:3000", dc: "c" },
+                { host: "goodhost7 open:3000", dc: "c" },
+                { host: "goodhost8 open:3000", dc: "c" },
+                { host: "goodhost9 open:3000", dc: "c" },
+            ],
+            onConnected,
+            onDisconnected,
+            onFailed,
+        });
+        connect();
+        jest.advanceTimersByTime(300);
+        networkIsPossiblyDown(); // network goes down before goodhost1 is scheduled
+        jest.advanceTimersByTime(3500);
+        expect(onConnected).toHaveBeenCalledTimes(0); // if network wasn't down, goodhost1 would be tried and connected now
+        expect(onFailed).toHaveBeenCalledTimes(1); // even if there are more host to try, we need to have received the onFailed so the client can re-rerun connect() and start at top of list
+
+        networkIsUp();
+        connect(); // this call should be triggered by client after the onFailed()
+        jest.runAllTimers();
+
+        expect(onConnected).toHaveBeenCalledTimes(1);
+        expect(onConnected).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                url: "goodhost1 open:2000", // the first good host is connected, even if the network recovered in the middle of the host-list
+            }),
+            expect.anything(),
+        );
+    });
+
     it("will provide analytics, updated and aggregated across multiple calls to connect()", () => {
         const onConnected = jest.fn();
         const { connect, updateHostList } = createVegaConnectionManager({
