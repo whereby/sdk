@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.25.1
+
+### Patch Changes
+
+- 2f4e231: media: aborts further host connection attempts when network is seemingly down'
+
 ## 1.25.0
 
 ### Minor Changes
