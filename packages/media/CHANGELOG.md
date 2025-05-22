@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.25.0
+
+### Minor Changes
+
+- 05c7086: media: Introduces other media settings for additional screenshares
+
 ## 1.24.0
 
 ### Minor Changes
