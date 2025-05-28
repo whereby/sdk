@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.26.0
+
+### Minor Changes
+
+- c5e0177: media: Uses new sfu connection logic as default, removes old
+
 ## 1.25.1
 
 ### Patch Changes
