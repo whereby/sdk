@@ -105,7 +105,6 @@ export default class VegaRtcManager implements RtcManager {
     _mediaserverConfigTtlSeconds: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
-    _hasVegaConnection: boolean;
     _isConnectingOrConnected: boolean;
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
@@ -214,7 +213,6 @@ export default class VegaRtcManager implements RtcManager {
         // Retry if connection closed until disconnectAll called;
         this._reconnect = true;
         this._reconnectTimeOut = null;
-        this._hasVegaConnection = false;
         this._isConnectingOrConnected = false;
 
         this._qualityMonitor = new VegaMediaQualityMonitor();
@@ -320,7 +318,7 @@ export default class VegaRtcManager implements RtcManager {
                 }
 
                 if (this._screenVideoTrack) this._emitScreenshareStarted();
-                if (this._features.sfuReconnectV2On && !this._hasVegaConnection && this._reconnect) {
+                if (this._features.sfuReconnectV2On && this._reconnect) {
                     this._connect();
                 }
             }),
@@ -342,49 +340,6 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _connect() {
-        if (this._features.sfuConnectionManagerOn) return this._connect_v2();
-
-        if (this._features.sfuReconnectV2On) {
-            if (this._hasVegaConnection) return;
-
-            if (!this._serverSocket.isConnected()) {
-                // Consider reconnecting to SFU within glitchfree reconnect threshold.
-                const reconnectThresholdInMs = this._serverSocket.getReconnectThreshold();
-                if (!reconnectThresholdInMs) return; // We're not using ReconnectManager and glitchfree reconnect.
-
-                // We don't have signal-server connection and it's too late to do glitchfree reconnect.
-                if (Date.now() > (this._serverSocket.disconnectTimestamp || 0) + reconnectThresholdInMs) return;
-            }
-
-            // This SFU connect attempt could have been triggered by a room_joined response from signal-server.
-            // If so, a reconnect might also have been scheduled, and we need to cancel it to avoid a loop.
-            if (this._reconnectTimeOut) clearTimeout(this._reconnectTimeOut);
-        }
-
-        const host = this._features.sfuServerOverrideHost || [this._sfuServer.url];
-        const searchParams = new URLSearchParams({
-            clientId: this._selfId,
-            organizationId: this._room.organizationId,
-            roomName: this._room.name,
-            eventClaim: this._room.isClaimed ? this._eventClaim : null,
-            lowBw: "true",
-            ...Object.keys(this._features || {})
-                .filter((featureKey) => this._features[featureKey] && /^sfu/.test(featureKey))
-                .reduce((prev, current) => ({ ...prev, [current]: this._features[current] }), {}),
-        });
-        const queryString = searchParams.toString();
-        const wsUrl = `wss://${host}?${queryString}`;
-
-        this._vegaConnection = new VegaConnection(wsUrl);
-        this._hasVegaConnection = true;
-        this._vegaConnection.on("open", () => this._join());
-        this._vegaConnection.on("close", () => this._onClose());
-        this._vegaConnection.on("message", (message: any) => this._onMessage(message));
-    }
-
-    // if everything works we can replace the old connect with this new one
-    // for now we test by gradual rollout of sfuConnectionManagerOn flag
-    _connect_v2() {
         if (this._features.sfuReconnectV2On) {
             if (this._isConnectingOrConnected) return;
 
@@ -450,7 +405,6 @@ export default class VegaRtcManager implements RtcManager {
 
     _onClose() {
         logger.info("_onClose()");
-        this._hasVegaConnection = false;
 
         // These will clean up any and all producers/consumers
         this._sendTransport?.close();
