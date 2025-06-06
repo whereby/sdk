@@ -48,7 +48,7 @@ export const appSlice = createSlice({
     name: "app",
     initialState,
     reducers: {
-        doAppStart: (state, action: PayloadAction<AppConfig>) => {
+        doAppSetup: (state, action: PayloadAction<AppConfig>) => {
             const url = new URL(action.payload.roomUrl);
 
             return {
@@ -56,8 +56,11 @@ export const appSlice = createSlice({
                 ...action.payload,
                 roomName: url.pathname,
                 initialConfig: { ...action.payload },
-                isActive: true,
+                isActive: false,
             };
+        },
+        doAppStart: (state) => {
+            return { ...state, isActive: true };
         },
         doAppStop: (state) => {
             return { ...state, isActive: false };
@@ -69,7 +72,7 @@ export const appSlice = createSlice({
  * Action creators
  */
 
-export const { doAppStop, doAppStart } = appSlice.actions;
+export const { doAppStop, doAppStart, doAppSetup } = appSlice.actions;
 
 /**
  * Selectors
