@@ -31,7 +31,7 @@ const VIDEO_SETTINGS_VP9 = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
-    encodings: [{ scalabilityMode: "L3T2_KEY" }],
+    encodings: [{ scalabilityMode: "L3T2_KEY", maxBitrate: 1650000 }],
 };
 
 const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
