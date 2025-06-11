@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.27.0
+
+### Minor Changes
+
+- ee76ef5: Limit bandwidth for large rooms sending VP9
+
 ## 1.26.0
 
 ### Minor Changes
