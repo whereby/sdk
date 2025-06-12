@@ -433,10 +433,13 @@ export default class VegaRtcManager implements RtcManager {
             const { routerRtpCapabilities } = await this._vegaConnection.request("getCapabilities");
 
             if (!this._routerRtpCapabilities) {
-                modifyMediaCapabilities(routerRtpCapabilities, { ...this._features, vp9On: this._features.sfuVp9On });
+                const modifiedCapabilities = modifyMediaCapabilities(routerRtpCapabilities, {
+                    ...this._features,
+                    vp9On: this._features.sfuVp9On,
+                });
 
-                this._routerRtpCapabilities = routerRtpCapabilities;
-                await this._mediasoupDevice?.load({ routerRtpCapabilities });
+                this._routerRtpCapabilities = modifiedCapabilities;
+                await this._mediasoupDevice?.load({ routerRtpCapabilities: modifiedCapabilities });
             }
 
             this._vegaConnection.message("setCapabilities", {

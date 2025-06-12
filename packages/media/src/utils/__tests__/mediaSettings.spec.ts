@@ -1,3 +1,4 @@
+import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import {
     ADDITIONAL_SCREEN_SHARE_SETTINGS,
     ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9,
@@ -14,9 +15,11 @@ import {
     VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY,
     sortCodecs,
     getMediaSettings,
+    modifyMediaCapabilities,
 } from "../mediaSettings";
-
 import { type Codec } from "../mediaSettings";
+import mockRouterRtpCapabilities from "./mockRouterRtpCapabilities.json";
+import assert from "assert";
 
 jest.mock("webrtc-adapter", () => ({ browserDetails: { browser: "firefox" } }));
 
@@ -165,7 +168,7 @@ describe("sortCodecs", () => {
     });
 
     describe("with av1On and vp9On enabled", () => {
-        it("prioritises AV1", async () => {
+        it("prioritizes AV1", async () => {
             const sorted = await sortCodecs(codecs, { av1On: true, vp9On: true });
 
             expect(sorted.findIndex((codec: Codec) => !!codec.mimeType.match(/av1/i))).toEqual(0);
@@ -323,4 +326,76 @@ describe("getMediaSettings", () => {
             expect(getMediaSettings(kind, isScreenshare, features, isSomeoneAlreadyPresenting)).toEqual(expected);
         },
     );
+});
+
+describe("modifyMediaCapabilities", () => {
+    it("does nothing with no flags", () => {
+        const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {});
+
+        expect(modifiedCapabilities).toEqual(mockRouterRtpCapabilities);
+    });
+
+    it("prioritizes H264", () => {
+        const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+            h264On: true,
+            vp9On: false,
+        });
+
+        expect(modifiedCapabilities.codecs?.length).toEqual(mockRouterRtpCapabilities.codecs.length);
+        assert(modifiedCapabilities.codecs); // for typescript
+        expect(modifiedCapabilities.codecs[0].mimeType).toEqual("video/H264");
+        expect(modifiedCapabilities.codecs[1].parameters?.apt).toEqual(
+            modifiedCapabilities.codecs[0].preferredPayloadType,
+        );
+    });
+
+    describe("vp9On", () => {
+        describe("when not using chrome", () => {
+            beforeEach(() => {
+                const webrtcAdapter = jest.requireMock("webrtc-adapter");
+                webrtcAdapter.browserDetails.browser = "firefox";
+            });
+
+            it("does nothing", () => {
+                const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+                    vp9On: true,
+                });
+
+                expect(modifiedCapabilities).toEqual(mockRouterRtpCapabilities);
+            });
+        });
+        describe("when using chrome", () => {
+            beforeEach(() => {
+                const webrtcAdapter = jest.requireMock("webrtc-adapter");
+                webrtcAdapter.browserDetails.browser = "chrome";
+            });
+
+            it("prioritizes VP9", () => {
+                const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+                    vp9On: true,
+                });
+
+                expect(modifiedCapabilities.codecs?.length).toEqual(mockRouterRtpCapabilities.codecs.length);
+                assert(modifiedCapabilities.codecs); // for typescript
+                expect(modifiedCapabilities.codecs[0].mimeType).toEqual("video/VP9");
+                expect(modifiedCapabilities.codecs[1].parameters?.apt).toEqual(
+                    modifiedCapabilities.codecs[0].preferredPayloadType,
+                );
+            });
+
+            it("prioritizes VP9 over H264", () => {
+                const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+                    vp9On: true,
+                    h264On: true,
+                });
+
+                expect(modifiedCapabilities.codecs?.length).toEqual(mockRouterRtpCapabilities.codecs.length);
+                assert(modifiedCapabilities.codecs); // for typescript
+                expect(modifiedCapabilities.codecs[0].mimeType).toEqual("video/VP9");
+                expect(modifiedCapabilities.codecs[1].parameters?.apt).toEqual(
+                    modifiedCapabilities.codecs[0].preferredPayloadType,
+                );
+            });
+        });
+    });
 });

@@ -1,3 +1,4 @@
+import { RtpCapabilities, RtpCodecCapability } from "mediasoup-client/lib/RtpParameters";
 import adapter from "webrtc-adapter";
 
 export const AUDIO_SETTINGS = {
@@ -175,46 +176,52 @@ const getScreenShareMediaSettings = ({
     return SCREEN_SHARE_SETTINGS;
 };
 
+enum PrioritizableCodec {
+    H264 = "video/h264",
+    VP9 = "video/vp9",
+}
 export const modifyMediaCapabilities = (
-    routerRtpCapabilities: any,
+    routerRtpCapabilities: RtpCapabilities,
     features: { vp9On?: boolean; h264On?: boolean },
 ) => {
     const { vp9On, h264On } = features;
-
-    if (vp9On) {
-        const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) => codec.mimeType.toLowerCase() === "video/vp9",
-        );
-
-        const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) =>
-                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType,
-        );
-
-        routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
-            (codec: any) =>
-                codec.kind === "audio" ||
-                codec.preferredPayloadType === preferredPayloadType ||
-                codec.preferredPayloadType === aptPreferredPayloadType,
-        );
-    } else if (h264On) {
-        const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) => codec.mimeType.toLowerCase() === "video/h264",
-        );
-
-        const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) =>
-                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType,
-        );
-
-        routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
-            (codec: any) =>
-                codec.kind === "audio" ||
-                codec.preferredPayloadType === preferredPayloadType ||
-                codec.preferredPayloadType === aptPreferredPayloadType,
-        );
+    const isChrome = adapter.browserDetails.browser === "chrome";
+    if (!routerRtpCapabilities?.codecs) {
+        return routerRtpCapabilities;
     }
+
+    if (vp9On && isChrome) {
+        const sorted = prioritizeRouterRtpCapabilitiesCodecs(routerRtpCapabilities.codecs, PrioritizableCodec.VP9);
+        return { ...routerRtpCapabilities, codecs: sorted };
+    } else if (h264On) {
+        const sorted = prioritizeRouterRtpCapabilitiesCodecs(routerRtpCapabilities.codecs, PrioritizableCodec.H264);
+        return { ...routerRtpCapabilities, codecs: sorted };
+    }
+
+    return routerRtpCapabilities;
 };
+
+function prioritizeRouterRtpCapabilitiesCodecs(codecs: RtpCodecCapability[], preferredCodec: PrioritizableCodec) {
+    const preferredCodecEntry = codecs.find(({ mimeType }) => mimeType.toLowerCase() === preferredCodec);
+    if (!preferredCodecEntry) {
+        return codecs;
+    }
+    return [...codecs].sort((left, right) => {
+        if (left.mimeType.toLowerCase() === preferredCodec) {
+            return -1;
+        }
+        if (
+            left.mimeType.toLowerCase() === "video/rtx" &&
+            left.parameters.apt === preferredCodecEntry.preferredPayloadType
+        ) {
+            if (right.mimeType.toLowerCase() === preferredCodec) {
+                return 1;
+            }
+            return -1;
+        }
+        return 0;
+    });
+}
 
 function getPreferredOrder(availableCodecs: string[], { vp9On, av1On }: { vp9On?: boolean; av1On?: boolean }) {
     if (vp9On) {
