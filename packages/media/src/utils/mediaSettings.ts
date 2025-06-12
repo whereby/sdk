@@ -1,4 +1,4 @@
-const AUDIO_SETTINGS = {
+export const AUDIO_SETTINGS = {
     codecOptions: {
         opusDtx: true,
         opusFec: true,
@@ -6,7 +6,7 @@ const AUDIO_SETTINGS = {
     encodings: [{ dtx: true }],
 };
 
-const VIDEO_SETTINGS_HD = {
+export const VIDEO_SETTINGS_HD = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
@@ -17,7 +17,7 @@ const VIDEO_SETTINGS_HD = {
     ],
 };
 
-const VIDEO_SETTINGS_SD = {
+export const VIDEO_SETTINGS_SD = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
@@ -27,25 +27,25 @@ const VIDEO_SETTINGS_SD = {
     ],
 };
 
-const VIDEO_SETTINGS_VP9 = {
+export const VIDEO_SETTINGS_VP9 = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
     encodings: [{ scalabilityMode: "L3T2_KEY", maxBitrate: 1650000 }],
 };
 
-const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
+export const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
     encodings: [{ scalabilityMode: "L2T2_KEY", maxBitrate: 800000 }],
 };
 
-const SCREEN_SHARE_SETTINGS = {
+export const SCREEN_SHARE_SETTINGS = {
     encodings: [{}],
 };
 
-const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
+export const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
     encodings: [
         {
             maxBitrate: 600000,
@@ -54,14 +54,14 @@ const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
     ],
 };
 
-const SCREEN_SHARE_SIMULCAST_SETTINGS = {
+export const SCREEN_SHARE_SIMULCAST_SETTINGS = {
     encodings: [
         { scaleResolutionDownBy: 2, dtx: true, maxBitrate: 500000 },
         { scaleResolutionDownBy: 1, dtx: true, maxBitrate: 1500000 },
     ],
 };
 
-const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
+export const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
     encodings: [
         { scaleResolutionDownBy: 4, dtx: true, maxBitrate: 150000 },
         { scaleResolutionDownBy: 2, dtx: true, maxBitrate: 500000 },
@@ -69,11 +69,11 @@ const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
     ],
 };
 
-const ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9 = {
+export const ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9 = {
     encodings: [{ scalabilityMode: "L2T2_KEY", dtx: true, maxBitrate: 1500000 }],
 };
 
-const SCREEN_SHARE_SETTINGS_VP9 = {
+export const SCREEN_SHARE_SETTINGS_VP9 = {
     encodings: [{ dtx: true }],
 };
 
