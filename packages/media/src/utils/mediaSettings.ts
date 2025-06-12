@@ -95,25 +95,61 @@ export const getMediaSettings = (
     }
 
     if (isScreenShare) {
-        if (isSomeoneAlreadyPresenting) {
-            if (vp9On) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
-            return ADDITIONAL_SCREEN_SHARE_SETTINGS;
-        }
-        if (lowBandwidth && !vp9On) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
-        if (vp9On) return SCREEN_SHARE_SETTINGS_VP9;
-        if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
-
-        return SCREEN_SHARE_SETTINGS;
+        return getScreenShareMediaSettings({
+            lowBandwidth: lowBandwidth,
+            vp9On,
+            isSomeoneAlreadyPresenting,
+            simulcastScreenshareOn,
+        });
     } else {
-        if (lowBandwidth) {
-            if (vp9On) return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH;
-            return VIDEO_SETTINGS_SD;
-        }
-        if (vp9On) return VIDEO_SETTINGS_VP9;
-        if (lowDataModeEnabled) return VIDEO_SETTINGS_SD;
-
-        return VIDEO_SETTINGS_HD;
+        return getCameraMediaSettings({
+            lowBandwidth: lowBandwidth || lowDataModeEnabled,
+            vp9On,
+        });
     }
+};
+
+const getCameraMediaSettings = ({
+    lowBandwidth,
+    vp9On,
+}: {
+    lowBandwidth?: boolean;
+    vp9On?: boolean;
+    svcKeyScalabilityModeOn?: boolean;
+}) => {
+    if (lowBandwidth) {
+        if (vp9On) {
+            return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH;
+        }
+        return VIDEO_SETTINGS_SD;
+    }
+    if (vp9On) {
+        return VIDEO_SETTINGS_VP9;
+    }
+
+    return VIDEO_SETTINGS_HD;
+};
+
+const getScreenShareMediaSettings = ({
+    lowBandwidth,
+    vp9On,
+    isSomeoneAlreadyPresenting,
+    simulcastScreenshareOn,
+}: {
+    lowBandwidth?: boolean;
+    vp9On?: boolean;
+    isSomeoneAlreadyPresenting?: boolean;
+    simulcastScreenshareOn?: boolean;
+}) => {
+    if (isSomeoneAlreadyPresenting) {
+        if (vp9On) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
+        return ADDITIONAL_SCREEN_SHARE_SETTINGS;
+    }
+    if (lowBandwidth && !vp9On) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
+    if (vp9On) return SCREEN_SHARE_SETTINGS_VP9;
+    if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
+
+    return SCREEN_SHARE_SETTINGS;
 };
 
 export const modifyMediaCapabilities = (
