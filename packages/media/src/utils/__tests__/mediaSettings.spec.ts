@@ -9,11 +9,17 @@ import {
     VIDEO_SETTINGS_HD,
     VIDEO_SETTINGS_SD,
     VIDEO_SETTINGS_VP9,
+    VIDEO_SETTINGS_VP9_KEY,
     VIDEO_SETTINGS_VP9_LOW_BANDWIDTH,
-    getMediaSettings,
+    VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY,
     sortCodecs,
+    getMediaSettings,
 } from "../mediaSettings";
+
 import { type Codec } from "../mediaSettings";
+
+jest.mock("webrtc-adapter", () => ({ browserDetails: { browser: "firefox" } }));
+
 describe("sortCodecs", () => {
     const codecs: Codec[] = [
         {
@@ -262,52 +268,35 @@ describe("sortCodecs", () => {
 });
 
 describe("getMediaSettings", () => {
-    const x = () => Math.random() > 0.5;
+    const randomBoolean = () => Math.random() > 0.5;
+    const randomBrowser = () => (randomBoolean() ? "chrome" : "not chrome");
 
     it.each`
-        kind       | isScreenshare | lowDataModeEnabled | isSomeoneAlreadyPresenting | simulcastScreenshareOn | lowBandwidth | vp9On    | expected
-        ${"audio"} | ${x()}        | ${x()}             | ${x()}                     | ${x()}                 | ${x()}       | ${x()}   | ${AUDIO_SETTINGS}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${true}                | ${false}     | ${false} | ${VIDEO_SETTINGS_HD}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${false}               | ${false}     | ${false} | ${VIDEO_SETTINGS_HD}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${true}                | ${false}     | ${false} | ${VIDEO_SETTINGS_HD}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${false}               | ${false}     | ${false} | ${VIDEO_SETTINGS_HD}
-        ${"video"} | ${false}      | ${true}            | ${true}                    | ${true}                | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${true}            | ${true}                    | ${true}                | ${false}     | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${true}            | ${true}                    | ${false}               | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${true}            | ${true}                    | ${false}               | ${false}     | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${true}            | ${false}                   | ${true}                | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${true}            | ${false}                   | ${true}                | ${false}     | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${true}            | ${false}                   | ${false}               | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${true}            | ${false}                   | ${false}               | ${false}     | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${true}                | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${false}               | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${true}                | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${false}               | ${true}      | ${false} | ${VIDEO_SETTINGS_SD}
-        ${"video"} | ${true}       | ${false}           | ${false}                   | ${false}               | ${false}     | ${false} | ${SCREEN_SHARE_SETTINGS}
-        ${"video"} | ${true}       | ${true}            | ${false}                   | ${false}               | ${false}     | ${false} | ${SCREEN_SHARE_SETTINGS}
-        ${"video"} | ${true}       | ${false}           | ${false}                   | ${false}               | ${false}     | ${true}  | ${SCREEN_SHARE_SETTINGS_VP9}
-        ${"video"} | ${true}       | ${true}            | ${false}                   | ${false}               | ${false}     | ${true}  | ${SCREEN_SHARE_SETTINGS_VP9}
-        ${"video"} | ${true}       | ${true}            | ${false}                   | ${true}                | ${false}     | ${false} | ${SCREEN_SHARE_SIMULCAST_SETTINGS}
-        ${"video"} | ${true}       | ${true}            | ${false}                   | ${false}               | ${true}      | ${false} | ${SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH}
-        ${"video"} | ${true}       | ${false}           | ${false}                   | ${false}               | ${true}      | ${false} | ${SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH}
-        ${"video"} | ${true}       | ${true}            | ${true}                    | ${false}               | ${true}      | ${false} | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}
-        ${"video"} | ${true}       | ${false}           | ${true}                    | ${false}               | ${true}      | ${false} | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}
-        ${"video"} | ${true}       | ${true}            | ${true}                    | ${false}               | ${true}      | ${true}  | ${ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9}
-        ${"video"} | ${true}       | ${false}           | ${true}                    | ${false}               | ${true}      | ${true}  | ${ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${true}                | ${false}     | ${true}  | ${VIDEO_SETTINGS_VP9}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${false}               | ${false}     | ${true}  | ${VIDEO_SETTINGS_VP9}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${true}                | ${false}     | ${true}  | ${VIDEO_SETTINGS_VP9}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${false}               | ${false}     | ${true}  | ${VIDEO_SETTINGS_VP9}
-        ${"video"} | ${false}      | ${true}            | ${true}                    | ${true}                | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
-        ${"video"} | ${false}      | ${true}            | ${true}                    | ${false}               | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
-        ${"video"} | ${false}      | ${true}            | ${false}                   | ${true}                | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
-        ${"video"} | ${false}      | ${true}            | ${false}                   | ${false}               | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${true}                | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
-        ${"video"} | ${false}      | ${false}           | ${true}                    | ${false}               | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${true}                | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
-        ${"video"} | ${false}      | ${false}           | ${false}                   | ${false}               | ${true}      | ${true}  | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
+        kind       | isScreenshare      | lowDataModeEnabled | isSomeoneAlreadyPresenting | simulcastScreenshareOn | lowBandwidth       | vp9On              | svcKeyScalabilityModeOn | browser            | expected
+        ${"audio"} | ${randomBoolean()} | ${randomBoolean()} | ${randomBoolean()}         | ${randomBoolean()}     | ${randomBoolean()} | ${randomBoolean()} | ${randomBoolean()}      | ${randomBrowser()} | ${AUDIO_SETTINGS}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${VIDEO_SETTINGS_HD}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${randomBoolean()}      | ${"not_chrome"}    | ${VIDEO_SETTINGS_HD}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${randomBoolean()} | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${VIDEO_SETTINGS_SD}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${VIDEO_SETTINGS_SD}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${randomBoolean()}      | ${"not_chrome"}    | ${VIDEO_SETTINGS_SD}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${true}            | ${randomBoolean()}      | ${"not chrome"}    | ${SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${true}            | ${randomBoolean()}      | ${"chrome"}        | ${SCREEN_SHARE_SETTINGS_VP9}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${true}                | ${false}           | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${SCREEN_SHARE_SIMULCAST_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${true}            | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${true}            | ${randomBoolean()}      | ${"not chrome"}    | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${true}            | ${randomBoolean()}      | ${"chrome"}        | ${ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_KEY}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY}
     `(
-        "should return $expected when isScreenshare:$isScreenshare, isSomeoneAlreadyPresenting:$isSomeoneAlreadyPresenting, lowDataModeEnabled:$lowDataModeEnabled, simulcastScreenshareOn:$simulcastScreenshareOn, lowBandwidth:$lowBandwidth, vp9On:$vp9On",
+        "should return $expected when isScreenshare:$isScreenshare, isSomeoneAlreadyPresenting:$isSomeoneAlreadyPresenting, lowDataModeEnabled:$lowDataModeEnabled, simulcastScreenshareOn:$simulcastScreenshareOn, lowBandwidth:$lowBandwidth, vp9On:$vp9On, svcKeyScalabilityModeOn:$svcKeyScalabilityModeOn, browser:$browser",
         ({
             kind,
             isScreenshare,
@@ -316,9 +305,20 @@ describe("getMediaSettings", () => {
             simulcastScreenshareOn,
             lowBandwidth,
             vp9On,
+            svcKeyScalabilityModeOn,
+            browser,
             expected,
         }) => {
-            const features = { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On };
+            const webrtcAdapterMock = jest.requireMock("webrtc-adapter");
+            webrtcAdapterMock.browserDetails.browser = browser;
+
+            const features = {
+                lowDataModeEnabled,
+                simulcastScreenshareOn,
+                lowBandwidth,
+                vp9On,
+                svcKeyScalabilityModeOn,
+            };
 
             expect(getMediaSettings(kind, isScreenshare, features, isSomeoneAlreadyPresenting)).toEqual(expected);
         },

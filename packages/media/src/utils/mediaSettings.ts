@@ -1,3 +1,5 @@
+import adapter from "webrtc-adapter";
+
 export const AUDIO_SETTINGS = {
     codecOptions: {
         opusDtx: true,
@@ -31,14 +33,28 @@ export const VIDEO_SETTINGS_VP9 = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
-    encodings: [{ scalabilityMode: "L3T2_KEY", maxBitrate: 1650000 }],
+    encodings: [{ scalabilityMode: "L3T2", maxBitrate: 1000000 }],
+};
+
+export const VIDEO_SETTINGS_VP9_KEY = {
+    codecOptions: {
+        videoGoogleStartBitrate: 500,
+    },
+    encodings: [{ scalabilityMode: "L3T2_KEY", maxBitrate: 1250000 }],
 };
 
 export const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
-    encodings: [{ scalabilityMode: "L2T2_KEY", maxBitrate: 800000 }],
+    encodings: [{ scalabilityMode: "L2T2", maxBitrate: 500000 }],
+};
+
+export const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY = {
+    codecOptions: {
+        videoGoogleStartBitrate: 500,
+    },
+    encodings: [{ scalabilityMode: "L2T2_KEY", maxBitrate: 650000 }],
 };
 
 export const SCREEN_SHARE_SETTINGS = {
@@ -85,45 +101,52 @@ export const getMediaSettings = (
         simulcastScreenshareOn?: boolean;
         lowBandwidth?: boolean;
         vp9On?: boolean;
+        svcKeyScalabilityModeOn?: boolean;
     },
     isSomeoneAlreadyPresenting = false,
 ) => {
-    const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On } = features;
+    const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On, svcKeyScalabilityModeOn } = features;
 
     if (kind === "audio") {
         return AUDIO_SETTINGS;
     }
+    const isChrome = adapter.browserDetails.browser === "chrome";
 
+    const isVp9Available = isChrome && vp9On;
     if (isScreenShare) {
         return getScreenShareMediaSettings({
             lowBandwidth: lowBandwidth,
-            vp9On,
+            isVp9Available,
             isSomeoneAlreadyPresenting,
             simulcastScreenshareOn,
         });
     } else {
         return getCameraMediaSettings({
             lowBandwidth: lowBandwidth || lowDataModeEnabled,
-            vp9On,
+            isVp9Available,
+            svcKeyScalabilityModeOn,
         });
     }
 };
 
 const getCameraMediaSettings = ({
     lowBandwidth,
-    vp9On,
+    isVp9Available,
+    svcKeyScalabilityModeOn,
 }: {
     lowBandwidth?: boolean;
-    vp9On?: boolean;
+    isVp9Available?: boolean;
     svcKeyScalabilityModeOn?: boolean;
 }) => {
     if (lowBandwidth) {
-        if (vp9On) {
+        if (isVp9Available) {
+            if (svcKeyScalabilityModeOn) return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY;
             return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH;
         }
         return VIDEO_SETTINGS_SD;
     }
-    if (vp9On) {
+    if (isVp9Available) {
+        if (svcKeyScalabilityModeOn) return VIDEO_SETTINGS_VP9_KEY;
         return VIDEO_SETTINGS_VP9;
     }
 
@@ -132,21 +155,21 @@ const getCameraMediaSettings = ({
 
 const getScreenShareMediaSettings = ({
     lowBandwidth,
-    vp9On,
+    isVp9Available,
     isSomeoneAlreadyPresenting,
     simulcastScreenshareOn,
 }: {
     lowBandwidth?: boolean;
-    vp9On?: boolean;
+    isVp9Available?: boolean;
     isSomeoneAlreadyPresenting?: boolean;
     simulcastScreenshareOn?: boolean;
 }) => {
     if (isSomeoneAlreadyPresenting) {
-        if (vp9On) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
+        if (isVp9Available) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
         return ADDITIONAL_SCREEN_SHARE_SETTINGS;
     }
-    if (lowBandwidth && !vp9On) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
-    if (vp9On) return SCREEN_SHARE_SETTINGS_VP9;
+    if (lowBandwidth && !isVp9Available) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
+    if (isVp9Available) return SCREEN_SHARE_SETTINGS_VP9;
     if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
 
     return SCREEN_SHARE_SETTINGS;
