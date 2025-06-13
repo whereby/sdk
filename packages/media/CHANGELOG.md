@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.28.0
+
+### Minor Changes
+
+- 2a9feee: Update preferred codec logic in Group mode rooms
+
 ## 1.27.0
 
 ### Minor Changes
