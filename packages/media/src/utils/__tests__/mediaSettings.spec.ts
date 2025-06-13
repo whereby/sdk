@@ -1,5 +1,27 @@
-import { sortCodecs } from "../mediaSettings";
+import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
+import {
+    ADDITIONAL_SCREEN_SHARE_SETTINGS,
+    ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9,
+    AUDIO_SETTINGS,
+    SCREEN_SHARE_SETTINGS,
+    SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH,
+    SCREEN_SHARE_SIMULCAST_SETTINGS,
+    SCREEN_SHARE_SETTINGS_VP9,
+    VIDEO_SETTINGS_HD,
+    VIDEO_SETTINGS_SD,
+    VIDEO_SETTINGS_VP9,
+    VIDEO_SETTINGS_VP9_KEY,
+    VIDEO_SETTINGS_VP9_LOW_BANDWIDTH,
+    VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY,
+    sortCodecs,
+    getMediaSettings,
+    modifyMediaCapabilities,
+} from "../mediaSettings";
 import { type Codec } from "../mediaSettings";
+import mockRouterRtpCapabilities from "./mockRouterRtpCapabilities.json";
+import assert from "assert";
+
+jest.mock("webrtc-adapter", () => ({ browserDetails: { browser: "firefox" } }));
 
 describe("sortCodecs", () => {
     const codecs: Codec[] = [
@@ -146,7 +168,7 @@ describe("sortCodecs", () => {
     });
 
     describe("with av1On and vp9On enabled", () => {
-        it("prioritises AV1", async () => {
+        it("prioritizes AV1", async () => {
             const sorted = await sortCodecs(codecs, { av1On: true, vp9On: true });
 
             expect(sorted.findIndex((codec: Codec) => !!codec.mimeType.match(/av1/i))).toEqual(0);
@@ -243,6 +265,136 @@ describe("sortCodecs", () => {
                         mimeType: "video/VP8",
                     },
                 ]);
+            });
+        });
+    });
+});
+
+describe("getMediaSettings", () => {
+    const randomBoolean = () => Math.random() > 0.5;
+    const randomBrowser = () => (randomBoolean() ? "chrome" : "not chrome");
+
+    it.each`
+        kind       | isScreenshare      | lowDataModeEnabled | isSomeoneAlreadyPresenting | simulcastScreenshareOn | lowBandwidth       | vp9On              | svcKeyScalabilityModeOn | browser            | expected
+        ${"audio"} | ${randomBoolean()} | ${randomBoolean()} | ${randomBoolean()}         | ${randomBoolean()}     | ${randomBoolean()} | ${randomBoolean()} | ${randomBoolean()}      | ${randomBrowser()} | ${AUDIO_SETTINGS}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${VIDEO_SETTINGS_HD}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${randomBoolean()}      | ${"not_chrome"}    | ${VIDEO_SETTINGS_HD}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${randomBoolean()} | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${VIDEO_SETTINGS_SD}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${VIDEO_SETTINGS_SD}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${randomBoolean()}      | ${"not_chrome"}    | ${VIDEO_SETTINGS_SD}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${true}            | ${randomBoolean()}      | ${"not chrome"}    | ${SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${true}            | ${randomBoolean()}      | ${"chrome"}        | ${SCREEN_SHARE_SETTINGS_VP9}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${true}                | ${false}           | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${SCREEN_SHARE_SIMULCAST_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${true}            | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${false}           | ${randomBoolean()}      | ${randomBrowser()} | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${true}            | ${randomBoolean()}      | ${"not chrome"}    | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${true}            | ${randomBoolean()}      | ${"chrome"}        | ${ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_KEY}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${false}                | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${true}            | ${true}                 | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY}
+    `(
+        "should return $expected when isScreenshare:$isScreenshare, isSomeoneAlreadyPresenting:$isSomeoneAlreadyPresenting, lowDataModeEnabled:$lowDataModeEnabled, simulcastScreenshareOn:$simulcastScreenshareOn, lowBandwidth:$lowBandwidth, vp9On:$vp9On, svcKeyScalabilityModeOn:$svcKeyScalabilityModeOn, browser:$browser",
+        ({
+            kind,
+            isScreenshare,
+            isSomeoneAlreadyPresenting,
+            lowDataModeEnabled,
+            simulcastScreenshareOn,
+            lowBandwidth,
+            vp9On,
+            svcKeyScalabilityModeOn,
+            browser,
+            expected,
+        }) => {
+            const webrtcAdapterMock = jest.requireMock("webrtc-adapter");
+            webrtcAdapterMock.browserDetails.browser = browser;
+
+            const features = {
+                lowDataModeEnabled,
+                simulcastScreenshareOn,
+                lowBandwidth,
+                vp9On,
+                svcKeyScalabilityModeOn,
+            };
+
+            expect(getMediaSettings(kind, isScreenshare, features, isSomeoneAlreadyPresenting)).toEqual(expected);
+        },
+    );
+});
+
+describe("modifyMediaCapabilities", () => {
+    it("does nothing with no flags", () => {
+        const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {});
+
+        expect(modifiedCapabilities).toEqual(mockRouterRtpCapabilities);
+    });
+
+    it("prioritizes H264", () => {
+        const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+            h264On: true,
+            vp9On: false,
+        });
+
+        expect(modifiedCapabilities.codecs?.length).toEqual(mockRouterRtpCapabilities.codecs.length);
+        assert(modifiedCapabilities.codecs); // for typescript
+        expect(modifiedCapabilities.codecs[0].mimeType).toEqual("video/H264");
+        expect(modifiedCapabilities.codecs[1].parameters?.apt).toEqual(
+            modifiedCapabilities.codecs[0].preferredPayloadType,
+        );
+    });
+
+    describe("vp9On", () => {
+        describe("when not using chrome", () => {
+            beforeEach(() => {
+                const webrtcAdapter = jest.requireMock("webrtc-adapter");
+                webrtcAdapter.browserDetails.browser = "firefox";
+            });
+
+            it("does nothing", () => {
+                const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+                    vp9On: true,
+                });
+
+                expect(modifiedCapabilities).toEqual(mockRouterRtpCapabilities);
+            });
+        });
+        describe("when using chrome", () => {
+            beforeEach(() => {
+                const webrtcAdapter = jest.requireMock("webrtc-adapter");
+                webrtcAdapter.browserDetails.browser = "chrome";
+            });
+
+            it("prioritizes VP9", () => {
+                const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+                    vp9On: true,
+                });
+
+                expect(modifiedCapabilities.codecs?.length).toEqual(mockRouterRtpCapabilities.codecs.length);
+                assert(modifiedCapabilities.codecs); // for typescript
+                expect(modifiedCapabilities.codecs[0].mimeType).toEqual("video/VP9");
+                expect(modifiedCapabilities.codecs[1].parameters?.apt).toEqual(
+                    modifiedCapabilities.codecs[0].preferredPayloadType,
+                );
+            });
+
+            it("prioritizes VP9 over H264", () => {
+                const modifiedCapabilities = modifyMediaCapabilities(mockRouterRtpCapabilities as RtpCapabilities, {
+                    vp9On: true,
+                    h264On: true,
+                });
+
+                expect(modifiedCapabilities.codecs?.length).toEqual(mockRouterRtpCapabilities.codecs.length);
+                assert(modifiedCapabilities.codecs); // for typescript
+                expect(modifiedCapabilities.codecs[0].mimeType).toEqual("video/VP9");
+                expect(modifiedCapabilities.codecs[1].parameters?.apt).toEqual(
+                    modifiedCapabilities.codecs[0].preferredPayloadType,
+                );
             });
         });
     });

@@ -1,4 +1,7 @@
-const AUDIO_SETTINGS = {
+import { RtpCapabilities, RtpCodecCapability } from "mediasoup-client/lib/RtpParameters";
+import adapter from "webrtc-adapter";
+
+export const AUDIO_SETTINGS = {
     codecOptions: {
         opusDtx: true,
         opusFec: true,
@@ -6,7 +9,7 @@ const AUDIO_SETTINGS = {
     encodings: [{ dtx: true }],
 };
 
-const VIDEO_SETTINGS_HD = {
+export const VIDEO_SETTINGS_HD = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
@@ -17,7 +20,7 @@ const VIDEO_SETTINGS_HD = {
     ],
 };
 
-const VIDEO_SETTINGS_SD = {
+export const VIDEO_SETTINGS_SD = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
@@ -27,25 +30,39 @@ const VIDEO_SETTINGS_SD = {
     ],
 };
 
-const VIDEO_SETTINGS_VP9 = {
+export const VIDEO_SETTINGS_VP9 = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
-    encodings: [{ scalabilityMode: "L3T2_KEY", maxBitrate: 1650000 }],
+    encodings: [{ scalabilityMode: "L3T2", maxBitrate: 1000000 }],
 };
 
-const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
+export const VIDEO_SETTINGS_VP9_KEY = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
-    encodings: [{ scalabilityMode: "L2T2_KEY", maxBitrate: 800000 }],
+    encodings: [{ scalabilityMode: "L3T2_KEY", maxBitrate: 1250000 }],
 };
 
-const SCREEN_SHARE_SETTINGS = {
+export const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
+    codecOptions: {
+        videoGoogleStartBitrate: 500,
+    },
+    encodings: [{ scalabilityMode: "L2T2", maxBitrate: 500000 }],
+};
+
+export const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY = {
+    codecOptions: {
+        videoGoogleStartBitrate: 500,
+    },
+    encodings: [{ scalabilityMode: "L2T2_KEY", maxBitrate: 650000 }],
+};
+
+export const SCREEN_SHARE_SETTINGS = {
     encodings: [{}],
 };
 
-const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
+export const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
     encodings: [
         {
             maxBitrate: 600000,
@@ -54,14 +71,14 @@ const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
     ],
 };
 
-const SCREEN_SHARE_SIMULCAST_SETTINGS = {
+export const SCREEN_SHARE_SIMULCAST_SETTINGS = {
     encodings: [
         { scaleResolutionDownBy: 2, dtx: true, maxBitrate: 500000 },
         { scaleResolutionDownBy: 1, dtx: true, maxBitrate: 1500000 },
     ],
 };
 
-const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
+export const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
     encodings: [
         { scaleResolutionDownBy: 4, dtx: true, maxBitrate: 150000 },
         { scaleResolutionDownBy: 2, dtx: true, maxBitrate: 500000 },
@@ -69,11 +86,11 @@ const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
     ],
 };
 
-const ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9 = {
+export const ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9 = {
     encodings: [{ scalabilityMode: "L2T2_KEY", dtx: true, maxBitrate: 1500000 }],
 };
 
-const SCREEN_SHARE_SETTINGS_VP9 = {
+export const SCREEN_SHARE_SETTINGS_VP9 = {
     encodings: [{ dtx: true }],
 };
 
@@ -85,77 +102,126 @@ export const getMediaSettings = (
         simulcastScreenshareOn?: boolean;
         lowBandwidth?: boolean;
         vp9On?: boolean;
+        svcKeyScalabilityModeOn?: boolean;
     },
     isSomeoneAlreadyPresenting = false,
 ) => {
-    const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On } = features;
+    const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On, svcKeyScalabilityModeOn } = features;
 
     if (kind === "audio") {
         return AUDIO_SETTINGS;
     }
+    const isChrome = adapter.browserDetails.browser === "chrome";
 
+    const isVp9Available = isChrome && vp9On;
     if (isScreenShare) {
-        if (isSomeoneAlreadyPresenting) {
-            if (vp9On) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
-            return ADDITIONAL_SCREEN_SHARE_SETTINGS;
-        }
-        if (lowBandwidth && !vp9On) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
-        if (vp9On) return SCREEN_SHARE_SETTINGS_VP9;
-        if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
-
-        return SCREEN_SHARE_SETTINGS;
+        return getScreenShareMediaSettings({
+            lowBandwidth: lowBandwidth,
+            isVp9Available,
+            isSomeoneAlreadyPresenting,
+            simulcastScreenshareOn,
+        });
     } else {
-        if (lowBandwidth) {
-            if (vp9On) return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH;
-            return VIDEO_SETTINGS_SD;
-        }
-        if (vp9On) return VIDEO_SETTINGS_VP9;
-        if (lowDataModeEnabled) return VIDEO_SETTINGS_SD;
-
-        return VIDEO_SETTINGS_HD;
+        return getCameraMediaSettings({
+            lowBandwidth: lowBandwidth || lowDataModeEnabled,
+            isVp9Available,
+            svcKeyScalabilityModeOn,
+        });
     }
 };
 
+const getCameraMediaSettings = ({
+    lowBandwidth,
+    isVp9Available,
+    svcKeyScalabilityModeOn,
+}: {
+    lowBandwidth?: boolean;
+    isVp9Available?: boolean;
+    svcKeyScalabilityModeOn?: boolean;
+}) => {
+    if (lowBandwidth) {
+        if (isVp9Available) {
+            if (svcKeyScalabilityModeOn) return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY;
+            return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH;
+        }
+        return VIDEO_SETTINGS_SD;
+    }
+    if (isVp9Available) {
+        if (svcKeyScalabilityModeOn) return VIDEO_SETTINGS_VP9_KEY;
+        return VIDEO_SETTINGS_VP9;
+    }
+
+    return VIDEO_SETTINGS_HD;
+};
+
+const getScreenShareMediaSettings = ({
+    lowBandwidth,
+    isVp9Available,
+    isSomeoneAlreadyPresenting,
+    simulcastScreenshareOn,
+}: {
+    lowBandwidth?: boolean;
+    isVp9Available?: boolean;
+    isSomeoneAlreadyPresenting?: boolean;
+    simulcastScreenshareOn?: boolean;
+}) => {
+    if (isSomeoneAlreadyPresenting) {
+        if (isVp9Available) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
+        return ADDITIONAL_SCREEN_SHARE_SETTINGS;
+    }
+    if (lowBandwidth && !isVp9Available) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
+    if (isVp9Available) return SCREEN_SHARE_SETTINGS_VP9;
+    if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
+
+    return SCREEN_SHARE_SETTINGS;
+};
+
+enum PrioritizableCodec {
+    H264 = "video/h264",
+    VP9 = "video/vp9",
+}
 export const modifyMediaCapabilities = (
-    routerRtpCapabilities: any,
+    routerRtpCapabilities: RtpCapabilities,
     features: { vp9On?: boolean; h264On?: boolean },
 ) => {
     const { vp9On, h264On } = features;
-
-    if (vp9On) {
-        const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) => codec.mimeType.toLowerCase() === "video/vp9",
-        );
-
-        const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) =>
-                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType,
-        );
-
-        routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
-            (codec: any) =>
-                codec.kind === "audio" ||
-                codec.preferredPayloadType === preferredPayloadType ||
-                codec.preferredPayloadType === aptPreferredPayloadType,
-        );
-    } else if (h264On) {
-        const { preferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) => codec.mimeType.toLowerCase() === "video/h264",
-        );
-
-        const { preferredPayloadType: aptPreferredPayloadType } = routerRtpCapabilities.codecs.find(
-            (codec: any) =>
-                codec.mimeType.toLowerCase() === "video/rtx" && codec.parameters.apt === preferredPayloadType,
-        );
-
-        routerRtpCapabilities.codecs = routerRtpCapabilities.codecs.filter(
-            (codec: any) =>
-                codec.kind === "audio" ||
-                codec.preferredPayloadType === preferredPayloadType ||
-                codec.preferredPayloadType === aptPreferredPayloadType,
-        );
+    const isChrome = adapter.browserDetails.browser === "chrome";
+    if (!routerRtpCapabilities?.codecs) {
+        return routerRtpCapabilities;
     }
+
+    if (vp9On && isChrome) {
+        const sorted = prioritizeRouterRtpCapabilitiesCodecs(routerRtpCapabilities.codecs, PrioritizableCodec.VP9);
+        return { ...routerRtpCapabilities, codecs: sorted };
+    } else if (h264On) {
+        const sorted = prioritizeRouterRtpCapabilitiesCodecs(routerRtpCapabilities.codecs, PrioritizableCodec.H264);
+        return { ...routerRtpCapabilities, codecs: sorted };
+    }
+
+    return routerRtpCapabilities;
 };
+
+function prioritizeRouterRtpCapabilitiesCodecs(codecs: RtpCodecCapability[], preferredCodec: PrioritizableCodec) {
+    const preferredCodecEntry = codecs.find(({ mimeType }) => mimeType.toLowerCase() === preferredCodec);
+    if (!preferredCodecEntry) {
+        return codecs;
+    }
+    return [...codecs].sort((left, right) => {
+        if (left.mimeType.toLowerCase() === preferredCodec) {
+            return -1;
+        }
+        if (
+            left.mimeType.toLowerCase() === "video/rtx" &&
+            left.parameters.apt === preferredCodecEntry.preferredPayloadType
+        ) {
+            if (right.mimeType.toLowerCase() === preferredCodec) {
+                return 1;
+            }
+            return -1;
+        }
+        return 0;
+    });
+}
 
 function getPreferredOrder(availableCodecs: string[], { vp9On, av1On }: { vp9On?: boolean; av1On?: boolean }) {
     if (vp9On) {
