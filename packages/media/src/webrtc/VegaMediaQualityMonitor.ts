@@ -53,12 +53,12 @@ export default class VegaMediaQualityMonitor extends EventEmitter {
         this._evaluateProducer(
             clientId,
             Object.values(producers).filter((p: any) => p.kind === "audio"),
-            "audio"
+            "audio",
         );
         this._evaluateProducer(
             clientId,
             Object.values(producers).filter((p: any) => p.kind === "video"),
-            "video"
+            "video",
         );
     }
 

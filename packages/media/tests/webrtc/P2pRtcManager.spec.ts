@@ -91,7 +91,19 @@ describe("P2pRtcManager", () => {
     } = {}) {
         return new P2pRtcManager({
             selfId,
-            room: Object.assign({ name: roomName, iceServers: { iceServers } }, roomData),
+            room: Object.assign(
+                {
+                    name: roomName,
+                    iceServers: { iceServers },
+                    isClaimed: true,
+                    mediaserverConfigTtlSeconds: 100,
+                    organizationId: "id",
+                    session: null,
+                    sfuServer: null,
+                    turnServers: [],
+                },
+                roomData,
+            ),
             emitter: _emitter,
             serverSocket: _serverSocket,
             webrtcProvider,

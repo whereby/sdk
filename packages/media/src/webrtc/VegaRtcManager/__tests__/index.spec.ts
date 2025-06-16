@@ -3,7 +3,7 @@ import VegaRtcManager from "../";
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
-import { CustomMediaStreamTrack } from "../../types";
+import { CustomMediaStreamTrack, SFUServerConfig } from "../../types";
 import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
@@ -72,11 +72,14 @@ describe("VegaRtcManager", () => {
         rtcManager = new VegaRtcManager({
             selfId: helpers.randomString("client-"),
             room: {
-                iceServers: [],
-                sfuServer: { url: sfuWebsocketServerUrl },
+                iceServers: { iceServers: [] },
+                isClaimed: true,
+                mediaserverConfigTtlSeconds: 100,
                 name: "name",
                 organizationId: "id",
-                isClaimed: true,
+                session: null,
+                sfuServer: { url: sfuWebsocketServerUrl } as SFUServerConfig,
+                turnServers: [],
             },
             emitter,
             serverSocket,
@@ -94,7 +97,16 @@ describe("VegaRtcManager", () => {
 
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
-        const room = { name: helpers.randomString("/room-"), iceServers: {} };
+        const room = {
+            iceServers: { iceServers: [] },
+            isClaimed: true,
+            mediaserverConfigTtlSeconds: 100,
+            name: helpers.randomString("/room-"),
+            organizationId: "id",
+            session: null,
+            sfuServer: { url: sfuWebsocketServerUrl } as SFUServerConfig,
+            turnServers: [],
+        };
 
         it("gets a mediasoup device", () => {
             const device = jest.fn();

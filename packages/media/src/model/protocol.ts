@@ -1,5 +1,8 @@
 // Protocol enum used for the CLIENT (Make sure to keep it in sync with its server counterpart)
 
+import { RtcEvents } from "../webrtc";
+import { MEDIA_QUALITY } from "../webrtc/VegaMediaQualityMonitor";
+
 // Requests: messages from the client to the server
 export const PROTOCOL_REQUESTS = {
     BLOCK_CLIENT: "block_client",

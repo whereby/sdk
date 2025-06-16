@@ -6,7 +6,7 @@ import { Safari17 } from "./Safari17Handler";
 import { Safari12 as NodeDeviceHandler } from "mediasoup-client/lib/handlers/Safari12.js";
 
 type SupportedDevice = BuiltinHandlerName | "NodeJS" | "Safari17" | undefined;
-export const getMediasoupDevice = (features: Record<string, boolean | undefined>): Device => {
+export const getMediasoupDevice = (features: { isNodeSdk?: boolean; safari17HandlerOn?: boolean }): Device => {
     if (features.isNodeSdk) {
         return new Device({ handlerFactory: NodeDeviceHandler.createFactory() });
     }

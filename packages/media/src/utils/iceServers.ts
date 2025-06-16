@@ -1,4 +1,6 @@
-export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN?: string }) => {
+import { TransportOptions } from "mediasoup-client/lib/types";
+
+export const maybeTurnOnly = (iceConfig: TransportOptions, features: { useOnlyTURN?: string }) => {
     if (!features.useOnlyTURN) {
         return;
     }
@@ -13,7 +15,7 @@ export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN?: string }
     }[features.useOnlyTURN];
 
     if (filter) {
-        iceConfig.iceServers = iceConfig.iceServers.filter((entry: any) => {
+        iceConfig.iceServers = iceConfig.iceServers!.filter((entry: any) => {
             if (entry.url && entry.url.match(filter)) return entry;
             if (entry.urls) {
                 entry.urls = (entry.urls.some ? entry.urls : [entry.urls]).filter((url: any) => url.match(filter));

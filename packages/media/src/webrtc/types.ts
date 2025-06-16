@@ -1,5 +1,6 @@
 import { RoomMode, SignalClient, SignalKnocker } from "../utils";
 import { HostListEntryOptionalDC } from "./VegaConnectionManager";
+import { MEDIA_QUALITY } from "./VegaMediaQualityMonitor";
 
 /*
     RTC
@@ -96,6 +97,12 @@ export type RtcEvents = {
     pc_sld_failure: void;
     pc_on_answer_failure: void;
     pc_on_offer_failure: void;
+    media_quality_changed: {
+        clientId: string;
+        kind: string;
+        quality: typeof MEDIA_QUALITY;
+    };
+    pending_client_left: { clientId: string };
 };
 
 /*
@@ -202,37 +209,15 @@ export interface TurnServerConfig {
 export type RoomType = "free" | "premium";
 
 export interface RoomState {
-    clients: SignalClient[];
     name: string;
     organizationId: string;
-    owners: string[];
     session: { id: string; createdAt: string } | null;
-    breakout: unknown | null;
-    coLocation: unknown | null;
-    timeLimitEnabledAt: unknown | null;
-    recordingId: unknown | null;
-    liveTranscriptionId: unknown | null;
-    breakoutStartedAt: unknown | null;
-    breakoutEndedAt: unknown | null;
-    backgroundImageUrl: string;
-    backgroundThumbnailUrl: string;
-    logoUrl: string | null;
     sfuServer: SFUServerConfig | null;
     sfuServers?: HostListEntryOptionalDC[];
     iceServers: { iceServers: ICEServerConfig[] };
     turnServers: TurnServerConfig[];
     mediaserverConfigTtlSeconds: number;
     isClaimed: boolean;
-    type: RoomType;
-    legacyRoomType: RoomType;
-    mode: RoomMode;
-    isFollowEnabled: boolean;
-    isLocked: boolean;
-    knockers: SignalKnocker[];
-    knockPage: {
-        backgroundImageUrl: null;
-        backgroundThumbnailUrl: null;
-    };
 }
 
 export interface WebRTCProvider {
