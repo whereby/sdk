@@ -1,3 +1,6 @@
+import { RoomMode, SignalClient, SignalKnocker } from "../utils";
+import { HostListEntryOptionalDC } from "./VegaConnectionManager";
+
 /*
     RTC
 */
@@ -71,6 +74,28 @@ export type RtcEvents = {
     local_stream_track_removed: RtcLocalStreamTrackRemovedPayload;
     remote_stream_track_added: void;
     remote_stream_track_removed: void;
+    camera_not_working: void;
+    connection_blocked_by_network: void;
+    ice_ipv6_seen: {
+        teredoSeen: boolean;
+        sixtofourSeen: boolean;
+    };
+    ice_mdns_seen: void;
+    ice_no_public_ip_gathered: void;
+    ice_no_public_ip_gathered_3sec: void;
+    ice_restart: void;
+    microphone_not_working: void;
+    microphone_stopped_working: void;
+    camera_stopped_working: void;
+    new_pc: void;
+    sfu_connection_open: void;
+    sfu_connection_closed: void;
+    sfu_connection_info: void;
+    colocation_speaker: void;
+    dominant_speaker: void;
+    pc_sld_failure: void;
+    pc_on_answer_failure: void;
+    pc_on_offer_failure: void;
 };
 
 /*
@@ -145,4 +170,86 @@ export type GetDeviceDataResult = {
 
 export interface CustomMediaStreamTrack extends MediaStreamTrack {
     effectTrack?: boolean;
+}
+
+export interface SFUServer {
+    fqdn: string;
+    ip: string;
+    port: number;
+    dc: string;
+}
+
+export interface SFUServerConfig {
+    url: string;
+    fallbackUrl: string;
+    fallbackServers: SFUServer[];
+    sfuProtocol: string;
+}
+
+export interface ICEServerConfig {
+    url: string;
+    urls: string[];
+    username: string;
+    credential: string;
+}
+
+export interface TurnServerConfig {
+    urls: string[];
+    username: string;
+    credential: string;
+}
+
+export type RoomType = "free" | "premium";
+
+export interface RoomState {
+    clients: SignalClient[];
+    name: string;
+    organizationId: string;
+    owners: string[];
+    session: { id: string; createdAt: string } | null;
+    breakout: unknown | null;
+    coLocation: unknown | null;
+    timeLimitEnabledAt: unknown | null;
+    recordingId: unknown | null;
+    liveTranscriptionId: unknown | null;
+    breakoutStartedAt: unknown | null;
+    breakoutEndedAt: unknown | null;
+    backgroundImageUrl: string;
+    backgroundThumbnailUrl: string;
+    logoUrl: string | null;
+    sfuServer: SFUServerConfig | null;
+    sfuServers?: HostListEntryOptionalDC[];
+    iceServers: { iceServers: ICEServerConfig[] };
+    turnServers: TurnServerConfig[];
+    mediaserverConfigTtlSeconds: number;
+    isClaimed: boolean;
+    type: RoomType;
+    legacyRoomType: RoomType;
+    mode: RoomMode;
+    isFollowEnabled: boolean;
+    isLocked: boolean;
+    knockers: SignalKnocker[];
+    knockPage: {
+        backgroundImageUrl: null;
+        backgroundThumbnailUrl: null;
+    };
+}
+
+export interface WebRTCProvider {
+    getMediaConstraints: () => { audio: boolean; video: boolean };
+    deferrable: (args: {
+        client?: { breakoutGroup?: string; isAudioEnabled: boolean; isVideoEnabled: boolean };
+        breakoutCurrentId: string;
+    }) => boolean;
+}
+
+export type StoredMediaStream = MediaStream & { track?: MediaStreamTrack };
+
+export interface MicAnalyserDebugger {
+    onScoreUpdated: (data: unknown) => void;
+    onConsumerScore: (clientId: string, score: number) => void;
+}
+
+export interface RtcEventEmitter {
+    emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void;
 }

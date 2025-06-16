@@ -1,4 +1,4 @@
-export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN: string }) => {
+export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN?: string }) => {
     if (!features.useOnlyTURN) {
         return;
     }
@@ -25,7 +25,7 @@ export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN: string })
 
 export const external_stun_servers = (
     iceConfig: any,
-    features: { addGoogleStunServers: string; addCloudflareStunServers: string },
+    features: { addGoogleStunServers?: boolean; addCloudflareStunServers?: boolean },
 ) => {
     if (features.addGoogleStunServers) {
         iceConfig.iceServers = [
@@ -43,10 +43,7 @@ export const external_stun_servers = (
     }
 };
 
-export const turnServerOverride = (
-    iceServers: any,
-    overrideHost: any
-) => {
+export const turnServerOverride = (iceServers: any, overrideHost: any) => {
     if (overrideHost && iceServers) {
         const host = overrideHost;
         const port = host.indexOf(":") > 0 ? "" : ":443";
@@ -64,4 +61,4 @@ export const turnServerOverride = (
     } else {
         return iceServers;
     }
-}
+};
