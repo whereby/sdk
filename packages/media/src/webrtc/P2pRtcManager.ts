@@ -17,9 +17,11 @@ import Logger from "../utils/Logger";
 import {
     CustomMediaStreamTrack,
     ICEServerConfig,
+    P2PRtcFeatures,
     RoomState,
     RtcEventEmitter,
     RtcEvents,
+    RtcFeatures,
     RtcManager,
     SFUServerConfig,
     StoredMediaStream,
@@ -28,6 +30,7 @@ import {
 } from "./types";
 import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
+import { RtcManagerConfig } from "./RtcManagerDispatcher";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -50,7 +53,7 @@ if (browserName === "chrome") {
     });
 }
 
-export default class DynamicRtcManager implements RtcManager {
+export default class P2pRtcManager implements RtcManager {
     _selfId: string;
     _roomName: string;
     _roomSessionId: string | null;
@@ -63,27 +66,7 @@ export default class DynamicRtcManager implements RtcManager {
     _emitter: RtcEventEmitter;
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
-    _features: {
-        adjustBitratesFromResolution?: boolean;
-        bandwidth?: string;
-        cleanSdpOn?: boolean;
-        deprioritizeH264OnSafari?: boolean;
-        highP2PBandwidth?: boolean;
-        higherP2PBitrates?: boolean;
-        increaseIncomingMediaBufferOn?: boolean;
-        lowBandwidth?: boolean;
-        p2pAv1On?: boolean;
-        p2pVp9On?: boolean;
-        preferP2pHardwareDecodingOn?: boolean;
-        redOn?: boolean;
-        rtpAbsCaptureTimeOn?: boolean;
-        turnServerOverrideHost?: boolean;
-        turnServersOn?: boolean;
-        unlimitedBandwidthWhenUsingRelayP2POn?: boolean;
-        useOnlyTURN?: string;
-        addGoogleStunServers?: boolean;
-        addCloudflareStunServers?: boolean;
-    };
+    _features: P2PRtcFeatures;
     _isAudioOnlyMode: boolean;
     offerOptions: {
         offerToReceiveAudio: boolean;
@@ -107,21 +90,7 @@ export default class DynamicRtcManager implements RtcManager {
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
 
-    constructor({
-        selfId,
-        room,
-        emitter,
-        serverSocket,
-        webrtcProvider,
-        features,
-    }: {
-        selfId: string;
-        room: RoomState;
-        emitter: RtcEventEmitter;
-        serverSocket: ServerSocket;
-        webrtcProvider: WebRTCProvider;
-        features: Record<string, boolean>;
-    }) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerConfig) {
         const { name, session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
@@ -189,6 +158,7 @@ export default class DynamicRtcManager implements RtcManager {
         videoPaused: boolean,
         beforeEffectTracks: CustomMediaStreamTrack[] = [],
     ) {
+        console.log("TRACE P2pRtcManager.addNewStream", { streamId });
         if (stream === this.localStreams[streamId]) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
@@ -308,6 +278,7 @@ export default class DynamicRtcManager implements RtcManager {
             }),
 
             this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data: any) => {
+                console.log("trace P2pRtcManager.setupSocketListeners.ready_to_receive_offer", data);
                 this._connect(data.clientId);
             }),
 
@@ -622,6 +593,7 @@ export default class DynamicRtcManager implements RtcManager {
 
         pc.ontrack = (event: any) => {
             const stream = event.streams[0];
+            console.log("TRACE P2pRtcManager.ontrack", { streamId: stream.id, clientId: session.clientId });
             if (stream.id === "default" && stream.getAudioTracks().length === 0) {
                 // due to our PlanB / UnifiedPlan conversion we can run into this:
                 // https://bugs.chromium.org/p/webrtc/issues/detail?id=8228
@@ -1297,6 +1269,7 @@ export default class DynamicRtcManager implements RtcManager {
         clientId: string;
         shouldAddLocalVideo?: boolean;
     }) {
+        console.log("TRACE P2pRtcManager.acceptNewStream", { streamId, clientId });
         let session = this._getSession(clientId);
         if (session && streamId !== clientId) {
             // we are adding a screenshare stream to existing session/pc

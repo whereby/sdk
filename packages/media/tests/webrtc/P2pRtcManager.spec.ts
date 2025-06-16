@@ -93,6 +93,7 @@ describe("P2pRtcManager", () => {
             selfId,
             room: Object.assign(
                 {
+                    clients: [],
                     name: roomName,
                     iceServers: { iceServers },
                     isClaimed: true,

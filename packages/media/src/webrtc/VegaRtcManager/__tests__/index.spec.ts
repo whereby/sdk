@@ -72,6 +72,7 @@ describe("VegaRtcManager", () => {
         rtcManager = new VegaRtcManager({
             selfId: helpers.randomString("client-"),
             room: {
+                clients: [],
                 iceServers: { iceServers: [] },
                 isClaimed: true,
                 mediaserverConfigTtlSeconds: 100,
@@ -98,6 +99,7 @@ describe("VegaRtcManager", () => {
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
         const room = {
+            clients: [],
             iceServers: { iceServers: [] },
             isClaimed: true,
             mediaserverConfigTtlSeconds: 100,

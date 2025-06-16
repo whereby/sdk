@@ -15,9 +15,11 @@ import {
     RoomState,
     RtcEventEmitter,
     RtcEvents,
+    RtcFeatures,
     RtcManager,
     SFUServerConfig,
     TurnServerConfig,
+    VegaRtcFeatures,
     WebRTCProvider,
 } from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
@@ -42,6 +44,7 @@ import {
     SctpStreamParameters,
     Transport,
 } from "mediasoup-client/lib/types";
+import { RtcManagerConfig } from "../RtcManagerDispatcher";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -68,25 +71,6 @@ type ClientState = {
     screenStream?: MediaSteamWhichMayHaveInboundId;
     screenShareStreamId?: string;
     camStreamId?: string;
-};
-
-type VegaRtcFeatures = Record<string, boolean> & {
-    increaseIncomingMediaBufferOn?: boolean;
-    isNodeSdk?: boolean;
-    lowBandwidth?: boolean;
-    lowDataModeEnabled?: boolean;
-    safari17HandlerOn?: boolean;
-    sfuReconnectV2On?: boolean;
-    sfuServerOverrideHost?: string;
-    sfuServersOverride?: string;
-    sfuVp9On?: boolean;
-    simulcastScreenshareOn?: boolean;
-    svcKeyScalabilityModeOn?: boolean;
-    turnServersOn?: boolean;
-    turnServerOverrideHost?: unknown;
-    uncappedSingleRemoteVideoOn?: boolean;
-    useOnlyTURN?: string;
-    vp9On?: boolean;
 };
 
 export default class VegaRtcManager implements RtcManager {
@@ -149,23 +133,7 @@ export default class VegaRtcManager implements RtcManager {
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
 
-    constructor({
-        selfId,
-        room,
-        emitter,
-        serverSocket,
-        webrtcProvider,
-        features,
-        eventClaim,
-    }: {
-        selfId: string;
-        room: RoomState;
-        emitter: RtcEventEmitter;
-        serverSocket: ServerSocket;
-        webrtcProvider: WebRTCProvider;
-        features?: VegaRtcFeatures;
-        eventClaim?: string;
-    }) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim }: RtcManagerConfig) {
         const { session, iceServers, turnServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
@@ -1581,7 +1549,7 @@ export default class VegaRtcManager implements RtcManager {
      * }} streamOptions
      */
     acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
-        logger.info("acceptNewStream()", { streamId, clientId });
+        console.log("TRACE VegaRtcManager.acceptNewStream", { streamId, clientId });
 
         const clientState = this._getOrCreateClientState(clientId);
         const isScreenShare = streamId !== clientId;
@@ -2000,8 +1968,14 @@ export default class VegaRtcManager implements RtcManager {
             });
         }
 
+        console.log("TRACE VegaRtcManager.syncStreamsWithPWA.stream_added", {
+            clientId,
+            webcamStream,
+            hasEmittedScreenStream,
+            hasAcceptedWebcamStream,
+        });
         // If the webcam stream has not been emitted, we emit it.
-        if (webcamStream && !hasEmittedWebcamStream && hasAcceptedWebcamStream) {
+        if (webcamStream && !hasEmittedWebcamStream && true) {
             this._emitToPWA(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                 clientId,
                 stream: webcamStream,

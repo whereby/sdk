@@ -35,6 +35,10 @@ export interface RtcManager {
     isInitializedWith({ selfId, roomName, isSfu }: { selfId: string; roomName: string; isSfu: boolean }): boolean;
     setEventClaim?(eventClaim: string): void;
     hasClient(clientId: string): boolean;
+    setupSocketListeners(): void;
+    stopOrResumeVideo(localStream: MediaStream, enable: boolean): void;
+    stopOrResumeAudio(localStream: MediaStream, enable: boolean): void;
+    setRoomSessionId(roomSessionId: string): void;
 }
 
 export interface RtcManagerCreatedPayload {
@@ -209,6 +213,7 @@ export interface TurnServerConfig {
 export type RoomType = "free" | "premium";
 
 export interface RoomState {
+    clients: SignalClient[];
     name: string;
     organizationId: string;
     session: { id: string; createdAt: string } | null;
@@ -238,3 +243,49 @@ export interface MicAnalyserDebugger {
 export interface RtcEventEmitter {
     emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void;
 }
+
+export type VegaRtcFeatures = Record<string, boolean> & {
+    increaseIncomingMediaBufferOn?: boolean;
+    isNodeSdk?: boolean;
+    lowBandwidth?: boolean;
+    lowDataModeEnabled?: boolean;
+    safari17HandlerOn?: boolean;
+    sfuReconnectV2On?: boolean;
+    sfuServerOverrideHost?: string;
+    sfuServersOverride?: string;
+    sfuVp9On?: boolean;
+    simulcastScreenshareOn?: boolean;
+    svcKeyScalabilityModeOn?: boolean;
+    turnServerOverrideHost?: unknown;
+    turnServersOn?: boolean;
+    uncappedSingleRemoteVideoOn?: boolean;
+    useOnlyTURN?: string;
+    vp9On?: boolean;
+};
+
+export interface P2PRtcFeatures {
+    addCloudflareStunServers?: boolean;
+    addGoogleStunServenrs?: boolean;
+    adjustBitratesFromResolution?: boolean;
+    bandwidth?: string;
+    cleanSdpOn?: boolean;
+    deprioritizeH264OnSafari?: boolean;
+    highP2PBandwidth?: boolean;
+    higherP2PBitrates?: boolean;
+    increaseIncomingMediaBufferOn?: boolean;
+    lowBandwidth?: boolean;
+    p2pAv1On?: boolean;
+    p2pVp9On?: boolean;
+    preferP2pHardwareDecodingOn?: boolean;
+    redOn?: boolean;
+    rtpAbsCaptureTimeOn?: boolean;
+    turnServerOverrideHost?: boolean;
+    turnServersOn?: boolean;
+    unlimitedBandwidthWhenUsingRelayP2POn?: boolean;
+    useOnlyTURN?: string;
+}
+
+export type RtcFeatures = P2PRtcFeatures &
+    VegaRtcFeatures & {
+        dynamicRtcManagerOn?: boolean;
+    };

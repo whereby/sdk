@@ -3,8 +3,18 @@ import { PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import VegaRtcManager from "./VegaRtcManager";
 import { ServerSocket } from "../utils";
-import { RtcManager, RtcEvents, RtcEventEmitter } from "./types";
+import { RtcManager, RtcEvents, RtcEventEmitter, WebRTCProvider, RtcFeatures, RoomState } from "./types";
+import { DynamicRtcManager } from "./DynamicRtcManager";
 
+export interface RtcManagerConfig {
+    selfId: string;
+    room: RoomState;
+    emitter: RtcEventEmitter;
+    serverSocket: ServerSocket;
+    webrtcProvider: WebRTCProvider;
+    features: RtcFeatures;
+    eventClaim?: string;
+}
 export default class RtcManagerDispatcher {
     emitter: { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
     currentManager: RtcManager | null;
@@ -17,14 +27,24 @@ export default class RtcManagerDispatcher {
     }: {
         emitter: RtcEventEmitter;
         serverSocket: ServerSocket;
-        webrtcProvider: any;
-        features: any;
+        webrtcProvider: WebRTCProvider;
+        features: RtcFeatures;
     }) {
         this.emitter = emitter;
         this.currentManager = null;
         serverSocket.on(
             PROTOCOL_RESPONSES.ROOM_JOINED,
-            ({ room, selfId, error, eventClaim }: { room: any; selfId: any; error: any; eventClaim: string }) => {
+            ({
+                room,
+                selfId,
+                error,
+                eventClaim,
+            }: {
+                room: RoomState;
+                selfId: string;
+                error: unknown;
+                eventClaim: string;
+            }) => {
                 if (error) return; // ignore error responses which lack room
                 const config = {
                     selfId,
@@ -37,6 +57,18 @@ export default class RtcManagerDispatcher {
                 };
                 const isSfu = !!room.sfuServer;
                 roomMode = isSfu ? "group" : "normal";
+                let rtcManager = null;
+
+                if (features.dynamicRtcManagerOn) {
+                    rtcManager = new DynamicRtcManager(config);
+                } else {
+                    if (isSfu) {
+                        rtcManager = new VegaRtcManager(config);
+                    } else {
+                        rtcManager = new P2pRtcManager(config);
+                    }
+                }
+
                 if (this.currentManager) {
                     if (this.currentManager.isInitializedWith({ selfId, roomName: room.name, isSfu })) {
                         if (this.currentManager.setEventClaim && eventClaim) {
@@ -47,12 +79,7 @@ export default class RtcManagerDispatcher {
                     this.currentManager.disconnectAll();
                     emitter.emit(CONNECTION_STATUS.EVENTS.RTC_MANAGER_DESTROYED);
                 }
-                let rtcManager = null;
-                if (isSfu) {
-                    rtcManager = new VegaRtcManager(config);
-                } else {
-                    rtcManager = new P2pRtcManager(config);
-                }
+
                 rtcManager.rtcStatsReconnect();
                 rtcManager.setupSocketListeners();
                 emitter.emit(CONNECTION_STATUS.EVENTS.RTC_MANAGER_CREATED, { rtcManager });
