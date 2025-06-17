@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.12.17
+
+### Patch Changes
+
+- e1a912f: Allow react19 to be used
+
 ## 3.12.16
 
 ### Patch Changes
