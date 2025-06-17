@@ -2,7 +2,7 @@ import { appSlice } from "../app";
 
 describe("appSlice", () => {
     describe("reducers", () => {
-        describe("doAppStart", () => {
+        describe("doAppSetup", () => {
             it("should change the state", () => {
                 const initialConfig = {
                     isNodeSdk: true,
@@ -15,10 +15,10 @@ describe("appSlice", () => {
                     externalId: "externalId",
                 };
 
-                const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppSetup(initialConfig));
 
                 expect(result).toEqual({
-                    isActive: true,
+                    isActive: false,
                     isDialIn: true,
                     ignoreBreakoutGroups: true,
                     roomName: "/roomName",
@@ -41,10 +41,10 @@ describe("appSlice", () => {
                     externalId: "externalId",
                 };
 
-                const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppSetup(initialConfig));
 
                 expect(result).toEqual({
-                    isActive: true,
+                    isActive: false,
                     isDialIn: false,
                     ignoreBreakoutGroups: false,
                     roomName: "/roomName",
@@ -56,6 +56,26 @@ describe("appSlice", () => {
                     isNodeSdk: true,
                     initialConfig,
                 });
+            });
+        });
+
+        describe("doAppStart", () => {
+            it("should set sdk app to an active state", () => {
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppStart());
+
+                expect(result.isActive).toEqual(true);
+            });
+        });
+
+        describe("doAppStop", () => {
+            beforeEach(() => {
+                appSlice.reducer(undefined, appSlice.actions.doAppStart());
+            });
+
+            it("should set sdk app to an inactive state", () => {
+                const result = appSlice.reducer(undefined, appSlice.actions.doAppStop());
+
+                expect(result.isActive).toEqual(false);
             });
         });
     });

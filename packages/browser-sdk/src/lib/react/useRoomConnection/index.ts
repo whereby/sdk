@@ -15,6 +15,7 @@ import {
     toggleLowDataModeEnabled,
     doStartScreenshare,
     doStopScreenshare,
+    doAppSetup,
     doAppStart,
     doAppStop,
     doKnockRoom,
@@ -74,7 +75,7 @@ export function useRoomConnection(
     }, []);
 
     const sendChatMessage = React.useCallback((text: string) => dispatch(doSendChatMessage({ text })), [dispatch]);
-    const knock = React.useCallback(() => dispatch(doKnockRoom()), [dispatch]);
+    const knock = React.useCallback(() => dispatch(doAppSetup(roomConfig)) && dispatch(doKnockRoom()), [dispatch]);
     const setDisplayName = React.useCallback(
         (displayName: string) => dispatch(doSetDisplayName({ displayName })),
         [dispatch],
@@ -116,7 +117,7 @@ export function useRoomConnection(
     const startScreenshare = React.useCallback(() => dispatch(doStartScreenshare()), [dispatch]);
     const stopCloudRecording = React.useCallback(() => dispatch(doStopCloudRecording()), [dispatch]);
     const stopScreenshare = React.useCallback(() => dispatch(doStopScreenshare()), [dispatch]);
-    const joinRoom = React.useCallback(() => dispatch(doAppStart(roomConfig)), [dispatch]);
+    const joinRoom = React.useCallback(() => dispatch(doAppSetup(roomConfig)) && dispatch(doAppStart()), [dispatch]);
     const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
     const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
     const muteParticipants = React.useCallback(
