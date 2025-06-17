@@ -87,8 +87,8 @@
     "runes": "^0.4.3"
   },
   "peerDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
   },
   "resolutions": {
     "string-width": "^4",
