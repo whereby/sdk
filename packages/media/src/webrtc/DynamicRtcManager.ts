@@ -19,7 +19,6 @@ export class DynamicRtcManager {
     proxyStreamMap: Record<string, MediaStream>;
     vegaStreamMap: Record<string, MediaStream>;
     p2pStreamMap: Record<string, MediaStream>;
-    clientIdStreamIdMap: Record<string, string>;
 
     constructor(config: RtcManagerConfig) {
         config.emitter;
@@ -28,7 +27,6 @@ export class DynamicRtcManager {
         this.proxyStreamMap = {};
         this.vegaStreamMap = {};
         this.p2pStreamMap = {};
-        this.clientIdStreamIdMap = {};
         this.vegaEmitter = {
             emit: this.onVegaEvent,
         };
@@ -60,7 +58,6 @@ export class DynamicRtcManager {
         this.p2pRtcManager.acceptNewStream({ streamId, clientId, shouldAddLocalVideo });
 
         this.proxyStreamMap[clientId] = new MediaStream();
-        this.clientIdStreamIdMap[clientId] = streamId;
     }
 
     onVegaEvent = <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => {
@@ -68,9 +65,8 @@ export class DynamicRtcManager {
         switch (eventName) {
             case "stream_added": {
                 console.log("TRACE DynamicRtcManager.onVegaEvent.stream_added", args);
-                const { clientId, stream, streamId } = args as RtcStreamAddedPayload;
+                const { clientId, stream } = args as RtcStreamAddedPayload;
                 this.vegaStreamMap[clientId] = stream;
-                this.clientIdStreamIdMap[clientId] = streamId ?? this.clientIdStreamIdMap[clientId];
 
                 if (this.currentRtcManager === "vega") {
                     const proxyStream = this.proxyStreamMap[clientId];
@@ -94,29 +90,27 @@ export class DynamicRtcManager {
     onP2pEvent = <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => {
         console.log("trace onP2pEvent", eventName);
         switch (eventName) {
-            case "stream_added":
-                {
-                    const { clientId, stream, streamId } = args as RtcStreamAddedPayload;
-                    console.log("trace DynamicRtcManager.onP2pEvent.stream_added", { clientId });
-                    this.p2pStreamMap[clientId] = stream;
-                    this.clientIdStreamIdMap[clientId] = streamId ?? this.clientIdStreamIdMap[clientId];
+            case "stream_added": {
+                const { clientId, stream } = args as RtcStreamAddedPayload;
+                console.log("trace DynamicRtcManager.onP2pEvent.stream_added", { clientId });
+                this.p2pStreamMap[clientId] = stream;
 
-                    if (this.currentRtcManager === "p2p") {
-                        let proxyStream = this.proxyStreamMap[clientId];
-                        if (!proxyStream) {
-                            proxyStream = new MediaStream();
-                            this.proxyStreamMap[clientId] = proxyStream;
-                        }
-                        this.addTracksToProxy(proxyStream, stream);
-                        this.roomEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
-                            clientId,
-                            stream: proxyStream,
-                        });
+                if (this.currentRtcManager === "p2p") {
+                    let proxyStream = this.proxyStreamMap[clientId];
+                    if (!proxyStream) {
+                        proxyStream = new MediaStream();
+                        this.proxyStreamMap[clientId] = proxyStream;
                     }
-                    return;
+                    this.addTracksToProxy(proxyStream, stream);
+                    this.roomEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+                        clientId,
+                        stream: proxyStream,
+                    });
                 }
-                console.log("trace p2p event", eventName);
+                return;
+            }
             default: {
+                console.log("trace p2p event", eventName);
                 if (this.currentRtcManager === "p2p") {
                     this.roomEmitter.emit(eventName, args);
                 }
@@ -146,6 +140,9 @@ export class DynamicRtcManager {
     }
 
     async swapToVega() {
+        if (this.currentRtcManager === "vega") {
+            return;
+        }
         this.currentRtcManager = "vega";
         await new Promise<void>((resolve) => {
             Object.keys(this.p2pStreamMap).forEach((clientId) => {
@@ -189,7 +186,11 @@ export class DynamicRtcManager {
         this.vegaRtcManager.removeStream(...args);
     }
     shouldAcceptStreamsFromBothSides(...args: Parameters<RtcManager["disconnectAll"]>) {
-        return this.vegaRtcManager.shouldAcceptStreamsFromBothSides(...args) ?? false;
+        if (this.currentRtcManager === "p2p") {
+            return false;
+        } else {
+            return this.vegaRtcManager.shouldAcceptStreamsFromBothSides(...args);
+        }
     }
     updateStreamResolution(...args: Parameters<RtcManager["updateStreamResolution"]>) {
         // @ts-expect-error
@@ -204,10 +205,13 @@ export class DynamicRtcManager {
         }
     }
     isInitializedWith(...args: Parameters<RtcManager["isInitializedWith"]>) {
-        return this.vegaRtcManager.isInitializedWith(...args) ?? this.p2pRtcManager.isInitializedWith(...args);
+        if (this.currentRtcManager === "p2p") {
+            return this.vegaRtcManager.isInitializedWith(...args);
+        } else {
+            return this.p2pRtcManager.isInitializedWith(...args);
+        }
     }
-    setEventClaim(...args: any[]) {
-        // @ts-expect-error
+    setEventClaim(...args: Parameters<VegaRtcManager["setEventClaim"]>) {
         this.vegaRtcManager.setEventClaim(...args);
     }
     hasClient(...args: Parameters<RtcManager["hasClient"]>) {

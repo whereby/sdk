@@ -1968,14 +1968,14 @@ export default class VegaRtcManager implements RtcManager {
             });
         }
 
-        console.log("TRACE VegaRtcManager.syncStreamsWithPWA.stream_added", {
+        console.log("TRACE VegaRtcManager.syncIncomingStreamsWithPWA.stream_added", {
             clientId,
             webcamStream,
             hasEmittedScreenStream,
             hasAcceptedWebcamStream,
         });
         // If the webcam stream has not been emitted, we emit it.
-        if (webcamStream && !hasEmittedWebcamStream && true) {
+        if (webcamStream && !hasEmittedWebcamStream && hasAcceptedWebcamStream) {
             this._emitToPWA(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                 clientId,
                 stream: webcamStream,
