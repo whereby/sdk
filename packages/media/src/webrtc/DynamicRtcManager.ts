@@ -54,10 +54,20 @@ export class DynamicRtcManager {
             streamId,
             clientId,
         });
-        this.vegaRtcManager.acceptNewStream({ streamId, clientId });
-        this.p2pRtcManager.acceptNewStream({ streamId, clientId, shouldAddLocalVideo });
+        if (!this.vegaStreamMap[clientId]) {
+            this.vegaRtcManager.acceptNewStream({ streamId, clientId });
+        }
 
-        this.proxyStreamMap[clientId] = new MediaStream();
+        if (!this.p2pStreamMap[clientId]) {
+            // PWA calls `rtcManager.shouldAcceptStreamsFromBothSides.?()` before calling `rtcManager.acceptNewStream`
+            // we need this to return true so we can call this.vegaRtcManager.acceptNewStream, so we only call
+            // this.p2pRtcManager.acceptNewStream when we haven't already received this stream after emitting `ready_to_receive_offer`
+            this.p2pRtcManager.acceptNewStream({ streamId, clientId, shouldAddLocalVideo });
+        }
+
+        if (!this.proxyStreamMap[clientId]) {
+            this.proxyStreamMap[clientId] = new MediaStream();
+        }
     }
 
     onVegaEvent = <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => {
@@ -187,7 +197,8 @@ export class DynamicRtcManager {
     }
     shouldAcceptStreamsFromBothSides(...args: Parameters<RtcManager["disconnectAll"]>) {
         if (this.currentRtcManager === "p2p") {
-            return false;
+            // we want to receieve these to pass through to the vega manager, but we wont
+            return true;
         } else {
             return this.vegaRtcManager.shouldAcceptStreamsFromBothSides(...args);
         }
