@@ -231,6 +231,7 @@ export interface RoomState {
     mediaserverConfigTtlSeconds: number;
     isClaimed: boolean;
     dynamicRoomMode?: DynamicRoomMode;
+    mode: RoomMode;
 }
 
 export interface WebRTCProvider {
@@ -293,7 +294,4 @@ export interface P2PRtcFeatures {
     useOnlyTURN?: string;
 }
 
-export type RtcFeatures = P2PRtcFeatures &
-    VegaRtcFeatures & {
-        dynamicRtcManagerOn?: boolean;
-    };
+export type RtcFeatures = P2PRtcFeatures & VegaRtcFeatures;

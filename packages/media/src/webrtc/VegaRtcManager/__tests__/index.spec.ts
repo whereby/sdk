@@ -3,7 +3,7 @@ import VegaRtcManager from "../";
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
-import { CustomMediaStreamTrack, SFUServerConfig } from "../../types";
+import { CustomMediaStreamTrack, RoomState, SFUServerConfig } from "../../types";
 import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
@@ -81,6 +81,7 @@ describe("VegaRtcManager", () => {
                 session: null,
                 sfuServer: { url: sfuWebsocketServerUrl } as SFUServerConfig,
                 turnServers: [],
+                mode: "group",
             },
             emitter,
             serverSocket,
@@ -98,7 +99,7 @@ describe("VegaRtcManager", () => {
 
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
-        const room = {
+        const room: RoomState = {
             clients: [],
             iceServers: { iceServers: [] },
             isClaimed: true,
@@ -108,6 +109,7 @@ describe("VegaRtcManager", () => {
             session: null,
             sfuServer: { url: sfuWebsocketServerUrl } as SFUServerConfig,
             turnServers: [],
+            mode: "group",
         };
 
         it("gets a mediasoup device", () => {

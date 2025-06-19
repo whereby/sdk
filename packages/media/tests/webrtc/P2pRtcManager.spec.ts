@@ -11,6 +11,7 @@ import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
+import { RoomState } from "packages/media/src";
 
 const originalNavigator = global.navigator;
 
@@ -102,9 +103,10 @@ describe("P2pRtcManager", () => {
                     session: null,
                     sfuServer: null,
                     turnServers: [],
+                    mode: "normal",
                 },
                 roomData,
-            ),
+            ) as RoomState,
             emitter: _emitter,
             serverSocket: _serverSocket,
             webrtcProvider,

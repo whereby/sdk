@@ -57,17 +57,16 @@ export default class RtcManagerDispatcher {
                 };
                 const isSfu = !!room.sfuServer;
                 roomMode = isSfu ? "group" : "normal";
-                let rtcManager = null;
-
-                if (isSfu) {
-                    if (features.dynamicRtcManagerOn) {
-                        rtcManager = new DynamicRtcManager(config);
-                    } else {
-                        rtcManager = new VegaRtcManager(config);
+                const rtcManager = (() => {
+                    switch (room.mode) {
+                        case "normal":
+                            return new P2pRtcManager(config);
+                        case "group":
+                            return new VegaRtcManager(config);
+                        case "dynamic":
+                            return new DynamicRtcManager(config);
                     }
-                } else {
-                    rtcManager = new P2pRtcManager(config);
-                }
+                })();
 
                 if (this.currentManager) {
                     if (this.currentManager.isInitializedWith({ selfId, roomName: room.name, isSfu })) {
