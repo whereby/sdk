@@ -5,6 +5,8 @@ import VegaRtcManager from "./VegaRtcManager";
 import { RtcEventEmitter, RtcEvents, RtcManager, RtcStreamAddedPayload } from "./types";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { ServerSocket } from "../utils";
+import Logger from "../utils/Logger";
+const logger = new Logger();
 
 interface ClientStreams {
     pwa: Record<string, MediaStream>;
@@ -98,7 +100,7 @@ class ClientStreamMap {
             return !p2pMap[streamId];
         });
         if (missingIds.length !== 1) {
-            console.log("Could not find missing vega stream", this.map[clientId], missingIds);
+            logger.warn("Could not find missing vega stream", this.map[clientId], missingIds);
             return null;
         }
         const streamId = missingIds[0]!;
@@ -108,7 +110,7 @@ class ClientStreamMap {
     getP2pStream({ clientId, streamId }: { clientId: string; streamId: string }) {
         const stream = this.map[clientId]?.p2p[streamId];
         if (!stream) {
-            console.log("ClientStreamMap.getP2pStream", this.map[clientId]);
+            logger.warn("ClientStreamMap.getP2pStream", this.map[clientId]);
             throw new Error(`No P2p stream found for clientId: ${clientId} and streamId: ${streamId}`);
         }
         return stream;
@@ -254,6 +256,7 @@ export class DynamicRtcManager {
     }
 
     addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean) {
+        // TODO pause vega producer if we are on P2P
         const isVega = this.currentRtcManager === "vega";
         this.vegaRtcManager.addNewStream(streamId, stream, isAudioEnabled, isVideoEnabled);
         if (this.currentRtcManager === "p2p") {

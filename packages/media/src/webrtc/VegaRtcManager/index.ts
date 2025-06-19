@@ -383,8 +383,8 @@ export default class VegaRtcManager implements RtcManager {
                         eventClaim: this._room.isClaimed ? this._eventClaim : null,
                         lowBw: "true",
                         ...Object.keys(this._features || {})
-                            .filter((featureKey) => this._features[featureKey] && /^sfu/.test(featureKey))
-                            .reduce((prev, current) => ({ ...prev, [current]: this._features[current] }), {}),
+                            .filter((featureKey) => this._features[featureKey as keyof VegaRtcFeatures] && /^sfu/.test(featureKey))
+                            .reduce((prev, current) => ({ ...prev, [current]: this._features[current as keyof VegaRtcFeatures] }), {}),
                     });
                     const queryString = searchParams.toString();
                     const wsUrl = `wss://${host}?${queryString}`;
@@ -1276,7 +1276,6 @@ export default class VegaRtcManager implements RtcManager {
             clientState.hasAcceptedWebcamStream = false;
             clientState.hasAcceptedScreenStream = false;
 
-            console.log("trace VegaRtcManager.disconnect calling syncIncomingStreamsWithPwa", { clientIdOrStreamId });
             this._syncIncomingStreamsWithPWA(clientIdOrStreamId);
         }
 
@@ -1550,8 +1549,6 @@ export default class VegaRtcManager implements RtcManager {
      * }} streamOptions
      */
     acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
-        console.log("TRACE VegaRtcManager.acceptNewStream", { streamId, clientId });
-
         const clientState = this._getOrCreateClientState(clientId);
         const isScreenShare = streamId !== clientId;
 
@@ -1563,7 +1560,6 @@ export default class VegaRtcManager implements RtcManager {
             clientState.hasEmittedWebcamStream = false; // re-emit stream if re-accepted
         }
 
-        console.log("trace VegaRtcManager.acceptNewStream calling syncIncomingStreamsWithPwa", { clientId });
         this._syncIncomingStreamsWithPWA(clientId);
     }
 
@@ -1607,7 +1603,7 @@ export default class VegaRtcManager implements RtcManager {
             {
                 numberOfActiveVideos,
                 numberOfTemporalLayers,
-                uncappedSingleRemoteVideoOn: this._features?.uncappedSingleRemoteVideoOn!,
+                uncappedSingleRemoteVideoOn: !!this._features.uncappedSingleRemoteVideoOn,
             },
         );
 
@@ -1787,7 +1783,6 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         stream.addTrack(consumer.track);
-        console.log("trace VegaRtcManager.onConsumerReady calling syncIncomingStreamsWithPwa", { clientId });
         this._syncIncomingStreamsWithPWA(clientId);
 
         // Update resolution if we already have it
@@ -1874,7 +1869,6 @@ export default class VegaRtcManager implements RtcManager {
             }
         });
 
-        console.log("trace VegaRtcManager.onDataConsumerReady calling syncIncomingStreamsWithPwa", { clientId });
         this._syncIncomingStreamsWithPWA(clientId as string);
     }
 
@@ -1972,12 +1966,6 @@ export default class VegaRtcManager implements RtcManager {
             });
         }
 
-        console.log("TRACE VegaRtcManager.syncIncomingStreamsWithPWA.stream_added", {
-            clientId,
-            webcamStream,
-            hasEmittedScreenStream,
-            hasAcceptedWebcamStream,
-        });
         // If the webcam stream has not been emitted, we emit it.
         if (webcamStream && !hasEmittedWebcamStream && hasAcceptedWebcamStream) {
             this._emitToPWA(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {

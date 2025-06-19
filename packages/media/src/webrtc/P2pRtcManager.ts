@@ -158,7 +158,6 @@ export default class P2pRtcManager implements RtcManager {
         videoPaused: boolean,
         beforeEffectTracks: CustomMediaStreamTrack[] = [],
     ) {
-        console.log("TRACE P2pRtcManager.addNewStream", { streamId });
         if (stream === this.localStreams[streamId]) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
@@ -278,7 +277,6 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data: any) => {
-                console.log("trace P2pRtcManager.setupSocketListeners.ready_to_receive_offer", data);
                 this._connect(data.clientId);
             }),
 
@@ -593,7 +591,6 @@ export default class P2pRtcManager implements RtcManager {
 
         pc.ontrack = (event: any) => {
             const stream = event.streams[0];
-            console.log("TRACE P2pRtcManager.ontrack", { streamId: stream.id, clientId: session.clientId });
             if (stream.id === "default" && stream.getAudioTracks().length === 0) {
                 // due to our PlanB / UnifiedPlan conversion we can run into this:
                 // https://bugs.chromium.org/p/webrtc/issues/detail?id=8228
@@ -1269,7 +1266,6 @@ export default class P2pRtcManager implements RtcManager {
         clientId: string;
         shouldAddLocalVideo?: boolean;
     }) {
-        console.log("TRACE P2pRtcManager.acceptNewStream", { streamId, clientId });
         let session = this._getSession(clientId);
         if (session && streamId !== clientId) {
             // we are adding a screenshare stream to existing session/pc

@@ -236,10 +236,7 @@ export interface RoomState {
 
 export interface WebRTCProvider {
     getMediaConstraints: () => { audio: boolean; video: boolean };
-    deferrable: (args: {
-        client?: { breakoutGroup?: string; isAudioEnabled: boolean; isVideoEnabled: boolean };
-        breakoutCurrentId: string;
-    }) => boolean;
+    deferrable: (clientId: string) => boolean;
 }
 
 export type StoredMediaStream = MediaStream & { track?: MediaStreamTrack };
@@ -253,7 +250,7 @@ export interface RtcEventEmitter {
     emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void;
 }
 
-export type VegaRtcFeatures = Record<string, boolean> & {
+export type VegaRtcFeatures = {
     increaseIncomingMediaBufferOn?: boolean;
     isNodeSdk?: boolean;
     lowBandwidth?: boolean;
@@ -265,11 +262,12 @@ export type VegaRtcFeatures = Record<string, boolean> & {
     sfuVp9On?: boolean;
     simulcastScreenshareOn?: boolean;
     svcKeyScalabilityModeOn?: boolean;
-    turnServerOverrideHost?: unknown;
+    turnServerOverrideHost?: string;
     turnServersOn?: boolean;
     uncappedSingleRemoteVideoOn?: boolean;
     useOnlyTURN?: string;
     vp9On?: boolean;
+    h264On?: boolean;
 };
 
 export interface P2PRtcFeatures {
@@ -288,7 +286,7 @@ export interface P2PRtcFeatures {
     preferP2pHardwareDecodingOn?: boolean;
     redOn?: boolean;
     rtpAbsCaptureTimeOn?: boolean;
-    turnServerOverrideHost?: boolean;
+    turnServerOverrideHost?: string;
     turnServersOn?: boolean;
     unlimitedBandwidthWhenUsingRelayP2POn?: boolean;
     useOnlyTURN?: string;
