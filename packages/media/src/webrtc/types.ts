@@ -39,6 +39,7 @@ export interface RtcManager {
     stopOrResumeVideo(localStream: MediaStream, enable: boolean): void;
     stopOrResumeAudio(localStream: MediaStream, enable: boolean): void;
     setRoomSessionId(roomSessionId: string): void;
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds?: string[]): void;
 }
 
 export interface RtcManagerCreatedPayload {
@@ -70,11 +71,16 @@ export interface RtcLocalStreamTrackRemovedPayload {
     track: MediaStreamTrack;
 }
 
+export interface RtcManagerSwappedPayload {
+    currentRtcManager: DynamicRoomMode;
+}
+
 export type RtcEvents = {
     client_connection_status_changed: RtcClientConnectionStatusChangedPayload;
     stream_added: RtcStreamAddedPayload;
     rtc_manager_created: RtcManagerCreatedPayload;
     rtc_manager_destroyed: void;
+    rtc_manager_swapped: RtcManagerSwappedPayload;
     local_stream_track_added: RtcLocalStreamTrackAddedPayload;
     local_stream_track_removed: RtcLocalStreamTrackRemovedPayload;
     remote_stream_track_added: void;
@@ -212,6 +218,7 @@ export interface TurnServerConfig {
 
 export type RoomType = "free" | "premium";
 
+type DynamicRoomMode = "vega" | "p2p";
 export interface RoomState {
     clients: SignalClient[];
     name: string;
@@ -223,6 +230,7 @@ export interface RoomState {
     turnServers: TurnServerConfig[];
     mediaserverConfigTtlSeconds: number;
     isClaimed: boolean;
+    dynamicRoomMode?: DynamicRoomMode;
 }
 
 export interface WebRTCProvider {

@@ -399,7 +399,7 @@ export default class P2pRtcManager implements RtcManager {
         });
     }
 
-    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = [] as string[]) {
         const localScreenshareStream = this._getFirstLocalNonCameraStream();
 
         this._screenshareVideoTrackIds = [

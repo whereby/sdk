@@ -1,32 +1,155 @@
 import { P2pRtcManager } from ".";
-import { PROTOCOL_EVENTS, PROTOCOL_RESPONSES } from "../model";
+import { PROTOCOL_EVENTS } from "../model";
 import { RtcManagerConfig } from "./RtcManagerDispatcher";
 import VegaRtcManager from "./VegaRtcManager";
-import { RtcEventEmitter, RtcEventNames, RtcEvents, RtcManager, RtcStreamAddedPayload } from "./types";
+import { RtcEventEmitter, RtcEvents, RtcManager, RtcStreamAddedPayload } from "./types";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
-import { v4 as uuid } from "uuid";
+import { ServerSocket } from "../utils";
 
-export interface DynamicRtcManager extends RtcManager {}
+interface ClientStreams {
+    pwa: Record<string, MediaStream>;
+    vega: Record<string, MediaStream>;
+    p2p: Record<string, MediaStream>;
+}
+
+class ClientStreamMap {
+    map: Record<string, ClientStreams> = {};
+
+    hasClientVegaStream({ clientId, streamId }: { clientId: string; streamId: string }) {
+        const clientMap = this.map[clientId];
+        if (!clientMap) {
+            return false;
+        }
+
+        return !!clientMap.vega[streamId];
+    }
+    hasClientP2pStream({ clientId, streamId }: { clientId: string; streamId: string }) {
+        const clientMap = this.map[clientId];
+        if (!clientMap) {
+            return false;
+        }
+
+        return !!clientMap.p2p[streamId];
+    }
+    hasClientPwaStream({ clientId, streamId }: { clientId: string; streamId: string }) {
+        const clientMap = this.map[clientId];
+        if (!clientMap) {
+            return false;
+        }
+
+        return !!clientMap.pwa[streamId];
+    }
+    addPwaStream({ clientId, streamId, stream }: { clientId: string; streamId: string; stream: MediaStream }) {
+        if (!this.map[clientId]) {
+            this.map[clientId] = { pwa: {}, vega: {}, p2p: {} };
+        }
+        this.map[clientId].pwa[streamId] = stream;
+    }
+    addVegaStream({ clientId, streamId, stream }: { clientId: string; streamId: string; stream: MediaStream }) {
+        if (!this.map[clientId]) {
+            this.map[clientId] = { pwa: {}, vega: {}, p2p: {} };
+        }
+        this.map[clientId].vega[streamId] = stream;
+    }
+    addP2pStream({ clientId, streamId, stream }: { clientId: string; streamId: string; stream: MediaStream }) {
+        if (!this.map[clientId]) {
+            this.map[clientId] = { pwa: {}, vega: {}, p2p: {} };
+        }
+        this.map[clientId].p2p[streamId] = stream;
+    }
+    getOrCreatePwaStream({ clientId, streamId }: { clientId: string; streamId: string }) {
+        let clientMap = this.map[clientId];
+        if (!clientMap) {
+            clientMap = { pwa: {}, vega: {}, p2p: {} };
+            this.map[clientId] = clientMap;
+        }
+        let stream = clientMap.pwa[streamId];
+        if (!stream) {
+            stream = new MediaStream();
+            this.map[clientId].pwa[streamId] = stream;
+        }
+        return stream;
+    }
+    getPwaStream({ clientId, streamId }: { clientId: string; streamId: string }) {
+        const stream = this.map[clientId]?.pwa[streamId];
+        if (!stream) {
+            throw new Error(`No PWA stream found for clientId: ${clientId} and streamId: ${streamId}`);
+        }
+        return stream;
+    }
+    getVegaStream({ clientId, streamId }: { clientId: string; streamId: string }) {
+        const stream = this.map[clientId]?.vega[streamId];
+        if (!stream) {
+            return null;
+        }
+        return stream;
+    }
+    getVegaStreamMissingFromP2p({ clientId }: { clientId: string }) {
+        const p2pMap = this.map[clientId]?.p2p;
+        const vegaMap = this.map[clientId]?.vega;
+        if (!p2pMap) {
+            throw new Error(`Somehow missing p2p map for ${clientId}`);
+        }
+        if (!vegaMap) {
+            throw new Error(`Somehow missing vega map for ${clientId}`);
+        }
+
+        const missingIds = Object.keys(vegaMap).filter((streamId) => {
+            return !p2pMap[streamId];
+        });
+        if (missingIds.length !== 1) {
+            console.log("Could not find missing vega stream", this.map[clientId], missingIds);
+            return null;
+        }
+        const streamId = missingIds[0]!;
+
+        return vegaMap[streamId];
+    }
+    getP2pStream({ clientId, streamId }: { clientId: string; streamId: string }) {
+        const stream = this.map[clientId]?.p2p[streamId];
+        if (!stream) {
+            console.log("ClientStreamMap.getP2pStream", this.map[clientId]);
+            throw new Error(`No P2p stream found for clientId: ${clientId} and streamId: ${streamId}`);
+        }
+        return stream;
+    }
+    getP2pStreamIdPairs() {
+        return Object.keys(this.map)
+            .map((clientId) => {
+                const clientMap = this.map[clientId];
+                if (!clientMap) {
+                    throw new Error(`No clientMap found for clientId: ${clientId}`);
+                }
+                return Object.keys(clientMap.p2p).map<{ clientId: string; streamId: string }>((streamId) => ({
+                    clientId,
+                    streamId,
+                }));
+            })
+            .flat();
+    }
+    clearP2pStreams() {
+        Object.keys(this.map).forEach((clientId) => {
+            this.map[clientId].p2p = {};
+        });
+    }
+}
 
 export class DynamicRtcManager {
-    currentRtcManager: "p2p" | "vega" = "p2p";
-    p2pRtcManager: P2pRtcManager;
+    currentRtcManager: "p2p" | "vega";
+    p2pRtcManager?: P2pRtcManager;
     vegaRtcManager: VegaRtcManager;
     createdWithConfig: RtcManagerConfig;
-    roomEmitter: RtcEventEmitter;
+    pwaEmitter: RtcEventEmitter;
     vegaEmitter: RtcEventEmitter;
     p2pEmitter: RtcEventEmitter;
-    proxyStreamMap: Record<string, MediaStream>;
-    vegaStreamMap: Record<string, MediaStream>;
-    p2pStreamMap: Record<string, MediaStream>;
+    clientStreamMap = new ClientStreamMap();
+    serverSocket: ServerSocket;
 
     constructor(config: RtcManagerConfig) {
-        config.emitter;
+        this.currentRtcManager = config.room.dynamicRoomMode ?? "p2p";
         this.createdWithConfig = config;
-        this.roomEmitter = config.emitter;
-        this.proxyStreamMap = {};
-        this.vegaStreamMap = {};
-        this.p2pStreamMap = {};
+        this.serverSocket = config.serverSocket;
+        this.pwaEmitter = config.emitter;
         this.vegaEmitter = {
             emit: this.onVegaEvent,
         };
@@ -35,8 +158,9 @@ export class DynamicRtcManager {
         };
 
         this.vegaRtcManager = new VegaRtcManager({ ...this.createdWithConfig, emitter: this.vegaEmitter });
-        this.p2pRtcManager = new P2pRtcManager({ ...config, emitter: this.p2pEmitter });
-        this.roomEmitter = config.emitter;
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager = new P2pRtcManager({ ...config, emitter: this.p2pEmitter });
+        }
     }
 
     // implement all RtcManager functions
@@ -50,103 +174,91 @@ export class DynamicRtcManager {
         clientId: string;
         shouldAddLocalVideo?: boolean;
     }) {
-        console.log("TRACE DynamicRtcManager.acceptNewStream", {
-            streamId,
-            clientId,
-        });
-        if (!this.vegaStreamMap[clientId]) {
+        if (!this.clientStreamMap.hasClientVegaStream({ clientId, streamId })) {
             this.vegaRtcManager.acceptNewStream({ streamId, clientId });
         }
 
-        if (!this.p2pStreamMap[clientId]) {
+        if (!this.clientStreamMap.hasClientP2pStream({ clientId, streamId }) && this.currentRtcManager === "p2p") {
             // PWA calls `rtcManager.shouldAcceptStreamsFromBothSides.?()` before calling `rtcManager.acceptNewStream`
             // we need this to return true so we can call this.vegaRtcManager.acceptNewStream, so we only call
             // this.p2pRtcManager.acceptNewStream when we haven't already received this stream after emitting `ready_to_receive_offer`
-            this.p2pRtcManager.acceptNewStream({ streamId, clientId, shouldAddLocalVideo });
-        }
-
-        if (!this.proxyStreamMap[clientId]) {
-            this.proxyStreamMap[clientId] = new MediaStream();
+            this.p2pRtcManager?.acceptNewStream({ streamId, clientId, shouldAddLocalVideo });
         }
     }
 
     onVegaEvent = <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => {
-        console.log("trace onVegaEvent", eventName);
         switch (eventName) {
             case "stream_added": {
-                console.log("TRACE DynamicRtcManager.onVegaEvent.stream_added", args);
-                const { clientId, stream } = args as RtcStreamAddedPayload;
-                this.vegaStreamMap[clientId] = stream;
+                const { clientId, stream, streamId } = args as RtcStreamAddedPayload;
+                if (!streamId) {
+                    throw new Error(`Well, there's no stream id adding vega stream !?!, clientId: ${clientId}`);
+                }
+
+                this.clientStreamMap.addVegaStream({ clientId, stream, streamId });
 
                 if (this.currentRtcManager === "vega") {
-                    const proxyStream = this.proxyStreamMap[clientId];
+                    const pwaStream = this.clientStreamMap.getOrCreatePwaStream({ clientId, streamId });
 
-                    this.addTracksToProxy(proxyStream, stream);
-                    this.roomEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+                    this.swapTracksToPwa(pwaStream, stream);
+                    this.pwaEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                         clientId,
-                        stream: proxyStream,
+                        stream: pwaStream,
                     });
                 }
                 return;
             }
             default: {
-                console.log("trace vega event", eventName);
                 if (this.currentRtcManager === "vega") {
-                    this.roomEmitter.emit(eventName, args);
+                    this.pwaEmitter.emit(eventName, args);
                 }
             }
         }
     };
     onP2pEvent = <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => {
-        console.log("trace onP2pEvent", eventName);
         switch (eventName) {
             case "stream_added": {
                 const { clientId, stream } = args as RtcStreamAddedPayload;
-                console.log("trace DynamicRtcManager.onP2pEvent.stream_added", { clientId });
-                this.p2pStreamMap[clientId] = stream;
+                let { streamId } = args as RtcStreamAddedPayload;
+
+                if (!streamId) {
+                    // P2pRtcManager doesn't emit streamIds, clientId is the streamId for the webcam, so this will differentiate between presentation streams and webcam streams
+                    streamId = stream.id;
+                }
+
+                this.clientStreamMap.addP2pStream({ clientId, stream, streamId });
 
                 if (this.currentRtcManager === "p2p") {
-                    let proxyStream = this.proxyStreamMap[clientId];
-                    if (!proxyStream) {
-                        proxyStream = new MediaStream();
-                        this.proxyStreamMap[clientId] = proxyStream;
-                    }
-                    this.addTracksToProxy(proxyStream, stream);
-                    this.roomEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+                    const pwaStream = this.clientStreamMap.getOrCreatePwaStream({ clientId, streamId });
+                    this.swapTracksToPwa(pwaStream, stream);
+                    this.pwaEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                         clientId,
-                        stream: proxyStream,
+                        stream: pwaStream,
                     });
                 }
                 return;
             }
             default: {
-                console.log("trace p2p event", eventName);
                 if (this.currentRtcManager === "p2p") {
-                    this.roomEmitter.emit(eventName, args);
+                    this.pwaEmitter.emit(eventName, args);
                 }
             }
         }
     };
-    private addTracksToProxy(proxyStream: MediaStream, newStream: MediaStream) {
-        console.log("TRACE DynamicRtcManager.addTracksToProxy", {
-            proxyStreamId: proxyStream.id,
-            newStreamId: newStream.id,
-        });
-        proxyStream.getTracks().forEach((track) => {
-            proxyStream.removeTrack(track);
+    private swapTracksToPwa(pwaStream: MediaStream, newStream: MediaStream) {
+        pwaStream.getTracks().forEach((track) => {
+            pwaStream.removeTrack(track);
         });
         newStream.getTracks().forEach((track) => {
-            proxyStream.addTrack(track);
+            pwaStream.addTrack(track);
         });
     }
 
     addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean) {
-        console.log("TRACE DynamicRtcManager.addNewStream", {
-            streamId,
-        });
         const isVega = this.currentRtcManager === "vega";
         this.vegaRtcManager.addNewStream(streamId, stream, isAudioEnabled, isVideoEnabled);
-        this.p2pRtcManager.addNewStream(streamId, stream, isAudioEnabled, isVideoEnabled);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.addNewStream(streamId, stream, isAudioEnabled, isVideoEnabled);
+        }
     }
 
     async swapToVega() {
@@ -155,43 +267,60 @@ export class DynamicRtcManager {
         }
         this.currentRtcManager = "vega";
         await new Promise<void>((resolve) => {
-            Object.keys(this.p2pStreamMap).forEach((clientId) => {
-                const vegaStream = this.vegaStreamMap[clientId];
+            this.clientStreamMap.getP2pStreamIdPairs().forEach(({ clientId, streamId }) => {
+                const vegaStream: MediaStream | null =
+                    this.clientStreamMap.getVegaStream({ clientId, streamId }) ??
+                    this.clientStreamMap.getVegaStreamMissingFromP2p({ clientId });
                 if (!vegaStream) {
-                    console.log("trace, swapToVega, no vegaStream", { clientId });
+                    // get whatever vega stream has an ID that doesn't exist in p2p streams
+                    return;
                 }
-                const proxyStream = this.proxyStreamMap[clientId];
-                this.addTracksToProxy(proxyStream, vegaStream);
+
+                const pwaStream = this.clientStreamMap.getPwaStream({ clientId, streamId });
+                this.swapTracksToPwa(pwaStream, vegaStream);
             });
             resolve();
         });
-        this.p2pRtcManager.disconnectAll();
-        this.p2pStreamMap = {};
+        this.p2pRtcManager?.disconnectAll();
+        this.clientStreamMap.clearP2pStreams();
+        this.pwaEmitter.emit("rtc_manager_swapped", { currentRtcManager: this.currentRtcManager });
     }
 
     rtcStatsReconnect(...args: Parameters<RtcManager["rtcStatsReconnect"]>) {
-        this.p2pRtcManager.rtcStatsReconnect(...args);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.rtcStatsReconnect(...args);
+        }
         this.vegaRtcManager.rtcStatsReconnect(...args);
     }
     rtcStatsDisconnect(...args: Parameters<RtcManager["rtcStatsDisconnect"]>) {
-        this.p2pRtcManager.rtcStatsDisconnect(...args);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.rtcStatsDisconnect(...args);
+        }
         this.vegaRtcManager.rtcStatsDisconnect(...args);
     }
     disconnect(...args: Parameters<RtcManager["disconnect"]>) {
-        // @ts-expect-error
-        this.p2pRtcManager.disconnect(...args);
+        if (this.currentRtcManager === "p2p") {
+            // @ts-expect-error
+            this.p2pRtcManager?.disconnect(...args);
+        }
         this.vegaRtcManager.disconnect(...args);
     }
     disconnectAll(...args: Parameters<RtcManager["disconnectAll"]>) {
-        this.p2pRtcManager.disconnectAll(...args);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.disconnectAll(...args);
+        }
         this.vegaRtcManager.disconnectAll(...args);
     }
     replaceTrack(...args: Parameters<RtcManager["replaceTrack"]>) {
-        this.p2pRtcManager.replaceTrack(...args);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.replaceTrack(...args);
+        }
         this.vegaRtcManager.replaceTrack(...args);
     }
     removeStream(...args: Parameters<RtcManager["removeStream"]>) {
-        this.p2pRtcManager.removeStream(...args);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.removeStream(...args);
+        }
         // @ts-expect-error
         this.vegaRtcManager.removeStream(...args);
     }
@@ -204,22 +333,24 @@ export class DynamicRtcManager {
         }
     }
     updateStreamResolution(...args: Parameters<RtcManager["updateStreamResolution"]>) {
-        // @ts-expect-error
-        this.p2pRtcManager.updateStreamResolution(...args);
+        if (this.currentRtcManager === "p2p") {
+            // @ts-expect-error
+            this.p2pRtcManager?.updateStreamResolution(...args);
+        }
         this.vegaRtcManager.updateStreamResolution(...args);
     }
     sendStatsCustomEvent(...args: Parameters<RtcManager["sendStatsCustomEvent"]>) {
         if (this.currentRtcManager === "p2p") {
-            this.p2pRtcManager.sendStatsCustomEvent(...args);
+            this.p2pRtcManager?.sendStatsCustomEvent(...args);
         } else {
             this.vegaRtcManager.sendStatsCustomEvent(...args);
         }
     }
     isInitializedWith(...args: Parameters<RtcManager["isInitializedWith"]>) {
         if (this.currentRtcManager === "p2p") {
-            return this.vegaRtcManager.isInitializedWith(...args);
+            return this.p2pRtcManager?.isInitializedWith(...args) ?? false;
         } else {
-            return this.p2pRtcManager.isInitializedWith(...args);
+            return this.vegaRtcManager.isInitializedWith(...args);
         }
     }
     setEventClaim(...args: Parameters<VegaRtcManager["setEventClaim"]>) {
@@ -227,34 +358,61 @@ export class DynamicRtcManager {
     }
     hasClient(...args: Parameters<RtcManager["hasClient"]>) {
         if (this.currentRtcManager === "p2p") {
-            return this.p2pRtcManager.hasClient(...args);
+            return this.p2pRtcManager?.hasClient(...args) ?? false;
         } else {
             return this.vegaRtcManager.hasClient(...args);
         }
     }
     setupSocketListeners(...args: Parameters<RtcManager["setupSocketListeners"]>) {
-        this.p2pRtcManager.setupSocketListeners(...args);
+        this.serverSocket.on(
+            PROTOCOL_EVENTS.DYNAMIC_ROOM_MODE_CHANGED,
+            ({ dynamicRoomMode }: { dynamicRoomMode: DynamicRtcManager["currentRtcManager"] }) => {
+                if (dynamicRoomMode !== this.currentRtcManager && dynamicRoomMode === "vega") {
+                    this.swapToVega();
+                }
+            },
+        );
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.setupSocketListeners(...args);
+        }
         this.vegaRtcManager.setupSocketListeners(...args);
     }
     sendAudioMutedStats() {}
     sendVideoMutedStats() {}
     supportsScreenShareAudio() {
         if (this.currentRtcManager === "p2p") {
-            return this.p2pRtcManager.supportsScreenShareAudio();
+            return this.p2pRtcManager?.supportsScreenShareAudio();
         } else {
             return this.vegaRtcManager.supportsScreenShareAudio();
         }
     }
     stopOrResumeVideo(...args: Parameters<RtcManager["stopOrResumeVideo"]>) {
-        this.p2pRtcManager.stopOrResumeVideo(...args);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.stopOrResumeVideo(...args);
+        }
+
         this.vegaRtcManager.stopOrResumeVideo(...args);
     }
     stopOrResumeAudio(...args: Parameters<RtcManager["stopOrResumeAudio"]>) {
-        this.p2pRtcManager.stopOrResumeAudio();
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.stopOrResumeAudio();
+        }
         this.vegaRtcManager.stopOrResumeAudio(...args);
     }
     setRoomSessionId(...args: Parameters<RtcManager["setRoomSessionId"]>) {
-        this.p2pRtcManager.setRoomSessionId(...args);
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.setRoomSessionId(...args);
+        }
         this.vegaRtcManager.setRoomSessionId(...args);
+    }
+    get peerConnections() {
+        return this.p2pRtcManager?.peerConnections ?? {};
+    }
+    setRemoteScreenshareVideoTrackIds(trackIds = []) {
+        if (this.currentRtcManager === "p2p") {
+            this.p2pRtcManager?.setRemoteScreenshareVideoTrackIds(trackIds);
+        }
+        // @ts-expect-error unexpected argument
+        this.vegaRtcManager.setRemoteScreenshareVideoTrackIds(trackIds);
     }
 }

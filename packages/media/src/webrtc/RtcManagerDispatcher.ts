@@ -59,14 +59,14 @@ export default class RtcManagerDispatcher {
                 roomMode = isSfu ? "group" : "normal";
                 let rtcManager = null;
 
-                if (features.dynamicRtcManagerOn) {
-                    rtcManager = new DynamicRtcManager(config);
-                } else {
-                    if (isSfu) {
-                        rtcManager = new VegaRtcManager(config);
+                if (isSfu) {
+                    if (features.dynamicRtcManagerOn) {
+                        rtcManager = new DynamicRtcManager(config);
                     } else {
-                        rtcManager = new P2pRtcManager(config);
+                        rtcManager = new VegaRtcManager(config);
                     }
+                } else {
+                    rtcManager = new P2pRtcManager(config);
                 }
 
                 if (this.currentManager) {

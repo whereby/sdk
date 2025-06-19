@@ -142,4 +142,5 @@ export const KNOCK_MESSAGES = {
 export const PROTOCOL_EVENTS = {
     PENDING_CLIENT_LEFT: "pending_client_left",
     MEDIA_QUALITY_CHANGED: "media_quality_changed",
+    DYNAMIC_ROOM_MODE_CHANGED: "dynamic_room_mode_changed",
 };
