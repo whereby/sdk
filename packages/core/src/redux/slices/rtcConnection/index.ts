@@ -2,12 +2,14 @@ import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import {
-    RtcManager,
-    RtcManagerDispatcher,
-    RtcEvents,
-    RtcManagerCreatedPayload,
-    RtcStreamAddedPayload,
     RtcClientConnectionStatusChangedPayload,
+    RtcEvents,
+    RtcFeatures,
+    RtcManager,
+    RtcManagerCreatedPayload,
+    RtcManagerDispatcher,
+    RtcStreamAddedPayload,
+    WebRTCProvider,
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
@@ -41,7 +43,6 @@ function isDeferrable({ client, breakoutCurrentId }: { client?: RemoteParticipan
     return false;
 }
 import { rtcEvents } from "./actions";
-export { rtcEvents } from "./actions";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -210,7 +211,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
         return;
     }
 
-    const webrtcProvider = {
+    const webrtcProvider: WebRTCProvider = {
         getMediaConstraints: () => ({
             audio: isMicrophoneEnabled,
             video: isCameraEnabled,
@@ -223,20 +224,21 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
         },
     };
 
+    const features: RtcFeatures = {
+        isNodeSdk,
+        lowDataModeEnabled: false,
+        sfuServerOverrideHost: undefined,
+        turnServerOverrideHost: undefined,
+        useOnlyTURN: undefined,
+        vp9On: false,
+        h264On: false,
+        simulcastScreenshareOn: false,
+    };
     const rtcManagerDispatcher = new RtcManagerDispatcher({
         emitter: createWebRtcEmitter(dispatch),
         serverSocket: socket,
         webrtcProvider,
-        features: {
-            isNodeSdk,
-            lowDataModeEnabled: false,
-            sfuServerOverrideHost: undefined,
-            turnServerOverrideHost: undefined,
-            useOnlyTURN: undefined,
-            vp9On: false,
-            h264On: false,
-            simulcastScreenshareOn: false,
-        },
+        features,
     });
 
     dispatch(rtcDispatcherCreated(rtcManagerDispatcher));

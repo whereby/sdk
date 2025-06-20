@@ -66,7 +66,7 @@ export interface Spotlight {
     streamId: string;
 }
 
-export type RoomMode = "normal" | "group";
+export type RoomMode = "normal" | "group" | "dynamic";
 
 export interface AudioEnabledEvent {
     clientId: string;

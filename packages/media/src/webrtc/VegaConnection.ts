@@ -1,8 +1,23 @@
 import SfuV2Parser from "./SfuV2Parser";
 import { EventEmitter } from "events";
 import Logger from "../utils/Logger";
+import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
+import {
+    AppData,
+    IceParameters,
+    SctpParameters,
+    SctpStreamParameters,
+    TransportOptions,
+} from "mediasoup-client/lib/types";
 
 const logger = new Logger();
+type RequestMethod =
+    | "produce"
+    | "produceData"
+    | "restartIce"
+    | "getCapabilities"
+    | "getTransportStats"
+    | "createTransport";
 
 export default class VegaConnection extends EventEmitter {
     wsUrl: string;
@@ -99,7 +114,47 @@ export default class VegaConnection extends EventEmitter {
         this.send(message);
     }
 
-    request(method: any, data: any = {}, timeout: number = 1500 * (15 + 0.1 * this.sents.size)) {
+    request(
+        method: "getCapabilities",
+        data?: null,
+        timeout?: number,
+    ): Promise<{ routerRtpCapabilities: RtpCapabilities }>;
+    request(
+        method: "produce",
+        data: { transportId: string; kind: string; appData: AppData; paused?: boolean; rtpParameters: RtpParameters },
+        timeout?: number,
+    ): Promise<{ id: string }>;
+    request(
+        method: "produceData",
+        data: { transportId: string; appData: AppData; sctpStreamParameters: SctpStreamParameters },
+        timeout?: number,
+    ): Promise<{ id: string }>;
+    request(
+        method: "restartIce",
+        data: { transportId: string },
+        timeout?: number,
+    ): Promise<{ iceParameters: IceParameters }>;
+    request(
+        method: "createTransport",
+        data: {
+            producing: boolean;
+            consuming: boolean;
+            enableTcp: boolean;
+            enableUdp: boolean;
+            preferUdp: boolean;
+            sctpParameters: {
+                enableSctp: boolean;
+                numSctpStreams: {
+                    OS: number;
+                    MIS: number;
+                };
+                maxSctpMessageSize: number;
+                sctpSendBufferSize: number;
+            };
+        },
+        timeout?: number,
+    ): Promise<TransportOptions>;
+    request(method: RequestMethod, data: any = {}, timeout: number = 1500 * (15 + 0.1 * this.sents.size)) {
         const request = SfuV2Parser.createRequest(method, data);
 
         this.send(request);

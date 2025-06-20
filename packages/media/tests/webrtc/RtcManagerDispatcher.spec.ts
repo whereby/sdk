@@ -22,7 +22,15 @@ describe("RtcManagerDispatcher", () => {
 
         const serverSocket = serverSocketStub.socket;
         // eslint-disable-next-line no-new
-        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider: {}, features });
+        new RtcManagerDispatcher({
+            emitter,
+            serverSocket,
+            webrtcProvider: {
+                getMediaConstraints: () => ({ audio: true, video: true }),
+                deferrable: () => true,
+            },
+            features,
+        });
         Object.defineProperty(mediasoupClient, "Device", {
             value: jest.fn(),
         });

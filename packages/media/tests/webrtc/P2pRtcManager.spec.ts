@@ -11,6 +11,7 @@ import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
+import { RoomState } from "packages/media/src";
 
 const originalNavigator = global.navigator;
 
@@ -91,7 +92,21 @@ describe("P2pRtcManager", () => {
     } = {}) {
         return new P2pRtcManager({
             selfId,
-            room: Object.assign({ name: roomName, iceServers: { iceServers } }, roomData),
+            room: Object.assign(
+                {
+                    clients: [],
+                    name: roomName,
+                    iceServers: { iceServers },
+                    isClaimed: true,
+                    mediaserverConfigTtlSeconds: 100,
+                    organizationId: "id",
+                    session: null,
+                    sfuServer: null,
+                    turnServers: [],
+                    mode: "normal",
+                },
+                roomData,
+            ) as RoomState,
             emitter: _emitter,
             serverSocket: _serverSocket,
             webrtcProvider,
