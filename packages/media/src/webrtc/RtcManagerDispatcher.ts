@@ -67,6 +67,8 @@ export default class RtcManagerDispatcher {
                             return new DynamicRtcManager(config);
                     }
                 })();
+                // @ts-expect-error
+                document.rtcManager = rtcManager;
 
                 if (this.currentManager) {
                     if (this.currentManager.isInitializedWith({ selfId, roomName: room.name, isSfu })) {

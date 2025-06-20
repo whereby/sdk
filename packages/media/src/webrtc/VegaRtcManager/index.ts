@@ -11,6 +11,7 @@ import createMicAnalyser from "../VegaMicAnalyser";
 import {
     CustomMediaStreamTrack,
     ICEServerConfig,
+    MediaStreamWhichMayHaveDirectionalIds,
     MicAnalyserDebugger,
     RoomState,
     RtcEventEmitter,
@@ -60,15 +61,13 @@ const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 
 if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
-type MediaSteamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
-
 type ClientState = {
     hasAcceptedWebcamStream: Boolean;
     hasAcceptedScreenStream: Boolean;
     hasEmittedWebcamStream: Boolean;
     hasEmittedScreenStream: Boolean;
-    webcamStream?: MediaSteamWhichMayHaveInboundId;
-    screenStream?: MediaSteamWhichMayHaveInboundId;
+    webcamStream?: MediaStreamWhichMayHaveDirectionalIds;
+    screenStream?: MediaStreamWhichMayHaveDirectionalIds;
     screenShareStreamId?: string;
     camStreamId?: string;
 };
@@ -132,10 +131,21 @@ export default class VegaRtcManager implements RtcManager {
     _isConnectingOrConnected: boolean;
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
+    _globalPause: boolean;
 
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim }: RtcManagerConfig) {
+    constructor({
+        selfId,
+        room,
+        emitter,
+        serverSocket,
+        webrtcProvider,
+        features,
+        eventClaim,
+        globalPause,
+    }: RtcManagerConfig & { globalPause?: boolean }) {
         const { session, iceServers, turnServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
 
+        this._globalPause = !!globalPause;
         this._selfId = selfId;
         this._room = room;
         this._roomSessionId = session?.id;
@@ -383,8 +393,17 @@ export default class VegaRtcManager implements RtcManager {
                         eventClaim: this._room.isClaimed ? this._eventClaim : null,
                         lowBw: "true",
                         ...Object.keys(this._features || {})
-                            .filter((featureKey) => this._features[featureKey as keyof VegaRtcFeatures] && /^sfu/.test(featureKey))
-                            .reduce((prev, current) => ({ ...prev, [current]: this._features[current as keyof VegaRtcFeatures] }), {}),
+                            .filter(
+                                (featureKey) =>
+                                    this._features[featureKey as keyof VegaRtcFeatures] && /^sfu/.test(featureKey),
+                            )
+                            .reduce(
+                                (prev, current) => ({
+                                    ...prev,
+                                    [current]: this._features[current as keyof VegaRtcFeatures],
+                                }),
+                                {},
+                            ),
                     });
                     const queryString = searchParams.toString();
                     const wsUrl = `wss://${host}?${queryString}`;
@@ -700,6 +719,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._micTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_CAM_OUTBOUND_STREAM_ID,
@@ -711,7 +731,7 @@ export default class VegaRtcManager implements RtcManager {
                     },
                 });
 
-                currentPaused ? producer.pause() : producer.resume();
+                this._globalPause || currentPaused ? producer.pause() : producer.resume();
 
                 this._micProducer = producer;
                 this._qualityMonitor?.addProducer(this._selfId, producer.id);
@@ -900,6 +920,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._webcamTrack!,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings("video", false, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_CAM_OUTBOUND_STREAM_ID,
@@ -911,7 +932,12 @@ export default class VegaRtcManager implements RtcManager {
                     },
                 });
 
-                currentPaused ? producer.pause() : producer.resume();
+                if (this._globalPause || currentPaused) {
+                    console.log("trace pausing webcam producer", { globalPause: this._globalPause });
+                    setTimeout(() => producer.pause(), 0);
+                } else {
+                    producer.resume();
+                }
 
                 this._webcamProducer = producer;
                 this._qualityMonitor?.addProducer(this._selfId, producer.id);
@@ -1020,6 +1046,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenVideoTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings(
                         "video",
                         true,
@@ -1035,8 +1062,12 @@ export default class VegaRtcManager implements RtcManager {
                         localClosed: undefined,
                     },
                 });
+                if (this._globalPause) {
+                    producer.pause();
+                }
 
                 this._screenVideoProducer = producer;
+
                 this._qualityMonitor?.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('screenVideoProducer "close" event');
@@ -1111,6 +1142,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenAudioTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings("audio", true, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
@@ -1122,7 +1154,11 @@ export default class VegaRtcManager implements RtcManager {
                     },
                 });
 
+                if (this._globalPause) {
+                    producer.pause();
+                }
                 this._screenAudioProducer = producer;
+
                 this._qualityMonitor?.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('screenAudioProducer "close" event');
@@ -1370,6 +1406,7 @@ export default class VegaRtcManager implements RtcManager {
         videoPaused: boolean,
         beforeEffectTracks: CustomMediaStreamTrack[] = [],
     ) {
+        console.log("trace addNewStream", { streamId });
         if (streamId === "0") {
             this._micPaused = audioPaused;
             this._webcamPaused = videoPaused;
@@ -1472,6 +1509,52 @@ export default class VegaRtcManager implements RtcManager {
             this._sendWebcam(track);
         }
     }
+
+    globalResume() {
+        this._globalPause = false;
+        console.log("trace globalResume", {
+            webcamPaused: this._webcamPaused,
+            webcamProducerPaused: this._webcamProducer?.paused,
+            webcamProducerPromise: this._webcamProducerPromise,
+        });
+        if (!this._webcamPaused) {
+            if (this._webcamProducer) {
+                this._webcamProducer.resume();
+            }
+            if (this._webcamProducerPromise) {
+                this._webcamProducerPromise.then(() => {
+                    this._webcamProducer?.resume();
+                });
+            }
+        }
+        if (!this._micPaused) {
+            if (this._micProducer) {
+                this._micProducer.resume();
+            }
+            if (this._micProducerPromise) {
+                this._micProducerPromise.then(() => {
+                    this._micProducer?.resume();
+                });
+            }
+        }
+        if (this._screenVideoProducer && this._screenVideoProducer.paused) {
+            this._screenVideoProducer.resume();
+        }
+        if (this._screenAudioProducer && this._screenAudioProducer.paused) {
+            this._screenAudioProducer.resume();
+        }
+        this._screenVideoProducerPromise?.then(() => {
+            if (this._screenVideoProducer?.paused) {
+                this._screenVideoProducer.resume();
+            }
+        });
+
+        this._screenAudioProducerPromise?.then(() => {
+            if (this._screenAudioProducer?.paused) {
+                this._screenAudioProducer.resume();
+            }
+        });
+    }
     /**
      * Only for webcam.
      *
@@ -1551,6 +1634,7 @@ export default class VegaRtcManager implements RtcManager {
     acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
         const clientState = this._getOrCreateClientState(clientId);
         const isScreenShare = streamId !== clientId;
+        console.log("trace VegaRtcManager.acceptNewStream", { streamId, clientId });
 
         if (isScreenShare) {
             clientState.hasAcceptedScreenStream = true;
@@ -1760,7 +1844,14 @@ export default class VegaRtcManager implements RtcManager {
             streamId,
         } = consumer.appData as { sourceClientId: string; screenShare: boolean; streamId: string };
         const clientState = this._getOrCreateClientState(clientId);
-
+        console.log("trace VegaRtcManager.onConsumerReady", {
+            options,
+            appData: {
+                sourceClientId: clientId,
+                screenShare,
+                streamId,
+            },
+        });
         if (screenShare) {
             clientState.hasEmittedScreenStream = false; // re-emit stream if updated
             clientState.screenShareStreamId = streamId;

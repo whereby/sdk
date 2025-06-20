@@ -48,9 +48,9 @@ export interface RtcManagerCreatedPayload {
 
 export interface RtcStreamAddedPayload {
     clientId: string;
-    stream: MediaStream;
-    streamId: string | undefined;
-    streamType: "webcam" | "screenshare" | undefined;
+    stream: MediaStreamWhichMayHaveDirectionalIds;
+    streamId?: string;
+    streamType?: "webcam" | "screenshare";
 }
 
 export interface RtcClientConnectionStatusChangedPayload {
@@ -187,6 +187,11 @@ export type GetDeviceDataResult = {
 
 export interface CustomMediaStreamTrack extends MediaStreamTrack {
     effectTrack?: boolean;
+}
+
+export interface MediaStreamWhichMayHaveDirectionalIds extends MediaStream {
+    inboundId?: string;
+    outboundId?: string;
 }
 
 export interface SFUServer {

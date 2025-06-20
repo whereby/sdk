@@ -2,16 +2,23 @@ import { P2pRtcManager } from ".";
 import { PROTOCOL_EVENTS } from "../model";
 import { RtcManagerConfig } from "./RtcManagerDispatcher";
 import VegaRtcManager from "./VegaRtcManager";
-import { RtcEventEmitter, RtcEvents, RtcManager, RtcStreamAddedPayload } from "./types";
+import {
+    MediaStreamWhichMayHaveDirectionalIds,
+    RtcEventEmitter,
+    RtcEvents,
+    RtcManager,
+    RtcStreamAddedPayload,
+} from "./types";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { ServerSocket } from "../utils";
 import Logger from "../utils/Logger";
 const logger = new Logger();
 
 interface ClientStreams {
-    pwa: Record<string, MediaStream>;
-    vega: Record<string, MediaStream>;
-    p2p: Record<string, MediaStream>;
+    pwa: Record<string, MediaStreamWhichMayHaveDirectionalIds>;
+    vega: Record<string, MediaStreamWhichMayHaveDirectionalIds>;
+    p2p: Record<string, MediaStreamWhichMayHaveDirectionalIds>;
+    webcamP2pStreamId?: string;
 }
 
 class ClientStreamMap {
@@ -41,22 +48,50 @@ class ClientStreamMap {
 
         return !!clientMap.pwa[streamId];
     }
-    addPwaStream({ clientId, streamId, stream }: { clientId: string; streamId: string; stream: MediaStream }) {
+    addPwaStream({
+        clientId,
+        streamId,
+        stream,
+    }: {
+        clientId: string;
+        streamId: string;
+        stream: MediaStreamWhichMayHaveDirectionalIds;
+    }) {
         if (!this.map[clientId]) {
             this.map[clientId] = { pwa: {}, vega: {}, p2p: {} };
         }
         this.map[clientId].pwa[streamId] = stream;
     }
-    addVegaStream({ clientId, streamId, stream }: { clientId: string; streamId: string; stream: MediaStream }) {
+    addVegaStream({
+        clientId,
+        streamId,
+        stream,
+    }: {
+        clientId: string;
+        streamId: string;
+        stream: MediaStreamWhichMayHaveDirectionalIds;
+    }) {
         if (!this.map[clientId]) {
             this.map[clientId] = { pwa: {}, vega: {}, p2p: {} };
         }
         this.map[clientId].vega[streamId] = stream;
     }
-    addP2pStream({ clientId, streamId, stream }: { clientId: string; streamId: string; stream: MediaStream }) {
+    addP2pStream({
+        clientId,
+        streamId,
+        stream,
+    }: {
+        clientId: string;
+        streamId: string;
+        stream: MediaStreamWhichMayHaveDirectionalIds;
+    }) {
         if (!this.map[clientId]) {
             this.map[clientId] = { pwa: {}, vega: {}, p2p: {} };
         }
+        if (!this.map[clientId].webcamP2pStreamId) {
+            this.map[clientId].webcamP2pStreamId = streamId;
+        }
+
         this.map[clientId].p2p[streamId] = stream;
     }
     getOrCreatePwaStream({ clientId, streamId }: { clientId: string; streamId: string }) {
@@ -142,14 +177,15 @@ export class DynamicRtcManager {
     vegaRtcManager: VegaRtcManager;
     createdWithConfig: RtcManagerConfig;
     pwaEmitter: RtcEventEmitter;
+    serverSocket: ServerSocket;
     vegaEmitter: RtcEventEmitter;
     p2pEmitter: RtcEventEmitter;
     clientStreamMap = new ClientStreamMap();
-    serverSocket: ServerSocket;
 
     constructor(config: RtcManagerConfig) {
         this.currentRtcManager = config.room.dynamicRoomMode ?? "p2p";
         this.createdWithConfig = config;
+
         this.serverSocket = config.serverSocket;
         this.pwaEmitter = config.emitter;
         this.vegaEmitter = {
@@ -159,9 +195,23 @@ export class DynamicRtcManager {
             emit: this.onP2pEvent,
         };
 
-        this.vegaRtcManager = new VegaRtcManager({ ...this.createdWithConfig, emitter: this.vegaEmitter });
+        this.vegaRtcManager = new VegaRtcManager({
+            ...this.createdWithConfig,
+            emitter: this.vegaEmitter,
+            globalPause: this.currentRtcManager === "p2p",
+        });
+        this.vegaRtcManager._emitToSignal = (...args) => {
+            if (this.currentRtcManager === "vega") {
+                this.serverSocket.emit(...args);
+            }
+        };
         if (this.currentRtcManager === "p2p") {
             this.p2pRtcManager = new P2pRtcManager({ ...config, emitter: this.p2pEmitter });
+            this.p2pRtcManager._emitServerEvent = (...args) => {
+                if (this.currentRtcManager === "p2p") {
+                    this.serverSocket.emit(...args);
+                }
+            };
         }
     }
 
@@ -191,7 +241,7 @@ export class DynamicRtcManager {
     onVegaEvent = <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => {
         switch (eventName) {
             case "stream_added": {
-                const { clientId, stream, streamId } = args as RtcStreamAddedPayload;
+                const { clientId, stream, streamId, streamType } = args as RtcStreamAddedPayload;
                 if (!streamId) {
                     throw new Error(`Well, there's no stream id adding vega stream !?!, clientId: ${clientId}`);
                 }
@@ -199,12 +249,17 @@ export class DynamicRtcManager {
                 this.clientStreamMap.addVegaStream({ clientId, stream, streamId });
 
                 if (this.currentRtcManager === "vega") {
-                    const pwaStream = this.clientStreamMap.getOrCreatePwaStream({ clientId, streamId });
+                    const pwaStream = this.clientStreamMap.getOrCreatePwaStream({
+                        clientId,
+                        streamId,
+                    });
 
                     this.swapTracksToPwa(pwaStream, stream);
                     this.pwaEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                         clientId,
                         stream: pwaStream,
+                        streamId,
+                        streamType,
                     });
                 }
                 return;
@@ -225,16 +280,22 @@ export class DynamicRtcManager {
                 if (!streamId) {
                     // P2pRtcManager doesn't emit streamIds, clientId is the streamId for the webcam, so this will differentiate between presentation streams and webcam streams
                     streamId = stream.id;
+                    console.log("trace setting streamId to stream.id", { stream });
                 }
 
                 this.clientStreamMap.addP2pStream({ clientId, stream, streamId });
 
                 if (this.currentRtcManager === "p2p") {
-                    const pwaStream = this.clientStreamMap.getOrCreatePwaStream({ clientId, streamId });
+                    const pwaStream = this.clientStreamMap.getOrCreatePwaStream({
+                        clientId,
+                        streamId,
+                    });
+                    const isWebcam = this.clientStreamMap.map[clientId].webcamP2pStreamId === streamId;
                     this.swapTracksToPwa(pwaStream, stream);
                     this.pwaEmitter.emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                         clientId,
                         stream: pwaStream,
+                        streamType: isWebcam ? "webcam" : "screenshare",
                     });
                 }
                 return;
@@ -246,19 +307,28 @@ export class DynamicRtcManager {
             }
         }
     };
-    private swapTracksToPwa(pwaStream: MediaStream, newStream: MediaStream) {
+    private swapTracksToPwa(
+        pwaStream: MediaStreamWhichMayHaveDirectionalIds,
+        newStream: MediaStreamWhichMayHaveDirectionalIds,
+    ) {
         pwaStream.getTracks().forEach((track) => {
             pwaStream.removeTrack(track);
         });
         newStream.getTracks().forEach((track) => {
             pwaStream.addTrack(track);
         });
+        pwaStream.inboundId = newStream.inboundId;
+        pwaStream.outboundId = newStream.outboundId;
     }
 
-    addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean) {
-        // TODO pause vega producer if we are on P2P
-        const isVega = this.currentRtcManager === "vega";
-        this.vegaRtcManager.addNewStream(streamId, stream, isAudioEnabled, isVideoEnabled);
+    addNewStream(
+        streamId: string,
+        stream: MediaStreamWhichMayHaveDirectionalIds,
+        isAudioEnabled: boolean,
+        isVideoEnabled: boolean,
+    ) {
+        // const isVega = this.currentRtcManager === "vega";
+        this.vegaRtcManager.addNewStream(streamId, stream, false && isAudioEnabled, false && isVideoEnabled);
         if (this.currentRtcManager === "p2p") {
             this.p2pRtcManager?.addNewStream(streamId, stream, isAudioEnabled, isVideoEnabled);
         }
@@ -269,9 +339,10 @@ export class DynamicRtcManager {
             return;
         }
         this.currentRtcManager = "vega";
+        this.vegaRtcManager.globalResume();
         await new Promise<void>((resolve) => {
             this.clientStreamMap.getP2pStreamIdPairs().forEach(({ clientId, streamId }) => {
-                const vegaStream: MediaStream | null =
+                const vegaStream: MediaStreamWhichMayHaveDirectionalIds | null =
                     this.clientStreamMap.getVegaStream({ clientId, streamId }) ??
                     this.clientStreamMap.getVegaStreamMissingFromP2p({ clientId });
                 if (!vegaStream) {
