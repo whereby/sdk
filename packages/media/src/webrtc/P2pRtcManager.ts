@@ -1071,9 +1071,9 @@ export default class P2pRtcManager implements RtcManager {
         let bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
-                  1: this._features.lowBandwidth ? 768 : 0,
-                  2: this._features.highP2PBandwidth && !this._features.lowBandwidth ? 768 : 384,
-                  3: this._features.highP2PBandwidth && !this._features.lowBandwidth ? 512 : 256,
+                  1: 0,
+                  2: this._features.highP2PBandwidth ? 768 : 384,
+                  3: this._features.highP2PBandwidth ? 512 : 256,
                   4: 192,
                   5: 128,
                   6: 128,
@@ -1098,7 +1098,7 @@ export default class P2pRtcManager implements RtcManager {
             }
         }
 
-        if (this._features.higherP2PBitrates && !this._features.lowBandwidth) {
+        if (this._features.higherP2PBitrates) {
             bandwidth = bandwidth * 1.5;
         }
 
