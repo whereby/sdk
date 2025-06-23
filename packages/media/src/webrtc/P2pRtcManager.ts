@@ -1065,14 +1065,12 @@ export default class P2pRtcManager implements RtcManager {
             numPeers = 7;
         }
 
-        // We use a slightly different curve in premium to give better quality when
-        // there are few participants.
-        let bandwidth = this._features.bandwidth
+        const bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
                   1: 0,
-                  2: this._features.highP2PBandwidth ? 768 : 384,
-                  3: this._features.highP2PBandwidth ? 512 : 256,
+                  2: 384,
+                  3: 256,
                   4: 192,
                   5: 128,
                   6: 128,
