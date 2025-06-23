@@ -1083,10 +1083,6 @@ export default class P2pRtcManager implements RtcManager {
             return 0;
         }
 
-        if (this._features.higherP2PBitrates) {
-            bandwidth = bandwidth * 1.5;
-        }
-
         this._forEachPeerConnection((session: any) => {
             session.changeBandwidth(bandwidth);
         });
