@@ -5,7 +5,6 @@ import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RtcStream } from "../model/RtcStream";
-import { getOptimalBitrate } from "../utils/optimalBitrate";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
@@ -1082,20 +1081,6 @@ export default class P2pRtcManager implements RtcManager {
 
         if (bandwidth === undefined) {
             return 0;
-        }
-
-        if (this._features.adjustBitratesFromResolution) {
-            const cameraStream = this._getLocalCameraStream();
-            if (cameraStream) {
-                const cameraTrack = cameraStream && cameraStream.getVideoTracks()[0];
-                if (cameraTrack) {
-                    const { width, height, frameRate } = cameraTrack.getSettings();
-                    if (width && height && frameRate) {
-                        const optimalBandwidth = Math.round(getOptimalBitrate(width, height, frameRate) / 1000);
-                        bandwidth = Math.min(optimalBandwidth, bandwidth || optimalBandwidth);
-                    }
-                }
-            }
         }
 
         if (this._features.higherP2PBitrates) {
