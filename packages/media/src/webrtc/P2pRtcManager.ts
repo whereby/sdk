@@ -5,7 +5,6 @@ import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { RtcStream } from "../model/RtcStream";
-import { getOptimalBitrate } from "../utils/optimalBitrate";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
@@ -1066,14 +1065,12 @@ export default class P2pRtcManager implements RtcManager {
             numPeers = 7;
         }
 
-        // We use a slightly different curve in premium to give better quality when
-        // there are few participants.
-        let bandwidth = this._features.bandwidth
+        const bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
-                  1: this._features.lowBandwidth ? 768 : 0,
-                  2: this._features.highP2PBandwidth && !this._features.lowBandwidth ? 768 : 384,
-                  3: this._features.highP2PBandwidth && !this._features.lowBandwidth ? 512 : 256,
+                  1: 0,
+                  2: 384,
+                  3: 256,
                   4: 192,
                   5: 128,
                   6: 128,
@@ -1082,24 +1079,6 @@ export default class P2pRtcManager implements RtcManager {
 
         if (bandwidth === undefined) {
             return 0;
-        }
-
-        if (this._features.adjustBitratesFromResolution) {
-            const cameraStream = this._getLocalCameraStream();
-            if (cameraStream) {
-                const cameraTrack = cameraStream && cameraStream.getVideoTracks()[0];
-                if (cameraTrack) {
-                    const { width, height, frameRate } = cameraTrack.getSettings();
-                    if (width && height && frameRate) {
-                        const optimalBandwidth = Math.round(getOptimalBitrate(width, height, frameRate) / 1000);
-                        bandwidth = Math.min(optimalBandwidth, bandwidth || optimalBandwidth);
-                    }
-                }
-            }
-        }
-
-        if (this._features.higherP2PBitrates && !this._features.lowBandwidth) {
-            bandwidth = bandwidth * 1.5;
         }
 
         this._forEachPeerConnection((session: any) => {

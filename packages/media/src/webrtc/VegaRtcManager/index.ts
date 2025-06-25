@@ -930,10 +930,6 @@ export default class VegaRtcManager implements RtcManager {
                     this._stopProducer(this._webcamProducer);
                     this._webcamProducer = null;
                 }
-
-                if (this._features.lowBandwidth && this._screenVideoTrack) {
-                    this._webcamProducer?.setMaxSpatialLayer(0);
-                }
             }
         })();
     }
@@ -1038,9 +1034,6 @@ export default class VegaRtcManager implements RtcManager {
 
                 // Has someone replaced the track?
                 if (this._screenVideoTrack !== this._screenVideoProducer.track) await this._replaceScreenVideoTrack();
-                if (this._features.lowBandwidth) {
-                    this._webcamProducer?.setMaxSpatialLayer(0);
-                }
             } catch (error) {
                 logger.error("screenVideoProducer failed:%o", error);
             } finally {
@@ -1050,9 +1043,6 @@ export default class VegaRtcManager implements RtcManager {
                 if (!this._screenVideoTrack) {
                     await this._stopProducer(this._screenVideoProducer);
                     this._screenVideoProducer = null;
-                    if (this._features.lowBandwidth) {
-                        this._webcamProducer?.setMaxSpatialLayer(Number.MAX_VALUE);
-                    }
                 }
             }
         })();
@@ -1324,10 +1314,6 @@ export default class VegaRtcManager implements RtcManager {
         this._stopProducer(this._screenAudioProducer);
         this._screenAudioProducer = null;
         this._screenAudioTrack = null;
-
-        if (this._features.lowBandwidth) {
-            this._webcamProducer?.setMaxSpatialLayer(Number.MAX_VALUE);
-        }
     }
 
     _onMicAnalyserScoreUpdated(data: any) {

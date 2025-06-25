@@ -4,7 +4,6 @@ export * from "./getMediasoupDevice";
 export { default as ipRegex } from "./ipRegex";
 export { default as Logger } from "./Logger";
 export * from "./mediaSettings";
-export * from "./optimalBitrate";
 export * from "./ReconnectManager";
 export * from "./ServerSocket";
 export * from "./iceServers";

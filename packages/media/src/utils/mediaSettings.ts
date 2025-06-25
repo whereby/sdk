@@ -62,15 +62,6 @@ export const SCREEN_SHARE_SETTINGS = {
     encodings: [{}],
 };
 
-export const SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH = {
-    encodings: [
-        {
-            maxBitrate: 600000,
-            maxFramerate: 2,
-        },
-    ],
-};
-
 export const SCREEN_SHARE_SIMULCAST_SETTINGS = {
     encodings: [
         { scaleResolutionDownBy: 2, dtx: true, maxBitrate: 500000 },
@@ -100,13 +91,12 @@ export const getMediaSettings = (
     features: {
         lowDataModeEnabled?: boolean;
         simulcastScreenshareOn?: boolean;
-        lowBandwidth?: boolean;
         vp9On?: boolean;
         svcKeyScalabilityModeOn?: boolean;
     },
     isSomeoneAlreadyPresenting = false,
 ) => {
-    const { lowDataModeEnabled, simulcastScreenshareOn, lowBandwidth, vp9On, svcKeyScalabilityModeOn } = features;
+    const { lowDataModeEnabled, simulcastScreenshareOn, vp9On, svcKeyScalabilityModeOn } = features;
 
     if (kind === "audio") {
         return AUDIO_SETTINGS;
@@ -116,14 +106,13 @@ export const getMediaSettings = (
     const isVp9Available = isChrome && vp9On;
     if (isScreenShare) {
         return getScreenShareMediaSettings({
-            lowBandwidth: lowBandwidth,
             isVp9Available,
             isSomeoneAlreadyPresenting,
             simulcastScreenshareOn,
         });
     } else {
         return getCameraMediaSettings({
-            lowBandwidth: lowBandwidth || lowDataModeEnabled,
+            lowBandwidth: lowDataModeEnabled,
             isVp9Available,
             svcKeyScalabilityModeOn,
         });
@@ -155,12 +144,10 @@ const getCameraMediaSettings = ({
 };
 
 const getScreenShareMediaSettings = ({
-    lowBandwidth,
     isVp9Available,
     isSomeoneAlreadyPresenting,
     simulcastScreenshareOn,
 }: {
-    lowBandwidth?: boolean;
     isVp9Available?: boolean;
     isSomeoneAlreadyPresenting?: boolean;
     simulcastScreenshareOn?: boolean;
@@ -169,7 +156,6 @@ const getScreenShareMediaSettings = ({
         if (isVp9Available) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
         return ADDITIONAL_SCREEN_SHARE_SETTINGS;
     }
-    if (lowBandwidth && !isVp9Available) return SCREEN_SHARE_SETTINGS_LOW_BANDWIDTH;
     if (isVp9Available) return SCREEN_SHARE_SETTINGS_VP9;
     if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
 
