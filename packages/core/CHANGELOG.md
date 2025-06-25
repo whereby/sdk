@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 0.33.10
+
+### Patch Changes
+
+- Updated dependencies [68f8d85]
+  - @whereby.com/media@1.29.0
+
 ## 0.33.9
 
 ### Patch Changes

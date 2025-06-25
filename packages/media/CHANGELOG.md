@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.29.0
+
+### Minor Changes
+
+- 68f8d85: clean up bandwidth limiting flags
+
 ## 1.28.0
 
 ### Minor Changes
