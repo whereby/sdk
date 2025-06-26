@@ -4,10 +4,10 @@ import { RootState } from "../store";
 import { ThunkConfig, createAppThunk } from "../thunk";
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { selectRtcConnectionRaw, selectRtcManagerInitialized, selectRtcStatus } from "./rtcConnection";
-import { selectAppDisplayName, selectAppExternalId } from "./app";
-import { selectOrganizationId } from "./organization";
+import { selectAppExternalId } from "./app";
+import { selectOrganizationId, selectOrganizationPreferences } from "./organization";
 import { doEnableAudio, doEnableVideo, setDisplayName } from "./localParticipant";
-import { selectSelfId } from "./localParticipant/selectors";
+import { selectLocalParticipantDisplayName, selectSelfId } from "./localParticipant/selectors";
 import { selectAuthorizationRoleName } from "./authorization";
 import { selectSignalStatus } from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
@@ -64,7 +64,12 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
     displayName: {
         actions: [setDisplayName],
         rtcEventName: "displayName",
-        getValue: (state: RootState) => selectAppDisplayName(state),
+        getValue: (state: RootState) => {
+            const displayName = selectLocalParticipantDisplayName(state);
+            const prefs = selectOrganizationPreferences(state);
+
+            return prefs?.hideInsightsDisplayNames ? "[[redacted]]" : displayName;
+        },
         getOutput: (value) => ({ displayName: value }),
     },
     clientId: {
