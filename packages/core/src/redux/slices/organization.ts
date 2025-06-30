@@ -80,6 +80,7 @@ export const doOrganizationFetch = createAppAsyncThunk(
 
 export const selectOrganizationRaw = (state: RootState) => state.organization;
 export const selectOrganizationId = (state: RootState) => state.organization.data?.organizationId;
+export const selectOrganizationPreferences = (state: RootState) => state.organization.data?.preferences;
 
 /**
  * Reducers
