@@ -12,8 +12,8 @@
         "typescript": "^5.3.3"
     },
     "devDependencies": {
-        "@vitejs/plugin-react": "^4.2.1",
-        "vite": "^5.0.13"
+        "@vitejs/plugin-react": "^4.4.1",
+        "vite": "^6.3.5"
     },
     "scripts": {
         "clean": "rm -rf dist node_modules .turbo",
