@@ -43,6 +43,7 @@
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/jest-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
         "deep-object-diff": "^1.1.9",
         "dotenv": "^16.4.5",

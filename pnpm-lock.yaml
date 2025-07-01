@@ -26,18 +26,6 @@ importers:
       '@changesets/cli':
         specifier: ^2.27.1
         version: 2.29.5
-      '@rollup/plugin-commonjs':
-        specifier: ^25.0.7
-        version: 25.0.8(rollup@4.44.1)
-      '@rollup/plugin-json':
-        specifier: ^6.1.0
-        version: 6.1.0(rollup@4.44.1)
-      '@rollup/plugin-node-resolve':
-        specifier: ^15.2.3
-        version: 15.3.1(rollup@4.44.1)
-      '@rollup/plugin-replace':
-        specifier: ^5.0.5
-        version: 5.0.7(rollup@4.44.1)
       '@types/btoa':
         specifier: ^1.2.3
         version: 1.2.5
@@ -74,21 +62,6 @@ importers:
       rimraf:
         specifier: ^5.0.5
         version: 5.0.10
-      rollup:
-        specifier: ^4.22.4
-        version: 4.44.1
-      rollup-plugin-dts:
-        specifier: ^6.1.0
-        version: 6.2.1(rollup@4.44.1)(typescript@5.8.3)
-      rollup-plugin-polyfill-node:
-        specifier: ^0.13.0
-        version: 0.13.0(rollup@4.44.1)
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.44.1)
-      rollup-plugin-typescript2:
-        specifier: ^0.36.0
-        version: 0.36.0(rollup@4.44.1)(typescript@5.8.3)
       turbo:
         specifier: ^2.5.4
         version: 2.5.4
@@ -474,6 +447,9 @@ importers:
       '@whereby.com/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
+      '@whereby.com/rollup-config':
+        specifier: workspace:*
+        version: link:../../tooling/rollup
       '@whereby.com/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -553,6 +529,9 @@ importers:
       '@whereby.com/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
+      '@whereby.com/rollup-config':
+        specifier: workspace:*
+        version: link:../../tooling/rollup
       '@whereby.com/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -641,6 +620,9 @@ importers:
       '@whereby.com/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
+      '@whereby.com/rollup-config':
+        specifier: workspace:*
+        version: link:../../tooling/rollup
       '@whereby.com/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -798,6 +780,52 @@ importers:
       '@whereby.com/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
+  tooling/rollup:
+    dependencies:
+      '@rollup/plugin-commonjs':
+        specifier: ^25.0.7
+        version: 25.0.8(rollup@4.44.1)
+      '@rollup/plugin-json':
+        specifier: ^6.1.0
+        version: 6.1.0(rollup@4.44.1)
+      '@rollup/plugin-node-resolve':
+        specifier: ^15.2.3
+        version: 15.3.1(rollup@4.44.1)
+      '@rollup/plugin-replace':
+        specifier: ^5.0.5
+        version: 5.0.7(rollup@4.44.1)
+      rollup:
+        specifier: ^4.22.4
+        version: 4.44.1
+      rollup-plugin-dts:
+        specifier: ^6.1.0
+        version: 6.2.1(rollup@4.44.1)(typescript@5.8.3)
+      rollup-plugin-polyfill-node:
+        specifier: ^0.13.0
+        version: 0.13.0(rollup@4.44.1)
+      rollup-plugin-terser:
+        specifier: ^7.0.2
+        version: 7.0.2(rollup@4.44.1)
+      rollup-plugin-typescript2:
+        specifier: ^0.36.0
+        version: 0.36.0(rollup@4.44.1)(typescript@5.8.3)
+    devDependencies:
+      '@whereby.com/prettier-config':
+        specifier: workspace:*
+        version: link:../prettier
+      '@whereby.com/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      eslint:
+        specifier: 'catalog:'
+        version: 9.30.0(jiti@1.21.7)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
       typescript:
         specifier: 'catalog:'
         version: 5.8.3

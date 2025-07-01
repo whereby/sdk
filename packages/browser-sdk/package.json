@@ -58,6 +58,7 @@
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/jest-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
         "@storybook/addon-actions": "^8.0.10",
         "@storybook/addon-essentials": "^8.0.10",

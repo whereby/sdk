@@ -68,6 +68,7 @@
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/jest-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
         "@babel/core": "^7.23.2",
         "@babel/preset-env": "^7.23.2",

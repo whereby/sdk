@@ -14,7 +14,7 @@ dotenv.config({
     path: `../../.env`,
 });
 
-const baseConfig = require("../../rollup.base.config");
+const baseConfig = require("@whereby.com/rollup-config/base");
 const replaceValues = baseConfig(__dirname, {}).replaceValues;
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
