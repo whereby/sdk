@@ -13,12 +13,12 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-icons": "^5.0.1",
-        "react-qr-code": "^2.0.11",
-        "typescript": "^5.3.3"
+        "react-qr-code": "^2.0.11"
     },
     "devDependencies": {
         "@vitejs/plugin-react": "^4.2.1",
-        "vite": "^5.0.13"
+        "vite": "^5.0.13",
+        "typescript": "catalog:"
     },
     "scripts": {
         "clean": "rm -rf dist node_modules .turbo",

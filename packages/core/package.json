@@ -45,7 +45,8 @@
         "dotenv-run-script": "^0.4.1",
         "tslib": "^2.4.1",
         "uuid": "^9.0.1",
-        "yalc": "^1.0.0-pre.53"
+        "yalc": "^1.0.0-pre.53",
+        "typescript": "catalog:"
     },
     "dependencies": {
         "@reduxjs/toolkit": "^2.2.3",

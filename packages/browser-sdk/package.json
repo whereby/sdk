@@ -75,7 +75,8 @@
     "tslib": "^2.4.1",
     "uuid": "^9.0.1",
     "vite": "^5.0.13",
-    "yalc": "^1.0.0-pre.53"
+    "yalc": "^1.0.0-pre.53",
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.0.7",
