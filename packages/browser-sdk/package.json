@@ -46,7 +46,7 @@
     "build": "rollup -c rollup.config.js",
     "build:storybook": "storybook build",
     "dev": "storybook dev -p 6006",
-    "test": "yarn test:lint && yarn test:unit",
+    "test": "pnpm test:lint && pnpm test:unit",
     "test:lint": "eslint src/",
     "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
@@ -75,11 +75,13 @@
     "tslib": "^2.4.1",
     "uuid": "^9.0.1",
     "vite": "^5.0.13",
-    "yalc": "^1.0.0-pre.53"
+    "yalc": "^1.0.0-pre.53",
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.0.7",
     "@reduxjs/toolkit": "^2.2.3",
+    "@whereby.com/media": "0.29.0",
     "@whereby.com/core": "0.33.10",
     "clsx": "^2.1.1",
     "heresy": "^1.0.4",

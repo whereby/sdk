@@ -1,5 +1,4 @@
-import { ActionCreatorWithPayload, PayloadAction, createSlice, isAnyOf } from "@reduxjs/toolkit";
-import { AsyncThunkFulfilledActionCreator } from "@reduxjs/toolkit/dist/createAsyncThunk";
+import { AsyncThunk, ActionCreatorWithPayload, PayloadAction, createSlice, isAnyOf } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { ThunkConfig, createAppThunk } from "../thunk";
 import { createReactor, startAppListening } from "../listenerMiddleware";
@@ -18,7 +17,7 @@ import { signalEvents } from "./signalConnection/actions";
 
 type RtcAnalyticsCustomEvent = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    actions: Array<ActionCreatorWithPayload<any> | AsyncThunkFulfilledActionCreator<any, any, ThunkConfig>> | null;
+    actions: Array<ActionCreatorWithPayload<any> | AsyncThunk<any, any, ThunkConfig>["fulfilled"]> | null;
     rtcEventName: string;
     getValue: (state: RootState) => unknown;
     getOutput: (value: unknown) => unknown;
@@ -134,7 +133,7 @@ const rtcCustomEventActions = Object.values(rtcAnalyticsCustomEvents)
             action,
         ): action is
             | ActionCreatorWithPayload<unknown, string>
-            | AsyncThunkFulfilledActionCreator<unknown, unknown, ThunkConfig> => action !== null,
+            | AsyncThunk<unknown, unknown, ThunkConfig>["fulfilled"] => action !== null,
     );
 
 const makeComparable = (value: unknown) => {

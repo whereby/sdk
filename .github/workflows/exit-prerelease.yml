@@ -18,16 +18,19 @@ jobs:
                   # with the correct commits
                   fetch-depth: 0
 
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
                   node-version-file: .nvmrc
-                  cache: "yarn"
+                  cache: "pnpm"
                   cache-dependency-path: |
-                      yarn.lock
+                      pnpm-lock.yaml
 
             - name: Install Dependencies
-              run: yarn install --frozen-lockfile
+              run: pnpm install --frozen-lockfile
 
               # Check if pre.json file exists. The rest of the steps will only run if this file exists
             - name: Check for pre.json file existence
@@ -39,7 +42,7 @@ jobs:
               # Exit prerelease mode
             - name: Exit prerelease mode
               if: steps.check_files.outputs.files_exists == 'true'
-              run: yarn changeset pre exit
+              run: pnpm changeset pre exit
 
             - uses: stefanzweifel/git-auto-commit-action@v5
               if: steps.check_files.outputs.files_exists == 'true'

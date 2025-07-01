@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "author": "Whereby AS",
   "license": "MIT",
-  "packageManager": "yarn@1.22.19",
+  "packageManager": "pnpm@10.12.4",
   "scripts": {
     "build": "turbo build",
     "changeset": "changeset",
@@ -15,7 +15,7 @@
     "dev:sample-app": "turbo dev --filter=sample-app",
     "dev:nextjs-example": "turbo dev --filter=nextjs-example",
     "dev:react-native-webview-example": "turbo dev --filter=react-native-webview-example",
-    "release": "yarn build && changeset publish",
+    "release": "pnpm build && changeset publish",
     "test": "turbo test",
     "test:lint": "turbo test:lint",
     "test:e2e": "turbo test:e2e",
@@ -54,10 +54,8 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.36.0",
     "ts-jest": "^29.1.2",
-    "turbo": "^2.0.14"
-  },
-  "dependencies": {
-    "typescript": "^5.3.3"
+    "turbo": "^2.0.14",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": "^20"

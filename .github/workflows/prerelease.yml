@@ -15,22 +15,25 @@ jobs:
               with:
                   fetch-depth: 0
 
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
                   node-version-file: .nvmrc
-                  cache: "yarn"
+                  cache: "pnpm"
                   cache-dependency-path: |
-                      yarn.lock
+                      pnpm-lock.yaml
 
             - name: Install Dependencies
-              run: yarn install --frozen-lockfile
+              run: pnpm install --frozen-lockfile
 
             - name: Run Tests
-              run: yarn test --cache-dir=.turbo
+              run: pnpm test --cache-dir=.turbo
 
             - name: Build
-              run: yarn build --cache-dir=.turbo
+              run: pnpm build --cache-dir=.turbo
 
             - name: Check for pre.json file existence
               id: check_files
@@ -42,12 +45,12 @@ jobs:
               # If .changeset/pre.json does not exist and we did not recently exit
               # prerelease mode, enter prerelease mode with tag beta
               if: steps.check_files.outputs.files_exists == 'false' && !contains(github.event.head_commit.message, 'Exit prerelease')
-              run: yarn changeset pre enter beta
+              run: pnpm changeset pre enter beta
 
             - name: Create prerelease PR
               uses: changesets/action@v1
               with:
-                  version: yarn changeset version
+                  version: pnpm changeset version
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -59,7 +62,7 @@ jobs:
               uses: changesets/action@v1
               with:
                   version: echo "This step should never version"
-                  publish: yarn changeset publish
+                  publish: pnpm changeset publish
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

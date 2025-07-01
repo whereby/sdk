@@ -17,7 +17,7 @@ runs:
     using: "composite"
     steps:
         - name: Build
-          run: yarn build
+          run: pnpm build
           shell: bash
 
         - name: Configure AWS Credentials
