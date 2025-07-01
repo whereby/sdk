@@ -11,9 +11,12 @@
         "react-hot-toast": "^2.4.1"
     },
     "devDependencies": {
+        "@whereby.com/prettier-config": "*",
+        "@whereby.com/tsconfig": "*",
         "@playwright/test": "^1.50.1",
         "@vitejs/plugin-react": "^4.2.1",
         "vite": "^5.0.13",
+        "prettier": "catalog:",
         "typescript": "catalog:"
     },
     "scripts": {
@@ -40,5 +43,6 @@
             "last 1 firefox version",
             "last 1 safari version"
         ]
-    }
+    },
+    "prettier": "@whereby.com/prettier-config"
 }

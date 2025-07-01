@@ -1,5 +1,5 @@
 {
-    "extends": "../../tsconfig.build.json",
+    "extends": "@whereby.com/tsconfig/build.json",
     "compilerOptions": {
         "jsx": "react",
         "moduleResolution": "Bundler"

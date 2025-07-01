@@ -11,6 +11,8 @@
         "react-dom": "^18.2.0"
     },
     "devDependencies": {
+        "@whereby.com/prettier-config": "*",
+        "@whereby.com/tsconfig": "*",
         "@vitejs/plugin-react": "^4.2.1",
         "vite": "^5.0.13",
         "typescript": "catalog:"
@@ -37,5 +39,6 @@
             "last 1 firefox version",
             "last 1 safari version"
         ]
-    }
+    },
+    "prettier": "@whereby.com/prettier-config"
 }

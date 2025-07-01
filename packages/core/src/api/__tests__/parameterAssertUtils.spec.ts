@@ -26,7 +26,7 @@ describe("parameterAssertUtils", () => {
                 "number as string": "12",
                 "boolean as string": "true",
                 null: null,
-                undefined: undefined, // eslint-disable-line object-shorthand
+                undefined: undefined,
                 Object: {},
             },
             (description: string, value: unknown) => {
@@ -56,7 +56,7 @@ describe("parameterAssertUtils", () => {
                 "number as string": "12",
                 boolean: true,
                 null: null,
-                undefined: undefined, // eslint-disable-line object-shorthand
+                undefined: undefined,
                 Object: {},
             },
             (description, value) => {
@@ -81,7 +81,7 @@ describe("parameterAssertUtils", () => {
                 number: 1,
                 boolean: true,
                 null: null,
-                undefined: undefined, // eslint-disable-line object-shorthand
+                undefined: undefined,
                 Object: {},
             },
             (description, value) => {
@@ -106,7 +106,7 @@ describe("parameterAssertUtils", () => {
                 number: 1,
                 boolean: true,
                 null: null,
-                undefined: undefined, // eslint-disable-line object-shorthand
+                undefined: undefined,
                 Object: {},
             },
             (description, value) => {
@@ -166,7 +166,7 @@ describe("parameterAssertUtils", () => {
                 "number as string": "12",
                 "boolean as string": "true",
                 null: null,
-                undefined: undefined, // eslint-disable-line object-shorthand
+                undefined: undefined,
                 Array: [],
             },
             (description, value) => {

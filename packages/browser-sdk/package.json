@@ -1,103 +1,109 @@
 {
-  "name": "@whereby.com/browser-sdk",
-  "version": "3.12.18",
-  "description": "Modules for integration Whereby video in web apps",
-  "author": "Whereby AS",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/whereby/sdk.git",
-    "directory": "packages/browser-sdk"
-  },
-  "browserslist": "> 0.5%, last 2 versions, not dead",
-  "source": "src/index.js",
-  "exports": {
-    "./react": {
-      "import": "./dist/react/index.esm.js",
-      "types": "./dist/react/index.d.ts",
-      "require": "./dist/react/index.cjs",
-      "default": "./dist/react/index.esm.js"
+    "name": "@whereby.com/browser-sdk",
+    "version": "3.12.18",
+    "description": "Modules for integration Whereby video in web apps",
+    "author": "Whereby AS",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/whereby/sdk.git",
+        "directory": "packages/browser-sdk"
     },
-    "./embed": {
-      "import": "./dist/embed/index.esm.js",
-      "types": "./dist/embed/index.d.ts",
-      "require": "./dist/embed/index.cjs",
-      "default": "./dist/embed/index.esm.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "react": [
-        "dist/react/index.d.ts"
-      ],
-      "embed": [
-        "dist/embed/index.d.ts"
-      ]
-    }
-  },
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "dist/**/*.cjs"
-  ],
-  "scripts": {
-    "clean": "rimraf dist node_modules .turbo",
-    "prebuild": "rimraf dist",
-    "build": "rollup -c rollup.config.js",
-    "build:storybook": "storybook build",
-    "dev": "storybook dev -p 6006",
-    "test": "pnpm test:lint && pnpm test:unit",
-    "test:lint": "eslint src/",
-    "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
-    "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
-    "test:attw": "attw --pack . -f table --ignore-rules fallback-condition unexpected-module-syntax",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
-  },
-  "devDependencies": {
-    "@storybook/addon-actions": "^8.0.10",
-    "@storybook/addon-essentials": "^8.0.10",
-    "@storybook/addon-links": "^8.0.10",
-    "@storybook/builder-vite": "^8.0.10",
-    "@storybook/react-vite": "^8.0.10",
-    "@testing-library/react": "^14.0.0",
-    "@types/runes": "^0.4.3",
-    "@vitejs/plugin-react": "^4.2.1",
-    "deep-object-diff": "^1.1.9",
-    "dotenv": "^16.4.5",
-    "dotenv-run-script": "^0.4.1",
-    "lit-html": "^2.5.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-hot-toast": "^2.4.1",
-    "rimraf": "^5.0.5",
-    "storybook": "^8.0.10",
-    "tslib": "^2.4.1",
-    "uuid": "^9.0.1",
-    "vite": "^5.0.13",
-    "yalc": "^1.0.0-pre.53",
-    "typescript": "catalog:"
-  },
-  "dependencies": {
-    "@radix-ui/react-popover": "^1.0.7",
-    "@reduxjs/toolkit": "^2.2.3",
-    "@whereby.com/media": "0.29.0",
-    "@whereby.com/core": "0.33.10",
-    "clsx": "^2.1.1",
-    "heresy": "^1.0.4",
-    "react-redux": "^9.1.1",
-    "runes": "^0.4.3"
-  },
-  "peerDependencies": {
-    "react": ">=18.2.0",
-    "react-dom": ">=18.2.0"
-  },
-  "resolutions": {
-    "string-width": "^4",
-    "jackspeak": "2.1.1",
-    "wrap-ansi": "7.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
+    "browserslist": "> 0.5%, last 2 versions, not dead",
+    "source": "src/index.js",
+    "exports": {
+        "./react": {
+            "import": "./dist/react/index.esm.js",
+            "types": "./dist/react/index.d.ts",
+            "require": "./dist/react/index.cjs",
+            "default": "./dist/react/index.esm.js"
+        },
+        "./embed": {
+            "import": "./dist/embed/index.esm.js",
+            "types": "./dist/embed/index.d.ts",
+            "require": "./dist/embed/index.cjs",
+            "default": "./dist/embed/index.esm.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "react": [
+                "dist/react/index.d.ts"
+            ],
+            "embed": [
+                "dist/embed/index.d.ts"
+            ]
+        }
+    },
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.d.ts",
+        "dist/**/*.cjs"
+    ],
+    "scripts": {
+        "clean": "rimraf dist node_modules .turbo",
+        "prebuild": "rimraf dist",
+        "build": "rollup -c rollup.config.js",
+        "build:storybook": "storybook build",
+        "dev": "storybook dev -p 6006",
+        "test": "pnpm test:lint && pnpm test:unit",
+        "test:lint": "eslint src/",
+        "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
+        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
+        "test:attw": "attw --pack . -f table --ignore-rules fallback-condition unexpected-module-syntax",
+        "storybook": "storybook dev -p 6006",
+        "build-storybook": "storybook build"
+    },
+    "devDependencies": {
+        "@whereby.com/eslint-config": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "@storybook/addon-actions": "^8.0.10",
+        "@storybook/addon-essentials": "^8.0.10",
+        "@storybook/addon-links": "^8.0.10",
+        "@storybook/builder-vite": "^8.0.10",
+        "@storybook/react-vite": "^8.0.10",
+        "@testing-library/react": "^14.0.0",
+        "@types/runes": "^0.4.3",
+        "@vitejs/plugin-react": "^4.2.1",
+        "deep-object-diff": "^1.1.9",
+        "dotenv": "^16.4.5",
+        "dotenv-run-script": "^0.4.1",
+        "lit-html": "^2.5.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-hot-toast": "^2.4.1",
+        "rimraf": "^5.0.5",
+        "storybook": "^8.0.10",
+        "tslib": "^2.4.1",
+        "uuid": "^9.0.1",
+        "vite": "^5.0.13",
+        "yalc": "^1.0.0-pre.53",
+        "eslint": "catalog:",
+        "prettier": "catalog:",
+        "typescript": "catalog:"
+    },
+    "dependencies": {
+        "@radix-ui/react-popover": "^1.0.7",
+        "@reduxjs/toolkit": "^2.2.3",
+        "@whereby.com/media": "0.29.0",
+        "@whereby.com/core": "0.33.10",
+        "clsx": "^2.1.1",
+        "heresy": "^1.0.4",
+        "react-redux": "^9.1.1",
+        "runes": "^0.4.3"
+    },
+    "peerDependencies": {
+        "react": ">=18.2.0",
+        "react-dom": ">=18.2.0"
+    },
+    "resolutions": {
+        "string-width": "^4",
+        "jackspeak": "2.1.1",
+        "wrap-ansi": "7.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "prettier": "@whereby.com/prettier-config"
 }

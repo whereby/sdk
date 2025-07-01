@@ -1,46 +1,50 @@
 {
-  "name": "telehealth-tutorial-app",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@testing-library/jest-dom": "^6.4.2",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^14.5.2",
-    "@whereby.com/browser-sdk": "*",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.3.3",
-    "web-vitals": "^3.5.2"
-  },
-  "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.0.13",
-    "typescript": "catalog:"
-  },
-  "scripts": {
-    "clean": "rm -rf dist node_modules .turbo",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+    "name": "telehealth-tutorial-app",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+        "@testing-library/jest-dom": "^6.4.2",
+        "@testing-library/react": "^13.4.0",
+        "@testing-library/user-event": "^14.5.2",
+        "@whereby.com/browser-sdk": "*",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "typescript": "^5.3.3",
+        "web-vitals": "^3.5.2"
+    },
+    "devDependencies": {
+        "@whereby.com/prettier-config": "*",
+        "@whereby.com/tsconfig": "*",
+        "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+        "@vitejs/plugin-react": "^4.2.1",
+        "vite": "^5.0.13",
+        "prettier": "catalog:",
+        "typescript": "catalog:"
+    },
+    "scripts": {
+        "clean": "rm -rf dist node_modules .turbo",
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+    },
+    "eslintConfig": {
+        "extends": [
+            "react-app",
+            "react-app/jest"
+        ]
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "prettier": "@whereby.com/prettier-config"
 }
