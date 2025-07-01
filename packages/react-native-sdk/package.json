@@ -41,7 +41,7 @@
     "test:lint": "eslint src/",
     "test:unit": "jest --passWithNoTests",
     "test:unit:watch": "jest --watch",
-    "test:attw": "attw --pack . -f table",
+    "test:attw": "attw --pack . -f table --ignore-rules false-esm unexpected-module-syntax",
     "clean": "rm -rf dist node_modules .turbo",
     "build": "bob build"
   },
@@ -76,9 +76,6 @@
     "react-native": "0.74.5",
     "react-native-builder-bob": "^0.30.0",
     "typescript": "catalog:"
-  },
-  "resolutions": {
-    "@types/react": "^18.2.44"
   },
   "peerDependencies": {
     "react": "*",

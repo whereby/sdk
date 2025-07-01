@@ -81,6 +81,7 @@
   "dependencies": {
     "@radix-ui/react-popover": "^1.0.7",
     "@reduxjs/toolkit": "^2.2.3",
+    "@whereby.com/media": "0.29.0",
     "@whereby.com/core": "0.33.10",
     "clsx": "^2.1.1",
     "heresy": "^1.0.4",

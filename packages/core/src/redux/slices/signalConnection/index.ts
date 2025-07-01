@@ -100,10 +100,10 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("breakout_move_to_main", () => dispatch(signalEvents.breakoutMoveToMain()));
 }
 
-const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net";
+const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL;
 
 function createSocket() {
-    const parsedUrl = new URL(SIGNAL_BASE_URL);
+    const parsedUrl = new URL(SIGNAL_BASE_URL || "wss://signal.appearin.net");
     const socketHost = parsedUrl.origin;
 
     const socketOverrides = {

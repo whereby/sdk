@@ -24,7 +24,7 @@ import { spotlightsSlice } from "./slices/spotlights";
 import { streamingSlice } from "./slices/streaming";
 import { waitingParticipantsSlice } from "./slices/waitingParticipants";
 
-const IS_DEV = process.env.REACT_APP_IS_DEV === "true" ?? false;
+const IS_DEV = process.env.REACT_APP_IS_DEV === "true";
 
 const appReducer = combineReducers({
     app: appSlice.reducer,
