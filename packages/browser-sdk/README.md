@@ -13,6 +13,11 @@ or
 ```shell
 yarn add @whereby.com/browser-sdk
 ```
+or
+
+```shell
+pnpm add @whereby.com/browser-sdk
+```
 
 ## Usage
 

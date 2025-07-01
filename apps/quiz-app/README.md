@@ -19,8 +19,8 @@ https://hackday-sdk-demo.netlify.app/
 ## Setup
 
 ```
-yarn
-yarn dev
+pnpm
+pnpm dev
 ```
 
 Runs the app in the development mode.\ Open

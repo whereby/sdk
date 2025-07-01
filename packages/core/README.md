@@ -13,3 +13,9 @@ or
 ```shell
 yarn add @whereby.com/browser-core
 ```
+
+or
+
+```shell
+pnpm add @whereby.com/browser-core
+```
