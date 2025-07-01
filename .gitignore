@@ -15,6 +15,17 @@ yalc.lock
 .turbo
 
 .env
+.env.local
+.env.production
+
 yarn-error.log
 
 test-report/
+
+.cache
+.expo
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
