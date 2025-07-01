@@ -24,9 +24,11 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "tooling/*"
   ],
   "devDependencies": {
+    "@whereby.com/prettier-config": "workspace:*",
     "@arethetypeswrong/cli": "^0.15.3",
     "@changesets/cli": "^2.27.1",
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -46,7 +48,7 @@
     "@whereby.com/eslint-config": "*",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "prettier": "^3.2.5",
+    "prettier": "catalog:",
     "rimraf": "^5.0.5",
     "rollup": "^4.22.4",
     "rollup-plugin-dts": "^6.1.0",
@@ -59,5 +61,6 @@
   },
   "engines": {
     "node": "^20"
-  }
+  },
+  "prettier": "@whereby.com/prettier-config"
 }

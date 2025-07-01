@@ -1,6 +1,8 @@
 packages:
     - apps/*
     - packages/*
+    - tooling/*
 
 catalog:
+    prettier: ^3.5.3
     typescript: ^5.3.3

@@ -1,0 +1,11 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "extends": "./base.json",
+    "compilerOptions": {
+        "emitDeclarationOnly": false,
+        "noEmit": false,
+        "outDir": "dist",
+        "removeComments": true
+    },
+    "exclude": ["src/stories", "src/**/*.spec.ts", "src/lib/__mocks__"]
+}
