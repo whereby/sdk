@@ -7,7 +7,7 @@
     "scripts": {
         "clean": "rimraf dist node_modules .turbo",
         "build": "rimraf dist && rollup -c rollup.config.js",
-        "test": "yarn test:lint && yarn test:unit",
+        "test": "pnpm test:lint && pnpm test:unit",
         "test:lint": "eslint src/",
         "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
         "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",

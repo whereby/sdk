@@ -36,7 +36,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "test": "yarn test:typescript && yarn test:lint && yarn test:unit",
+    "test": "pnpm test:typescript && pnpm test:lint && pnpm test:unit",
     "test:typescript": "tsc",
     "test:lint": "eslint src/",
     "test:unit": "jest --passWithNoTests",
