@@ -286,7 +286,6 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
         });
 
         React.useImperativeHandle(ref, () => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return Object.assign(webviewRef.current!, {
                 endMeeting: () => {
                     webviewRef.current?.injectJavaScript(getInjectableJSMessage("end_meeting", []));

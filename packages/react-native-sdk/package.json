@@ -6,11 +6,11 @@
     "exports": {
         "./embed": {
             "import": {
-                "types": "./dist/typescript/module/packages/react-native-sdk/src/embed/index.d.ts",
+                "types": "./dist/typescript/module/src/embed/index.d.ts",
                 "default": "./dist/module/embed/index.js"
             },
             "require": {
-                "types": "./dist/typescript/commonjs/packages/react-native-sdk/src/embed/index.d.ts",
+                "types": "./dist/typescript/commonjs/src/embed/index.d.ts",
                 "default": "./dist/commonjs/embed/index.js"
             }
         }
