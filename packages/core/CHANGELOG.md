@@ -1,74 +1,85 @@
 # @whereby.com/core
 
+## 0.34.0
+
+### Minor Changes
+
+- c1bb662: Respect hideInsightsDisplayNames when sending rtc-stats
+
+### Patch Changes
+
+- Updated dependencies [9f3d2e6]
+    - @whereby.com/media@1.30.0
+
 ## 0.33.10
 
 ### Patch Changes
 
 - Updated dependencies [68f8d85]
-  - @whereby.com/media@1.29.0
+    - @whereby.com/media@1.29.0
 
 ## 0.33.9
 
 ### Patch Changes
 
 - Updated dependencies [2a9feee]
-  - @whereby.com/media@1.28.0
+    - @whereby.com/media@1.28.0
 
 ## 0.33.8
 
 ### Patch Changes
 
 - Updated dependencies [ee76ef5]
-  - @whereby.com/media@1.27.0
+    - @whereby.com/media@1.27.0
 
 ## 0.33.7
 
 ### Patch Changes
 
 - Updated dependencies [c5e0177]
-  - @whereby.com/media@1.26.0
+    - @whereby.com/media@1.26.0
 
 ## 0.33.6
 
 ### Patch Changes
 
 - Updated dependencies [2f4e231]
-  - @whereby.com/media@1.25.1
+    - @whereby.com/media@1.25.1
 
 ## 0.33.5
 
 ### Patch Changes
 
 - Updated dependencies [05c7086]
-  - @whereby.com/media@1.25.0
+    - @whereby.com/media@1.25.0
 
 ## 0.33.4
 
 ### Patch Changes
 
 - Updated dependencies [794fea1]
-  - @whereby.com/media@1.24.0
+    - @whereby.com/media@1.24.0
 
 ## 0.33.3
 
 ### Patch Changes
 
 - Updated dependencies [bd95d49]
-  - @whereby.com/media@1.23.3
+    - @whereby.com/media@1.23.3
 
 ## 0.33.2
 
 ### Patch Changes
 
 - Updated dependencies [e19d99a]
-  - @whereby.com/media@1.23.2
+    - @whereby.com/media@1.23.2
 
 ## 0.33.1
 
 ### Patch Changes
 
 - Updated dependencies [c0d4b36]
-  - @whereby.com/media@1.23.1
+    - @whereby.com/media@1.23.1
 
 ## 0.33.0
 
@@ -79,35 +90,35 @@
 ### Patch Changes
 
 - Updated dependencies [e9ae7dc]
-  - @whereby.com/media@1.23.0
+    - @whereby.com/media@1.23.0
 
 ## 0.32.11
 
 ### Patch Changes
 
 - Updated dependencies [3e1acc3]
-  - @whereby.com/media@1.22.0
+    - @whereby.com/media@1.22.0
 
 ## 0.32.10
 
 ### Patch Changes
 
 - Updated dependencies [775c2f1]
-  - @whereby.com/media@1.21.1
+    - @whereby.com/media@1.21.1
 
 ## 0.32.9
 
 ### Patch Changes
 
 - Updated dependencies [8d9a19d]
-  - @whereby.com/media@1.21.0
+    - @whereby.com/media@1.21.0
 
 ## 0.32.8
 
 ### Patch Changes
 
 - Updated dependencies [79350ae]
-  - @whereby.com/media@1.20.1
+    - @whereby.com/media@1.20.1
 
 ## 0.32.7
 
@@ -120,14 +131,14 @@
 ### Patch Changes
 
 - Updated dependencies [595a889]
-  - @whereby.com/media@1.20.0
+    - @whereby.com/media@1.20.0
 
 ## 0.32.5
 
 ### Patch Changes
 
 - Updated dependencies [9bd1e91]
-  - @whereby.com/media@1.19.0
+    - @whereby.com/media@1.19.0
 
 ## 0.32.4
 
@@ -136,28 +147,28 @@
 - 47f1b36: Exclude captioner in breakout groups
 - Updated dependencies [144c274]
 - Updated dependencies [47f1b36]
-  - @whereby.com/media@1.18.1
+    - @whereby.com/media@1.18.1
 
 ## 0.32.3
 
 ### Patch Changes
 
 - Updated dependencies [36ffa21]
-  - @whereby.com/media@1.18.0
+    - @whereby.com/media@1.18.0
 
 ## 0.32.2
 
 ### Patch Changes
 
 - Updated dependencies [692ed26]
-  - @whereby.com/media@1.17.16
+    - @whereby.com/media@1.17.16
 
 ## 0.32.1
 
 ### Patch Changes
 
 - Updated dependencies [cdd379c]
-  - @whereby.com/media@1.17.15
+    - @whereby.com/media@1.17.15
 
 ## 0.32.0
 
@@ -168,35 +179,35 @@
 ### Patch Changes
 
 - Updated dependencies [5476530]
-  - @whereby.com/media@1.17.14
+    - @whereby.com/media@1.17.14
 
 ## 0.31.4
 
 ### Patch Changes
 
 - Updated dependencies [cc22bea]
-  - @whereby.com/media@1.17.13
+    - @whereby.com/media@1.17.13
 
 ## 0.31.3
 
 ### Patch Changes
 
 - Updated dependencies [c4b4a83]
-  - @whereby.com/media@1.17.12
+    - @whereby.com/media@1.17.12
 
 ## 0.31.2
 
 ### Patch Changes
 
 - Updated dependencies [d46c94f]
-  - @whereby.com/media@1.17.11
+    - @whereby.com/media@1.17.11
 
 ## 0.31.1
 
 ### Patch Changes
 
 - Updated dependencies [9304948]
-  - @whereby.com/media@1.17.10
+    - @whereby.com/media@1.17.10
 
 ## 0.31.0
 
@@ -209,28 +220,28 @@
 ### Patch Changes
 
 - Updated dependencies [1b6e43c]
-  - @whereby.com/media@1.17.9
+    - @whereby.com/media@1.17.9
 
 ## 0.30.3
 
 ### Patch Changes
 
 - Updated dependencies [2d5bf4e]
-  - @whereby.com/media@1.17.8
+    - @whereby.com/media@1.17.8
 
 ## 0.30.2
 
 ### Patch Changes
 
 - Updated dependencies [2d9abec]
-  - @whereby.com/media@1.17.7
+    - @whereby.com/media@1.17.7
 
 ## 0.30.1
 
 ### Patch Changes
 
 - Updated dependencies [482c96d]
-  - @whereby.com/media@1.17.6
+    - @whereby.com/media@1.17.6
 
 ## 0.30.0
 
@@ -244,7 +255,7 @@
 
 - Updated dependencies [d144d34]
 - Updated dependencies [65c020b]
-  - @whereby.com/media@1.17.5
+    - @whereby.com/media@1.17.5
 
 ## 0.29.2
 
@@ -252,7 +263,7 @@
 
 - Updated dependencies [dc6bd5c]
 - Updated dependencies [6ca79b8]
-  - @whereby.com/media@1.17.4
+    - @whereby.com/media@1.17.4
 
 ## 0.29.1
 
@@ -260,7 +271,7 @@
 
 - 3a9396f: Add .js files to the files array in package.json
 - Updated dependencies [89c008e]
-  - @whereby.com/media@1.17.3
+    - @whereby.com/media@1.17.3
 
 ## 0.29.0
 
@@ -272,42 +283,42 @@
 ### Patch Changes
 
 - Updated dependencies [392e210]
-  - @whereby.com/media@1.17.2
+    - @whereby.com/media@1.17.2
 
 ## 0.28.7
 
 ### Patch Changes
 
 - Updated dependencies [f393639]
-  - @whereby.com/media@1.17.1
+    - @whereby.com/media@1.17.1
 
 ## 0.28.6
 
 ### Patch Changes
 
 - Updated dependencies [76616f0]
-  - @whereby.com/media@1.17.0
+    - @whereby.com/media@1.17.0
 
 ## 0.28.5
 
 ### Patch Changes
 
 - Updated dependencies [eaf5096]
-  - @whereby.com/media@1.16.3
+    - @whereby.com/media@1.16.3
 
 ## 0.28.4
 
 ### Patch Changes
 
 - Updated dependencies [b5ec7b9]
-  - @whereby.com/media@1.16.2
+    - @whereby.com/media@1.16.2
 
 ## 0.28.3
 
 ### Patch Changes
 
 - Updated dependencies [b9aff12]
-  - @whereby.com/media@1.16.1
+    - @whereby.com/media@1.16.1
 
 ## 0.28.2
 
@@ -320,7 +331,7 @@
 ### Patch Changes
 
 - Updated dependencies [0fa77c4]
-  - @whereby.com/media@1.16.0
+    - @whereby.com/media@1.16.0
 
 ## 0.28.0
 
@@ -331,14 +342,14 @@
 ### Patch Changes
 
 - Updated dependencies [fedea8c]
-  - @whereby.com/media@1.15.0
+    - @whereby.com/media@1.15.0
 
 ## 0.27.1
 
 ### Patch Changes
 
 - Updated dependencies [ad22d11]
-  - @whereby.com/media@1.14.2
+    - @whereby.com/media@1.14.2
 
 ## 0.27.0
 
@@ -349,7 +360,7 @@
 ### Patch Changes
 
 - Updated dependencies [c149827]
-  - @whereby.com/media@1.14.1
+    - @whereby.com/media@1.14.1
 
 ## 0.26.0
 
@@ -362,14 +373,14 @@
 - 03c8fdf: Refactor RTCStats WebSocket connect timing
 - Updated dependencies [73c96f5]
 - Updated dependencies [03c8fdf]
-  - @whereby.com/media@1.14.0
+    - @whereby.com/media@1.14.0
 
 ## 0.25.1
 
 ### Patch Changes
 
 - Updated dependencies [a200436]
-  - @whereby.com/media@1.13.0
+    - @whereby.com/media@1.13.0
 
 ## 0.25.0
 
@@ -380,7 +391,7 @@
 ### Patch Changes
 
 - Updated dependencies [58b9d4a]
-  - @whereby.com/media@1.12.2
+    - @whereby.com/media@1.12.2
 
 ## 0.24.3
 
@@ -388,21 +399,21 @@
 
 - 0d4385b: Enforce turn tls for dial-in peerconnections
 - Updated dependencies [0d4385b]
-  - @whereby.com/media@1.12.1
+    - @whereby.com/media@1.12.1
 
 ## 0.24.2
 
 ### Patch Changes
 
 - Updated dependencies [9ce30c8]
-  - @whereby.com/media@1.12.0
+    - @whereby.com/media@1.12.0
 
 ## 0.24.1
 
 ### Patch Changes
 
 - Updated dependencies [d01aa03]
-  - @whereby.com/media@1.11.1
+    - @whereby.com/media@1.11.1
 
 ## 0.24.0
 
@@ -415,7 +426,7 @@
 - 6b0db5a: Avoid filtering out non-human-role clients in remoteclients state
 - Updated dependencies [b5adf9d]
 - Updated dependencies [ada15ac]
-  - @whereby.com/media@1.11.0
+    - @whereby.com/media@1.11.0
 
 ## 0.23.1
 
@@ -423,7 +434,7 @@
 
 - Updated dependencies [c936c88]
 - Updated dependencies [3662377]
-  - @whereby.com/media@1.10.1
+    - @whereby.com/media@1.10.1
 
 ## 0.23.0
 
@@ -437,14 +448,14 @@
 
 - Updated dependencies [0b11d0d]
 - Updated dependencies [1656f43]
-  - @whereby.com/media@1.10.0
+    - @whereby.com/media@1.10.0
 
 ## 0.22.1
 
 ### Patch Changes
 
 - Updated dependencies [7a765e3]
-  - @whereby.com/media@1.9.0
+    - @whereby.com/media@1.9.0
 
 ## 0.22.0
 
@@ -456,7 +467,7 @@
 
 - Updated dependencies [e299f5d]
 - Updated dependencies [fb0db35]
-  - @whereby.com/media@1.8.0
+    - @whereby.com/media@1.8.0
 
 ## 0.21.0
 
@@ -467,7 +478,7 @@
 ### Patch Changes
 
 - Updated dependencies [2eb29a9]
-  - @whereby.com/media@1.7.0
+    - @whereby.com/media@1.7.0
 
 ## 0.20.0
 
@@ -480,21 +491,21 @@
 ### Patch Changes
 
 - Updated dependencies [c2459a8]
-  - @whereby.com/media@1.6.5
+    - @whereby.com/media@1.6.5
 
 ## 0.19.4
 
 ### Patch Changes
 
 - Updated dependencies [cc38ede]
-  - @whereby.com/media@1.6.4
+    - @whereby.com/media@1.6.4
 
 ## 0.19.3
 
 ### Patch Changes
 
 - Updated dependencies [a211453]
-  - @whereby.com/media@1.6.3
+    - @whereby.com/media@1.6.3
 
 ## 0.19.2
 
@@ -502,7 +513,7 @@
 
 - Updated dependencies [582dc14]
 - Updated dependencies [319881b]
-  - @whereby.com/media@1.6.2
+    - @whereby.com/media@1.6.2
 
 ## 0.19.1
 
@@ -510,7 +521,7 @@
 
 - Updated dependencies [18ec086]
 - Updated dependencies [7320e54]
-  - @whereby.com/media@1.6.1
+    - @whereby.com/media@1.6.1
 
 ## 0.19.0
 
@@ -535,7 +546,7 @@
 ### Patch Changes
 
 - Updated dependencies [80836f3]
-  - @whereby.com/media@1.6.0
+    - @whereby.com/media@1.6.0
 
 ## 0.16.2
 
@@ -543,14 +554,14 @@
 
 - Updated dependencies [74f0c4c]
 - Updated dependencies [b9013ce]
-  - @whereby.com/media@1.5.1
+    - @whereby.com/media@1.5.1
 
 ## 0.16.1
 
 ### Patch Changes
 
 - Updated dependencies [8f146fb]
-  - @whereby.com/media@1.5.0
+    - @whereby.com/media@1.5.0
 
 ## 0.16.0
 
@@ -565,7 +576,7 @@
 ### Patch Changes
 
 - Updated dependencies [a442c75]
-  - @whereby.com/media@1.4.2
+    - @whereby.com/media@1.4.2
 
 ## 0.15.2
 
@@ -573,7 +584,7 @@
 
 - 50ce696: Handle case when invalid characters are provided in display name
 - Updated dependencies [50ce696]
-  - @whereby.com/media@1.4.1
+    - @whereby.com/media@1.4.1
 
 ## 0.15.1
 
@@ -599,7 +610,7 @@
 ### Patch Changes
 
 - Updated dependencies [998eebb]
-  - @whereby.com/media@1.4.0
+    - @whereby.com/media@1.4.0
 
 ## 0.13.0
 
@@ -618,7 +629,7 @@
 
 - 7eb3cac: Drop sending of selfId in join_room signal request
 - Updated dependencies [7eb3cac]
-  - @whereby.com/media@1.3.9
+    - @whereby.com/media@1.3.9
 
 ## 0.12.0
 
@@ -642,7 +653,7 @@
 ### Patch Changes
 
 - Updated dependencies [8a75b16]
-  - @whereby.com/media@1.3.5
+    - @whereby.com/media@1.3.5
 
 ## 0.10.0
 
@@ -653,7 +664,7 @@
 ### Patch Changes
 
 - Updated dependencies [d75644f]
-  - @whereby.com/media@1.3.3
+    - @whereby.com/media@1.3.3
 
 ## 0.9.2
 
@@ -661,7 +672,7 @@
 
 - b91990a: Reorder export fields, default should be last
 - Updated dependencies [b91990a]
-  - @whereby.com/media@1.3.2
+    - @whereby.com/media@1.3.2
 
 ## 0.9.1
 
@@ -669,7 +680,7 @@
 
 - 5412e6f: Bump media
 - Updated dependencies [5412e6f]
-  - @whereby.com/media@1.3.1
+    - @whereby.com/media@1.3.1
 
 ## 0.9.0
 
@@ -681,7 +692,7 @@
 ### Patch Changes
 
 - Updated dependencies [c6ff015]
-  - @whereby.com/media@1.3.0
+    - @whereby.com/media@1.3.0
 
 ## 0.8.0
 
@@ -692,7 +703,7 @@
 ### Patch Changes
 
 - Updated dependencies [3c84618]
-  - @whereby.com/media@1.2.0
+    - @whereby.com/media@1.2.0
 
 ## 0.7.0
 
@@ -720,8 +731,8 @@
 - 3638f73: Use module type for the core package and update jslib-media
 - 7eae1d9: Add flag for Node SDK usage
 
-  disables local media and explicitly sets the mediasoup device handler to one
-  that supports node
+    disables local media and explicitly sets the mediasoup device handler to one
+    that supports node
 
 ## 0.3.0
 
