@@ -100,7 +100,6 @@ describe("VegaRtcManager", () => {
             const device = jest.fn();
             getMediasoupDevice.mockImplementation(() => device);
 
-            //eslint-disable-next-line no-new
             const rtcManager = new VegaRtcManager({
                 selfId,
                 room,
