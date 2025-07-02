@@ -1,5 +1,14 @@
 # @whereby.com/browser-sdk
 
+## 3.12.19
+
+### Patch Changes
+
+- Updated dependencies [9f3d2e6]
+- Updated dependencies [c1bb662]
+    - @whereby.com/media@1.30.0
+    - @whereby.com/core@0.34.0
+
 ## 3.12.18
 
 ### Patch Changes
@@ -83,7 +92,7 @@
 ### Patch Changes
 
 - Updated dependencies [e9ae7dc]
-  - @whereby.com/core@0.33.0
+    - @whereby.com/core@0.33.0
 
 ## 3.12.4
 
@@ -120,7 +129,7 @@
 ### Patch Changes
 
 - Updated dependencies [5ba10b7]
-  - @whereby.com/core@0.32.7
+    - @whereby.com/core@0.32.7
 
 ## 3.11.6
 
@@ -139,7 +148,7 @@
 ### Patch Changes
 
 - Updated dependencies [47f1b36]
-  - @whereby.com/core@0.32.4
+    - @whereby.com/core@0.32.4
 
 ## 3.11.3
 
@@ -168,7 +177,7 @@
 ### Patch Changes
 
 - Updated dependencies [5476530]
-  - @whereby.com/core@0.32.0
+    - @whereby.com/core@0.32.0
 
 ## 3.10.12
 
@@ -199,7 +208,7 @@
 ### Patch Changes
 
 - Updated dependencies [0f0fa89]
-  - @whereby.com/core@0.31.0
+    - @whereby.com/core@0.31.0
 
 ## 3.10.7
 
@@ -231,7 +240,7 @@
 
 - afe0308: embed: Remove use of core library
 - Updated dependencies [afe0308]
-  - @whereby.com/core@0.30.0
+    - @whereby.com/core@0.30.0
 
 ## 3.10.2
 
@@ -258,7 +267,7 @@
 - ad21973: Auto mute video cell of local participant in video grid
 - eaacf54: Show placeholder cell when there's no stream
 - Updated dependencies [3a9396f]
-  - @whereby.com/core@0.29.1
+    - @whereby.com/core@0.29.1
 
 ## 3.9.11
 
@@ -266,7 +275,7 @@
 
 - Updated dependencies [392e210]
 - Updated dependencies [34c8ba4]
-  - @whereby.com/core@0.29.0
+    - @whereby.com/core@0.29.0
 
 ## 3.9.10
 
@@ -303,7 +312,7 @@
 ### Patch Changes
 
 - Updated dependencies [30f1c57]
-  - @whereby.com/core@0.28.2
+    - @whereby.com/core@0.28.2
 
 ## 3.9.4
 
@@ -316,7 +325,7 @@
 ### Patch Changes
 
 - Updated dependencies [fedea8c]
-  - @whereby.com/core@0.28.0
+    - @whereby.com/core@0.28.0
 
 ## 3.9.2
 
@@ -339,7 +348,7 @@
 ### Patch Changes
 
 - Updated dependencies [c149827]
-  - @whereby.com/core@0.27.0
+    - @whereby.com/core@0.27.0
 
 ## 3.8.2
 
@@ -347,7 +356,7 @@
 
 - Updated dependencies [73c96f5]
 - Updated dependencies [03c8fdf]
-  - @whereby.com/core@0.26.0
+    - @whereby.com/core@0.26.0
 
 ## 3.8.1
 
@@ -366,14 +375,14 @@
 ### Patch Changes
 
 - Updated dependencies [58b9d4a]
-  - @whereby.com/core@0.25.0
+    - @whereby.com/core@0.25.0
 
 ## 3.7.4
 
 ### Patch Changes
 
 - Updated dependencies [0d4385b]
-  - @whereby.com/core@0.24.3
+    - @whereby.com/core@0.24.3
 
 ## 3.7.3
 
@@ -393,7 +402,7 @@
 
 - Updated dependencies [ada15ac]
 - Updated dependencies [6b0db5a]
-  - @whereby.com/core@0.24.0
+    - @whereby.com/core@0.24.0
 
 ## 3.7.0
 
@@ -427,7 +436,7 @@
 ### Patch Changes
 
 - Updated dependencies [d7bad4d]
-  - @whereby.com/core@0.23.0
+    - @whereby.com/core@0.23.0
 
 ## 3.4.4
 
@@ -446,14 +455,14 @@
 ### Patch Changes
 
 - Updated dependencies [fb0db35]
-  - @whereby.com/core@0.22.0
+    - @whereby.com/core@0.22.0
 
 ## 3.4.1
 
 ### Patch Changes
 
 - Updated dependencies [2eb29a9]
-  - @whereby.com/core@0.21.0
+    - @whereby.com/core@0.21.0
 
 ## 3.4.0
 
@@ -465,7 +474,7 @@
 
 - 26e849b: Add a grant_device_permission event to embed element
 - Updated dependencies [396251e]
-  - @whereby.com/core@0.20.0
+    - @whereby.com/core@0.20.0
 
 ## 3.3.4
 
@@ -502,14 +511,14 @@
 ### Patch Changes
 
 - 3ac7fd8: adding callQualityMonitoring as an attribute
-  - @whereby.com/core@0.19.1
+    - @whereby.com/core@0.19.1
 
 ## 3.2.3
 
 ### Patch Changes
 
 - Updated dependencies [e06697c]
-  - @whereby.com/core@0.19.0
+    - @whereby.com/core@0.19.0
 
 ## 3.2.2
 
@@ -522,7 +531,7 @@
 ### Patch Changes
 
 - Updated dependencies [4b02a01]
-  - @whereby.com/core@0.18.0
+    - @whereby.com/core@0.18.0
 
 ## 3.2.0
 
@@ -533,7 +542,7 @@
 ### Patch Changes
 
 - Updated dependencies [1fcfa6b]
-  - @whereby.com/core@0.17.0
+    - @whereby.com/core@0.17.0
 
 ## 3.1.0
 
@@ -546,7 +555,7 @@
 ### Patch Changes
 
 - 470c96a: Including externalId in participant_join and participant_leave events
-  - @whereby.com/core@0.16.3
+    - @whereby.com/core@0.16.3
 
 ## 3.0.3
 
@@ -571,8 +580,8 @@
 ### Major Changes
 
 - 869695f: - Introduce Provider to the Whereby browser-sdk
-  - This is added so that we can have a shared state between all components and hooks
-  - All usage of the library needs to be wrapped in a Provider.
+    - This is added so that we can have a shared state between all components and hooks
+    - All usage of the library needs to be wrapped in a Provider.
 - 6d30526: Breaking change: require call to joinRoom() before joining a room session
 
 ### Minor Changes
@@ -590,7 +599,7 @@
 - Updated dependencies [9171216]
 - Updated dependencies [869695f]
 - Updated dependencies [af71f4e]
-  - @whereby.com/core@0.16.0
+    - @whereby.com/core@0.16.0
 
 ## 2.13.0
 
@@ -603,7 +612,7 @@
 ### Patch Changes
 
 - Updated dependencies [50ce696]
-  - @whereby.com/core@0.15.2
+    - @whereby.com/core@0.15.2
 
 ## 2.12.2
 
@@ -611,14 +620,14 @@
 
 - 5cf454d: Delay resetting the store state until the next joinRoom() API request is called
 - Updated dependencies [5cf454d]
-  - @whereby.com/core@0.15.1
+    - @whereby.com/core@0.15.1
 
 ## 2.12.1
 
 ### Patch Changes
 
 - Updated dependencies [ef26bd0]
-  - @whereby.com/core@0.15.0
+    - @whereby.com/core@0.15.0
 
 ## 2.12.0
 
@@ -638,7 +647,7 @@
 
 - Updated dependencies [324b52b]
 - Updated dependencies [b857c2b]
-  - @whereby.com/core@0.14.0
+    - @whereby.com/core@0.14.0
 
 ## 2.10.1
 
@@ -664,7 +673,7 @@
 - Updated dependencies [35dbed6]
 - Updated dependencies [b31e2f2]
 - Updated dependencies [7fcc0d9]
-  - @whereby.com/core@0.13.0
+    - @whereby.com/core@0.13.0
 
 ## 2.8.1
 
@@ -681,7 +690,7 @@
 ### Patch Changes
 
 - Updated dependencies [8a75b16]
-  - @whereby.com/core@0.11.0
+    - @whereby.com/core@0.11.0
 
 ## 2.7.0-beta.0
 
@@ -698,7 +707,7 @@
 ### Patch Changes
 
 - Updated dependencies [d75644f]
-  - @whereby.com/core@0.10.0
+    - @whereby.com/core@0.10.0
 
 ## 2.6.1
 
@@ -707,7 +716,7 @@
 - dd39593: Provide correct value for `userAgent` when connecting using `browser-sdk`.
 - Updated dependencies [6fc07f5]
 - Updated dependencies [300f6ac]
-  - @whereby.com/core@0.9.0
+    - @whereby.com/core@0.9.0
 
 ## 2.6.0
 
@@ -736,7 +745,7 @@
 ### Patch Changes
 
 - Updated dependencies [41a9cc2]
-  - @whereby.com/core@0.6.0
+    - @whereby.com/core@0.6.0
 
 ## 2.2.2
 
@@ -744,7 +753,7 @@
 
 - 1084a44: Listen for client_kicked events and update room ConnectionStatus accordingly
 - Updated dependencies [1084a44]
-  - @whereby.com/core@0.3.0
+    - @whereby.com/core@0.3.0
 
 ## 2.2.1
 
@@ -766,7 +775,7 @@
 - fd6c24f: Fix issue which kept camera light on after disabling video
 - Updated dependencies [d983b09]
 - Updated dependencies [a6972da]
-  - @whereby.com/core@0.2.0
+    - @whereby.com/core@0.2.0
 
 ## 2.1.0
 

@@ -1,5 +1,12 @@
 # @whereby.com/react-native-sdk
 
+## 0.7.51
+
+### Patch Changes
+
+- Updated dependencies [c1bb662]
+    - @whereby.com/core@0.34.0
+
 ## 0.7.50
 
 ### Patch Changes
@@ -71,7 +78,7 @@
 ### Patch Changes
 
 - Updated dependencies [e9ae7dc]
-  - @whereby.com/core@0.33.0
+    - @whereby.com/core@0.33.0
 
 ## 0.7.38
 
@@ -102,7 +109,7 @@
 ### Patch Changes
 
 - Updated dependencies [5ba10b7]
-  - @whereby.com/core@0.32.7
+    - @whereby.com/core@0.32.7
 
 ## 0.7.33
 
@@ -121,7 +128,7 @@
 ### Patch Changes
 
 - Updated dependencies [47f1b36]
-  - @whereby.com/core@0.32.4
+    - @whereby.com/core@0.32.4
 
 ## 0.7.30
 
@@ -146,7 +153,7 @@
 ### Patch Changes
 
 - Updated dependencies [5476530]
-  - @whereby.com/core@0.32.0
+    - @whereby.com/core@0.32.0
 
 ## 0.7.26
 
@@ -177,7 +184,7 @@
 ### Patch Changes
 
 - Updated dependencies [0f0fa89]
-  - @whereby.com/core@0.31.0
+    - @whereby.com/core@0.31.0
 
 ## 0.7.21
 
@@ -208,7 +215,7 @@
 ### Patch Changes
 
 - Updated dependencies [afe0308]
-  - @whereby.com/core@0.30.0
+    - @whereby.com/core@0.30.0
 
 ## 0.7.16
 
@@ -227,7 +234,7 @@
 ### Patch Changes
 
 - Updated dependencies [3a9396f]
-  - @whereby.com/core@0.29.1
+    - @whereby.com/core@0.29.1
 
 ## 0.7.13
 
@@ -235,7 +242,7 @@
 
 - Updated dependencies [392e210]
 - Updated dependencies [34c8ba4]
-  - @whereby.com/core@0.29.0
+    - @whereby.com/core@0.29.0
 
 ## 0.7.12
 
@@ -272,7 +279,7 @@
 ### Patch Changes
 
 - Updated dependencies [30f1c57]
-  - @whereby.com/core@0.28.2
+    - @whereby.com/core@0.28.2
 
 ## 0.7.6
 
@@ -285,7 +292,7 @@
 ### Patch Changes
 
 - Updated dependencies [fedea8c]
-  - @whereby.com/core@0.28.0
+    - @whereby.com/core@0.28.0
 
 ## 0.7.4
 
@@ -298,7 +305,7 @@
 ### Patch Changes
 
 - Updated dependencies [c149827]
-  - @whereby.com/core@0.27.0
+    - @whereby.com/core@0.27.0
 
 ## 0.7.2
 
@@ -306,7 +313,7 @@
 
 - Updated dependencies [73c96f5]
 - Updated dependencies [03c8fdf]
-  - @whereby.com/core@0.26.0
+    - @whereby.com/core@0.26.0
 
 ## 0.7.1
 
@@ -331,14 +338,14 @@
 ### Patch Changes
 
 - Updated dependencies [58b9d4a]
-  - @whereby.com/core@0.25.0
+    - @whereby.com/core@0.25.0
 
 ## 0.5.1
 
 ### Patch Changes
 
 - Updated dependencies [0d4385b]
-  - @whereby.com/core@0.24.3
+    - @whereby.com/core@0.24.3
 
 ## 0.5.0
 

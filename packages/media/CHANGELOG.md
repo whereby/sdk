@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.30.0
+
+### Minor Changes
+
+- 9f3d2e6: Add audio denoiser suspended context issue detector
+
 ## 1.29.0
 
 ### Minor Changes
