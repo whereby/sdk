@@ -1,7 +1,7 @@
 let localStorage;
 try {
     localStorage = self.localStorage;
-} catch (e) {
+} catch {
     localStorage = {
         getItem: (): undefined => undefined,
         key: (): undefined => undefined,

@@ -19,13 +19,21 @@
         "test:e2e": {
             "dependsOn": ["^build"],
             "outputs": ["playwright-*"],
-            "env": [
-                "WHEREBY_API_KEY"
-            ]
+            "env": ["WHEREBY_API_KEY"]
         },
         "clean": {
             "dependsOn": ["^clean"],
             "cache": false
         }
-    }
+    },
+    "globalEnv": [
+        "WHEREBY_API_KEY",
+        "REACT_APP_IS_DEV",
+        "REACT_APP_SIGNAL_BASE_URL",
+        "REACT_APP_API_BASE_URL",
+        "NODE_ENV",
+        "RTCSTATS_URL",
+        "STORYBOOK_ROOM",
+        "STORYBOOK_ROOM_HOST_ROOMKEY"
+    ]
 }

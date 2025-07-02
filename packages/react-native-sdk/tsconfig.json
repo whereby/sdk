@@ -1,12 +1,12 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "react-native-sdk": ["./src/index"]
-    },
-    "jsx": "react-jsx",
-    "lib": ["ESNext"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-  }
+    "extends": "@whereby.com/tsconfig/base.json",
+    "compilerOptions": {
+        "paths": {
+            "react-native-sdk": ["./src/index"]
+        },
+        "jsx": "react-jsx",
+        "lib": ["ESNext"],
+        "module": "ESNext",
+        "moduleResolution": "Bundler"
+    }
 }

@@ -6,11 +6,13 @@
     "dependencies": {
         "@coreui/icons": "^3.0.1",
         "@coreui/icons-react": "^2.2.1",
-        "@whereby.com/browser-sdk": "*",
+        "@whereby.com/browser-sdk": "workspace:*",
         "react": "^18.2.0",
         "react-dom": "^18.2.0"
     },
     "devDependencies": {
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
         "@vitejs/plugin-react": "^4.2.1",
         "vite": "^5.0.13",
         "typescript": "catalog:"
@@ -37,5 +39,6 @@
             "last 1 firefox version",
             "last 1 safari version"
         ]
-    }
+    },
+    "prettier": "@whereby.com/prettier-config"
 }

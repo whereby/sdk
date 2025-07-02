@@ -5,7 +5,7 @@ module.exports = {
         [
             "commonjs",
             {
-                esm: true,
+                esm: false,
             },
         ],
         [

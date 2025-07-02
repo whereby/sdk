@@ -354,6 +354,7 @@ define("WherebyEmbed", {
                 this.roomUrl.searchParams.set(k, v);
             }
         });
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         this.html`
       <iframe
         title=${title || "Video calling component"}

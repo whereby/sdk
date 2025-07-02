@@ -143,7 +143,7 @@ export default class CredentialsService extends EventEmitter {
         return this.getCurrentCredentials()
             .then((storedCredentials) => {
                 if (!storedCredentials) {
-                    console.error("Illegal state: no credentials to set user id for."); // eslint-disable-line no-console
+                    console.error("Illegal state: no credentials to set user id for.");
                 }
 
                 const userIdChangedFromLocalStorage = storedCredentials === null || storedCredentials.userId !== userId;

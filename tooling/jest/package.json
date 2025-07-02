@@ -1,0 +1,28 @@
+{
+    "name": "@whereby.com/jest-config",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "exports": {
+        "./base": "./base.js"
+    },
+    "scripts": {
+        "clean": "git clean -xdf .cache .turbo node_modules",
+        "format": "prettier --check . --ignore-path ../../.gitignore",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "jest": "catalog:jest29",
+        "jest-environment-jsdom": "catalog:jest29",
+        "ts-jest": "catalog:jest29"
+    },
+    "devDependencies": {
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "@types/jest": "catalog:jest29",
+        "eslint": "catalog:",
+        "prettier": "catalog:",
+        "typescript": "catalog:"
+    },
+    "prettier": "@whereby.com/prettier-config"
+}

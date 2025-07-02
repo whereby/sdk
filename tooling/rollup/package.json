@@ -1,0 +1,33 @@
+{
+    "name": "@whereby.com/rollup-config",
+    "private": true,
+    "version": "0.1.0",
+    "type": "commonjs",
+    "exports": {
+        "./base": "./base.js"
+    },
+    "scripts": {
+        "clean": "git clean -xdf .cache .turbo node_modules",
+        "format": "prettier --check . --ignore-path ../../.gitignore",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@rollup/plugin-commonjs": "^25.0.7",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "^15.2.3",
+        "@rollup/plugin-replace": "^5.0.5",
+        "rollup": "^4.22.4",
+        "rollup-plugin-dts": "^6.1.0",
+        "rollup-plugin-polyfill-node": "^0.13.0",
+        "rollup-plugin-terser": "^7.0.2",
+        "rollup-plugin-typescript2": "^0.36.0"
+    },
+    "devDependencies": {
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "eslint": "catalog:",
+        "prettier": "catalog:",
+        "typescript": "catalog:"
+    },
+    "prettier": "@whereby.com/prettier-config"
+}

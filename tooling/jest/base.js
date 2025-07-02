@@ -1,4 +1,4 @@
-module.exports = function buildConfig(_packageDirectory, pkgConfig) {
+export default function buildConfig(_packageDirectory, pkgConfig) {
     return {
         preset: "ts-jest",
         testEnvironment: "jsdom",
@@ -13,4 +13,4 @@ module.exports = function buildConfig(_packageDirectory, pkgConfig) {
         testMatch: ["<rootDir>/src/**/?(*.)+(spec|test|unit).[jt]s?(x)"],
         ...pkgConfig,
     };
-};
+}

@@ -8,7 +8,6 @@ import MockMediaStream from "./MediaStream";
 
 const uuid = uuidPkg.v4;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 export const noop = () => {};
 
 export function oneOf<T>(...array: T[]): T {

@@ -27,14 +27,14 @@ export default class LocalStorageStore implements AbstractStore {
             if (value) {
                 try {
                     return Promise.resolve(JSON.parse(value));
-                } catch (e) {
+                } catch {
                     /* NOOP */
                 }
             }
             return Promise.resolve(defaultValue);
         } catch (e) {
             // Cookies are blocked
-            console.warn("Error getting access to storage. Are cookies blocked?", e); // eslint-disable-line no-console
+            console.warn("Error getting access to storage. Are cookies blocked?", e);
             return Promise.resolve(defaultValue);
         }
     }
@@ -50,7 +50,7 @@ export default class LocalStorageStore implements AbstractStore {
             return Promise.resolve();
         } catch (e) {
             /* NOOP, cookies are blocked */
-            console.warn("Error getting access to storage. Are cookies blocked?", e); // eslint-disable-line no-console
+            console.warn("Error getting access to storage. Are cookies blocked?", e);
             return Promise.reject(e);
         }
     }

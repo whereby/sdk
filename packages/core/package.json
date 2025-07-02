@@ -40,12 +40,21 @@
         }
     },
     "devDependencies": {
+        "@whereby.com/eslint-config": "workspace:*",
+        "@whereby.com/jest-config": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "@types/btoa": "^1.2.3",
+        "@types/chrome": "^0.0.210",
         "deep-object-diff": "^1.1.9",
         "dotenv": "^16.4.5",
         "dotenv-run-script": "^0.4.1",
         "tslib": "^2.4.1",
         "uuid": "^9.0.1",
         "yalc": "^1.0.0-pre.53",
+        "eslint": "catalog:",
+        "prettier": "catalog:",
         "typescript": "catalog:"
     },
     "dependencies": {
@@ -54,5 +63,6 @@
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
         "events": "^3.3.0"
-    }
+    },
+    "prettier": "@whereby.com/prettier-config"
 }

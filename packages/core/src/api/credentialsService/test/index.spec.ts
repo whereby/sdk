@@ -131,14 +131,14 @@ describe("CredentialsService", () => {
             });
 
             afterEach(() => {
-                console.error.mockRestore(); // eslint-disable-line no-console
+                console.error.mockRestore();
             });
 
             it("should call log an error", () => {
                 const promise = credentialsService.setUserId(mockUserId);
 
                 return promise.then(() => {
-                    expect(console.error).toBeCalled(); // eslint-disable-line no-console
+                    expect(console.error).toBeCalled();
                 });
             });
 

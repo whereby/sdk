@@ -29,9 +29,11 @@ export interface ChatMessageEventProps {
 }
 export type ChatMessageEvent = NotificationEvent<"chatMessageReceived", ChatMessageEventProps>;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SignalStatusEventProps {}
 export type SignalStatusEvent = NotificationEvent<"signalTrouble" | "signalOk", SignalStatusEventProps>;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SignalClientEventProps {}
 export type SignalClientEvent = NotificationEvent<"clientUnableToJoinFullRoom", SignalClientEventProps>;
 

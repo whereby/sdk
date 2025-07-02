@@ -1,7 +1,9 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const buildConfig = require("../../jest.base.config");
+import path from "node:path";
+import buildConfig from "@whereby.com/jest-config/base";
 
-module.exports = buildConfig(__dirname, {
+const __dirname = path.resolve();
+
+export default buildConfig(__dirname, {
     testEnvironment: "jsdom",
     testMatch: ["<rootDir>/tests/**/?(*.)+(spec|test).[jt]s?(x)", "<rootDir>/src/**/?(*.)+(spec|test|unit).[jt]s?(x)"],
     transform: {

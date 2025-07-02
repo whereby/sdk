@@ -5,7 +5,7 @@ import { calculateLayout } from "./layout/stageLayout";
 import { makeVideoCellView } from "./layout/cellView";
 import { STAGE_PARTICIPANT_LIMIT } from "./contants";
 import { useGridParticipants } from "./useGridParticipants";
-import { ClientView } from "packages/core/dist";
+import { ClientView } from "@whereby.com/core";
 
 interface Props {
     activeVideosSubgridTrigger?: number;

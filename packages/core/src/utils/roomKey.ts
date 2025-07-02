@@ -11,7 +11,7 @@ export default function parseUnverifiedRoomKeyData(roomKey: string) {
         try {
             const base64DecodedJwtData = atob(roomKeyData);
             return JSON.parse(base64DecodedJwtData);
-        } catch (e) {
+        } catch {
             return {};
         }
     }
