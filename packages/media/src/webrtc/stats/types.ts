@@ -1,3 +1,7 @@
+export interface MediaStreamTrackWithDenoiserContext extends MediaStreamTrack {
+    _denoiserCtx?: AudioContext;
+}
+
 export interface StatsClient {
     id: string;
     clientId: string;
@@ -5,7 +9,7 @@ export interface StatsClient {
     isAudioOnlyModeEnabled: boolean;
     audio: {
         enabled: boolean;
-        track?: MediaStreamTrack;
+        track?: MediaStreamTrackWithDenoiserContext;
     };
     video: {
         enabled: boolean;

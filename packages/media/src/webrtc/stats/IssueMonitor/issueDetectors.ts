@@ -1,6 +1,6 @@
 import { getRoomMode } from "../../RtcManagerDispatcher";
 import { ssrcStats, TrackStats, ViewStats } from "../StatsMonitor";
-import { StatsClient } from "../types";
+import { MediaStreamTrackWithDenoiserContext, StatsClient } from "../types";
 import { PacketLossAnalyser } from "./packetLossAnalyser";
 
 interface IssueDetector {
@@ -14,7 +14,7 @@ export interface IssueCheckData {
     client: StatsClient;
     clients: StatsClient[];
     kind: string;
-    track: MediaStreamTrack | undefined;
+    track: MediaStreamTrack | MediaStreamTrackWithDenoiserContext | undefined;
     trackStats?: TrackStats;
     stats?: ViewStats;
     hasLiveTrack: boolean;
@@ -181,6 +181,14 @@ export const issueDetectors: IssueDetector[] = [
     },
     noTrackStatsIssueDetector,
     dryTrackIssueDetector,
+    {
+        id: "denoiser-context-suspended",
+        enabled: ({ client, kind }) => client.isLocalClient && kind === "audio" && !!client.audio?.track?._denoiserCtx,
+        check: ({ track }) => {
+            if (!track || !("_denoiserCtx" in track)) return false;
+            return track._denoiserCtx?.state === "suspended";
+        },
+    },
     {
         id: "low-layer0-bitrate",
         enabled: ({ hasLiveTrack, ssrc0, kind, client }) =>
