@@ -6,7 +6,7 @@ packages:
 catalog:
     eslint: ^9.29.0
     prettier: ^3.5.3
-    typescript: ^5.3.3
+    typescript: ^5.8.3
 
 catalogs:
     jest29:

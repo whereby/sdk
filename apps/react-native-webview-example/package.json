@@ -19,7 +19,7 @@
         "@whereby.com/prettier-config": "workspace:*",
         "@expo/vector-icons": "^14.0.2",
         "@react-navigation/native": "^6.0.2",
-        "@whereby.com/react-native-sdk": "*",
+        "@whereby.com/react-native-sdk": "workspace:*",
         "expo": "^51.0.31",
         "expo-av": "~14.0.7",
         "expo-camera": "~15.0.15",
@@ -42,7 +42,7 @@
         "react-native-web": "~0.19.10"
     },
     "devDependencies": {
-        "@whereby.com/prettier-config": "*",
+        "@whereby.com/prettier-config": "workspace:*",
         "@babel/core": "^7.20.0",
         "@types/jest": "catalog:jest29",
         "@types/react": "~18.2.45",

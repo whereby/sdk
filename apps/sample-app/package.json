@@ -4,15 +4,15 @@
     "private": true,
     "type": "module",
     "dependencies": {
-        "@whereby.com/browser-sdk": "*",
-        "@whereby.com/core": "*",
+        "@whereby.com/browser-sdk": "workspace:*",
+        "@whereby.com/core": "workspace:*",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-hot-toast": "^2.4.1"
     },
     "devDependencies": {
-        "@whereby.com/prettier-config": "*",
-        "@whereby.com/tsconfig": "*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
         "@playwright/test": "^1.50.1",
         "@vitejs/plugin-react": "^4.2.1",
         "vite": "^5.0.13",
