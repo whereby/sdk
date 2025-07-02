@@ -516,8 +516,8 @@ importers:
         specifier: ^1.2.3
         version: 1.2.5
       '@types/chrome':
-        specifier: ^0.0.210
-        version: 0.0.210
+        specifier: ^0.0.329
+        version: 0.0.329
       '@whereby.com/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
@@ -3373,8 +3373,8 @@ packages:
   '@types/btoa@1.2.5':
     resolution: {integrity: sha512-BItINdjZRlcGdI2efwK4bwxY5vEAT0SnIVfMOZVT18wp4900F1Lurqk/9PNdF9hMP1zgFmWbjVEtAsQKVcbqxA==}
 
-  '@types/chrome@0.0.210':
-    resolution: {integrity: sha512-VSjQu1k6a/rAfuqR1Gi/oxHZj4+t6+LG+GobNI3ZWI6DQ+fmphNSF6TrLHG6BYK2bXc9Gb4c1uXFKRRVLaGl5Q==}
+  '@types/chrome@0.0.329':
+    resolution: {integrity: sha512-jAZX4QMnAa1bTSWoQ5/EhhiY1t+1B7a5ZCY5ZEs61tWiQfxXAkfBSxCkQWhGxJoiq/4b4vtcmYEebNEmlLKecg==}
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
@@ -12316,7 +12316,7 @@ snapshots:
     dependencies:
       '@types/node': 22.15.34
 
-  '@types/chrome@0.0.210':
+  '@types/chrome@0.0.329':
     dependencies:
       '@types/filesystem': 0.0.36
       '@types/har-format': 1.2.16
