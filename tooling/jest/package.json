@@ -12,14 +12,14 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "jest": "^29.7.0",
-        "jest-environment-jsdom": "^29.7.0",
-        "ts-jest": "^29.1.2"
+        "jest": "catalog:jest29",
+        "jest-environment-jsdom": "catalog:jest29",
+        "ts-jest": "catalog:jest29"
     },
     "devDependencies": {
         "@whereby.com/prettier-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
-        "@types/jest": "^29.5.12",
+        "@types/jest": "catalog:jest29",
         "eslint": "catalog:",
         "prettier": "catalog:",
         "typescript": "catalog:"
