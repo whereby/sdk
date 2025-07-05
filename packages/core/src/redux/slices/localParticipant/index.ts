@@ -3,7 +3,7 @@ import { RoleName } from "@whereby.com/media";
 import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../../thunk";
 import { LocalParticipant } from "../../../RoomParticipant";
 import { selectSignalConnectionRaw } from "../signalConnection";
-import { doAppStart } from "../app";
+import { doAppSetup } from "../app";
 import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../localMedia";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
@@ -61,7 +61,7 @@ export const localParticipantSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doAppStart, (state, action) => {
+        builder.addCase(doAppSetup, (state, action) => {
             return {
                 ...state,
                 displayName: action.payload.displayName,
