@@ -1,4 +1,6 @@
-export default {
+import { RtcEvents } from "./types";
+
+const events: Record<string, keyof RtcEvents> = {
     CAMERA_NOT_WORKING: "camera_not_working",
     CONNECTION_BLOCKED_BY_NETWORK: "connection_blocked_by_network",
     ICE_IPV6_SEEN: "ice_ipv6_seen",
@@ -19,3 +21,5 @@ export default {
     PC_ON_ANSWER_FAILURE: "pc_on_answer_failure",
     PC_ON_OFFER_FAILURE: "pc_on_offer_failure",
 };
+
+export default events;

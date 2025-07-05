@@ -8,7 +8,21 @@ import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
 import VegaConnection from "../VegaConnection";
 import createMicAnalyser from "../VegaMicAnalyser";
-import { CustomMediaStreamTrack, RtcManager } from "../types";
+import {
+    CustomMediaStreamTrack,
+    ICEServerConfig,
+    MediaStreamWhichMayHaveDirectionalIds,
+    MicAnalyserDebugger,
+    RoomState,
+    RtcEventEmitter,
+    RtcEvents,
+    RtcFeatures,
+    RtcManager,
+    SFUServerConfig,
+    TurnServerConfig,
+    VegaRtcFeatures,
+    WebRTCProvider,
+} from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
 import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
 
@@ -21,6 +35,17 @@ import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ServerSocket } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
+import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
+import {
+    AppData,
+    Consumer,
+    DataConsumer,
+    DataProducer,
+    Producer,
+    SctpStreamParameters,
+    Transport,
+} from "mediasoup-client/lib/types";
+import { RtcManagerConfig } from "../RtcManagerDispatcher";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -36,78 +61,77 @@ const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 
 if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
-type MediaSteamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
-
 type ClientState = {
     hasAcceptedWebcamStream: Boolean;
     hasAcceptedScreenStream: Boolean;
     hasEmittedWebcamStream: Boolean;
     hasEmittedScreenStream: Boolean;
-    webcamStream?: MediaSteamWhichMayHaveInboundId;
-    screenStream?: MediaSteamWhichMayHaveInboundId;
+    webcamStream?: MediaStreamWhichMayHaveDirectionalIds;
+    screenStream?: MediaStreamWhichMayHaveDirectionalIds;
     screenShareStreamId?: string;
     camStreamId?: string;
 };
 
 export default class VegaRtcManager implements RtcManager {
-    _selfId: any;
-    _room: any;
-    _roomSessionId: any;
-    _emitter: any;
+    _selfId: string;
+    _room: RoomState;
+    _roomSessionId?: string | null;
+    _emitter: RtcEventEmitter;
     _serverSocket: ServerSocket;
-    _webrtcProvider: any;
-    _features: any;
-    _eventClaim?: any;
-    _vegaConnection: any;
-    _micAnalyser: any;
-    _micAnalyserDebugger: any;
+    _webrtcProvider: WebRTCProvider;
+    _features: VegaRtcFeatures;
+    _eventClaim?: string;
+    _vegaConnection: VegaConnection | null;
+    _micAnalyser: ReturnType<typeof createMicAnalyser> | null;
+    _micAnalyserDebugger: MicAnalyserDebugger | null;
     _mediasoupDevice: Device | null;
-    _routerRtpCapabilities: any;
-    _sendTransport: any;
-    _receiveTransport: any;
+    _routerRtpCapabilities: RtpCapabilities | null;
+    _sendTransport?: Transport | null;
+    _receiveTransport?: Transport | null;
     _clientStates: Map<string, ClientState>;
-    _streamIdToVideoConsumerId: any;
+    _streamIdToVideoConsumerId: Map<string, string>;
     _streamIdToVideoResolution: Map<string, { width: number; height: number }>;
-    _consumers: any;
-    _dataConsumers: any;
-    _localStreamDeregisterFunction: any;
-    _micTrack: any;
-    _webcamTrack: any;
-    _screenVideoTrack: any;
-    _screenAudioTrack: any;
-    _micProducer: any;
-    _micProducerPromise: any;
-    _micPaused: any;
-    _micScoreProducer: any;
-    _micScoreProducerPromise: any;
-    _webcamProducer: any;
-    _webcamProducerPromise: any;
-    _webcamPaused: any;
-    _screenVideoProducer: any;
-    _screenVideoProducerPromise: any;
-    _screenAudioProducer: any;
-    _screenAudioProducerPromise: any;
-    _sndTransportIceRestartPromise: any;
-    _rcvTransportIceRestartPromise: any;
-    _colocation: any;
-    _stopCameraTimeout: any;
-    _audioTrackOnEnded: any;
-    _videoTrackOnEnded: any;
-    _socketListenerDeregisterFunctions: any;
-    _reconnect: any;
-    _reconnectTimeOut: any;
-    _qualityMonitor: any;
-    _fetchMediaServersTimer: any;
-    _iceServers: any;
-    _turnServers: any;
-    _sfuServer: any;
+    _consumers: Map<string, Consumer>;
+    _dataConsumers: Map<string, DataConsumer>;
+    _localStreamDeregisterFunction: (() => void) | null;
+    _micTrack: MediaStreamTrack | null;
+    _webcamTrack: MediaStreamTrack | null;
+    _screenVideoTrack: MediaStreamTrack | null;
+    _screenAudioTrack: MediaStreamTrack | null;
+    _micProducer: Producer | null;
+    _micProducerPromise: Promise<void> | null;
+    _micPaused: boolean;
+    _micScoreProducer: DataProducer | null;
+    _micScoreProducerPromise: Promise<void> | null;
+    _webcamProducer: Producer | null;
+    _webcamProducerPromise: Promise<void> | null;
+    _webcamPaused: boolean;
+    _screenVideoProducer: Producer | null;
+    _screenVideoProducerPromise: Promise<void> | null;
+    _screenAudioProducer: Producer | null;
+    _screenAudioProducerPromise: Promise<void> | null;
+    _sndTransportIceRestartPromise: Promise<void> | null;
+    _rcvTransportIceRestartPromise: Promise<void> | null;
+    _colocation: string | null;
+    _stopCameraTimeout?: NodeJS.Timeout | null;
+    _audioTrackOnEnded: (() => void) | null;
+    _videoTrackOnEnded: (() => void) | null;
+    _socketListenerDeregisterFunctions: (() => void)[];
+    _reconnect: boolean;
+    _reconnectTimeOut?: NodeJS.Timeout | null;
+    _qualityMonitor: VegaMediaQualityMonitor | null;
+    _fetchMediaServersTimer?: NodeJS.Timeout | null;
+    _iceServers?: ICEServerConfig[];
+    _turnServers?: TurnServerConfig[];
+    _sfuServer?: SFUServerConfig | null;
     _sfuServers?: HostListEntryOptionalDC[];
-    _mediaserverConfigTtlSeconds: any;
+    _mediaserverConfigTtlSeconds?: number;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
     _isConnectingOrConnected: boolean;
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
+    _globalPause: boolean;
 
     constructor({
         selfId,
@@ -117,17 +141,11 @@ export default class VegaRtcManager implements RtcManager {
         webrtcProvider,
         features,
         eventClaim,
-    }: {
-        selfId: any;
-        room: any;
-        emitter: any;
-        serverSocket: any;
-        webrtcProvider: any;
-        features?: any;
-        eventClaim?: string;
-    }) {
+        globalPause,
+    }: RtcManagerConfig & { globalPause?: boolean }) {
         const { session, iceServers, turnServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
 
+        this._globalPause = !!globalPause;
         this._selfId = selfId;
         this._room = room;
         this._roomSessionId = session?.id;
@@ -142,7 +160,7 @@ export default class VegaRtcManager implements RtcManager {
         this._micAnalyser = null;
         this._micAnalyserDebugger = null;
 
-        this._mediasoupDevice = getMediasoupDevice(features);
+        this._mediasoupDevice = getMediasoupDevice(this._features);
 
         this._routerRtpCapabilities = null;
 
@@ -217,7 +235,7 @@ export default class VegaRtcManager implements RtcManager {
 
         this._qualityMonitor = new VegaMediaQualityMonitor();
         this._qualityMonitor.on(PROTOCOL_EVENTS.MEDIA_QUALITY_CHANGED, (payload: any) => {
-            this._emitToPWA(PROTOCOL_EVENTS.MEDIA_QUALITY_CHANGED, payload);
+            this._emitToPWA(PROTOCOL_EVENTS.MEDIA_QUALITY_CHANGED as keyof RtcEvents, payload);
         });
 
         this._networkIsDetectedUpBySignal = false;
@@ -230,10 +248,10 @@ export default class VegaRtcManager implements RtcManager {
         sfuServers,
         mediaserverConfigTtlSeconds,
     }: {
-        iceServers: any;
-        turnServers: any;
-        sfuServer: any;
-        sfuServers: any;
+        iceServers: ICEServerConfig[];
+        turnServers: TurnServerConfig[];
+        sfuServer?: SFUServerConfig | null;
+        sfuServers?: HostListEntryOptionalDC[];
         mediaserverConfigTtlSeconds: any;
     }) {
         this._iceServers = iceServers;
@@ -253,10 +271,10 @@ export default class VegaRtcManager implements RtcManager {
 
         // update vega connection manager if exists
         this._vegaConnectionManager?.updateHostList(
-            this._features.sfuServersOverride ||
+            (this._features.sfuServersOverride ||
                 this._sfuServers ||
                 this._features.sfuServerOverrideHost ||
-                sfuServer.url,
+                sfuServer?.url)!,
         );
 
         const iceServersList = {
@@ -362,11 +380,12 @@ export default class VegaRtcManager implements RtcManager {
                 this._features.sfuServersOverride ||
                 this._sfuServers ||
                 this._features.sfuServerOverrideHost ||
-                this._sfuServer.url;
+                this._sfuServer?.url;
 
             this._vegaConnectionManager = createVegaConnectionManager({
-                initialHostList: hostList,
+                initialHostList: hostList as string | HostListEntryOptionalDC[],
                 getUrlForHost: (host) => {
+                    // @ts-expect-error eventClaim: string | null | undefined not asssignable to string | undefined
                     const searchParams = new URLSearchParams({
                         clientId: this._selfId,
                         organizationId: this._room.organizationId,
@@ -374,8 +393,17 @@ export default class VegaRtcManager implements RtcManager {
                         eventClaim: this._room.isClaimed ? this._eventClaim : null,
                         lowBw: "true",
                         ...Object.keys(this._features || {})
-                            .filter((featureKey) => this._features[featureKey] && /^sfu/.test(featureKey))
-                            .reduce((prev, current) => ({ ...prev, [current]: this._features[current] }), {}),
+                            .filter(
+                                (featureKey) =>
+                                    this._features[featureKey as keyof VegaRtcFeatures] && /^sfu/.test(featureKey),
+                            )
+                            .reduce(
+                                (prev, current) => ({
+                                    ...prev,
+                                    [current]: this._features[current as keyof VegaRtcFeatures],
+                                }),
+                                {},
+                            ),
                     });
                     const queryString = searchParams.toString();
                     const wsUrl = `wss://${host}?${queryString}`;
@@ -420,7 +448,7 @@ export default class VegaRtcManager implements RtcManager {
             this._reconnectTimeOut = setTimeout(() => this._connect(), 1000);
         }
 
-        this._qualityMonitor.close();
+        this._qualityMonitor?.close();
         this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_CLOSED);
     }
 
@@ -430,7 +458,7 @@ export default class VegaRtcManager implements RtcManager {
 
         try {
             // We need to always do this, as this triggers the join logic on the SFU
-            const { routerRtpCapabilities } = await this._vegaConnection.request("getCapabilities");
+            const { routerRtpCapabilities } = await this._vegaConnection!.request("getCapabilities");
 
             if (!this._routerRtpCapabilities) {
                 const modifiedCapabilities = modifyMediaCapabilities(routerRtpCapabilities, {
@@ -442,11 +470,11 @@ export default class VegaRtcManager implements RtcManager {
                 await this._mediasoupDevice?.load({ routerRtpCapabilities: modifiedCapabilities });
             }
 
-            this._vegaConnection.message("setCapabilities", {
+            this._vegaConnection!.message("setCapabilities", {
                 rtpCapabilities: this._mediasoupDevice?.rtpCapabilities,
             });
 
-            if (this._colocation) this._vegaConnection.message("setColocation", { colocation: this._colocation });
+            if (this._colocation) this._vegaConnection!.message("setColocation", { colocation: this._colocation });
 
             await Promise.all([this._createTransport(true), this._createTransport(false)]);
 
@@ -468,10 +496,10 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    async _createTransport(send: any) {
+    async _createTransport(send: boolean) {
         const creator = send ? "createSendTransport" : "createRecvTransport";
 
-        const transportOptions = await this._vegaConnection.request("createTransport", {
+        const transportOptions = await this._vegaConnection!.request("createTransport", {
             producing: send,
             consuming: !send,
             enableTcp: true,
@@ -486,7 +514,7 @@ export default class VegaRtcManager implements RtcManager {
                 maxSctpMessageSize: 262144,
                 sctpSendBufferSize: 262144,
             },
-        });
+        })!;
 
         transportOptions.iceServers = turnServerOverride(
             this._features.turnServersOn ? this._turnServers : this._iceServers,
@@ -518,7 +546,7 @@ export default class VegaRtcManager implements RtcManager {
             }
         };
         transport
-            ?.on("connect", ({ dtlsParameters }: { dtlsParameters: any }, callback: any) => {
+            ?.on("connect", ({ dtlsParameters }: { dtlsParameters: any }, callback: () => void) => {
                 this._vegaConnection?.message("connectTransport", {
                     transportId: transport.id,
                     dtlsParameters,
@@ -541,17 +569,17 @@ export default class VegaRtcManager implements RtcManager {
                         rtpParameters,
                         appData,
                     }: {
-                        kind: any;
-                        rtpParameters: any;
-                        appData: any;
+                        kind: string;
+                        rtpParameters: RtpParameters;
+                        appData: AppData;
                     },
-                    callback: any,
-                    errback: any,
+                    callback: (args: { id: string }) => void,
+                    errback: (err: Error) => void,
                 ) => {
                     try {
-                        const { paused } = appData;
+                        const { paused } = appData as { paused?: boolean };
 
-                        const { id } = await this._vegaConnection?.request("produce", {
+                        const { id } = await this._vegaConnection!.request("produce", {
                             transportId: transport.id,
                             kind,
                             rtpParameters,
@@ -561,7 +589,7 @@ export default class VegaRtcManager implements RtcManager {
 
                         callback({ id });
                     } catch (error) {
-                        errback(error);
+                        errback(error as Error);
                     }
                 },
             );
@@ -572,21 +600,21 @@ export default class VegaRtcManager implements RtcManager {
                         appData,
                         sctpStreamParameters,
                     }: {
-                        appData: any;
-                        sctpStreamParameters: any;
+                        appData: AppData;
+                        sctpStreamParameters: SctpStreamParameters;
                     },
-                    callback: any,
-                    errback: any,
+                    callback: (args: { id: string }) => void,
+                    errback: (err: Error) => void,
                 ) => {
                     try {
-                        const { id } = await this._vegaConnection?.request("produceData", {
+                        const { id } = await this._vegaConnection!.request("produceData", {
                             transportId: transport.id,
                             sctpStreamParameters,
                             appData,
                         });
                         callback({ id });
                     } catch (error) {
-                        errback(error);
+                        errback(error as Error);
                     }
                 },
             );
@@ -691,6 +719,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._micTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_CAM_OUTBOUND_STREAM_ID,
@@ -698,13 +727,14 @@ export default class VegaRtcManager implements RtcManager {
                         screenShare: false,
                         source: "mic",
                         paused: currentPaused,
+                        localClosed: undefined,
                     },
                 });
 
-                currentPaused ? producer.pause() : producer.resume();
+                this._globalPause || currentPaused ? producer.pause() : producer.resume();
 
                 this._micProducer = producer;
-                this._qualityMonitor.addProducer(this._selfId, producer.id);
+                this._qualityMonitor?.addProducer(this._selfId, producer.id);
 
                 producer.observer.once("close", () => {
                     logger.info('micProducer "close" event');
@@ -714,7 +744,7 @@ export default class VegaRtcManager implements RtcManager {
 
                     this._micProducer = null;
                     this._micProducerPromise = null;
-                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
+                    this._qualityMonitor?.removeProducer(this._selfId, producer.id);
                 });
 
                 if (this._micTrack !== this._micProducer.track) await this._replaceMicTrack();
@@ -744,13 +774,14 @@ export default class VegaRtcManager implements RtcManager {
                     return;
                 }
 
-                const producer = await this._sendTransport.produceData({
+                const producer = await this._sendTransport!.produceData({
                     ordered: false,
                     maxPacketLifeTime: 3000,
                     label: "micscore",
                     appData: {
                         producerId: this._micProducer.id,
                         clientId: this._selfId,
+                        localClosed: undefined,
                     },
                 });
 
@@ -885,10 +916,11 @@ export default class VegaRtcManager implements RtcManager {
             try {
                 const currentPaused = this._webcamPaused;
 
-                const producer = await this._sendTransport.produce({
-                    track: this._webcamTrack,
+                const producer = await this._sendTransport!.produce({
+                    track: this._webcamTrack!,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings("video", false, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_CAM_OUTBOUND_STREAM_ID,
@@ -896,13 +928,19 @@ export default class VegaRtcManager implements RtcManager {
                         screenShare: false,
                         source: "webcam",
                         paused: currentPaused,
+                        localClosed: undefined,
                     },
                 });
 
-                currentPaused ? producer.pause() : producer.resume();
+                if (this._globalPause || currentPaused) {
+                    console.log("trace pausing webcam producer", { globalPause: this._globalPause });
+                    setTimeout(() => producer.pause(), 0);
+                } else {
+                    producer.resume();
+                }
 
                 this._webcamProducer = producer;
-                this._qualityMonitor.addProducer(this._selfId, producer.id);
+                this._qualityMonitor?.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('webcamProducer "close" event');
 
@@ -911,7 +949,7 @@ export default class VegaRtcManager implements RtcManager {
 
                     this._webcamProducer = null;
                     this._webcamProducerPromise = null;
-                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
+                    this._qualityMonitor?.removeProducer(this._selfId, producer.id);
                 });
 
                 // Has someone replaced the track?
@@ -945,8 +983,8 @@ export default class VegaRtcManager implements RtcManager {
             return;
         }
 
-        if (this._webcamProducer.track !== this._webcamTrack) {
-            await this._webcamProducer.replaceTrack({ track: this._webcamTrack });
+        if (this._webcamProducer!.track !== this._webcamTrack) {
+            await this._webcamProducer!.replaceTrack({ track: this._webcamTrack });
             await this._replaceWebcamTrack();
         }
     }
@@ -1004,6 +1042,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenVideoTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings(
                         "video",
                         true,
@@ -1016,11 +1055,16 @@ export default class VegaRtcManager implements RtcManager {
                         screenShare: true,
                         source: "screenvideo",
                         paused: false,
+                        localClosed: undefined,
                     },
                 });
+                if (this._globalPause) {
+                    producer.pause();
+                }
 
                 this._screenVideoProducer = producer;
-                this._qualityMonitor.addProducer(this._selfId, producer.id);
+
+                this._qualityMonitor?.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('screenVideoProducer "close" event');
 
@@ -1029,7 +1073,7 @@ export default class VegaRtcManager implements RtcManager {
 
                     this._screenVideoProducer = null;
                     this._screenVideoProducerPromise = null;
-                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
+                    this._qualityMonitor?.removeProducer(this._selfId, producer.id);
                 });
 
                 // Has someone replaced the track?
@@ -1088,6 +1132,7 @@ export default class VegaRtcManager implements RtcManager {
                     track: this._screenAudioTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    zeroRtpOnPause: !!this._globalPause,
                     ...getMediaSettings("audio", true, { ...this._features, vp9On: this._features.sfuVp9On }),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
@@ -1095,11 +1140,16 @@ export default class VegaRtcManager implements RtcManager {
                         screenShare: true,
                         source: "screenaudio",
                         paused: false,
+                        localClosed: undefined,
                     },
                 });
 
+                if (this._globalPause) {
+                    producer.pause();
+                }
                 this._screenAudioProducer = producer;
-                this._qualityMonitor.addProducer(this._selfId, producer.id);
+
+                this._qualityMonitor?.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('screenAudioProducer "close" event');
 
@@ -1108,7 +1158,7 @@ export default class VegaRtcManager implements RtcManager {
 
                     this._screenAudioProducer = null;
                     this._screenAudioProducerPromise = null;
-                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
+                    this._qualityMonitor?.removeProducer(this._selfId, producer.id);
                 });
 
                 // Has someone replaced the track?
@@ -1197,7 +1247,7 @@ export default class VegaRtcManager implements RtcManager {
      *
      * @param {string} colocation
      */
-    setColocation(colocation: any) {
+    setColocation(colocation: string) {
         this._colocation = colocation;
         this._vegaConnection?.message("setColocation", { colocation });
 
@@ -1342,6 +1392,7 @@ export default class VegaRtcManager implements RtcManager {
         videoPaused: boolean,
         beforeEffectTracks: CustomMediaStreamTrack[] = [],
     ) {
+        console.log("trace addNewStream", { streamId });
         if (streamId === "0") {
             this._micPaused = audioPaused;
             this._webcamPaused = videoPaused;
@@ -1444,6 +1495,52 @@ export default class VegaRtcManager implements RtcManager {
             this._sendWebcam(track);
         }
     }
+
+    globalResume() {
+        this._globalPause = false;
+        console.log("trace globalResume", {
+            webcamPaused: this._webcamPaused,
+            webcamProducerPaused: this._webcamProducer?.paused,
+            webcamProducerPromise: this._webcamProducerPromise,
+        });
+        if (!this._webcamPaused) {
+            if (this._webcamProducer) {
+                this._webcamProducer.resume();
+            }
+            if (this._webcamProducerPromise) {
+                this._webcamProducerPromise.then(() => {
+                    this._webcamProducer?.resume();
+                });
+            }
+        }
+        if (!this._micPaused) {
+            if (this._micProducer) {
+                this._micProducer.resume();
+            }
+            if (this._micProducerPromise) {
+                this._micProducerPromise.then(() => {
+                    this._micProducer?.resume();
+                });
+            }
+        }
+        if (this._screenVideoProducer && this._screenVideoProducer.paused) {
+            this._screenVideoProducer.resume();
+        }
+        if (this._screenAudioProducer && this._screenAudioProducer.paused) {
+            this._screenAudioProducer.resume();
+        }
+        this._screenVideoProducerPromise?.then(() => {
+            if (this._screenVideoProducer?.paused) {
+                this._screenVideoProducer.resume();
+            }
+        });
+
+        this._screenAudioProducerPromise?.then(() => {
+            if (this._screenAudioProducer?.paused) {
+                this._screenAudioProducer.resume();
+            }
+        });
+    }
     /**
      * Only for webcam.
      *
@@ -1465,7 +1562,7 @@ export default class VegaRtcManager implements RtcManager {
         // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
 
         if (!enable) {
-            clearTimeout(this._stopCameraTimeout);
+            clearTimeout(this._stopCameraTimeout!);
 
             const stopCameraDelay =
                 localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended"
@@ -1521,10 +1618,9 @@ export default class VegaRtcManager implements RtcManager {
      * }} streamOptions
      */
     acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
-        logger.info("acceptNewStream()", { streamId, clientId });
-
         const clientState = this._getOrCreateClientState(clientId);
         const isScreenShare = streamId !== clientId;
+        console.log("trace VegaRtcManager.acceptNewStream", { streamId, clientId });
 
         if (isScreenShare) {
             clientState.hasAcceptedScreenStream = true;
@@ -1562,7 +1658,7 @@ export default class VegaRtcManager implements RtcManager {
         logger.info("updateStreamResolution()", { streamId, width, height });
 
         const consumerId = this._streamIdToVideoConsumerId.get(streamId);
-        const consumer = this._consumers.get(consumerId);
+        const consumer = this._consumers.get(consumerId!);
 
         if (!consumer) {
             this._streamIdToVideoResolution.set(streamId, { width, height });
@@ -1577,7 +1673,7 @@ export default class VegaRtcManager implements RtcManager {
             {
                 numberOfActiveVideos,
                 numberOfTemporalLayers,
-                uncappedSingleRemoteVideoOn: this._features?.uncappedSingleRemoteVideoOn,
+                uncappedSingleRemoteVideoOn: !!this._features.uncappedSingleRemoteVideoOn,
             },
         );
 
@@ -1652,7 +1748,7 @@ export default class VegaRtcManager implements RtcManager {
     _monitorAudioTrack(track: any) {
         if (this._audioTrackBeingMonitored?.id === track.id) return;
 
-        this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded);
+        this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded!);
         track.addEventListener("ended", this._audioTrackOnEnded);
         this._audioTrackBeingMonitored = track;
     }
@@ -1660,8 +1756,8 @@ export default class VegaRtcManager implements RtcManager {
     _monitorVideoTrack(track: CustomMediaStreamTrack) {
         if (this._videoTrackBeingMonitored?.id === track.id) return;
 
-        this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
-        track.addEventListener("ended", this._videoTrackOnEnded);
+        this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded!);
+        track.addEventListener("ended", this._videoTrackOnEnded!);
         this._videoTrackBeingMonitored = track;
     }
 
@@ -1701,34 +1797,47 @@ export default class VegaRtcManager implements RtcManager {
     async _onConsumerReady(options: any) {
         logger.info("_onConsumerReady()", { id: options.id, producerId: options.producerId });
 
-        const consumer = await this._receiveTransport.consume(options);
+        const consumer = await this._receiveTransport!.consume(options);
 
         consumer.pause();
         consumer.appData.localPaused = true;
         consumer.appData.spatialLayer = 2;
 
         this._consumers.set(consumer.id, consumer);
-        this._qualityMonitor.addConsumer(consumer.appData.sourceClientId, consumer.id);
+        this._qualityMonitor?.addConsumer(consumer.appData.sourceClientId as string, consumer.id);
         consumer.observer.once("close", () => {
             this._consumers.delete(consumer.id);
-            this._qualityMonitor.removeConsumer(consumer.appData.sourceClientId, consumer.id);
+            this._qualityMonitor?.removeConsumer(consumer.appData.sourceClientId as string, consumer.id);
 
             this._consumerClosedCleanup(consumer);
         });
 
         if (this._features.increaseIncomingMediaBufferOn && consumer.rtpReceiver) {
             try {
+                // @ts-expect-error Property 'jitterBufferTarget' does not exist on type 'RTCRtpReceiver'
                 consumer.rtpReceiver.jitterBufferTarget = MEDIA_JITTER_BUFFER_TARGET;
                 // Legacy Chrome API
+                // @ts-expect-error Property 'playoutDelayHint' does not exist on type 'RTCRtpReceiver'
                 consumer.rtpReceiver.playoutDelayHint = MEDIA_JITTER_BUFFER_TARGET / 1000; // seconds
             } catch (error) {
                 logger.error("Error during setting jitter buffer target:", error);
             }
         }
 
-        const { sourceClientId: clientId, screenShare, streamId } = consumer.appData;
+        const {
+            sourceClientId: clientId,
+            screenShare,
+            streamId,
+        } = consumer.appData as { sourceClientId: string; screenShare: boolean; streamId: string };
         const clientState = this._getOrCreateClientState(clientId);
-
+        console.log("trace VegaRtcManager.onConsumerReady", {
+            options,
+            appData: {
+                sourceClientId: clientId,
+                screenShare,
+                streamId,
+            },
+        });
         if (screenShare) {
             clientState.hasEmittedScreenStream = false; // re-emit stream if updated
             clientState.screenShareStreamId = streamId;
@@ -1796,10 +1905,10 @@ export default class VegaRtcManager implements RtcManager {
         logger.info("_onConsumerScore()", { consumerId, kind, score });
         const {
             appData: { sourceClientId },
-        } = this._consumers.get(consumerId) || { appData: {} };
+        } = this._consumers.get(consumerId) || { appData: { sourceClientId: undefined } };
 
         if (sourceClientId) {
-            this._qualityMonitor.addConsumerScore(sourceClientId, consumerId, kind, score);
+            this._qualityMonitor?.addConsumerScore(sourceClientId as string, consumerId, kind, score);
         }
     }
 
@@ -1808,7 +1917,7 @@ export default class VegaRtcManager implements RtcManager {
         [this._micProducer, this._webcamProducer, this._screenVideoProducer, this._screenAudioProducer].forEach(
             (producer) => {
                 if (producer?.id === producerId) {
-                    this._qualityMonitor.addProducerScore(this._selfId, producerId, kind, score);
+                    this._qualityMonitor?.addProducerScore(this._selfId, producerId, kind, score);
                 }
             },
         );
@@ -1816,7 +1925,7 @@ export default class VegaRtcManager implements RtcManager {
 
     async _onDataConsumerReady(options: any) {
         logger.info("_onDataConsumerReady()", { id: options.id, producerId: options.producerId });
-        const consumer = await this._receiveTransport.consumeData(options);
+        const consumer = await this._receiveTransport!.consumeData(options);
 
         this._dataConsumers.set(consumer.id, consumer);
         consumer.once("close", () => {
@@ -1833,11 +1942,11 @@ export default class VegaRtcManager implements RtcManager {
 
             const { score } = JSON.parse(message);
             if (score) {
-                this._micAnalyserDebugger?.onConsumerScore(consumer.appData.clientId, score);
+                this._micAnalyserDebugger?.onConsumerScore(consumer.appData.clientId as string, score);
             }
         });
 
-        this._syncIncomingStreamsWithPWA(clientId);
+        this._syncIncomingStreamsWithPWA(clientId as string);
     }
 
     async _onDataConsumerClosed({ dataConsumerId, reason }: { dataConsumerId: string; reason: string }) {
@@ -1976,7 +2085,7 @@ export default class VegaRtcManager implements RtcManager {
         return clientState;
     }
 
-    _emitToPWA(eventName: string, data?: any) {
+    _emitToPWA(eventName: keyof RtcEvents, data?: any) {
         this._emitter.emit(eventName, data);
     }
 
@@ -1989,7 +2098,7 @@ export default class VegaRtcManager implements RtcManager {
         return true;
     }
 
-    setMicAnalyserDebugger(analyserDebugger: any) {
+    setMicAnalyserDebugger(analyserDebugger: MicAnalyserDebugger) {
         this._micAnalyserDebugger = analyserDebugger;
     }
 

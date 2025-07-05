@@ -13,9 +13,23 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { CustomMediaStreamTrack, RtcManager } from "./types";
-import { sortCodecs } from "../utils";
+import {
+    CustomMediaStreamTrack,
+    ICEServerConfig,
+    P2PRtcFeatures,
+    RoomState,
+    RtcEventEmitter,
+    RtcEvents,
+    RtcFeatures,
+    RtcManager,
+    SFUServerConfig,
+    StoredMediaStream,
+    TurnServerConfig,
+    WebRTCProvider,
+} from "./types";
+import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
+import { RtcManagerConfig } from "./RtcManagerDispatcher";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -39,57 +53,43 @@ if (browserName === "chrome") {
 }
 
 export default class P2pRtcManager implements RtcManager {
-    _selfId: any;
-    _roomName: any;
-    _roomSessionId: any;
-    peerConnections: any;
-    localStreams: any;
-    enabledLocalStreamIds: any[];
-    _screenshareVideoTrackIds: any[];
-    _socketListenerDeregisterFunctions: any[];
-    _localStreamDeregisterFunction: any;
-    _emitter: any;
-    _serverSocket: any;
-    _webrtcProvider: any;
-    _features: any;
+    _selfId: string;
+    _roomName: string;
+    _roomSessionId: string | null;
+    peerConnections: Record<string, Session>;
+    localStreams: Record<string, StoredMediaStream>;
+    enabledLocalStreamIds: string[];
+    _screenshareVideoTrackIds: string[];
+    _socketListenerDeregisterFunctions: (() => void)[];
+    _localStreamDeregisterFunction: (() => void) | null;
+    _emitter: RtcEventEmitter;
+    _serverSocket: ServerSocket;
+    _webrtcProvider: WebRTCProvider;
+    _features: P2PRtcFeatures;
     _isAudioOnlyMode: boolean;
     offerOptions: {
         offerToReceiveAudio: boolean;
         offerToReceiveVideo: boolean;
     };
-    _pendingActionsForConnectedPeerConnections: any[];
+    _pendingActionsForConnectedPeerConnections: (() => void)[];
     _audioTrackOnEnded: () => void;
     _videoTrackOnEnded: () => void;
     totalSessionsCreated: number;
-    _iceServers: any;
-    _turnServers: any;
-    _sfuServer: any;
-    _mediaserverConfigTtlSeconds: any;
-    _fetchMediaServersTimer: any;
-    _wasScreenSharing: any;
-    ipv6HostCandidateTeredoSeen: any;
-    ipv6HostCandidate6to4Seen: any;
-    mdnsHostCandidateSeen: any;
-    _stoppedVideoTrack: any;
-    icePublicIPGatheringTimeoutID: any;
+    _iceServers?: ICEServerConfig;
+    _turnServers?: TurnServerConfig;
+    _sfuServer?: SFUServerConfig;
+    _mediaserverConfigTtlSeconds?: number;
+    _fetchMediaServersTimer?: NodeJS.Timeout | null;
+    _wasScreenSharing?: boolean;
+    ipv6HostCandidateTeredoSeen?: boolean;
+    ipv6HostCandidate6to4Seen?: boolean;
+    mdnsHostCandidateSeen?: boolean;
+    _stoppedVideoTrack?: MediaStreamTrack;
+    icePublicIPGatheringTimeoutID?: NodeJS.Timeout | null;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
 
-    constructor({
-        selfId,
-        room,
-        emitter,
-        serverSocket,
-        webrtcProvider,
-        features,
-    }: {
-        selfId: any;
-        room: any;
-        emitter: any;
-        serverSocket: any;
-        webrtcProvider: any;
-        features: any;
-    }) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerConfig) {
         const { name, session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
@@ -396,7 +396,7 @@ export default class P2pRtcManager implements RtcManager {
         });
     }
 
-    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = [] as string[]) {
         const localScreenshareStream = this._getFirstLocalNonCameraStream();
 
         this._screenshareVideoTrackIds = [
@@ -430,7 +430,7 @@ export default class P2pRtcManager implements RtcManager {
         session.connectionStatus = newStatus;
 
         setTimeout(() => {
-            this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED as string, {
+            this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED, {
                 streamIds: session.streamIds,
                 clientId,
                 status: newStatus,
@@ -457,7 +457,7 @@ export default class P2pRtcManager implements RtcManager {
         this._serverSocket.emit(eventName, data, callback);
     }
 
-    _emit(eventName: string, data?: any) {
+    _emit(eventName: keyof RtcEvents, data?: any) {
         this._emitter.emit(eventName, data);
     }
 
@@ -599,7 +599,7 @@ export default class P2pRtcManager implements RtcManager {
             // ontrack fires for each track of a stream. Emulate old onaddstream behaviour.
             if (session.streamIds.indexOf(stream.id) === -1) {
                 session.streamIds.push(stream.id);
-                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
+                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                     clientId,
                     stream,
                 });
@@ -608,7 +608,7 @@ export default class P2pRtcManager implements RtcManager {
                 // we need to tell the GUI about it.
                 if (session.connectionStatus === CONNECTION_STATUS.TYPES.CONNECTION_SUCCESSFUL) {
                     setTimeout(() => {
-                        this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED as string, {
+                        this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED, {
                             streamIds: session.streamIds,
                             clientId,
                             status: session.connectionStatus,
@@ -1294,7 +1294,7 @@ export default class P2pRtcManager implements RtcManager {
         // detaches the audio from the peerconnection. No-op in P2P mode.
     }
 
-    _handleStopOrResumeVideo({ enable, track }: { enable: boolean; track: any }) {
+    _handleStopOrResumeVideo({ enable, track }: { enable: boolean; track: MediaStreamTrack }) {
         if (!enable) {
             this._stoppedVideoTrack = track;
         } else {
@@ -1323,7 +1323,7 @@ export default class P2pRtcManager implements RtcManager {
                     if (track.enabled === false) {
                         track.stop();
                         localStream.removeTrack(track);
-                        this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED as string, {
+                        this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
                             stream: localStream,
                             track,
                         });
@@ -1345,7 +1345,7 @@ export default class P2pRtcManager implements RtcManager {
                     const track = stream.getVideoTracks()[0];
                     localStream.addTrack(track);
                     this._monitorVideoTrack(track);
-                    this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {
+                    this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                         streamId: localStream.id,
                         tracks: [track],
                         screenShare: false,
