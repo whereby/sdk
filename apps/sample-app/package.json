@@ -6,8 +6,8 @@
     "dependencies": {
         "@whereby.com/browser-sdk": "workspace:*",
         "@whereby.com/core": "workspace:*",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
+        "react": "catalog:react19",
+        "react-dom": "catalog:react19",
         "react-hot-toast": "^2.4.1"
     },
     "devDependencies": {

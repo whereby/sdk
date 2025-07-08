@@ -7,8 +7,8 @@
         "@coreui/icons": "^3.0.1",
         "@coreui/icons-react": "^2.2.1",
         "@whereby.com/browser-sdk": "workspace:*",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react": "catalog:react19",
+        "react-dom": "catalog:react19"
     },
     "devDependencies": {
         "@whereby.com/prettier-config": "workspace:*",
