@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.31.0
+
+### Minor Changes
+
+- dd6216c: Remove flag unlimitedBandwidthWhenUsingRelayP2POn
+
 ## 1.30.0
 
 ### Minor Changes
