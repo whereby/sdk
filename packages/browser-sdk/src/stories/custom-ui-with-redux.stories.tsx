@@ -2,13 +2,13 @@ import * as React from "react";
 import VideoExperience from "./components/VideoExperience";
 import "./styles.css";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
-import { StoryFn } from "@storybook/react";
+import { StoryObj } from "@storybook/react-vite";
 import { decremented, incremented, Provider, selectCount } from "./redux-store";
 import { useDispatch, useSelector } from "react-redux";
 
 // This is to test that the SDK works with a redux store in the consumer app, without interfering with the SDK's own redux store.
-const defaultArgs = {
-    title: "Examples/Custom UI with Redux",
+const defaultArgs: StoryObj = {
+    name: "Examples/Custom UI with Redux",
     argTypes: {
         displayName: { control: "text" },
         roomUrl: { control: "text", type: { required: true } },
@@ -19,7 +19,7 @@ const defaultArgs = {
         roomUrl: process.env.STORYBOOK_ROOM,
     },
     decorators: [
-        (Story: StoryFn) => (
+        (Story) => (
             <WherebyProvider>
                 <Provider>
                     <Story />

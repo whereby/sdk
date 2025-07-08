@@ -12,13 +12,13 @@ function getAbsolutePath(value) {
 
 const config: StorybookConfig = {
     stories: ["../src/**/*.stories.@(js|jsx|ts|tsx)"],
-    addons: [getAbsolutePath("@storybook/addon-links"), getAbsolutePath("@storybook/addon-essentials")],
+
+    addons: [getAbsolutePath("@storybook/addon-links"), getAbsolutePath("@storybook/addon-docs")],
+
     framework: getAbsolutePath("@storybook/react-vite"),
+
     core: {
         builder: getAbsolutePath("@storybook/builder-vite"),
-    },
-    docs: {
-        autodocs: true,
     },
 };
 

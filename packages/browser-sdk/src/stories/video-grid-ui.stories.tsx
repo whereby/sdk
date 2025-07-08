@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { StoryFn } from "@storybook/react";
+import { StoryObj } from "@storybook/react-vite";
 import "./styles.css";
 import { useRoomConnection } from "../lib/react";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
@@ -12,8 +12,8 @@ import {
     ParticipantMenuTrigger,
 } from "../lib/react/Grid/ParticipantMenu";
 
-const defaultArgs = {
-    title: "Examples/Video Grid UI",
+const defaultArgs: StoryObj = {
+    name: "Examples/Video Grid UI",
     argTypes: {
         displayName: { control: "text" },
         roomUrl: { control: "text", type: { required: true } },
@@ -24,7 +24,7 @@ const defaultArgs = {
         roomUrl: process.env.STORYBOOK_ROOM,
     },
     decorators: [
-        (Story: StoryFn) => (
+        (Story) => (
             <WherebyProvider>
                 <Story />
             </WherebyProvider>

@@ -1,4 +1,4 @@
-import { StoryFn } from "@storybook/react";
+import { StoryFn } from "@storybook/react-vite";
 import React, { useEffect, useRef, useState } from "react";
 import "../lib/embed";
 import type { WherebyEmbedElement } from "../lib/embed";
@@ -91,16 +91,13 @@ const WherebyEmbed = ({
         element?.addEventListener("meeting_end", () => {
             setMeetingEnded(true);
         });
-
     }, []);
 
     return (
         <p>
             <p>Camera: {cameraEnabled ? "ENABLED" : "DISABLED"}</p>
             <p>Meeting ended: {meetingEnded ? "TRUE" : "FALSE"}</p>
-            <button onClick={() => elmRef.current?.openSettings()}>
-                "Open Settings"
-            </button>
+            <button onClick={() => elmRef.current?.openSettings()}>"Open Settings"</button>
             <whereby-embed
                 audio={offOn(audio)}
                 avatarUrl={avatarUrl}
