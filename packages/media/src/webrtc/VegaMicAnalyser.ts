@@ -115,18 +115,13 @@ export default function createMicAnalyser({
         // it is needed for tweaking the scoring algorithm and the output sent to SFU
 
         const initScriptFunc =
-            // eslint-disable-next-line no-new-func
             params.initScript && new Function("f", "setTrack", "lastTrack", params.initScript.join("\n"));
 
-        // eslint-disable-next-line no-new-func
         const scoreScriptFunc = params.scoreScript && new Function("bins", "g", "f", params.scoreScript.join("\n"));
 
-        // eslint-disable-next-line no-new-func
         const calcScore = params.scoreFormula && new Function("bands", `return ${params.scoreFormula}`);
         const getOutValue =
-            // eslint-disable-next-line no-new-func
             params.outFormula && new Function("score", "avg", "max", "scores", `return ${params.outFormula}`);
-        // eslint-disable-next-line no-new-func
         const binMap = params.binFormula && new Function("bin", "index", `return ${params.binFormula}`);
 
         let reportRateCounter = 0;
