@@ -47,7 +47,7 @@ jobs:
               id: changesets
               uses: changesets/action@v1
               with:
-                  version: pnpm changeset version && pnpm install --lockfile-only
+                  version: pnpm run version
                   publish: pnpm release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
