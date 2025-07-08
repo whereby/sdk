@@ -13,6 +13,7 @@
     "devDependencies": {
         "@whereby.com/prettier-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
+        "@types/react": "catalog:react19",
         "@vitejs/plugin-react": "^4.2.1",
         "vite": "^5.0.13",
         "typescript": "catalog:"
