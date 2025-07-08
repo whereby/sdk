@@ -8,6 +8,7 @@
     "scripts": {
         "build": "turbo build",
         "changeset": "changeset",
+        "version": "changeset version && pnpm install --lockfile-only",
         "dev": "turbo dev --filter=@whereby.com/browser-sdk",
         "dev:embed-element-app": "turbo dev --filter=embed-element-app",
         "dev:telehealth-app": "turbo dev --filter=telehealth-tutorial-app",
