@@ -81,7 +81,6 @@ assert.notEqual = function notEqual(actual: any, expected: any, message: any) {
     if (arguments.length < 2) {
         throw new Error("'actual' and 'expected' arguments are required");
     }
-    // eslint-disable-next-line eqeqeq
     if (actual == expected) {
         innerFail({
             actual,

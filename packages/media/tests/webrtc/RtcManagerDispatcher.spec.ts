@@ -21,7 +21,7 @@ describe("RtcManagerDispatcher", () => {
         serverSocketStub = helpers.createServerSocketStub();
 
         const serverSocket = serverSocketStub.socket;
-        // eslint-disable-next-line no-new
+         
         new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider: {}, features });
         Object.defineProperty(mediasoupClient, "Device", {
             value: jest.fn(),

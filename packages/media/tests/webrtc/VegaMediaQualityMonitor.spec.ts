@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const { default: VegaMediaQualityMonitor } = require("../../src/webrtc/VegaMediaQualityMonitor");
 
 const SELF_CLIENT_ID = "selfClientId";
