@@ -1,8 +1,6 @@
 import * as sdpModifier from "./sdpModifier";
-import * as statsHelper from "./statsHelper";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
-import { MAXIMUM_TURN_BANDWIDTH_UNLIMITED } from "./constants";
 import Logger from "../utils/Logger";
 
 // @ts-ignore
@@ -23,7 +21,6 @@ export default class Session {
     connectionStatus: any;
     stats: { totalSent: number; totalRecv: number };
     bandwidth: any;
-    maximumTurnBandwidth: any;
     pending: any[];
     isOperationPending: boolean;
     streamIds: any[];
@@ -42,12 +39,10 @@ export default class Session {
     constructor({
         peerConnectionId,
         bandwidth,
-        maximumTurnBandwidth,
         deprioritizeH264Encoding,
     }: {
         peerConnectionId: any;
         bandwidth: any;
-        maximumTurnBandwidth: any;
         deprioritizeH264Encoding: any;
     }) {
         this.peerConnectionId = peerConnectionId;
@@ -67,7 +62,6 @@ export default class Session {
             totalRecv: 0,
         };
         this.bandwidth = bandwidth || 0; // maximum bandwidth in kbps.
-        this.maximumTurnBandwidth = maximumTurnBandwidth;
         this.pending = [];
         this.isOperationPending = false;
         this.streamIds = [];
@@ -379,24 +373,6 @@ export default class Session {
                     return pc.setLocalDescription(answer);
                 });
         }
-    }
-
-    // Restricts the bandwidth based on whether we are using a relayed connection.
-    // No signaling is required, this is done independently by both sides.
-    // Only applies to unrestricted connections, not affecting the bandwidth tables
-    // that depend on the number of participants.
-    maybeRestrictRelayBandwidth() {
-        if (this.maximumTurnBandwidth === MAXIMUM_TURN_BANDWIDTH_UNLIMITED) {
-            return;
-        }
-        if (!this.pc.getStats) {
-            return;
-        }
-        statsHelper.isRelayed(this.pc).then((isRelayed: boolean) => {
-            if (isRelayed && this.bandwidth === 0) {
-                this.changeBandwidth(this.maximumTurnBandwidth);
-            }
-        });
     }
 
     // no-signaling negotiation of bandwidth. Peer is NOT informed.

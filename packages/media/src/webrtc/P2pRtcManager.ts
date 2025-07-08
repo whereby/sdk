@@ -1,6 +1,6 @@
 import rtcStats from "./rtcStatsService";
 import Session from "./Session";
-import { MAXIMUM_TURN_BANDWIDTH, MAXIMUM_TURN_BANDWIDTH_UNLIMITED, MEDIA_JITTER_BUFFER_TARGET } from "./constants";
+import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
@@ -144,10 +144,6 @@ export default class P2pRtcManager implements RtcManager {
 
     supportsScreenShareAudio() {
         return true;
-    }
-
-    maybeRestrictRelayBandwidth(session: any) {
-        session.maybeRestrictRelayBandwidth();
     }
 
     addNewStream(
@@ -494,9 +490,6 @@ export default class P2pRtcManager implements RtcManager {
             this.peerConnections[peerConnectionId] = session = new Session({
                 peerConnectionId,
                 bandwidth: initialBandwidth,
-                maximumTurnBandwidth: this._features.unlimitedBandwidthWhenUsingRelayP2POn
-                    ? MAXIMUM_TURN_BANDWIDTH_UNLIMITED
-                    : MAXIMUM_TURN_BANDWIDTH,
                 deprioritizeH264Encoding,
             });
 
@@ -645,9 +638,6 @@ export default class P2pRtcManager implements RtcManager {
                             (browserName === "chrome" && pc.localDescription && pc.localDescription.type === "answer"))
                     ) {
                         session.wasEverConnected = true;
-                        if (this._features.bandwidth !== "false") {
-                            this.maybeRestrictRelayBandwidth(session);
-                        }
                     }
 
                     if (this._isAudioOnlyMode) {

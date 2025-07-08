@@ -17,7 +17,6 @@ export { default as rtcStats } from "./rtcStatsService";
 export * from "./sdpModifier";
 export { default as Session } from "./Session";
 export { default as SfuV2Parser } from "./SfuV2Parser";
-export * from "./statsHelper";
 export * from "./types";
 export { default as VegaConnection } from "./VegaConnection";
 export { default as VegaMediaQualityMonitor } from "./VegaMediaQualityMonitor";
