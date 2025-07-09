@@ -625,6 +625,9 @@ importers:
       '@types/sdp-transform':
         specifier: ^2.4.9
         version: 2.4.10
+      '@types/uuid':
+        specifier: ^9.0.1
+        version: 9.0.8
       '@types/uuid-validate':
         specifier: ^0.0.3
         version: 0.0.3
@@ -3412,6 +3415,9 @@ packages:
 
   '@types/uuid-validate@0.0.3':
     resolution: {integrity: sha512-htkuv1+RZjjHkSrXets3a6kqDeqgYutBtdER3U6I1mWV58AIsDFWoUuN0cB6DMOWiqTHK0XqH3pXeqIVfJIrog==}
+
+  '@types/uuid@9.0.8':
+    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -11957,6 +11963,8 @@ snapshots:
   '@types/use-sync-external-store@0.0.6': {}
 
   '@types/uuid-validate@0.0.3': {}
+
+  '@types/uuid@9.0.8': {}
 
   '@types/yargs-parser@21.0.3': {}
 

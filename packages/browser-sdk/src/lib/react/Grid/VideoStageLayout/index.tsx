@@ -5,6 +5,16 @@ import { VideoCell } from "../VideoCell";
 import { hasBounds, makeFrame } from "../layout/helpers";
 import { Bounds, Box, Frame, Origin, StageLayout } from "../layout/types";
 
+type ContentProps = {
+    props: {
+        client?: { id: string };
+        isSmallCell?: boolean;
+        isZoomedByDefault?: boolean;
+        canZoom?: boolean;
+        isDraggable?: boolean;
+    };
+};
+
 function generateStylesFromFrame({ origin, bounds }: { origin: Origin; bounds: Bounds }) {
     return {
         top: Math.round(origin.top),
@@ -19,7 +29,13 @@ interface RenderVideoCellProps {
         bounds: Bounds;
         aspectRatio: number;
     };
-    child: React.ReactElement;
+    child: React.ReactElement<{
+        contentWidth?: number;
+        contentHeight?: number;
+        withRoundedCorners?: boolean;
+        withShadow?: boolean;
+    }> &
+        ContentProps;
     className?: string;
     clientId: string;
     style?: React.CSSProperties;
@@ -194,7 +210,7 @@ function renderGridVideoCells({
 }
 
 interface RenderFloatingVideoCellProps {
-    content: React.ReactElement;
+    content: React.ReactElement & ContentProps;
     containerFrame: Frame;
     stageLayout: StageLayout;
     withRoundedCorners: boolean;
@@ -249,7 +265,7 @@ interface VideoStageLayoutProps {
     containerPaddings?: Box;
     debug?: boolean;
     featureRoundedCornersOff?: boolean;
-    floatingContent?: React.ReactElement;
+    floatingContent?: React.ReactElement & ContentProps;
     gridContent?: (React.JSX.Element | undefined)[];
     hiddenGridContent?: React.ReactElement[];
     hiddenPresentationGridContent?: React.ReactElement[];
