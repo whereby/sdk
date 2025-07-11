@@ -6,10 +6,10 @@ import { getFakeMediaStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
-import { StoryFn } from "@storybook/react";
+import { StoryObj } from "@storybook/react-vite";
 
-const defaultArgs = {
-    title: "Examples/Custom UI",
+const defaultArgs: StoryObj = {
+    name: "Examples/Custom UI",
     argTypes: {
         displayName: { control: "text" },
         roomUrl: { control: "text", type: { required: true } },
@@ -20,7 +20,7 @@ const defaultArgs = {
         roomUrl: process.env.STORYBOOK_ROOM,
     },
     decorators: [
-        (Story: StoryFn) => (
+        (Story) => (
             <WherebyProvider>
                 <Story />
             </WherebyProvider>
@@ -271,8 +271,13 @@ RoomConnectionStrictMode.parameters = {
     },
 };
 
-
-export const RoomConnectionWithBreakoutGroups = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
+export const RoomConnectionWithBreakoutGroups = ({
+    roomUrl,
+    displayName,
+}: {
+    roomUrl: string;
+    displayName?: string;
+}) => {
     if (!roomUrl || !roomUrl.match(roomRegEx)) {
         return <p>Set room url on the Controls panel</p>;
     }

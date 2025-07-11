@@ -142,7 +142,7 @@ export interface WherebyEmbedElement extends HTMLIFrameElement, WherebyEmbedElem
 }
 
 declare global {
-    namespace JSX {
+    namespace React.JSX {
         interface IntrinsicElements {
             ["whereby-embed"]: Partial<WherebyEmbedElementAttributes>;
         }

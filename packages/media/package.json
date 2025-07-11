@@ -65,19 +65,20 @@
         "webrtc-adapter": "^9.0.1"
     },
     "devDependencies": {
+        "@babel/core": "^7.23.2",
+        "@babel/preset-env": "^7.23.2",
+        "@types/sdp-transform": "^2.4.9",
+        "@types/uuid": "^9.0.1",
+        "@types/uuid-validate": "^0.0.3",
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/jest-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
         "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
-        "@babel/core": "^7.23.2",
-        "@babel/preset-env": "^7.23.2",
-        "@types/sdp-transform": "^2.4.9",
-        "@types/uuid-validate": "^0.0.3",
-        "jest-websocket-mock": "^2.5.0",
-        "process": "^0.11.10",
         "eslint": "catalog:",
+        "jest-websocket-mock": "^2.5.0",
         "prettier": "catalog:",
+        "process": "^0.11.10",
         "typescript": "catalog:"
     },
     "engines": {

@@ -4,7 +4,12 @@ import { fitToBounds } from "../layout/gridUtils";
 
 interface Props {
     aspectRatio: number;
-    children: React.ReactElement;
+    children: React.ReactElement<{
+        contentWidth?: number;
+        contentHeight?: number;
+        withRoundedCorners?: boolean;
+        withShadow?: boolean;
+    }>;
     className?: string;
     height: number;
     style: React.CSSProperties;

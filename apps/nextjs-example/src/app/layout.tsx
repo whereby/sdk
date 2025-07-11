@@ -2,9 +2,7 @@ import * as React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import dynamic from "next/dynamic";
-
-const Provider = dynamic(() => import("../components/provider"), { ssr: false });
+import ProviderWrapper from "../components/provider-wrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,7 +19,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={inter.className}>
-                <Provider>{children}</Provider>
+                <ProviderWrapper>{children}</ProviderWrapper>
             </body>
         </html>
     );
