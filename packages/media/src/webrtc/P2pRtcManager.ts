@@ -918,10 +918,8 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     async _setCodecPreferences(pc: RTCPeerConnection) {
-        const { p2pVp9On, p2pAv1On, redOn, preferP2pHardwareDecodingOn } = this._features;
-        if (!(p2pVp9On || p2pAv1On || redOn || preferP2pHardwareDecodingOn)) {
-            return;
-        }
+        const { p2pAv1On, redOn } = this._features;
+
         try {
             // audio
             const audioTransceivers = pc
@@ -954,13 +952,9 @@ export default class P2pRtcManager implements RtcManager {
                     if (videoTransceiver.setCodecPreferences === undefined) return;
 
                     const capabilities: any = RTCRtpReceiver.getCapabilities("video");
-                    if (p2pVp9On || p2pAv1On || preferP2pHardwareDecodingOn) {
-                        capabilities.codecs = await sortCodecs(capabilities.codecs, {
-                            vp9On: p2pVp9On,
-                            av1On: p2pAv1On,
-                            preferHardwareDecodingOn: p2pVp9On || preferP2pHardwareDecodingOn,
-                        });
-                    }
+                    capabilities.codecs = await sortCodecs(capabilities.codecs, {
+                        av1On: p2pAv1On,
+                    });
 
                     videoTransceiver.setCodecPreferences(capabilities.codecs);
                 }),
@@ -984,7 +978,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { p2pVp9On, redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         this._setCodecPreferences(pc).then(() =>
             pc
@@ -993,9 +987,8 @@ export default class P2pRtcManager implements RtcManager {
                     // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
                     if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
                     // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
-                    // Only vp9 because FF does not support AV1 yet
-                    if ((p2pVp9On || redOn) && browserName === "firefox") {
-                        offer.sdp = setCodecPreferenceSDP(offer.sdp, p2pVp9On, redOn);
+                    if (browserName === "firefox") {
+                        offer.sdp = setCodecPreferenceSDP(offer.sdp, redOn);
                     }
 
                     // workaround for two different browser bugs:
@@ -1058,14 +1051,14 @@ export default class P2pRtcManager implements RtcManager {
         const bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
-                  1: 0,
-                  2: 384,
-                  3: 256,
-                  4: 192,
-                  5: 128,
-                  6: 128,
-                  7: 64,
-              }[numPeers];
+                1: 0,
+                2: 384,
+                3: 256,
+                4: 192,
+                5: 128,
+                6: 128,
+                7: 64,
+            }[numPeers];
 
         if (bandwidth === undefined) {
             return 0;
@@ -1278,7 +1271,7 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     // this does not (currently) make sense for peer-to-peer connections
-    updateStreamResolution(/* streamId, clientId, resolution */) {}
+    updateStreamResolution(/* streamId, clientId, resolution */) { }
 
     stopOrResumeAudio(/*localStream, enable*/) {
         // detaches the audio from the peerconnection. No-op in P2P mode.
