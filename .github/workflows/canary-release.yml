@@ -69,9 +69,9 @@ jobs:
                   script: |
                       const execa = require('execa')
 
-                      await execa.command('pnpm changeset version -- --snapshot canary', { stdio: 'inherit' })
+                      await execa.command('pnpm changeset version --snapshot canary', { stdio: 'inherit' })
 
-                      const releaseProcess = execa.command('pnpm release -- --no-git-tags --snapshot --tag canary')
+                      const releaseProcess = execa.command('pnpm release --no-git-tags --snapshot --tag canary')
                       releaseProcess.stdout.pipe(process.stdout)
 
                       const {stdout} = await releaseProcess
