@@ -1,5 +1,16 @@
 # @whereby.com/react-native-sdk
 
+## 0.8.0
+
+### Minor Changes
+
+- 10605f6: Upgrade react native webview
+
+### Patch Changes
+
+- Updated dependencies [746902b]
+    - @whereby.com/core@0.35.0
+
 ## 0.7.52
 
 ### Patch Changes

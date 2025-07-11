@@ -1,5 +1,13 @@
 # @whereby.com/browser-sdk
 
+## 3.12.21
+
+### Patch Changes
+
+- 10605f6: Upgrade JSX typing
+- Updated dependencies [746902b]
+    - @whereby.com/core@0.35.0
+
 ## 3.12.20
 
 ### Patch Changes
