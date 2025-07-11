@@ -233,7 +233,6 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
             sfuServerOverrideHost: undefined,
             turnServerOverrideHost: undefined,
             useOnlyTURN: undefined,
-            p2pVp9On: true,
             sfuVp9On: false,
             h264On: false,
             simulcastScreenshareOn: false,
