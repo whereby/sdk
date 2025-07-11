@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 0.35.0
+
+### Minor Changes
+
+- 746902b: Enable VP9 for P2P calls
+
 ## 0.34.1
 
 ### Patch Changes
