@@ -30,6 +30,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     floatSelf: string;
     groups: string;
     help: string;
+    hideLegend: string;
     lang: string;
     leaveButton: string;
     locking: string;
@@ -166,6 +167,7 @@ const boolAttrs = [
     "emptyRoomInvitation",
     "floatSelf",
     "help",
+    "hideLegend",
     "leaveButton",
     "locking",
     "localization",

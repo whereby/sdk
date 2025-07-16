@@ -44,6 +44,7 @@ describe("@whereby/browser-sdk", () => {
                         "floatself",
                         "groups",
                         "help",
+                        "hidelegend",
                         "lang",
                         "leavebutton",
                         "localization",
@@ -75,8 +76,7 @@ describe("@whereby/browser-sdk", () => {
                         "toolbardarktext",
                         "toptoolbar",
                         "video",
-                        "virtualbackgroundurl"
-
+                        "virtualbackgroundurl",
                     ]),
                 }),
             );
