@@ -37,25 +37,11 @@ export const VIDEO_SETTINGS_VP9 = {
     encodings: [{ scalabilityMode: "L3T2", maxBitrate: 1000000 }],
 };
 
-export const VIDEO_SETTINGS_VP9_KEY = {
-    codecOptions: {
-        videoGoogleStartBitrate: 500,
-    },
-    encodings: [{ scalabilityMode: "L3T2_KEY", maxBitrate: 1250000 }],
-};
-
 export const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH = {
     codecOptions: {
         videoGoogleStartBitrate: 500,
     },
     encodings: [{ scalabilityMode: "L2T2", maxBitrate: 500000 }],
-};
-
-export const VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY = {
-    codecOptions: {
-        videoGoogleStartBitrate: 500,
-    },
-    encodings: [{ scalabilityMode: "L2T2_KEY", maxBitrate: 650000 }],
 };
 
 export const SCREEN_SHARE_SETTINGS = {
@@ -78,7 +64,7 @@ export const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
 };
 
 export const ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9 = {
-    encodings: [{ scalabilityMode: "L2T2_KEY", dtx: true, maxBitrate: 1500000 }],
+    encodings: [{ scalabilityMode: "L2T2", dtx: true, maxBitrate: 1500000 }],
 };
 
 export const SCREEN_SHARE_SETTINGS_VP9 = {
@@ -92,11 +78,10 @@ export const getMediaSettings = (
         lowDataModeEnabled?: boolean;
         simulcastScreenshareOn?: boolean;
         vp9On?: boolean;
-        svcKeyScalabilityModeOn?: boolean;
     },
     isSomeoneAlreadyPresenting = false,
 ) => {
-    const { lowDataModeEnabled, simulcastScreenshareOn, vp9On, svcKeyScalabilityModeOn } = features;
+    const { lowDataModeEnabled, simulcastScreenshareOn, vp9On } = features;
 
     if (kind === "audio") {
         return AUDIO_SETTINGS;
@@ -114,7 +99,6 @@ export const getMediaSettings = (
         return getCameraMediaSettings({
             lowBandwidth: lowDataModeEnabled,
             isVp9Available,
-            svcKeyScalabilityModeOn,
         });
     }
 };
@@ -122,21 +106,17 @@ export const getMediaSettings = (
 const getCameraMediaSettings = ({
     lowBandwidth,
     isVp9Available,
-    svcKeyScalabilityModeOn,
 }: {
     lowBandwidth?: boolean;
     isVp9Available?: boolean;
-    svcKeyScalabilityModeOn?: boolean;
 }) => {
     if (lowBandwidth) {
         if (isVp9Available) {
-            if (svcKeyScalabilityModeOn) return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH_KEY;
             return VIDEO_SETTINGS_VP9_LOW_BANDWIDTH;
         }
         return VIDEO_SETTINGS_SD;
     }
     if (isVp9Available) {
-        if (svcKeyScalabilityModeOn) return VIDEO_SETTINGS_VP9_KEY;
         return VIDEO_SETTINGS_VP9;
     }
 
