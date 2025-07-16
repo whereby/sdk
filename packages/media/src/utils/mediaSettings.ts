@@ -189,10 +189,8 @@ function prioritizeRouterRtpCapabilitiesCodecs(codecs: RtpCodecCapability[], pre
     });
 }
 
-function getPreferredOrder(availableCodecs: string[], { vp9On, av1On }: { vp9On?: boolean; av1On?: boolean }) {
-    if (vp9On) {
-        availableCodecs.unshift("video/vp9");
-    }
+function getPreferredOrder(availableCodecs: string[], { av1On }: { av1On?: boolean }) {
+    availableCodecs.unshift("video/vp9");
 
     if (av1On) {
         availableCodecs.unshift("video/av1");
@@ -206,7 +204,7 @@ export interface Codec {
     sdpFmtpLine?: string;
 }
 
-function sortCodecsByMimeType(codecs: Codec[], features: { vp9On?: boolean; av1On?: boolean }) {
+function sortCodecsByMimeType(codecs: Codec[], features: { av1On?: boolean }) {
     const availableCodecs = codecs
         .map(({ mimeType }) => mimeType)
         .filter((value, index, array) => array.indexOf(value) === index);
@@ -251,14 +249,9 @@ async function sortCodecsByPowerEfficiency(codecs: Codec[]) {
     return sorted;
 }
 
-export async function sortCodecs(
-    codecs: Codec[],
-    features: { vp9On?: boolean; av1On?: boolean; preferHardwareDecodingOn?: boolean },
-) {
-    codecs = sortCodecsByMimeType(codecs, features);
-    if (features.preferHardwareDecodingOn) {
-        codecs = await sortCodecsByPowerEfficiency(codecs);
-    }
+export async function sortCodecs(codecs: Codec[], features: { av1On?: boolean }) {
+    let sortedCodecs = sortCodecsByMimeType(codecs, features);
+    sortedCodecs = await sortCodecsByPowerEfficiency(codecs);
 
-    return codecs;
+    return sortedCodecs;
 }
