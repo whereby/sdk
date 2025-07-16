@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.12.22
+
+### Patch Changes
+
+- 5a4132b: adding hideLegend as an attribute
+
 ## 3.12.21
 
 ### Patch Changes
