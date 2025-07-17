@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 1.32.0
+
+### Minor Changes
+
+- d47b159: Remove p2pVp9On flag
+- 3606518: Remove SVC \_KEY encoding flag
+
 ## 1.31.0
 
 ### Minor Changes

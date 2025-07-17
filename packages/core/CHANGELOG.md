@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 0.36.0
+
+### Minor Changes
+
+- d47b159: Remove p2pVp9On flag
+
+### Patch Changes
+
+- Updated dependencies [d47b159]
+- Updated dependencies [3606518]
+    - @whereby.com/media@1.32.0
+
 ## 0.35.0
 
 ### Minor Changes
