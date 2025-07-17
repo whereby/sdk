@@ -30,7 +30,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     floatSelf: string;
     groups: string;
     help: string;
-    hideLegend: string;
+    hideLegend: string; // deprecated and replaced by toolbarText
     lang: string;
     leaveButton: string;
     locking: string;
@@ -73,6 +73,7 @@ interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
      * Use this attribute when the room background is light and the bottom toolbar items are hard to read.
      */
     toolbarDarkText: string;
+    toolbarText: string;
     topToolbar: string;
     video: string;
     virtualBackgroundUrl: string;
@@ -191,6 +192,7 @@ const boolAttrs = [
     "subgridLabels",
     "timer",
     "toolbarDarkText",
+    "toolbarText",
     "topToolbar",
     "video",
 ];

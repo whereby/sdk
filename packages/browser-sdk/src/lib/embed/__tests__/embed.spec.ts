@@ -74,6 +74,7 @@ describe("@whereby/browser-sdk", () => {
                         "timer",
                         "title",
                         "toolbardarktext",
+                        "toolbartext",
                         "toptoolbar",
                         "video",
                         "virtualbackgroundurl",
