@@ -1,5 +1,15 @@
 # @whereby.com/browser-sdk
 
+## 3.12.23
+
+### Patch Changes
+
+- 381b269: adding toolbarText as an attribute
+- Updated dependencies [d47b159]
+- Updated dependencies [3606518]
+    - @whereby.com/media@1.32.0
+    - @whereby.com/core@0.36.0
+
 ## 3.12.22
 
 ### Patch Changes

@@ -2,7 +2,7 @@
     "name": "@whereby.com/core",
     "description": "Core library for whereby.com sdk",
     "author": "Whereby AS",
-    "version": "0.35.0",
+    "version": "0.36.0",
     "license": "MIT",
     "scripts": {
         "clean": "rimraf dist node_modules .turbo",
@@ -59,7 +59,7 @@
     },
     "dependencies": {
         "@reduxjs/toolkit": "^2.2.3",
-        "@whereby.com/media": "1.31.0",
+        "@whereby.com/media": "1.32.0",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
         "events": "^3.3.0"
