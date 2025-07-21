@@ -2,7 +2,7 @@ import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RoleName } from "@whereby.com/media";
 import { RootState } from "../store";
 import { signalEvents } from "./signalConnection/actions";
-import { doAppStart } from "./app";
+import { doAppSetup } from "./app";
 
 const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName> } = {
     canLockRoom: ["host"],
@@ -40,7 +40,7 @@ export const authorizationSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doAppStart, (state, action) => {
+        builder.addCase(doAppSetup, (state, action) => {
             return {
                 ...state,
                 roomKey: action.payload.roomKey,

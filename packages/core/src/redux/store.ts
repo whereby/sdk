@@ -2,7 +2,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../services";
 
-import { appSlice, doAppStart } from "./slices/app";
+import { appSlice, doAppSetup } from "./slices/app";
 import { authorizationSlice } from "./slices/authorization";
 import { breakoutSlice } from "./slices/breakout";
 import { chatSlice } from "./slices/chat";
@@ -52,7 +52,7 @@ const appReducer = combineReducers({
 
 export const rootReducer: AppReducer = (state, action) => {
     // Reset store state on app join action
-    if (doAppStart.match(action)) {
+    if (doAppSetup.match(action)) {
         const resetState: Partial<RootState> = {
             app: {
                 ...appSlice.getInitialState(),
