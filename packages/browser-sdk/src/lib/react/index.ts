@@ -12,6 +12,8 @@ export {
 
 export type { UseLocalMediaResult } from "./useLocalMedia/types";
 
+export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConnection/types";
+
 export type {
     ChatMessageState as ChatMessage,
     CloudRecordingState as CloudRecording,
@@ -22,6 +24,4 @@ export type {
     RoomConnectionState as RoomConnection,
     ScreenshareState as Screenshare,
     WaitingParticipantState as WaitingParticipant,
-    RoomConnectionActions,
-    RoomConnectionOptions,
-} from "./useRoomConnection/types";
+} from "@whereby.com/core";

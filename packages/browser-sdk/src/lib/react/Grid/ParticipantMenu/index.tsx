@@ -3,8 +3,8 @@ import * as React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../Popover";
 import { useGridCell } from "../GridContext";
 import { PopoverProps } from "@radix-ui/react-popover";
-import { useAppDispatch, useAppSelector } from "../../Provider/hooks";
-import { doRemoveSpotlight, doSpotlightParticipant, selectSpotlightedClientViews } from "@whereby.com/core";
+import { useGridParticipants } from "../useGridParticipants";
+import { WherebyContext } from "../../Provider";
 
 type ParticipantMenuContextValue = {
     open: boolean;
@@ -108,8 +108,8 @@ const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, Partici
             setFloatingParticipant,
             floatingParticipant,
         } = useParticipantMenu();
-        const dispatch = useAppDispatch();
-        const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
+        const client = React.useContext(WherebyContext)?.getGridClient();
+        const { spotlightedParticipants } = useGridParticipants();
         const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
         const isMaximized = maximizedParticipant?.id === participant.id;
         const isFloating = floatingParticipant?.id === participant.id;
@@ -130,9 +130,9 @@ const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, Partici
             case "spotlight":
                 onClick = () => {
                     if (isSpotlighted) {
-                        dispatch(doRemoveSpotlight({ id: participant.id }));
+                        client?.removeSpotlight(participant.id);
                     } else {
-                        dispatch(doSpotlightParticipant({ id: participant.id }));
+                        client?.spotlightParticipant(participant.id);
                     }
                     setOpen(false);
                 };

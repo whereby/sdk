@@ -1,13 +1,8 @@
 import * as React from "react";
 
-import {
-    selectNumParticipants,
-    ClientView,
-    selectAllClientViews,
-    selectSpotlightedClientViews,
-} from "@whereby.com/core";
-import { useAppSelector } from "../Provider/hooks";
+import { ClientView, GridState } from "@whereby.com/core";
 import { ACTIVE_VIDEO_SUBGRID_TRIGGER, ACTIVE_VIDEOS_PHONE_LIMIT, STAGE_PARTICIPANT_LIMIT } from "./contants";
+import { WherebyContext } from "../Provider";
 
 export function calculateSubgridViews({
     clientViews,
@@ -95,9 +90,62 @@ function useGridParticipants({
     floatingParticipant,
     isConstrained = false,
 }: Props = {}) {
-    const allClientViews = useAppSelector(selectAllClientViews);
-    const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
-    const numParticipants = useAppSelector(selectNumParticipants);
+    const [state, setState] = React.useState<GridState>({
+        allClientViews: [],
+        spotlightedParticipants: [],
+        numParticipants: 0,
+    });
+    const client = React.useContext(WherebyContext)?.getGridClient();
+
+    if (!client) {
+        throw new Error("useGridParticipants must be used within a WherebyProvider");
+    }
+
+    const handleClientViewChanged = React.useCallback(
+        (clientViews: ClientView[]) => {
+            setState((prevState) => ({
+                ...prevState,
+                allClientViews: clientViews,
+            }));
+        },
+        [setState],
+    );
+
+    const handleSpotlightedParticipantsChanged = React.useCallback(
+        (spotlighted: ClientView[]) => {
+            setState((prevState) => ({
+                ...prevState,
+                spotlightedParticipants: spotlighted,
+            }));
+        },
+        [setState],
+    );
+
+    const handleNumParticipantsChanged = React.useCallback(
+        (num: number) => {
+            setState((prevState) => ({
+                ...prevState,
+                numParticipants: num,
+            }));
+        },
+        [setState],
+    );
+
+    React.useEffect(() => {
+        const unsubscribeClientViews = client.subscribeClientViews(handleClientViewChanged);
+        const unsubscribeSpotlighted = client.subscribeSpotlightedParticipants(handleSpotlightedParticipantsChanged);
+        const unsubscribeNumParticipants = client.subscribeNumberOfClientViews(handleNumParticipantsChanged);
+
+        return () => {
+            unsubscribeClientViews();
+            unsubscribeSpotlighted();
+            unsubscribeNumParticipants();
+        };
+    }, [client]);
+
+    const allClientViews = React.useMemo(() => state.allClientViews, [state.allClientViews]);
+    const spotlightedParticipants = React.useMemo(() => state.spotlightedParticipants, [state.spotlightedParticipants]);
+    const numParticipants = React.useMemo(() => state.numParticipants, [state.numParticipants]);
 
     const floatingClientView = React.useMemo(() => {
         return floatingParticipant;
@@ -149,6 +197,7 @@ function useGridParticipants({
         clientViewsInGrid,
         clientViewsInPresentationGrid,
         clientViewsInSubgrid,
+        spotlightedParticipants,
     };
 }
 
