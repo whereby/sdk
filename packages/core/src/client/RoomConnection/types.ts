@@ -31,7 +31,7 @@ export interface ChatMessageState {
 }
 export type ScreenshareState = Screenshare;
 
-type LocalScreenshareStatus = "starting" | "active";
+export type LocalScreenshareStatus = "starting" | "active";
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
 

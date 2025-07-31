@@ -6,6 +6,7 @@ import {
     CloudRecordingState,
     LiveStreamState,
     LocalParticipantState,
+    LocalScreenshareStatus,
     RemoteParticipantState,
 } from "./types";
 
@@ -18,12 +19,10 @@ export const CLOUD_RECORDING_STATUS_CHANGED = "cloud-recording:status-changed";
 /* Connection Status Events */
 export const CONNECTION_STATUS_CHANGED = "connection:status-changed";
 /* Local participant events */
-export const LOCAL_PARTICIPANT_JOINED = "local-participant:joined";
-export const LOCAL_PARTICIPANT_LEFT = "local-participant:left";
+export const LOCAL_PARTICIPANT_CHANGED = "local-participant:changed";
+export const LOCAL_SCREENSHARE_STATUS_CHANGED = "local-screenshare:status-changed";
 /* Remote participant events */
-export const REMOTE_PARTICIPANT_JOINED = "remote-participant:joined";
-export const REMOTE_PARTICIPANT_LEFT = "remote-participant:left";
-export const REMOTE_PARTICIPANT_CHANGED = "remote-participant:changed";
+export const REMOTE_PARTICIPANTS_CHANGED = "remote-participants:changed";
 /* Screen share events */
 export const SCREENSHARE_STARTED = "screenshare:started";
 export const SCREENSHARE_STOPPED = "screenshare:stopped";
@@ -55,11 +54,9 @@ export type RoomConnectionEvents = {
     [CHAT_NEW_MESSAGE]: [message: ChatMessage];
     [CLOUD_RECORDING_STATUS_CHANGED]: [status: CloudRecordingState | undefined];
     [CONNECTION_STATUS_CHANGED]: [status: ConnectionStatus];
-    [LOCAL_PARTICIPANT_JOINED]: [participant: LocalParticipantState];
-    [LOCAL_PARTICIPANT_LEFT]: [participantId: string];
-    [REMOTE_PARTICIPANT_JOINED]: [participant: RemoteParticipantState];
-    [REMOTE_PARTICIPANT_LEFT]: [participantId: string];
-    [REMOTE_PARTICIPANT_CHANGED]: [participant: RemoteParticipantState];
+    [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
+    [LOCAL_SCREENSHARE_STATUS_CHANGED]: [status?: LocalScreenshareStatus];
+    [REMOTE_PARTICIPANTS_CHANGED]: [participants: RemoteParticipantState[]];
     [SCREENSHARE_STARTED]: [screenshare: Screenshare];
     [SCREENSHARE_STOPPED]: [screenshareId: string];
     [ROOM_JOINED]: [room: RoomJoinedEvent];

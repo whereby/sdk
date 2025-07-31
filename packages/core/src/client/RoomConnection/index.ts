@@ -1,5 +1,6 @@
-import { EventEmitter } from "events";
 import {
+    ClientView,
+    ConnectionStatus,
     doAcceptWaitingParticipant,
     doAppStart,
     doAppStop,
@@ -29,17 +30,25 @@ import {
     toggleMicrophoneEnabled,
 } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
-import type { RemoteParticipantState, RoomConnectionState, WherebyClientOptions } from "./types";
+import type {
+    BreakoutState,
+    ChatMessage,
+    LocalParticipantState,
+    LocalScreenshareStatus,
+    RemoteParticipantState,
+    RoomConnectionState,
+    ScreenshareState,
+    WaitingParticipantState,
+    WherebyClientOptions,
+} from "./types";
 import {
     BREAKOUT_CONFIG_CHANGED,
     CHAT_NEW_MESSAGE,
     CLOUD_RECORDING_STATUS_CHANGED,
     CONNECTION_STATUS_CHANGED,
-    LOCAL_PARTICIPANT_JOINED,
-    LOCAL_PARTICIPANT_LEFT,
-    REMOTE_PARTICIPANT_CHANGED,
-    REMOTE_PARTICIPANT_JOINED,
-    REMOTE_PARTICIPANT_LEFT,
+    LOCAL_PARTICIPANT_CHANGED,
+    LOCAL_SCREENSHARE_STATUS_CHANGED,
+    REMOTE_PARTICIPANTS_CHANGED,
     ROOM_JOINED,
     ROOM_JOINED_ERROR,
     SCREENSHARE_STARTED,
@@ -54,60 +63,125 @@ import {
 } from "./events";
 import { selectRoomConnectionState } from "./selector";
 import { coreVersion } from "../../version";
+import { BaseClient } from "../BaseClient";
 
-export class RoomConnectionClient extends EventEmitter<RoomConnectionEvents> {
-    private store: AppStore;
+export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomConnectionEvents> {
     private options: WherebyClientOptions;
     private selfId: string | null = null;
 
-    private previousState: RoomConnectionState;
-
-    private participantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
+    private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
+    private cloudRecordingSubscribers = new Set<(status: { status: "recording" } | undefined) => void>();
+    private breakoutSubscribers = new Set<(config: BreakoutState) => void>();
+    private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
+    private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
+    private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
+    private localParticipantSubscribers = new Set<(participant?: LocalParticipantState) => void>();
+    private remoteParticipantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
+    private screenshareSubscribers = new Set<(screenshares: ScreenshareState[]) => void>();
+    private waitingParticipantsSubscribers = new Set<(participants: WaitingParticipantState[]) => void>();
+    private spotlightedParticipantsSubscribers = new Set<(participants: ClientView[]) => void>();
 
     constructor(store: AppStore) {
-        super();
-        this.store = store;
-        this.previousState = this.getState();
+        super(store);
         this.options = {};
-
-        this.setupEventBridge();
-    }
-
-    /**
-     * Set up the event bridge to listen for store changes.
-     */
-    private setupEventBridge() {
         this.registerAppListeners();
-
-        this.store.subscribe(() => {
-            this.emitStateChanges();
-            const currentState = this.getState();
-
-            if (currentState === this.previousState) {
-                return;
-            }
-
-            this.notifyStateSubscribers(currentState, this.previousState);
-            this.previousState = currentState;
-        });
     }
 
-    private notifyStateSubscribers(currentState: RoomConnectionState, previousState: RoomConnectionState) {
-        if (currentState.remoteParticipants !== previousState.remoteParticipants) {
-            this.participantsSubscribers.forEach((callback) => {
-                callback(currentState.remoteParticipants);
+    protected handleStateChanges(state: RoomConnectionState, previousState: RoomConnectionState): void {
+        if (state.chatMessages !== previousState.chatMessages) {
+            this.chatMessageSubscribers.forEach((cb) => cb(state.chatMessages));
+        }
+
+        if (state.cloudRecording !== previousState.cloudRecording) {
+            this.cloudRecordingSubscribers.forEach((cb) =>
+                cb(state.cloudRecording ? { status: "recording" } : undefined),
+            );
+            this.emit(CLOUD_RECORDING_STATUS_CHANGED, state.cloudRecording ? { status: "recording" } : undefined);
+        }
+
+        if (state.breakout !== previousState.breakout) {
+            this.breakoutSubscribers.forEach((cb) => cb(state.breakout));
+            this.emit(BREAKOUT_CONFIG_CHANGED, state.breakout);
+        }
+
+        if (state.connectionStatus !== previousState.connectionStatus) {
+            this.connectionStatusSubscribers.forEach((cb) => cb(state.connectionStatus));
+            this.emit(CONNECTION_STATUS_CHANGED, state.connectionStatus);
+        }
+
+        if (state.liveStream !== previousState.liveStream) {
+            this.liveStreamSubscribers.forEach((cb) => cb(state.liveStream));
+            if (state.liveStream?.status === "streaming") {
+                this.emit(STREAMING_STARTED, state.liveStream);
+            } else {
+                this.emit(STREAMING_STOPPED);
+            }
+        }
+
+        if (state.localScreenshareStatus !== previousState.localScreenshareStatus) {
+            this.localScreenshareStatusSubscribers.forEach((cb) => cb(state.localScreenshareStatus));
+            this.emit(LOCAL_SCREENSHARE_STATUS_CHANGED, state.localScreenshareStatus);
+        }
+
+        if (state.localParticipant !== previousState.localParticipant) {
+            this.localParticipantSubscribers.forEach((cb) => cb(state.localParticipant));
+            this.emit(LOCAL_PARTICIPANT_CHANGED, state.localParticipant);
+        }
+
+        if (state.remoteParticipants !== previousState.remoteParticipants) {
+            this.remoteParticipantsSubscribers.forEach((cb) => cb(state.remoteParticipants));
+            this.emit(REMOTE_PARTICIPANTS_CHANGED, state.remoteParticipants);
+        }
+
+        if (state.screenshares !== previousState.screenshares) {
+            this.screenshareSubscribers.forEach((cb) => cb(state.screenshares));
+
+            const added = state.screenshares.filter((c) => !previousState.screenshares.some((p) => p.id === c.id));
+            const removed = previousState.screenshares.filter((p) => !state.screenshares.some((c) => c.id === p.id));
+
+            added.forEach((screenshare) => {
+                this.emit(SCREENSHARE_STARTED, screenshare);
+            });
+            removed.forEach((screenshare) => {
+                this.emit(SCREENSHARE_STOPPED, screenshare.id);
             });
         }
-    }
 
-    /**
-     * Subscribe to remote participant changes.
-     * @param callback - The callback to call when remote participants change.
-     * @return A function to unsubscribe from the event.
-     */
-    public subscribeToParticipants(callback: (participants: RemoteParticipantState[]) => void): () => void {
-        this.participantsSubscribers.add(callback);
-        return () => this.participantsSubscribers.delete(callback);
+        if (state.waitingParticipants !== previousState.waitingParticipants) {
+            this.waitingParticipantsSubscribers.forEach((cb) => cb(state.waitingParticipants));
+
+            const added = state.waitingParticipants.filter(
+                (c) => !previousState.waitingParticipants.some((p) => p.id === c.id),
+            );
+            const removed = previousState.waitingParticipants.filter(
+                (p) => !state.waitingParticipants.some((c) => c.id === p.id),
+            );
+
+            added.forEach((participant) => {
+                this.emit(WAITING_PARTICIPANT_JOINED, participant);
+            });
+            removed.forEach((participant) => {
+                this.emit(WAITING_PARTICIPANT_LEFT, participant.id);
+            });
+        }
+
+        if (state.spotlightedParticipants !== previousState.spotlightedParticipants) {
+            this.spotlightedParticipantsSubscribers.forEach((cb) => cb(state.spotlightedParticipants));
+
+            const added = state.spotlightedParticipants.filter(
+                (c) => !previousState.spotlightedParticipants.some((p) => p.id === c.id),
+            );
+            const removed = previousState.spotlightedParticipants.filter(
+                (p) => !state.spotlightedParticipants.some((c) => c.id === p.id),
+            );
+
+            added.forEach((participant) => {
+                this.emit(SPOTLIGHT_PARTICIPANT_ADDED, participant);
+            });
+            removed.forEach((participant) => {
+                this.emit(SPOTLIGHT_PARTICIPANT_REMOVED, participant.id);
+            });
+        }
     }
 
     private registerAppListeners() {
@@ -136,193 +210,60 @@ export class RoomConnectionClient extends EventEmitter<RoomConnectionEvents> {
         });
     }
 
-    /**
-     * Emit state changes based on the Redux store.
-     */
-    private emitStateChanges() {
-        this.emitNewParticipantEvents();
-        this.emitLocalParticipantEvents();
-        this.emitCloudRecordingEvents();
-        this.emitConnectionStateChange();
-        this.emitBreakoutEvents();
-        this.emitScreenshareEvents();
-        this.emitWaitingParticipantEvents();
-        this.emitSpotlightParticipantEvents();
-        this.emitStreamingEvents();
+    /* Subscriptions */
+    public subscribeToChatMessages(callback: (messages: ChatMessage[]) => void): () => void {
+        this.chatMessageSubscribers.add(callback);
+        return () => this.chatMessageSubscribers.delete(callback);
     }
 
-    /**
-     * Emit local participant events.
-     * This method listens for the local participant joining or leaving the room and emits events.
-     */
-    private emitLocalParticipantEvents() {
-        const current = this.getState().localParticipant;
-        const previous = this.previousState.localParticipant;
-
-        if (current !== previous) {
-            if (current) {
-                this.emit(LOCAL_PARTICIPANT_JOINED, current);
-            } else {
-                this.emit(LOCAL_PARTICIPANT_LEFT, this.selfId || "unknown");
-                this.selfId = null;
-            }
-        }
+    public subscribeToCloudRecording(callback: (status: { status: "recording" } | undefined) => void): () => void {
+        this.cloudRecordingSubscribers.add(callback);
+        return () => this.cloudRecordingSubscribers.delete(callback);
     }
 
-    /**
-     * Emit new participant events.
-     * This method listens for new participants joining the room and emits events.
-     */
-    private emitNewParticipantEvents() {
-        const current = this.getState().remoteParticipants;
-        const previous = this.previousState.remoteParticipants;
-
-        if (current === previous) {
-            return;
-        }
-
-        const joined = current.filter((c) => !previous.some((p) => p.id === c.id));
-        const left = previous.filter((p) => !current.some((c) => c.id === p.id));
-
-        current.forEach((participant) => {
-            if (previous.some((p) => p.id === participant.id && p !== participant)) {
-                this.emit(REMOTE_PARTICIPANT_CHANGED, participant);
-            }
-        });
-
-        joined.forEach((participant) => {
-            this.emit(REMOTE_PARTICIPANT_JOINED, participant);
-        });
-        left.forEach((participant) => {
-            this.emit(REMOTE_PARTICIPANT_LEFT, participant.id);
-        });
+    public subscribeToBreakoutConfig(callback: (config: BreakoutState) => void): () => void {
+        this.breakoutSubscribers.add(callback);
+        return () => this.breakoutSubscribers.delete(callback);
     }
 
-    /**
-     * Emit cloud recording events.
-     * This method listens for cloud recording events and emits them.
-     * @param state - The current state of the Redux store.
-     */
-    private emitCloudRecordingEvents() {
-        const current = this.getState().cloudRecording;
-        const previous = this.previousState.cloudRecording;
-
-        if (current !== previous) {
-            this.emit(CLOUD_RECORDING_STATUS_CHANGED, current);
-        }
+    public subscribeToConnectionStatus(callback: (status: ConnectionStatus) => void): () => void {
+        this.connectionStatusSubscribers.add(callback);
+        return () => this.connectionStatusSubscribers.delete(callback);
     }
 
-    /**
-     * Emit connection state changes.
-     * This method checks if the connection status has changed and emits an event if it has.
-     * @param state - The current state of the Redux store.
-     */
-    private emitConnectionStateChange() {
-        const current = this.getState().connectionStatus;
-        const previous = this.previousState.connectionStatus;
-
-        if (current !== previous) {
-            this.emit(CONNECTION_STATUS_CHANGED, current);
-        }
+    public subscribeToLiveStream(callback: (status: { status: "streaming" } | undefined) => void): () => void {
+        this.liveStreamSubscribers.add(callback);
+        return () => this.liveStreamSubscribers.delete(callback);
     }
 
-    /**
-     * Emit breakout events.
-     * This method listens for breakout events and emits them.
-     * @param state - The current state of the Redux store.
-     */
-    private emitBreakoutEvents() {
-        const current = this.getState().breakout;
-        const previous = this.previousState.breakout;
-
-        if (current !== previous) {
-            this.emit(BREAKOUT_CONFIG_CHANGED, current);
-        }
+    public subscribeToLocalScreenshareStatus(callback: (status?: LocalScreenshareStatus) => void): () => void {
+        this.localScreenshareStatusSubscribers.add(callback);
+        return () => this.localScreenshareStatusSubscribers.delete(callback);
     }
 
-    /**
-     * Emit screenshare events.
-     * @param state - The current state of the Redux store.
-     */
-    private emitScreenshareEvents() {
-        const current = this.getState().screenshares;
-        const previous = this.previousState.screenshares;
-
-        if (current !== previous) {
-            const joined = current.filter((c) => !previous.some((p) => p.id === c.id));
-            const left = previous.filter((p) => !current.some((c) => c.id === p.id));
-
-            joined.forEach((screenshare) => {
-                this.emit(SCREENSHARE_STARTED, screenshare);
-            });
-
-            left.forEach((screenshare) => {
-                this.emit(SCREENSHARE_STOPPED, screenshare.id);
-            });
-        }
+    public subscribeToLocalParticipant(callback: (participant?: LocalParticipantState) => void): () => void {
+        this.localParticipantSubscribers.add(callback);
+        return () => this.localParticipantSubscribers.delete(callback);
     }
 
-    /**
-     * Emit waiting participant events.
-     * @param state - The current state of the Redux store.
-     */
-    private emitWaitingParticipantEvents() {
-        const current = this.getState().waitingParticipants;
-        const previous = this.previousState.waitingParticipants;
-
-        if (current.length === previous.length) {
-            return;
-        }
-
-        const joined = current.filter((c) => !previous.some((p) => p.id === c.id));
-        const left = previous.filter((p) => !current.some((c) => c.id === p.id));
-
-        joined.forEach((participant) => {
-            this.emit(WAITING_PARTICIPANT_JOINED, participant);
-        });
-        left.forEach((participant) => {
-            this.emit(WAITING_PARTICIPANT_LEFT, participant.id);
-        });
+    public subscribeToRemoteParticipants(callback: (participants: RemoteParticipantState[]) => void): () => void {
+        this.remoteParticipantsSubscribers.add(callback);
+        return () => this.remoteParticipantsSubscribers.delete(callback);
     }
 
-    /**
-     * Emit spotlight participant events.
-     * @param state - The current state of the Redux store.
-     */
-    private emitSpotlightParticipantEvents() {
-        const current = this.getState().spotlightedParticipants;
-        const previous = this.previousState.spotlightedParticipants;
-
-        if (current.length === previous.length) {
-            return;
-        }
-
-        const added = current.filter((c) => !previous.some((p) => p.id === c.id));
-        const removed = previous.filter((p) => !current.some((c) => c.id === p.id));
-
-        added.forEach((participant) => {
-            this.emit(SPOTLIGHT_PARTICIPANT_ADDED, participant);
-        });
-        removed.forEach((participant) => {
-            this.emit(SPOTLIGHT_PARTICIPANT_REMOVED, participant.id);
-        });
+    public subscribeToScreenshares(callback: (screenshares: ScreenshareState[]) => void): () => void {
+        this.screenshareSubscribers.add(callback);
+        return () => this.screenshareSubscribers.delete(callback);
     }
 
-    /**
-     * Emit streaming events.
-     * @param state - The current state of the Redux store.
-     */
-    private emitStreamingEvents() {
-        const current = this.getState().liveStream;
-        const previous = this.previousState.liveStream;
+    public subscribeToWaitingParticipants(callback: (participants: WaitingParticipantState[]) => void): () => void {
+        this.waitingParticipantsSubscribers.add(callback);
+        return () => this.waitingParticipantsSubscribers.delete(callback);
+    }
 
-        if (current !== previous) {
-            if (current?.status === "streaming") {
-                this.emit(STREAMING_STARTED, current);
-            } else {
-                this.emit(STREAMING_STOPPED);
-            }
-        }
+    public subscribeToSpotlightedParticipants(callback: (participants: ClientView[]) => void): () => void {
+        this.spotlightedParticipantsSubscribers.add(callback);
+        return () => this.spotlightedParticipantsSubscribers.delete(callback);
     }
 
     /**
@@ -597,5 +538,16 @@ export class RoomConnectionClient extends EventEmitter<RoomConnectionEvents> {
         this.store.dispatch(doAppStop());
         this.removeAllListeners();
         this.selfId = null;
+        this.chatMessageSubscribers.clear();
+        this.cloudRecordingSubscribers.clear();
+        this.breakoutSubscribers.clear();
+        this.connectionStatusSubscribers.clear();
+        this.liveStreamSubscribers.clear();
+        this.localScreenshareStatusSubscribers.clear();
+        this.localParticipantSubscribers.clear();
+        this.remoteParticipantsSubscribers.clear();
+        this.screenshareSubscribers.clear();
+        this.waitingParticipantsSubscribers.clear();
+        this.spotlightedParticipantsSubscribers.clear();
     }
 }

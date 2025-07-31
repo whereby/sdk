@@ -1,8 +1,8 @@
-import { createStore, type Store as AppStore } from "../../redux/store";
-import { createServices } from "../../services";
-import { GridClient } from "../Grid";
-import { LocalMediaClient } from "../LocalMedia";
-import { RoomConnectionClient } from "../RoomConnection";
+import { createStore, type Store as AppStore } from "../redux/store";
+import { createServices } from "../services";
+import { GridClient } from "./Grid";
+import { LocalMediaClient } from "./LocalMedia";
+import { RoomConnectionClient } from "./RoomConnection";
 
 export class WherebyClient {
     private store: AppStore;
@@ -39,5 +39,6 @@ export class WherebyClient {
     public destroy(): void {
         this.localMediaClient.destroy();
         this.roomConnectionClient.destroy();
+        this.gridClient.destroy();
     }
 }
