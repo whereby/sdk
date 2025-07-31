@@ -37,6 +37,12 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
         }
     }
 
+    public getState(): GridState {
+        return selectGridState(this.store.getState());
+    }
+
+    /* Subscriptions */
+
     public subscribeClientViews(callback: (clientViews: ClientView[]) => void): () => void {
         this.clientViewSubscribers.add(callback);
         return () => this.clientViewSubscribers.delete(callback);
@@ -52,9 +58,7 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
         return () => this.numberOfClientViewsSubscribers.delete(callback);
     }
 
-    public getState(): GridState {
-        return selectGridState(this.store.getState());
-    }
+    /* Actions */
 
     public spotlightParticipant(id: string) {
         this.store.dispatch(doSpotlightParticipant({ id }));
@@ -62,5 +66,13 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
 
     public removeSpotlight(id: string) {
         this.store.dispatch(doRemoveSpotlight({ id }));
+    }
+
+    public destroy() {
+        super.destroy();
+        this.clientViewSubscribers.clear();
+        this.spotlightedSubscribers.clear();
+        this.numberOfClientViewsSubscribers.clear();
+        this.removeAllListeners();
     }
 }

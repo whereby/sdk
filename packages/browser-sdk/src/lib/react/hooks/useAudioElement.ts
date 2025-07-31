@@ -6,9 +6,9 @@ export type AudioElement = HTMLAudioElement & { setSinkId?: (deviceId: string) =
 export const useAudioElement = ({ stream, muted }: { stream?: MediaStream | null; muted?: boolean }) => {
     const audioEl = React.useRef<AudioElement>(null);
     const client = React.useContext(WherebyContext)?.getLocalMediaClient();
-    const [currentSpeakerId, setCurrentSpeakerId] = React.useState<string | null>(null);
+    const [currentSpeakerId, setCurrentSpeakerId] = React.useState<string | undefined>();
 
-    const listener = React.useCallback((speakerId: string | null) => {
+    const listener = React.useCallback((speakerId?: string) => {
         setCurrentSpeakerId(speakerId);
     }, []);
 
