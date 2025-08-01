@@ -48,73 +48,12 @@ export function useRoomConnection(
     React.useEffect(() => {
         client.initialize(roomConfig);
 
-        client.subscribeToChatMessages((messages) => {
+        const unsubscribe = client.subscribe((state) => {
             setRoomConnectionState((prev) => ({
                 ...prev,
-                chatMessages: messages,
+                ...state,
             }));
         });
-        client.subscribeToCloudRecording((cloudRecording) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                cloudRecording,
-            }));
-        });
-        client.subscribeToBreakoutConfig((breakout) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                breakout,
-            }));
-        });
-        client.subscribeToConnectionStatus((connectionStatus) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                connectionStatus,
-            }));
-        });
-        client.subscribeToLiveStream((liveStream) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                liveStream,
-            }));
-        });
-        client.subscribeToLocalScreenshareStatus((status) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                localScreenshareStatus: status,
-            }));
-        });
-        client.subscribeToLocalParticipant((localParticipant) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                localParticipant,
-            }));
-        });
-        client.subscribeToRemoteParticipants((remoteParticipants) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                remoteParticipants,
-            }));
-        });
-        client.subscribeToScreenshares((screenshares) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                screenshares,
-            }));
-        });
-        client.subscribeToWaitingParticipants((waitingParticipants) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                waitingParticipants,
-            }));
-        });
-        client.subscribeToSpotlightedParticipants((spotlightedParticipants) => {
-            setRoomConnectionState((prev) => ({
-                ...prev,
-                spotlightedParticipants,
-            }));
-        });
-
         const eventEmitter = client.getNotificationsEventEmitter();
         setRoomConnectionState((prev) => ({
             ...prev,
@@ -122,9 +61,12 @@ export function useRoomConnection(
         }));
 
         return () => {
+            unsubscribe();
+            setRoomConnectionState(initialState);
+            eventEmitter.removeAllListeners();
             client.destroy();
         };
-    }, [client]);
+    }, []);
 
     const joinRoom = React.useCallback(() => client.joinRoom(), [client]);
     const sendChatMessage = React.useCallback((text: string) => client.sendChatMessage(text), [client]);

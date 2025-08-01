@@ -53,6 +53,7 @@ export abstract class BaseClient<TState, TEvents extends Record<string, unknown[
             }
 
             this.handleStateChanges(currentState, this.previousState);
+            this.stateSubscribers.forEach((callback) => callback(currentState));
             this.previousState = currentState;
         });
     }
