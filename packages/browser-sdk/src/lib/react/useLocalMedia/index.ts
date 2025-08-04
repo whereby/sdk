@@ -26,6 +26,7 @@ export function useLocalMedia(
 
         return () => {
             unsubscribe();
+            client.stopMedia();
         };
     }, []);
 

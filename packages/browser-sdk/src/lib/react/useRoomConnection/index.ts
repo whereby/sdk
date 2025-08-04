@@ -46,8 +46,6 @@ export function useRoomConnection(
     }, [roomUrl, roomConnectionOptions]);
 
     React.useEffect(() => {
-        client.initialize(roomConfig);
-
         const unsubscribe = client.subscribe((state) => {
             setRoomConnectionState((prev) => ({
                 ...prev,
@@ -62,13 +60,14 @@ export function useRoomConnection(
 
         return () => {
             unsubscribe();
-            setRoomConnectionState(initialState);
-            eventEmitter.removeAllListeners();
-            client.destroy();
+            client.leaveRoom();
         };
     }, []);
 
-    const joinRoom = React.useCallback(() => client.joinRoom(), [client]);
+    const joinRoom = React.useCallback(() => {
+        client.initialize(roomConfig);
+        client.joinRoom();
+    }, [client]);
     const sendChatMessage = React.useCallback((text: string) => client.sendChatMessage(text), [client]);
     const knock = React.useCallback(() => client.knock(), [client]);
     const setDisplayName = React.useCallback((displayName: string) => client.setDisplayName(displayName), [client]);

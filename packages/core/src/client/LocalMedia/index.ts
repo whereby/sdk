@@ -6,6 +6,7 @@ import {
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
     setCurrentSpeakerDeviceId,
+    doStopLocalMedia,
 } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import { selectLocalMediaState } from "./selector";
@@ -229,12 +230,17 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         this.store.dispatch(setCurrentSpeakerDeviceId({ deviceId }));
     }
 
+    public stopMedia() {
+        return this.store.dispatch(doStopLocalMedia());
+    }
+
     /**
      * Destroy the LocalMediaClient instance.
      * This method cleans up any resources and event listeners.
      */
     public destroy() {
         super.destroy();
+        this.stopMedia();
         this.removeAllListeners();
         this.cameraDeviceSubscribers.clear();
         this.microphoneDeviceSubscribers.clear();

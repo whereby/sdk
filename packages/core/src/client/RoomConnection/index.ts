@@ -303,10 +303,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         }
 
         const roomConfig = {
-            localMediaOptions: this.options.localMediaOptions || {
-                audio: true,
-                video: true,
-            },
+            localMediaOptions: this.options.localMediaOptions || undefined,
             displayName: this.options.displayName || "Guest",
             roomKey: this.options.roomKey || null,
             externalId: this.options.externalId || null,
@@ -323,7 +320,6 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public sendChatMessage(text: string) {
         this.store.dispatch(doSendChatMessage({ text }));
-        //this.emit("chatMessageSent", text);
     }
 
     /**
@@ -535,6 +531,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      * This method will stop the app and reset the client state.
      */
     public destroy() {
+        super.destroy();
         this.store.dispatch(doAppStop());
         this.removeAllListeners();
         this.selfId = null;

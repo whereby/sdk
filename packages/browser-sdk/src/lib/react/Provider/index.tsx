@@ -7,7 +7,14 @@ export interface ProviderProps {
 }
 
 function Provider({ children }: ProviderProps) {
-    const client = new WherebyClient();
+    const client = React.useMemo(() => new WherebyClient(), []);
+
+    React.useEffect(() => {
+        return () => {
+            client.destroy();
+        };
+    }, [client]);
+
     return <WherebyContext.Provider value={client}>{children}</WherebyContext.Provider>;
 }
 
