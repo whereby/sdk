@@ -21,6 +21,7 @@ import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ServerSocket } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
+import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -62,7 +63,7 @@ export default class VegaRtcManager implements RtcManager {
     _micAnalyser: any;
     _micAnalyserDebugger: any;
     _mediasoupDevice: Device | null;
-    _routerRtpCapabilities: any;
+    _routerRtpCapabilities: RtpCapabilities | null;
     _sendTransport: any;
     _receiveTransport: any;
     _clientStates: Map<string, ClientState>;
@@ -254,9 +255,9 @@ export default class VegaRtcManager implements RtcManager {
         // update vega connection manager if exists
         this._vegaConnectionManager?.updateHostList(
             this._features.sfuServersOverride ||
-                this._sfuServers ||
-                this._features.sfuServerOverrideHost ||
-                sfuServer.url,
+            this._sfuServers ||
+            this._features.sfuServerOverrideHost ||
+            sfuServer.url,
         );
 
         const iceServersList = {
@@ -1000,14 +1001,21 @@ export default class VegaRtcManager implements RtcManager {
                     return;
                 }
 
+                // VP9 + SVC isn't supported for screenshares, so we force VP8
+                const codec = this._features.sfuVp9On
+                    ? this._routerRtpCapabilities?.codecs?.find((codec) => codec.mimeType.match(/vp8/i))
+                    : undefined;
+
                 const producer = await this._sendTransport.produce({
                     track: this._screenVideoTrack,
                     disableTrackOnPause: false,
                     stopTracks: false,
+                    codec,
                     ...getMediaSettings(
                         "video",
                         true,
-                        { ...this._features, vp9On: this._features.sfuVp9On },
+                        // Screenshare doesn't support SVC encoding, so we force VP8
+                        { ...this._features, vp9On: false },
                         this._getIsSomeoneAlreadyPresenting(),
                     ),
                     appData: {
@@ -1222,7 +1230,7 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     // the track ids send by signal server for remote-initiated screenshares
-    setRemoteScreenshareVideoTrackIds(/*remoteScreenshareVideoTrackIds*/) {}
+    setRemoteScreenshareVideoTrackIds(/*remoteScreenshareVideoTrackIds*/) { }
 
     /**
      * The unique identifier for this room session.
