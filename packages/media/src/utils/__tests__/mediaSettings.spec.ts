@@ -1,11 +1,9 @@
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import {
     ADDITIONAL_SCREEN_SHARE_SETTINGS,
-    ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9,
     AUDIO_SETTINGS,
     SCREEN_SHARE_SETTINGS,
     SCREEN_SHARE_SIMULCAST_SETTINGS,
-    SCREEN_SHARE_SETTINGS_VP9,
     VIDEO_SETTINGS_HD,
     VIDEO_SETTINGS_SD,
     VIDEO_SETTINGS_VP9,
@@ -100,21 +98,17 @@ describe("getMediaSettings", () => {
     const randomBrowser = () => (randomBoolean() ? "chrome" : "not chrome");
 
     it.each`
-        kind       | isScreenshare      | lowDataModeEnabled | isSomeoneAlreadyPresenting | simulcastScreenshareOn | vp9On              | browser            | expected                                | expectedName
-        ${"audio"} | ${randomBoolean()} | ${randomBoolean()} | ${randomBoolean()}         | ${randomBoolean()}     | ${randomBoolean()} | ${randomBrowser()} | ${AUDIO_SETTINGS}                       | ${"AUDIO_SETTINGS"}
-        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${randomBrowser()} | ${VIDEO_SETTINGS_HD}                    | ${"VIDEO_SETTINGS_HD"}
-        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"not_chrome"}    | ${VIDEO_SETTINGS_HD}                    | ${"VIDEO_SETTINGS_HD"}
-        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${randomBrowser()} | ${VIDEO_SETTINGS_SD}                    | ${"VIDEO_SETTINGS_SD"}
-        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"not_chrome"}    | ${VIDEO_SETTINGS_SD}                    | ${"VIDEO_SETTINGS_SD"}
-        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${randomBrowser()} | ${SCREEN_SHARE_SETTINGS}                | ${"SCREEN_SHARE_SETTINGS"}
-        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${true}            | ${"not chrome"}    | ${SCREEN_SHARE_SETTINGS}                | ${"SCREEN_SHARE_SETTINGS"}
-        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${true}            | ${"chrome"}        | ${SCREEN_SHARE_SETTINGS_VP9}            | ${"SCREEN_SHARE_SETTINGS_VP9"}
-        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${true}                | ${false}           | ${randomBrowser()} | ${SCREEN_SHARE_SIMULCAST_SETTINGS}      | ${"SCREEN_SHARE_SIMULCAST_SETTINGS"}
-        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${false}           | ${randomBrowser()} | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}     | ${"ADDITIONAL_SCREEN_SHARE_SETTINGS"}
-        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${"not chrome"}    | ${ADDITIONAL_SCREEN_SHARE_SETTINGS}     | ${"ADDITIONAL_SCREEN_SHARE_SETTINGS"}
-        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${true}            | ${"chrome"}        | ${ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9} | ${"ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9"}
-        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"chrome"}        | ${VIDEO_SETTINGS_VP9}                   | ${"VIDEO_SETTINGS_VP9"}
-        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH}     | ${"VIDEO_SETTINGS_VP9_LOW_BANDWIDTH"}
+        kind       | isScreenshare      | lowDataModeEnabled | isSomeoneAlreadyPresenting | simulcastScreenshareOn | vp9On              | browser            | expected                            | expectedName
+        ${"audio"} | ${randomBoolean()} | ${randomBoolean()} | ${randomBoolean()}         | ${randomBoolean()}     | ${randomBoolean()} | ${randomBrowser()} | ${AUDIO_SETTINGS}                   | ${"AUDIO_SETTINGS"}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${randomBrowser()} | ${VIDEO_SETTINGS_HD}                | ${"VIDEO_SETTINGS_HD"}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"not_chrome"}    | ${VIDEO_SETTINGS_HD}                | ${"VIDEO_SETTINGS_HD"}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${false}           | ${randomBrowser()} | ${VIDEO_SETTINGS_SD}                | ${"VIDEO_SETTINGS_SD"}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"not_chrome"}    | ${VIDEO_SETTINGS_SD}                | ${"VIDEO_SETTINGS_SD"}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${false}               | ${false}           | ${randomBrowser()} | ${SCREEN_SHARE_SETTINGS}            | ${"SCREEN_SHARE_SETTINGS"}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${false}                   | ${true}                | ${randomBoolean()} | ${randomBrowser()} | ${SCREEN_SHARE_SIMULCAST_SETTINGS}  | ${"SCREEN_SHARE_SIMULCAST_SETTINGS"}
+        ${"video"} | ${true}            | ${randomBoolean()} | ${true}                    | ${false}               | ${randomBoolean()} | ${randomBrowser()} | ${ADDITIONAL_SCREEN_SHARE_SETTINGS} | ${"ADDITIONAL_SCREEN_SHARE_SETTINGS"}
+        ${"video"} | ${false}           | ${false}           | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"chrome"}        | ${VIDEO_SETTINGS_VP9}               | ${"VIDEO_SETTINGS_VP9"}
+        ${"video"} | ${false}           | ${true}            | ${randomBoolean()}         | ${randomBoolean()}     | ${true}            | ${"chrome"}        | ${VIDEO_SETTINGS_VP9_LOW_BANDWIDTH} | ${"VIDEO_SETTINGS_VP9_LOW_BANDWIDTH"}
     `(
         "should return $expectedName when isScreenshare:$isScreenshare, isSomeoneAlreadyPresenting:$isSomeoneAlreadyPresenting, lowDataModeEnabled:$lowDataModeEnabled, simulcastScreenshareOn:$simulcastScreenshareOn, vp9On:$vp9On, browser:$browser",
         ({

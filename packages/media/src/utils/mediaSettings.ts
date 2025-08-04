@@ -63,14 +63,6 @@ export const ADDITIONAL_SCREEN_SHARE_SETTINGS = {
     ],
 };
 
-export const ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9 = {
-    encodings: [{ scalabilityMode: "L2T2", dtx: true, maxBitrate: 1500000 }],
-};
-
-export const SCREEN_SHARE_SETTINGS_VP9 = {
-    encodings: [{ dtx: true }],
-};
-
 export const getMediaSettings = (
     kind: string,
     isScreenShare: boolean,
@@ -91,7 +83,6 @@ export const getMediaSettings = (
     const isVp9Available = isChrome && vp9On;
     if (isScreenShare) {
         return getScreenShareMediaSettings({
-            isVp9Available,
             isSomeoneAlreadyPresenting,
             simulcastScreenshareOn,
         });
@@ -124,19 +115,15 @@ const getCameraMediaSettings = ({
 };
 
 const getScreenShareMediaSettings = ({
-    isVp9Available,
     isSomeoneAlreadyPresenting,
     simulcastScreenshareOn,
 }: {
-    isVp9Available?: boolean;
     isSomeoneAlreadyPresenting?: boolean;
     simulcastScreenshareOn?: boolean;
 }) => {
     if (isSomeoneAlreadyPresenting) {
-        if (isVp9Available) return ADDITIONAL_SCREEN_SHARE_SETTINGS_VP9;
         return ADDITIONAL_SCREEN_SHARE_SETTINGS;
     }
-    if (isVp9Available) return SCREEN_SHARE_SETTINGS_VP9;
     if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
 
     return SCREEN_SHARE_SETTINGS;
