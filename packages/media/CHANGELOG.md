@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.32.1
+
+### Patch Changes
+
+- 329090d: Fix multi-screenshare bug in SFU rooms with VP9 enabled
+
 ## 1.32.0
 
 ### Minor Changes
