@@ -257,8 +257,6 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
         const stats = statsByView[client.id];
 
         ["video", "audio", "global"].forEach((kind) => {
-            // skip checking muted/disabled tracks if not global
-            if (!(kind === "global" && !client.isPresentation) && !(client as any)[kind]?.enabled) return;
             // don't check global for remote clients
             if (kind === "global" && !client.isLocalClient) return;
 
@@ -274,8 +272,8 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
             const trackStats = track && stats && stats.tracks[track.id];
             const ssrcs = trackStats
                 ? Object.values(trackStats.ssrcs).sort(
-                      (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
-                  )
+                    (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
+                )
                 : [];
             const ssrc0 = ssrcs[0];
 
