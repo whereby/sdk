@@ -9,7 +9,7 @@ interface Metric {
     id: string;
     global?: true;
     enabled?: (checkData: IssueCheckData) => boolean;
-    value: (checkData: IssueCheckData) => any;
+    value: (checkData: IssueCheckData) => number;
 }
 
 interface MetricData {
@@ -114,7 +114,7 @@ const metrics: Metric[] = [
         id: "sourceHeight",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
             hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.sourceHeight && ssrc0.direction === "out",
-        value: ({ ssrc0 }) => ssrc0?.sourceHeight,
+        value: ({ ssrc0 }) => ssrc0?.sourceHeight || NaN,
     },
     {
         id: "packetloss",
@@ -124,7 +124,7 @@ const metrics: Metric[] = [
     {
         id: "jitter",
         enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.bitrate && ssrc0.direction === "in",
-        value: ({ ssrc0 }) => ssrc0?.jitter,
+        value: ({ ssrc0 }) => ssrc0?.jitter || NaN,
     },
     {
         // https://www.pingman.com/kb/article/how-is-mos-calculated-in-pingplotter-pro-50.html
@@ -162,13 +162,13 @@ const metrics: Metric[] = [
         id: "turn-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.usingTurn),
+        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.usingTurn) ? 1 : 0,
     },
     {
         id: "turn-tls-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.turnProtocol === "tls"),
+        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.turnProtocol === "tls") ? 1 : 0,
     },
     {
         id: "concealment",
@@ -179,7 +179,7 @@ const metrics: Metric[] = [
             ssrc0.direction === "in" &&
             kind === "audio" &&
             (ssrc0.audioLevel || 0) >= 0.001,
-        value: ({ ssrc0 }) => ssrc0?.audioConcealment,
+        value: ({ ssrc0 }) => ssrc0?.audioConcealment || NaN,
     },
     {
         id: "deceleration",
@@ -190,7 +190,7 @@ const metrics: Metric[] = [
             ssrc0.direction === "in" &&
             kind === "audio" &&
             (ssrc0.audioLevel || 0) >= 0.001,
-        value: ({ ssrc0 }) => ssrc0?.audioDeceleration,
+        value: ({ ssrc0 }) => ssrc0?.audioDeceleration || NaN,
     },
     {
         id: "acceleration",
@@ -201,7 +201,7 @@ const metrics: Metric[] = [
             ssrc0.direction === "in" &&
             kind === "audio" &&
             (ssrc0.audioLevel || 0) >= 0.001,
-        value: ({ ssrc0 }) => ssrc0?.audioAcceleration,
+        value: ({ ssrc0 }) => ssrc0?.audioAcceleration || NaN,
     },
     {
         id: "qpf",
