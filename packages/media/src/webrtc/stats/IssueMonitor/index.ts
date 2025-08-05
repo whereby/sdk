@@ -1,6 +1,6 @@
-import { StatsSubscription, subscribeStats, ViewStats } from "../StatsMonitor";
-import { StatsClient } from "../types";
 import { IssueCheckData, issueDetectors } from "./issueDetectors";
+import { subscribeStats } from "../StatsMonitor";
+import { StatsClient, ViewStats } from "../types";
 
 let subscriptions: any[] = [];
 let stopStats: (() => void) | null = null;
