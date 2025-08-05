@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { ClientView, selectSpotlightedClientViews } from "@whereby.com/core";
+import { ClientView } from "@whereby.com/core";
 
 import {
     ParticipantMenu,
@@ -9,19 +9,19 @@ import {
     ParticipantMenuTrigger,
 } from "../ParticipantMenu";
 import { EllipsisIcon } from "../../../EllipsisIcon";
-import { useAppSelector } from "../../Provider/hooks";
 import { MaximizeOnIcon } from "../../../MaximizeOnIcon";
 import { SpotlightIcon } from "../../../SpotlightIcon";
 import { useGridCell } from "../GridContext";
 import { PopOutIcon } from "../../../PopOutIcon";
 import { PopInIcon } from "../../../PopInIcon";
+import { useGridParticipants } from "../useGridParticipants";
 
 interface DefaultParticipantMenuProps {
     participant: ClientView;
 }
 
 function DefaultParticipantMenu({ participant }: DefaultParticipantMenuProps) {
-    const spotlightedParticipants = useAppSelector(selectSpotlightedClientViews);
+    const { spotlightedParticipants } = useGridParticipants();
     const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
     const { isHovered, maximizedParticipant, floatingParticipant } = useGridCell();
     const isMaximized = maximizedParticipant?.id === participant.id;

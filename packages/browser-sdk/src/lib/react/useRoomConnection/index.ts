@@ -1,36 +1,10 @@
 import * as React from "react";
-import {
-    AppConfig,
-    doSendChatMessage,
-    doStartCloudRecording,
-    doStopCloudRecording,
-    doAcceptWaitingParticipant,
-    doRejectWaitingParticipant,
-    doRequestAudioEnable,
-    doRequestVideoEnable,
-    doSetDisplayName,
-    doSetLocalStickyReaction,
-    toggleCameraEnabled,
-    toggleMicrophoneEnabled,
-    toggleLowDataModeEnabled,
-    doStartScreenshare,
-    doStopScreenshare,
-    doAppStart,
-    doAppStop,
-    doKnockRoom,
-    doLockRoom,
-    doKickParticipant,
-    doEndMeeting,
-    doSpotlightParticipant,
-    doRemoveSpotlight,
-    NotificationsEventEmitter,
-    doBreakoutJoin,
-} from "@whereby.com/core";
+import { AppConfig, NotificationsEventEmitter, RoomConnectionState } from "@whereby.com/core";
 
-import { selectRoomConnectionState } from "./selector";
-import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
+import { RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
-import { useAppDispatch, useAppSelector } from "../Provider/hooks";
+import { WherebyContext } from "../Provider";
+import { initialState } from "./initialState";
 
 export type RoomConnectionRef = {
     state: Omit<RoomConnectionState, "events">;
@@ -49,8 +23,12 @@ export function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions = defaultRoomConnectionOptions,
 ): RoomConnectionRef {
-    const dispatch = useAppDispatch();
-    const roomConnectionState = useAppSelector(selectRoomConnectionState);
+    const client = React.useContext(WherebyContext)?.getRoomConnection();
+    const [roomConnectionState, setRoomConnectionState] = React.useState<RoomConnectionState>(() => initialState);
+
+    if (!client) {
+        throw new Error("WherebyClient is not initialized. Please wrap your component with WherebyProvider.");
+    }
 
     const roomConfig = React.useMemo((): AppConfig => {
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
@@ -68,82 +46,77 @@ export function useRoomConnection(
     }, [roomUrl, roomConnectionOptions]);
 
     React.useEffect(() => {
+        const unsubscribe = client.subscribe((state) => {
+            setRoomConnectionState((prev) => ({
+                ...prev,
+                ...state,
+            }));
+        });
+        const eventEmitter = client.getNotificationsEventEmitter();
+        setRoomConnectionState((prev) => ({
+            ...prev,
+            events: eventEmitter,
+        }));
+
         return () => {
-            dispatch(doAppStop());
+            unsubscribe();
+            client.leaveRoom();
         };
     }, []);
 
-    const sendChatMessage = React.useCallback((text: string) => dispatch(doSendChatMessage({ text })), [dispatch]);
-    const knock = React.useCallback(() => dispatch(doKnockRoom()), [dispatch]);
-    const setDisplayName = React.useCallback(
-        (displayName: string) => dispatch(doSetDisplayName({ displayName })),
-        [dispatch],
-    );
-
-    const toggleCamera = React.useCallback(
-        (enabled?: boolean) => dispatch(toggleCameraEnabled({ enabled })),
-        [dispatch],
-    );
-    const toggleMicrophone = React.useCallback(
-        (enabled?: boolean) => dispatch(toggleMicrophoneEnabled({ enabled })),
-        [dispatch],
-    );
-    const toggleLowDataMode = React.useCallback(
-        (enabled?: boolean) => dispatch(toggleLowDataModeEnabled({ enabled })),
-        [dispatch],
-    );
-    const toggleRaiseHand = React.useCallback(
-        (enabled?: boolean) => dispatch(doSetLocalStickyReaction({ enabled })),
-        [dispatch],
-    );
-    const askToSpeak = React.useCallback(
-        (participantId: string) => dispatch(doRequestAudioEnable({ clientIds: [participantId], enable: true })),
-        [dispatch],
-    );
+    const joinRoom = React.useCallback(() => {
+        client.initialize(roomConfig);
+        client.joinRoom();
+    }, [client]);
+    const sendChatMessage = React.useCallback((text: string) => client.sendChatMessage(text), [client]);
+    const knock = React.useCallback(() => client.knock(), [client]);
+    const setDisplayName = React.useCallback((displayName: string) => client.setDisplayName(displayName), [client]);
+    const toggleCamera = React.useCallback((enabled?: boolean) => client.toggleCamera(enabled), [client]);
+    const toggleMicrophone = React.useCallback((enabled?: boolean) => client.toggleMicrophone(enabled), [client]);
+    const toggleLowDataMode = React.useCallback((enabled?: boolean) => client.toggleLowDataMode(enabled), [client]);
+    const toggleRaiseHand = React.useCallback((enabled?: boolean) => client.toggleRaiseHand(enabled), [client]);
+    const askToSpeak = React.useCallback((participantId: string) => client.askToSpeak(participantId), [client]);
     const askToTurnOnCamera = React.useCallback(
-        (participantId: string) => dispatch(doRequestVideoEnable({ clientIds: [participantId], enable: true })),
-        [dispatch],
+        (participantId: string) => client.askToTurnOnCamera(participantId),
+        [client],
     );
     const acceptWaitingParticipant = React.useCallback(
-        (participantId: string) => dispatch(doAcceptWaitingParticipant({ participantId })),
-        [dispatch],
+        (participantId: string) => client.acceptWaitingParticipant(participantId),
+        [client],
     );
     const rejectWaitingParticipant = React.useCallback(
-        (participantId: string) => dispatch(doRejectWaitingParticipant({ participantId })),
-        [dispatch],
+        (participantId: string) => client.rejectWaitingParticipant(participantId),
+        [client],
     );
-    const startCloudRecording = React.useCallback(() => dispatch(doStartCloudRecording()), [dispatch]);
-    const startScreenshare = React.useCallback(() => dispatch(doStartScreenshare()), [dispatch]);
-    const stopCloudRecording = React.useCallback(() => dispatch(doStopCloudRecording()), [dispatch]);
-    const stopScreenshare = React.useCallback(() => dispatch(doStopScreenshare()), [dispatch]);
-    const joinRoom = React.useCallback(() => dispatch(doAppStart(roomConfig)), [dispatch]);
-    const leaveRoom = React.useCallback(() => dispatch(doAppStop()), [dispatch]);
-    const lockRoom = React.useCallback((locked: boolean) => dispatch(doLockRoom({ locked })), [dispatch]);
+    const startCloudRecording = React.useCallback(() => client.startCloudRecording(), [client]);
+    const startScreenshare = React.useCallback(() => client.startScreenshare(), [client]);
+    const stopCloudRecording = React.useCallback(() => client.stopCloudRecording(), [client]);
+    const stopScreenshare = React.useCallback(() => client.stopScreenshare(), [client]);
+    const leaveRoom = React.useCallback(() => client.leaveRoom(), [client]);
+    const lockRoom = React.useCallback((locked: boolean) => client.lockRoom(locked), [client]);
     const muteParticipants = React.useCallback(
-        (participantIds: string[]) => dispatch(doRequestAudioEnable({ clientIds: participantIds, enable: false })),
-        [dispatch],
+        (participantIds: string[]) => client.muteParticipants(participantIds),
+        [client],
     );
     const turnOffParticipantCameras = React.useCallback(
-        (participantIds: string[]) => dispatch(doRequestVideoEnable({ clientIds: participantIds, enable: false })),
-        [dispatch],
+        (participantIds: string[]) => client.turnOffParticipantCameras(participantIds),
+        [client],
     );
     const spotlightParticipant = React.useCallback(
-        (participantId: string) => dispatch(doSpotlightParticipant({ id: participantId })),
-        [dispatch],
+        (participantId: string) => client.spotlightParticipant(participantId),
+        [client],
     );
     const removeSpotlight = React.useCallback(
-        (participantId: string) => dispatch(doRemoveSpotlight({ id: participantId })),
-        [dispatch],
+        (participantId: string) => client.removeSpotlight(participantId),
+        [client],
     );
     const kickParticipant = React.useCallback(
-        (participantId: string) => dispatch(doKickParticipant({ clientId: participantId })),
-        [dispatch],
+        (participantId: string) => client.kickParticipant(participantId),
+        [client],
     );
-    const endMeeting = React.useCallback((stayBehind?: boolean) => dispatch(doEndMeeting({ stayBehind })), [dispatch]);
-
-    const joinBreakoutGroup = React.useCallback((group: string) => dispatch(doBreakoutJoin({ group })), [dispatch]);
-
-    const joinBreakoutMainRoom = React.useCallback(() => dispatch(doBreakoutJoin({ group: "" })), [dispatch]);
+    const endMeeting = React.useCallback((stayBehind?: boolean) => client.endMeeting(stayBehind), [client]);
+    const joinBreakoutGroup = React.useCallback((group: string) => client.joinBreakoutGroup(group), [client]);
+    const joinBreakoutMainRoom = React.useCallback(() => client.joinBreakoutMainRoom(), [client]);
 
     const { events, ...state } = roomConnectionState;
 

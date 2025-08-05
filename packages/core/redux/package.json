@@ -1,0 +1,4 @@
+{
+    "main": "../dist/redux/index.cjs",
+    "types": "../dist/redux/index.d.ts"
+}

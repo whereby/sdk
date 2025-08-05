@@ -1,33 +1,21 @@
 import * as React from "react";
-import {
-    Provider as ReduxProvider,
-    createStoreHook,
-    createDispatchHook,
-    createSelectorHook,
-    ReactReduxContextValue,
-} from "react-redux";
-import { createServices, createStore } from "@whereby.com/core";
-import { Action } from "@reduxjs/toolkit";
+import { WherebyClient } from "@whereby.com/core";
 
-const WherebyContext = React.createContext<ReactReduxContextValue<unknown, Action> | null>(null);
-
-export const useStore = createStoreHook(WherebyContext);
-export const useDispatch = createDispatchHook(WherebyContext);
-export const useSelector = createSelectorHook(WherebyContext);
-
+export const WherebyContext = React.createContext<WherebyClient | null>(null);
 export interface ProviderProps {
     children: React.ReactNode;
 }
 
 function Provider({ children }: ProviderProps) {
-    const services = createServices();
-    const store = createStore({ injectServices: services });
+    const client = React.useMemo(() => new WherebyClient(), []);
 
-    return (
-        <ReduxProvider context={WherebyContext} store={store}>
-            {children}
-        </ReduxProvider>
-    );
+    React.useEffect(() => {
+        return () => {
+            client.destroy();
+        };
+    }, [client]);
+
+    return <WherebyContext.Provider value={client}>{children}</WherebyContext.Provider>;
 }
 
 export { Provider };

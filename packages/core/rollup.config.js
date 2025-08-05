@@ -48,6 +48,18 @@ module.exports = [
         plugins,
         external,
     },
+    {
+        input: "src/redux/index.ts",
+        output: [
+            {
+                format: "esm",
+                file: "dist/redux/index.mjs",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
     // Legacy Esm build of lib, to be used with older bundlers
     {
         input: "src/index.ts",
@@ -55,6 +67,18 @@ module.exports = [
             {
                 format: "es",
                 file: "dist/legacy-esm.js",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
+    {
+        input: "src/redux/index.ts",
+        output: [
+            {
+                format: "es",
+                file: "dist/redux/index.js",
                 exports: "named",
             },
         ],
@@ -75,8 +99,26 @@ module.exports = [
         external,
     },
     {
+        input: "src/redux/index.ts",
+        output: [
+            {
+                format: "cjs",
+                file: "dist/redux/index.cjs",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
+    {
         input: "src/index.ts",
         output: [{ file: "dist/index.d.mts", format: "esm" }],
+        external,
+        plugins: [dts(tsOptions)],
+    },
+    {
+        input: "src/redux/index.ts",
+        output: [{ file: "dist/redux/index.d.mts", format: "esm" }],
         external,
         plugins: [dts(tsOptions)],
     },
@@ -87,8 +129,20 @@ module.exports = [
         plugins: [dts(tsOptions)],
     },
     {
+        input: "src/redux/index.ts",
+        output: [{ file: "dist/redux/index.d.ts", format: "es" }],
+        external,
+        plugins: [dts(tsOptions)],
+    },
+    {
         input: "src/index.ts",
         output: [{ file: "dist/index.d.cts", format: "cjs" }],
+        external,
+        plugins: [dts(tsOptions)],
+    },
+    {
+        input: "src/redux/index.ts",
+        output: [{ file: "dist/redux/index.d.cts", format: "cjs" }],
         external,
         plugins: [dts(tsOptions)],
     },

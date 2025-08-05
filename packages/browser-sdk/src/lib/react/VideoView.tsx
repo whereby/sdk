@@ -1,7 +1,7 @@
 import * as React from "react";
-import { debounce, doRtcReportStreamResolution } from "@whereby.com/core";
-import { useAppDispatch } from "./Provider/hooks";
+import { debounce } from "@whereby.com/core";
 import { useAudioElement } from "./hooks/useAudioElement";
+import { WherebyContext } from "./Provider";
 
 interface VideoViewSelfProps {
     stream: MediaStream;
@@ -21,7 +21,7 @@ export type VideoViewProps = VideoViewSelfProps &
 
 export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
     ({ muted, mirror = false, stream, onVideoResize, ...rest }, ref) => {
-        const dispatch = useAppDispatch();
+        const client = React.useContext(WherebyContext)?.getRoomConnection();
 
         const videoEl = React.useRef<WherebyVideoElement>(null);
         const audioEl = useAudioElement({ muted, stream });
@@ -56,13 +56,8 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
                             const width = videoEl.current.clientWidth;
                             const height = videoEl.current.clientHeight;
 
-                            dispatch(
-                                doRtcReportStreamResolution({
-                                    streamId: stream.id,
-                                    width,
-                                    height,
-                                }),
-                            );
+                            client?.reportStreamResolution(stream.id, width, height);
+
                             if (onVideoResize) {
                                 onVideoResize({
                                     width,

@@ -13,8 +13,7 @@ import {
     selectMicrophoneDeviceError,
     selectMicrophoneDevices,
     selectSpeakerDevices,
-} from "@whereby.com/core";
-
+} from "../../redux";
 import { LocalMediaState } from "./types";
 
 export const selectLocalMediaState = createSelector(

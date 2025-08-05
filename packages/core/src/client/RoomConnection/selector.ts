@@ -1,12 +1,12 @@
 import { createSelector } from "@reduxjs/toolkit";
 import {
+    selectLocalParticipantRaw,
     selectChatMessages,
     selectCloudRecordingRaw,
     selectRemoteParticipants,
     selectScreenshares,
     selectRoomConnectionStatus,
     selectWaitingParticipants,
-    selectLocalParticipantRaw,
     selectLocalMediaStream,
     selectStreamingRaw,
     selectNotificationsEmitter,
@@ -15,7 +15,7 @@ import {
     selectBreakoutActive,
     selectBreakoutGroupedParticipants,
     selectAllClientViewsInCurrentGroup,
-} from "@whereby.com/core";
+} from "../../redux";
 
 import { RoomConnectionState } from "./types";
 
