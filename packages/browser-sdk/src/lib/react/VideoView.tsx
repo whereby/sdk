@@ -21,7 +21,7 @@ export type VideoViewProps = VideoViewSelfProps &
 
 export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
     ({ muted, mirror = false, stream, onVideoResize, ...rest }, ref) => {
-        const client = React.useContext(WherebyContext)?.getRoomConnectionClient();
+        const client = React.useContext(WherebyContext)?.getRoomConnection();
 
         const videoEl = React.useRef<WherebyVideoElement>(null);
         const audioEl = useAudioElement({ muted, stream });

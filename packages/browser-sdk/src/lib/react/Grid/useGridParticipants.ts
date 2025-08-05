@@ -95,7 +95,7 @@ function useGridParticipants({
         spotlightedParticipants: [],
         numParticipants: 0,
     });
-    const client = React.useContext(WherebyContext)?.getGridClient();
+    const client = React.useContext(WherebyContext)?.getGrid();
 
     if (!client) {
         throw new Error("useGridParticipants must be used within a WherebyProvider");

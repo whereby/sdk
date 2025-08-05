@@ -108,7 +108,7 @@ const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, Partici
             setFloatingParticipant,
             floatingParticipant,
         } = useParticipantMenu();
-        const client = React.useContext(WherebyContext)?.getGridClient();
+        const client = React.useContext(WherebyContext)?.getGrid();
         const { spotlightedParticipants } = useGridParticipants();
         const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
         const isMaximized = maximizedParticipant?.id === participant.id;

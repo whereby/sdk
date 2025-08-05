@@ -23,7 +23,7 @@ export function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions = defaultRoomConnectionOptions,
 ): RoomConnectionRef {
-    const client = React.useContext(WherebyContext)?.getRoomConnectionClient();
+    const client = React.useContext(WherebyContext)?.getRoomConnection();
     const [roomConnectionState, setRoomConnectionState] = React.useState<RoomConnectionState>(() => initialState);
 
     if (!client) {

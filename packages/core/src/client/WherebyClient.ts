@@ -20,15 +20,15 @@ export class WherebyClient {
         this.gridClient = new GridClient(this.store);
     }
 
-    public getLocalMediaClient(): LocalMediaClient {
+    public getLocalMedia(): LocalMediaClient {
         return this.localMediaClient;
     }
 
-    public getRoomConnectionClient(): RoomConnectionClient {
+    public getRoomConnection(): RoomConnectionClient {
         return this.roomConnectionClient;
     }
 
-    public getGridClient(): GridClient {
+    public getGrid(): GridClient {
         return this.gridClient;
     }
 

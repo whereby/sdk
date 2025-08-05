@@ -7,7 +7,7 @@ import { initialState } from "./initialState";
 export function useLocalMedia(
     optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true },
 ): UseLocalMediaResult {
-    const client = React.useContext(WherebyContext)?.getLocalMediaClient();
+    const client = React.useContext(WherebyContext)?.getLocalMedia();
     const [localMediaState, setLocalMediaState] = React.useState<LocalMediaState>(() => initialState);
 
     if (!client) {
