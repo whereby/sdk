@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 3.13.0
+
+### Minor Changes
+
+- bb1e720: Bump core
+
+### Patch Changes
+
+- Updated dependencies [bb1e720]
+    - @whereby.com/core@1.0.0
+
 ## 3.12.24
 
 ### Patch Changes

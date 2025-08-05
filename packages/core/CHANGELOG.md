@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.0.0
+
+### Major Changes
+
+- bb1e720: Public Core API
+
 ## 0.36.1
 
 ### Patch Changes
