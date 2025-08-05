@@ -1,7 +1,6 @@
-import { getRoomMode } from "../../RtcManagerDispatcher";
-import { ssrcStats, TrackStats, ViewStats } from "../StatsMonitor";
-import { MediaStreamTrackWithDenoiserContext, StatsClient } from "../types";
 import { PacketLossAnalyser } from "./packetLossAnalyser";
+import { MediaStreamTrackWithDenoiserContext, SsrcStats, StatsClient, TrackStats, ViewStats } from "../types";
+import { getRoomMode } from "../../RtcManagerDispatcher";
 
 interface IssueDetector {
     id: string;
@@ -18,8 +17,8 @@ export interface IssueCheckData {
     trackStats?: TrackStats;
     stats?: ViewStats;
     hasLiveTrack: boolean;
-    ssrc0?: ssrcStats;
-    ssrcs: ssrcStats[];
+    ssrc0?: SsrcStats;
+    ssrcs: SsrcStats[];
     issues: any;
     metrics: any;
 }

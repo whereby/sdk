@@ -1,5 +1,4 @@
-import { StatsMonitorOptions, StatsMonitorState, StatsSubscription, ViewStats } from ".";
-import rtcStats from "../../rtcStatsService";
+import { StatsMonitorOptions, StatsMonitorState } from ".";
 import {
     captureSsrcInfo,
     captureCommonSsrcMetrics,
@@ -9,6 +8,8 @@ import {
 } from "./metrics";
 import { getPeerConnectionsWithStatsReports } from "./peerConnection";
 import { getPeerConnectionIndex, removePeerConnection } from "./peerConnectionTracker";
+import { ViewStats } from "../types";
+import rtcStats from "../../rtcStatsService";
 
 const getOrCreateSsrcMetricsContainer = (
     statsByView: Record<string, ViewStats>,

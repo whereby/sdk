@@ -11,12 +11,6 @@ export interface PressureObserver {
     unobserve: (source: string) => undefined;
 }
 
-export type PressureRecord = {
-    source: string;
-    state: string;
-    time: number;
-};
-
 const CPU_OBSERVER_OPTIONS: CpuObserverOptions = {
     sampleRate: 1,
     // these tokens expire May 29th 2024
