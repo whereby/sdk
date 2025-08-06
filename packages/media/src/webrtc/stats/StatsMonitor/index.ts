@@ -2,7 +2,7 @@ import { collectStats } from "./collectStats";
 import { PressureObserver, startCpuObserver } from "./cpuObserver";
 import { numFailedTrackSsrcLookups, numMissingTrackSsrcLookups } from "./peerConnection";
 
-import { PressureRecord, ViewStats } from "../types";
+import { PressureRecord, StatsClient, ViewStats } from "../types";
 import Logger from "../../../utils/Logger";
 
 interface StatsMonitor {
@@ -11,12 +11,12 @@ interface StatsMonitor {
 }
 
 export interface StatsSubscription {
-    onUpdatedStats: (statsByView: Record<string, ViewStats>, clients: any) => void;
+    onUpdatedStats: (statsByView: Record<string, ViewStats>, clients: StatsClient[]) => void;
 }
 
 export interface StatsMonitorState {
     currentMonitor: StatsMonitor | null;
-    getClients: () => any[];
+    getClients: () => StatsClient[];
     lastPressureObserverRecord?: PressureRecord;
     lastUpdateTime: number;
     nextTimeout?: number;
@@ -57,15 +57,15 @@ export const getNumFailedTrackSsrcLookups = () => numFailedTrackSsrcLookups;
 
 export const getUpdatedStats = () => STATE.currentMonitor?.getUpdatedStats();
 
-export const setClientProvider = (provider: any) => (STATE.getClients = provider);
+export const setClientProvider = (provider: () => StatsClient[]) => (STATE.getClients = provider);
 
 function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
     const collectStatsBound = collectStats.bind(null, state, { interval, logger });
 
-    let cpuObserver: any;
+    let cpuObserver: ReturnType<typeof startCpuObserver>;
 
     try {
-        cpuObserver = startCpuObserver((records: any) => (state.lastPressureObserverRecord = records.pop()));
+        cpuObserver = startCpuObserver((records) => (state.lastPressureObserverRecord = records.pop()));
     } catch (ex) {
         logger.warn("Failed to observe CPU pressure", ex);
     }
@@ -79,7 +79,7 @@ function startStatsMonitor(state: StatsMonitorState, { interval, logger }: Stats
         },
         stop: () => {
             clearTimeout(state.nextTimeout);
-            if (cpuObserver) cpuObserver.stop();
+            cpuObserver?.stop();
         },
     };
 }

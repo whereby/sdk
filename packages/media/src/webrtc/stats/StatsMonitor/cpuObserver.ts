@@ -1,4 +1,5 @@
 import { OriginTrial, registerOriginTrials } from "../../../utils/originTrial";
+import { PressureRecord } from "../types";
 
 interface CpuObserverOptions {
     /** Sample rate, in seconds */
@@ -27,7 +28,7 @@ const CPU_OBSERVER_OPTIONS: CpuObserverOptions = {
 };
 
 export function startCpuObserver(
-    cb: (records: PressureObserver[]) => void,
+    cb: (records: PressureRecord[]) => void,
     { sampleRate, originTrials }: CpuObserverOptions = CPU_OBSERVER_OPTIONS,
     window: Window = globalThis.window,
 ) {

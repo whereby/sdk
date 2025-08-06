@@ -1,6 +1,8 @@
 import { subscribeIssues } from "..";
+import { createMockedMediaStreamTrack } from "../../../../../tests/webrtc/webRtcHelpers";
 import { setClientProvider } from "../../StatsMonitor";
 import { setPeerConnectionsForTests } from "../../StatsMonitor/peerConnectionTracker";
+import { StatsClient } from "../../types";
 
 function createMockPeerConnection(clients: ReturnType<typeof createMockClient>[]) {
     return {
@@ -8,51 +10,58 @@ function createMockPeerConnection(clients: ReturnType<typeof createMockClient>[]
             return new Map(
                 clients
                     .flatMap((client) => [
-                        client.audio.enabled && { ...client.audio.stats, timestamp: Date.now() },
-                        client.video.enabled && { ...client.video.stats, timestamp: Date.now() },
+                        client.audio.enabled && { ...client.audioStats, timestamp: Date.now() },
+                        client.video.enabled && { ...client.videoStats, timestamp: Date.now() },
                     ])
                     .filter(Boolean)
                     .map((stats: any) => [stats.id, { ...stats }])
             );
         },
-    };
+    } as unknown as RTCPeerConnection;
 }
 
-function createMockClient(id: string, isLocal: boolean) {
+interface ExtendedStatsClient extends StatsClient {
+    audioStats: any;
+    videoStats: any;
+}
+
+function createMockClient(id: string, isLocal: boolean): ExtendedStatsClient {
     return {
+        clientId: id,
         id,
         isLocalClient: !!isLocal,
         audio: {
             enabled: true,
-            track: { id: `${id}-audiotrack` },
-            stats: {
-                id: `${id}-audiostats`,
-                kind: "audio",
-                type: isLocal ? "outbound-rtp" : "inbound-rtp",
-                trackIdentifier: `${id}-audiotrack`,
-                ssrc: `${id}-audiossrc`,
-                bytesSent: 0,
-                headerBytesSent: 0,
-                bytesReceived: 0,
-                headerBytesReceived: 0,
-            },
+            track: createMockedMediaStreamTrack({ id: `${id}-audiotrack`, kind: "audio" }),
+        },
+        audioStats: {
+            id: `${id}-audiostats`,
+            kind: "audio",
+            type: isLocal ? "outbound-rtp" : "inbound-rtp",
+            trackIdentifier: `${id}-audiotrack`,
+            ssrc: `${id}-audiossrc`,
+            bytesSent: 0,
+            headerBytesSent: 0,
+            bytesReceived: 0,
+            headerBytesReceived: 0,
         },
         video: {
             enabled: true,
-            track: { id: `${id}-videotrack` },
-            stats: {
-                id: `${id}-videostats`,
-                kind: "video",
-                type: isLocal ? "outbound-rtp" : "inbound-rtp",
-                trackIdentifier: `${id}-videotrack`,
-                ssrc: `${id}-videossrc`,
-                bytesSent: 0,
-                headerBytesSent: 0,
-                bytesReceived: 0,
-                headerBytesReceived: 0,
-            },
+            track: createMockedMediaStreamTrack({ id: `${id}-videotrack`, kind: "video" }),
+        },
+        videoStats: {
+            id: `${id}-videostats`,
+            kind: "video",
+            type: isLocal ? "outbound-rtp" : "inbound-rtp",
+            trackIdentifier: `${id}-videotrack`,
+            ssrc: `${id}-videossrc`,
+            bytesSent: 0,
+            headerBytesSent: 0,
+            bytesReceived: 0,
+            headerBytesReceived: 0,
         },
         isPresentation: false,
+        isAudioOnlyModeEnabled: false,
     };
 }
 
@@ -70,7 +79,7 @@ describe("IssueMonitor", () => {
         jest.useRealTimers();
     });
 
-    let onUpdatedIssues: any;
+    let onUpdatedIssues: jest.Mock;
 
     const statsIntervalTick = async () => {
         jest.advanceTimersByTime(2000);
@@ -124,9 +133,9 @@ describe("IssueMonitor", () => {
     });
 
     it("tracks aggregated metrics", async () => {
-        localCam.video.stats.bytesSent = (200000 / 8) * 2;
-        remoteCam1.video.stats.bytesReceived = (300000 / 8) * 2;
-        remoteCam2.video.stats.bytesReceived = (400000 / 8) * 2;
+        localCam.videoStats.bytesSent = (200000 / 8) * 2;
+        remoteCam1.videoStats.bytesReceived = (300000 / 8) * 2;
+        remoteCam2.videoStats.bytesReceived = (400000 / 8) * 2;
 
         await statsIntervalTick();
 
@@ -137,9 +146,9 @@ describe("IssueMonitor", () => {
     });
 
     it("tracks aggregated issues", async () => {
-        localCam.video.stats.bytesSent = 0;
-        remoteCam1.video.stats.bytesReceived = (300000 / 8) * 2;
-        remoteCam2.video.stats.bytesReceived = 0;
+        localCam.videoStats.bytesSent = 0;
+        remoteCam1.videoStats.bytesReceived = (300000 / 8) * 2;
+        remoteCam2.videoStats.bytesReceived = 0;
 
         await statsIntervalTick();
 
@@ -150,9 +159,9 @@ describe("IssueMonitor", () => {
     });
 
     it("tracks issues and metrics over time", async () => {
-        localCam.video.stats.bytesSent = (200000 / 8) * 2;
-        remoteCam1.video.stats.bytesReceived = (300000 / 8) * 2;
-        remoteCam2.video.stats.bytesReceived = 0;
+        localCam.videoStats.bytesSent = (200000 / 8) * 2;
+        remoteCam1.videoStats.bytesReceived = (300000 / 8) * 2;
+        remoteCam2.videoStats.bytesReceived = 0;
 
         await statsIntervalTick();
 
@@ -168,9 +177,9 @@ describe("IssueMonitor", () => {
 
         expect(onUpdatedIssues).toHaveBeenCalledTimes(1);
 
-        localCam.video.stats.bytesSent += 0;
-        remoteCam1.video.stats.bytesReceived += (300000 / 8) * 2;
-        remoteCam2.video.stats.bytesReceived += (400000 / 8) * 2;
+        localCam.videoStats.bytesSent += 0;
+        remoteCam1.videoStats.bytesReceived += (300000 / 8) * 2;
+        remoteCam2.videoStats.bytesReceived += (400000 / 8) * 2;
 
         await statsIntervalTick();
 

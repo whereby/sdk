@@ -1,14 +1,14 @@
-let peerConnections: any = [];
+let peerConnections: RTCPeerConnection[] = [];
 let peerConnectionCounter = 0;
-const peerConnectionData = new WeakMap();
+const peerConnectionData = new WeakMap<RTCPeerConnection, { index: number }>();
 
-export const removePeerConnection = (pc: any) => {
-    peerConnections = peerConnections.filter((old: any) => old !== pc);
+export const removePeerConnection = (pc: RTCPeerConnection) => {
+    peerConnections = peerConnections.filter((old) => old !== pc);
 };
 
 if (window.RTCPeerConnection) {
     const OriginalRTCPeerConnection = window.RTCPeerConnection;
-    function PatchedRTCPeerConnection(rtcConfig: any) {
+    function PatchedRTCPeerConnection(rtcConfig?: RTCConfiguration) {
         const pc = new OriginalRTCPeerConnection(rtcConfig);
         peerConnections.push(pc);
         peerConnectionData.set(pc, { index: peerConnectionCounter++ });
@@ -27,6 +27,6 @@ if (window.RTCPeerConnection) {
 
 export const getCurrentPeerConnections = () => peerConnections;
 
-export const getPeerConnectionIndex = (pc: any) => peerConnectionData.get(pc)?.index;
+export const getPeerConnectionIndex = (pc: RTCPeerConnection) => peerConnectionData.get(pc)?.index;
 
-export const setPeerConnectionsForTests = (pcs: any) => (peerConnections = pcs);
+export const setPeerConnectionsForTests = (pcs: RTCPeerConnection[]) => (peerConnections = pcs);
