@@ -78,7 +78,7 @@ export const getMediaSettings = (
     if (kind === "audio") {
         return AUDIO_SETTINGS;
     }
-    const isChrome = adapter.browserDetails.browser === "chrome";
+    const isChrome = adapter.browserDetails?.browser === "chrome";
 
     const isVp9Available = isChrome && vp9On;
     if (isScreenShare) {
@@ -138,7 +138,7 @@ export const modifyMediaCapabilities = (
     features: { vp9On?: boolean; h264On?: boolean },
 ) => {
     const { vp9On, h264On } = features;
-    const isChrome = adapter.browserDetails.browser === "chrome";
+    const isChrome = adapter.browserDetails?.browser === "chrome";
     if (!routerRtpCapabilities?.codecs) {
         return routerRtpCapabilities;
     }
