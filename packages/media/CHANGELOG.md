@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 1.33.0
+
+### Minor Changes
+
+- 6636f3f: Commits sfuReconnectV2On experiment
+
 ## 1.32.1
 
 ### Patch Changes
