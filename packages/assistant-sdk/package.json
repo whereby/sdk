@@ -1,0 +1,64 @@
+{
+    "name": "@whereby.com/assistant-sdk",
+    "description": "Assistant SDK for whereby.com",
+    "author": "Whereby AS",
+    "version": "1.0.0",
+    "license": "MIT",
+    "scripts": {
+        "clean": "rimraf dist node_modules .turbo",
+        "build": "rimraf dist && rollup -c rollup.config.js",
+        "test": "pnpm test:lint && pnpm test:unit",
+        "test:lint": "eslint src/",
+        "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
+        "test:unit:watch": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --watch",
+        "test:attw": "attw --pack . -f table"
+    },
+    "files": [
+        "dist",
+        "polyfills/package.json"
+    ],
+    "publishConfig": {
+        "access": "restricted"
+    },
+    "main": "./dist/index.cjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.mts",
+                "default": "./dist/index.mjs"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        },
+        "./polyfills": {
+            "import": {
+                "types": "./dist/polyfills.d.ts",
+                "default": "./dist/polyfills.cjs"
+            },
+            "require": {
+                "types": "./dist/polyfills.d.ts",
+                "default": "./dist/polyfills.cjs"
+            }
+        }
+    },
+    "devDependencies": {
+        "@whereby.com/eslint-config": "workspace:*",
+        "@whereby.com/jest-config": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "eslint": "catalog:",
+        "prettier": "catalog:",
+        "typescript": "catalog:"
+    },
+    "dependencies": {
+        "@whereby.com/core": "workspace:*",
+        "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source",
+        "uuid": "^11.0.3",
+        "ws": "^8.18.0"
+    },
+    "prettier": "@whereby.com/prettier-config"
+}
