@@ -203,7 +203,7 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
     /* Actions */
 
     public async startMedia(options: LocalMediaOptions | MediaStream = { audio: true, video: true }) {
-        return this.store.dispatch(doStartLocalMedia(options));
+        return await this.store.dispatch(doStartLocalMedia(options));
     }
 
     public toggleCamera(enabled?: boolean) {

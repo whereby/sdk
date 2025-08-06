@@ -309,6 +309,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             externalId: this.options.externalId || null,
             sdkVersion: `core:${coreVersion}`,
             roomUrl,
+            isNodeSdk: this.options.isNodeSdk || false,
         };
 
         this.store.dispatch(doAppStart(roomConfig));
