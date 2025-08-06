@@ -1,4 +1,7 @@
 
 {
-    "extends": "@whereby.com/tsconfig/base.json"
+    "extends": "@whereby.com/tsconfig/base.json",
+    // "compilerOptions": {
+    //     "outDir": "dist",
+    // }
 }

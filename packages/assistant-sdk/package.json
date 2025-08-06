@@ -14,7 +14,7 @@
         "test:attw": "attw --pack . -f table"
     },
     "publishConfig": {
-        "access": "private"
+        "access": "restricted"
     },
     "files": [],
     "main": "./dist/index.cjs",
@@ -39,10 +39,15 @@
         "@whereby.com/tsconfig": "workspace:*",
         "eslint": "catalog:",
         "prettier": "catalog:",
-        "typescript": "catalog:"
+        "typescript": "catalog:",
+        "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source"
     },
     "dependencies": {
-        "@whereby.com/core": "workspace:*"
+        "@whereby.com/core": "workspace:*",
+        "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source"
     },
-    "prettier": "@whereby.com/prettier-config"
+    "prettier": "@whereby.com/prettier-config",
+    "sideEffects": [
+        "./src/utils/polyfills.ts"
+    ]
 }

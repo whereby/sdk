@@ -1,3 +1,4 @@
+import "./utils/polyfills.ts";
 import { WherebyClient, RoomConnectionClient, LocalMediaClient } from "@whereby.com/core";
 
 export class Assistant {
