@@ -23,7 +23,7 @@ export function createServerSocketStub() {
     });
 
     socket.once = jest.fn((eventName, handler) => {
-        const cleanUp = socket.on(eventName, function () {
+        const cleanUp = socket.on(eventName, function() {
             cleanUp();
             handler.apply(null, arguments);
         });
@@ -133,7 +133,7 @@ export function createMockedMediaStreamTrack({ id = randomString("track"), kind 
             result.readyState = "ended";
         }),
     };
-    return Object.assign(new EventTarget(), result);
+    return Object.assign(new EventTarget(), result) as unknown as MediaStreamTrack;
 }
 
 export function createMockedMediaStream(existingTracks?: any) {

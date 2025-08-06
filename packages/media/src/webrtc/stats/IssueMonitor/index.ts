@@ -2,7 +2,11 @@ import { IssueCheckData, issueDetectors } from "./issueDetectors";
 import { subscribeStats } from "../StatsMonitor";
 import { StatsClient, ViewStats } from "../types";
 
-let subscriptions: any[] = [];
+type IssueSubscription = {
+    onUpdatedIssues: (issuesAndMetricsByView: IssuesAndMetricsByView, statsByView: Record<string, ViewStats>, clients: StatsClient[]) => void;
+}
+
+let subscriptions: IssueSubscription[] = [];
 let stopStats: (() => void) | null = null;
 
 interface Metric {
@@ -96,7 +100,7 @@ const metrics: Metric[] = [
             hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
             Object.values(trackStats?.ssrcs || {}).reduce(
-                (sum: number, ssrc: any) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
+                (sum: number, ssrc) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
                 0,
             ),
     },
@@ -106,7 +110,7 @@ const metrics: Metric[] = [
             hasLiveTrack && kind === "video" && !!trackStats && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
             Object.values(trackStats?.ssrcs || {}).reduce(
-                (max: number, ssrc: any) => Math.max(max, ssrc.fps > 0 ? ssrc.height : 0),
+                (max: number, ssrc) => Math.max(max, ssrc.fps || 0 > 0 ? ssrc.height || 0 : 0),
                 0,
             ),
     },
@@ -156,7 +160,7 @@ const metrics: Metric[] = [
         global: true,
         enabled: ({ stats }) => stats?.pressure?.source === "cpu",
         value: ({ stats }) =>
-            (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }) as any)[stats?.pressure?.state || ""] || 0,
+            (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }))[stats?.pressure?.state || ""] || 0,
     },
     {
         id: "turn-usage",
@@ -266,13 +270,13 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
                 issuesAndMetricsByView[client.id] = issuesAndMetrics;
             }
 
-            const track = (client as any)[kind]?.track as MediaStreamTrack | undefined;
+            const track = kind === "audio" || kind === "video" ? client[kind].track : undefined;
             const hasLiveTrack = !!track && track.readyState !== "ended";
 
             const trackStats = track && stats && stats.tracks[track.id];
             const ssrcs = trackStats
                 ? Object.values(trackStats.ssrcs).sort(
-                    (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
+                    (a, b) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
                 )
                 : [];
             const ssrc0 = ssrcs[0];
@@ -465,9 +469,7 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
     );
 }
 
-export function subscribeIssues(subscription: {
-    onUpdatedIssues: (issuesAndMetricsByView: IssuesAndMetricsByView, statsByView: any, clients: any) => void;
-}): { stop: () => void } {
+export function subscribeIssues(subscription: IssueSubscription): { stop: () => void } {
     subscriptions.push(subscription);
 
     // start the stats on first subscription
