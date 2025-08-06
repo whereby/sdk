@@ -392,6 +392,37 @@ importers:
         specifier: ^5.0.13
         version: 5.4.19(@types/node@22.15.34)(lightningcss@1.27.0)(terser@5.43.1)
 
+  packages/assistant-sdk:
+    dependencies:
+      '@whereby.com/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@whereby.com/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@whereby.com/jest-config':
+        specifier: workspace:*
+        version: link:../../tooling/jest
+      '@whereby.com/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@whereby.com/rollup-config':
+        specifier: workspace:*
+        version: link:../../tooling/rollup
+      '@whereby.com/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      eslint:
+        specifier: 'catalog:'
+        version: 9.30.0(jiti@1.21.7)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
   packages/browser-sdk:
     dependencies:
       '@radix-ui/react-popover':
