@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "esModuleInterop": true,
+        "allowJs": true,
+        "outDir": "dist",
+        "skipLibCheck": true,
+        "lib": ["ES6"],
+        "strict": true,
+
+        "noUncheckedIndexedAccess": true
+    },
+    "include": ["./src/**/*"],
+}

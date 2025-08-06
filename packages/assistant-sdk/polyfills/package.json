@@ -1,0 +1,4 @@
+{
+    "main": "../dist/polyfills.cjs",
+    "types": "../dist/polyfills.d.ts"
+}
