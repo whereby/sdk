@@ -21,7 +21,7 @@ const getOrCreateSsrcMetricsContainer = (
 ) => {
     let viewStats = statsByView[clientId];
     if (!viewStats) {
-        viewStats = { tracks: {}, startTime: time, updated: time };
+        viewStats = { candidatePairs: {}, tracks: {}, startTime: time, updated: time };
         statsByView[clientId] = viewStats;
     }
     viewStats.updated = time;
@@ -231,7 +231,7 @@ export async function collectStats(
         removeNonUpdatedStats(state.statsByView, state.lastUpdateTime);
 
         // mark candidatepairs as active/inactive
-        Object.entries(defaultViewStats?.candidatePairs || {}).forEach(([cpKey, cp]: any) => {
+        Object.entries(defaultViewStats?.candidatePairs || {}).forEach(([cpKey, cp]) => {
             const active = cp.lastRtcStatsTime === state.lastUpdateTime;
             cp.active = active;
             if (!active) {

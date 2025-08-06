@@ -162,13 +162,13 @@ const metrics: Metric[] = [
         id: "turn-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.usingTurn) ? 1 : 0,
+        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp) => cp.usingTurn) ? 1 : 0,
     },
     {
         id: "turn-tls-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.turnProtocol === "tls") ? 1 : 0,
+        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp) => cp.turnProtocol === "tls") ? 1 : 0,
     },
     {
         id: "concealment",
