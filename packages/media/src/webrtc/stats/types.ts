@@ -37,9 +37,21 @@ export interface ViewStats {
     startTime?: number;
     updated?: number;
     pressure?: PressureRecord | null;
-    candidatePairs?: any;
+    candidatePairs: Record<string, CandidatePairStats>;
     tracks: Record<string, TrackStats>;
 }
+
+export interface CandidatePairStats {
+    active?: boolean;
+    id: string;
+    inactiveFromTime?: number;
+    lastRtcStatsTime?: number;
+    startTime: number;
+    state?: string;
+    turnProtocol?: string;
+    usingTurn?: boolean;
+}
+
 
 export interface SsrcStats {
     startTime: number;
