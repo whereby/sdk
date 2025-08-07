@@ -50,6 +50,18 @@ module.exports = [
         plugins,
         external,
     },
+    {
+        input: "src/utils/polyfills.ts",
+        output: [
+            {
+                format: "cjs",
+                file: "dist/polyfills.cjs",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
 
     // Legacy Esm build of lib, to be used with older bundlers
     {

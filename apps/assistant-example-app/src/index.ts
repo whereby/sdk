@@ -1,4 +1,4 @@
-// import "../node_modules/@whereby.com/assistant-sdk/dist/index.cjs";
+import "@whereby.com/assistant-sdk/polyfills";
 import express, { type Request, type Response } from "express";
 import bodyParser from "body-parser";
 import { Assistant } from "@whereby.com/assistant-sdk";

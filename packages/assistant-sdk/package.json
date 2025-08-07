@@ -16,7 +16,6 @@
     "publishConfig": {
         "access": "restricted"
     },
-    "files": [],
     "main": "./dist/index.cjs",
     "types": "./dist/index.d.ts",
     "exports": {
@@ -29,6 +28,10 @@
                 "types": "./dist/index.d.cts",
                 "default": "./dist/index.cjs"
             }
+        },
+        "./polyfills": {
+            "import": "./dist/polyfills.cjs",
+            "require": "./dist/polyfills.cjs"
         }
     },
     "devDependencies": {
@@ -46,8 +49,5 @@
         "@whereby.com/core": "workspace:*",
         "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source"
     },
-    "prettier": "@whereby.com/prettier-config",
-    "sideEffects": [
-        "./src/utils/polyfills.ts"
-    ]
+    "prettier": "@whereby.com/prettier-config"
 }
