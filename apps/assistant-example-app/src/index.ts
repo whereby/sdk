@@ -2,6 +2,7 @@ import "@whereby.com/assistant-sdk/polyfills";
 import express, { type Request, type Response } from "express";
 import bodyParser from "body-parser";
 import { Assistant } from "@whereby.com/assistant-sdk";
+import { ChatGPTAudioSession } from "./chatgpt_audio.js";
 
 const createRouter = () => {
     const router = express.Router();
@@ -16,9 +17,45 @@ const createRouter = () => {
     router.post("/", jsonParser, (req: Request, res: Response) => {
         const assistant = new Assistant();
         assistant.joinRoom(
-            "https://embedded-ip-10-173-97-238.hereby.dev:4443/browser-sdk-e2e-test-3a2fcb10-772c-495e-baeb-37242201aecb?roomKey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZWV0aW5nSWQiOiI1MDEiLCJyb29tUmVmZXJlbmNlIjp7InJvb21OYW1lIjoiL2Jyb3dzZXItc2RrLWUyZS10ZXN0LTNhMmZjYjEwLTc3MmMtNDk1ZS1iYWViLTM3MjQyMjAxYWVjYiIsIm9yZ2FuaXphdGlvbklkIjoiMTUifSwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy1pcC0xMjctMC0wLTEuaGVyZWJ5LmRldjo0NDQzIiwiaWF0IjoxNzU0NDc5OTI4LCJyb29tS2V5VHlwZSI6Im1lZXRpbmdIb3N0In0.w8V3XrFc3X1YrdglaSdV65NmVx4jggC0I5KiN8hczTY",
+            "https://embedded-ip-192-168-1-168.hereby.dev:4443/workpls6a9b2830-8c81-4606-9a41-7b32399dc6c1?roomKey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZWV0aW5nSWQiOiI1NTYiLCJyb29tUmVmZXJlbmNlIjp7InJvb21OYW1lIjoiL3dvcmtwbHM2YTliMjgzMC04YzgxLTQ2MDYtOWE0MS03YjMyMzk5ZGM2YzEiLCJvcmdhbml6YXRpb25JZCI6IjE1In0sImlzcyI6Imh0dHBzOi8vYWNjb3VudHMtaXAtMTI3LTAtMC0xLmhlcmVieS5kZXY6NDQ0MyIsImlhdCI6MTc1NDU4MDIyNSwicm9vbUtleVR5cGUiOiJtZWV0aW5nSG9zdCJ9.vZzVuvcMskXwO336De-U02cZy93_Tz1iWhIecEHSie8",
+            true,
         );
 
+        const localMediaStream = assistant.getLocalMediaStream();
+        const audioSource = localMediaStream?.getAudioTracks()[0];
+        const chatGptSession = new ChatGPTAudioSession(audioSource);
+        chatGptSession
+            .startSession()
+            .then(({ dataChannel }) => {
+                dataChannel.addEventListener("open", () => {
+                    // Give some system context on start
+                    dataChannel.send(
+                        JSON.stringify({
+                            type: "conversation.item.create",
+                            previous_item_id: null,
+                            item: {
+                                id: null,
+                                type: "message",
+                                role: "system",
+                                content: [
+                                    {
+                                        type: "input_text",
+                                        text: `You are ChatBot. The user is called Thomas. Respond to what the user said in a creative and helpful way. Keep your responses short and aim to ask a follow-up question. Let the user lead the conversation when possible.`,
+                                    },
+                                ],
+                            },
+                        }),
+                    );
+
+                    // dataChannel.addEventListener("message", (event) => {
+                    //     console.log("oai-events event received", event);
+                    // });
+                });
+            })
+            .catch((error) => {
+                console.error("ChatGPT setup error:", error);
+                chatGptSession.stopSession();
+            });
         res.status(200);
         res.end();
     });

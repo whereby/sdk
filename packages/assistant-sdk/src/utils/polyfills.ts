@@ -84,6 +84,7 @@ global.RTCRtpSender = wrtc.RTCRtpSender;
 global.RTCRtpTransceiver = wrtc.RTCRtpTransceiver;
 global.RTCSctpTransport = wrtc.RTCSctpTransport;
 global.RTCSessionDescription = wrtc.RTCSessionDescription;
+
 global.window = {
     ...global,
     location: { pathname: "" },

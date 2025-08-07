@@ -46,7 +46,9 @@
     },
     "dependencies": {
         "@whereby.com/core": "workspace:*",
-        "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source"
+        "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source",
+        "uuid": "^11.0.3",
+        "ws": "^8.18.0"
     },
     "prettier": "@whereby.com/prettier-config"
 }
