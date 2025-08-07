@@ -42,8 +42,7 @@
         "@whereby.com/tsconfig": "workspace:*",
         "eslint": "catalog:",
         "prettier": "catalog:",
-        "typescript": "catalog:",
-        "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source"
+        "typescript": "catalog:"
     },
     "dependencies": {
         "@whereby.com/core": "workspace:*",
