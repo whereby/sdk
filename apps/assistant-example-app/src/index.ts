@@ -17,45 +17,45 @@ const createRouter = () => {
     router.post("/", jsonParser, (req: Request, res: Response) => {
         const assistant = new Assistant();
         assistant.joinRoom(
-            "https://embedded-ip-192-168-1-168.hereby.dev:4443/workpls6a9b2830-8c81-4606-9a41-7b32399dc6c1?roomKey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZWV0aW5nSWQiOiI1NTYiLCJyb29tUmVmZXJlbmNlIjp7InJvb21OYW1lIjoiL3dvcmtwbHM2YTliMjgzMC04YzgxLTQ2MDYtOWE0MS03YjMyMzk5ZGM2YzEiLCJvcmdhbml6YXRpb25JZCI6IjE1In0sImlzcyI6Imh0dHBzOi8vYWNjb3VudHMtaXAtMTI3LTAtMC0xLmhlcmVieS5kZXY6NDQ0MyIsImlhdCI6MTc1NDU4MDIyNSwicm9vbUtleVR5cGUiOiJtZWV0aW5nSG9zdCJ9.vZzVuvcMskXwO336De-U02cZy93_Tz1iWhIecEHSie8",
+            "https://embedded-ip-192-168-1-167.hereby.dev:4443/5541af68-a8d4-4f19-a277-a9af4bb26082",
             true,
         );
 
         const localMediaStream = assistant.getLocalMediaStream();
         const audioSource = localMediaStream?.getAudioTracks()[0];
-        const chatGptSession = new ChatGPTAudioSession(audioSource);
-        chatGptSession
-            .startSession()
-            .then(({ dataChannel }) => {
-                dataChannel.addEventListener("open", () => {
-                    // Give some system context on start
-                    dataChannel.send(
-                        JSON.stringify({
-                            type: "conversation.item.create",
-                            previous_item_id: null,
-                            item: {
-                                id: null,
-                                type: "message",
-                                role: "system",
-                                content: [
-                                    {
-                                        type: "input_text",
-                                        text: `You are ChatBot. The user is called Thomas. Respond to what the user said in a creative and helpful way. Keep your responses short and aim to ask a follow-up question. Let the user lead the conversation when possible.`,
-                                    },
-                                ],
-                            },
-                        }),
-                    );
-
-                    // dataChannel.addEventListener("message", (event) => {
-                    //     console.log("oai-events event received", event);
-                    // });
-                });
-            })
-            .catch((error) => {
-                console.error("ChatGPT setup error:", error);
-                chatGptSession.stopSession();
-            });
+        // const chatGptSession = new ChatGPTAudioSession(audioSource);
+        // chatGptSession
+        //     .startSession()
+        //     .then(({ dataChannel }) => {
+        //         dataChannel.addEventListener("open", () => {
+        //             // Give some system context on start
+        //             dataChannel.send(
+        //                 JSON.stringify({
+        //                     type: "conversation.item.create",
+        //                     previous_item_id: null,
+        //                     item: {
+        //                         id: null,
+        //                         type: "message",
+        //                         role: "system",
+        //                         content: [
+        //                             {
+        //                                 type: "input_text",
+        //                                 text: `You are ChatBot. The user is called Thomas. Respond to what the user said in a creative and helpful way. Keep your responses short and aim to ask a follow-up question. Let the user lead the conversation when possible.`,
+        //                             },
+        //                         ],
+        //                     },
+        //                 }),
+        //             );
+        //
+        //             // dataChannel.addEventListener("message", (event) => {
+        //             //     console.log("oai-events event received", event);
+        //             // });
+        //         });
+        //     })
+        //     .catch((error) => {
+        //         console.error("ChatGPT setup error:", error);
+        //         chatGptSession.stopSession();
+        //     });
         res.status(200);
         res.end();
     });

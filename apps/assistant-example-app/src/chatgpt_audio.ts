@@ -1,25 +1,25 @@
 import { AudioSink } from "@whereby.com/assistant-sdk";
 export type ChatGPTVoice = "ash" | "ballad" | "coral" | "sage" | "verse";
-
+import wrtc from "@roamhq/wrtc";
 export const CHAT_GPT_VOICES: Array<ChatGPTVoice> = ["ash", "ballad", "coral", "sage", "verse"];
 
 export type ChatGPTAudioSessionInstance = {
-    peerConnection: RTCPeerConnection;
-    dataChannel: RTCDataChannel;
+    peerConnection: wrtc.RTCPeerConnection;
+    dataChannel: wrtc.RTCDataChannel;
 };
 
 export class ChatGPTAudioSession {
     private chatGptSession: ChatGPTAudioSessionInstance | undefined;
     private audioSinkUnsubscribe: (() => void) | undefined;
-    private audioSource: any;
+    private audioSource: wrtc.nonstandard.RTCAudioSource;
 
-    constructor(audioSource: any) {
+    constructor(audioSource: wrtc.nonstandard.RTCAudioSource) {
         this.audioSource = audioSource;
     }
 
     private async createChatGPTWebRTCSession(voice: ChatGPTVoice = "ash"): Promise<ChatGPTAudioSessionInstance> {
         console.log("First log", global.navigator.userAgent);
-        const pc = new RTCPeerConnection();
+        const pc = new wrtc.RTCPeerConnection();
 
         console.log("Second log, peerConnection created", pc);
 
@@ -65,7 +65,7 @@ export class ChatGPTAudioSession {
             method: "POST",
             headers: {
                 // TO DO: un-hardcore this
-                Authorization: ``,
+                Authorization: `Bearer`,
                 "Content-Type": "application/sdp",
             },
             body: offer.sdp,

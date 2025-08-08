@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import ws from "ws";
 import wrtc from "@roamhq/wrtc";
@@ -21,6 +22,7 @@ export function setWebsocketOrigin(roomUrl: string) {
         }
         global.WebSocket = OriginAwareWebsocket as unknown as typeof global.WebSocket;
     } catch (e) {
+        // eslint-disable-next-line no-console
         console.error(e);
     }
 }
@@ -50,6 +52,7 @@ global.navigator = {
 };
 class DOMException {
     constructor(...args) {
+        // eslint-disable-next-line no-console
         console.error("DOMException", args);
     }
 }
@@ -84,7 +87,6 @@ global.RTCRtpSender = wrtc.RTCRtpSender;
 global.RTCRtpTransceiver = wrtc.RTCRtpTransceiver;
 global.RTCSctpTransport = wrtc.RTCSctpTransport;
 global.RTCSessionDescription = wrtc.RTCSessionDescription;
-
 global.window = {
     ...global,
     location: { pathname: "" },
