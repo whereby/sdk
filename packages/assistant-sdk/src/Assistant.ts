@@ -6,6 +6,7 @@ export class Assistant {
     private roomConnection: RoomConnectionClient;
     private localMedia: LocalMediaClient;
     private mediaStream: MediaStream | null = null;
+    private audioSource: wrtc.nonstandard.RTCAudioSource | null = null;
 
     constructor() {
         this.client = new WherebyClient();
@@ -13,12 +14,13 @@ export class Assistant {
         this.localMedia = this.client.getLocalMedia();
     }
 
-    public joinRoom(roomUrl: string, withStream?: boolean): void {
+    public async joinRoom(roomUrl: string, withStream?: boolean): Promise<void> {
         if (withStream) {
             const outputAudioSource = new wrtc.nonstandard.RTCAudioSource();
             const outputMediaStream = new wrtc.MediaStream([outputAudioSource.createTrack()]);
-            this.localMedia.startMedia(outputMediaStream);
+            await this.localMedia.startMedia(outputMediaStream);
             this.mediaStream = outputMediaStream;
+            this.audioSource = outputAudioSource;
         }
         this.roomConnection.initialize({
             roomUrl,
@@ -29,5 +31,13 @@ export class Assistant {
 
     public getLocalMediaStream(): MediaStream | null {
         return this.mediaStream;
+    }
+
+    public getLocalAudioSource(): wrtc.nonstandard.RTCAudioSource | null {
+        return this.audioSource;
+    }
+
+    public getRoomConnection(): RoomConnectionClient {
+        return this.roomConnection;
     }
 }

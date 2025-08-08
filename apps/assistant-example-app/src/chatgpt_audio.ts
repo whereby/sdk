@@ -17,20 +17,18 @@ export class ChatGPTAudioSession {
         this.audioSource = audioSource;
     }
 
-    private async createChatGPTWebRTCSession(voice: ChatGPTVoice = "ash"): Promise<ChatGPTAudioSessionInstance> {
-        console.log("First log", global.navigator.userAgent);
+    private async createChatGPTWebRTCSession(
+        inputAudioStream: MediaStreamTrack,
+        voice: ChatGPTVoice = "ash",
+    ): Promise<ChatGPTAudioSessionInstance> {
         const pc = new wrtc.RTCPeerConnection();
 
-        console.log("Second log, peerConnection created", pc);
+        pc.addTrack(inputAudioStream);
 
         pc.addEventListener("track", (event: RTCTrackEvent) => {
-            console.log("Third log");
             const [remoteStream] = event.streams;
 
-            console.log("Fourth log");
-
             const audioTrack = remoteStream?.getTracks().find((t) => t.kind === "audio");
-            console.log("Fifth log");
 
             if (!audioTrack) {
                 return;
@@ -88,14 +86,17 @@ export class ChatGPTAudioSession {
         };
     }
 
-    async startSession(voice?: ChatGPTVoice): Promise<ChatGPTAudioSessionInstance> {
+    async startSession(
+        participantMediaStream: MediaStreamTrack,
+        voice?: ChatGPTVoice,
+    ): Promise<ChatGPTAudioSessionInstance> {
         if (this.chatGptSession) {
             this.stopSession();
         }
 
         console.log("Creating connection to ChatGPT");
 
-        this.chatGptSession = await this.createChatGPTWebRTCSession(voice);
+        this.chatGptSession = await this.createChatGPTWebRTCSession(participantMediaStream, voice);
 
         process.on("SIGTERM", () => {
             this.stopSession();
