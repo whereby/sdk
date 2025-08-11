@@ -235,13 +235,13 @@ export async function getStream(
                 stream = await getUserMedia(getConstraints({ ...constraintOpt, audioId: false }));
             } catch (e2: any) {
                 if (e2.name !== "NotFoundError") {
-                     addDetails(e2, e);
+                    addDetails(e2, e);
                 }
             }
             try {
                 if (!stream) stream = await getUserMedia(getConstraints({ ...constraintOpt, videoId: false }));
             } catch (e2) {
-                 addDetails(e2, e);
+                addDetails(e2, e);
             }
         }
     };

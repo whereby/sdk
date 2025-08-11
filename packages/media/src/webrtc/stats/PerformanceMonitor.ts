@@ -94,7 +94,7 @@ export function startPerformanceMonitor({
                             currentMetrics = { ...currentMetrics, ricLag: performance.now() - beforeRic };
                         }
                     },
-                    { timeout: RIC_TIMEOUT }
+                    { timeout: RIC_TIMEOUT },
                 );
             }
 
