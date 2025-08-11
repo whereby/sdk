@@ -17,8 +17,7 @@ const createRouter = () => {
     router.post("/", jsonParser, async (req: Request, res: Response) => {
         const assistant = new Assistant();
         await assistant.joinRoom(
-            "https://embedded-ip-192-168-1-168.hereby.dev:4443/browser-sdk-e2e-test-bf01967b-98f3-44c2-bf76-91df5a6a3656",
-            true,
+            "https://embedded-ip-192-168-1-167.hereby.dev:4443/5541af68-a8d4-4f19-a277-a9af4bb26082",
         );
 
         assistant.getRoomConnection().on("remote-participants:changed", (remoteParticipants) => {
@@ -26,7 +25,6 @@ const createRouter = () => {
             const participant = remoteParticipants[0];
 
             if (!participant?.stream) {
-                console.log("No participant stream found", participant);
                 return;
             }
 

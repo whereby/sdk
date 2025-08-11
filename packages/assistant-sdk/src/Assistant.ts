@@ -12,20 +12,24 @@ export class Assistant {
         this.client = new WherebyClient();
         this.roomConnection = this.client.getRoomConnection();
         this.localMedia = this.client.getLocalMedia();
+        const outputAudioSource = new wrtc.nonstandard.RTCAudioSource();
+        const outputMediaStream = new wrtc.MediaStream([outputAudioSource.createTrack()]);
+        this.mediaStream = outputMediaStream;
+        this.audioSource = outputAudioSource;
     }
 
-    public async joinRoom(roomUrl: string, withStream?: boolean): Promise<void> {
-        if (withStream) {
-            const outputAudioSource = new wrtc.nonstandard.RTCAudioSource();
-            const outputMediaStream = new wrtc.MediaStream([outputAudioSource.createTrack()]);
-            await this.localMedia.startMedia(outputMediaStream);
-            this.mediaStream = outputMediaStream;
-            this.audioSource = outputAudioSource;
-        }
+    public async joinRoom(roomUrl: string): Promise<void> {
         this.roomConnection.initialize({
+            localMediaOptions: {
+                audio: false,
+                video: false,
+            },
             roomUrl,
             isNodeSdk: true,
         });
+        if (this.mediaStream) {
+            await this.localMedia.startMedia(this.mediaStream);
+        }
         this.roomConnection.joinRoom();
     }
 
