@@ -29,7 +29,7 @@ export const periodicPacketLossDetector: IssueDetector = {
     id: "periodic-packet-loss",
     enabled: ({ client, hasLiveTrack, ssrc0 }) => {
         return (
-            client.isLocalClient &&
+            !!client.isLocalClient &&
             hasLiveTrack &&
             !!ssrc0?.ssrc &&
             ssrc0?.direction === "out" &&
@@ -182,7 +182,8 @@ export const issueDetectors: IssueDetector[] = [
     dryTrackIssueDetector,
     {
         id: "denoiser-context-suspended",
-        enabled: ({ client, kind }) => client.isLocalClient && kind === "audio" && !!client.audio?.track?._denoiserCtx,
+        enabled: ({ client, kind }) =>
+            !!client.isLocalClient && kind === "audio" && !!client.audio?.track?._denoiserCtx,
         check: ({ track }) => {
             if (!track || !("_denoiserCtx" in track)) return false;
             return track._denoiserCtx?.state === "suspended";
@@ -208,7 +209,7 @@ export const issueDetectors: IssueDetector[] = [
                 if (remoteClients.some((c) => c.isAudioOnlyModeEnabled)) return false;
             }
 
-            return hasLiveTrack && client.isLocalClient && kind === "video" && !!stats;
+            return hasLiveTrack && !!client.isLocalClient && kind === "video" && !!stats;
         },
         check: ({ stats }) => {
             if (!stats) return false;
@@ -220,7 +221,7 @@ export const issueDetectors: IssueDetector[] = [
     {
         id: "quality-limitation-cpu",
         enabled: ({ hasLiveTrack, stats, client, kind }) =>
-            hasLiveTrack && client.isLocalClient && kind === "video" && !!stats,
+            hasLiveTrack && !!client.isLocalClient && kind === "video" && !!stats,
         check: ({ stats }) => {
             if (!stats) return false;
             return !!Object.values(stats.tracks).find((track) =>

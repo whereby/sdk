@@ -8,17 +8,17 @@ export interface MediaStreamTrackWithDenoiserContext extends MediaStreamTrack {
 export interface StatsClient {
     id: string;
     clientId: string;
-    isLocalClient: boolean;
-    isAudioOnlyModeEnabled: boolean;
+    isLocalClient?: boolean;
+    isAudioOnlyModeEnabled?: boolean;
     audio: {
-        enabled: boolean;
+        enabled?: boolean;
         track?: MediaStreamTrackWithDenoiserContext;
     };
     video: {
-        enabled: boolean;
+        enabled?: boolean;
         track?: MediaStreamTrack;
     };
-    isPresentation: boolean;
+    isPresentation?: boolean;
 }
 
 export type PressureRecord = {
