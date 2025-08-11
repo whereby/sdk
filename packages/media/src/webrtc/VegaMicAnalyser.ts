@@ -140,7 +140,7 @@ export default function createMicAnalyser({
                         avg: bands.reduce((sum: number, current: number) => sum + current, 0) / range.length,
                         min: bands.reduce(
                             (min: number, current: number) => Math.min(min, current / 255),
-                            Number.MAX_VALUE
+                            Number.MAX_VALUE,
                         ),
                         max: bands.reduce((max: number, current: number) => Math.max(max, current / 255), 0),
                     };

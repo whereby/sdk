@@ -220,7 +220,7 @@ export default class Session {
             },
             (e: any) => {
                 logger.warn("Could not set remote description from remote answer: ", e);
-            }
+            },
         );
     }
 
@@ -404,7 +404,7 @@ export default class Session {
                     videoTransceiver?.direction !== "recvonly" &&
                     videoTransceiver?.receiver?.track?.kind === "video" &&
                     !excludedTrackIds.includes(videoTransceiver?.receiver?.track?.id) &&
-                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id)
+                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id),
             )
             .forEach((videoTransceiver: any) => {
                 videoTransceiver.direction = enable ? "sendonly" : "sendrecv";

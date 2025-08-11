@@ -14,7 +14,7 @@ function createMockPeerConnection(clients: ReturnType<typeof createMockClient>[]
                         client.video.enabled && { ...client.videoStats, timestamp: Date.now() },
                     ])
                     .filter(Boolean)
-                    .map((stats: any) => [stats.id, { ...stats }])
+                    .map((stats: any) => [stats.id, { ...stats }]),
             );
         },
     } as unknown as RTCPeerConnection;
@@ -190,7 +190,7 @@ describe("IssueMonitor", () => {
                 "loc-cam-video-dry-track": { active: true, registered: 1, ticks: 2, initial: 0 },
                 "rem-cam-video-dry-track": { active: false, registered: 1, ticks: 4, initial: 1 },
             },
-            1
+            1,
         );
 
         expectAggregatedMetrics(
@@ -205,7 +205,7 @@ describe("IssueMonitor", () => {
                     curTicks: 2,
                 },
             },
-            1
+            1,
         );
     });
 });

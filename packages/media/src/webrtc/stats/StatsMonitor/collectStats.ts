@@ -66,9 +66,14 @@ const removeNonUpdatedStats = (statsByView: Record<string, ViewStats>, time: num
 };
 
 const DEFAULT_CLIENT: StatsClient = {
-    id: "unknown", clientId: "unknown", audio: { enabled: false, track: undefined }, video: { enabled: false, track: undefined }, isAudioOnlyModeEnabled: false, isLocalClient: true, isPresentation: false
-
-}
+    id: "unknown",
+    clientId: "unknown",
+    audio: { enabled: false, track: undefined },
+    video: { enabled: false, track: undefined },
+    isAudioOnlyModeEnabled: false,
+    isLocalClient: true,
+    isPresentation: false,
+};
 
 export async function collectStats(
     state: StatsMonitorState,
@@ -96,9 +101,7 @@ export async function collectStats(
         const timeSinceLastUpdate = Date.now() - state.lastUpdateTime;
         if (timeSinceLastUpdate < 400) {
             if (immediate) return state.statsByView;
-            state.subscriptions.forEach((subscription) =>
-                subscription.onUpdatedStats?.(state.statsByView, clients),
-            );
+            state.subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(state.statsByView, clients));
             state.nextTimeout = setTimeout(collectStatsBound, interval);
             return;
         }
@@ -169,7 +172,6 @@ export async function collectStats(
                         pcData.ssrcToTrackId[ssrc] && // only update if we previously had a track id mapped to this ssrc.
                         clientTrack?.id &&
                         clientTrack.id !== pcData.ssrcToTrackId[ssrc]
-
                     ) {
                         trackId = clientTrack.id;
                         pcData.ssrcToTrackId[ssrc] = clientTrack.id;
