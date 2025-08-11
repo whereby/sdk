@@ -85,7 +85,7 @@ export function cleanSdp(sdp: string) {
                 );
         });
         return sdpTransform.write(sdpObject);
-    } catch (_) { }
+    } catch (_) {}
     return sdp;
 }
 

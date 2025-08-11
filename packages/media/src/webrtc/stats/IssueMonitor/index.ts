@@ -3,8 +3,12 @@ import { subscribeStats } from "../StatsMonitor";
 import { StatsClient, ViewStats } from "../types";
 
 type IssueSubscription = {
-    onUpdatedIssues: (issuesAndMetricsByView: IssuesAndMetricsByView, statsByView: Record<string, ViewStats>, clients: StatsClient[]) => void;
-}
+    onUpdatedIssues: (
+        issuesAndMetricsByView: IssuesAndMetricsByView,
+        statsByView: Record<string, ViewStats>,
+        clients: StatsClient[],
+    ) => void;
+};
 
 let subscriptions: IssueSubscription[] = [];
 let stopStats: (() => void) | null = null;
@@ -160,19 +164,20 @@ const metrics: Metric[] = [
         global: true,
         enabled: ({ stats }) => stats?.pressure?.source === "cpu",
         value: ({ stats }) =>
-            (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }))[stats?.pressure?.state || ""] || 0,
+            ({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 })[stats?.pressure?.state || ""] || 0,
     },
     {
         id: "turn-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp) => cp.usingTurn) ? 1 : 0,
+        value: ({ stats }) => (Object.values(stats?.candidatePairs || {}).some((cp) => cp.usingTurn) ? 1 : 0),
     },
     {
         id: "turn-tls-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp) => cp.turnProtocol === "tls") ? 1 : 0,
+        value: ({ stats }) =>
+            Object.values(stats?.candidatePairs || {}).some((cp) => cp.turnProtocol === "tls") ? 1 : 0,
     },
     {
         id: "concealment",
@@ -276,8 +281,8 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
             const trackStats = track && stats && stats.tracks[track.id];
             const ssrcs = trackStats
                 ? Object.values(trackStats.ssrcs).sort(
-                    (a, b) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
-                )
+                      (a, b) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
+                  )
                 : [];
             const ssrc0 = ssrcs[0];
 

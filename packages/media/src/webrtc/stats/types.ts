@@ -52,7 +52,6 @@ export interface CandidatePairStats {
     usingTurn?: boolean;
 }
 
-
 export interface SsrcStats {
     startTime: number;
     updated: number;
@@ -98,4 +97,3 @@ export interface SsrcStats {
     sourceWidth?: number;
     sourceFps?: number;
 }
-

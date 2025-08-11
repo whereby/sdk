@@ -1,4 +1,3 @@
- 
 const { default: VegaMediaQualityMonitor } = require("../../src/webrtc/VegaMediaQualityMonitor");
 
 const SELF_CLIENT_ID = "selfClientId";
@@ -160,11 +159,11 @@ describe("VegaMediaQualityMonitor", () => {
             vegaQualityMonitor.addProducer(SELF_CLIENT_ID, PRODUCER_ID1);
 
             expect(() =>
-                vegaQualityMonitor.addProducerScore(SELF_CLIENT_ID, PRODUCER_ID1, "video", illegalScore)
+                vegaQualityMonitor.addProducerScore(SELF_CLIENT_ID, PRODUCER_ID1, "video", illegalScore),
             ).not.toThrow();
 
             vegaQualityMonitor.close();
-        }
+        },
     );
 
     it.each([[null], [undefined], [{}], [[]], [[{ score: 1 }, {}]], [[{ score: 10 }, null]]])(
@@ -175,11 +174,11 @@ describe("VegaMediaQualityMonitor", () => {
             vegaQualityMonitor.addConsumer(CLIENT_ID1, CONSUMER_ID1);
 
             expect(() =>
-                vegaQualityMonitor.addConsumerScore(CLIENT_ID1, CONSUMER_ID1, "video", illegalScore)
+                vegaQualityMonitor.addConsumerScore(CLIENT_ID1, CONSUMER_ID1, "video", illegalScore),
             ).not.toThrow();
 
             vegaQualityMonitor.close();
-        }
+        },
     );
 
     it.each([[[]], [["id", null]], [[undefined, "id"]], [["id"]]])(
@@ -190,7 +189,7 @@ describe("VegaMediaQualityMonitor", () => {
 
             expect(() => vegaQualityMonitor.addConsumer(illegalParams)).not.toThrow();
             expect(Object.keys(vegaQualityMonitor._producers).length).toBe(0);
-        }
+        },
     );
 
     it.each([[[]], [["id", null]], [[undefined, "id"]], [["id"]]])(
@@ -201,6 +200,6 @@ describe("VegaMediaQualityMonitor", () => {
 
             expect(() => vegaQualityMonitor.addProducer(illegalParams)).not.toThrow();
             expect(Object.keys(vegaQualityMonitor._producers).length).toBe(0);
-        }
+        },
     );
 });

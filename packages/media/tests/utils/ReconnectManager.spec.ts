@@ -19,7 +19,7 @@ const createClient = (
     streams = ["0"],
     isAudioEnabled = false,
     isVideoEnabled = false,
-    isPendingToLeave = false
+    isPendingToLeave = false,
 ) => {
     return {
         id,
@@ -197,7 +197,7 @@ describe("ReconnectManager", () => {
                     audioChange,
                     videoChange,
                     screenshareChange,
-                    shouldMerge
+                    shouldMerge,
                 ) => {
                     const socket = createMockSocket();
                     const sut = new ReconnectManager(socket);
@@ -240,7 +240,7 @@ describe("ReconnectManager", () => {
                     expect(forwardEvent).toHaveBeenCalledTimes(2);
                     expect(forwardEvent.mock.calls[1][0]).toBe(PROTOCOL_RESPONSES.ROOM_JOINED);
                     expect(forwardEvent.mock.calls[1][1].room.clients[1].mergeWithOldClientState).toBe(shouldMerge);
-                }
+                },
             );
 
             it.each([

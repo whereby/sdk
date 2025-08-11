@@ -43,10 +43,7 @@ export const external_stun_servers = (
     }
 };
 
-export const turnServerOverride = (
-    iceServers: any,
-    overrideHost: any
-) => {
+export const turnServerOverride = (iceServers: any, overrideHost: any) => {
     if (overrideHost && iceServers) {
         const host = overrideHost;
         const port = host.indexOf(":") > 0 ? "" : ":443";
@@ -64,4 +61,4 @@ export const turnServerOverride = (
     } else {
         return iceServers;
     }
-}
+};
