@@ -19,6 +19,11 @@ export class Assistant {
     }
 
     public async joinRoom(roomUrl: string): Promise<void> {
+        if (this.mediaStream) {
+            console.log("Starting local media with custom audio source");
+            console.log("MediaStream:", this.mediaStream);
+            await this.localMedia.startMedia(this.mediaStream);
+        }
         this.roomConnection.initialize({
             localMediaOptions: {
                 audio: false,
@@ -27,9 +32,7 @@ export class Assistant {
             roomUrl,
             isNodeSdk: true,
         });
-        if (this.mediaStream) {
-            await this.localMedia.startMedia(this.mediaStream);
-        }
+
         this.roomConnection.joinRoom();
     }
 

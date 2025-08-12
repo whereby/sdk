@@ -63,7 +63,7 @@ export class ChatGPTAudioSession {
             method: "POST",
             headers: {
                 // TO DO: un-hardcore this
-                Authorization: `Bearer`,
+                Authorization: `Bearer `,
                 "Content-Type": "application/sdp",
             },
             body: offer.sdp,

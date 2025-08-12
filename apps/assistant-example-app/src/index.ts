@@ -19,9 +19,13 @@ const createRouter = () => {
         await assistant.joinRoom(
             "https://embedded-ip-192-168-1-167.hereby.dev:4443/5541af68-a8d4-4f19-a277-a9af4bb26082",
         );
+        let didJoin = false;
 
         assistant.getRoomConnection().on("remote-participants:changed", (remoteParticipants) => {
             console.log("This is the beginning");
+            if (didJoin) {
+                return;
+            }
             const participant = remoteParticipants[0];
 
             if (!participant?.stream) {
@@ -40,6 +44,7 @@ const createRouter = () => {
             console.log("Starting");
 
             startChatGpt(assistant);
+            didJoin = true;
         });
 
         res.status(200);
