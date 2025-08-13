@@ -72,14 +72,18 @@ describe("peerConnection", () => {
                 {
                     _scenario: "Uses deprecated trackId as fallback",
                     pcStats: [
-                        { id: "inbound", type: "inbound-rtp", ssrc: 12, trackId: "track" },
-                        { id: "track", type: "track", trackIdentifier: "deprecatedTrack" },
+                        { id: "inbound", type: "inbound-rtp", ssrc: 12, trackId: "trackId" },
+                        {
+                            id: "trackId",
+                            type: "deprecated-track-attachment-stats",
+                            trackIdentifier: "trackIdentifier",
+                        },
                     ],
                     pcData: undefined,
-                    expectedPcData: { ssrcToTrackId: { "12": "deprecatedTrack" } },
+                    expectedPcData: { ssrcToTrackId: { "12": "trackIdentifier" } },
                 },
                 {
-                    _scenario: "Uses trancievers as fallback",
+                    _scenario: "Uses tranceivers as fallback",
                     pcStats: [{ id: "inbound", type: "inbound-rtp", ssrc: 12 }],
                     pcData: undefined,
                     receivers: [
