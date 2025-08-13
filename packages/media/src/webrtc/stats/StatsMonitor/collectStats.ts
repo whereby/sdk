@@ -1,5 +1,4 @@
-import { StatsMonitorOptions, StatsMonitorState, StatsSubscription, ViewStats } from ".";
-import rtcStats from "../../rtcStatsService";
+import { StatsMonitorOptions, StatsMonitorState } from ".";
 import {
     captureSsrcInfo,
     captureCommonSsrcMetrics,
@@ -9,18 +8,20 @@ import {
 } from "./metrics";
 import { getPeerConnectionsWithStatsReports } from "./peerConnection";
 import { getPeerConnectionIndex, removePeerConnection } from "./peerConnectionTracker";
+import { StatsClient, ViewStats } from "../types";
+import rtcStats from "../../rtcStatsService";
 
 const getOrCreateSsrcMetricsContainer = (
     statsByView: Record<string, ViewStats>,
     time: number,
-    pcIndex: any,
+    pcIndex: number,
     clientId: string,
     trackId: string,
     ssrc: any,
 ) => {
     let viewStats = statsByView[clientId];
     if (!viewStats) {
-        viewStats = { tracks: {}, startTime: time, updated: time };
+        viewStats = { candidatePairs: {}, tracks: {}, startTime: time, updated: time };
         statsByView[clientId] = viewStats;
     }
     viewStats.updated = time;
@@ -44,23 +45,34 @@ const getOrCreateSsrcMetricsContainer = (
 };
 
 const removeNonUpdatedStats = (statsByView: Record<string, ViewStats>, time: number) => {
-    Object.entries(statsByView).forEach(([viewId, viewStats]: any) => {
-        if (viewStats.updated < time) {
+    Object.entries(statsByView).forEach(([viewId, viewStats]) => {
+        if (viewStats.updated !== undefined && viewStats.updated < time) {
             delete statsByView[viewId];
         } else {
-            Object.entries(viewStats.tracks).forEach(([trackId, trackStats]: any) => {
+            Object.entries(viewStats.tracks).forEach(([trackId, trackStats]) => {
                 if (trackStats.updated < time) {
                     delete viewStats.tracks[trackId];
                 } else {
-                    Object.entries(trackStats.ssrcs).forEach(([ssrc, ssrcStats]: any) => {
+                    Object.entries(trackStats.ssrcs).forEach(([ssrc, ssrcStats]) => {
                         if (ssrcStats.updated < time) {
-                            delete trackStats.ssrcs[ssrc];
+                            // Cast ssrc back to number, as Object.entries converts keys to strings
+                            delete trackStats.ssrcs[ssrc as unknown as number];
                         }
                     });
                 }
             });
         }
     });
+};
+
+const DEFAULT_CLIENT: StatsClient = {
+    id: "unknown",
+    clientId: "unknown",
+    audio: { enabled: false, track: undefined },
+    video: { enabled: false, track: undefined },
+    isAudioOnlyModeEnabled: false,
+    isLocalClient: true,
+    isPresentation: false,
 };
 
 export async function collectStats(
@@ -74,8 +86,7 @@ export async function collectStats(
         // refresh provided clients before each run
         const clients = state.getClients();
         // general stats, and stats that cannot be matched to any client will be added to "selfview" / unknown
-        const defaultClient = clients.find((c: any) => c.isLocalClient && !c.isPresentation) || { id: "unknown" };
-
+        const defaultClient = clients.find((c) => c.isLocalClient && !c.isPresentation) || DEFAULT_CLIENT;
         // default stats need to be initialized
         let defaultViewStats = state.statsByView[defaultClient.id];
         if (!defaultViewStats) {
@@ -90,9 +101,7 @@ export async function collectStats(
         const timeSinceLastUpdate = Date.now() - state.lastUpdateTime;
         if (timeSinceLastUpdate < 400) {
             if (immediate) return state.statsByView;
-            state.subscriptions.forEach((subscription: any) =>
-                subscription.onUpdatedStats?.(state.statsByView, clients),
-            );
+            state.subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(state.statsByView, clients));
             state.nextTimeout = setTimeout(collectStatsBound, interval);
             return;
         }
@@ -104,6 +113,10 @@ export async function collectStats(
         (await getPeerConnectionsWithStatsReports()).forEach(([pc, report, pcData]) => {
             // each new peer connection will get +1, to be able to see/count/correlate data
             const pcIndex = getPeerConnectionIndex(pc);
+
+            if (pcIndex === undefined) {
+                logger.warn("Could not find index for PeerConnection");
+            }
 
             // for some reason, the close event isn't called always, so we clean up manually
             if (pc.connectionState === "closed") {
@@ -132,7 +145,7 @@ export async function collectStats(
                 }
 
                 if (currentRtcStats.type === "inbound-rtp" || currentRtcStats.type === "outbound-rtp") {
-                    const kind = currentRtcStats.mediaType || currentRtcStats.kind;
+                    const kind = (currentRtcStats.mediaType || currentRtcStats.kind) as "audio" | "video";
                     const ssrc = currentRtcStats.ssrc;
 
                     let trackId = currentRtcStats.trackIdentifier || pcData.ssrcToTrackId[ssrc];
@@ -149,18 +162,19 @@ export async function collectStats(
                     }
 
                     // find the current client using this trackId, or default
-                    const client = clients.find((c: any) => c[kind].track?.id === trackId) || defaultClient;
+                    const client = clients.find((c) => c[kind].track?.id === trackId) || defaultClient;
+                    const clientTrack = client[kind].track;
 
                     // the track might have been replaced, but we don't always have access to mediaSourceId
                     // on the rtcstats report, e.g. when mapping track to ssrc from rtpsenders and -receivers.
                     if (
                         !currentRtcStats.trackIdentifier && // if the report have a trackIdentifier we use it.
                         pcData.ssrcToTrackId[ssrc] && // only update if we previously had a track id mapped to this ssrc.
-                        client[kind].track?.id &&
-                        client[kind].track.id !== pcData.ssrcToTrackId[ssrc]
+                        clientTrack?.id &&
+                        clientTrack.id !== pcData.ssrcToTrackId[ssrc]
                     ) {
-                        trackId = client[kind].track.id;
-                        pcData.ssrcToTrackId[ssrc] = client[kind].track.id;
+                        trackId = clientTrack.id;
+                        pcData.ssrcToTrackId[ssrc] = clientTrack.id;
                     }
 
                     pcData.currentSSRCs[ssrc] = client.id;
@@ -188,7 +202,7 @@ export async function collectStats(
                     const ssrcMetrics = getOrCreateSsrcMetricsContainer(
                         state.statsByView,
                         state.lastUpdateTime,
-                        pcIndex,
+                        pcIndex as number,
                         client.id,
                         trackId,
                         ssrc,
@@ -217,9 +231,9 @@ export async function collectStats(
                         // remove
                         const clientView = state.statsByView[clientId];
                         if (clientView) {
-                            Object.values(clientView.tracks).forEach((trackStats: any) => {
-                                if (trackStats.ssrcs[ssrc]) {
-                                    delete trackStats.ssrcs[ssrc];
+                            Object.values(clientView.tracks).forEach((trackStats) => {
+                                if (trackStats.ssrcs[ssrc as unknown as number]) {
+                                    delete trackStats.ssrcs[ssrc as unknown as number];
                                 }
                             });
                         }
@@ -230,7 +244,7 @@ export async function collectStats(
         removeNonUpdatedStats(state.statsByView, state.lastUpdateTime);
 
         // mark candidatepairs as active/inactive
-        Object.entries(defaultViewStats?.candidatePairs || {}).forEach(([cpKey, cp]: any) => {
+        Object.entries(defaultViewStats?.candidatePairs || {}).forEach(([cpKey, cp]) => {
             const active = cp.lastRtcStatsTime === state.lastUpdateTime;
             cp.active = active;
             if (!active) {

@@ -1,7 +1,9 @@
-import Logger from "../../../utils/Logger";
 import { collectStats } from "./collectStats";
-import { PressureObserver, PressureRecord, startCpuObserver } from "./cpuObserver";
+import { PressureObserver, startCpuObserver } from "./cpuObserver";
 import { numFailedTrackSsrcLookups, numMissingTrackSsrcLookups } from "./peerConnection";
+
+import { PressureRecord, StatsClient, ViewStats } from "../types";
+import Logger from "../../../utils/Logger";
 
 interface StatsMonitor {
     getUpdatedStats: () => Promise<Record<string, ViewStats> | undefined>;
@@ -9,12 +11,12 @@ interface StatsMonitor {
 }
 
 export interface StatsSubscription {
-    onUpdatedStats: (statsByView: Record<string, ViewStats>, clients: any) => void;
+    onUpdatedStats: (statsByView: Record<string, ViewStats>, clients: StatsClient[]) => void;
 }
 
 export interface StatsMonitorState {
     currentMonitor: StatsMonitor | null;
-    getClients: () => any[];
+    getClients: () => StatsClient[];
     lastPressureObserverRecord?: PressureRecord;
     lastUpdateTime: number;
     nextTimeout?: number;
@@ -27,66 +29,6 @@ export interface StatsMonitorState {
 export interface StatsMonitorOptions {
     interval: number;
     logger: Pick<Logger, "debug" | "error" | "info" | "warn">;
-}
-
-export interface TrackStats {
-    startTime: number;
-    updated: number;
-    ssrcs: Record<number, ssrcStats>;
-}
-
-export interface ViewStats {
-    startTime?: number;
-    updated?: number;
-    pressure?: PressureRecord | null;
-    candidatePairs?: any;
-    tracks: Record<string, TrackStats>;
-}
-
-export interface ssrcStats {
-    startTime: number;
-    updated: number;
-    pcIndex: number;
-    direction?: string;
-    bitrate?: number;
-    fractionLost?: number;
-    height?: number;
-    lossRatio?: number;
-    pliRate?: number;
-    fps?: number;
-    audioLevel?: number;
-    audioConcealment?: number;
-    audioDeceleration?: number;
-    audioAcceleration?: number;
-    sourceHeight?: number;
-    jitter?: number;
-    roundTripTime?: number;
-    codec?: string;
-    byteCount?: number;
-    kind?: string;
-    ssrc?: number;
-    mid?: number;
-    rid?: string;
-    nackCount?: number;
-    nackRate?: number;
-    packetCount?: number;
-    packetRate?: number;
-    headerByteCount?: number;
-    mediaRatio?: number;
-    sendDelay?: number;
-    retransRatio?: number;
-    width?: number;
-    qualityLimitationReason?: string;
-    pliCount?: number;
-    firCount?: number;
-    firRate?: number;
-    kfCount?: number;
-    kfRate?: number;
-    frameCount?: number;
-    qpf?: number;
-    encodeTime?: number;
-    sourceWidth?: number;
-    sourceFps?: number;
 }
 
 const STATE: StatsMonitorState = {
@@ -115,15 +57,15 @@ export const getNumFailedTrackSsrcLookups = () => numFailedTrackSsrcLookups;
 
 export const getUpdatedStats = () => STATE.currentMonitor?.getUpdatedStats();
 
-export const setClientProvider = (provider: any) => (STATE.getClients = provider);
+export const setClientProvider = (provider: () => StatsClient[]) => (STATE.getClients = provider);
 
 function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
     const collectStatsBound = collectStats.bind(null, state, { interval, logger });
 
-    let cpuObserver: any;
+    let cpuObserver: ReturnType<typeof startCpuObserver>;
 
     try {
-        cpuObserver = startCpuObserver((records: any) => (state.lastPressureObserverRecord = records.pop()));
+        cpuObserver = startCpuObserver((records) => (state.lastPressureObserverRecord = records.pop()));
     } catch (ex) {
         logger.warn("Failed to observe CPU pressure", ex);
     }
@@ -137,7 +79,7 @@ function startStatsMonitor(state: StatsMonitorState, { interval, logger }: Stats
         },
         stop: () => {
             clearTimeout(state.nextTimeout);
-            if (cpuObserver) cpuObserver.stop();
+            cpuObserver?.stop();
         },
     };
 }

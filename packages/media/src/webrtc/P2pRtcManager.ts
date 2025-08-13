@@ -1051,14 +1051,14 @@ export default class P2pRtcManager implements RtcManager {
         const bandwidth = this._features.bandwidth
             ? parseInt(this._features.bandwidth, 10)
             : {
-                1: 0,
-                2: 384,
-                3: 256,
-                4: 192,
-                5: 128,
-                6: 128,
-                7: 64,
-            }[numPeers];
+                  1: 0,
+                  2: 384,
+                  3: 256,
+                  4: 192,
+                  5: 128,
+                  6: 128,
+                  7: 64,
+              }[numPeers];
 
         if (bandwidth === undefined) {
             return 0;
@@ -1271,7 +1271,7 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     // this does not (currently) make sense for peer-to-peer connections
-    updateStreamResolution(/* streamId, clientId, resolution */) { }
+    updateStreamResolution(/* streamId, clientId, resolution */) {}
 
     stopOrResumeAudio(/*localStream, enable*/) {
         // detaches the audio from the peerconnection. No-op in P2P mode.

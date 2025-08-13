@@ -1,5 +1,3 @@
-import { ssrcStats, TrackStats, ViewStats } from "../../StatsMonitor";
-import { StatsClient } from "../../types";
 import {
     badNetworkIssueDetector,
     dryTrackIssueDetector,
@@ -7,6 +5,7 @@ import {
     IssueCheckData,
     noTrackStatsIssueDetector,
 } from "../issueDetectors";
+import { SsrcStats, StatsClient, TrackStats, ViewStats } from "../../types";
 
 function makeStatsClient(args?: Partial<StatsClient>): StatsClient {
     return {
@@ -30,8 +29,8 @@ function makeCheckData(args?: Partial<IssueCheckData>): IssueCheckData {
         trackStats: {} as TrackStats,
         stats: {} as ViewStats,
         hasLiveTrack: true,
-        ssrc0: {} as ssrcStats,
-        ssrcs: {} as ssrcStats[],
+        ssrc0: {} as SsrcStats,
+        ssrcs: {} as SsrcStats[],
         issues: {},
         metrics: {},
         ...args,

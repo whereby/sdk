@@ -4,7 +4,7 @@ import rtcstats from "rtcstats";
 import { v4 as uuidv4 } from "uuid";
 
 // @ts-ignore
-const adapter = adapterRaw.default ?? adapterRaw;  
+const adapter = adapterRaw.default ?? adapterRaw;
 
 const RTCSTATS_PROTOCOL_VERSION = "1.0";
 
