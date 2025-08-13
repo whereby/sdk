@@ -15,7 +15,7 @@ const createRouter = () => {
     });
 
     router.post("/", jsonParser, async (req: Request, res: Response) => {
-        const assistant = new Assistant();
+        const assistant = new Assistant(true);
         await assistant.joinRoom(
             "https://embedded-ip-192-168-1-167.hereby.dev:4443/5541af68-a8d4-4f19-a277-a9af4bb26082",
         );
