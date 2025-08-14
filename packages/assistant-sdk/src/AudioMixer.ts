@@ -43,7 +43,7 @@ export class AudioMixer {
         const { sink, writer, stop } = writeAudioDataToFFmpeg(this.ffmpegProcess!, inputIndex, audioTrack);
 
         const stopActiveJob: StopActiveJobFunction = () => {
-            stop();
+            // stop();
             this.activeJobs.delete(jobId);
         };
         this.activeJobs.set(jobId, stopActiveJob);
@@ -65,19 +65,28 @@ export class AudioMixer {
     }
 
     public handleRemoteParticipants(participants: RemoteParticipantState[]): void {
-        if (this.ffmpegProcess && participants.every((p) => p.isAudioEnabled === false)) {
-            stopFFmpegProcess(this.ffmpegProcess, this.combinedAudioSource!);
-            Object.values(this.perInput).forEach(({ sink, writer, stop }) => {
-                sink.stop();
-                writer.end();
-                stop();
-            });
+        if (participants.every((p) => p.isAudioEnabled === false)) {
+            this.stopAudioMixer();
         }
         // Create a process with extra stdio pipes (fd 3..3+inputs-1)
-        this.ffmpegProcess = spawnFFmpegProcess(participants.length, this.combinedAudioSource!);
+
+        if (!this.ffmpegProcess) {
+            this.ffmpegProcess = spawnFFmpegProcess(participants.length, this.combinedAudioSource!);
+        }
 
         participants.forEach((participant, index) => {
             this.handleRemoteParticipantAudioStream(participant, index);
         });
+    }
+
+    public stopAudioMixer() {
+        if (this.ffmpegProcess) {
+            stopFFmpegProcess(this.ffmpegProcess, this.combinedAudioSource!);
+            Object.values(this.perInput).forEach(({ sink, writer, stop }) => {
+                sink.stop();
+                writer?.end();
+                stop();
+            });
+        }
     }
 }

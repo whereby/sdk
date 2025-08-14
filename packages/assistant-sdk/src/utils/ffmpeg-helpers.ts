@@ -36,14 +36,16 @@ export function getFFmpegArguments(numberOfParticipants: number) {
 export function spawnFFmpegProcess(numberOfParticipants: number, audioSource: NodeJS.WritableStream) {
     const stdio = ["ignore", "pipe", "inherit", ...Array(numberOfParticipants).fill("pipe")];
     const args = getFFmpegArguments(numberOfParticipants);
-    const ffmpegProcess = spawn("ffmpeg", args, { stdio });
 
+    const ffmpegProcess = spawn("ffmpeg", args, { stdio });
+    ffmpegProcess.on("error", () => {
+        console.error("FFmpeg process error: FFmpeg is not installed");
+    });
+
+    console.log("Piping into output.pcm");
     const out = fs.createWriteStream("./output.pcm");
     ffmpegProcess.stdout.pipe(audioSource);
     ffmpegProcess.stdout.pipe(out);
-    ffmpegProcess.on("error", (err) => {
-        console.error("FFmpeg process error:", err);
-    });
     out.on("error", (err) => {
         console.error("Output stream error:", err);
     });
