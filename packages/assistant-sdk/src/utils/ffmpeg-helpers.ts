@@ -1,5 +1,5 @@
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
-import fs from "fs";
+import fs, { write } from "fs";
 import Stream from "stream";
 import wrtc from "@roamhq/wrtc";
 import { AudioSink } from "./AudioSink";
@@ -113,8 +113,12 @@ export function stopFFmpegProcess(ffmpegProcess: ChildProcessWithoutNullStreams,
 
 export function feedSilenceForever(writer: Stream.Writable) {
     console.log("Writer: ", writer);
-    const silenceFrame = Buffer.alloc(960 * 2); // 10ms of silence
+    const silenceFrame = Buffer.alloc(480 * 2);
     const interval = setInterval(() => {
+        if (writer.writableEnded) {
+            clearInterval(interval);
+            return;
+        }
         writer.write(silenceFrame);
     }, 10); // every 10ms
     return () => clearInterval(interval);
