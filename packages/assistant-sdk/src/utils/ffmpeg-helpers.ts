@@ -8,31 +8,53 @@ import { RTCAudioData } from "@roamhq/wrtc/types/nonstandard";
 export const STREAM_INPUT_SAMPLE_RATE_IN_HZ = 48000;
 export const PARTICIPANT_SLOTS = 2;
 
+export const writers: Map<number, { writer: Stream.Writable; stop: () => void }> = new Map();
+
 export function getFFmpegArguments() {
-    const ffArgs = [];
-    for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
-        ffArgs.push(
-            "-f",
-            "s16le",
-            "-ar",
-            String(STREAM_INPUT_SAMPLE_RATE_IN_HZ),
-            "-ac",
-            String(1),
-            "-i",
-            `pipe:${3 + i}`,
-        );
+    const N = PARTICIPANT_SLOTS;
+    const SR = STREAM_INPUT_SAMPLE_RATE_IN_HZ;
+
+    const ffArgs: string[] = [];
+
+    // 1) Inputs
+    for (let i = 0; i < N; i++) {
+        ffArgs.push("-f", "s16le", "-ar", String(SR), "-ac", "1", "-i", `pipe:${3 + i}`);
     }
-    // Mix, add a little headroom with volume if you like
+
+    // 2) Filter graph: per-input aresample + amix
+    const pre: string[] = [];
+    for (let i = 0; i < N; i++) {
+        pre.push(`[${i}:a]aresample=async=1:first_pts=0[a${i}]`);
+    }
+    const labels = Array.from({ length: N }, (_, i) => `[a${i}]`).join("");
+    const amix = `${labels}amix=inputs=${N}:duration=longest:dropout_transition=250:normalize=1[mix]`;
+    const filter = `${pre.join(";")};${amix}`;
+
+    // 3) Filters + mapping
     ffArgs.push(
+        "-hide_banner",
+        "-nostats",
+        "-loglevel",
+        "error",
         "-filter_complex",
-        `amix=inputs=${PARTICIPANT_SLOTS}:dropout_transition=250,volume=1.0`,
-        // Output: WAV (change to s16le/raw if you prefer raw PCM on stdout)
+        filter, // <-- SINGLE ARG!
+        "-map",
+        "[mix]", // <-- map mixed stream
+        // 4) Output options + output
         "-f",
         "s16le",
+        "-ar",
+        String(SR),
+        "-ac",
+        "1",
+        "-c:a",
+        "pcm_s16le",
         "pipe:1",
     );
 
-    console.log("args", ffArgs);
+    // Helpful during debug:
+    console.log("ffmpeg argv:\n", ffArgs.map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(" "));
+
     return ffArgs;
 }
 
@@ -42,8 +64,7 @@ export function spawnFFmpegProcess(audioSource: NodeJS.WritableStream) {
 
     const ffmpegProcess = spawn("ffmpeg", args, { stdio });
     for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
-        const writer = ffmpegProcess.stdio[3 + i] as Stream.Writable;
-        feedSilenceForever(writer);
+        feedSilenceForever(i + 3, ffmpegProcess); // Start feeding silence to each input
     }
     ffmpegProcess.on("error", () => {
         console.error("FFmpeg process error: FFmpeg is not installed");
@@ -69,6 +90,10 @@ export function writeAudioDataToFFmpeg(
     const writer = ffmpegProcess!.stdio[inputIndex] as Stream.Writable; // the fd for this input
 
     const sink = new AudioSink(audioTrack); // audioTrack.addEventListener?.("ended", stop);
+    const silenceWriter = writers.get(inputIndex);
+    if (silenceWriter) {
+        silenceWriter.stop(); // Stop feeding silence if it was already running
+    }
     sink.ondata = ({ samples, sampleRate: sr, channelCount: ch, bitsPerSample, numberOfFrames }: RTCAudioData) => {
         // Ensure format is s16le, 48k, mono. Downmix/resample if needed.
         if (sr !== STREAM_INPUT_SAMPLE_RATE_IN_HZ || ch !== 1 || bitsPerSample !== 16) {
@@ -79,6 +104,10 @@ export function writeAudioDataToFFmpeg(
         try {
             let totalWritten = 0;
             const buf = Buffer.from(samples.buffer, samples.byteOffset, samples.byteLength);
+            if (!writer || !writer.writable || writer.writableEnded) {
+                console.warn(`FFmpeg input ${inputIndex} is not writable. Skipping write.`);
+                return;
+            }
             const ok = writer?.write(buf);
             if (ok) totalWritten += buf.length;
             // console.log(`Wrote ${totalWritten} bytes to FFmpeg input ${inputIndex}`);
@@ -92,7 +121,7 @@ export function writeAudioDataToFFmpeg(
             sink.stop();
         } catch {}
         try {
-            feedSilenceForever(writer);
+            feedSilenceForever(inputIndex, ffmpegProcess);
         } catch {}
     };
 
@@ -106,14 +135,24 @@ export function stopFFmpegProcess(ffmpegProcess: ChildProcessWithoutNullStreams,
         ffmpegProcess.kill();
         for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
             const writer = ffmpegProcess!.stdio[i + 3] as Stream.Writable; // the fd for this input
+            if (writers.has(i + 3)) {
+                const silenceWriter = writers.get(i + 3);
+                silenceWriter?.stop(); // Stop feeding silence
+                writers.delete(i + 3);
+            }
             writer.end();
         }
     }
 }
 
-export function feedSilenceForever(writer: Stream.Writable) {
-    console.log("Writer: ", writer);
+export function feedSilenceForever(index: number, ffmpegProcess: ChildProcessWithoutNullStreams) {
+    const writer = ffmpegProcess.stdio[index] as Stream.Writable;
+    if (!writer) {
+        console.warn(`No writer found for index ${index}. Cannot feed silence.`);
+        return;
+    }
     const silenceFrame = Buffer.alloc(480 * 2);
+
     const interval = setInterval(() => {
         if (writer.writableEnded) {
             clearInterval(interval);
@@ -121,5 +160,6 @@ export function feedSilenceForever(writer: Stream.Writable) {
         }
         writer.write(silenceFrame);
     }, 10); // every 10ms
+    writers.set(index, { writer, stop: () => clearInterval(interval) });
     return () => clearInterval(interval);
 }
