@@ -49,6 +49,7 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
             if (eventName === "rtc_manager_created") {
                 dispatch(doRtcManagerCreated(data as RtcManagerCreatedPayload));
             } else if (eventName === "stream_added") {
+                console.log("Stream added", data);
                 dispatch(rtcEvents.streamAdded(data as RtcStreamAddedPayload));
             } else if (eventName === "rtc_manager_destroyed") {
                 dispatch(rtcManagerDestroyed());
@@ -206,6 +207,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
 
+    console.log("IS_NODE_SDK", isNodeSdk);
     if (dispatcher || !socket) {
         return;
     }

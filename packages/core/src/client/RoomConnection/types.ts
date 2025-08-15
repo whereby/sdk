@@ -13,6 +13,7 @@ export interface WherebyClientOptions {
     roomUrl?: string;
     roomKey?: string | null;
     externalId?: string | null;
+    isNodeSdk?: boolean;
 }
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 export interface LocalParticipantState extends LocalParticipant {
