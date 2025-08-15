@@ -2,7 +2,13 @@ import type { ChildProcessWithoutNullStreams } from "child_process";
 import { AudioSink, AudioSource } from "./utils/AudioSink";
 import Stream from "stream";
 import { RemoteParticipantState } from "@whereby.com/core";
-import { stopFFmpegProcess, spawnFFmpegProcess, writeAudioDataToFFmpeg } from "./utils/ffmpeg-helpers";
+import {
+    stopFFmpegProcess,
+    spawnFFmpegProcess,
+    writeAudioDataToFFmpeg,
+    PARTICIPANT_SLOTS,
+} from "./utils/ffmpeg-helpers";
+
 type StopActiveJobFunction = () => void;
 
 export class AudioMixer {
@@ -10,13 +16,43 @@ export class AudioMixer {
     private combinedAudioStream: MediaStream | null = null;
     private combinedAudioSource: AudioSource | null = null;
     private activeJobs = new Map<string, StopActiveJobFunction>();
+    // participantId -> slot index
+    private participantSlots = new Map<number, string>();
     private perInput: Record<number, { sink: AudioSink; writer: Stream.Writable; stop: () => void }> = {};
 
     constructor() {
         this.combinedAudioSource = new AudioSource();
+        this.participantSlots = new Map(Array.from({ length: PARTICIPANT_SLOTS }, (_, i) => [i + 3, ""]));
     }
 
-    private handleRemoteParticipantAudioStream(participant: RemoteParticipantState, inputIndex: number): void {
+    private getParticipantSlot(participantId: string): number | null {
+        const existing = [...this.participantSlots.entries()].find(([_, id]) => id === participantId)?.[0] ?? -1;
+        if (existing !== -1) {
+            return existing;
+        }
+        return null;
+    }
+
+    private getAvailableSlotIndex(participantId: string): number | null {
+        const existingSlot = this.getParticipantSlot(participantId);
+        if (existingSlot !== null) {
+            console.log(`Participant ${participantId} already has a slot:`, existingSlot);
+            return existingSlot;
+        }
+
+        const emptySlot = [...this.participantSlots.entries()].find(([_, id]) => id === "")?.[0] ?? -1;
+
+        if (emptySlot === -1) {
+            console.warn("No empty slot available for participant:", participantId);
+            return null;
+        }
+
+        this.participantSlots.set(emptySlot, participantId);
+        console.log(`Assigned participant ${participantId} to slot ${emptySlot}`);
+        return emptySlot;
+    }
+
+    private handleRemoteParticipantAudioStream(participant: RemoteParticipantState): void {
         const { id: participantId, stream: participantStream, isAudioEnabled } = participant;
 
         if (!participantId) {
@@ -37,6 +73,14 @@ export class AudioMixer {
 
         const jobId = `${participantId}/${audioTrack.id}`;
 
+        console.log(`Handling audio stream for participant: ${participantId}, jobId: ${jobId}`);
+        const inputIndex = this.getAvailableSlotIndex(participantId);
+        console.log(`Input index for participant ${participantId}:`, inputIndex);
+        if (inputIndex === null) {
+            console.warn(`No available slot for participant: ${participantId}`);
+            return;
+        }
+
         if (this.activeJobs.has(jobId)) {
             return;
         }
@@ -52,6 +96,11 @@ export class AudioMixer {
     }
 
     private stop(participantId: string) {
+        const slotIndex = this.getParticipantSlot(participantId);
+        if (slotIndex !== null) {
+            this.participantSlots.delete(slotIndex);
+        }
+
         console.log(`Stopping audio for participant: ${participantId}`);
         this.activeJobs.forEach((stopActiveJob, jobId) => {
             if (jobId.startsWith(`${participantId}/`)) {
@@ -71,16 +120,17 @@ export class AudioMixer {
         // Create a process with extra stdio pipes (fd 3..3+inputs-1)
 
         if (!this.ffmpegProcess) {
-            this.ffmpegProcess = spawnFFmpegProcess(participants.length, this.combinedAudioSource!);
+            this.ffmpegProcess = spawnFFmpegProcess(this.combinedAudioSource!);
         }
 
-        participants.forEach((participant, index) => {
-            this.handleRemoteParticipantAudioStream(participant, index);
+        participants.forEach((participant) => {
+            this.handleRemoteParticipantAudioStream(participant);
         });
     }
 
     public stopAudioMixer() {
         if (this.ffmpegProcess) {
+            console.log("Stopping audio mixer and FFmpeg process");
             stopFFmpegProcess(this.ffmpegProcess, this.combinedAudioSource!);
             Object.values(this.perInput).forEach(({ sink, writer, stop }) => {
                 sink.stop();
