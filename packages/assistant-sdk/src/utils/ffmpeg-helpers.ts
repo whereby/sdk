@@ -6,7 +6,7 @@ import { AudioSink } from "./AudioSink";
 import { RTCAudioData } from "@roamhq/wrtc/types/nonstandard";
 
 export const STREAM_INPUT_SAMPLE_RATE_IN_HZ = 48000;
-export const PARTICIPANT_SLOTS = 20;
+export const PARTICIPANT_SLOTS = 2;
 
 export function getFFmpegArguments() {
     const ffArgs = [];
@@ -31,6 +31,8 @@ export function getFFmpegArguments() {
         "s16le",
         "pipe:1",
     );
+
+    console.log("args", ffArgs);
     return ffArgs;
 }
 
@@ -39,6 +41,10 @@ export function spawnFFmpegProcess(audioSource: NodeJS.WritableStream) {
     const args = getFFmpegArguments();
 
     const ffmpegProcess = spawn("ffmpeg", args, { stdio });
+    for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
+        const writer = ffmpegProcess.stdio[3 + i] as Stream.Writable;
+        feedSilenceForever(writer);
+    }
     ffmpegProcess.on("error", () => {
         console.error("FFmpeg process error: FFmpeg is not installed");
     });
@@ -75,7 +81,7 @@ export function writeAudioDataToFFmpeg(
             const buf = Buffer.from(samples.buffer, samples.byteOffset, samples.byteLength);
             const ok = writer?.write(buf);
             if (ok) totalWritten += buf.length;
-            console.log(`Wrote ${totalWritten} bytes to FFmpeg input ${inputIndex}`);
+            // console.log(`Wrote ${totalWritten} bytes to FFmpeg input ${inputIndex}`);
         } catch (error) {
             console.error(`Error writing audio data:`, error);
         }
@@ -86,7 +92,7 @@ export function writeAudioDataToFFmpeg(
             sink.stop();
         } catch {}
         try {
-            writer?.end();
+            feedSilenceForever(writer);
         } catch {}
     };
 
@@ -94,8 +100,22 @@ export function writeAudioDataToFFmpeg(
 }
 
 export function stopFFmpegProcess(ffmpegProcess: ChildProcessWithoutNullStreams, audioSource: NodeJS.WritableStream) {
+    console.log("Stopping FFmpeg process and audio source");
     if (ffmpegProcess && !ffmpegProcess.killed) {
         ffmpegProcess.stdout.unpipe(audioSource);
         ffmpegProcess.kill();
+        for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
+            const writer = ffmpegProcess!.stdio[i + 3] as Stream.Writable; // the fd for this input
+            writer.end();
+        }
     }
+}
+
+export function feedSilenceForever(writer: Stream.Writable) {
+    console.log("Writer: ", writer);
+    const silenceFrame = Buffer.alloc(960 * 2); // 10ms of silence
+    const interval = setInterval(() => {
+        writer.write(silenceFrame);
+    }, 10); // every 10ms
+    return () => clearInterval(interval);
 }

@@ -9,13 +9,13 @@ import {
     PARTICIPANT_SLOTS,
 } from "./utils/ffmpeg-helpers";
 
-type StopActiveJobFunction = () => void;
+// type StopActiveJobFunction = () => void;
 
 export class AudioMixer {
     private ffmpegProcess: ChildProcessWithoutNullStreams | null = null;
     private combinedAudioStream: MediaStream | null = null;
     private combinedAudioSource: AudioSource | null = null;
-    private activeJobs = new Map<string, StopActiveJobFunction>();
+    // private activeJobs = new Map<string, StopActiveJobFunction>();
     // participantId -> slot index
     private participantSlots = new Map<number, string>();
     private perInput: Record<number, { sink: AudioSink; writer: Stream.Writable; stop: () => void }> = {};
@@ -81,16 +81,16 @@ export class AudioMixer {
             return;
         }
 
-        if (this.activeJobs.has(jobId)) {
-            return;
-        }
+        // if (this.activeJobs.has(jobId)) {
+        //     return;
+        // }
         const { sink, writer, stop } = writeAudioDataToFFmpeg(this.ffmpegProcess!, inputIndex, audioTrack);
 
-        const stopActiveJob: StopActiveJobFunction = () => {
-            // stop();
-            this.activeJobs.delete(jobId);
-        };
-        this.activeJobs.set(jobId, stopActiveJob);
+        // const stopActiveJob: StopActiveJobFunction = () => {
+        //     // stop();
+        //     this.activeJobs.delete(jobId);
+        // };
+        // this.activeJobs.set(jobId, stopActiveJob);
 
         this.perInput[inputIndex] = { sink, writer, stop };
     }
@@ -98,15 +98,16 @@ export class AudioMixer {
     private stop(participantId: string) {
         const slotIndex = this.getParticipantSlot(participantId);
         if (slotIndex !== null) {
-            this.participantSlots.delete(slotIndex);
+            this.participantSlots.set(slotIndex, "");
+            this.perInput[slotIndex]?.stop();
         }
 
         console.log(`Stopping audio for participant: ${participantId}`);
-        this.activeJobs.forEach((stopActiveJob, jobId) => {
-            if (jobId.startsWith(`${participantId}/`)) {
-                stopActiveJob();
-            }
-        });
+        // this.activeJobs.forEach((stopActiveJob, jobId) => {
+        //     if (jobId.startsWith(`${participantId}/`)) {
+        //         stopActiveJob();
+        //     }
+        // });
     }
 
     public getCombinedAudioStream(): MediaStream | null {
@@ -114,7 +115,7 @@ export class AudioMixer {
     }
 
     public handleRemoteParticipants(participants: RemoteParticipantState[]): void {
-        if (participants.every((p) => p.isAudioEnabled === false)) {
+        if (participants.length === 0) {
             this.stopAudioMixer();
         }
         // Create a process with extra stdio pipes (fd 3..3+inputs-1)
@@ -132,11 +133,6 @@ export class AudioMixer {
         if (this.ffmpegProcess) {
             console.log("Stopping audio mixer and FFmpeg process");
             stopFFmpegProcess(this.ffmpegProcess, this.combinedAudioSource!);
-            Object.values(this.perInput).forEach(({ sink, writer, stop }) => {
-                sink.stop();
-                writer?.end();
-                stop();
-            });
         }
     }
 }
