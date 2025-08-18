@@ -16,6 +16,7 @@ import { selectRoomConnectionSessionId } from "./roomConnection/selectors";
 import { signalEvents } from "./signalConnection/actions";
 import { selectCloudRecordingIsInitiator, selectIsCloudRecording } from "./cloudRecording";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RtcAnalyticsCustomEvent<T = any> = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     actions: Array<ActionCreatorWithPayload<any> | AsyncThunk<any, any, ThunkConfig>["fulfilled"]> | null;
