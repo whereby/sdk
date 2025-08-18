@@ -14,6 +14,7 @@ import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLo
 import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "./localScreenshare";
 import { selectRoomConnectionSessionId } from "./roomConnection/selectors";
 import { signalEvents } from "./signalConnection/actions";
+import { selectCloudRecordingIsInitiator, selectIsCloudRecording } from "./cloudRecording";
 
 type RtcAnalyticsCustomEvent<T = any> = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,6 +105,15 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         rtcEventName: "signalConnectionStatus",
         getValue: (state: RootState) => selectSignalStatus(state),
         getOutput: (value) => ({ status: value }),
+    }),
+    recording: createRtcAnalyticsCustomEvent({
+        actions: [signalEvents.newClient],
+        rtcEventName: "recording",
+        getValue: (state: RootState) => ({
+            local: false,
+            cloud: !!(selectIsCloudRecording(state) && selectCloudRecordingIsInitiator(state)),
+        }),
+        getOutput: (value) => value,
     }),
     roomSessionId: createRtcAnalyticsCustomEvent({
         actions: [
