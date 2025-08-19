@@ -583,8 +583,8 @@ importers:
         specifier: ^9.0.5
         version: 9.0.5
       mediasoup-client:
-        specifier: 3.15.2
-        version: 3.15.2
+        specifier: whereby/mediasoup-client#3.15.3
+        version: https://codeload.github.com/whereby/mediasoup-client/tar.gz/76b6c4ca8ebd984eb6d09b3168779f5cf00c087a
       rtcstats:
         specifier: github:whereby/rtcstats#5.4.1
         version: https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d
@@ -5045,6 +5045,10 @@ packages:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
     engines: {node: '>=6'}
 
+  event-target-shim@6.0.2:
+    resolution: {integrity: sha512-8q3LsZjRezbFZ2PN+uP+Q7pnHUMmAOziU2vA2OwoFaKIXxlxl38IylhSSgUorWu/rf4er67w0ikBqjBFk/pomA==}
+    engines: {node: '>=10.13.0'}
+
   events@3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
@@ -5207,9 +5211,8 @@ packages:
     resolution: {integrity: sha512-hMQ4CX1p1izmuLYyZqLMO/qGNw10wSv9QDCPfzXfyFrOaCSSoRfqE1Kf1s5an66J5JZC62NewG+mK49jOCtQew==}
     engines: {node: '>=4'}
 
-  fake-mediastreamtrack@2.1.2:
-    resolution: {integrity: sha512-7ZFSI2vUmg63lqGzMYUG97GeqTVPBAOv2NbQe7YIDH+AU3ucEBcBzVmIDU89V17dezLxqi8U0U1C0X9TmhYYGA==}
-    engines: {node: '>=18'}
+  fake-mediastreamtrack@1.2.0:
+    resolution: {integrity: sha512-AxHtlEmka1sqNoe3Ej1H1hJc9gjjO/6vCbCPm4D4QeEXvzhjYumA+iZ7wOi2WrmkAhGElHhBgWoNgJhFccectA==}
 
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
@@ -6417,8 +6420,9 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
-  mediasoup-client@3.15.2:
-    resolution: {integrity: sha512-yrQjYSPlKpCuiI4KE+it8kWJu5DpAbAt3voC0Zyf5rKflXArpEI5sABIFejMFZIE2rjgHQ6N+IS/MIh9sbvlkQ==}
+  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/76b6c4ca8ebd984eb6d09b3168779f5cf00c087a:
+    resolution: {tarball: https://codeload.github.com/whereby/mediasoup-client/tar.gz/76b6c4ca8ebd984eb6d09b3168779f5cf00c087a}
+    version: 3.15.2
     engines: {node: '>=18'}
 
   memoize-one@5.2.1:
@@ -8446,10 +8450,6 @@ packages:
 
   uuid-validate@0.0.3:
     resolution: {integrity: sha512-Fykw5U4eZESbq739BeLvEBFRuJODfrlmjx5eJux7W817LjRaq4b7/i4t2zxQmhcX+fAj4nMfRdTzO4tmwLKn0w==}
-
-  uuid@11.1.0:
-    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
-    hasBin: true
 
   uuid@7.0.3:
     resolution: {integrity: sha512-DPSke0pXhTZgoF/d+WSt2QaKMCFSfx7QegxEWT+JOuHF5aWrKEn0G+ztjuJg/gG8/ItK+rbPCD/yNv8yyih6Cg==}
@@ -13928,6 +13928,8 @@ snapshots:
 
   event-target-shim@5.0.1: {}
 
+  event-target-shim@6.0.2: {}
+
   events@3.3.0: {}
 
   exec-async@2.2.0: {}
@@ -14144,9 +14146,10 @@ snapshots:
       iconv-lite: 0.4.24
       tmp: 0.0.33
 
-  fake-mediastreamtrack@2.1.2:
+  fake-mediastreamtrack@1.2.0:
     dependencies:
-      uuid: 11.1.0
+      event-target-shim: 6.0.2
+      uuid: 9.0.1
 
   fast-deep-equal@3.1.3: {}
 
@@ -15613,14 +15616,14 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mediasoup-client@3.15.2:
+  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/76b6c4ca8ebd984eb6d09b3168779f5cf00c087a:
     dependencies:
       '@types/debug': 4.1.12
       '@types/events-alias': '@types/events@3.0.3'
       awaitqueue: 3.2.4(supports-color@10.2.0)
       debug: 4.4.1(supports-color@10.2.0)
       events-alias: events@3.3.0
-      fake-mediastreamtrack: 2.1.2
+      fake-mediastreamtrack: 1.2.0
       h264-profile-level-id: 2.2.3(supports-color@10.2.0)
       sdp-transform: 2.15.0
       supports-color: 10.2.0
@@ -18050,8 +18053,6 @@ snapshots:
   utils-merge@1.0.1: {}
 
   uuid-validate@0.0.3: {}
-
-  uuid@11.1.0: {}
 
   uuid@7.0.3: {}
 
