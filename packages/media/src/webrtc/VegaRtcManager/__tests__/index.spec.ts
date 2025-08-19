@@ -9,7 +9,7 @@ import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
 
 jest.mock("../../../utils/getMediasoupDevice");
-const { getMediasoupDevice } = jest.requireMock("../../../utils/getMediasoupDevice");
+const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
 
 const logger = new Logger();
 
@@ -62,7 +62,7 @@ describe("VegaRtcManager", () => {
             value: navigator,
         });
 
-        getMediasoupDevice.mockImplementation(() => ({
+        getMediasoupDeviceAsync.mockImplementation(() => ({
             load: jest.fn(),
             rtpCapabilities: {},
             createSendTransport: () => mockSendTransport,
@@ -96,9 +96,9 @@ describe("VegaRtcManager", () => {
         const selfId = helpers.randomString("client-");
         const room = { name: helpers.randomString("/room-"), iceServers: {} };
 
-        it("gets a mediasoup device", () => {
+        it("gets a mediasoup device", async () => {
             const device = jest.fn();
-            getMediasoupDevice.mockImplementation(() => device);
+            getMediasoupDeviceAsync.mockImplementation(() => device);
 
             const rtcManager = new VegaRtcManager({
                 selfId,
@@ -109,8 +109,8 @@ describe("VegaRtcManager", () => {
                 features: { isNodeSdk: true },
             });
 
-            expect(getMediasoupDevice).toHaveBeenCalledWith({ isNodeSdk: true });
-            expect(rtcManager._mediasoupDevice).toEqual(device);
+            expect(getMediasoupDeviceAsync).toHaveBeenCalledWith({ isNodeSdk: true });
+            expect(await rtcManager._mediasoupDeviceInitializedAsync).toEqual(device);
         });
     });
 

@@ -165,7 +165,7 @@ function prioritizeRouterRtpCapabilitiesCodecs(codecs: RtpCodecCapability[], pre
         }
         if (
             left.mimeType.toLowerCase() === "video/rtx" &&
-            left.parameters.apt === preferredCodecEntry.preferredPayloadType
+            left.parameters?.apt === preferredCodecEntry.preferredPayloadType
         ) {
             if (right.mimeType.toLowerCase() === preferredCodec) {
                 return 1;

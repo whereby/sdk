@@ -15,7 +15,7 @@ import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
 import { PROTOCOL_EVENTS, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../model/protocol";
 import * as CONNECTION_STATUS from "../../model/connectionStatusConstants";
 import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSettings";
-import { getMediasoupDevice } from "../../utils/getMediasoupDevice";
+import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
 import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
@@ -62,7 +62,7 @@ export default class VegaRtcManager implements RtcManager {
     _vegaConnection: any;
     _micAnalyser: any;
     _micAnalyserDebugger: any;
-    _mediasoupDevice: Device | null;
+    _mediasoupDeviceInitializedAsync: Promise<Device | null>;
     _routerRtpCapabilities: RtpCapabilities | null;
     _sendTransport: any;
     _receiveTransport: any;
@@ -143,7 +143,7 @@ export default class VegaRtcManager implements RtcManager {
         this._micAnalyser = null;
         this._micAnalyserDebugger = null;
 
-        this._mediasoupDevice = getMediasoupDevice(features);
+        this._mediasoupDeviceInitializedAsync = getMediasoupDeviceAsync(features);
 
         this._routerRtpCapabilities = null;
 
@@ -438,11 +438,13 @@ export default class VegaRtcManager implements RtcManager {
                 });
 
                 this._routerRtpCapabilities = modifiedCapabilities;
-                await this._mediasoupDevice?.load({ routerRtpCapabilities: modifiedCapabilities });
+                await (
+                    await this._mediasoupDeviceInitializedAsync
+                )?.load({ routerRtpCapabilities: modifiedCapabilities });
             }
 
             this._vegaConnection.message("setCapabilities", {
-                rtpCapabilities: this._mediasoupDevice?.rtpCapabilities,
+                rtpCapabilities: (await this._mediasoupDeviceInitializedAsync)?.rtpCapabilities,
             });
 
             if (this._colocation) this._vegaConnection.message("setColocation", { colocation: this._colocation });
@@ -494,7 +496,7 @@ export default class VegaRtcManager implements RtcManager {
 
         maybeTurnOnly(transportOptions, this._features);
 
-        const transport = this._mediasoupDevice?.[creator](transportOptions);
+        const transport = (await this._mediasoupDeviceInitializedAsync)?.[creator](transportOptions);
         const onConnectionStateListener = async (connectionState: any) => {
             logger.info(`Transport ConnectionStateChanged ${connectionState}`);
             if (connectionState !== "disconnected" && connectionState !== "failed") {
@@ -1630,7 +1632,7 @@ export default class VegaRtcManager implements RtcManager {
 
         this._streamIdToVideoConsumerId.clear();
 
-        this._mediasoupDevice = null;
+        this._mediasoupDeviceInitializedAsync = Promise.resolve(null);
     }
 
     sendAudioMutedStats(muted: boolean) {

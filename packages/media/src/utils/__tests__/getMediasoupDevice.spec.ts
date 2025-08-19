@@ -1,12 +1,10 @@
-import { getMediasoupDevice } from "../getMediasoupDevice";
+import { getMediasoupDeviceAsync } from "../getMediasoupDevice";
 
 jest.mock("mediasoup-client", () => ({
     Device: jest.fn(),
-    detectDevice: jest.fn(),
+    detectDeviceAsync: jest.fn(),
 }));
 const mediasoupClient = jest.requireMock("mediasoup-client");
-jest.mock("../Safari17Handler");
-const { Safari17 } = jest.requireMock("../Safari17Handler");
 
 const safari17UserAgent =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
@@ -17,21 +15,21 @@ describe("getMediasoupClient", () => {
     const features = {};
     (global as any).userAgent = jest.spyOn(navigator, "userAgent", "get");
 
-    it("returns the resolved handler from mediasoup-client", () => {
-        mediasoupClient.detectDevice.mockImplementationOnce(() => "Chrome111");
+    it("returns the resolved handler from mediasoup-client", async () => {
+        mediasoupClient.detectDeviceAsync.mockImplementationOnce(() => "Chrome111");
 
-        getMediasoupDevice(features);
+        await getMediasoupDeviceAsync(features);
 
         expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerName: "Chrome111" });
     });
 
     describe("when the browser version is Safari12", () => {
         beforeEach(() => {
-            mediasoupClient.detectDevice.mockImplementationOnce(() => "Safari12");
+            mediasoupClient.detectDeviceAsync.mockImplementationOnce(() => "Safari12");
         });
 
-        it("returns the resolved handler from mediasoup-client", () => {
-            getMediasoupDevice(features);
+        it("returns the resolved handler from mediasoup-client", async () => {
+            await getMediasoupDeviceAsync(features);
 
             expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerName: "Safari12" });
         });
@@ -44,21 +42,10 @@ describe("getMediasoupClient", () => {
                 (global as any).userAgent.mockReturnValue(userAgent);
             });
 
-            it("returns the resolved handler from mediasoup-client", () => {
-                getMediasoupDevice(features);
+            it("returns the resolved handler from mediasoup-client", async () => {
+                await getMediasoupDeviceAsync(features);
 
                 expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerName: "Safari12" });
-            });
-
-            describe("when the safari17HandlerOn feature is enabled", () => {
-                it("returns a Safari17 device", () => {
-                    const factory = jest.fn();
-                    Safari17.createFactory.mockImplementation(() => factory);
-
-                    getMediasoupDevice({ safari17HandlerOn: true });
-
-                    expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: factory });
-                });
             });
         });
     });
@@ -68,11 +55,8 @@ describe("getMediasoupClient", () => {
             (global as any).userAgent.mockReturnValue(userAgent);
         });
 
-        it("returns a Safari12 device", () => {
-            const factory = jest.fn();
-            Safari17.createFactory.mockImplementation(() => factory);
-
-            getMediasoupDevice({ safari17HandlerOn: false });
+        it("returns a Safari12 device", async () => {
+            await getMediasoupDeviceAsync({ safari17HandlerOn: false });
 
             expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerName: "Safari12" });
         });
@@ -83,24 +67,10 @@ describe("getMediasoupClient", () => {
             (global as any).userAgent.mockReturnValue(userAgent);
         });
 
-        it("returns a Safari12 device", () => {
-            const factory = jest.fn();
-            Safari17.createFactory.mockImplementation(() => factory);
-
-            getMediasoupDevice({ safari17HandlerOn: false });
+        it("returns a Safari12 device", async () => {
+            await getMediasoupDeviceAsync({ safari17HandlerOn: false });
 
             expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerName: "Safari12" });
-        });
-
-        describe("when the safari17HandlerOn feature is enabled", () => {
-            it("returns a Safari17 device", () => {
-                const factory = jest.fn();
-                Safari17.createFactory.mockImplementation(() => factory);
-
-                getMediasoupDevice({ safari17HandlerOn: true });
-
-                expect(mediasoupClient.Device).toHaveBeenCalledWith({ handlerFactory: factory });
-            });
         });
     });
 });

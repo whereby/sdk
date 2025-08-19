@@ -3,7 +3,7 @@ import EventEmitter from "events";
 import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import Logger from "../utils/Logger";
-import { getMediasoupDevice } from "../utils/getMediasoupDevice";
+import { getMediasoupDeviceAsync } from "../utils/getMediasoupDevice";
 
 const logger = new Logger();
 
@@ -11,7 +11,7 @@ export default class BandwidthTester extends EventEmitter {
     closed: boolean;
     _features: any;
     _vegaConnection: any;
-    _mediasoupDevice: Device | null;
+    _mediasoupDeviceInitializedAsync: Promise<Device | null>;
     _routerRtpCapabilities: any;
     _sendTransport: any;
     _receiveTransport: any;
@@ -36,7 +36,7 @@ export default class BandwidthTester extends EventEmitter {
 
         this._vegaConnection = null;
 
-        this._mediasoupDevice = getMediasoupDevice(this._features);
+        this._mediasoupDeviceInitializedAsync = getMediasoupDeviceAsync(this._features);
 
         this._routerRtpCapabilities = null;
 
@@ -121,7 +121,7 @@ export default class BandwidthTester extends EventEmitter {
         }
 
         this._receiveTransport = null;
-        this._mediasoupDevice = null;
+        this._mediasoupDeviceInitializedAsync = Promise.resolve(null);
 
         if (this._vegaConnection) {
             this._vegaConnection.removeAllListeners();
@@ -164,11 +164,13 @@ export default class BandwidthTester extends EventEmitter {
                 });
 
                 this._routerRtpCapabilities = modifiedCapabilities;
-                await this._mediasoupDevice?.load({ routerRtpCapabilities: modifiedCapabilities });
+                await (
+                    await this._mediasoupDeviceInitializedAsync
+                )?.load({ routerRtpCapabilities: modifiedCapabilities });
             }
 
             this._vegaConnection.message("setCapabilities", {
-                rtpCapabilities: this._mediasoupDevice?.rtpCapabilities,
+                rtpCapabilities: (await this._mediasoupDeviceInitializedAsync)?.rtpCapabilities,
             });
 
             await Promise.all([this._createTransport(true), this._createTransport(false)]);
@@ -222,7 +224,7 @@ export default class BandwidthTester extends EventEmitter {
 
         transportOptions.iceServers = [{ urls: "stun:any.turn.svc.whereby.com" }];
 
-        const transport = this._mediasoupDevice?.[creator](transportOptions);
+        const transport = (await this._mediasoupDeviceInitializedAsync)?.[creator](transportOptions);
 
         transport?.on("connect", ({ dtlsParameters }: { dtlsParameters: any }, callback: any) => {
             this._vegaConnection.message("connectTransport", {
