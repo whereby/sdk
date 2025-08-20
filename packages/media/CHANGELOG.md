@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.0.0
+
+### Major Changes
+
+- 4242c01: Updates mediasoup client and switches to async device detection
+
 ## 1.33.0
 
 ### Minor Changes
