@@ -4,20 +4,28 @@ const commonjs = require("@rollup/plugin-commonjs");
 const replace = require("@rollup/plugin-replace");
 const pkg = require("./package.json");
 const { dts } = require("rollup-plugin-dts");
+const dotenv = require("dotenv");
+
+dotenv.config({
+  path: `../../.env`,
+});
 
 const dependencies = [...Object.keys(pkg.dependencies || {})];
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
 const tsOptions = {
-    tsconfig: "tsconfig.build.json",
+  tsconfig: "tsconfig.build.json",
 };
+
+const baseConfig = require("@whereby.com/rollup-config/base");
+const replaceValues = baseConfig(__dirname, {}).replaceValues.values;
 
 const plugins = [
     replace({
         preventAssignment: true,
         // jslib-media uses global.navigator for some gUM calls, replace these
         delimiters: [" ", "."],
-        values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
+        values: { "global.navigator.mediaDevices": " navigator.mediaDevices.", ...replaceValues },
     }),
     commonjs(),
     typescript(tsOptions),

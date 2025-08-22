@@ -1,4 +1,4 @@
-import { cloudRecordingSlice } from "../cloudRecording";
+import { cloudRecordingSlice, initialCloudRecordingState } from "../cloudRecording";
 import { signalEvents } from "../signalConnection/actions";
 
 describe("cloudRecordingSlice", () => {
@@ -12,17 +12,34 @@ describe("cloudRecordingSlice", () => {
 
             expect(result).toEqual({
                 error: "some error",
+                isInitiator: false,
                 isRecording: false,
                 status: "error",
             });
         });
 
-        it("signalEvents.cloudRecordingStopped", () => {
-            const result = cloudRecordingSlice.reducer(undefined, signalEvents.cloudRecordingStopped());
+        describe("signalEvents.cloudRecordingStopped", () => {
+            it("resets the recording state", () => {
+                const result = cloudRecordingSlice.reducer(undefined, signalEvents.cloudRecordingStopped());
 
-            expect(result).toEqual({
-                error: null,
-                isRecording: false,
+                expect(result).toEqual({
+                    error: null,
+                    isInitiator: false,
+                    isRecording: false,
+                });
+            });
+
+            it("resets the recording state as the initiator", () => {
+                const result = cloudRecordingSlice.reducer(
+                    { ...initialCloudRecordingState, isInitiator: true },
+                    signalEvents.cloudRecordingStopped(),
+                );
+
+                expect(result).toEqual({
+                    error: null,
+                    isInitiator: false,
+                    isRecording: false,
+                });
             });
         });
 
@@ -50,6 +67,7 @@ describe("cloudRecordingSlice", () => {
 
             expect(result).toEqual({
                 error: null,
+                isInitiator: false,
                 isRecording: true,
                 status: "recording",
                 startedAt: 1609459200000,

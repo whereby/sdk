@@ -76,6 +76,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         toggleMicrophone,
         startScreenshare,
         stopScreenshare,
+        startCloudRecording,
+        stopCloudRecording,
         joinRoom,
         leaveRoom,
         toggleRaiseHand,
@@ -264,6 +266,12 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 </button>
                 <button data-testid="stopScreenshareBtn" onClick={() => stopScreenshare()}>
                     Stop screen share
+                </button>
+                <button data-testid="startCloudRecordingBtn" onClick={() => startCloudRecording()}>
+                    Start cloud recording
+                </button>
+                <button data-testid="stopCloudRecordingBtn" onClick={() => stopCloudRecording()}>
+                    Stop cloud recording
                 </button>
                 {localParticipant && (
                     <>
