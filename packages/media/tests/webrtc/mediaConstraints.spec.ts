@@ -64,7 +64,7 @@ describe("getMediaConstraints", () => {
                 const result = getMediaConstraints({ lowDataMode, preferredDeviceIds, simulcast } as any);
 
                 expect(result.video.frameRate).toBe(expected);
-            }
+            },
         );
     });
 

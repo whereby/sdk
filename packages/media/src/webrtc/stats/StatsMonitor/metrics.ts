@@ -3,7 +3,7 @@ export function captureCandidatePairInfoMetrics(
     currentCptats: any,
     prevCptats: any,
     timeDiff: any,
-    report: any
+    report: any,
 ) {
     const bytesReceivedDiff = currentCptats.bytesReceived - (prevCptats?.bytesReceived || 0);
     const bytesSentDiff = currentCptats.bytesSent - (prevCptats?.bytesSent || 0);
@@ -26,7 +26,7 @@ export function captureCandidatePairInfoMetrics(
 
     cpMetrics.usingTurn = false;
     if (local) {
-        if (/relay/i.test(local.candidateType || '')) {
+        if (/relay/i.test(local.candidateType || "")) {
             cpMetrics.usingTurn = true;
             cpMetrics.turnProtocol = local.relayProtocol;
         }
@@ -44,7 +44,7 @@ export function captureSsrcInfo(
     currentSsrcStats: any,
     prevSsrcStats: any,
     timeDiff: any,
-    report: any
+    report: any,
 ) {
     // we only update this until we receive codec stats
     if (ssrcMetrics.codec) return;
@@ -76,7 +76,7 @@ export function captureCommonSsrcMetrics(
     currentSsrcStats: any,
     prevSsrcStats: any,
     timeDiff: any,
-    report: any
+    report: any,
 ) {
     const nackCountDiff = (currentSsrcStats.nackCount || 0) - (prevSsrcStats?.nackCount || 0);
     ssrcMetrics.nackCount = (ssrcMetrics.nackCount || 0) + nackCountDiff;
@@ -152,7 +152,7 @@ export function captureAudioSsrcMetrics(
     currentSsrcStats: any,
     prevSsrcStats: any,
     timeDiff: any,
-    report: any
+    report: any,
 ) {
     const packetsDiscardedDiff = currentSsrcStats.packetsDiscarded - (prevSsrcStats?.packetsDiscarded || 0);
     ssrcMetrics.packetsDiscarded = (ssrcMetrics.packetsDiscarded || 0) + packetsDiscardedDiff;
@@ -191,7 +191,7 @@ export function captureVideoSsrcMetrics(
     currentSsrcStats: any,
     prevSsrcStats: any,
     timeDiff: any,
-    report: any
+    report: any,
 ) {
     ssrcMetrics.width = currentSsrcStats.frameWidth;
     ssrcMetrics.height = currentSsrcStats.frameHeight;

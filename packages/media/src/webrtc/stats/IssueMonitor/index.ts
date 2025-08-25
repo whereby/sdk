@@ -1,15 +1,23 @@
-import { StatsSubscription, subscribeStats, ViewStats } from "../StatsMonitor";
-import { StatsClient } from "../types";
 import { IssueCheckData, issueDetectors } from "./issueDetectors";
+import { subscribeStats } from "../StatsMonitor";
+import { StatsClient, ViewStats } from "../types";
 
-let subscriptions: any[] = [];
+type IssueSubscription = {
+    onUpdatedIssues: (
+        issuesAndMetricsByView: IssuesAndMetricsByView,
+        statsByView: Record<string, ViewStats>,
+        clients: StatsClient[],
+    ) => void;
+};
+
+let subscriptions: IssueSubscription[] = [];
 let stopStats: (() => void) | null = null;
 
 interface Metric {
     id: string;
     global?: true;
     enabled?: (checkData: IssueCheckData) => boolean;
-    value: (checkData: IssueCheckData) => any;
+    value: (checkData: IssueCheckData) => number;
 }
 
 interface MetricData {
@@ -96,7 +104,7 @@ const metrics: Metric[] = [
             hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
             Object.values(trackStats?.ssrcs || {}).reduce(
-                (sum: number, ssrc: any) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
+                (sum: number, ssrc) => sum + (ssrc.fps || 0) * (ssrc.width || 0) * (ssrc.height || 0),
                 0,
             ),
     },
@@ -106,7 +114,7 @@ const metrics: Metric[] = [
             hasLiveTrack && kind === "video" && !!trackStats && !!track && !!ssrc0 && !!ssrc0.height,
         value: ({ trackStats }) =>
             Object.values(trackStats?.ssrcs || {}).reduce(
-                (max: number, ssrc: any) => Math.max(max, ssrc.fps > 0 ? ssrc.height : 0),
+                (max: number, ssrc) => Math.max(max, ssrc.fps || 0 > 0 ? ssrc.height || 0 : 0),
                 0,
             ),
     },
@@ -114,7 +122,7 @@ const metrics: Metric[] = [
         id: "sourceHeight",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
             hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.sourceHeight && ssrc0.direction === "out",
-        value: ({ ssrc0 }) => ssrc0?.sourceHeight,
+        value: ({ ssrc0 }) => ssrc0?.sourceHeight || NaN,
     },
     {
         id: "packetloss",
@@ -124,7 +132,7 @@ const metrics: Metric[] = [
     {
         id: "jitter",
         enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.bitrate && ssrc0.direction === "in",
-        value: ({ ssrc0 }) => ssrc0?.jitter,
+        value: ({ ssrc0 }) => ssrc0?.jitter || NaN,
     },
     {
         // https://www.pingman.com/kb/article/how-is-mos-calculated-in-pingplotter-pro-50.html
@@ -156,19 +164,20 @@ const metrics: Metric[] = [
         global: true,
         enabled: ({ stats }) => stats?.pressure?.source === "cpu",
         value: ({ stats }) =>
-            (({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 }) as any)[stats?.pressure?.state || ""] || 0,
+            ({ nominal: 0.25, fair: 0.5, serious: 0.75, critical: 1 })[stats?.pressure?.state || ""] || 0,
     },
     {
         id: "turn-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.usingTurn),
+        value: ({ stats }) => (Object.values(stats?.candidatePairs || {}).some((cp) => cp.usingTurn) ? 1 : 0),
     },
     {
         id: "turn-tls-usage",
         global: true,
         enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
-        value: ({ stats }) => Object.values(stats?.candidatePairs || {}).some((cp: any) => cp.turnProtocol === "tls"),
+        value: ({ stats }) =>
+            Object.values(stats?.candidatePairs || {}).some((cp) => cp.turnProtocol === "tls") ? 1 : 0,
     },
     {
         id: "concealment",
@@ -179,7 +188,7 @@ const metrics: Metric[] = [
             ssrc0.direction === "in" &&
             kind === "audio" &&
             (ssrc0.audioLevel || 0) >= 0.001,
-        value: ({ ssrc0 }) => ssrc0?.audioConcealment,
+        value: ({ ssrc0 }) => ssrc0?.audioConcealment || NaN,
     },
     {
         id: "deceleration",
@@ -190,7 +199,7 @@ const metrics: Metric[] = [
             ssrc0.direction === "in" &&
             kind === "audio" &&
             (ssrc0.audioLevel || 0) >= 0.001,
-        value: ({ ssrc0 }) => ssrc0?.audioDeceleration,
+        value: ({ ssrc0 }) => ssrc0?.audioDeceleration || NaN,
     },
     {
         id: "acceleration",
@@ -201,7 +210,7 @@ const metrics: Metric[] = [
             ssrc0.direction === "in" &&
             kind === "audio" &&
             (ssrc0.audioLevel || 0) >= 0.001,
-        value: ({ ssrc0 }) => ssrc0?.audioAcceleration,
+        value: ({ ssrc0 }) => ssrc0?.audioAcceleration || NaN,
     },
     {
         id: "qpf",
@@ -257,8 +266,6 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
         const stats = statsByView[client.id];
 
         ["video", "audio", "global"].forEach((kind) => {
-            // skip checking muted/disabled tracks if not global
-            if (!(kind === "global" && !client.isPresentation) && !(client as any)[kind]?.enabled) return;
             // don't check global for remote clients
             if (kind === "global" && !client.isLocalClient) return;
 
@@ -268,13 +275,13 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
                 issuesAndMetricsByView[client.id] = issuesAndMetrics;
             }
 
-            const track = (client as any)[kind]?.track as MediaStreamTrack | undefined;
+            const track = kind === "audio" || kind === "video" ? client[kind].track : undefined;
             const hasLiveTrack = !!track && track.readyState !== "ended";
 
             const trackStats = track && stats && stats.tracks[track.id];
             const ssrcs = trackStats
                 ? Object.values(trackStats.ssrcs).sort(
-                      (a: any, b: any) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
+                      (a, b) => (a.height || Number.MAX_SAFE_INTEGER) - (b.height || Number.MAX_SAFE_INTEGER),
                   )
                 : [];
             const ssrc0 = ssrcs[0];
@@ -467,9 +474,7 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
     );
 }
 
-export function subscribeIssues(subscription: {
-    onUpdatedIssues: (issuesAndMetricsByView: IssuesAndMetricsByView, statsByView: any, clients: any) => void;
-}): { stop: () => void } {
+export function subscribeIssues(subscription: IssueSubscription): { stop: () => void } {
     subscriptions.push(subscription);
 
     // start the stats on first subscription
