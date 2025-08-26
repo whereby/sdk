@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 1.1.0
+
+### Minor Changes
+
+- 8a46a62: Send cloud recording rtcAnalytics event
+
+### Patch Changes
+
+- Updated dependencies [8a46a62]
+- Updated dependencies [007d61b]
+    - @whereby.com/media@2.1.0
+
 ## 1.0.2
 
 ### Patch Changes

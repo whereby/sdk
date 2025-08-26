@@ -1,5 +1,17 @@
 # @whereby.com/media
 
+## 2.1.0
+
+### Minor Changes
+
+- 007d61b: - Allow disabled tracks to being checked for issues, as active issues wont be cleared out if checks for disabled tracks are ignored
+    - Add more typings to files in the webrtc/stats directory
+    - Add unit tests for the PeerConnection module in the webrtc/stats directory
+
+### Patch Changes
+
+- 8a46a62: Send cloud recording rtcAnalytics event
+
 ## 2.0.0
 
 ### Major Changes
