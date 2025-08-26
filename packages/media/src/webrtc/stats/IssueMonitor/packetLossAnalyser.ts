@@ -17,7 +17,7 @@ type PacketLossHistory = {
 const logger = new Logger();
 const debugLogger = {
     // eslint-disable-next-line no-console
-    print: (...args: any[]) => console.debug(args[0], ...args.slice(1)),
+    print: (...args: unknown[]) => console.debug(args[0], ...args.slice(1)),
 };
 logger.withDebugLogger(debugLogger);
 

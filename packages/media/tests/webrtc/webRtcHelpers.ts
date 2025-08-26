@@ -52,7 +52,17 @@ export function createServerSocketStub() {
     };
 }
 
-export function createRTCPeerConnectionStub() {
+export function createRTCPeerConnectionStub(
+    {
+        receivers = [],
+        senders = [],
+        stats = new Map(),
+    }: { receivers?: RTCRtpReceiver[]; senders?: RTCRtpSender[]; stats?: Map<string, unknown> } = {
+        receivers: [] as RTCRtpReceiver[],
+        senders: [] as RTCRtpSender[],
+        stats: new Map(),
+    },
+) {
     return jest.fn(() => {
         return {
             addIceCandidate: jest.fn(() => Promise.resolve()),
@@ -65,8 +75,21 @@ export function createRTCPeerConnectionStub() {
             signalingState: "stable",
             addEventListener: jest.fn(),
             close: jest.fn(),
-            getSenders: jest.fn(() => []),
-        };
+            getReceivers: jest.fn(() => receivers),
+            getSenders: jest.fn(() => senders),
+            getStats: jest.fn(() => stats),
+        } as unknown as RTCPeerConnection;
+    });
+}
+
+export function createRTCTrancieverStub<T extends RTCRtpReceiver | RTCRtpSender>(
+    { stats, track } = { stats: new Map(), track: createMockedMediaStreamTrack({ kind: "video" }) },
+): () => T {
+    return jest.fn(() => {
+        return {
+            getStats: jest.fn(() => stats),
+            track,
+        } as unknown as T;
     });
 }
 
@@ -133,7 +156,7 @@ export function createMockedMediaStreamTrack({ id = randomString("track"), kind 
             result.readyState = "ended";
         }),
     };
-    return Object.assign(new EventTarget(), result);
+    return Object.assign(new EventTarget(), result) as unknown as MediaStreamTrack;
 }
 
 export function createMockedMediaStream(existingTracks?: any) {
@@ -234,9 +257,7 @@ export const createSfuWebsocketServer = (): {
                 socket.on("message", function message(message) {
                     const { method, id } = JSON.parse(message.toString());
                     if (method === "getCapabilities") {
-                        socket.send(
-                            JSON.stringify({ response: true, id, ok: true, })
-                        );
+                        socket.send(JSON.stringify({ response: true, id, ok: true }));
                     }
                     if (method === "createTransport") {
                         socket.send(
@@ -244,7 +265,7 @@ export const createSfuWebsocketServer = (): {
                                 id,
                                 ok: true,
                                 response: true,
-                            })
+                            }),
                         );
                     }
                 });
