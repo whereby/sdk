@@ -173,7 +173,8 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     return connection;
 }
 
-const server = rtcStatsConnection(process.env.RTCSTATS_URL || "wss://rtcstats.srv.whereby.com");
+const RTCSTATS_URL = process.env.RTCSTATS_URL;
+const server = rtcStatsConnection(RTCSTATS_URL || "wss://rtcstats.srv.whereby.com");
 const stats = rtcstats(
     server.trace,
     10000, // query once every 10 seconds.

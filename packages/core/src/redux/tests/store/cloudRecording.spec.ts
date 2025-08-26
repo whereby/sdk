@@ -18,6 +18,7 @@ describe("actions", () => {
             });
             expect(diff(before, after)).toEqual({
                 status: "requested",
+                isInitiator: true,
             });
         });
 

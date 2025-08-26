@@ -8,6 +8,7 @@ import { selectSignalConnectionRaw } from "./signalConnection";
  * Reducer
  */
 export interface CloudRecordingState {
+    isInitiator: boolean;
     isRecording: boolean;
     error: unknown;
     status?: "recording" | "requested" | "error";
@@ -15,6 +16,7 @@ export interface CloudRecordingState {
 }
 
 export const initialCloudRecordingState: CloudRecordingState = {
+    isInitiator: false,
     isRecording: false,
     error: null,
     startedAt: undefined,
@@ -27,6 +29,7 @@ export const cloudRecordingSlice = createSlice({
         recordingRequestStarted: (state) => {
             return {
                 ...state,
+                isInitiator: true,
                 status: "requested",
             };
         },
@@ -35,6 +38,7 @@ export const cloudRecordingSlice = createSlice({
         builder.addCase(signalEvents.cloudRecordingStopped, (state) => {
             return {
                 ...state,
+                isInitiator: false,
                 isRecording: false,
                 status: undefined,
             };
@@ -48,6 +52,7 @@ export const cloudRecordingSlice = createSlice({
 
             return {
                 ...state,
+                isInitiator: false,
                 isRecording: false,
                 status: "error",
                 error: payload.error,
@@ -107,3 +112,4 @@ export const selectCloudRecordingStatus = (state: RootState) => state.cloudRecor
 export const selectCloudRecordingStartedAt = (state: RootState) => state.cloudRecording.startedAt;
 export const selectCloudRecordingError = (state: RootState) => state.cloudRecording.error;
 export const selectIsCloudRecording = (state: RootState) => state.cloudRecording.isRecording;
+export const selectCloudRecordingIsInitiator = (state: RootState) => state.cloudRecording.isInitiator;
