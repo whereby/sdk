@@ -58,7 +58,8 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             },
             roomUrl,
             isNodeSdk: true,
-            roomKey: this.assistantKey,
+            assistantKey: this.assistantKey,
+            isAssistant: true,
         });
         this.roomConnection.joinRoom();
     }
