@@ -7,6 +7,7 @@ describe("appSlice", () => {
                 const initialConfig = {
                     isNodeSdk: true,
                     isDialIn: true,
+                    isAssistant: false,
                     ignoreBreakoutGroups: true,
                     roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
