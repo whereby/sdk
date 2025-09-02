@@ -27,6 +27,7 @@ function main() {
         },
         subdomain: "embedded",
         port: 3000,
+        assistantKey: "",
     });
 
     trigger.start();
