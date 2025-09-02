@@ -20,11 +20,13 @@ const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName
 
 export interface AuthorizationState {
     roomKey: string | null;
+    assistantKey?: string | null;
     roleName: RoleName;
 }
 
 export const authorizationSliceInitialState: AuthorizationState = {
     roomKey: null,
+    assistantKey: null,
     roleName: "none",
 };
 
@@ -44,6 +46,7 @@ export const authorizationSlice = createSlice({
             return {
                 ...state,
                 roomKey: action.payload.roomKey,
+                assistantKey: action.payload.assistantKey,
             };
         });
 
@@ -79,6 +82,7 @@ export const { setRoomKey } = authorizationSlice.actions;
  */
 
 export const selectRoomKey = (state: RootState) => state.authorization.roomKey;
+export const selectAssistantKey = (state: RootState) => state.authorization.assistantKey;
 
 export const selectAuthorizationRoleName = (state: RootState) => state.authorization.roleName;
 

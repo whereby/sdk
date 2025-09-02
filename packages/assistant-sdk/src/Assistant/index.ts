@@ -1,4 +1,10 @@
-import { WherebyClient, RoomConnectionClient, LocalMediaClient, RemoteParticipantState } from "@whereby.com/core";
+import {
+    WherebyClient,
+    RoomConnectionClient,
+    LocalMediaClient,
+    RemoteParticipantState,
+    ChatMessage,
+} from "@whereby.com/core";
 import wrtc from "@roamhq/wrtc";
 import { AudioMixer } from "../AudioMixer";
 import EventEmitter from "events";
@@ -7,6 +13,7 @@ import { AUDIO_STREAM_READY, AssistantEvents } from "./types";
 export type AssistantOptions = {
     assistantKey?: string;
     startCombinedAudioStream: boolean;
+    startLocalMedia?: boolean;
 };
 
 export class Assistant extends EventEmitter<AssistantEvents> {
@@ -18,16 +25,24 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private audioSource: wrtc.nonstandard.RTCAudioSource | null = null;
     private combinedStream: MediaStream | null = null;
 
-    constructor({ assistantKey, startCombinedAudioStream }: AssistantOptions = { startCombinedAudioStream: false }) {
+    constructor(
+        { assistantKey, startCombinedAudioStream, startLocalMedia }: AssistantOptions = {
+            startCombinedAudioStream: false,
+            startLocalMedia: false,
+        },
+    ) {
         super();
         this.assistantKey = assistantKey;
         this.client = new WherebyClient();
         this.roomConnection = this.client.getRoomConnection();
         this.localMedia = this.client.getLocalMedia();
-        const outputAudioSource = new wrtc.nonstandard.RTCAudioSource();
-        const outputMediaStream = new wrtc.MediaStream([outputAudioSource.createTrack()]);
-        this.mediaStream = outputMediaStream;
-        this.audioSource = outputAudioSource;
+
+        if (startLocalMedia) {
+            const outputAudioSource = new wrtc.nonstandard.RTCAudioSource();
+            const outputMediaStream = new wrtc.MediaStream([outputAudioSource.createTrack()]);
+            this.mediaStream = outputMediaStream;
+            this.audioSource = outputAudioSource;
+        }
 
         if (startCombinedAudioStream) {
             const handleStreamReady = () => {
@@ -58,9 +73,20 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             },
             roomUrl,
             isNodeSdk: true,
-            roomKey: this.assistantKey,
+            assistantKey: this.assistantKey,
+            isAssistant: true,
         });
         this.roomConnection.joinRoom();
+    }
+
+    public startLocalMedia(): void {
+        if (!this.mediaStream) {
+            const outputAudioSource = new wrtc.nonstandard.RTCAudioSource();
+            const outputMediaStream = new wrtc.MediaStream([outputAudioSource.createTrack()]);
+            this.mediaStream = outputMediaStream;
+            this.audioSource = outputAudioSource;
+        }
+        this.localMedia.startMedia(this.mediaStream);
     }
 
     public getLocalMediaStream(): MediaStream | null {
@@ -129,5 +155,9 @@ export class Assistant extends EventEmitter<AssistantEvents> {
 
     public subscribeToRemoteParticipants(callback: (participants: RemoteParticipantState[]) => void): () => void {
         return this.roomConnection.subscribeToRemoteParticipants(callback);
+    }
+
+    public subscribeToChatMessages(callback: (messages: ChatMessage[]) => void): () => void {
+        return this.roomConnection.subscribeToChatMessages(callback);
     }
 }

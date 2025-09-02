@@ -10,10 +10,12 @@ import { coreVersion } from "../../version";
 export interface AppConfig {
     isNodeSdk?: boolean;
     isDialIn?: boolean;
+    isAssistant?: boolean;
     ignoreBreakoutGroups?: boolean;
     displayName: string;
     localMediaOptions?: LocalMediaOptions;
     roomKey: string | null;
+    assistantKey?: string | null;
     roomUrl: string;
     userAgent?: string;
     externalId: string | null;
@@ -23,6 +25,7 @@ export interface AppState {
     isNodeSdk: boolean;
     isActive: boolean;
     isDialIn: boolean;
+    isAssistant: boolean;
     ignoreBreakoutGroups: boolean;
     roomUrl: string | null;
     roomName: string | null;
@@ -36,6 +39,7 @@ export const initialState: AppState = {
     isNodeSdk: false,
     isActive: false,
     isDialIn: false,
+    isAssistant: false,
     ignoreBreakoutGroups: false,
     roomName: null,
     roomUrl: null,
@@ -78,6 +82,7 @@ export const { doAppStop, doAppStart } = appSlice.actions;
 export const selectAppRaw = (state: RootState) => state.app;
 export const selectAppIsActive = (state: RootState) => state.app.isActive;
 export const selectAppIsDialIn = (state: RootState) => state.app.isDialIn;
+export const selectAppIsAssistant = (state: RootState) => state.app.isAssistant;
 export const selectAppRoomName = (state: RootState) => state.app.roomName;
 export const selectAppRoomUrl = (state: RootState) => state.app.roomUrl;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;

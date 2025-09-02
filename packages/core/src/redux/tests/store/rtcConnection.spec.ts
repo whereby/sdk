@@ -80,6 +80,7 @@ describe("actions", () => {
                             isNodeSdk: true,
                             isActive: false,
                             isDialIn: false,
+                            isAssistant: false,
                             ignoreBreakoutGroups: false,
                             roomName: null,
                             roomUrl: null,
