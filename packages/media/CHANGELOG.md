@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 2.1.1
+
+### Patch Changes
+
+- 612f65b: Remove unused dependency
+- 63ac735: update mediasoup-client to 3.15.6
+
 ## 2.1.0
 
 ### Minor Changes
