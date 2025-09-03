@@ -6,7 +6,13 @@ import {
     noTrackStatsIssueDetector,
 } from "../issueDetectors";
 import { SsrcStats, StatsClient, TrackStats, ViewStats } from "../../types";
+import { mockSsrcStats } from "../../../../../tests/webrtc/webRtcHelpers";
 
+/**
+ * By default, client media is enabled for all tests.
+ * Test cases for disabled media are generated automatically
+ * by `buildEnabledTestCases()` helper function.
+ */
 function makeStatsClient(args?: Partial<StatsClient>): StatsClient {
     return {
         isLocalClient: true,
@@ -37,22 +43,40 @@ function makeCheckData(args?: Partial<IssueCheckData>): IssueCheckData {
     };
 }
 
+function buildEnabledTestCases(
+    testCases: (Partial<IssueCheckData> & { expected: boolean })[],
+): (IssueCheckData & { expected: boolean })[] {
+    const cases = testCases.map((t) => ({
+        ...makeCheckData(t),
+        expected: t.expected,
+    }));
+
+    const mediaDisabledCases = cases
+        .filter((t) => t.expected === true)
+        .map((t) => ({
+            ...makeCheckData({
+                ...t,
+                client: makeStatsClient({ audio: { enabled: false }, video: { enabled: false } }),
+            }),
+            expected: false,
+        }));
+    return [...cases, ...mediaDisabledCases];
+}
+
 describe("badNetworkIssueDetector", () => {
     describe("enabled", () => {
-        it.each`
-            hasLiveTrack | ssrcs   | expected
-            ${false}     | ${[]}   | ${false}
-            ${true}      | ${[]}   | ${false}
-            ${false}     | ${[{}]} | ${false}
-            ${true}      | ${[{}]} | ${true}
-        `("expected $expected when hasLiveTrack:$hasLiveTrack, ssrcs:$ssrcs", ({ hasLiveTrack, ssrcs, expected }) => {
-            const checkData = makeCheckData({
-                hasLiveTrack,
-                ssrcs,
-            });
-
-            expect(badNetworkIssueDetector.enabled(checkData)).toEqual(expected);
-        });
+        const TEST_CASES = buildEnabledTestCases([
+            { hasLiveTrack: false, ssrcs: [], expected: false },
+            { hasLiveTrack: true, ssrcs: [], expected: false },
+            { hasLiveTrack: false, ssrcs: [mockSsrcStats()], expected: false },
+            { hasLiveTrack: true, ssrcs: [mockSsrcStats()], expected: true },
+        ]);
+        it.each(TEST_CASES)(
+            "expected $expected when hasLiveTrack:$hasLiveTrack, ssrcs:$ssrcs",
+            ({ expected, ...checkData }) => {
+                expect(badNetworkIssueDetector.enabled(checkData)).toEqual(expected);
+            },
+        );
     });
 
     describe("check", () => {
@@ -84,20 +108,18 @@ describe("badNetworkIssueDetector", () => {
 
 describe("dryTrackIssueDetector", () => {
     describe("enabled", () => {
-        it.each`
-            hasLiveTrack | ssrcs   | expected
-            ${false}     | ${null} | ${false}
-            ${true}      | ${null} | ${false}
-            ${false}     | ${{}}   | ${false}
-            ${true}      | ${{}}   | ${true}
-        `("expected $expected when hasLiveTrack:$hasLiveTrack, ssrcs:$ssrcs", ({ hasLiveTrack, ssrcs, expected }) => {
-            const checkData = makeCheckData({
-                hasLiveTrack,
-                ssrcs,
-            });
-
-            expect(dryTrackIssueDetector.enabled(checkData)).toEqual(expected);
-        });
+        const TEST_CASES = buildEnabledTestCases([
+            { hasLiveTrack: false, ssrcs: undefined, expected: false },
+            { hasLiveTrack: true, ssrcs: undefined, expected: false },
+            { hasLiveTrack: false, ssrcs: [mockSsrcStats()], expected: false },
+            { hasLiveTrack: true, ssrcs: [mockSsrcStats()], expected: true },
+        ]);
+        it.each(TEST_CASES)(
+            "expected $expected when hasLiveTrack:$hasLiveTrack, ssrcs:$ssrcs",
+            ({ expected, ...checkData }) => {
+                expect(dryTrackIssueDetector.enabled(checkData)).toEqual(expected);
+            },
+        );
     });
 
     describe("check", () => {
@@ -177,15 +199,11 @@ describe("noTrackIssueDetector", () => {
 
 describe("noTrackStatsIssueDetector", () => {
     describe("enabled", () => {
-        it.each`
-            hasLiveTrack | expected
-            ${false}     | ${false}
-            ${true}      | ${true}
-        `("expected $expected when hasLiveTrack:$hasLiveTrack", ({ hasLiveTrack, expected }) => {
-            const checkData = makeCheckData({
-                hasLiveTrack,
-            });
-
+        const TEST_CASES = buildEnabledTestCases([
+            { hasLiveTrack: false, expected: false },
+            { hasLiveTrack: true, expected: true },
+        ]);
+        it.each(TEST_CASES)("expected $expected when hasLiveTrack:$hasLiveTrack", ({ expected, ...checkData }) => {
             expect(noTrackStatsIssueDetector.enabled(checkData)).toEqual(expected);
         });
     });
