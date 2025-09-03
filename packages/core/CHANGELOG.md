@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 1.1.1
+
+### Patch Changes
+
+- 00b4ff2: Bump axios
+- Updated dependencies [612f65b]
+- Updated dependencies [63ac735]
+    - @whereby.com/media@2.1.1
+
 ## 1.1.0
 
 ### Minor Changes
