@@ -1,8 +1,56 @@
 import WS from "jest-websocket-mock";
 
 import { ServerSocket } from "../../src/utils/ServerSocket";
+import { SsrcStats } from "../../src/webrtc/stats/types";
 jest.mock("../../src/utils/ServerSocket");
 
+export function mockSsrcStats(): SsrcStats {
+    return {
+        startTime: Math.random(),
+        updated: Math.random(),
+        pcIndex: Math.random(),
+        direction: undefined,
+        bitrate: Math.random(),
+        fractionLost: Math.random(),
+        height: Math.random(),
+        lossRatio: Math.random(),
+        pliRate: Math.random(),
+        fps: Math.random(),
+        audioLevel: Math.random(),
+        audioConcealment: Math.random(),
+        audioDeceleration: Math.random(),
+        audioAcceleration: Math.random(),
+        sourceHeight: Math.random(),
+        jitter: Math.random(),
+        roundTripTime: Math.random(),
+        codec: undefined,
+        byteCount: Math.random(),
+        kind: undefined,
+        ssrc: Math.random(),
+        mid: Math.random(),
+        rid: undefined,
+        nackCount: Math.random(),
+        nackRate: Math.random(),
+        packetCount: Math.random(),
+        packetRate: Math.random(),
+        headerByteCount: Math.random(),
+        mediaRatio: Math.random(),
+        sendDelay: Math.random(),
+        retransRatio: Math.random(),
+        width: Math.random(),
+        qualityLimitationReason: undefined,
+        pliCount: Math.random(),
+        firCount: Math.random(),
+        firRate: Math.random(),
+        kfCount: Math.random(),
+        kfRate: Math.random(),
+        frameCount: Math.random(),
+        qpf: Math.random(),
+        encodeTime: Math.random(),
+        sourceWidth: Math.random(),
+        sourceFps: Math.random(),
+    };
+}
 export function createServerSocketStub() {
     const listeners: any = {};
 

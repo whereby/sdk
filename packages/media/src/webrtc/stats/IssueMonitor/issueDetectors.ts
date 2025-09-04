@@ -25,9 +25,29 @@ export interface IssueCheckData {
 
 const packetLossAnalyser = new PacketLossAnalyser();
 
+/**
+ * Helper function to create an enabled check which returns false early if client media kind is not enabled.
+ */
+export function clientMediaEnabled(
+    enabledCb: (checkData: IssueCheckData) => boolean = () => true,
+): (checkData: IssueCheckData) => boolean {
+    return (checkData) => {
+        const { client, kind } = checkData;
+
+        let mediaEnabled = false;
+        if (kind === "audio" && client.audio.enabled) {
+            mediaEnabled = true;
+        } else if (kind === "video" && client.video.enabled) {
+            mediaEnabled = true;
+        }
+
+        return mediaEnabled && enabledCb(checkData);
+    };
+}
+
 export const periodicPacketLossDetector: IssueDetector = {
     id: "periodic-packet-loss",
-    enabled: ({ client, hasLiveTrack, ssrc0 }) => {
+    enabled: clientMediaEnabled(({ client, hasLiveTrack, ssrc0 }) => {
         return (
             !!client.isLocalClient &&
             hasLiveTrack &&
@@ -35,7 +55,7 @@ export const periodicPacketLossDetector: IssueDetector = {
             ssrc0?.direction === "out" &&
             (ssrc0?.bitrate || 0) > 0
         );
-    },
+    }),
     check: ({ ssrc0 }) => {
         if (!ssrc0 || !ssrc0.ssrc) return false;
         packetLossAnalyser.addPacketLossMeasurement(ssrc0.ssrc, ssrc0.fractionLost || 0, Date.now());
@@ -45,7 +65,7 @@ export const periodicPacketLossDetector: IssueDetector = {
 
 export const badNetworkIssueDetector: IssueDetector = {
     id: "bad-network",
-    enabled: ({ hasLiveTrack, ssrcs }) => hasLiveTrack && ssrcs.length > 0,
+    enabled: clientMediaEnabled(({ hasLiveTrack, ssrcs }) => hasLiveTrack && ssrcs.length > 0),
     check: ({ client, clients, kind, ssrcs }) => {
         const hasPositiveBitrate = ssrcs.some((ssrc) => (ssrc?.bitrate || 0) > 0);
 
@@ -77,7 +97,7 @@ export const badNetworkIssueDetector: IssueDetector = {
  */
 export const dryTrackIssueDetector: IssueDetector = {
     id: "dry-track",
-    enabled: ({ hasLiveTrack, ssrcs }) => !!(hasLiveTrack && ssrcs),
+    enabled: clientMediaEnabled(({ hasLiveTrack, ssrcs }) => !!(hasLiveTrack && ssrcs)),
     check: ({ client, clients, ssrcs }) => {
         /**
          * A client can be a remote one or the local one.
@@ -114,7 +134,7 @@ export const dryTrackIssueDetector: IssueDetector = {
 
 export const noTrackIssueDetector: IssueDetector = {
     id: "no-track",
-    enabled: () => true,
+    enabled: clientMediaEnabled(),
     check: ({ client, clients, kind, track }) => {
         if (!track && !client.isLocalClient && kind === "video") {
             const localClient = clients.find((c) => c.isLocalClient);
@@ -129,7 +149,7 @@ export const noTrackIssueDetector: IssueDetector = {
 
 export const noTrackStatsIssueDetector: IssueDetector = {
     id: "no-track-stats",
-    enabled: ({ hasLiveTrack }) => hasLiveTrack,
+    enabled: clientMediaEnabled(({ hasLiveTrack }) => hasLiveTrack),
     check: ({ client, clients, kind, ssrcs }) => {
         if (ssrcs.length === 0 && !client.isLocalClient && kind === "video") {
             const localClient = clients.find((c) => c.isLocalClient);
@@ -145,14 +165,14 @@ export const noTrackStatsIssueDetector: IssueDetector = {
 export const issueDetectors: IssueDetector[] = [
     {
         id: "desync",
-        enabled: ({ client, track, stats }) => {
+        enabled: clientMediaEnabled(({ client, track, stats }) => {
             return (
                 !client.isLocalClient &&
                 track?.kind === "audio" &&
                 typeof stats?.tracks === "object" &&
                 Object.keys(stats.tracks).length > 1
             );
-        },
+        }),
         check: ({ stats }) => {
             if (!stats) return false;
             const jitter = {
@@ -175,15 +195,16 @@ export const issueDetectors: IssueDetector[] = [
     noTrackIssueDetector,
     {
         id: "ended-track",
-        enabled: ({ track }) => !!track,
+        enabled: clientMediaEnabled(({ track }) => !!track),
         check: ({ track }) => track?.readyState === "ended",
     },
     noTrackStatsIssueDetector,
     dryTrackIssueDetector,
     {
         id: "denoiser-context-suspended",
-        enabled: ({ client, kind }) =>
-            !!client.isLocalClient && kind === "audio" && !!client.audio?.track?._denoiserCtx,
+        enabled: clientMediaEnabled(
+            ({ client, kind }) => !!client.isLocalClient && kind === "audio" && !!client.audio?.track?._denoiserCtx,
+        ),
         check: ({ track }) => {
             if (!track || !("_denoiserCtx" in track)) return false;
             return track._denoiserCtx?.state === "suspended";
@@ -191,8 +212,10 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "low-layer0-bitrate",
-        enabled: ({ hasLiveTrack, ssrc0, kind, client }) =>
-            hasLiveTrack && kind === "video" && !!ssrc0 && !!ssrc0?.height && !client.isPresentation,
+        enabled: clientMediaEnabled(
+            ({ hasLiveTrack, ssrc0, kind, client }) =>
+                hasLiveTrack && kind === "video" && !!ssrc0 && !!ssrc0?.height && !client.isPresentation,
+        ),
         check: ({ ssrc0 }) => {
             if (!ssrc0?.bitrate) return false;
             return (ssrc0?.height || 0) < 200 && ssrc0.bitrate < 30000;
@@ -200,7 +223,7 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "quality-limitation-bw",
-        enabled: ({ hasLiveTrack, stats, client, clients, kind }) => {
+        enabled: clientMediaEnabled(({ hasLiveTrack, stats, client, clients, kind }) => {
             // This issue will be stuck active forever in P2P with a remote audio-only participant.
             const roomMode = getRoomMode();
             if (roomMode === "normal") {
@@ -210,7 +233,7 @@ export const issueDetectors: IssueDetector[] = [
             }
 
             return hasLiveTrack && !!client.isLocalClient && kind === "video" && !!stats;
-        },
+        }),
         check: ({ stats }) => {
             if (!stats) return false;
             return !!Object.values(stats.tracks).find((track) =>
@@ -220,8 +243,10 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "quality-limitation-cpu",
-        enabled: ({ hasLiveTrack, stats, client, kind }) =>
-            hasLiveTrack && !!client.isLocalClient && kind === "video" && !!stats,
+        enabled: clientMediaEnabled(
+            ({ hasLiveTrack, stats, client, kind }) =>
+                hasLiveTrack && !!client.isLocalClient && kind === "video" && !!stats,
+        ),
         check: ({ stats }) => {
             if (!stats) return false;
             return !!Object.values(stats.tracks).find((track) =>
@@ -231,44 +256,48 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "high-plirate",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.height,
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.height),
         check: ({ ssrc0 }) => (ssrc0?.pliRate || 0) > 2,
     },
     {
         id: "extreme-plirate",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.height,
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && !!ssrc0.height),
         check: ({ ssrc0 }) => (ssrc0?.pliRate || 0) > 5,
     },
     {
         id: "high-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "in",
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "in"),
         check: ({ ssrc0 }) => (ssrc0?.lossRatio || 0) > 0.02,
     },
     {
         id: "extreme-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "in",
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "in"),
         check: ({ ssrc0 }) => (ssrc0?.lossRatio || 0) > 0.1,
     },
     {
         id: "high-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "out",
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "out"),
         check: ({ ssrc0 }) => (ssrc0?.fractionLost || 0) > 0.02,
     },
     {
         id: "extreme-packetloss",
-        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "out",
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0 && ssrc0.direction === "out"),
         check: ({ ssrc0 }) => (ssrc0?.fractionLost || 0) > 0.1,
     },
     {
         id: "fps-below-20",
-        enabled: ({ hasLiveTrack, ssrc0, kind, client }) =>
-            hasLiveTrack && !!ssrc0 && !!ssrc0.height && kind === "video" && !client.isPresentation,
+        enabled: clientMediaEnabled(
+            ({ hasLiveTrack, ssrc0, kind, client }) =>
+                hasLiveTrack && !!ssrc0 && !!ssrc0.height && kind === "video" && !client.isPresentation,
+        ),
         check: ({ ssrc0 }) => (ssrc0?.height || 0) > 180 && (ssrc0?.fps || 0) < 20,
     },
     {
         id: "fps-below-10",
-        enabled: ({ hasLiveTrack, ssrc0, kind, client }) =>
-            hasLiveTrack && !!ssrc0 && !!ssrc0.height && kind === "video" && !client.isPresentation,
+        enabled: clientMediaEnabled(
+            ({ hasLiveTrack, ssrc0, kind, client }) =>
+                hasLiveTrack && !!ssrc0 && !!ssrc0.height && kind === "video" && !client.isPresentation,
+        ),
         check: ({ ssrc0 }) => (ssrc0?.fps || 0) < 10,
     },
     badNetworkIssueDetector,
@@ -287,7 +316,7 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "concealed",
-        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio",
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio"),
         check: ({ ssrc0 }) =>
             !!ssrc0?.bitrate &&
             ssrc0?.direction === "in" &&
@@ -296,7 +325,7 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "decelerated",
-        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio",
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio"),
         check: ({ ssrc0 }) =>
             !!ssrc0?.bitrate &&
             ssrc0.direction === "in" &&
@@ -305,7 +334,7 @@ export const issueDetectors: IssueDetector[] = [
     },
     {
         id: "accelerated",
-        enabled: ({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio",
+        enabled: clientMediaEnabled(({ hasLiveTrack, ssrc0, kind }) => hasLiveTrack && !!ssrc0 && kind === "audio"),
         check: ({ ssrc0 }) =>
             !!ssrc0?.bitrate &&
             ssrc0.direction === "in" &&
