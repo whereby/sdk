@@ -1,4 +1,10 @@
-import { WherebyClient, RoomConnectionClient, LocalMediaClient, RemoteParticipantState } from "@whereby.com/core";
+import {
+    WherebyClient,
+    RoomConnectionClient,
+    LocalMediaClient,
+    RemoteParticipantState,
+    ChatMessage,
+} from "@whereby.com/core";
 import wrtc from "@roamhq/wrtc";
 import { AudioMixer } from "../AudioMixer";
 import EventEmitter from "events";
@@ -130,5 +136,9 @@ export class Assistant extends EventEmitter<AssistantEvents> {
 
     public subscribeToRemoteParticipants(callback: (participants: RemoteParticipantState[]) => void): () => void {
         return this.roomConnection.subscribeToRemoteParticipants(callback);
+    }
+
+    public subscribeToChatMessages(callback: (messages: ChatMessage[]) => void): () => void {
+        return this.roomConnection.subscribeToChatMessages(callback);
     }
 }
