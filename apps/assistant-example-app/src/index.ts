@@ -7,6 +7,7 @@ import type { ParticipantInfo } from "./chatgpt/prompts.js";
 import type { RemoteParticipantState } from "@whereby.com/assistant-sdk";
 import { responseOutputItemDoneEvent } from "./chatgpt/realtime-schemas.js";
 import { handleRealtimeEvent } from "./chatgpt/event-handler.js";
+import { fetchJoke } from "./fetch-joke.js";
 
 let hasJoinedRoom = false;
 
@@ -21,6 +22,7 @@ function getParticipantList(participants: RemoteParticipantState[]): Participant
 
 function main() {
     let chatgptDataChannel: RTCDataChannel;
+    const chatMessageSet = new Set();
     const trigger = new Trigger({
         webhookTriggers: {
             "room.client.joined": () => !hasJoinedRoom,
@@ -35,65 +37,86 @@ function main() {
     trigger.on(ASSISTANT_JOIN_SUCCESS, ({ assistant }) => {
         hasJoinedRoom = true;
         assistant.on(AUDIO_STREAM_READY, ({ track }) => {
-            const audioSource = assistant.getLocalAudioSource();
-
-            // Get initial participant list
-            const remoteParticipants = assistant.getRemoteParticipants();
-            const participantList = getParticipantList(remoteParticipants);
-
-            if (chatGptSession) {
-                try {
-                    chatGptSession.stopSession();
-                } catch {}
-            }
-            chatGptSession = new ChatGPTAudioSession(audioSource!);
-
-            chatGptSession
-                .startSession(track, "ash")
-                .then(({ dataChannel }) => {
-                    chatgptDataChannel = dataChannel;
-                    dataChannel.addEventListener("open", () => {
-                        // Give list of available functions
-                        dataChannel.send(JSON.stringify(functions));
-                        // Give some system context on start
-                        dataChannel.send(JSON.stringify(systemPrompt));
-                        // Give the participant list on start
-                        dataChannel.send(JSON.stringify(participantListPrompt(participantList)));
-                    });
-
-                    dataChannel.addEventListener("message", (event) => {
-                        try {
-                            const rawData = JSON.parse(event.data);
-
-                            if (
-                                rawData.type !== "response.output_item.done" ||
-                                !responseOutputItemDoneEvent.safeParse(rawData).success
-                            ) {
-                                return;
-                            }
-
-                            const realtimeEvent = responseOutputItemDoneEvent.parse(rawData);
-                            handleRealtimeEvent(realtimeEvent, dataChannel, assistant);
-                        } catch (error) {
-                            console.error("Error processing realtime event:", error);
-                            console.error("Raw event data:", event.data);
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.error("ChatGPT setup error:", error);
-                    chatGptSession?.stopSession();
-                    chatGptSession = null;
-                });
+            assistant.sendChatMessage("Hello! I am your AI assistant. How can I help you today?");
+            //     const audioSource = assistant.getLocalAudioSource();
+            //
+            //     // Get initial participant list
+            //     const remoteParticipants = assistant.getRemoteParticipants();
+            //     const participantList = getParticipantList(remoteParticipants);
+            //
+            //     if (chatGptSession) {
+            //         try {
+            //             chatGptSession.stopSession();
+            //         } catch {}
+            //     }
+            //     chatGptSession = new ChatGPTAudioSession(audioSource!);
+            //
+            //     chatGptSession
+            //         .startSession(track, "ash")
+            //         .then(({ dataChannel }) => {
+            //             chatgptDataChannel = dataChannel;
+            //             dataChannel.addEventListener("open", () => {
+            //                 // Give list of available functions
+            //                 dataChannel.send(JSON.stringify(functions));
+            //                 // Give some system context on start
+            //                 dataChannel.send(JSON.stringify(systemPrompt));
+            //                 // Give the participant list on start
+            //                 dataChannel.send(JSON.stringify(participantListPrompt(participantList)));
+            //             });
+            //
+            //             dataChannel.addEventListener("message", (event) => {
+            //                 try {
+            //                     const rawData = JSON.parse(event.data);
+            //
+            //                     if (
+            //                         rawData.type !== "response.output_item.done" ||
+            //                         !responseOutputItemDoneEvent.safeParse(rawData).success
+            //                     ) {
+            //                         return;
+            //                     }
+            //
+            //                     const realtimeEvent = responseOutputItemDoneEvent.parse(rawData);
+            //                     handleRealtimeEvent(realtimeEvent, dataChannel, assistant);
+            //                 } catch (error) {
+            //                     console.error("Error processing realtime event:", error);
+            //                     console.error("Raw event data:", event.data);
+            //                 }
+            //             });
+            //         })
+            //         .catch((error) => {
+            //             console.error("ChatGPT setup error:", error);
+            //             chatGptSession?.stopSession();
+            //             chatGptSession = null;
+            //         });
         });
 
         assistant.subscribeToRemoteParticipants((remoteParticipants) => {
-            if (!chatgptDataChannel || chatgptDataChannel.readyState !== "open") {
-                return;
-            }
+            // if (!chatgptDataChannel || chatgptDataChannel.readyState !== "open") {
+            //     return;
+            // }
+            //
+            // const participantList = getParticipantList(remoteParticipants);
+            // chatgptDataChannel.send(JSON.stringify(participantListPrompt(participantList)));
+        });
 
-            const participantList = getParticipantList(remoteParticipants);
-            chatgptDataChannel.send(JSON.stringify(participantListPrompt(participantList)));
+        assistant.subscribeToChatMessages((chatMessages) => {
+            chatMessages.forEach((chatMessage, index) => {
+                if (chatMessageSet.has(index)) {
+                    return;
+                }
+                chatMessageSet.add(index);
+
+                if (chatMessage.text.toLowerCase().includes("tell me a joke")) {
+                    assistant.sendChatMessage("Sure! Let me find one for you...");
+                    fetchJoke()
+                        .then((joke) => {
+                            assistant.sendChatMessage(joke);
+                        })
+                        .catch(() => {
+                            assistant.sendChatMessage("Sorry, I couldn't fetch a joke at the moment.");
+                        });
+                }
+            });
         });
     });
 }
