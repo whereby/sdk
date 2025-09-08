@@ -103,25 +103,25 @@ function main() {
             // chatgptDataChannel.send(JSON.stringify(participantListPrompt(participantList)));
         });
 
-        assistant.subscribeToChatMessages((chatMessages) => {
-            chatMessages.forEach((chatMessage, index) => {
-                if (chatMessageSet.has(index)) {
-                    return;
-                }
-                chatMessageSet.add(index);
-
-                if (chatMessage.text.toLowerCase().includes("tell me a joke")) {
-                    assistant.sendChatMessage("Sure! Let me find one for you...");
-                    fetchJoke()
-                        .then((joke) => {
-                            assistant.sendChatMessage(joke);
-                        })
-                        .catch(() => {
-                            assistant.sendChatMessage("Sorry, I couldn't fetch a joke at the moment.");
-                        });
-                }
-            });
-        });
+        // assistant.subscribeToChatMessages((chatMessages) => {
+        //     chatMessages.forEach((chatMessage, index) => {
+        //         if (chatMessageSet.has(index)) {
+        //             return;
+        //         }
+        //         chatMessageSet.add(index);
+        //
+        //         if (chatMessage.text.toLowerCase().includes("tell me a joke")) {
+        //             assistant.sendChatMessage("Sure! Let me find one for you...");
+        //             fetchJoke()
+        //                 .then((joke) => {
+        //                     assistant.sendChatMessage(joke);
+        //                 })
+        //                 .catch(() => {
+        //                     assistant.sendChatMessage("Sorry, I couldn't fetch a joke at the moment.");
+        //                 });
+        //         }
+        //     });
+        // });
     });
 }
 
