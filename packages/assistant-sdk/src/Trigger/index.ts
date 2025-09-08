@@ -20,6 +20,8 @@ export interface TriggerOptions {
     subdomain: string;
     port?: number;
     assistantKey?: string;
+    startCombinedAudioStream?: boolean;
+    startLocalMedia?: boolean;
 }
 
 const webhookRouter = (
@@ -27,6 +29,8 @@ const webhookRouter = (
     subdomain: string,
     emitter: EventEmitter<TriggerEvents>,
     assistantKey?: string,
+    startCombinedAudioStream = false,
+    startLocalMedia = false,
 ) => {
     const router = express.Router();
 
@@ -46,7 +50,7 @@ const webhookRouter = (
         if (shouldTriggerOnReceivedWebhook) {
             const roomUrl = buildRoomUrl(req.body.data.roomName, subdomain);
 
-            const assistant = new Assistant({ assistantKey, startCombinedAudioStream: true });
+            const assistant = new Assistant({ assistantKey, startCombinedAudioStream, startLocalMedia });
             assistant.joinRoom(roomUrl);
 
             emitter.emit(ASSISTANT_JOIN_SUCCESS, { roomUrl, triggerWebhook: req.body, assistant });
@@ -64,20 +68,38 @@ export class Trigger extends EventEmitter<TriggerEvents> {
     private subdomain: string;
     private port: number;
     private assistantKey?: string;
+    private startCombinedAudioStream: boolean;
+    private startLocalMedia: boolean;
 
-    constructor({ webhookTriggers = {}, subdomain, port = 4999, assistantKey }: TriggerOptions) {
+    constructor({
+        webhookTriggers = {},
+        subdomain,
+        port = 4999,
+        assistantKey,
+        startCombinedAudioStream,
+        startLocalMedia,
+    }: TriggerOptions) {
         super();
 
         this.webhookTriggers = webhookTriggers;
         this.subdomain = subdomain;
         this.port = port;
         this.assistantKey = assistantKey;
+        this.startCombinedAudioStream = startCombinedAudioStream ?? false;
+        this.startLocalMedia = startLocalMedia ?? false;
     }
 
     start() {
         const app = express();
 
-        const router = webhookRouter(this.webhookTriggers, this.subdomain, this, this.assistantKey);
+        const router = webhookRouter(
+            this.webhookTriggers,
+            this.subdomain,
+            this,
+            this.assistantKey,
+            this.startCombinedAudioStream,
+            this.startLocalMedia,
+        );
 
         app.use(router);
 
