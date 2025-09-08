@@ -17,7 +17,6 @@ export * from "./types.js";
 
 export interface TriggerOptions {
     webhookTriggers: WherebyWebhookTriggers;
-    subdomain: string;
     port?: number;
     assistantKey?: string;
     startCombinedAudioStream?: boolean;
@@ -26,7 +25,6 @@ export interface TriggerOptions {
 
 const webhookRouter = (
     webhookTriggers: WherebyWebhookTriggers,
-    subdomain: string,
     emitter: EventEmitter<TriggerEvents>,
     assistantKey?: string,
     startCombinedAudioStream = false,
@@ -48,7 +46,7 @@ const webhookRouter = (
         const shouldTriggerOnReceivedWebhook = webhookTriggers[req.body.type]?.(req.body);
 
         if (shouldTriggerOnReceivedWebhook) {
-            const roomUrl = buildRoomUrl(req.body.data.roomName, subdomain);
+            const roomUrl = buildRoomUrl(req.body.data.roomName, req.body.data.subdomain);
 
             const assistant = new Assistant({ assistantKey, startCombinedAudioStream, startLocalMedia });
             assistant.joinRoom(roomUrl);
@@ -65,7 +63,6 @@ const webhookRouter = (
 
 export class Trigger extends EventEmitter<TriggerEvents> {
     private webhookTriggers: WherebyWebhookTriggers;
-    private subdomain: string;
     private port: number;
     private assistantKey?: string;
     private startCombinedAudioStream: boolean;
@@ -73,7 +70,6 @@ export class Trigger extends EventEmitter<TriggerEvents> {
 
     constructor({
         webhookTriggers = {},
-        subdomain,
         port = 4999,
         assistantKey,
         startCombinedAudioStream,
@@ -82,7 +78,6 @@ export class Trigger extends EventEmitter<TriggerEvents> {
         super();
 
         this.webhookTriggers = webhookTriggers;
-        this.subdomain = subdomain;
         this.port = port;
         this.assistantKey = assistantKey;
         this.startCombinedAudioStream = startCombinedAudioStream ?? false;
@@ -94,7 +89,6 @@ export class Trigger extends EventEmitter<TriggerEvents> {
 
         const router = webhookRouter(
             this.webhookTriggers,
-            this.subdomain,
             this,
             this.assistantKey,
             this.startCombinedAudioStream,
