@@ -27,7 +27,6 @@ function main() {
         webhookTriggers: {
             "room.client.joined": () => !hasJoinedRoom,
         },
-        subdomain: "embedded",
         port: 3000,
         assistantKey: "",
         startCombinedAudioStream: true,
