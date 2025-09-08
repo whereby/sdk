@@ -17,6 +17,7 @@ interface WherebyWebhookInRoom {
     meetingId: string;
     roomName: string;
     roomSessionId: string | null;
+    subdomain: string;
 }
 
 interface WherebyWebhookDataClient {
