@@ -30,11 +30,16 @@ function main() {
         subdomain: "embedded",
         port: 3000,
         assistantKey: "",
+        startCombinedAudioStream: true,
+        startLocalMedia: true,
     });
+
+    console.log("Starting webhook listener on port 3000");
 
     trigger.start();
 
     trigger.on(ASSISTANT_JOIN_SUCCESS, ({ assistant }) => {
+        console.log("Assistant joined the room");
         hasJoinedRoom = true;
         assistant.on(AUDIO_STREAM_READY, ({ track }) => {
             assistant.sendChatMessage("Hello! I am your AI assistant. How can I help you today?");
