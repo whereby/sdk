@@ -62,6 +62,18 @@ module.exports = [
         plugins,
         external,
     },
+    {
+        input: "tools/index.ts",
+        output: [
+            {
+                format: "cjs",
+                file: "dist/tools.cjs",
+                exports: "named",
+            },
+        ],
+        plugins,
+        external,
+    },
 
     // Legacy Esm build of lib, to be used with older bundlers
     {
@@ -116,6 +128,14 @@ module.exports = [
     {
         input: "src/utils/polyfills.ts",
         output: [{ file: "dist/polyfills.d.ts", format: "cjs" }],
+        external,
+        plugins: [dts(tsOptions)],
+    },
+
+    // Type declarations for tools
+    {
+        input: "tools/index.ts",
+        output: [{ file: "dist/tools.d.ts", format: "cjs" }],
         external,
         plugins: [dts(tsOptions)],
     },
