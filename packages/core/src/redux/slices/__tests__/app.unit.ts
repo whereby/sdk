@@ -21,6 +21,7 @@ describe("appSlice", () => {
                 expect(result).toEqual({
                     isActive: true,
                     isDialIn: true,
+                    isAssistant: false,
                     ignoreBreakoutGroups: true,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
@@ -47,6 +48,7 @@ describe("appSlice", () => {
                 expect(result).toEqual({
                     isActive: true,
                     isDialIn: false,
+                    isAssistant: false,
                     ignoreBreakoutGroups: false,
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",

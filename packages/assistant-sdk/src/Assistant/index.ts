@@ -11,13 +11,13 @@ import EventEmitter from "events";
 import { AUDIO_STREAM_READY, AssistantEvents } from "./types";
 
 export type AssistantOptions = {
-    assistantKey?: string;
-    startCombinedAudioStream: boolean;
+    assistantKey: string;
+    startCombinedAudioStream?: boolean;
     startLocalMedia?: boolean;
 };
 
 export class Assistant extends EventEmitter<AssistantEvents> {
-    private assistantKey?: string;
+    private assistantKey: string;
     private client: WherebyClient;
     private roomConnection: RoomConnectionClient;
     private localMedia: LocalMediaClient;
@@ -25,12 +25,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private audioSource: wrtc.nonstandard.RTCAudioSource | null = null;
     private combinedStream: MediaStream | null = null;
 
-    constructor(
-        { assistantKey, startCombinedAudioStream, startLocalMedia }: AssistantOptions = {
-            startCombinedAudioStream: false,
-            startLocalMedia: false,
-        },
-    ) {
+    constructor({ assistantKey, startCombinedAudioStream = false, startLocalMedia = false }: AssistantOptions) {
         super();
         this.assistantKey = assistantKey;
         this.client = new WherebyClient();
@@ -74,7 +69,6 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             roomUrl,
             isNodeSdk: true,
             assistantKey: this.assistantKey,
-            isAssistant: true,
         });
         this.roomConnection.joinRoom();
     }
