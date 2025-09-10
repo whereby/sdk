@@ -350,7 +350,10 @@ export default class BandwidthTester extends EventEmitter {
 
         const producer = await this._sendTransport.produce({
             track,
-            ...getMediaSettings("video", false, this._features),
+            ...getMediaSettings("video", false, {
+                ...this._features,
+                vp9On: this._features.sfuVp9On,
+            }),
             appData: {
                 paused: false,
             },
