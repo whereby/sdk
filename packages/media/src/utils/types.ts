@@ -32,7 +32,8 @@ export type RoleName =
     | "host"
     | "recorder"
     | "streamer"
-    | "captioner";
+    | "captioner"
+    | "assistant";
 
 export interface ClientRole {
     roleName: RoleName;
