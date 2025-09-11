@@ -37,7 +37,8 @@ export type WherebyRoleName =
     | "granted_viewer"
     | "recorder"
     | "streamer"
-    | "captioner";
+    | "captioner"
+    | "assistant";
 
 interface WherebyWebhookDataClientJoinLeave {
     roleName: WherebyRoleName;
