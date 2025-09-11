@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.1.2
+
+### Patch Changes
+
+- f549671: Fix BandwidthTester when using VP9
+
 ## 2.1.1
 
 ### Patch Changes
