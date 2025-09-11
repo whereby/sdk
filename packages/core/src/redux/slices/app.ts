@@ -10,7 +10,6 @@ import { coreVersion } from "../../version";
 export interface AppConfig {
     isNodeSdk?: boolean;
     isDialIn?: boolean;
-    isAssistant?: boolean;
     ignoreBreakoutGroups?: boolean;
     displayName: string;
     localMediaOptions?: LocalMediaOptions;
@@ -61,6 +60,7 @@ export const appSlice = createSlice({
                 roomName: url.pathname,
                 initialConfig: { ...action.payload },
                 isActive: true,
+                isAssistant: Boolean(action.payload.assistantKey),
             };
         },
         doAppStop: (state) => {
