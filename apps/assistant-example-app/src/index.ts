@@ -1,5 +1,8 @@
 import "@whereby.com/assistant-sdk/polyfills";
 import { Trigger, ASSISTANT_JOIN_SUCCESS, AUDIO_STREAM_READY } from "@whereby.com/assistant-sdk";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 let hasJoinedRoom = false;
 
