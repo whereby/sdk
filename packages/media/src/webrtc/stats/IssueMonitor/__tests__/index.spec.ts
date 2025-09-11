@@ -1,8 +1,13 @@
-import { subscribeIssues } from "..";
-import { createMockedMediaStreamTrack } from "../../../../../tests/webrtc/webRtcHelpers";
+import { issueDetectorOrMetricEnabled, Metric, subscribeIssues } from "..";
+import {
+    createMockedMediaStreamTrack,
+    mockCheckData,
+    mockStatsClient,
+} from "../../../../../tests/webrtc/webRtcHelpers";
 import { setClientProvider } from "../../StatsMonitor";
 import { setPeerConnectionsForTests } from "../../StatsMonitor/peerConnectionTracker";
 import { StatsClient } from "../../types";
+import { IssueCheckData, IssueDetector } from "../issueDetectors";
 
 function createMockPeerConnection(clients: ReturnType<typeof createMockClient>[]) {
     return {
@@ -64,6 +69,63 @@ function createMockClient(id: string, isLocal: boolean): ExtendedStatsClient {
         isAudioOnlyModeEnabled: false,
     };
 }
+
+describe("issueDetectorOrMetricEnabled", () => {
+    it.each([
+        {
+            _scenario: "False when check is global but kind is not",
+            issueDetectorOrMetric: {
+                enabled: () => true,
+                global: true,
+            },
+            checkData: mockCheckData({ kind: "audio" }),
+            expected: false,
+        },
+        {
+            _scenario: "False when kind is global but check is not",
+            issueDetectorOrMetric: {
+                enabled: () => true,
+            },
+            checkData: mockCheckData({ kind: "global" }),
+            expected: false,
+        },
+        {
+            _scenario: "True when check and kind are both global and enabled returns true",
+            issueDetectorOrMetric: { enabled: () => true, global: true },
+            checkData: mockCheckData({ kind: "global" }),
+            expected: true,
+        },
+        {
+            _scenario: "True when check and kind are both global and enabled is undefined",
+            issueDetectorOrMetric: { global: true },
+            checkData: mockCheckData({ kind: "global" }),
+            expected: true,
+        },
+        {
+            _scenario: "False when check is enabled but kind is disabled",
+            issueDetectorOrMetric: {
+                enabled: () => true,
+            },
+            checkData: mockCheckData({ client: mockStatsClient({ audio: { enabled: false } }), kind: "audio" }),
+            expected: false,
+        },
+        {
+            _scenario: "True when check is enabled and kind is enabled",
+            issueDetectorOrMetric: {
+                enabled: () => true,
+            },
+            checkData: mockCheckData({ client: mockStatsClient({ audio: { enabled: true } }), kind: "audio" }),
+            expected: true,
+        },
+    ] as {
+        _scenario: string;
+        issueDetectorOrMetric: IssueDetector | Metric;
+        checkData: IssueCheckData;
+        expected: boolean;
+    }[])("$_scenario", ({ issueDetectorOrMetric, checkData, expected }) => {
+        expect(issueDetectorOrMetricEnabled(issueDetectorOrMetric, checkData)).toEqual(expected);
+    });
+});
 
 describe("IssueMonitor", () => {
     let stopSubscription: () => void;
