@@ -66,8 +66,12 @@
         "typescript": "catalog:"
     },
     "dependencies": {
-        "@whereby.com/core": "workspace:*",
         "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source",
+        "@types/web": "^0.0.267",
+        "@whereby.com/core": "workspace:*",
+        "body-parser": "2.2.0",
+        "dotenv": "^16.4.5",
+        "express": "5.1.0",
         "uuid": "^11.0.3",
         "ws": "^8.18.0"
     },

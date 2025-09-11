@@ -1,5 +1,8 @@
 import "@whereby.com/assistant-sdk/polyfills";
-import { Trigger, ASSISTANT_JOIN_SUCCESS, AUDIO_STREAM_READY } from "@whereby.com/assistant-sdk";
+import { Trigger, TRIGGER_EVENT_SUCCESS, AUDIO_STREAM_READY, Assistant } from "@whereby.com/assistant-sdk";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 let hasJoinedRoom = false;
 
@@ -9,16 +12,20 @@ function main() {
             "room.client.joined": () => !hasJoinedRoom,
         },
         port: 3000,
-        assistantKey: process.env.ASSISTANT_KEY!,
-        startCombinedAudioStream: true,
-        startLocalMedia: false,
     });
 
     trigger.start();
 
-    trigger.on(ASSISTANT_JOIN_SUCCESS, ({ assistant }) => {
-        console.log("Assistant joined the room");
+    trigger.on(TRIGGER_EVENT_SUCCESS, async ({ roomUrl }) => {
+        const assistant = new Assistant({
+            assistantKey: process.env.ASSISTANT_KEY || "",
+            startCombinedAudioStream: true,
+            startLocalMedia: false,
+        });
+        await assistant.joinRoom(roomUrl);
+
         hasJoinedRoom = true;
+
         assistant.on(AUDIO_STREAM_READY, ({ track }) => {
             assistant.sendChatMessage("Hello! I am your AI assistant. How can I help you today?");
         });

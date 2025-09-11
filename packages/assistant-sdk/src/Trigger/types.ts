@@ -1,10 +1,9 @@
 import type { EventEmitter } from "events";
 import type { Request, Response } from "express";
-import { Assistant } from "../Assistant";
 
 export type WebhookType = "room.client.joined" | "room.client.left" | "room.session.started" | "room.session.ended";
 
-export const ASSISTANT_JOIN_SUCCESS = "ASSISTANT_JOIN_SUCCESS";
+export const TRIGGER_EVENT_SUCCESS = "trigger_event_success";
 
 interface WherebyWebhookBase {
     type: WebhookType;
@@ -37,7 +36,8 @@ export type WherebyRoleName =
     | "granted_viewer"
     | "recorder"
     | "streamer"
-    | "captioner";
+    | "captioner"
+    | "assistant";
 
 interface WherebyWebhookDataClientJoinLeave {
     roleName: WherebyRoleName;
@@ -62,7 +62,7 @@ export interface WherebyWebhookRoomSessionEnded extends WherebyWebhookBase {
 }
 
 export type TriggerEvents = {
-    [ASSISTANT_JOIN_SUCCESS]: [{ roomUrl: string; triggerWebhook: WherebyWebhookType; assistant: Assistant }];
+    [TRIGGER_EVENT_SUCCESS]: [{ roomUrl: string; triggerWebhook: WherebyWebhookType }];
 };
 
 export type WherebyWebhookType =
@@ -72,10 +72,10 @@ export type WherebyWebhookType =
     | WherebyWebhookRoomSessionEnded;
 
 export type WherebyWebhookTriggerTypes = {
-    "room.client.joined": WherebyWebhookBase;
-    "room.client.left": WherebyWebhookBase;
+    "room.client.joined": WherebyWebhookRoomClientJoined;
+    "room.client.left": WherebyWebhookRoomClientLeft;
     "room.session.started": WherebyWebhookRoomSessionStarted;
-    "room.session.ended": WherebyWebhookBase;
+    "room.session.ended": WherebyWebhookRoomSessionEnded;
 };
 
 export type WherebyWebhookTriggers = Partial<{
