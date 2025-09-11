@@ -1,5 +1,6 @@
 import "@whereby.com/assistant-sdk/polyfills";
 import { Trigger, ASSISTANT_JOIN_SUCCESS, AUDIO_STREAM_READY } from "@whereby.com/assistant-sdk";
+
 let hasJoinedRoom = false;
 
 function main() {
@@ -8,7 +9,7 @@ function main() {
             "room.client.joined": () => !hasJoinedRoom,
         },
         port: 3000,
-        assistantKey: "",
+        assistantKey: process.env.ASSISTANT_KEY!,
         startCombinedAudioStream: true,
         startLocalMedia: false,
     });
