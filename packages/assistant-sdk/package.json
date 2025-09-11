@@ -61,6 +61,8 @@
         "@whereby.com/prettier-config": "workspace:*",
         "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
+        "body-parser": "2.2.0",
+        "express": "5.1.0",
         "eslint": "catalog:",
         "prettier": "catalog:",
         "typescript": "catalog:"
