@@ -18,7 +18,7 @@ export * from "./types.js";
 export interface TriggerOptions {
     webhookTriggers: WherebyWebhookTriggers;
     port?: number;
-    assistantKey?: string;
+    assistantKey: string;
     startCombinedAudioStream?: boolean;
     startLocalMedia?: boolean;
 }
@@ -26,7 +26,7 @@ export interface TriggerOptions {
 const webhookRouter = (
     webhookTriggers: WherebyWebhookTriggers,
     emitter: EventEmitter<TriggerEvents>,
-    assistantKey?: string,
+    assistantKey: string,
     startCombinedAudioStream = false,
     startLocalMedia = false,
 ) => {
@@ -64,7 +64,7 @@ const webhookRouter = (
 export class Trigger extends EventEmitter<TriggerEvents> {
     private webhookTriggers: WherebyWebhookTriggers;
     private port: number;
-    private assistantKey?: string;
+    private assistantKey: string;
     private startCombinedAudioStream: boolean;
     private startLocalMedia: boolean;
 
