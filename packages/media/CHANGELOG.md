@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.1.3
+
+### Patch Changes
+
+- b347996: Re-add check to prevent issues and metrics being collected for disabled tracks
+
 ## 2.1.2
 
 ### Patch Changes
