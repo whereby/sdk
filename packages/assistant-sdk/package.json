@@ -70,6 +70,7 @@
     "dependencies": {
         "@whereby.com/core": "workspace:*",
         "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source",
+        "dotenv": "^16.4.5",
         "uuid": "^11.0.3",
         "ws": "^8.18.0"
     },

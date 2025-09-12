@@ -1,7 +1,9 @@
 import { networkInterfaces } from "os";
+import * as dotenv from "dotenv";
 
-const IS_LOCAL = true;
-const BIND_INTERFACE = "en0";
+dotenv.config();
+
+const { IS_LOCAL = "false", BIND_INTERFACE = "en0" } = process.env;
 
 export function buildRoomUrl(roomPath: string, wherebySubdomain: string, baseDomain: string = "whereby.com"): string {
     let wherebyDomain;
