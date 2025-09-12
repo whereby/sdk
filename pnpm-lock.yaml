@@ -437,6 +437,9 @@ importers:
       '@whereby.com/core':
         specifier: workspace:*
         version: link:../core
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
       uuid:
         specifier: ^11.0.3
         version: 11.1.0
