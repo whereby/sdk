@@ -29,25 +29,30 @@ const wrtcMediaDevices = wrtc.mediaDevices as {
     addEventListener: EventTarget["addEventListener"];
     removeEventListener: EventTarget["removeEventListener"];
 };
-global.navigator = {
-    userAgent: "Node.js/20",
-    mediaDevices: {
-        getUserMedia: wrtc.getUserMedia as (args: { audio: boolean; video: boolean }) => Promise<MediaStream>,
-        addEventListener: wrtcMediaDevices.addEventListener,
-        removeEventListener: wrtcMediaDevices.removeEventListener,
-        enumerateDevices: async () =>
-            new Promise((resolve) =>
-                resolve([
-                    {
-                        deviceId: "default",
-                        groupId: uuid(),
-                        kind: "audioinput",
-                        label: "Dummy audio device",
-                    },
-                ]),
-            ),
+Object.defineProperty(global, "navigator", {
+    value: {
+        userAgent: "Node.js/20",
+        mediaDevices: {
+            getUserMedia: wrtc.getUserMedia as (args: { audio: boolean; video: boolean }) => Promise<MediaStream>,
+            addEventListener: wrtcMediaDevices.addEventListener,
+            removeEventListener: wrtcMediaDevices.removeEventListener,
+            enumerateDevices: async () =>
+                new Promise((resolve) =>
+                    resolve([
+                        {
+                            deviceId: "default",
+                            groupId: uuid(),
+                            kind: "audioinput",
+                            label: "Dummy audio device",
+                        },
+                    ]),
+                ),
+        },
     },
-};
+    writable: false,
+    enumerable: true,
+    configurable: true,
+});
 class DOMException {
     constructor(...args) {
         console.error("DOMException", args);
