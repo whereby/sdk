@@ -12,7 +12,7 @@ import {
     selectAppIsActive,
     selectAppIsDialIn,
 } from "../app";
-import { selectRoomKey, setRoomKey } from "../authorization";
+import { selectAssistantKey, selectRoomKey, setRoomKey } from "../authorization";
 
 import { selectOrganizationId } from "../organization";
 import { signalEvents } from "../signalConnection/actions";
@@ -187,6 +187,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const socket = selectSignalConnectionRaw(state).socket;
     const roomName = selectAppRoomName(state);
     const roomKey = selectRoomKey(state);
+    const assistantKey = selectAssistantKey(state);
     const displayName = selectAppDisplayName(state);
     const userAgent = selectAppUserAgent(state);
     const externalId = selectAppExternalId(state);
@@ -210,6 +211,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         kickFromOtherRooms: false,
         organizationId,
         roomKey,
+        assistantKey,
         roomName,
         userAgent,
         externalId,
