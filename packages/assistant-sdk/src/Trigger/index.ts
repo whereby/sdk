@@ -70,7 +70,7 @@ export class Trigger extends EventEmitter<TriggerEvents> {
 
     constructor({
         webhookTriggers = {},
-        port = 4999,
+        port = 8080,
         assistantKey,
         startCombinedAudioStream,
         startLocalMedia,
