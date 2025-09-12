@@ -8,9 +8,7 @@ const { IS_LOCAL = "false", BIND_INTERFACE = "en0" } = process.env;
 export function buildRoomUrl(roomPath: string, wherebySubdomain: string, baseDomain: string = "whereby.com"): string {
     let wherebyDomain;
 
-    if (!IS_LOCAL) {
-        wherebyDomain = `${wherebySubdomain}.${baseDomain}`;
-    } else {
+    if (IS_LOCAL === "true") {
         const ifaceAddrs = networkInterfaces()[BIND_INTERFACE];
 
         if (!ifaceAddrs) {
@@ -24,6 +22,8 @@ export function buildRoomUrl(roomPath: string, wherebySubdomain: string, baseDom
         }
 
         wherebyDomain = `${wherebySubdomain}-ip-${bindAddr.address.replace(/[.]/g, "-")}.hereby.dev:4443`;
+    } else {
+        wherebyDomain = `${wherebySubdomain}.${baseDomain}`;
     }
 
     return `https://${wherebyDomain}${roomPath}`;
