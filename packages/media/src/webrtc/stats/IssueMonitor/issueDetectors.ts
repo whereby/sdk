@@ -2,7 +2,7 @@ import { PacketLossAnalyser } from "./packetLossAnalyser";
 import { MediaStreamTrackWithDenoiserContext, SsrcStats, StatsClient, TrackStats, ViewStats } from "../types";
 import { getRoomMode } from "../../RtcManagerDispatcher";
 
-interface IssueDetector {
+export interface IssueDetector {
     id: string;
     global?: boolean;
     enabled: (args: IssueCheckData) => boolean;

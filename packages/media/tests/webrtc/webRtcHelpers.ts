@@ -1,6 +1,8 @@
 import WS from "jest-websocket-mock";
 
 import { ServerSocket } from "../../src/utils/ServerSocket";
+import { SsrcStats, StatsClient, TrackStats, ViewStats } from "../../src/webrtc/stats/types";
+import { IssueCheckData } from "../../src/webrtc/stats/IssueMonitor/issueDetectors";
 jest.mock("../../src/utils/ServerSocket");
 
 export function createServerSocketStub() {
@@ -280,3 +282,33 @@ export const createSfuWebsocketServer = (): {
 
     return { wss, url };
 };
+
+export function mockStatsClient(args?: Partial<StatsClient>): StatsClient {
+    return {
+        isLocalClient: true,
+        isAudioOnlyModeEnabled: false,
+        audio: { enabled: true },
+        video: { enabled: true },
+        clientId: "local",
+        id: "local",
+        isPresentation: false,
+        ...args,
+    };
+}
+
+export function mockCheckData(args?: Partial<IssueCheckData>): IssueCheckData {
+    return {
+        client: mockStatsClient(),
+        clients: [mockStatsClient(), mockStatsClient()],
+        kind: "audio",
+        track: undefined,
+        trackStats: {} as TrackStats,
+        stats: {} as ViewStats,
+        hasLiveTrack: true,
+        ssrc0: {} as SsrcStats,
+        ssrcs: {} as SsrcStats[],
+        issues: {},
+        metrics: {},
+        ...args,
+    };
+}

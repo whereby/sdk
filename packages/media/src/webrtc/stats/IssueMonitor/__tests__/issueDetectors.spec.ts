@@ -2,40 +2,9 @@ import {
     badNetworkIssueDetector,
     dryTrackIssueDetector,
     noTrackIssueDetector,
-    IssueCheckData,
     noTrackStatsIssueDetector,
 } from "../issueDetectors";
-import { SsrcStats, StatsClient, TrackStats, ViewStats } from "../../types";
-
-function makeStatsClient(args?: Partial<StatsClient>): StatsClient {
-    return {
-        isLocalClient: true,
-        isAudioOnlyModeEnabled: false,
-        audio: { enabled: true },
-        video: { enabled: true },
-        clientId: "local",
-        id: "local",
-        isPresentation: false,
-        ...args,
-    };
-}
-
-function makeCheckData(args?: Partial<IssueCheckData>): IssueCheckData {
-    return {
-        client: makeStatsClient(),
-        clients: [makeStatsClient(), makeStatsClient()],
-        kind: "audio",
-        track: undefined,
-        trackStats: {} as TrackStats,
-        stats: {} as ViewStats,
-        hasLiveTrack: true,
-        ssrc0: {} as SsrcStats,
-        ssrcs: {} as SsrcStats[],
-        issues: {},
-        metrics: {},
-        ...args,
-    };
-}
+import { mockCheckData, mockStatsClient } from "../../../../../tests/webrtc/webRtcHelpers";
 
 describe("badNetworkIssueDetector", () => {
     describe("enabled", () => {
@@ -46,7 +15,7 @@ describe("badNetworkIssueDetector", () => {
             ${false}     | ${[{}]} | ${false}
             ${true}      | ${[{}]} | ${true}
         `("expected $expected when hasLiveTrack:$hasLiveTrack, ssrcs:$ssrcs", ({ hasLiveTrack, ssrcs, expected }) => {
-            const checkData = makeCheckData({
+            const checkData = mockCheckData({
                 hasLiveTrack,
                 ssrcs,
             });
@@ -56,7 +25,7 @@ describe("badNetworkIssueDetector", () => {
     });
 
     describe("check", () => {
-        const client = makeStatsClient({ isLocalClient: true });
+        const client = mockStatsClient({ isLocalClient: true });
 
         it.each`
             client    | clients                                                              | kind       | ssrcs                                     | expected
@@ -69,7 +38,7 @@ describe("badNetworkIssueDetector", () => {
         `(
             "expected $expected when client:$client, clients:$clients, kind:$kind, ssrcs:$ssrcs",
             ({ client, clients, kind, ssrcs, expected }) => {
-                const checkData = makeCheckData({
+                const checkData = mockCheckData({
                     client,
                     clients,
                     kind,
@@ -91,7 +60,7 @@ describe("dryTrackIssueDetector", () => {
             ${false}     | ${{}}   | ${false}
             ${true}      | ${{}}   | ${true}
         `("expected $expected when hasLiveTrack:$hasLiveTrack, ssrcs:$ssrcs", ({ hasLiveTrack, ssrcs, expected }) => {
-            const checkData = makeCheckData({
+            const checkData = mockCheckData({
                 hasLiveTrack,
                 ssrcs,
             });
@@ -102,7 +71,7 @@ describe("dryTrackIssueDetector", () => {
 
     describe("check", () => {
         describe("local client", () => {
-            const client = makeStatsClient({ isLocalClient: true });
+            const client = mockStatsClient({ isLocalClient: true });
 
             it.each`
                 client    | clients                                                              | ssrcs                                 | expected
@@ -114,7 +83,7 @@ describe("dryTrackIssueDetector", () => {
             `(
                 "expected $expected when client:$client, clients:$clients, ssrcs:$ssrcs",
                 ({ client, clients, ssrcs, expected }) => {
-                    const checkData = makeCheckData({
+                    const checkData = mockCheckData({
                         client,
                         clients,
                         ssrcs,
@@ -130,7 +99,7 @@ describe("dryTrackIssueDetector", () => {
 describe("noTrackIssueDetector", () => {
     describe("check", () => {
         describe("local client", () => {
-            const client = makeStatsClient({ isLocalClient: true });
+            const client = mockStatsClient({ isLocalClient: true });
             it.each`
                 client    | clients                                                              | kind       | track        | expected
                 ${client} | ${[client, { isLocalClient: false, isAudioOnlyModeEnabled: false }]} | ${"audio"} | ${{}}        | ${false}
@@ -139,7 +108,7 @@ describe("noTrackIssueDetector", () => {
             `(
                 "expected $expected when client:$client, clients:$clients, kind:$kind, track:$track",
                 ({ client, clients, kind, track, expected }) => {
-                    const checkData = makeCheckData({
+                    const checkData = mockCheckData({
                         client,
                         clients,
                         kind,
@@ -152,7 +121,7 @@ describe("noTrackIssueDetector", () => {
         });
 
         describe("remote client", () => {
-            const client = makeStatsClient({ isLocalClient: false });
+            const client = mockStatsClient({ isLocalClient: false });
             it.each`
                 client    | clients                                                              | kind       | track        | expected
                 ${client} | ${[client, { isLocalClient: false, isAudioOnlyModeEnabled: false }]} | ${"audio"} | ${{}}        | ${false}
@@ -161,7 +130,7 @@ describe("noTrackIssueDetector", () => {
             `(
                 "expected $expected when client:$client, clients:$clients, kind:$kind, track:$track",
                 ({ client, clients, kind, track, expected }) => {
-                    const checkData = makeCheckData({
+                    const checkData = mockCheckData({
                         client,
                         clients,
                         kind,
@@ -182,7 +151,7 @@ describe("noTrackStatsIssueDetector", () => {
             ${false}     | ${false}
             ${true}      | ${true}
         `("expected $expected when hasLiveTrack:$hasLiveTrack", ({ hasLiveTrack, expected }) => {
-            const checkData = makeCheckData({
+            const checkData = mockCheckData({
                 hasLiveTrack,
             });
 
@@ -192,7 +161,7 @@ describe("noTrackStatsIssueDetector", () => {
 
     describe("check", () => {
         describe("local client", () => {
-            const client = makeStatsClient({ isLocalClient: true });
+            const client = mockStatsClient({ isLocalClient: true });
             it.each`
                 client    | clients                                                              | kind       | ssrcs   | expected
                 ${client} | ${[client, { isLocalClient: false, isAudioOnlyModeEnabled: false }]} | ${"audio"} | ${[{}]} | ${false}
@@ -201,7 +170,7 @@ describe("noTrackStatsIssueDetector", () => {
             `(
                 "expected $expected when client:$client, clients:$clients, kind:$kind, ssrcs:$ssrcs",
                 ({ client, clients, kind, ssrcs, expected }) => {
-                    const checkData = makeCheckData({
+                    const checkData = mockCheckData({
                         client,
                         clients,
                         kind,
@@ -214,7 +183,7 @@ describe("noTrackStatsIssueDetector", () => {
         });
 
         describe("remote client", () => {
-            const client = makeStatsClient({ isLocalClient: false });
+            const client = mockStatsClient({ isLocalClient: false });
             it.each`
                 client    | clients                                                              | kind       | ssrcs   | expected
                 ${client} | ${[client, { isLocalClient: false, isAudioOnlyModeEnabled: false }]} | ${"audio"} | ${[{}]} | ${false}
@@ -223,7 +192,7 @@ describe("noTrackStatsIssueDetector", () => {
             `(
                 "expected $expected when client:$client, clients:$clients, kind:$kind, ssrcs:$ssrcs",
                 ({ client, clients, kind, ssrcs, expected }) => {
-                    const checkData = makeCheckData({
+                    const checkData = mockCheckData({
                         client,
                         clients,
                         kind,

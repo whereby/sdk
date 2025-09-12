@@ -1,4 +1,4 @@
-import { IssueCheckData, issueDetectors } from "./issueDetectors";
+import { IssueCheckData, IssueDetector, issueDetectors } from "./issueDetectors";
 import { subscribeStats } from "../StatsMonitor";
 import { StatsClient, ViewStats } from "../types";
 
@@ -13,7 +13,7 @@ type IssueSubscription = {
 let subscriptions: IssueSubscription[] = [];
 let stopStats: (() => void) | null = null;
 
-interface Metric {
+export interface Metric {
     id: string;
     global?: true;
     enabled?: (checkData: IssueCheckData) => boolean;
@@ -242,6 +242,27 @@ export const getIssuesAndMetrics = () => {
     return { ...issuesAndMetricsByView };
 };
 
+/*
+ * Helper function to determine, on a high level, if
+ * a metric or issue detector should be enabled
+ */
+export function issueDetectorOrMetricEnabled(issueDetectorOrMetric: IssueDetector | Metric, checkData: IssueCheckData) {
+    const { client, kind } = checkData;
+
+    if (issueDetectorOrMetric.global && kind !== "global") return false;
+    if (!issueDetectorOrMetric.global && kind === "global") return false;
+
+    let enabled = kind === "global";
+
+    if (kind === "audio" && client.audio.enabled) {
+        enabled = true;
+    } else if (kind === "video" && client.video.enabled) {
+        enabled = true;
+    }
+
+    return enabled && (issueDetectorOrMetric.enabled ? issueDetectorOrMetric.enabled(checkData) : true);
+}
+
 function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsClient[]) {
     // reset aggregated current metrics
     Object.values(aggregatedMetrics).forEach((metricData: MetricDataAggregated) => {
@@ -306,10 +327,8 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
                     : `${client.isLocalClient ? "loc" : "rem"}-${client.isPresentation ? "pres" : "cam"}-${kind}`;
 
             metrics.forEach((metric) => {
-                if (metric.global && kind !== "global") return;
-                if (!metric.global && kind === "global") return;
+                const enabled = issueDetectorOrMetricEnabled(metric, checkData);
 
-                const enabled = metric.enabled ? metric.enabled(checkData) : true;
                 if (enabled) {
                     const metricKey = `${qualifierString}-${metric.id}`;
                     let metricData = issuesAndMetrics.metrics[metricKey];
@@ -374,12 +393,9 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
             });
 
             issueDetectors.forEach((issueDetector) => {
-                if (issueDetector.global && kind !== "global") return;
-                if (!issueDetector.global && kind === "global") return;
-
                 const issueKey = `${qualifierString}-${issueDetector.id}`;
 
-                const enabled = issueDetector.enabled(checkData);
+                const enabled = issueDetectorOrMetricEnabled(issueDetector, checkData);
 
                 let issueData = issuesAndMetrics.issues[issueKey] as IssueData;
                 let aggregatedIssueData = aggregatedIssues[issueKey] as IssueDataAggregated;
