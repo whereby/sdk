@@ -1,3 +1,4 @@
+export {};
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import type * as wrtc from "@roamhq/wrtc";
 
