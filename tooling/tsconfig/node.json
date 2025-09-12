@@ -1,0 +1,26 @@
+
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "outDir": "dist",
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "checkJs": false,
+        "declaration": false,
+        "downlevelIteration": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "importHelpers": true,
+        "isolatedModules": true,
+        "lib": ["es2023"],
+        "module": "esnext",
+        "moduleResolution": "node",
+        "noEmit": true,
+        "noFallthroughCasesInSwitch": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "target": "es6"
+    },
+    "exclude": ["node_modules", "build", "dist", ".next", ".expo"]
+}
