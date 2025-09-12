@@ -1,5 +1,4 @@
 
 {
-    "extends": "@whereby.com/tsconfig/base.json",
-
+    "extends": "@whereby.com/tsconfig/node.json",
 }

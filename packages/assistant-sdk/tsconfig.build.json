@@ -1,4 +1,4 @@
 
 {
-    "extends": "@whereby.com/tsconfig/build.json"
+    "extends": "@whereby.com/tsconfig/node.json"
 }
