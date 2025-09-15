@@ -7,29 +7,19 @@ import {
     type WherebyWebhookType,
     type WherebyWebhookTriggers,
     type TriggerEvents,
-    ASSISTANT_JOIN_SUCCESS,
+    TRIGGER_EVENT_SUCCESS,
 } from "./types.js";
 
 import { buildRoomUrl } from "../utils/buildRoomUrl.js";
-import { Assistant } from "../Assistant";
 
 export * from "./types.js";
 
 export interface TriggerOptions {
     webhookTriggers: WherebyWebhookTriggers;
     port?: number;
-    assistantKey: string;
-    startCombinedAudioStream?: boolean;
-    startLocalMedia?: boolean;
 }
 
-const webhookRouter = (
-    webhookTriggers: WherebyWebhookTriggers,
-    emitter: EventEmitter<TriggerEvents>,
-    assistantKey: string,
-    startCombinedAudioStream = false,
-    startLocalMedia = false,
-) => {
+const webhookRouter = (webhookTriggers: WherebyWebhookTriggers, emitter: EventEmitter<TriggerEvents>) => {
     const router = express.Router();
 
     const jsonParser = bodyParser.json();
@@ -48,10 +38,7 @@ const webhookRouter = (
         if (shouldTriggerOnReceivedWebhook) {
             const roomUrl = buildRoomUrl(req.body.data.roomName, req.body.data.subdomain);
 
-            const assistant = new Assistant({ assistantKey, startCombinedAudioStream, startLocalMedia });
-            assistant.joinRoom(roomUrl);
-
-            emitter.emit(ASSISTANT_JOIN_SUCCESS, { roomUrl, triggerWebhook: req.body, assistant });
+            emitter.emit(TRIGGER_EVENT_SUCCESS, { roomUrl, triggerWebhook: req.body });
         }
 
         res.status(200);
@@ -64,36 +51,18 @@ const webhookRouter = (
 export class Trigger extends EventEmitter<TriggerEvents> {
     private webhookTriggers: WherebyWebhookTriggers;
     private port: number;
-    private assistantKey: string;
-    private startCombinedAudioStream: boolean;
-    private startLocalMedia: boolean;
 
-    constructor({
-        webhookTriggers = {},
-        port = 8080,
-        assistantKey,
-        startCombinedAudioStream,
-        startLocalMedia,
-    }: TriggerOptions) {
+    constructor({ webhookTriggers = {}, port = 8080 }: TriggerOptions) {
         super();
 
         this.webhookTriggers = webhookTriggers;
         this.port = port;
-        this.assistantKey = assistantKey;
-        this.startCombinedAudioStream = startCombinedAudioStream ?? false;
-        this.startLocalMedia = startLocalMedia ?? false;
     }
 
     start() {
         const app = express();
 
-        const router = webhookRouter(
-            this.webhookTriggers,
-            this,
-            this.assistantKey,
-            this.startCombinedAudioStream,
-            this.startLocalMedia,
-        );
+        const router = webhookRouter(this.webhookTriggers, this);
 
         app.use(router);
 
