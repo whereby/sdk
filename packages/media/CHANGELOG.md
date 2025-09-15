@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.1.4
+
+### Patch Changes
+
+- ce401f7: Upgrade mediasoup-client to 3.15.7
+
 ## 2.1.3
 
 ### Patch Changes
