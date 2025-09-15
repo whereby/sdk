@@ -62,7 +62,7 @@
         "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
         "@types/btoa": "^1.2.3",
-        "@types/chrome": "^0.0.210",
+        "@types/chrome": "^0.1.11",
         "deep-object-diff": "^1.1.9",
         "dotenv": "^16.4.5",
         "dotenv-run-script": "^0.4.1",
