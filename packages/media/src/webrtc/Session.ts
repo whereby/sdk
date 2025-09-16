@@ -235,7 +235,7 @@ export default class Session {
             if (this.pc.signalingState === "closed") {
                 return;
             }
-            if (adapter.browserDetails.browser === "safari" && candidate && candidate.candidate === "") {
+            if (adapter.browserDetails?.browser === "safari" && candidate && candidate.candidate === "") {
                 // filter due to https://github.com/webrtcHacks/adapter/issues/863
                 return;
             }

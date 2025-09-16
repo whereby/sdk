@@ -13,9 +13,9 @@ const adapter = adapterRaw.default ?? adapterRaw;
  */
 export function detectMicrophoneNotWorking(pc: any) {
     if (
-        adapter.browserDetails.browser !== "chrome" ||
+        adapter.browserDetails?.browser !== "chrome" ||
         // @ts-ignore
-        adapter.browserDetails.browser < 58 || // legacy getStats is no longer supported.
+        adapter.browserDetails?.browser < 58 || // legacy getStats is no longer supported.
         pc.signalingState === "closed"
     ) {
         return Promise.resolve(false);
