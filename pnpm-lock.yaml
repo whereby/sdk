@@ -434,12 +434,21 @@ importers:
       '@roamhq/wrtc':
         specifier: github:whereby/node-webrtc#patch/rtc_audio_source
         version: https://codeload.github.com/whereby/node-webrtc/tar.gz/cd43d297d7c2ac8b4739644d40d3a5702867b8dd
+      '@types/web':
+        specifier: ^0.0.267
+        version: 0.0.267
       '@whereby.com/core':
         specifier: workspace:*
         version: link:../core
+      body-parser:
+        specifier: 2.2.0
+        version: 2.2.0
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
+      express:
+        specifier: 5.1.0
+        version: 5.1.0
       uuid:
         specifier: ^11.0.3
         version: 11.1.0
@@ -462,15 +471,9 @@ importers:
       '@whereby.com/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
-      body-parser:
-        specifier: 2.2.0
-        version: 2.2.0
       eslint:
         specifier: 'catalog:'
         version: 9.30.0(jiti@1.21.7)
-      express:
-        specifier: 5.1.0
-        version: 5.1.0
       prettier:
         specifier: 'catalog:'
         version: 3.6.2
@@ -3564,6 +3567,9 @@ packages:
 
   '@types/uuid@9.0.8':
     resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
+
+  '@types/web@0.0.267':
+    resolution: {integrity: sha512-BoXcBEr/fnGEl5wRmtbBg2zOAKiQszHPc1gxBMstiUBosGV8t5xZflmbgQV+y1I4x+lBo7Kb1HLItt2h+TdQBw==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -12341,6 +12347,8 @@ snapshots:
   '@types/uuid-validate@0.0.3': {}
 
   '@types/uuid@9.0.8': {}
+
+  '@types/web@0.0.267': {}
 
   '@types/yargs-parser@21.0.3': {}
 
