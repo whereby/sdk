@@ -38,12 +38,16 @@ export function createRemoteParticipant(client: SignalClient, newJoiner = false)
 //     return client.roleName === "captioner" || client.role?.roleName === "captioner";
 // }
 
-function findParticipant(state: RemoteParticipantState, participantId: string) {
+function findParticipant(state: RemoteParticipantSliceState, participantId: string) {
     const index = state.remoteParticipants.findIndex((c) => c.id === participantId);
     return { index, participant: state.remoteParticipants[index] };
 }
 
-function updateParticipant(state: RemoteParticipantState, participantId: string, updates: Partial<RemoteParticipant>) {
+function updateParticipant(
+    state: RemoteParticipantSliceState,
+    participantId: string,
+    updates: Partial<RemoteParticipant>,
+) {
     const { participant, index } = findParticipant(state, participantId);
 
     if (!participant) {
@@ -61,7 +65,7 @@ function updateParticipant(state: RemoteParticipantState, participantId: string,
     };
 }
 
-function addParticipant(state: RemoteParticipantState, participant: RemoteParticipant) {
+function addParticipant(state: RemoteParticipantSliceState, participant: RemoteParticipant) {
     const { participant: foundParticipant } = findParticipant(state, participant.id);
 
     if (foundParticipant) {
@@ -76,7 +80,7 @@ function addParticipant(state: RemoteParticipantState, participant: RemotePartic
 }
 
 function updateStreamState(
-    state: RemoteParticipantState,
+    state: RemoteParticipantSliceState,
     participantId: string,
     streamId: string,
     state_: StreamState,
@@ -94,14 +98,14 @@ function updateStreamState(
     return updateParticipant(state, participantId, { streams });
 }
 
-function removeClient(state: RemoteParticipantState, participantId: string) {
+function removeClient(state: RemoteParticipantSliceState, participantId: string) {
     return {
         ...state,
         remoteParticipants: state.remoteParticipants.filter((c) => c.id !== participantId),
     };
 }
 
-function addStreamId(state: RemoteParticipantState, participantId: string, streamId: string) {
+function addStreamId(state: RemoteParticipantSliceState, participantId: string, streamId: string) {
     const { participant } = findParticipant(state, participantId);
 
     if (!participant || participant.streams.find((s) => s.id === streamId)) {
@@ -114,7 +118,7 @@ function addStreamId(state: RemoteParticipantState, participantId: string, strea
     });
 }
 
-function removeStreamId(state: RemoteParticipantState, participantId: string, streamId: string) {
+function removeStreamId(state: RemoteParticipantSliceState, participantId: string, streamId: string) {
     const { participant } = findParticipant(state, participantId);
     if (!participant) {
         console.error(`No participant ${participantId} found to remove stream ${streamId}`);
@@ -131,7 +135,7 @@ function removeStreamId(state: RemoteParticipantState, participantId: string, st
     });
 }
 
-function addStream(state: RemoteParticipantState, payload: RtcStreamAddedPayload) {
+function addStream(state: RemoteParticipantSliceState, payload: RtcStreamAddedPayload) {
     const { clientId, stream, streamType } = payload;
     let { streamId } = payload;
 
@@ -174,11 +178,11 @@ function addStream(state: RemoteParticipantState, payload: RtcStreamAddedPayload
  * Reducer
  */
 
-export interface RemoteParticipantState {
+export interface RemoteParticipantSliceState {
     remoteParticipants: RemoteParticipant[];
 }
 
-export const remoteParticipantsSliceInitialState: RemoteParticipantState = {
+export const remoteParticipantsSliceInitialState: RemoteParticipantSliceState = {
     remoteParticipants: [],
 };
 
