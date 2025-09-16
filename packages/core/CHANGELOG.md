@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.1.5
+
+### Patch Changes
+
+- fd06800: Fix duplicate RemoteParticipantState export
+
 ## 1.1.4
 
 ### Patch Changes
