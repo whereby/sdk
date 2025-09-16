@@ -4,11 +4,12 @@ import {
     LocalMediaClient,
     RemoteParticipantState,
     ChatMessage,
+    ConnectionStatus,
 } from "@whereby.com/core";
 import wrtc from "@roamhq/wrtc";
 import { AudioMixer } from "../AudioMixer";
 import EventEmitter from "events";
-import { AUDIO_STREAM_READY, AssistantEvents } from "./types";
+import { ASSISTANT_JOINED_ROOM, ASSISTANT_LEFT_ROOM, AUDIO_STREAM_READY, AssistantEvents } from "./types";
 
 export type AssistantOptions = {
     assistantKey: string;
@@ -24,6 +25,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private mediaStream: MediaStream | null = null;
     private audioSource: wrtc.nonstandard.RTCAudioSource | null = null;
     private combinedStream: MediaStream | null = null;
+    private roomUrl: string | null = null;
 
     constructor({ assistantKey, startCombinedAudioStream = false, startLocalMedia = false }: AssistantOptions) {
         super();
@@ -54,13 +56,24 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             const audioMixer = new AudioMixer(handleStreamReady);
             this.combinedStream = audioMixer.getCombinedAudioStream();
             this.roomConnection.subscribeToRemoteParticipants(audioMixer.handleRemoteParticipants.bind(audioMixer));
+            this.roomConnection.subscribeToConnectionStatus(this.handleConnectionStatusChange);
         }
     }
+
+    private handleConnectionStatusChange = (status: ConnectionStatus) => {
+        if (status === "connected") {
+            this.emit(ASSISTANT_JOINED_ROOM, { roomUrl: this.roomUrl || "" });
+        }
+        if (["left", "kicked"].includes(status)) {
+            this.emit(ASSISTANT_LEFT_ROOM, { roomUrl: this.roomUrl || "" });
+        }
+    };
 
     public async joinRoom(roomUrl: string): Promise<void> {
         if (this.mediaStream) {
             await this.localMedia.startMedia(this.mediaStream);
         }
+        this.roomUrl = roomUrl;
         this.roomConnection.initialize({
             localMediaOptions: {
                 audio: false,

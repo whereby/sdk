@@ -1,5 +1,11 @@
 import "@whereby.com/assistant-sdk/polyfills";
-import { Trigger, TRIGGER_EVENT_SUCCESS, AUDIO_STREAM_READY, Assistant } from "@whereby.com/assistant-sdk";
+import {
+    Trigger,
+    TRIGGER_EVENT_SUCCESS,
+    AUDIO_STREAM_READY,
+    Assistant,
+    ASSISTANT_LEFT_ROOM,
+} from "@whereby.com/assistant-sdk";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -28,6 +34,11 @@ function main() {
 
         assistant.on(AUDIO_STREAM_READY, ({ track }) => {
             assistant.sendChatMessage("Hello! I am your AI assistant. How can I help you today?");
+        });
+
+        assistant.on(ASSISTANT_LEFT_ROOM, ({ roomUrl }) => {
+            console.log(`Assistant has left the room: ${roomUrl}`);
+            hasJoinedRoom = false;
         });
     });
 }

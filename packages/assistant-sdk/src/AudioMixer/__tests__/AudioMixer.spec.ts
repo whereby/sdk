@@ -1,21 +1,30 @@
 import { AudioMixer } from "..";
 import { RemoteParticipantState } from "@whereby.com/core";
 import { ChildProcessWithoutNullStreams } from "child_process";
-import {
-    spawnFFmpegProcess,
-    spawnFFmpegProcessDebug,
-    stopFFmpegProcess,
-    writeAudioDataToFFmpeg,
-    clearSlotQueue,
-    PARTICIPANT_SLOTS,
-} from "../../utils/ffmpeg-helpers";
+import { createFfmpegMixer, PARTICIPANT_SLOTS } from "../../utils/ffmpeg-helpers";
+
+const mockFFmpegProcess = {
+    kill: jest.fn(),
+    stdio: Array(23).fill({ write: jest.fn(), end: jest.fn() }),
+} as unknown as ChildProcessWithoutNullStreams;
+
+const mockSlotBinding = {
+    sink: {},
+    writer: { write: jest.fn(), end: jest.fn() },
+    stop: jest.fn(),
+    trackId: "track-123",
+};
+
+const mixerInstance = {
+    spawnFFmpegProcess: jest.fn().mockReturnValue(mockFFmpegProcess),
+    spawnFFmpegProcessDebug: jest.fn().mockReturnValue(mockFFmpegProcess),
+    stopFFmpegProcess: jest.fn(),
+    writeAudioDataToFFmpeg: jest.fn().mockReturnValue(mockSlotBinding),
+    clearSlotQueue: jest.fn(),
+};
 
 jest.mock("../../utils/ffmpeg-helpers", () => ({
-    spawnFFmpegProcess: jest.fn(),
-    spawnFFmpegProcessDebug: jest.fn(),
-    stopFFmpegProcess: jest.fn(),
-    writeAudioDataToFFmpeg: jest.fn(),
-    clearSlotQueue: jest.fn(),
+    createFfmpegMixer: jest.fn(() => mixerInstance),
     PARTICIPANT_SLOTS: 20,
 }));
 
@@ -37,17 +46,7 @@ jest.mock("@roamhq/wrtc", () => ({
     },
 }));
 
-const mockFFmpegProcess = {
-    kill: jest.fn(),
-    stdio: Array(23).fill({ write: jest.fn(), end: jest.fn() }),
-} as unknown as ChildProcessWithoutNullStreams;
-
-const mockSlotBinding = {
-    sink: {},
-    writer: { write: jest.fn(), end: jest.fn() },
-    stop: jest.fn(),
-    trackId: "track-123",
-};
+// moved above to be used in mixer mock
 
 const createMockParticipant = (
     id: string,
@@ -88,9 +87,12 @@ describe("AudioMixer", () => {
         jest.clearAllMocks();
         onStreamReady = jest.fn();
 
-        (spawnFFmpegProcess as jest.Mock).mockReturnValue(mockFFmpegProcess);
-        (spawnFFmpegProcessDebug as jest.Mock).mockReturnValue(mockFFmpegProcess);
-        (writeAudioDataToFFmpeg as jest.Mock).mockReturnValue(mockSlotBinding);
+        (createFfmpegMixer as jest.Mock).mockReturnValue(mixerInstance);
+        mixerInstance.spawnFFmpegProcess.mockClear();
+        mixerInstance.spawnFFmpegProcessDebug.mockClear();
+        mixerInstance.writeAudioDataToFFmpeg.mockClear();
+        mixerInstance.stopFFmpegProcess.mockClear();
+        mixerInstance.clearSlotQueue.mockClear();
 
         audioMixer = new AudioMixer(onStreamReady);
     });
@@ -127,28 +129,28 @@ describe("AudioMixer", () => {
     describe("handleRemoteParticipants", () => {
         it("should stop mixer when no participants", () => {
             audioMixer.handleRemoteParticipants([]);
-            expect(stopFFmpegProcess).not.toHaveBeenCalled(); // No process started yet
+            expect(mixerInstance.stopFFmpegProcess).not.toHaveBeenCalled(); // No process started yet
         });
 
         it("should spawn FFmpeg process for first participant", () => {
             const participant = createMockParticipant("p1");
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(spawnFFmpegProcess).toHaveBeenCalledWith(expect.any(Object), onStreamReady);
+            expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalledWith(expect.any(Object), onStreamReady);
         });
 
         it("should spawn debug FFmpeg process when DEBUG_MIXER_OUTPUT is true", () => {
             const participant = createMockParticipant("p1");
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(spawnFFmpegProcess).toHaveBeenCalled();
+            expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalled();
         });
 
         it("should attach participants with audio tracks", () => {
             const participant = createMockParticipant("p1");
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledWith(
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(
                 mockFFmpegProcess,
                 0,
                 expect.objectContaining({ id: "track-123", kind: "audio" }),
@@ -159,14 +161,14 @@ describe("AudioMixer", () => {
             const participant = createMockParticipant("p1", false);
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(writeAudioDataToFFmpeg).not.toHaveBeenCalled();
+            expect(mixerInstance.writeAudioDataToFFmpeg).not.toHaveBeenCalled();
         });
 
         it("should not attach participants without stream", () => {
             const participant = createMockParticipant("p1", true, false);
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(writeAudioDataToFFmpeg).not.toHaveBeenCalled();
+            expect(mixerInstance.writeAudioDataToFFmpeg).not.toHaveBeenCalled();
         });
 
         it("should not attach participants without audio track", () => {
@@ -176,7 +178,7 @@ describe("AudioMixer", () => {
             } as unknown as MediaStream;
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(writeAudioDataToFFmpeg).not.toHaveBeenCalled();
+            expect(mixerInstance.writeAudioDataToFFmpeg).not.toHaveBeenCalled();
         });
 
         it("should detach participants that are no longer present", () => {
@@ -184,11 +186,11 @@ describe("AudioMixer", () => {
             const participant2 = createMockParticipant("p2");
             audioMixer.handleRemoteParticipants([participant1, participant2]);
 
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledTimes(2);
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(2);
 
             audioMixer.handleRemoteParticipants([participant1]);
 
-            expect(clearSlotQueue).toHaveBeenCalledWith(1);
+            expect(mixerInstance.clearSlotQueue).toHaveBeenCalledWith(1);
             expect(mockSlotBinding.stop).toHaveBeenCalled();
         });
 
@@ -201,18 +203,18 @@ describe("AudioMixer", () => {
 
             audioMixer.handleRemoteParticipants(participants);
 
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledTimes(3);
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledWith(
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(3);
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(
                 mockFFmpegProcess,
                 0,
                 expect.objectContaining({ id: "track-1" }),
             );
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledWith(
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(
                 mockFFmpegProcess,
                 1,
                 expect.objectContaining({ id: "track-2" }),
             );
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledWith(
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(
                 mockFFmpegProcess,
                 2,
                 expect.objectContaining({ id: "track-3" }),
@@ -225,7 +227,7 @@ describe("AudioMixer", () => {
             audioMixer.handleRemoteParticipants([participant]);
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledTimes(1);
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(1);
         });
 
         it("should handle participant track changes", () => {
@@ -236,7 +238,7 @@ describe("AudioMixer", () => {
             audioMixer.handleRemoteParticipants([participant2]);
 
             expect(mockSlotBinding.stop).toHaveBeenCalled();
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledTimes(2);
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(2);
         });
 
         it("should handle up to PARTICIPANT_SLOTS participants", () => {
@@ -246,7 +248,7 @@ describe("AudioMixer", () => {
 
             audioMixer.handleRemoteParticipants(participants);
 
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledTimes(PARTICIPANT_SLOTS);
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(PARTICIPANT_SLOTS);
         });
     });
 
@@ -257,7 +259,7 @@ describe("AudioMixer", () => {
 
             audioMixer.stopAudioMixer();
 
-            expect(stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
         });
 
         it("should clear all participant slots", () => {
@@ -269,7 +271,11 @@ describe("AudioMixer", () => {
             const newParticipant = createMockParticipant("p3");
             audioMixer.handleRemoteParticipants([newParticipant]);
 
-            expect(writeAudioDataToFFmpeg).toHaveBeenLastCalledWith(expect.any(Object), 0, expect.any(Object));
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenLastCalledWith(
+                expect.any(Object),
+                0,
+                expect.any(Object),
+            );
         });
 
         it("should recreate media stream", () => {
@@ -289,7 +295,7 @@ describe("AudioMixer", () => {
     describe("error handling", () => {
         it("should handle writeAudioDataToFFmpeg throwing", () => {
             const error = new Error("FFmpeg write failed");
-            (writeAudioDataToFFmpeg as jest.Mock).mockImplementationOnce(() => {
+            (mixerInstance.writeAudioDataToFFmpeg as jest.Mock).mockImplementationOnce(() => {
                 throw error;
             });
 
@@ -310,7 +316,7 @@ describe("AudioMixer", () => {
 
             audioMixer.handleRemoteParticipants([participant1]);
 
-            (writeAudioDataToFFmpeg as jest.Mock).mockReturnValue(faultyBinding);
+            (mixerInstance.writeAudioDataToFFmpeg as jest.Mock).mockReturnValue(faultyBinding);
             audioMixer.handleRemoteParticipants([participant1, participant2]);
 
             expect(() => audioMixer.handleRemoteParticipants([participant1])).not.toThrow();
@@ -328,9 +334,9 @@ describe("AudioMixer", () => {
 
             audioMixer.handleRemoteParticipants(participants);
 
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledWith(mockFFmpegProcess, 0, expect.any(Object));
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledWith(mockFFmpegProcess, 1, expect.any(Object));
-            expect(writeAudioDataToFFmpeg).toHaveBeenCalledWith(mockFFmpegProcess, 2, expect.any(Object));
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(mockFFmpegProcess, 0, expect.any(Object));
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(mockFFmpegProcess, 1, expect.any(Object));
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(mockFFmpegProcess, 2, expect.any(Object));
         });
 
         it("should reuse slots when participants leave", () => {
@@ -346,7 +352,7 @@ describe("AudioMixer", () => {
             const newParticipant = createMockParticipant("p4");
             audioMixer.handleRemoteParticipants([participants[0], participants[2], newParticipant]);
 
-            expect(clearSlotQueue).toHaveBeenCalledWith(1);
+            expect(mixerInstance.clearSlotQueue).toHaveBeenCalledWith(1);
         });
     });
 });

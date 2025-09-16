@@ -3,14 +3,7 @@ import Stream from "stream";
 import { EventEmitter } from "events";
 import { RemoteParticipantState } from "@whereby.com/core";
 import { AudioSink } from "../utils/AudioSink";
-import {
-    PARTICIPANT_SLOTS,
-    spawnFFmpegProcess,
-    spawnFFmpegProcessDebug,
-    stopFFmpegProcess,
-    writeAudioDataToFFmpeg,
-    clearSlotQueue,
-} from "../utils/ffmpeg-helpers";
+import { PARTICIPANT_SLOTS, createFfmpegMixer } from "../utils/ffmpeg-helpers";
 
 import wrtc from "@roamhq/wrtc";
 
@@ -26,6 +19,7 @@ export class AudioMixer extends EventEmitter {
     private participantSlots = new Map<number, string>();
     private activeSlots: Record<number, SlotBinding | undefined> = {};
     private onStreamReady: () => void;
+    private mixer = createFfmpegMixer();
 
     constructor(onStreamReady: () => void) {
         super();
@@ -53,8 +47,8 @@ export class AudioMixer extends EventEmitter {
 
         if (!this.ffmpegProcess && this.rtcAudioSource) {
             this.ffmpegProcess = DEBUG_MIXER_OUTPUT
-                ? spawnFFmpegProcessDebug(this.rtcAudioSource, this.onStreamReady)
-                : spawnFFmpegProcess(this.rtcAudioSource, this.onStreamReady);
+                ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource, this.onStreamReady)
+                : this.mixer.spawnFFmpegProcess(this.rtcAudioSource, this.onStreamReady);
         }
 
         for (const p of participants) this.attachParticipantIfNeeded(p);
@@ -68,7 +62,7 @@ export class AudioMixer extends EventEmitter {
 
     public stopAudioMixer(): void {
         if (this.ffmpegProcess) {
-            stopFFmpegProcess(this.ffmpegProcess);
+            this.mixer.stopFFmpegProcess(this.ffmpegProcess);
             this.ffmpegProcess = null;
         }
         this.participantSlots = new Map(Array.from({ length: PARTICIPANT_SLOTS }, (_, i) => [i, ""]));
@@ -122,7 +116,7 @@ export class AudioMixer extends EventEmitter {
             this.activeSlots[slot] = undefined;
         }
 
-        const { sink, writer, stop } = writeAudioDataToFFmpeg(this.ffmpegProcess!, slot, audioTrack);
+        const { sink, writer, stop } = this.mixer.writeAudioDataToFFmpeg(this.ffmpegProcess!, slot, audioTrack);
         this.activeSlots[slot] = { sink, writer, stop, trackId: audioTrack.id };
 
         audioTrack.addEventListener?.("ended", () => this.detachParticipant(participantId));
@@ -143,7 +137,7 @@ export class AudioMixer extends EventEmitter {
         }
 
         // Clear any queued audio data for this slot to prevent stale audio
-        clearSlotQueue(slot);
+        this.mixer.clearSlotQueue(slot);
         this.participantSlots.set(slot, "");
     }
 }
