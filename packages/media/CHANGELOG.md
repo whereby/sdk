@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.1.5
+
+### Patch Changes
+
+- d52b52f: Fix browser adapter access in nodejs
+
 ## 2.1.4
 
 ### Patch Changes
