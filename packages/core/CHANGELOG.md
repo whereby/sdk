@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.1.6
+
+### Patch Changes
+
+- 2e3c066: Fix createStore/createServices type mismatch
+
 ## 1.1.5
 
 ### Patch Changes
