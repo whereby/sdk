@@ -72,10 +72,10 @@ export type WherebyWebhookType =
     | WherebyWebhookRoomSessionEnded;
 
 export type WherebyWebhookTriggerTypes = {
-    "room.client.joined": WherebyWebhookBase;
-    "room.client.left": WherebyWebhookBase;
+    "room.client.joined": WherebyWebhookRoomClientJoined;
+    "room.client.left": WherebyWebhookRoomClientLeft;
     "room.session.started": WherebyWebhookRoomSessionStarted;
-    "room.session.ended": WherebyWebhookBase;
+    "room.session.ended": WherebyWebhookRoomSessionEnded;
 };
 
 export type WherebyWebhookTriggers = Partial<{
