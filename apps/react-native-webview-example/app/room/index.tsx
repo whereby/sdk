@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ScrollView, StyleSheet, Text, View, Alert, Platform, Button } from "react-native";
-import { Audio } from "expo-av";
+import { AudioModule } from "expo-audio";
 import { Camera } from "expo-camera";
 import { WherebyEmbed, type WherebyWebView, WherebyEvent } from "@whereby.com/react-native-sdk/embed";
 
@@ -21,7 +21,7 @@ export default function Room() {
         (async () => {
             if (Platform.OS === "android") {
                 const cameraStatus = await Camera.requestCameraPermissionsAsync();
-                const audioStatus = await Audio.requestPermissionsAsync();
+                const audioStatus = await AudioModule.requestRecordingPermissionsAsync();
 
                 if (cameraStatus.status === "granted" && audioStatus.status === "granted") {
                     setHasPermissionForAndroid(true);
