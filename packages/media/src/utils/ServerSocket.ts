@@ -44,7 +44,9 @@ export class ServerSocket {
                 // safari doesn't support cross domain cookies making load-balancer stickiness not work
                 // and if socket.io reconnects to another signal instance with polling it will fail
                 // remove if we move signal to a whereby.com subdomain
-                if (adapter.browserDetails.browser !== "safari") delete this._wasConnectedUsingWebsocket;
+                if (adapter.browserDetails?.browser !== "safari") {
+                    delete this._wasConnectedUsingWebsocket;
+                }
             } else {
                 this._socket.io.opts.transports = ["websocket", "polling"];
             }

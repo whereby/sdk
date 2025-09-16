@@ -23,7 +23,7 @@ const logger = new Logger();
 
 const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
 const CAMERA_STREAM_ID = RtcStream.getCameraId();
-const browserName = adapter.browserDetails.browser;
+const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
 if (browserName === "firefox" && adapter.browserShim && "shimGetDisplayMedia" in adapter.browserShim) {

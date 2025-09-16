@@ -7,7 +7,7 @@ import Logger from "../utils/Logger";
 const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
-const browserName = adapter.browserDetails.browser;
+const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
 export function setCodecPreferenceSDP(sdp: any, redOn?: boolean) {

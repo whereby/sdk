@@ -3,7 +3,7 @@ import { GetConstraintsOptions, GetMediaConstraintsOptions } from "./types";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
-const isSafari = adapter.browserDetails.browser === "safari";
+const isSafari = adapter.browserDetails?.browser === "safari";
 
 // Expects format 640x360@25, returns [width, height, fps]
 const parseResolution = (res: any) => res.split(/[^\d]/g).map((n: any) => parseInt(n, 10));
