@@ -8,6 +8,10 @@ import {
     type WherebyWebhookTriggers,
     type TriggerEvents,
     TRIGGER_EVENT_SUCCESS,
+    WherebyWebhookRoomClientJoined,
+    WherebyWebhookRoomSessionStarted,
+    WherebyWebhookRoomClientLeft,
+    WherebyWebhookRoomSessionEnded,
 } from "./types.js";
 
 import { buildRoomUrl } from "../utils/buildRoomUrl.js";
@@ -33,7 +37,26 @@ const webhookRouter = (webhookTriggers: WherebyWebhookTriggers, emitter: EventEm
         assert(req.body, "message body is required");
         assert("type" in req.body, "webhook type is required");
 
-        const shouldTriggerOnReceivedWebhook = webhookTriggers[req.body.type]?.(req.body);
+        let shouldTriggerOnReceivedWebhook: boolean = false;
+
+        switch (req.body.type) {
+            case "room.client.joined":
+                shouldTriggerOnReceivedWebhook =
+                    webhookTriggers["room.client.joined"]?.(req.body as WherebyWebhookRoomClientJoined) ?? false;
+                break;
+            case "room.client.left":
+                shouldTriggerOnReceivedWebhook =
+                    webhookTriggers["room.client.left"]?.(req.body as WherebyWebhookRoomClientLeft) ?? false;
+                break;
+            case "room.session.started":
+                shouldTriggerOnReceivedWebhook =
+                    webhookTriggers["room.session.started"]?.(req.body as WherebyWebhookRoomSessionStarted) ?? false;
+                break;
+            case "room.session.ended":
+                shouldTriggerOnReceivedWebhook =
+                    webhookTriggers["room.session.ended"]?.(req.body as WherebyWebhookRoomSessionEnded) ?? false;
+                break;
+        }
 
         if (shouldTriggerOnReceivedWebhook) {
             const roomUrl = buildRoomUrl(req.body.data.roomName, req.body.data.subdomain);
