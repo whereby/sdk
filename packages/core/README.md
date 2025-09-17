@@ -5,17 +5,17 @@
 ## Installation
 
 ```shell
-npm install @whereby.com/browser-core
+npm install @whereby.com/core
 ```
 
 or
 
 ```shell
-yarn add @whereby.com/browser-core
+yarn add @whereby.com/core
 ```
 
 or
 
 ```shell
-pnpm add @whereby.com/browser-core
+pnpm add @whereby.com/core
 ```
