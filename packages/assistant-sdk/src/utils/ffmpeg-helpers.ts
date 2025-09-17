@@ -282,10 +282,10 @@ export function createFfmpegMixer() {
 
         const pre: string[] = [];
         for (let i = 0; i < N; i++) {
-            pre.push(`[${i}:a]aresample=async=1:first_pts=0,asetpts=N/SR/TB,asplit=2[a${i}tap][a${i}mix]`);
+            pre.push(`[${i}:a]aresample=async=0:first_pts=0,asetpts=PTS-STARTPTS,asplit=2[a${i}tap][a${i}mix]`);
         }
         const mixInputs = Array.from({ length: N }, (_, i) => `[a${i}mix]`).join("");
-        const filter = `${pre.join(";")};${mixInputs}amix=inputs=${N}:duration=longest:dropout_transition=250:normalize=0[mix]`;
+        const filter = `${pre.join(";")};${mixInputs}amix=inputs=${N}:duration=first:dropout_transition=0:normalize=0[mix]`;
 
         ffArgs.push("-hide_banner", "-nostats", "-loglevel", "info", "-y", "-filter_complex", filter);
 
@@ -313,10 +313,10 @@ export function createFfmpegMixer() {
 
         const pre: string[] = [];
         for (let i = 0; i < N; i++) {
-            pre.push(`[${i}:a]aresample=async=1:first_pts=0,asetpts=N/SR/TB[a${i}]`);
+            pre.push(`[${i}:a]aresample=async=0:first_pts=0,asetpts=PTS-STARTPTS[a${i}]`);
         }
         const labels = Array.from({ length: N }, (_, i) => `[a${i}]`).join("");
-        const amix = `${labels}amix=inputs=${N}:duration=longest:dropout_transition=250:normalize=0[mix]`;
+        const amix = `${labels}amix=inputs=${N}:duration=first:dropout_transition=0:normalize=0[mix]`;
         const filter = `${pre.join(";")};${amix}`;
 
         ffArgs.push(
