@@ -371,7 +371,7 @@ export function spawnFFmpegProcessDebug(
  * @return The spawned FFmpeg process.
  */
 export function spawnFFmpegProcess(rtcAudioSource: wrtc.nonstandard.RTCAudioSource, onAudioStreamReady: () => void) {
-    const stdio = ["ignore", "pipe", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
+    const stdio = ["pipe", "pipe", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
     const args = getFFmpegArguments();
     const ffmpegProcess = spawn("ffmpeg", args, { stdio });
 
@@ -467,6 +467,11 @@ export function stopFFmpegProcess(ffmpegProcess: ChildProcessWithoutNullStreams)
                 console.error("Failed to end ffmpeg writable stream");
             }
         }
-        ffmpegProcess.kill("SIGTERM");
+        try {
+            ffmpegProcess.stdin?.write("q\n");
+            ffmpegProcess.stdin?.end();
+        } catch {
+            console.error("Failed to end ffmpeg stdin");
+        }
     }
 }
