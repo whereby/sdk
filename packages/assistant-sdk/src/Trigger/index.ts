@@ -89,12 +89,8 @@ export class Trigger extends EventEmitter<TriggerEvents> {
 
         app.use(router);
 
-        const server = app.listen(this.port, () => {
+        app.listen(this.port, () => {
             // console.log(`Bot trigger server now running on port[${this.port}]`);
-        });
-
-        process.on("SIGTERM", () => {
-            server.close();
         });
     }
 }
