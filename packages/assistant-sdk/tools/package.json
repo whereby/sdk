@@ -1,0 +1,4 @@
+{
+    "main": "../dist/tools.cjs",
+    "types": "../dist/tools.d.ts"
+}
