@@ -79,7 +79,7 @@ export type WherebyWebhookTriggerTypes = {
 };
 
 export type WherebyWebhookTriggers = Partial<{
-    [Type in keyof WherebyWebhookTriggerTypes]: (data: WherebyWebhookTriggerTypes[Type]) => boolean;
+    [Type in keyof WherebyWebhookTriggerTypes]: (data: WherebyWebhookTriggerTypes[Type]) => Promise<boolean> | boolean;
 }>;
 
 export type WherebyWebHookHandlers = {
