@@ -9,7 +9,16 @@ import {
 import wrtc from "@roamhq/wrtc";
 import { AudioMixer } from "../AudioMixer";
 import EventEmitter from "events";
-import { ASSISTANT_JOINED_ROOM, ASSISTANT_LEFT_ROOM, AUDIO_STREAM_READY, AssistantEvents } from "./types";
+import {
+    ASSISTANT_JOINED_ROOM,
+    ASSISTANT_LEFT_ROOM,
+    AUDIO_STREAM_READY,
+    PARTICIPANT_VIDEO_TRACK_ADDED,
+    PARTICIPANT_VIDEO_TRACK_REMOVED,
+    PARTICIPANT_AUDIO_TRACK_ADDED,
+    PARTICIPANT_AUDIO_TRACK_REMOVED,
+    AssistantEvents,
+} from "./types";
 
 export type AssistantOptions = {
     assistantKey: string;
@@ -25,6 +34,10 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private mediaStream: MediaStream | null = null;
     private audioSource: wrtc.nonstandard.RTCAudioSource | null = null;
     private combinedStream: MediaStream | null = null;
+    private remoteMediaTracks: Record<
+        string,
+        { participantId: string; stream: wrtc.MediaStream; track: wrtc.MediaStreamTrack }
+    > = {};
     private roomUrl: string | null = null;
 
     constructor({ assistantKey, startCombinedAudioStream = false, startLocalMedia = false }: AssistantOptions) {
@@ -56,8 +69,11 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             const audioMixer = new AudioMixer(handleStreamReady);
             this.combinedStream = audioMixer.getCombinedAudioStream();
             this.roomConnection.subscribeToRemoteParticipants(audioMixer.handleRemoteParticipants.bind(audioMixer));
-            this.roomConnection.subscribeToConnectionStatus(this.handleConnectionStatusChange);
         }
+
+        this.roomConnection.subscribeToConnectionStatus(this.handleConnectionStatusChange);
+
+        this.roomConnection.subscribeToRemoteParticipants(this.handleRemoteParticipantsTracksChange);
     }
 
     private handleConnectionStatusChange = (status: ConnectionStatus) => {
@@ -67,6 +83,52 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         if (["left", "kicked"].includes(status)) {
             this.emit(ASSISTANT_LEFT_ROOM, { roomUrl: this.roomUrl || "" });
         }
+    };
+
+    private handleRemoteParticipantsTracksChange = (remoteParticipants: RemoteParticipantState[]) => {
+        const currentRemoteMediaTracks = remoteParticipants.flatMap(({ id: participantId, stream }) => {
+            if (!stream) {
+                return [];
+            }
+
+            const tracks = stream.getTracks();
+
+            tracks.forEach((track) => {
+                if (!this.remoteMediaTracks[track.id]) {
+                    const eventName =
+                        track.kind === "video" ? PARTICIPANT_VIDEO_TRACK_ADDED : PARTICIPANT_AUDIO_TRACK_ADDED;
+
+                    this.emit(eventName, {
+                        participantId,
+                        stream,
+                        track,
+                    });
+
+                    this.remoteMediaTracks[track.id] = {
+                        participantId,
+                        stream,
+                        track,
+                    };
+                }
+            });
+
+            return tracks;
+        });
+
+        Object.values(this.remoteMediaTracks).forEach(({ participantId, stream, track }) => {
+            if (!currentRemoteMediaTracks.includes(track)) {
+                const eventName =
+                    track.kind === "video" ? PARTICIPANT_VIDEO_TRACK_REMOVED : PARTICIPANT_AUDIO_TRACK_REMOVED;
+
+                this.emit(eventName, {
+                    participantId,
+                    stream,
+                    track,
+                });
+
+                delete this.remoteMediaTracks[track.id];
+            }
+        });
     };
 
     public async joinRoom(roomUrl: string): Promise<void> {
