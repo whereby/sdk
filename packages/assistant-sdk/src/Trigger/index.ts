@@ -33,7 +33,7 @@ const webhookRouter = (webhookTriggers: WherebyWebhookTriggers, emitter: EventEm
         res.end();
     });
 
-    router.post("/", jsonParser, (req: Request<never, never, WherebyWebhookType, never>, res: Response) => {
+    router.post("/", jsonParser, async (req: Request<never, never, WherebyWebhookType, never>, res: Response) => {
         assert(req.body, "message body is required");
         assert("type" in req.body, "webhook type is required");
 
@@ -42,19 +42,22 @@ const webhookRouter = (webhookTriggers: WherebyWebhookTriggers, emitter: EventEm
         switch (req.body.type) {
             case "room.client.joined":
                 shouldTriggerOnReceivedWebhook =
-                    webhookTriggers["room.client.joined"]?.(req.body as WherebyWebhookRoomClientJoined) ?? false;
+                    (await webhookTriggers["room.client.joined"]?.(req.body as WherebyWebhookRoomClientJoined)) ??
+                    false;
                 break;
             case "room.client.left":
                 shouldTriggerOnReceivedWebhook =
-                    webhookTriggers["room.client.left"]?.(req.body as WherebyWebhookRoomClientLeft) ?? false;
+                    (await webhookTriggers["room.client.left"]?.(req.body as WherebyWebhookRoomClientLeft)) ?? false;
                 break;
             case "room.session.started":
                 shouldTriggerOnReceivedWebhook =
-                    webhookTriggers["room.session.started"]?.(req.body as WherebyWebhookRoomSessionStarted) ?? false;
+                    (await webhookTriggers["room.session.started"]?.(req.body as WherebyWebhookRoomSessionStarted)) ??
+                    false;
                 break;
             case "room.session.ended":
                 shouldTriggerOnReceivedWebhook =
-                    webhookTriggers["room.session.ended"]?.(req.body as WherebyWebhookRoomSessionEnded) ?? false;
+                    (await webhookTriggers["room.session.ended"]?.(req.body as WherebyWebhookRoomSessionEnded)) ??
+                    false;
                 break;
         }
 
