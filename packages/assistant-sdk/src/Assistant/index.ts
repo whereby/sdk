@@ -39,6 +39,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         { participantId: string; stream: wrtc.MediaStream; track: wrtc.MediaStreamTrack }
     > = {};
     private roomUrl: string | null = null;
+    private stateSubscriptions: (() => void)[] = [];
 
     constructor({ assistantKey, startCombinedAudioStream = false, startLocalMedia = false }: AssistantOptions) {
         super();
@@ -68,12 +69,19 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             };
             const audioMixer = new AudioMixer(handleStreamReady);
             this.combinedStream = audioMixer.getCombinedAudioStream();
-            this.roomConnection.subscribeToRemoteParticipants(audioMixer.handleRemoteParticipants.bind(audioMixer));
+
+            this.stateSubscriptions.push(
+                this.roomConnection.subscribeToRemoteParticipants(audioMixer.handleRemoteParticipants.bind(audioMixer)),
+            );
         }
 
-        this.roomConnection.subscribeToConnectionStatus(this.handleConnectionStatusChange);
+        this.stateSubscriptions.push(
+            this.roomConnection.subscribeToConnectionStatus(this.handleConnectionStatusChange),
+        );
 
-        this.roomConnection.subscribeToRemoteParticipants(this.handleRemoteParticipantsTracksChange);
+        this.stateSubscriptions.push(
+            this.roomConnection.subscribeToRemoteParticipants(this.handleRemoteParticipantsTracksChange),
+        );
     }
 
     private handleConnectionStatusChange = (status: ConnectionStatus) => {
@@ -81,6 +89,8 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             this.emit(ASSISTANT_JOINED_ROOM, { roomUrl: this.roomUrl || "" });
         }
         if (["left", "kicked"].includes(status)) {
+            this.stateSubscriptions.forEach((unsubscribe) => unsubscribe());
+
             this.emit(ASSISTANT_LEFT_ROOM, { roomUrl: this.roomUrl || "" });
         }
     };
