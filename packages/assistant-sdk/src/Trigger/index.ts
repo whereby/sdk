@@ -92,8 +92,8 @@ export class Trigger extends EventEmitter<TriggerEvents> {
 
         app.use(router);
 
-        app.listen(this.port, () => {
-            // console.log(`Bot trigger server now running on port[${this.port}]`);
+        app.listen(this.port).on("error", (error) => {
+            console.error("Could not start Trigger web server", error);
         });
     }
 }
