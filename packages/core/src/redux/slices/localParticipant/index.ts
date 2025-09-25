@@ -3,7 +3,7 @@ import { RoleName } from "@whereby.com/media";
 import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../../thunk";
 import { LocalParticipant } from "../../../RoomParticipant";
 import { selectSignalConnectionRaw } from "../signalConnection";
-import { doAppStart } from "../app";
+import { doAppStart, selectAppIsAssistant } from "../app";
 import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../localMedia";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
@@ -235,9 +235,14 @@ startAppListening({
 });
 
 createReactor(
-    [selectLocalParticipantDisplayName, selectLocalParticipantStickyReaction, selectRoomConnectionStatus],
-    ({ dispatch }, diplayName, stickyReaction, roomConnectionStatus) => {
-        if (roomConnectionStatus === "connected") {
+    [
+        selectLocalParticipantDisplayName,
+        selectLocalParticipantStickyReaction,
+        selectRoomConnectionStatus,
+        selectAppIsAssistant,
+    ],
+    ({ dispatch }, diplayName, stickyReaction, roomConnectionStatus, isAssistant) => {
+        if (roomConnectionStatus === "connected" && !isAssistant) {
             dispatch(doSendClientMetadata());
         }
     },
