@@ -1,5 +1,13 @@
 # @whereby.com/browser-sdk
 
+## 3.13.11
+
+### Patch Changes
+
+- bf4351e: update react to 19.1.0
+- Updated dependencies [143a26f]
+    - @whereby.com/core@1.1.8
+
 ## 3.13.10
 
 ### Patch Changes
