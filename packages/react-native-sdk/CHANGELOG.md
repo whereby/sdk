@@ -1,5 +1,13 @@
 # @whereby.com/react-native-sdk
 
+## 0.8.14
+
+### Patch Changes
+
+- bf4351e: update react to 19.1.0
+- Updated dependencies [143a26f]
+    - @whereby.com/core@1.1.8
+
 ## 0.8.13
 
 ### Patch Changes

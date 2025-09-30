@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.1.8
+
+### Patch Changes
+
+- 143a26f: core readme updates
+
 ## 1.1.7
 
 ### Patch Changes
