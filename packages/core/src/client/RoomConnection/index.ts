@@ -1,3 +1,5 @@
+import { addListener } from "@reduxjs/toolkit";
+
 import {
     ClientView,
     ConnectionStatus,
@@ -37,6 +39,7 @@ import type {
     LocalScreenshareStatus,
     RemoteParticipantState,
     RoomConnectionState,
+    RoomJoinedSuccess,
     ScreenshareState,
     WaitingParticipantState,
     WherebyClientOptions,
@@ -295,7 +298,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      * Join a Whereby room.
      * This method will throw an error if the room URL is not provided.
      */
-    public joinRoom() {
+    public async joinRoom() {
         const { roomUrl } = this.options;
 
         if (!roomUrl) {
@@ -314,6 +317,31 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         };
 
         this.store.dispatch(doAppStart(roomConfig));
+
+        let resolve: (value: RoomJoinedSuccess | PromiseLike<RoomJoinedSuccess>) => void;
+        let reject: (reason: unknown) => void;
+        const promise = new Promise<RoomJoinedSuccess>((res, rej) => {
+            resolve = res;
+            reject = rej;
+        });
+
+        const unsubscribeRoomJoined = this.store.dispatch(
+            addListener({
+                actionCreator: signalEvents.roomJoined,
+                effect: ({ payload }) => {
+                    unsubscribeRoomJoined();
+
+                    if ("error" in payload) {
+                        reject?.(payload.error);
+                        return;
+                    }
+
+                    resolve?.(payload);
+                },
+            }),
+        );
+
+        return promise;
     }
 
     /**
