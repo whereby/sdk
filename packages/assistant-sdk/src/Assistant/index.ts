@@ -141,7 +141,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         });
     };
 
-    public async joinRoom(roomUrl: string): Promise<void> {
+    public async joinRoom(roomUrl: string) {
         if (this.mediaStream) {
             await this.localMedia.startMedia(this.mediaStream);
         }
@@ -155,7 +155,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             isNodeSdk: true,
             assistantKey: this.assistantKey,
         });
-        this.roomConnection.joinRoom();
+        return this.roomConnection.joinRoom();
     }
 
     public startLocalMedia(): void {

@@ -2,6 +2,8 @@ import { RoleName, ChatMessage as SignalChatMessage } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
 import { ClientView, ConnectionStatus, NotificationsEventEmitter } from "../../redux";
 
+export type { RoomJoinedSuccess } from "@whereby.com/media";
+
 export type LocalMediaOptions = {
     audio: boolean;
     video: boolean;
