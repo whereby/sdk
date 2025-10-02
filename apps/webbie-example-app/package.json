@@ -1,0 +1,29 @@
+{
+    "name": "webbie-example-app",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "src/index.ts",
+    "dependencies": {
+        "@roamhq/wrtc": "github:whereby/node-webrtc#patch/rtc_audio_source",
+        "@whereby.com/assistant-sdk": "workspace:*",
+        "dotenv": "^16.4.5",
+        "vosk": "^0.3.39",
+        "zod": "^4.1.1"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@whereby.com/eslint-config": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "tsx": "4.20.3",
+        "typescript": "catalog:"
+    },
+    "scripts": {
+        "build:typescript": "rm -rf dist && pnpm tsc",
+        "clean": "rm -rf dist node_modules .turbo",
+        "dev": "tsx src/index.ts",
+        "start": "pnpm build:typescript && node dist/index.js"
+    },
+    "prettier": "@whereby.com/prettier-config"
+}
