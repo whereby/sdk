@@ -64,8 +64,6 @@ export function createFfmpegMixer() {
         frameQueue: Int16Array[];
         nextDueMs: number;
         rtcAudioSource: wrtc.nonstandard.RTCAudioSource;
-        onAudioStreamReady: () => void;
-        didEmitReadyEvent: boolean;
     };
     let outputPacerState: OutputPacerState | null = null;
 
@@ -137,7 +135,6 @@ export function createFfmpegMixer() {
         ff: ChildProcessWithoutNullStreams,
         slotCount: number,
         rtcAudioSource: wrtc.nonstandard.RTCAudioSource,
-        onAudioStreamReady: () => void,
     ) {
         if (stopPacerFn) {
             stopPacerFn();
@@ -159,8 +156,6 @@ export function createFfmpegMixer() {
             frameQueue: [],
             nextDueMs: t0 + outputFrameMs,
             rtcAudioSource,
-            onAudioStreamReady,
-            didEmitReadyEvent: false,
         };
 
         const iv = setInterval(() => {
@@ -201,11 +196,6 @@ export function createFfmpegMixer() {
             if (t >= state.nextDueMs) {
                 const samples =
                     state.frameQueue.length > 0 ? state.frameQueue.shift()! : new Int16Array(FRAME_10MS_SAMPLES); // silence
-
-                if (!state.didEmitReadyEvent) {
-                    state.onAudioStreamReady();
-                    state.didEmitReadyEvent = true;
-                }
 
                 state.rtcAudioSource.onData({
                     samples: samples,
@@ -349,12 +339,12 @@ export function createFfmpegMixer() {
      * The process will log its output to stderr.
      * @return The spawned FFmpeg process.
      */
-    function spawnFFmpegProcessDebug(rtcAudioSource: wrtc.nonstandard.RTCAudioSource, onAudioStreamReady: () => void) {
+    function spawnFFmpegProcessDebug(rtcAudioSource: wrtc.nonstandard.RTCAudioSource) {
         const stdio = ["ignore", "ignore", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
         const args = getFFmpegArgumentsDebug();
         const ffmpegProcess = spawn("ffmpeg", args, { stdio });
 
-        startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource, onAudioStreamReady);
+        startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
 
         ffmpegProcess.stderr.setEncoding("utf8");
         ffmpegProcess.stderr.on("data", (d) => console.error("[ffmpeg]", String(d).trim()));
@@ -371,12 +361,12 @@ export function createFfmpegMixer() {
      * @param rtcAudioSource The RTCAudioSource to which the mixed audio will be sent.
      * @return The spawned FFmpeg process.
      */
-    function spawnFFmpegProcess(rtcAudioSource: wrtc.nonstandard.RTCAudioSource, onAudioStreamReady: () => void) {
+    function spawnFFmpegProcess(rtcAudioSource: wrtc.nonstandard.RTCAudioSource) {
         const stdio = ["pipe", "pipe", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
         const args = getFFmpegArguments();
         const ffmpegProcess = spawn("ffmpeg", args, { stdio });
 
-        startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource, onAudioStreamReady);
+        startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
 
         ffmpegProcess.stderr.setEncoding("utf8");
         ffmpegProcess.stderr.on("data", (d) => console.error("[ffmpeg]", String(d).trim()));

@@ -1,11 +1,5 @@
 import "@whereby.com/assistant-sdk/polyfills";
-import {
-    Trigger,
-    TRIGGER_EVENT_SUCCESS,
-    AUDIO_STREAM_READY,
-    Assistant,
-    ASSISTANT_LEFT_ROOM,
-} from "@whereby.com/assistant-sdk";
+import { Trigger, TRIGGER_EVENT_SUCCESS, Assistant, ASSISTANT_LEFT_ROOM } from "@whereby.com/assistant-sdk";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -25,16 +19,12 @@ function main() {
     trigger.on(TRIGGER_EVENT_SUCCESS, async ({ roomUrl }) => {
         const assistant = new Assistant({
             assistantKey: process.env.ASSISTANT_KEY || "",
-            startCombinedAudioStream: true,
-            startLocalMedia: false,
         });
         await assistant.joinRoom(roomUrl);
 
         hasJoinedRoom = true;
 
-        assistant.on(AUDIO_STREAM_READY, ({ track }) => {
-            assistant.sendChatMessage("Hello! I am your AI assistant. How can I help you today?");
-        });
+        assistant.getRoomConnection().sendChatMessage("Hello! I am your AI assistant. How can I help you today?");
 
         assistant.on(ASSISTANT_LEFT_ROOM, ({ roomUrl }) => {
             console.log(`Assistant has left the room: ${roomUrl}`);

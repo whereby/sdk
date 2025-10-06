@@ -18,14 +18,12 @@ export class AudioMixer extends EventEmitter {
     private rtcAudioSource: wrtc.nonstandard.RTCAudioSource | null = null;
     private participantSlots = new Map<number, string>();
     private activeSlots: Record<number, SlotBinding | undefined> = {};
-    private onStreamReady: () => void;
     private mixer = createFfmpegMixer();
 
-    constructor(onStreamReady: () => void) {
+    constructor() {
         super();
         this.setupMediaStream();
         this.participantSlots = new Map(Array.from({ length: PARTICIPANT_SLOTS }, (_, i) => [i, ""]));
-        this.onStreamReady = onStreamReady;
     }
 
     private setupMediaStream(): void {
@@ -47,8 +45,8 @@ export class AudioMixer extends EventEmitter {
 
         if (!this.ffmpegProcess && this.rtcAudioSource) {
             this.ffmpegProcess = DEBUG_MIXER_OUTPUT
-                ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource, this.onStreamReady)
-                : this.mixer.spawnFFmpegProcess(this.rtcAudioSource, this.onStreamReady);
+                ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource)
+                : this.mixer.spawnFFmpegProcess(this.rtcAudioSource);
         }
 
         for (const p of participants) this.attachParticipantIfNeeded(p);
