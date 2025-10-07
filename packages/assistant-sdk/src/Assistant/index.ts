@@ -17,6 +17,7 @@ import {
     PARTICIPANT_AUDIO_TRACK_REMOVED,
     AssistantEvents,
 } from "./types";
+import { AudioSink } from "../utils/AudioSink";
 
 export type AssistantOptions = {
     assistantKey: string;
@@ -29,7 +30,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private localMedia: LocalMediaClient;
     private mediaStream: MediaStream | null = null;
     private audioSource: wrtc.nonstandard.RTCAudioSource | null = null;
-    private combinedStream: MediaStream | null = null;
+    private combinedAudioSink: AudioSink | null = null;
     private remoteMediaTracks: Record<
         string,
         { participantId: string; stream: wrtc.MediaStream; track: wrtc.MediaStreamTrack }
@@ -157,19 +158,26 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         return this.localMedia;
     }
 
-    public getCombinedAudioStream(): MediaStream | null {
-        if (this.combinedStream) {
-            return this.combinedStream;
+    public getCombinedAudioSink(): AudioSink | null {
+        if (this.combinedAudioSink) {
+            return this.combinedAudioSink;
         }
 
         const audioMixer = new AudioMixer();
         const stream = audioMixer.getCombinedAudioStream();
 
-        this.combinedStream = stream;
-        this.stateSubscriptions.push(
-            this.roomConnection.subscribeToRemoteParticipants(audioMixer.handleRemoteParticipants.bind(audioMixer)),
-        );
+        const audioTracks = stream?.getAudioTracks();
 
-        return stream;
+        if (audioTracks?.length) {
+            this.combinedAudioSink = new AudioSink(audioTracks[0]);
+
+            this.stateSubscriptions.push(
+                this.roomConnection.subscribeToRemoteParticipants(audioMixer.handleRemoteParticipants.bind(audioMixer)),
+            );
+
+            return this.combinedAudioSink;
+        }
+
+        return null;
     }
 }
