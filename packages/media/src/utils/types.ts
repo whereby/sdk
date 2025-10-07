@@ -201,6 +201,18 @@ export interface InternalServerError {
     error: "internal_server_error";
 }
 
+export interface InvalidAssistantKeyError {
+    error: "invalid_assistant_key";
+}
+
+export interface OrganizationAssistantNotFoundError {
+    error: "organization_assistant_not_found";
+}
+
+export interface OrganizationAssistantNotEnabledError {
+    error: "organization_assistant_not_enabled";
+}
+
 export type ForbiddenErrorNames =
     | "missing_parameters"
     | "invalid_parameters"
@@ -222,7 +234,10 @@ export type RoomJoinedErrors =
     | MaxViewerLimitReachedError
     | HostPresenceControlsError
     | ForbiddenError
-    | InternalServerError;
+    | InternalServerError
+    | InvalidAssistantKeyError
+    | OrganizationAssistantNotFoundError
+    | OrganizationAssistantNotEnabledError;
 
 export interface RoomJoinedSuccess {
     room: {
