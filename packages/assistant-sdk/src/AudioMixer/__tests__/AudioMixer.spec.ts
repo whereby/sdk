@@ -81,11 +81,9 @@ const createMockParticipant = (
 
 describe("AudioMixer", () => {
     let audioMixer: AudioMixer;
-    let onStreamReady: jest.Mock;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        onStreamReady = jest.fn();
 
         (createFfmpegMixer as jest.Mock).mockReturnValue(mixerInstance);
         mixerInstance.spawnFFmpegProcess.mockClear();
@@ -94,7 +92,7 @@ describe("AudioMixer", () => {
         mixerInstance.stopFFmpegProcess.mockClear();
         mixerInstance.clearSlotQueue.mockClear();
 
-        audioMixer = new AudioMixer(onStreamReady);
+        audioMixer = new AudioMixer();
     });
 
     describe("constructor", () => {
@@ -106,10 +104,6 @@ describe("AudioMixer", () => {
         it("should initialize with a combined audio stream", () => {
             const stream = audioMixer.getCombinedAudioStream();
             expect(stream).toBeDefined();
-        });
-
-        it("should store the onStreamReady callback", () => {
-            expect(onStreamReady).not.toHaveBeenCalled();
         });
     });
 
@@ -136,7 +130,7 @@ describe("AudioMixer", () => {
             const participant = createMockParticipant("p1");
             audioMixer.handleRemoteParticipants([participant]);
 
-            expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalledWith(expect.any(Object), onStreamReady);
+            expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalledWith(expect.any(Object));
         });
 
         it("should spawn debug FFmpeg process when DEBUG_MIXER_OUTPUT is true", () => {

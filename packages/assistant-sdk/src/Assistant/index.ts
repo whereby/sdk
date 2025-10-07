@@ -144,6 +144,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         ]);
 
         this.localMedia.startMedia(outputMediaStream);
+        this.localMedia.toggleMicrophone(true);
     }
 
     public stopLocalMedia(): void {
