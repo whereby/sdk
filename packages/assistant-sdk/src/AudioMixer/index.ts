@@ -2,7 +2,7 @@ import type { ChildProcessWithoutNullStreams } from "child_process";
 import Stream from "stream";
 import { EventEmitter } from "events";
 import { RemoteParticipantState } from "@whereby.com/core";
-import { AudioSink } from "../utils/AudioSink";
+import { AudioSink } from "../utils/AudioEndpoints";
 import { PARTICIPANT_SLOTS, createFfmpegMixer } from "../utils/ffmpeg-helpers";
 
 import wrtc from "@roamhq/wrtc";

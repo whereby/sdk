@@ -17,7 +17,8 @@ import {
     PARTICIPANT_AUDIO_TRACK_REMOVED,
     AssistantEvents,
 } from "./types";
-import { AudioSink } from "../utils/AudioSink";
+import { AudioSource, AudioSink } from "../utils/AudioEndpoints";
+import { VideoSource, VideoSink } from "../utils/VideoEndpoints";
 
 export type AssistantOptions = {
     assistantKey: string;
@@ -27,14 +28,11 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private assistantKey: string;
     private client: WherebyClient;
     private roomConnection: RoomConnectionClient;
+    private localAudioSource: AudioSource | null = null;
+    private localVideoSource: VideoSource | null = null;
     private localMedia: LocalMediaClient;
-    private mediaStream: MediaStream | null = null;
-    private audioSource: wrtc.nonstandard.RTCAudioSource | null = null;
     private combinedAudioSink: AudioSink | null = null;
-    private remoteMediaTracks: Record<
-        string,
-        { participantId: string; stream: wrtc.MediaStream; track: wrtc.MediaStreamTrack }
-    > = {};
+    private remoteMediaTracks: Record<string, { participantId: string; track: wrtc.MediaStreamTrack }> = {};
     private roomUrl: string | null = null;
     private stateSubscriptions: (() => void)[] = [];
 
@@ -75,18 +73,22 @@ export class Assistant extends EventEmitter<AssistantEvents> {
 
             tracks.forEach((track) => {
                 if (!this.remoteMediaTracks[track.id]) {
-                    const eventName =
-                        track.kind === "video" ? PARTICIPANT_VIDEO_TRACK_ADDED : PARTICIPANT_AUDIO_TRACK_ADDED;
-
-                    this.emit(eventName, {
-                        participantId,
-                        stream,
-                        track,
-                    });
+                    if (track.kind === "video") {
+                        this.emit(PARTICIPANT_VIDEO_TRACK_ADDED, {
+                            participantId,
+                            trackId: track.id,
+                            data: new VideoSink(track),
+                        });
+                    } else {
+                        this.emit(PARTICIPANT_AUDIO_TRACK_ADDED, {
+                            participantId,
+                            trackId: track.id,
+                            data: new AudioSink(track),
+                        });
+                    }
 
                     this.remoteMediaTracks[track.id] = {
                         participantId,
-                        stream,
                         track,
                     };
                 }
@@ -95,15 +97,14 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             return tracks;
         });
 
-        Object.values(this.remoteMediaTracks).forEach(({ participantId, stream, track }) => {
+        Object.values(this.remoteMediaTracks).forEach(({ participantId, track }) => {
             if (!currentRemoteMediaTracks.includes(track)) {
                 const eventName =
                     track.kind === "video" ? PARTICIPANT_VIDEO_TRACK_REMOVED : PARTICIPANT_AUDIO_TRACK_REMOVED;
 
                 this.emit(eventName, {
                     participantId,
-                    stream,
-                    track,
+                    trackId: track.id,
                 });
 
                 delete this.remoteMediaTracks[track.id];
@@ -111,10 +112,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         });
     };
 
-    public async joinRoom(roomUrl: string) {
-        if (this.mediaStream) {
-            await this.localMedia.startMedia(this.mediaStream);
-        }
+    public joinRoom(roomUrl: string) {
         this.roomUrl = roomUrl;
         this.roomConnection.initialize({
             localMediaOptions: {
@@ -128,30 +126,39 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         return this.roomConnection.joinRoom();
     }
 
+    public getRoomConnection(): RoomConnectionClient {
+        return this.roomConnection;
+    }
+
     public startLocalMedia(): void {
-        if (!this.mediaStream) {
-            const outputAudioSource = new wrtc.nonstandard.RTCAudioSource();
-            const outputMediaStream = new wrtc.MediaStream([outputAudioSource.createTrack()]);
-            this.mediaStream = outputMediaStream;
-            this.audioSource = outputAudioSource;
+        if (Boolean(this.localAudioSource) || Boolean(this.localVideoSource)) {
+            return;
         }
-        this.localMedia.startMedia(this.mediaStream);
+
+        this.localAudioSource = new AudioSource();
+        this.localVideoSource = new VideoSource();
+
+        const outputMediaStream = new wrtc.MediaStream([
+            this.localAudioSource.createTrack(),
+            this.localVideoSource.createTrack(),
+        ]);
+
+        this.localMedia.startMedia(outputMediaStream);
     }
 
     public stopLocalMedia(): void {
         this.localMedia.stopMedia();
+
+        this.localAudioSource = null;
+        this.localVideoSource = null;
     }
 
-    public getLocalMediaStream(): MediaStream | null {
-        return this.mediaStream;
+    public getLocalAudioSource(): AudioSource | null {
+        return this.localAudioSource;
     }
 
-    public getLocalAudioSource(): wrtc.nonstandard.RTCAudioSource | null {
-        return this.audioSource;
-    }
-
-    public getRoomConnection(): RoomConnectionClient {
-        return this.roomConnection;
+    public getLocalVideoSource(): VideoSource | null {
+        return this.localVideoSource;
     }
 
     public getLocalMedia(): LocalMediaClient {

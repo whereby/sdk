@@ -1,7 +1,7 @@
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import Stream, { Writable } from "stream";
 import wrtc from "@roamhq/wrtc";
-import { AudioSink } from "./AudioSink";
+import { AudioSink } from "./AudioEndpoints";
 
 // Number of pipes in the ffmpeg process. We predefine a fixed number of slots, and then we dynamically assign
 // participants to these slots based on mute/unmute state.
