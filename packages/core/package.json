@@ -6,7 +6,7 @@
     "license": "MIT",
     "scripts": {
         "clean": "rimraf dist node_modules .turbo",
-        "build": "rimraf dist && rollup -c rollup.config.js",
+        "build": "rimraf dist && node --max-old-space-size=8192 ../../node_modules/rollup/dist/bin/rollup -c rollup.config.js",
         "test": "pnpm test:lint && pnpm test:unit",
         "test:lint": "eslint src/",
         "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
