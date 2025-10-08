@@ -20,9 +20,14 @@ function main() {
         const assistant = new Assistant({
             assistantKey: process.env.ASSISTANT_KEY || "",
         });
-        await assistant.joinRoom(roomUrl);
 
-        hasJoinedRoom = true;
+        try {
+            await assistant.joinRoom(roomUrl);
+            hasJoinedRoom = true;
+        } catch (error) {
+            console.error("Failed to join room:", error);
+            return;
+        }
 
         assistant.getRoomConnection().sendChatMessage("Hello! I am your AI assistant. How can I help you today?");
 
