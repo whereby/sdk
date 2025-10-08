@@ -22,6 +22,7 @@ import {
     selectLocalMediaStatus,
     doSetDevice,
     doSwitchLocalStream,
+    doStartLocalMedia,
 } from "../localMedia";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
@@ -421,6 +422,22 @@ startAppListening({
         const localParticipant = selectLocalParticipantRaw(getState());
 
         dispatch(rtcClientConnectionStatusChanged({ localParticipantId: localParticipant.id }));
+    },
+});
+
+startAppListening({
+    actionCreator: doStartLocalMedia.fulfilled,
+    effect: ({ payload }, { getState }) => {
+        const { rtcManager, rtcManagerInitialized } = selectRtcConnectionRaw(getState());
+        if (!rtcManager || !rtcManagerInitialized) return;
+
+        const isCameraEnabled = selectIsCameraEnabled(getState());
+        const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
+        const { stream } = payload;
+
+        if (stream) {
+            rtcManager.addNewStream("0", payload.stream, !isMicrophoneEnabled, !isCameraEnabled);
+        }
     },
 });
 

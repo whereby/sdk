@@ -35,6 +35,8 @@
         "NODE_ENV",
         "RTCSTATS_URL",
         "STORYBOOK_ROOM",
-        "STORYBOOK_ROOM_HOST_ROOMKEY"
+        "STORYBOOK_ROOM_HOST_ROOMKEY",
+        "IS_LOCAL",
+        "BIND_INTERFACE"
     ]
 }

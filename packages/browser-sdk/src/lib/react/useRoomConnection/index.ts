@@ -66,7 +66,7 @@ export function useRoomConnection(
 
     const joinRoom = React.useCallback(() => {
         client.initialize(roomConfig);
-        client.joinRoom();
+        return client.joinRoom();
     }, [client]);
     const sendChatMessage = React.useCallback((text: string) => client.sendChatMessage(text), [client]);
     const knock = React.useCallback(() => client.knock(), [client]);

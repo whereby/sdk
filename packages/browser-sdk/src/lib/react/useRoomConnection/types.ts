@@ -1,4 +1,4 @@
-import { LocalMediaOptions } from "@whereby.com/core";
+import { LocalMediaOptions, RoomJoinedSuccess } from "@whereby.com/core";
 
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
@@ -21,7 +21,7 @@ export interface RoomConnectionActions {
     askToTurnOnCamera: (participantId: string) => void;
     acceptWaitingParticipant: (participantId: string) => void;
     knock: () => void;
-    joinRoom: () => void;
+    joinRoom: () => Promise<RoomJoinedSuccess>;
     leaveRoom: () => void;
     lockRoom: (locked: boolean) => void;
     muteParticipants: (clientIds: string[]) => void;

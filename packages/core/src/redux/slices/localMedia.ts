@@ -203,8 +203,8 @@ export const localMediaSlice = createSlice({
             let microphoneDeviceId = undefined;
             let microphoneEnabled = false;
 
-            const audioTrack = stream.getAudioTracks()[0];
-            const videoTrack = stream.getVideoTracks()[0];
+            const audioTrack = stream?.getAudioTracks()[0];
+            const videoTrack = stream?.getVideoTracks()[0];
 
             if (audioTrack) {
                 microphoneDeviceId = audioTrack.getSettings().deviceId;
@@ -505,7 +505,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
         }
 
         if (!(payload.audio || payload.video)) {
-            return { stream: new MediaStream(), onDeviceChange };
+            return { stream: undefined, onDeviceChange };
         } else {
             dispatch(setLocalMediaOptions({ options: payload }));
         }
