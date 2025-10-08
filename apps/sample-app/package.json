@@ -15,7 +15,7 @@
         "@whereby.com/tsconfig": "workspace:*",
         "@playwright/test": "^1.50.1",
         "@vitejs/plugin-react": "^4.2.1",
-        "vite": "^5.0.13",
+        "vite": "^7.1.9",
         "prettier": "catalog:",
         "typescript": "catalog:"
     },
