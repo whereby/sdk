@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.14.0
+
+### Minor Changes
+
+- ff1f230: Return Promise<RoomJoinedSuccess> from joinRoom() API
+
+### Patch Changes
+
+- Updated dependencies [e200b78]
+- Updated dependencies [e3a06ca]
+    - @whereby.com/media@2.2.0
+    - @whereby.com/core@1.2.0
+
 ## 3.13.11
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @whereby.com/media
 
+## 2.2.0
+
+### Minor Changes
+
+- e3a06ca: Release assistant SDK
+
+### Patch Changes
+
+- e200b78: Add assistant-related errors to RoomJoinedErrors type definition
+
 ## 2.1.5
 
 ### Patch Changes
