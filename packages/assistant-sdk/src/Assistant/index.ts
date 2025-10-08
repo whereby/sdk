@@ -2,6 +2,7 @@ import {
     WherebyClient,
     RoomConnectionClient,
     LocalMediaClient,
+    LocalMediaOptions,
     RemoteParticipantState,
     ConnectionStatus,
 } from "@whereby.com/core";
@@ -28,8 +29,6 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private assistantKey: string;
     private client: WherebyClient;
     private roomConnection: RoomConnectionClient;
-    private localAudioSource: AudioSource | null = null;
-    private localVideoSource: VideoSource | null = null;
     private localMedia: LocalMediaClient;
     private combinedAudioSink: AudioSink | null = null;
     private remoteMediaTracks: Record<string, { participantId: string; track: wrtc.MediaStreamTrack }> = {};
@@ -130,36 +129,47 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         return this.roomConnection;
     }
 
-    public startLocalMedia(): void {
-        if (Boolean(this.localAudioSource) || Boolean(this.localVideoSource)) {
-            return;
+    public async startLocalMedia({ audio, video }: LocalMediaOptions): Promise<{
+        audioSource: AudioSource | null;
+        videoSource: VideoSource | null;
+    }> {
+        const localMediaState = this.localMedia.getState();
+        const localMediaStream = localMediaState.localStream || new wrtc.MediaStream([]);
+
+        // Remove all existing tracks from local stream, if any
+        localMediaStream.getTracks().forEach((existingTrack) => {
+            localMediaStream.removeTrack(existingTrack);
+            existingTrack.stop();
+        });
+
+        let newLocalAudioSource: AudioSource | null = null;
+        let newLocalVideoSource: VideoSource | null = null;
+
+        if (audio) {
+            newLocalAudioSource = new AudioSource();
+            localMediaStream.addTrack(newLocalAudioSource.createTrack());
         }
 
-        this.localAudioSource = new AudioSource();
-        this.localVideoSource = new VideoSource();
+        if (video) {
+            newLocalVideoSource = new VideoSource();
+            localMediaStream.addTrack(newLocalVideoSource.createTrack());
+        }
 
-        const outputMediaStream = new wrtc.MediaStream([
-            this.localAudioSource.createTrack(),
-            this.localVideoSource.createTrack(),
-        ]);
+        if (!localMediaState.localStream) {
+            await this.localMedia.startMedia(localMediaStream);
+        }
 
-        this.localMedia.startMedia(outputMediaStream);
-        this.localMedia.toggleMicrophone(true);
+        this.localMedia.toggleMicrophone(audio);
+        this.localMedia.toggleCamera(video);
+
+        return {
+            audioSource: newLocalAudioSource,
+            videoSource: newLocalVideoSource,
+        };
     }
 
     public stopLocalMedia(): void {
         this.localMedia.stopMedia();
-
-        this.localAudioSource = null;
-        this.localVideoSource = null;
-    }
-
-    public getLocalAudioSource(): AudioSource | null {
-        return this.localAudioSource;
-    }
-
-    public getLocalVideoSource(): VideoSource | null {
-        return this.localVideoSource;
     }
 
     public getLocalMedia(): LocalMediaClient {
