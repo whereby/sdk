@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 1.2.0
+
+### Minor Changes
+
+- e3a06ca: Release assistant SDK
+
+### Patch Changes
+
+- Updated dependencies [e200b78]
+- Updated dependencies [e3a06ca]
+    - @whereby.com/media@2.2.0
+
 ## 1.1.8
 
 ### Patch Changes
