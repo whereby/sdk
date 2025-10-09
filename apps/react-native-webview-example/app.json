@@ -14,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.reactnativewebviewexample"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,8 +25,12 @@
       "permissions": [
         "android.permission.MICROPHONE",
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MICROPHONE",
+        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "package": "com.anonymous.reactnativewebviewexample"
     },
     "web": {
       "bundler": "metro",

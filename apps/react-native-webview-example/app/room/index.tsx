@@ -4,7 +4,7 @@ import { AudioModule } from "expo-audio";
 import { Camera } from "expo-camera";
 import { WherebyEmbed, type WherebyWebView, WherebyEvent } from "@whereby.com/react-native-sdk/embed";
 
-const ROOM_URL = "";
+const ROOM_URL = "https://team.whereby.com/ios";
 
 export default function Room() {
     const wherebyRoomRef = React.useRef<WherebyWebView>(null);
