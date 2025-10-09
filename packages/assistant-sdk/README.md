@@ -27,7 +27,7 @@ Assistants require [FFmpeg](https://ffmpeg.org/download.html) to be installed an
 
 ## Usage
 
-In order to use assistants, you must first create an assistant in your Whereby dashboard. This will give you an API key which you can then pass into your Assistant to allow it to join rooms. See here for more details - **_INSERT DOCS WHEN READY_**
+In order to use assistants, you must first create an assistant in your Whereby dashboard. This will give you an API key which you can then pass into your Assistant to allow it to join rooms. See here for more details - [Assistants Documentation](https://docs.whereby.com/reference/assistant-sdk-reference)
 
 ### Getting started
 
@@ -39,18 +39,19 @@ async function main() {
     // Create an assistant instance
     const assistant = new Assistant({
         roomUrl: "https://your-subdwhereby.com/your-room", // Room URL to join
-        startCombinedAudioStream: true, // Enable combined audio stream
     });
 
-    // Listen for the audio stream to be ready
-    assistant.on(AUDIO_STREAM_READY, (stream) => {
-        console.log("Combined audio stream is ready:", stream);
-        // You can now pipe this stream to your transcription service or other processing
-    });
+    // Join the room
+    try {
+        await assistant.joinRoom(roomUrl);
+    } catch (error) {
+        console.error("Failed to join room:", error);
+        return;
+    }
 
-    // Start the assistant
-    await assistant.start();
-    console.log("Assistant started and joined the room");
+    // To receive all audio data from the call:
+    // You can now use the audio data in a transcription service, save to file, etc.
+    const combinedAudioSink = assistant.getCombinedAudioSink();
 }
 
 main();
@@ -87,9 +88,11 @@ Typical usage:
 import "@whereby.com/assistant-sdk/polyfills"; // Required to run in Node.js
 import { Assistant, Trigger, TRIGGER_EVENT_SUCCESS, AUDIO_STREAM_READY } from "@whereby.com/assistant-sdk";
 
+let hasJoinedRoom = false;
+
 const trigger = new Trigger({
     webhookTriggers: {
-        "room.client.joined": () => true, // Start an assistant when first client joins
+        "room.client.joined": () => !hasJoinedRoom, // Start an assistant when first client joins
     },
     port: 3000, // Port to listen on
 });
@@ -102,11 +105,14 @@ trigger.on(TRIGGER_EVENT_SuCCESS, async ({ roomUrl }) => {
         assistantKey: "your-assistant-key",
     });
 
-    await assistant.start();
+    try {
+        await assistant.joinRoom(roomUrl);
+        hasJoinedRoom = true;
+    } catch (error) {
+        console.error("Failed to join room:", error);
+        return;
+    }
 
-    assistant.on(AUDIO_STREAM_READY, (stream) => {
-        console.log("Combined audio stream is ready:", stream);
-    });
 });
 
 trigger.start();
