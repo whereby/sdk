@@ -71,7 +71,11 @@ roomConnection.initialize({
 });
 
 // join the room
-roomConnection.joinRoom();
+try {
+    await roomConnection.joinRoom();
+} catch(error) {
+    console.error("Could not join room", error);
+}
 
 // listen for changes in connection state
 roomConnection.subscribeToConnectionStatus((state) => {
