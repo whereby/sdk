@@ -3,8 +3,10 @@ import { ScrollView, StyleSheet, Text, View, Alert, Platform, Button } from "rea
 import { AudioModule } from "expo-audio";
 import { Camera } from "expo-camera";
 import { WherebyEmbed, type WherebyWebView, WherebyEvent } from "@whereby.com/react-native-sdk/embed";
+import RNCallKeep from 'react-native-callkeep';
+//import InCallManager from "react-native-incall-manager";
 
-const ROOM_URL = "";
+const ROOM_URL = "https://team.whereby.com/ios";
 
 export default function Room() {
     const wherebyRoomRef = React.useRef<WherebyWebView>(null);
@@ -17,7 +19,23 @@ export default function Room() {
         scrollRef.current?.scrollToEnd({ animated: true });
     };
 
+    const options = {
+        ios: {
+            appName: "MyApp",
+            supportsVideo: true,
+        },
+        android: {
+            alertTitle: 'Permissions required',
+            alertDescription: 'Needs phone accounts',
+            cancelButton: 'Cancel',
+            okButton: 'OK',
+            additionalPermissions: [],
+        },
+    };
+
     React.useEffect(() => {
+        RNCallKeep.setup(options);
+
         (async () => {
             if (Platform.OS === "android") {
                 const cameraStatus = await Camera.requestCameraPermissionsAsync();
@@ -63,6 +81,15 @@ export default function Room() {
                     wherebyRoomRef.current?.toggleMicrophone();
                 }}
                 title="Toggle Microphone"
+            />
+            <Button
+                onPress={() => {
+                    console.log("RNCallKeep.startCall");
+                    const uuid = "c56a4180-65aa-42ec-a945-5fd21dec0538";
+                    const handle = 'Some name';
+                    RNCallKeep.startCall(uuid, handle, handle, 'generic', true);
+                }}
+                title="Start RN Call Keep"
             />
             <View style={{ flex: 1, height: "100%" }}>
                 <WherebyEmbed

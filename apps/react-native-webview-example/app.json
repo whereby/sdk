@@ -14,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.whereby.rnexmaple"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +26,8 @@
         "android.permission.MICROPHONE",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "package": "test.package.android"
     },
     "web": {
       "bundler": "metro",
@@ -35,7 +37,8 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "./with-callkeep"
     ],
     "experiments": {
       "typedRoutes": true

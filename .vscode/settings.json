@@ -12,5 +12,8 @@
     "eslint.workingDirectories": [{ "pattern": "apps/*/" }, { "pattern": "packages/*/" }, { "pattern": "tooling/*/" }],
     "prettier.ignorePath": ".gitignore",
     "typescript.enablePromptUseWorkspaceTsdk": true,
-    "typescript.tsdk": "node_modules/typescript/lib"
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    }
 }
