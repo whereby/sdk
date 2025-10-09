@@ -1,5 +1,13 @@
 # @whereby.com/assistant-sdk
 
+## 1.1.1
+
+### Patch Changes
+
+- 6a7006e: Update readme
+- Updated dependencies [6a7006e]
+    - @whereby.com/core@1.2.1
+
 ## 1.1.0
 
 ### Minor Changes
