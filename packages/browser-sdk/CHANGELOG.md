@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.14.2
+
+### Patch Changes
+
+- 4ba420e: Make sure we initialize useAudioElement with current speaker id.
+
 ## 3.14.1
 
 ### Patch Changes
