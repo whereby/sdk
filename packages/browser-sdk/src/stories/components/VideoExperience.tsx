@@ -245,7 +245,6 @@ export default function VideoExperience({
         };
     }, [events]);
 
-
     return (
         <div>
             {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
@@ -308,30 +307,25 @@ export default function VideoExperience({
                                     return null;
                                 }
                                 return (
-
                                     <div key={group.group?.id}>
                                         <h3>{group.group?.name}</h3>
                                         {group.clients.map((p) => (
-                                            <div key={p.id}>
-                                                {p.displayName || "Guest"}
-                                            </div>
+                                            <div key={p.id}>{p.displayName || "Guest"}</div>
                                         ))}
                                         <button onClick={() => joinBreakoutGroup(group.group?.id || "")}>Join</button>
                                     </div>
-                                )
+                                );
                             })}
                             {breakout.isActive ? <h2>Main room</h2> : null}
                             {breakout.groupedParticipants.map((p) => {
                                 if (p.group?.id === "") {
-                                    return p.clients.map((p) => (
-                                        <div key={p.id}>
-                                            {p.displayName || "Guest"}
-                                        </div>
-                                    ));
+                                    return p.clients.map((p) => <div key={p.id}>{p.displayName || "Guest"}</div>);
                                 }
                                 return null;
                             })}
-                            {breakout.isActive ? <button onClick={() => joinBreakoutMainRoom()}>Join main room</button> : null}
+                            {breakout.isActive ? (
+                                <button onClick={() => joinBreakoutMainRoom()}>Join main room</button>
+                            ) : null}
                         </div>
                     ) : null}
 
@@ -349,22 +343,22 @@ export default function VideoExperience({
                                                     animationDelay: `1000ms`,
                                                     ...(participant.isAudioEnabled
                                                         ? {
-                                                            border: "2px solid grey",
-                                                        }
+                                                              border: "2px solid grey",
+                                                          }
                                                         : null),
                                                     ...(!participant.isVideoEnabled
                                                         ? {
-                                                            backgroundColor: "green",
-                                                        }
+                                                              backgroundColor: "green",
+                                                          }
                                                         : null),
                                                     ...(isSpotlighted
                                                         ? {
-                                                            border: "2px solid blue",
-                                                        }
+                                                              border: "2px solid blue",
+                                                          }
                                                         : null),
                                                 }}
                                             >
-                                                {participant.stream && participant.isVideoEnabled && (
+                                                {participant.stream && (
                                                     <VideoView
                                                         muted={participant.isLocalParticipant}
                                                         stream={participant.stream}
