@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.2.1
+
+### Patch Changes
+
+- 6a7006e: Update readme
+
 ## 1.2.0
 
 ### Minor Changes
