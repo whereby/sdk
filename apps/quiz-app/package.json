@@ -19,7 +19,7 @@
         "@whereby.com/prettier-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
         "@vitejs/plugin-react": "^4.2.1",
-        "vite": "^5.0.13",
+        "vite": "^7.1.9",
         "prettier": "catalog:",
         "typescript": "catalog:"
     },
