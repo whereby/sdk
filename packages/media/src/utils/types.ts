@@ -261,7 +261,7 @@ export interface RoomJoinedSuccess {
 
 export type RoomJoinedEvent = RoomJoinedErrors | RoomJoinedSuccess;
 
-export interface BreakoutSessionUpdatedEvent extends BreakoutConfig {}
+export interface BreakoutSessionUpdatedEvent extends BreakoutConfig { }
 
 export interface RoomKnockedEvent {
     clientId: string;
@@ -382,6 +382,8 @@ export interface SignalEvents {
     video_enable_requested: VideoEnableRequestedEvent;
     live_transcription_started: LiveTranscriptionStartedEvent;
     live_transcription_stopped: LiveTranscriptionStoppedEvent;
+    live_captions_started: void;
+    live_captions_stopped: void;
 }
 
 export interface IdentifyDeviceRequest {

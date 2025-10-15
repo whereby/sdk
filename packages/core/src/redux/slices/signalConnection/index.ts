@@ -87,6 +87,8 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("live_transcription_stopped", (payload: LiveTranscriptionStoppedEvent) =>
         dispatch(signalEvents.liveTranscriptionStopped(payload)),
     );
+    socket.on("live_captions_started", () => dispatch(signalEvents.liveCaptionsStarted()));
+    socket.on("live_captions_stopped", () => dispatch(signalEvents.liveCaptionsStopped()));
     socket.on("video_enable_requested", (payload: VideoEnableRequestedEvent) =>
         dispatch(signalEvents.videoEnableRequested(payload)),
     );
