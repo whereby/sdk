@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.3.0
+
+### Minor Changes
+
+- 94e6296: media: Adds metric for outgoing layer 0 height
+
 ## 2.2.0
 
 ### Minor Changes
