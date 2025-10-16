@@ -119,6 +119,18 @@ const metrics: Metric[] = [
             ),
     },
     {
+        id: "layer0-height",
+        enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
+            hasLiveTrack &&
+            kind === "video" &&
+            !!track &&
+            !!ssrc0 &&
+            !!ssrc0.height &&
+            !!ssrc0.fps &&
+            ssrc0.direction === "out",
+        value: ({ ssrc0 }) => ssrc0?.height || 0,
+    },
+    {
         id: "sourceHeight",
         enabled: ({ hasLiveTrack, track, ssrc0, kind }) =>
             hasLiveTrack && kind === "video" && !!track && !!ssrc0 && !!ssrc0.sourceHeight && ssrc0.direction === "out",
