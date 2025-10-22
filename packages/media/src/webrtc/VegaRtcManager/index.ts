@@ -18,7 +18,7 @@ import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSett
 import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
-import { getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
+import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ServerSocket } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
@@ -109,6 +109,7 @@ export default class VegaRtcManager implements RtcManager {
     _isConnectingOrConnected: boolean;
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
+    _cpuOveruseDetected: boolean;
 
     constructor({
         selfId,
@@ -222,6 +223,7 @@ export default class VegaRtcManager implements RtcManager {
         });
 
         this._networkIsDetectedUpBySignal = false;
+        this._cpuOveruseDetected = false;
     }
 
     _updateAndScheduleMediaServersRefresh({
@@ -871,6 +873,29 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
+    // sets/updates appropriate resource usage
+    _syncResourceUsage() {
+        if (this._webcamProducer) {
+            // control simulcast layer 3 activation
+            const simulcastLayer3ShouldBeActive = !this._cpuOveruseDetected;
+
+            const params = this._webcamProducer.rtpParameters;
+
+            // only do this when we are using 3 layer simulcast
+            if (params?.encodings?.length === 3) {
+                // only update if needed, in case of unwanted side effects
+                const targetMaxSpatialLayer = simulcastLayer3ShouldBeActive ? 2 : 1;
+                if (this._webcamProducer.maxSpatialLayer !== targetMaxSpatialLayer) {
+                    this._webcamProducer.setMaxSpatialLayer(targetMaxSpatialLayer);
+                    rtcStats.sendEvent("simulcast_layer_activation_changed", {
+                        layerIndex: 2,
+                        active: simulcastLayer3ShouldBeActive,
+                    });
+                }
+            }
+        }
+    }
+
     async _internalSendWebcam() {
         logger.info("_internalSendWebcam()");
         if (
@@ -902,6 +927,23 @@ export default class VegaRtcManager implements RtcManager {
 
                 currentPaused ? producer.pause() : producer.resume();
 
+                // this adds the cpu watch (detection) if feature is enabled.
+                const cleanUpCpuWatch = this._features.producerCpuOveruseWatchOn
+                    ? addProducerCpuOveruseWatch({
+                          producer,
+                          onOveruse: () => {
+                              rtcStats.sendEvent("producer_cpuoveruse_detected", {});
+
+                              // we stop monitoring once we detect
+                              cleanUpCpuWatch();
+
+                              // mark cpu overuse and sync to apply changes if needed
+                              this._cpuOveruseDetected = true;
+                              this._syncResourceUsage();
+                          },
+                      })
+                    : () => {};
+
                 this._webcamProducer = producer;
                 this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
@@ -909,6 +951,8 @@ export default class VegaRtcManager implements RtcManager {
 
                     if (producer.appData.localClosed)
                         this._vegaConnection?.message("closeProducers", { producerIds: [producer.id] });
+
+                    cleanUpCpuWatch();
 
                     this._webcamProducer = null;
                     this._webcamProducerPromise = null;
