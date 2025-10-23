@@ -487,7 +487,7 @@ importers:
         specifier: ^1.0.7
         version: 1.1.14(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@whereby.com/core':
-        specifier: 1.2.3
+        specifier: 1.2.4
         version: link:../core
       '@whereby.com/media':
         specifier: 2.4.0
@@ -742,7 +742,7 @@ importers:
   packages/react-native-sdk:
     dependencies:
       '@whereby.com/core':
-        specifier: 1.2.3
+        specifier: 1.2.4
         version: link:../core
       react-native-webview:
         specifier: 13.15.0
