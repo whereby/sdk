@@ -65,4 +65,6 @@ export const signalEvents = {
     videoEnableRequested: createSignalEventAction<VideoEnableRequestedEvent>("videoEnableRequested"),
     liveTranscriptionStarted: createSignalEventAction<LiveTranscriptionStartedEvent>("liveTranscriptionStarted"),
     liveTranscriptionStopped: createSignalEventAction<LiveTranscriptionStoppedEvent>("liveTranscriptionStopped"),
+    liveCaptionsStarted: createSignalEventAction<void>("liveCaptionsStarted"),
+    liveCaptionsStopped: createSignalEventAction<void>("liveCaptionsStopped"),
 };

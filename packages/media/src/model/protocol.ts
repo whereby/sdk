@@ -81,6 +81,8 @@ export const PROTOCOL_RESPONSES = {
     CLIENT_UNABLE_TO_JOIN: "client_unable_to_join",
     LIVE_TRANSCRIPTION_STARTED: "live_transcription_started",
     LIVE_TRANSCRIPTION_STOPPED: "live_transcription_stopped",
+    LIVE_CAPTIONS_STARTED: "live_captions_started",
+    LIVE_CAPTIONS_STOPPED: "live_captions_stopped",
 };
 
 export const PROTOCOL_ERRORS = {
