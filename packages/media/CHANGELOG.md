@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.4.0
+
+### Minor Changes
+
+- 1903612: media: Adds feature for detecting and acting on simulcast resolution change
+
 ## 2.3.0
 
 ### Minor Changes
