@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.2.4
+
+### Patch Changes
+
+- b7288f6: Add captions enabled/disabled signal events
+
 ## 1.2.3
 
 ### Patch Changes
