@@ -32,6 +32,8 @@ const events = [
     "people_toggle",
     "pip_toggle",
     "screenshare_toggle",
+    "streaming_status_change",
+    "recording_status_change",
     "transcription_status_change",
 ];
 
