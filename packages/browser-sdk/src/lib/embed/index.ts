@@ -113,6 +113,7 @@ interface WherebyEmbedElementEventMap {
             bandwidth: PrecallCheckCompletedStepResult;
         };
     }>;
+    transcription_status_change: CustomEvent<{ status: "started" | "stopped" }>;
 }
 
 interface WherebyEmbedElementCommands {
