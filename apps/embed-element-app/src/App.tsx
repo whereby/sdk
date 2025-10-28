@@ -32,6 +32,7 @@ const events = [
     "people_toggle",
     "pip_toggle",
     "screenshare_toggle",
+    "transcription_status_change",
 ];
 
 function App() {
