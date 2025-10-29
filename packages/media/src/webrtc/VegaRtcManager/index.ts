@@ -1060,7 +1060,7 @@ export default class VegaRtcManager implements RtcManager {
                         true,
                         // Screenshare doesn't support SVC encoding, so we force VP8
                         { ...this._features, vp9On: false },
-                        this._getIsSomeoneAlreadyPresenting(),
+                        this._getAreTooManyAlreadyPresenting(),
                     ),
                     appData: {
                         streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
@@ -1213,8 +1213,11 @@ export default class VegaRtcManager implements RtcManager {
         producer.close();
     }
 
-    _getIsSomeoneAlreadyPresenting() {
-        return !![...this._clientStates.values()].find((state) => state.hasAcceptedScreenStream && state.screenStream);
+    _getAreTooManyAlreadyPresenting() {
+        return (
+            [...this._clientStates.values()].filter((state) => state.hasAcceptedScreenStream && state.screenStream)
+                .length >= 3
+        );
     }
 
     /**

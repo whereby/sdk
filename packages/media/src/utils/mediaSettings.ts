@@ -71,7 +71,7 @@ export const getMediaSettings = (
         simulcastScreenshareOn?: boolean;
         vp9On?: boolean;
     },
-    isSomeoneAlreadyPresenting = false,
+    areTooManyAlreadyPresenting = false,
 ) => {
     const { lowDataModeEnabled, simulcastScreenshareOn, vp9On } = features;
 
@@ -83,7 +83,7 @@ export const getMediaSettings = (
     const isVp9Available = isChrome && vp9On;
     if (isScreenShare) {
         return getScreenShareMediaSettings({
-            isSomeoneAlreadyPresenting,
+            areTooManyAlreadyPresenting,
             simulcastScreenshareOn,
         });
     } else {
@@ -115,13 +115,13 @@ const getCameraMediaSettings = ({
 };
 
 const getScreenShareMediaSettings = ({
-    isSomeoneAlreadyPresenting,
+    areTooManyAlreadyPresenting,
     simulcastScreenshareOn,
 }: {
-    isSomeoneAlreadyPresenting?: boolean;
+    areTooManyAlreadyPresenting?: boolean;
     simulcastScreenshareOn?: boolean;
 }) => {
-    if (isSomeoneAlreadyPresenting) {
+    if (areTooManyAlreadyPresenting) {
         return ADDITIONAL_SCREEN_SHARE_SETTINGS;
     }
     if (simulcastScreenshareOn) return SCREEN_SHARE_SIMULCAST_SETTINGS;
