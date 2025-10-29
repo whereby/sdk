@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.5.0
+
+### Minor Changes
+
+- 8418cbc: media: Increase to 3 simultaneous screenshares not using simulcast
+
 ## 2.4.0
 
 ### Minor Changes
