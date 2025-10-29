@@ -102,6 +102,8 @@ interface WherebyEmbedElementEventMap {
     deny_device_permission: CustomEvent<{ denied: boolean }>;
     screenshare_toggle: CustomEvent<{ enabled: boolean }>;
     streaming_status_change: CustomEvent<{ status: string }>;
+    recording_status_change: CustomEvent<{ status: "starting" | "started" | "stopped" }>;
+    transcription_status_change: CustomEvent<{ status: "starting" | "started" | "stopped" }>;
     connection_status_change: CustomEvent<{ status: "stable" | "unstable" }>;
     precall_check_skipped: CustomEvent;
     precall_check_completed: CustomEvent<{

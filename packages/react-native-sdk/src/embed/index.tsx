@@ -119,6 +119,8 @@ const WHEREBY_EVENT_TYPES = [
     "deny_device_permission",
     "screenshare_toggle",
     "streaming_status_change",
+    "recording_status_change",
+    "transcription_status_change",
     "connection_status_change",
     "precall_check_skipped",
     "precall_check_completed",
@@ -142,6 +144,8 @@ export type WherebyEvent =
     | { type: "deny_device_permission"; payload: { denied: boolean } }
     | { type: "screenshare_toggle"; payload: { enabled: boolean } }
     | { type: "streaming_status_change"; payload: { status: string } }
+    | { type: "recording_status_change"; payload: { status: "starting" | "started" | "stopped" } }
+    | { type: "transcription_status_change"; payload: { status: "starting" | "started" | "stopped" } }
     | { type: "connection_status_change"; payload: { status: "stable" | "unstable" } }
     | { type: "precall_check_skipped"; payload: undefined }
     | {
@@ -198,6 +202,10 @@ interface WherebyEmbedProps extends WebViewProps, WherebyEmbedElementAttributes 
     onDenyDevicePermission?: (data: Extract<WherebyEvent, { type: "deny_device_permission" }>["payload"]) => void;
     onScreenshareToggle?: (data: Extract<WherebyEvent, { type: "screenshare_toggle" }>["payload"]) => void;
     onStreamingStatusChange?: (data: Extract<WherebyEvent, { type: "streaming_status_change" }>["payload"]) => void;
+    onRecordingStatusChange?: (data: Extract<WherebyEvent, { type: "recording_status_change" }>["payload"]) => void;
+    onTranscriptionStatusChange?: (
+        data: Extract<WherebyEvent, { type: "transcription_status_change" }>["payload"],
+    ) => void;
     onConnectionStatusChange?: (data: Extract<WherebyEvent, { type: "connection_status_change" }>["payload"]) => void;
     onPrecallCheckSkipped?: () => void;
     onPrecallCheckCompleted?: (data: Extract<WherebyEvent, { type: "precall_check_completed" }>["payload"]) => void;
@@ -395,6 +403,12 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
                             break;
                         case "streaming_status_change":
                             props.onStreamingStatusChange?.(data.payload);
+                            break;
+                        case "recording_status_change":
+                            props.onRecordingStatusChange?.(data.payload);
+                            break;
+                        case "transcription_status_change":
+                            props.onTranscriptionStatusChange?.(data.payload);
                             break;
                         case "connection_status_change":
                             props.onConnectionStatusChange?.(data.payload);
