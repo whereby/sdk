@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.14.7
+
+### Patch Changes
+
+- cac1485: Add missing \*\_status_change embed events
+
 ## 3.14.6
 
 ### Patch Changes

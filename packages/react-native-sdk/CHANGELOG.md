@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.8.21
+
+### Patch Changes
+
+- cac1485: Add missing \*\_status_change embed events
+
 ## 0.8.20
 
 ### Patch Changes
