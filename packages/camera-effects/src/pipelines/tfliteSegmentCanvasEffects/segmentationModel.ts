@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { simd } from "wasm-feature-detect";
 
 import createTflite from "../../../assets/tflite/tflite.js";

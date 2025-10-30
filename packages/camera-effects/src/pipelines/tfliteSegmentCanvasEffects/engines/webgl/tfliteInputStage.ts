@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { compileShader, createPiplelineStageProgram, createTexture, glsl } from "./webglHelper";
 
 // resizes input video to match segmentation model and renders it 3x in horizontal

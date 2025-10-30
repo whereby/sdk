@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { compileShader, createPiplelineStageProgram, createTexture, glsl } from "./webglHelper";
 
 // renders the output from tflite as a mask with

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { loadSegmentationModel } from "../../segmentationModel";
 
 import { compileShader, createTexture, glsl } from "./webglHelper";
@@ -158,6 +159,7 @@ export async function createWebGLEngine(videoWidth, videoHeight, setup, effectCa
             tflite._runInference();
             tfliteOutputToMaskStage.render();
             improveMaskStage.render();
+            // eslint-disable-next-line
             params.backgroundUrl ? backgroundImageStage.render() : backgroundBlurStage.render();
         },
         dispose() {

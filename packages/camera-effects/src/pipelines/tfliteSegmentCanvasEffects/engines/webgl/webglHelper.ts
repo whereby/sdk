@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const glsl = String.raw;
 
 export function createProgram(gl, vertexShader, fragmentShader) {

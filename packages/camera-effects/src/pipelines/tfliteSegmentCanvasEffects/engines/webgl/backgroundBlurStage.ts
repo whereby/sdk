@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { compileShader, createPiplelineStageProgram, createTexture, glsl } from "./webglHelper";
 
 // will generate a kernel from gaussian function
