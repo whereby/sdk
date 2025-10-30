@@ -1,0 +1,42 @@
+{
+    "name": "@whereby.com/camera-effects",
+    "version": "0.1.0",
+    "description": "Effects on top of camera stream",
+    "private": true,
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs",
+            "default": "./dist/index.mjs"
+        },
+        "./assets/*": "./dist/assets/*",
+        "./workers/*": "./dist/workers/*"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "rollup -c",
+        "clean": "rimraf dist",
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix ."
+    },
+    "devDependencies": {
+        "@whereby.com/eslint-config": "workspace:*",
+        "@whereby.com/jest-config": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "rimraf": "^5.0.5",
+        "rollup": "^4.22.4"
+    },
+    "dependencies": {
+        "wasm-feature-detect": "^1.8.0",
+        "webrtc-adapter": "^8.1.0"
+    },
+    "prettier": "@whereby.com/prettier-config"
+}
