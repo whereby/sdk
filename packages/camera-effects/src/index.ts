@@ -1,3 +1,4 @@
+// @ts-nocheck
 import adapter from "webrtc-adapter";
 
 import * as tfliteSegmentCanvasEffectsModule from "./pipelines/tfliteSegmentCanvasEffects";

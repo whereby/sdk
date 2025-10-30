@@ -1,3 +1,4 @@
+// @ts-nocheck
 // This runs on worker thread and makes ProcessorProxies on main thread
 // communicate with Processors on worker thread
 

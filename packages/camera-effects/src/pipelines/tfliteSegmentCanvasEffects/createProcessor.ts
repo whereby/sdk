@@ -1,4 +1,4 @@
-// eslint-disable-next-line import/no-unresolved
+// @ts-nocheck
 import Worker from "./ProcessorProxy.worker.js";
 
 import Processor from "./Processor";

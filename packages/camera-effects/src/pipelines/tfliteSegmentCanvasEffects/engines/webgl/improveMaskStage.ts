@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { compileShader, createPiplelineStageProgram, createTexture, glsl } from "./webglHelper";
 
 // improves the quality of the mask by applying a 5x5 gaussian blur kernel

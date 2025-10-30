@@ -1,3 +1,4 @@
+// @ts-nocheck
 // temp fix for using webpack async imported images
 export async function fixBackgroundUrlPromise(params) {
     if (params.backgroundUrl && params.backgroundUrl.then) {

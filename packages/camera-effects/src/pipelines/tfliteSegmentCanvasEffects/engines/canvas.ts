@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The canvas engine uses 2d canvas and filtered drawing to
 // to achieve desired effects. It runs the segmentation model
 // to separate person from background

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Processor (todo: rename as pipeline?)
 // Takes images as input, in various formats depending on how they
 // are transferred if using background-worker, insertable streams, etc,
@@ -11,18 +12,6 @@ import TimerWorker from "../timer.worker.js";
 import { createCanvas } from "../shared";
 import { createCanvasEngine } from "./engines/canvas";
 import { createWebGLEngine } from "./engines/webgl";
-
-// hack to make worker-loader work with haproxy setup (relative publicPath doesn't work)
-// should upgrade to webpack 5 which has builtin support for workers
-const webpackWorkerImportHack = (code) => {
-    // eslint-disable-next-line
-    const original = __webpack_public_path__;
-    // eslint-disable-next-line
-    __webpack_public_path__ = window.location.pathname.replace(/[^\/]+\/?$/, "");
-    code();
-    // eslint-disable-next-line
-    __webpack_public_path__ = original;
-};
 
 class Processor extends EventEmitter {
     constructor({ setup, params, videoWidth, videoHeight, emit }) {

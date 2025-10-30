@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { EventEmitter } from "events";
 
 let nextProcessorId = 0;

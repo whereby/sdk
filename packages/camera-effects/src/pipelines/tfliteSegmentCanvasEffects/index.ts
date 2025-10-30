@@ -1,3 +1,4 @@
+// @ts-nocheck
 import createProcessor from "./createProcessor";
 
 import { createBackgroundElement, createBackgroundProvider, fixBackgroundUrlPromise, createCanvas } from "../shared";
@@ -114,7 +115,9 @@ export const createEffectStream = async (inputStream, setup, params) => {
             cleanup.push(() => {
                 try {
                     document.body.removeChild(videoElement);
-                } catch {}
+                } catch {
+                    console.warn("video element already removed from DOM");
+                }
                 videoElement.srcObject = null;
             });
         }
