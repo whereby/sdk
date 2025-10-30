@@ -7,7 +7,7 @@
 
 import { EventEmitter } from "events";
 
-import TimerWorker from "worker-loader?filename=assets/js/timer.[hash:8].worker.js!../timer.worker.js";
+import TimerWorker from "../timer.worker.js";
 import { createCanvas } from "../shared";
 import { createCanvasEngine } from "./engines/canvas";
 import { createWebGLEngine } from "./engines/webgl";
@@ -127,9 +127,7 @@ class Processor extends EventEmitter {
         } else if (!this.setup.useBackgroundWorker) {
             // when not using a background worker, and not using insertable streams, we need a separate
             // worker to schedule setTimeouts to prevent pause/throttling when tab/window is inactive/hidden
-            webpackWorkerImportHack(() => {
-                this.timerWorker = new TimerWorker();
-            });
+            this.timerWorker = new TimerWorker();
             this.timerWorker.addEventListener("message", () => {
                 this.emit("output", { frame: this.currentOutputFrame }, [this.currentOutputFrame]);
             });

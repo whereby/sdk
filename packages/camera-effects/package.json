@@ -16,8 +16,7 @@
         "@whereby.com/tsconfig": "workspace:*"
     },
     "dependencies": {
-        "webrtc-adapter": "^8.1.0",
-        "worker-loader": "^3.0.8"
+        "webrtc-adapter": "^8.1.0"
     },
     "prettier": "@whereby.com/prettier-config"
 }
