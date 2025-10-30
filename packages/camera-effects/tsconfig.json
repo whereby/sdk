@@ -1,0 +1,3 @@
+{
+    "extends": "@whereby.com/tsconfig/base.json"
+}
