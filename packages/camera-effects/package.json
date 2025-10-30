@@ -1,0 +1,23 @@
+{
+    "name": "@whereby.com/camera-effects",
+    "version": "0.1.0",
+    "description": "Effects on top of camera stream",
+    "private": true,
+    "main": "src/index.js",
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix ."
+    },
+    "devDependencies": {
+        "@whereby.com/eslint-config": "workspace:*",
+        "@whereby.com/jest-config": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*"
+    },
+    "dependencies": {
+        "webrtc-adapter": "^8.1.0",
+        "worker-loader": "^3.0.8"
+    },
+    "prettier": "@whereby.com/prettier-config"
+}
