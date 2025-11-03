@@ -1,6 +1,8 @@
 import adapter from "webrtc-adapter";
 
 import * as tfliteSegmentCanvasEffectsModule from "./pipelines/tfliteSegmentCanvasEffects";
+import { loadSegmentationModel } from "./pipelines/tfliteSegmentCanvasEffects/segmentationModel";
+import { createBackgroundElement, fixBackgroundUrlPromise } from "./pipelines/shared";
 import { Params, Pipeline, Preset } from "./types";
 
 // check for webgl2 support
@@ -118,7 +120,7 @@ presets.push(
             pipelineConfigs: {
                 tfliteSegmentCanvasEffects: {
                     params: {
-                        backgroundType: "video",
+                        backgroundType: "video" as const,
                         backgroundUrl: urlModule,
                     },
                 },
@@ -129,7 +131,7 @@ presets.push(
 
 // merges the default setup/params, with anything set by the preset, with anything set by the api user
 // returns the merged params, and the first pipeline that supports the preset
-const getPresetAndMergedParams = (presetId: string, setup: Pipeline["getDefaultSetup"], params: Params) => {
+const getPresetAndMergedParams = (presetId: string, setup?: Pipeline["getDefaultSetup"], params?: Params) => {
     const preset = presets.find((p) => p.id === presetId);
     if (!preset) return;
 
@@ -172,8 +174,8 @@ const safariKeepAliveVideoSrcObjectHack = () => {
 export const createEffectStream = async (
     inputStream: MediaStream,
     presetId: string,
-    setup: Pipeline["getDefaultSetup"],
-    params: Params,
+    setup?: Pipeline["getDefaultSetup"],
+    params?: Params,
 ) => {
     const { pipeline, mergedSetup, mergedParams } = getPresetAndMergedParams(presetId, setup, params)!;
     if (mergedSetup.logToConsole) {
@@ -243,9 +245,55 @@ export const getUsablePresets = (
         )
         .map((preset) => preset.id);
 
+// returns metadata for available presets and whether they are supported in the current environment
+export const getPresets = (options?: {
+    allowSafari?: boolean;
+}): Array<{ id: string; kind: "blur" | "image" | "video"; supported: boolean }> => {
+    const kindOf = (id: string) => (id.startsWith("image-") ? "image" : id.startsWith("video-") ? "video" : "blur");
+
+    return presets.map((preset) => {
+        const supported = !!Object.keys(preset.pipelineConfigs ?? []).find((pipelineId) =>
+            pipelines[pipelineId as keyof typeof pipelines].canUse((options ?? {}) as { allowSafari?: boolean }),
+        );
+        return { id: preset.id, kind: kindOf(preset.id), supported };
+    });
+};
+
+// preloads heavy assets (wasm/model) and optional background for faster first-frame time
+export const warmup = async (
+    presetId?: string,
+    setup: Pipeline["getDefaultSetup"] = () => ({}),
+    params: Params = {},
+) => {
+    // choose preset (fallback to first usable or first defined)
+    const chosenPresetId = presetId || getUsablePresets((p) => p.canUse({}), {}).at(0) || presets.at(0)?.id;
+    if (!chosenPresetId) return;
+
+    const merged = getPresetAndMergedParams(chosenPresetId, setup, params);
+    if (!merged) return;
+    const { mergedSetup, mergedParams } = merged;
+
+    // preload segmentation wasm + model
+    await loadSegmentationModel(mergedSetup.segmentationModelId);
+
+    // optionally preload background asset
+    if (mergedParams?.backgroundUrl) {
+        await fixBackgroundUrlPromise(mergedParams);
+        try {
+            await createBackgroundElement(mergedParams.backgroundUrl as string, mergedParams.backgroundType);
+        } catch {
+            // ignore background preload failures
+        }
+    }
+};
+
 // sets the default setup of a pipeline, for testing purposes
 export const setDefaultSetup = (pipelineId: string, setup: Pipeline["getDefaultSetup"]) => {
     const oldSetup = pipelines[pipelineId as keyof typeof pipelines].getDefaultSetup();
     const newSetup = { ...oldSetup, ...setup };
     pipelines[pipelineId as keyof typeof pipelines].getDefaultSetup = () => newSetup;
 };
+
+// types
+export type SetupOptions = ReturnType<Pipeline["getDefaultSetup"]>;
+export type { Params as EffectParams, Pipeline, Preset };
