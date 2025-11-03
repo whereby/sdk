@@ -1,5 +1,5 @@
 import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
-import { getStream, getUpdatedDevices, getDeviceData } from "@whereby.com/media";
+import { getStream, getUpdatedDevices, getDeviceData, replaceTracksInStream } from "@whereby.com/media";
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
@@ -545,6 +545,18 @@ export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
 
     dispatch(localMediaStopped());
 });
+
+export const doLocalStreamEffect = createAppAsyncThunk(
+    "localMedia/doLocalStreamEffect",
+    async ({ effectStream }: { effectStream: MediaStream }, { getState, dispatch, rejectWithValue }) => {
+        const state = getState();
+        const replaceStream = selectLocalMediaStream(state);
+        if (!replaceStream) {
+            return;
+        }
+        return replaceTracksInStream(replaceStream, effectStream, "video");
+    },
+);
 
 /**
  * Selectors

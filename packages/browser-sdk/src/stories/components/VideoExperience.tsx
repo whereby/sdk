@@ -82,12 +82,19 @@ export default function VideoExperience({
         askToTurnOnCamera,
         joinBreakoutGroup,
         joinBreakoutMainRoom,
+        replaceEffectStream,
     } = actions;
 
-    async function loadBackgroundEffects() {
+    async function loadBackgroundEffects(stream: MediaStream) {
         const { getUsablePresets, createEffectStream } = await import("@whereby.com/camera-effects");
-        const usablePresets = getUsablePresets([], undefined);
-        const effectStream = createEffectStream(localMedia?.videoStream!, usablePresets[0], { logToConsole: true }, {});
+        const usablePresets = getUsablePresets(() => true, { allowSafari: true });
+        const effectStream = await createEffectStream(stream, usablePresets[0]);
+
+        if (!effectStream) {
+            console.warn("No effect stream created");
+            return;
+        }
+        await replaceEffectStream(effectStream.stream);
     }
 
     useEffect(() => {
@@ -96,6 +103,12 @@ export default function VideoExperience({
         joinRoom();
         return () => leaveRoom();
     }, []);
+
+    useEffect(() => {
+        if (!localParticipant?.stream) return;
+
+        loadBackgroundEffects(localParticipant.stream);
+    }, [localParticipant?.stream]);
 
     function showIncomingChatMessageNotification({ message }: ChatMessageEvent) {
         toast(message, {
