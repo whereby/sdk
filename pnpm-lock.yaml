@@ -523,6 +523,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.2.1
         version: 4.6.0(vite@5.4.19(@types/node@22.15.34)(lightningcss@1.30.2)(terser@5.43.1))
+      '@whereby.com/camera-effects':
+        specifier: workspace:*
+        version: link:../camera-effects
       '@whereby.com/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
