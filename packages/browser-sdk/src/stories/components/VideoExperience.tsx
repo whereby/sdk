@@ -84,6 +84,12 @@ export default function VideoExperience({
         joinBreakoutMainRoom,
     } = actions;
 
+    async function loadBackgroundEffects() {
+        const { getUsablePresets, createEffectStream } = await import("@whereby.com/camera-effects");
+        const usablePresets = getUsablePresets([], undefined);
+        const effectStream = createEffectStream(localMedia?.videoStream!, usablePresets[0], { logToConsole: true }, {});
+    }
+
     useEffect(() => {
         if (!joinRoomOnLoad) return;
 
