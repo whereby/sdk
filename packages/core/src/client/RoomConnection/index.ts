@@ -30,6 +30,7 @@ import {
     toggleCameraEnabled,
     toggleLowDataModeEnabled,
     toggleMicrophoneEnabled,
+    doLocalStreamEffect,
 } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import type {
@@ -554,6 +555,14 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public reportStreamResolution(streamId: string, width: number, height: number) {
         this.store.dispatch(doRtcReportStreamResolution({ streamId, width, height }));
+    }
+
+    public replaceEffectStream(newStream: MediaStream | null): Promise<void> {
+        if (!newStream) {
+            return Promise.resolve();
+        }
+        this.store.dispatch(doLocalStreamEffect({ effectStream: newStream }));
+        return Promise.resolve();
     }
 
     /**

@@ -25,6 +25,7 @@ interface Pipeline {
 
 interface Params {
     backgroundUrl?: Promise<unknown> | string;
+    backgroundType?: "image" | "video";
     backgroundBlur?: {
         amount: "slight" | "normal" | "heavy";
     };
