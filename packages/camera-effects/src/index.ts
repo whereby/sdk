@@ -1,7 +1,7 @@
-// @ts-nocheck
 import adapter from "webrtc-adapter";
 
 import * as tfliteSegmentCanvasEffectsModule from "./pipelines/tfliteSegmentCanvasEffects";
+import { Params, Pipeline, Preset } from "./types";
 
 // check for webgl2 support
 const canUseWebGL = (function () {
@@ -55,14 +55,14 @@ const pipelines = {
             return { ...shared };
         },
 
-        canUse: (options = {}) =>
+        canUse: (options: { allowSafari?: boolean } = {}) =>
             (adapter.browserDetails.browser === "safari" && canUseWebGL && options.allowSafari) ||
-            (adapter.browserDetails.browser === "chrome" && adapter.browserDetails.version >= 90) ||
-            (adapter.browserDetails.browser === "firefox" && adapter.browserDetails.version >= 89),
+            (adapter.browserDetails.browser === "chrome" && (adapter.browserDetails.version ?? 0) >= 90) ||
+            (adapter.browserDetails.browser === "firefox" && (adapter.browserDetails?.version ?? 0) >= 89),
     },
 };
 
-const presets = [
+const presets: Preset[] = [
     {
         id: "slight-blur",
         pipelineConfigs: {
@@ -129,23 +129,25 @@ presets.push(
 
 // merges the default setup/params, with anything set by the preset, with anything set by the api user
 // returns the merged params, and the first pipeline that supports the preset
-const getPresetAndMergedParams = (presetId, setup, params) => {
+const getPresetAndMergedParams = (presetId: string, setup: Pipeline["getDefaultSetup"], params: Params) => {
     const preset = presets.find((p) => p.id === presetId);
     if (!preset) return;
 
     // find first pipeline it can use
-    let pipelineId = Object.keys(preset.pipelineConfigs).find((pipelineId) => pipelines[pipelineId].canUse());
+    let pipelineId = Object.keys(preset.pipelineConfigs ?? []).find((pipelineId) =>
+        pipelines[pipelineId as keyof typeof pipelines].canUse(),
+    );
     // if not use first pipeline (for testing on unsupported browsers)
-    if (!pipelineId) pipelineId = Object.keys(preset.pipelineConfigs)[0];
+    if (!pipelineId) pipelineId = Object.keys(preset.pipelineConfigs ?? [])[0];
     if (!pipelineId) return;
-    const pipelineConfig = preset.pipelineConfigs[pipelineId];
-    const pipeline = pipelines[pipelineId];
-    const mergedSetup = { ...pipeline.getDefaultSetup(), ...pipelineConfig.setup, ...setup };
+    const pipelineConfig = preset.pipelineConfigs?.[pipelineId];
+    const pipeline = pipelines[pipelineId as keyof typeof pipelines];
+    const mergedSetup = { ...pipeline.getDefaultSetup(), ...pipelineConfig?.setup, ...setup };
 
     // only allow webGL if browser supports it
     mergedSetup.useWebGL = mergedSetup.useWebGL && canUseWebGL;
 
-    const mergedParams = { ...pipelineConfig.params, ...params };
+    const mergedParams = { ...pipelineConfig?.params, ...params };
     return { pipeline, mergedSetup, mergedParams };
 };
 
@@ -167,8 +169,13 @@ const safariKeepAliveVideoSrcObjectHack = () => {
 // setup and params can be overrided
 // only if it uses the same pipeline and the same setup and the pipeline supports updating can
 // the effect be updated. Otherwise the old effect must be stopped, and a new effect must be created.
-export const createEffectStream = async (inputStream, presetId, setup, params) => {
-    const { pipeline, mergedSetup, mergedParams } = getPresetAndMergedParams(presetId, setup, params);
+export const createEffectStream = async (
+    inputStream: MediaStream,
+    presetId: string,
+    setup: Pipeline["getDefaultSetup"],
+    params: Params,
+) => {
+    const { pipeline, mergedSetup, mergedParams } = getPresetAndMergedParams(presetId, setup, params)!;
     if (mergedSetup.logToConsole) {
         // eslint-disable-next-line no-console
         console.log(`Setting effect preset ${presetId}`, { setup: mergedSetup, params: mergedParams });
@@ -179,12 +186,16 @@ export const createEffectStream = async (inputStream, presetId, setup, params) =
         updateParams,
     } = await pipeline.module.createEffectStream(inputStream, mergedSetup, mergedParams);
 
-    const tryUpdate = async (updatedPresetId, updatedSetup, updatedParams) => {
+    const tryUpdate = async (
+        updatedPresetId: string,
+        updatedSetup: Pipeline["getDefaultSetup"],
+        updatedParams: Params,
+    ) => {
         const {
             pipeline: updatedPipeline,
             mergedSetup: updatedMergedSetup,
             mergedParams: updatedMergedParams,
-        } = getPresetAndMergedParams(updatedPresetId, updatedSetup, updatedParams);
+        } = getPresetAndMergedParams(updatedPresetId, updatedSetup, updatedParams)!;
         if (
             !updateParams ||
             updatedPipeline !== pipeline ||
@@ -220,16 +231,21 @@ export const createEffectStream = async (inputStream, presetId, setup, params) =
 };
 
 // returns list of usable presets. A custom filter ( ()=>true ) can be provided to test effects on unsupported browsers
-export const getUsablePresets = (filter = (pipeline, options) => pipeline.canUse(options), options) =>
+export const getUsablePresets = (
+    filter = (pipeline: Pipeline, options: { allowSafari?: boolean }) => pipeline.canUse(options),
+    options: { allowSafari?: boolean },
+) =>
     presets
         .filter((preset) =>
-            Object.keys(preset.pipelineConfigs).find((pipelineId) => filter(pipelines[pipelineId], options, preset)),
+            Object.keys(preset.pipelineConfigs ?? []).find((pipelineId) =>
+                filter(pipelines[pipelineId as keyof typeof pipelines], options),
+            ),
         )
         .map((preset) => preset.id);
 
 // sets the default setup of a pipeline, for testing purposes
-export const setDefaultSetup = (pipelineId, setup) => {
-    const oldSetup = pipelines[pipelineId].getDefaultSetup();
+export const setDefaultSetup = (pipelineId: string, setup: Pipeline["getDefaultSetup"]) => {
+    const oldSetup = pipelines[pipelineId as keyof typeof pipelines].getDefaultSetup();
     const newSetup = { ...oldSetup, ...setup };
-    pipelines[pipelineId].getDefaultSetup = () => newSetup;
+    pipelines[pipelineId as keyof typeof pipelines].getDefaultSetup = () => newSetup;
 };
