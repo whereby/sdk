@@ -8,7 +8,7 @@
 
 import { EventEmitter } from "events";
 
-import TimerWorker from "../timer.worker.js";
+// Create worker via URL at runtime to avoid bundler-specific worker imports
 import { createCanvas } from "../shared";
 import { createCanvasEngine } from "./engines/canvas";
 import { createWebGLEngine } from "./engines/webgl";
@@ -116,7 +116,8 @@ class Processor extends EventEmitter {
         } else if (!this.setup.useBackgroundWorker) {
             // when not using a background worker, and not using insertable streams, we need a separate
             // worker to schedule setTimeouts to prevent pause/throttling when tab/window is inactive/hidden
-            this.timerWorker = new TimerWorker();
+            const timerWorkerUrl = new URL("./workers/timer.worker.js", import.meta.url);
+            this.timerWorker = new Worker(timerWorkerUrl);
             this.timerWorker.addEventListener("message", () => {
                 this.emit("output", { frame: this.currentOutputFrame }, [this.currentOutputFrame]);
             });

@@ -1,6 +1,4 @@
 // @ts-nocheck
-import Worker from "./ProcessorProxy.worker.js";
-
 import Processor from "./Processor";
 import ProcessorProxy from "./ProcessorProxy";
 
@@ -11,7 +9,8 @@ export default function createProcessor(useBackgroundWorker, config) {
     if (!useBackgroundWorker) return new Processor(config);
 
     if (!sharedWorker) {
-        sharedWorker = new Worker();
+        const workerUrl = new URL("./workers/ProcessorProxy.worker.js", import.meta.url);
+        sharedWorker = new Worker(workerUrl);
     }
     return new ProcessorProxy(sharedWorker, config);
 }
