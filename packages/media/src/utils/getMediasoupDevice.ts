@@ -19,7 +19,7 @@ export const getMediasoupDeviceAsync = async (features: Record<string, boolean |
     if (/iphone|ipad/i.test(navigator.userAgent)) {
         handlerName = "Safari12";
     }
-
+    
     if (features.safari17HandlerOn && handlerName === "Safari12" && SAFARI_17_REGEXP.test(navigator.userAgent)) {
         return new Device({ handlerFactory: Safari17.createFactory() });
     }
