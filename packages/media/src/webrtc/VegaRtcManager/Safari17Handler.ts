@@ -485,6 +485,16 @@ export class Safari17
 		// Store in the map.
 		this._mapMidTransceiver.set(localId, transceiver);
 
+        if (track.kind === "video") {
+            const parameters = transceiver.sender.getParameters();
+            for (const [index, encoding] of sendingRtpParameters.encodings.entries()) {
+                parameters.encodings[index]!.maxBitrate = encoding.maxBitrate;
+                parameters.encodings[index]!.scaleResolutionDownBy = encoding.scaleResolutionDownBy;
+            }
+            // here we set the encodings with maxBitrate using the values provided
+            transceiver.sender.setParameters(parameters);
+        }
+
 		return {
 			localId,
 			rtpParameters: sendingRtpParameters,

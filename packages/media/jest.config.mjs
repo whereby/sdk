@@ -9,6 +9,9 @@ export default buildConfig(__dirname, {
     transform: {
         "^.+\\.(j|t)sx?$": "ts-jest",
     },
+    moduleNameMapper: {
+        "^mediasoup-client/lib/(.*)$": "<rootDir>/../../node_modules/mediasoup-client/lib/$1",
+    },
     roots: ["<rootDir>"],
     coverageDirectory: "test-report/unit-tests",
 });
