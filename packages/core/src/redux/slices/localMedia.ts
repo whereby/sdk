@@ -548,7 +548,7 @@ export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
 
 export const doLocalStreamEffect = createAppAsyncThunk(
     "localMedia/doLocalStreamEffect",
-    async ({ effectStream }: { effectStream: MediaStream }, { getState, dispatch, rejectWithValue }) => {
+    async ({ effectStream }: { effectStream: MediaStream }, { getState }) => {
         const state = getState();
         const replaceStream = selectLocalMediaStream(state);
         if (!replaceStream) {
