@@ -23,6 +23,7 @@ export default function VideoExperience({
     hostOptions,
     joinRoomOnLoad,
     showBreakoutGroups,
+    showCameraEffects,
 }: {
     displayName?: string;
     roomName: string;
@@ -33,9 +34,11 @@ export default function VideoExperience({
     hostOptions?: Array<string>;
     joinRoomOnLoad?: boolean;
     showBreakoutGroups?: boolean;
+    showCameraEffects?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
+    const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
 
     const { state, actions, events } = useRoomConnection(roomName, {
         localMediaOptions: {
@@ -82,19 +85,28 @@ export default function VideoExperience({
         askToTurnOnCamera,
         joinBreakoutGroup,
         joinBreakoutMainRoom,
-        replaceEffectStream,
+        replaceStream,
+        removeEffectStream,
     } = actions;
 
-    async function loadBackgroundEffects(stream: MediaStream) {
-        const { getUsablePresets, createEffectStream } = await import("@whereby.com/camera-effects");
+    async function loadBackgroundEffects() {
+        if (!showCameraEffects) return;
+
+        const { getUsablePresets } = await import("@whereby.com/camera-effects");
         const usablePresets = getUsablePresets(() => true, { allowSafari: true });
-        const effectStream = await createEffectStream(stream, usablePresets[0]);
+        setEffectPresets(usablePresets);
+    }
+
+    async function replaceEffect(stream: MediaStream, effectPreset: string) {
+        const { createEffectStream } = await import("@whereby.com/camera-effects");
+
+        const effectStream = await createEffectStream(stream, effectPreset);
 
         if (!effectStream) {
             console.warn("No effect stream created");
             return;
         }
-        await replaceEffectStream(effectStream.stream);
+        await replaceStream(effectStream.stream);
     }
 
     useEffect(() => {
@@ -107,7 +119,7 @@ export default function VideoExperience({
     useEffect(() => {
         if (!localParticipant?.stream) return;
 
-        loadBackgroundEffects(localParticipant.stream);
+        loadBackgroundEffects();
     }, [localParticipant?.stream]);
 
     function showIncomingChatMessageNotification({ message }: ChatMessageEvent) {
@@ -345,6 +357,27 @@ export default function VideoExperience({
                             {breakout.isActive ? (
                                 <button onClick={() => joinBreakoutMainRoom()}>Join main room</button>
                             ) : null}
+                        </div>
+                    ) : null}
+
+                    {showCameraEffects ? (
+                        <div>
+                            <button onClick={() => removeEffectStream()}>Remove background effect</button>
+                            <select
+                                value=""
+                                onChange={(e) => {
+                                    replaceEffect(localParticipant!.stream!, e.target.value);
+                                }}
+                            >
+                                <option value="" disabled>
+                                    Select background effect
+                                </option>
+                                {effectPresets.map((preset) => (
+                                    <option key={preset} value={preset}>
+                                        {preset}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     ) : null}
 
