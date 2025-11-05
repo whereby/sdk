@@ -3,7 +3,24 @@
 export async function fixBackgroundUrlPromise(params) {
     if (params.backgroundUrl && params.backgroundUrl.then) {
         const src = await params.backgroundUrl;
-        params.backgroundUrl = src.default || src;
+        const candidate = src?.default || src;
+        if (typeof candidate === "string") {
+            try {
+                if (
+                    !/^https?:\/\//.test(candidate) &&
+                    !candidate.startsWith("data:") &&
+                    !candidate.startsWith("blob:")
+                ) {
+                    params.backgroundUrl = new URL(candidate, import.meta.url).href;
+                } else {
+                    params.backgroundUrl = candidate;
+                }
+            } catch {
+                params.backgroundUrl = candidate;
+            }
+        } else {
+            params.backgroundUrl = candidate;
+        }
     }
 }
 

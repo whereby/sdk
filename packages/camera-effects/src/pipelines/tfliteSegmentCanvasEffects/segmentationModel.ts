@@ -14,7 +14,8 @@ export const SEGMENTATIONMODEL_TYPE_BACKGROUND_PERSON = 1;
 export const SEGMENTATIONMODEL_TYPE_PERSON = 2;
 
 const fixWebPackGeneratedFileUrl = (url) => {
-    return new URL(url, location.href).href.replace("assets/js/assets/media", "assets/media");
+    // Resolve asset relative to this module URL so bundlers/dev servers serve from node_modules correctly
+    return new URL(url, import.meta.url).href;
 };
 
 const models = {
