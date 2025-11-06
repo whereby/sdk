@@ -557,11 +557,30 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.store.dispatch(doRtcReportStreamResolution({ streamId, width, height }));
     }
 
-    public replaceEffectStream(newStream: MediaStream | null): Promise<void> {
-        if (!newStream) {
-            return Promise.resolve();
+    /**
+     * Replace the local stream with a new effect stream.
+     * @param newStream - The new MediaStream to use as the effect stream.
+     */
+    public async replaceStream(newStream: MediaStream): Promise<void> {
+        try {
+            await this.store.dispatch(doLocalStreamEffect({ effectStream: newStream, only: "video" }));
+        } catch (error) {
+            return Promise.reject(error);
         }
-        this.store.dispatch(doLocalStreamEffect({ effectStream: newStream }));
+
+        return Promise.resolve();
+    }
+
+    /**
+     * Remove the effect stream and revert to the original local stream.
+     */
+    public async removeEffectStream(): Promise<void> {
+        try {
+            await this.store.dispatch(doLocalStreamEffect({ effectStream: undefined, only: "video" }));
+        } catch (error) {
+            return Promise.reject(error);
+        }
+
         return Promise.resolve();
     }
 
