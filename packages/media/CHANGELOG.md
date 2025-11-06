@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.5.1
+
+### Patch Changes
+
+- 71ea8ae: media: Defaults to chrome handler when browser unknown
+
 ## 2.5.0
 
 ### Minor Changes
