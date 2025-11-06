@@ -117,12 +117,15 @@ export function useRoomConnection(
     const endMeeting = React.useCallback((stayBehind?: boolean) => client.endMeeting(stayBehind), [client]);
     const joinBreakoutGroup = React.useCallback((group: string) => client.joinBreakoutGroup(group), [client]);
     const joinBreakoutMainRoom = React.useCallback(() => client.joinBreakoutMainRoom(), [client]);
-    const replaceEffectStream = React.useCallback(
-        async (effectStream: MediaStream | null) => {
-            await client.replaceEffectStream(effectStream);
+    const replaceStream = React.useCallback(
+        async (effectStream: MediaStream) => {
+            await client.replaceStream(effectStream);
         },
         [client],
     );
+    const removeEffectStream = React.useCallback(async () => {
+        await client.removeEffectStream();
+    }, [client]);
 
     const { events, ...state } = roomConnectionState;
 
@@ -156,7 +159,8 @@ export function useRoomConnection(
             removeSpotlight,
             joinBreakoutGroup,
             joinBreakoutMainRoom,
-            replaceEffectStream,
+            replaceStream,
+            removeEffectStream,
         },
     };
 }

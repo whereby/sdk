@@ -457,4 +457,101 @@ describe("actions", () => {
             expect(mockedEnumerateDevices).toHaveBeenCalled();
         });
     });
+
+    describe("doLocalStreamEffect", () => {
+        it.each([["audio"], ["video"]])("basic %s", async (kind) => {
+            const getTracks = kind === "audio" ? "getAudioTracks" : "getVideoTracks";
+            const getOtherTracks = kind === "audio" ? "getVideoTracks" : "getAudioTracks";
+            const stream = new MockMediaStream();
+
+            const store = createStore({
+                initialState: {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: true,
+                        devices: [],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream,
+                        isSwitchingStream: false,
+                    },
+                },
+            });
+            const effectStream = new MockMediaStream();
+            await store.dispatch(
+                localMediaSlice.doLocalStreamEffect({ effectStream, only: kind as "audio" | "video" }),
+            );
+            const effectedStreamSelectedTracks = effectStream[getTracks]();
+            const originalStreamReplacedTracks = stream[getTracks]();
+            const effectedStreamNotSelectedTracks = effectStream[getOtherTracks]();
+            const originalStreamIntactTracks = stream[getOtherTracks]();
+
+            originalStreamReplacedTracks.forEach((effectedTrack) => {
+                const replaced = effectedStreamSelectedTracks.filter(
+                    (selectedTrack) => selectedTrack.id === effectedTrack.id,
+                );
+                expect(replaced.length).toEqual(1);
+            });
+
+            originalStreamIntactTracks.forEach((intactTrack) => {
+                const replaced = effectedStreamNotSelectedTracks.filter(
+                    (notSelectedTrack) => notSelectedTrack.id === intactTrack.id,
+                );
+                expect(replaced.length).toEqual(0);
+            });
+        });
+
+        it.each([["audio"], ["video"]])("reset %s", async (only) => {
+            const stream = new MockMediaStream();
+            const effectStream = new MockMediaStream();
+            const store = createStore({
+                initialState: {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: true,
+                        devices: [],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream,
+                        isSwitchingStream: false,
+                    },
+                },
+            });
+
+            await store.dispatch(
+                localMediaSlice.doLocalStreamEffect({ effectStream: undefined, only: only as "audio" | "video" }),
+            );
+
+            const getTracks = only === "audio" ? "getAudioTracks" : "getVideoTracks";
+            const getOtherTracks = only === "audio" ? "getVideoTracks" : "getAudioTracks";
+            const effectedStreamSelectedTracks = effectStream[getTracks]();
+            const originalStreamReplacedTracks = stream[getTracks]();
+            const effectedStreamNotSelectedTracks = effectStream[getOtherTracks]();
+            const originalStreamIntactTracks = stream[getOtherTracks]();
+
+            originalStreamReplacedTracks.forEach((effectedTrack) => {
+                const replaced = effectedStreamSelectedTracks.filter(
+                    (selectedTrack) => selectedTrack.id === effectedTrack.id,
+                );
+                expect(replaced.length).toEqual(0);
+            });
+
+            originalStreamIntactTracks.forEach((intactTrack) => {
+                const replaced = effectedStreamNotSelectedTracks.filter(
+                    (notSelectedTrack) => notSelectedTrack.id === intactTrack.id,
+                );
+                expect(replaced.length).toEqual(0);
+            });
+        });
+    });
 });
