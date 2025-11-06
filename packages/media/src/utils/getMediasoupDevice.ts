@@ -16,5 +16,8 @@ export const getMediasoupDeviceAsync = async (features: Record<string, boolean |
         handlerName = "Safari12";
     }
 
+    // for handling devices not detected by mediasoup-client, like "Dalvik/2.1.0 (Linux; U; Android 15; SM-A336B Build/AP3A.240905.015.A2)"
+    if (!handlerName) handlerName = "Chrome111";
+
     return new Device({ handlerName });
 };
