@@ -41,5 +41,6 @@ export interface RoomConnectionActions {
     removeSpotlight: (clientId: string) => void;
     joinBreakoutGroup: (group: string) => void;
     joinBreakoutMainRoom: () => void;
-    replaceEffectStream: (newStream: MediaStream | null) => Promise<void>;
+    replaceStream: (newStream: MediaStream) => Promise<void>;
+    removeEffectStream: () => Promise<void>;
 }

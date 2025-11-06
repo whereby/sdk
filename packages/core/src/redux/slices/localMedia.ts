@@ -37,6 +37,10 @@ export interface LocalMediaState {
     stream?: MediaStream;
     isSwitchingStream: boolean;
     onDeviceChange?: () => void;
+    beforeEffectTracks?: {
+        audio?: MediaStreamTrack;
+        video?: MediaStreamTrack;
+    };
 }
 
 export const initialLocalMediaState: LocalMediaState = {
@@ -244,12 +248,22 @@ export const localMediaSlice = createSlice({
             return {
                 ...state,
                 isSwitchingStream: false,
+                // beforeEffectTracks: { ...state.beforeEffectTracks, ...payload.beforeEffectTracks },
             };
         });
         builder.addCase(doSwitchLocalStream.rejected, (state) => {
             return {
                 ...state,
                 isSwitchingStream: false,
+            };
+        });
+        builder.addCase(doLocalStreamEffect.fulfilled, (state, { payload }) => {
+            if (!payload) {
+                return state;
+            }
+            return {
+                ...state,
+                beforeEffectTracks: { ...state.beforeEffectTracks, ...payload.beforeEffectTracks },
             };
         });
     },
@@ -450,6 +464,16 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             return;
         }
 
+        const beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
+        if (audioId !== undefined && beforeEffectTracks?.audio) {
+            beforeEffectTracks.audio.stop();
+            beforeEffectTracks.audio = undefined;
+        }
+        if (videoId !== undefined && beforeEffectTracks?.video) {
+            beforeEffectTracks.video.stop();
+            beforeEffectTracks.video = undefined;
+        }
+
         try {
             const { replacedTracks } = await getStream(
                 {
@@ -469,7 +493,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                     }),
                 );
             }
-            return { replacedTracks };
+            return { replacedTracks, beforeEffectTracks };
         } catch (error) {
             console.error(error);
             const deviceId = audioId || videoId;
@@ -548,13 +572,53 @@ export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
 
 export const doLocalStreamEffect = createAppAsyncThunk(
     "localMedia/doLocalStreamEffect",
-    async ({ effectStream }: { effectStream: MediaStream }, { getState }) => {
+    async (
+        {
+            effectStream,
+            only,
+            stopBeforeTrack,
+        }: { effectStream?: MediaStream; only: "audio" | "video"; stopBeforeTrack?: boolean },
+        { getState },
+    ) => {
         const state = getState();
-        const replaceStream = selectLocalMediaStream(state);
-        if (!replaceStream) {
+        let beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
+        const beforeTrack = beforeEffectTracks?.[only];
+        if (!effectStream && !beforeTrack) return;
+
+        try {
+            const stream = selectLocalMediaStream(state);
+            let replacedTracks: MediaStreamTrack[] | null = null;
+            if (!stream) {
+                throw new Error("No local media stream");
+            }
+            if (effectStream) {
+                if (!beforeTrack) {
+                    beforeEffectTracks = {
+                        [only]: (only === "audio" ? stream?.getAudioTracks() : stream?.getVideoTracks())?.[0],
+                    };
+                }
+                replacedTracks = replaceTracksInStream(stream, effectStream, only);
+            } else if (!stopBeforeTrack) {
+                // go back to how it used to be
+                replacedTracks = replaceTracksInStream(
+                    stream,
+                    beforeTrack ? new MediaStream([beforeTrack]) : new MediaStream(),
+                    only,
+                );
+                beforeEffectTracks = {
+                    [only]: undefined,
+                };
+            } else if (beforeTrack) {
+                beforeEffectTracks = {
+                    [only]: undefined,
+                };
+                beforeTrack.stop();
+            }
+            return { effectStream, beforeEffectTracks, replacedTracks };
+        } catch (error) {
+            console.error("Error applying local stream effect", error);
             return;
         }
-        return replaceTracksInStream(replaceStream, effectStream, "video");
     },
 );
 
@@ -582,6 +646,7 @@ export const selectLocalMediaStream = (state: RootState) => state.localMedia.str
 export const selectMicrophoneDeviceError = (state: RootState) => state.localMedia.microphoneDeviceError;
 export const selectLocalMediaStartError = (state: RootState) => state.localMedia.startError;
 export const selectLocalMediaIsSwitchingStream = (state: RootState) => state.localMedia.isSwitchingStream;
+export const selectLocalMediaBeforeEffectTracks = (state: RootState) => state.localMedia.beforeEffectTracks;
 export const selectLocalMediaConstraintsOptions = createSelector(
     selectLocalMediaDevices,
     selectCurrentCameraDeviceId,
