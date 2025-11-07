@@ -80,5 +80,13 @@
         "btoa": "^1.2.1",
         "events": "^3.3.0"
     },
+    "peerDependencies": {
+        "@whereby.com/camera-effects": "^0.1.0"
+    },
+    "peerDependenciesMeta": {
+        "@whereby.com/camera-effects": {
+            "optional": true
+        }
+    },
     "prettier": "@whereby.com/prettier-config"
 }

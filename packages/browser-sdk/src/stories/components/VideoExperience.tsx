@@ -85,8 +85,8 @@ export default function VideoExperience({
         askToTurnOnCamera,
         joinBreakoutGroup,
         joinBreakoutMainRoom,
-        replaceStream,
-        removeEffectStream,
+        switchCameraEffect,
+        clearCameraEffect,
     } = actions;
 
     async function loadBackgroundEffects() {
@@ -95,18 +95,6 @@ export default function VideoExperience({
         const { getUsablePresets } = await import("@whereby.com/camera-effects");
         const usablePresets = getUsablePresets(() => true, { allowSafari: true });
         setEffectPresets(usablePresets);
-    }
-
-    async function replaceEffect(stream: MediaStream, effectPreset: string) {
-        const { createEffectStream } = await import("@whereby.com/camera-effects");
-
-        const effectStream = await createEffectStream(stream, effectPreset);
-
-        if (!effectStream) {
-            console.warn("No effect stream created");
-            return;
-        }
-        await replaceStream(effectStream.stream);
     }
 
     useEffect(() => {
@@ -362,11 +350,11 @@ export default function VideoExperience({
 
                     {showCameraEffects ? (
                         <div>
-                            <button onClick={() => removeEffectStream()}>Remove background effect</button>
+                            <button onClick={() => clearCameraEffect()}>Remove background effect</button>
                             <select
                                 value=""
                                 onChange={(e) => {
-                                    replaceEffect(localParticipant!.stream!, e.target.value);
+                                    switchCameraEffect(e.target.value);
                                 }}
                             >
                                 <option value="" disabled>
