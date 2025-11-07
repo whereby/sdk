@@ -2,10 +2,12 @@
     "name": "@whereby.com/camera-effects",
     "version": "0.1.0",
     "description": "Effects on top of camera stream",
-    "private": true,
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
+    "publishConfig": {
+        "access": "public"
+    },
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
@@ -26,6 +28,7 @@
         "lint:fix": "eslint --fix ."
     },
     "devDependencies": {
+        "@rollup/plugin-wasm": "^6.2.2",
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/jest-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
@@ -35,6 +38,7 @@
         "rollup": "^4.22.4"
     },
     "dependencies": {
+        "events": "^3.3.0",
         "wasm-feature-detect": "^1.8.0",
         "webrtc-adapter": "^8.1.0"
     },
