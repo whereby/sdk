@@ -117,14 +117,14 @@ export function useRoomConnection(
     const endMeeting = React.useCallback((stayBehind?: boolean) => client.endMeeting(stayBehind), [client]);
     const joinBreakoutGroup = React.useCallback((group: string) => client.joinBreakoutGroup(group), [client]);
     const joinBreakoutMainRoom = React.useCallback(() => client.joinBreakoutMainRoom(), [client]);
-    const replaceStream = React.useCallback(
-        async (effectStream: MediaStream) => {
-            await client.replaceStream(effectStream);
+    const switchCameraEffect = React.useCallback(
+        async (effectId: string) => {
+            await client.switchCameraEffect(effectId);
         },
         [client],
     );
-    const removeEffectStream = React.useCallback(async () => {
-        await client.removeEffectStream();
+    const clearCameraEffect = React.useCallback(async () => {
+        await client.clearCameraEffect();
     }, [client]);
 
     const { events, ...state } = roomConnectionState;
@@ -159,8 +159,8 @@ export function useRoomConnection(
             removeSpotlight,
             joinBreakoutGroup,
             joinBreakoutMainRoom,
-            replaceStream,
-            removeEffectStream,
+            switchCameraEffect,
+            clearCameraEffect,
         },
     };
 }

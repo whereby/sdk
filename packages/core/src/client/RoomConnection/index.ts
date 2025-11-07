@@ -30,7 +30,6 @@ import {
     toggleCameraEnabled,
     toggleLowDataModeEnabled,
     toggleMicrophoneEnabled,
-    doLocalStreamEffect,
 } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import type {
@@ -68,6 +67,7 @@ import {
 import { selectRoomConnectionState } from "./selector";
 import { coreVersion } from "../../version";
 import { BaseClient } from "../BaseClient";
+import { doCameraEffectsSwitchPreset } from "../../redux/slices/cameraEffects";
 
 export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomConnectionEvents> {
     private options: WherebyClientOptions;
@@ -559,11 +559,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
 
     /**
      * Replace the local stream with a new effect stream.
-     * @param newStream - The new MediaStream to use as the effect stream.
+     * @param effectId - The ID of the effect to use.
      */
-    public async replaceStream(newStream: MediaStream): Promise<void> {
+    public async switchCameraEffect(effectId: string): Promise<void> {
         try {
-            await this.store.dispatch(doLocalStreamEffect({ effectStream: newStream, only: "video" }));
+            await this.store.dispatch(doCameraEffectsSwitchPreset({ effectId }));
         } catch (error) {
             return Promise.reject(error);
         }
@@ -574,9 +574,9 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     /**
      * Remove the effect stream and revert to the original local stream.
      */
-    public async removeEffectStream(): Promise<void> {
+    public async clearCameraEffect(): Promise<void> {
         try {
-            await this.store.dispatch(doLocalStreamEffect({ effectStream: undefined, only: "video" }));
+            await this.store.dispatch(doCameraEffectsSwitchPreset({ effectId: null }));
         } catch (error) {
             return Promise.reject(error);
         }
