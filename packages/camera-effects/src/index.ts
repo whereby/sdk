@@ -99,6 +99,12 @@ presets.push(
         { id: "sunrise", backgroundUrl: import("../assets/backgrounds/sunrise-720p.png") },
         { id: "day", backgroundUrl: import("../assets/backgrounds/day-720p.png") },
         { id: "night", backgroundUrl: import("../assets/backgrounds/night-720p.png") },
+        { id: "clay", backgroundUrl: import("../assets/backgrounds/clay.png") },
+        { id: "focus", backgroundUrl: import("../assets/backgrounds/focus.png") },
+        { id: "glow", backgroundUrl: import("../assets/backgrounds/glow.png") },
+        { id: "haven", backgroundUrl: import("../assets/backgrounds/haven.png") },
+        { id: "pulse", backgroundUrl: import("../assets/backgrounds/pulse.png") },
+        { id: "studio", backgroundUrl: import("../assets/backgrounds/studio.png") },
         { id: "custom" },
     ].map(({ id, backgroundUrl }) => ({
         id: `image-${id}`,
