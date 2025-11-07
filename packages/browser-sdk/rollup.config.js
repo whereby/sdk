@@ -116,6 +116,7 @@ module.exports = [
             globals: {
                 react: "React",
             },
+            inlineDynamicImports: true,
         },
         external: [...peerDependencies],
         plugins: [

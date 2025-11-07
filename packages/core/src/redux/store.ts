@@ -23,6 +23,7 @@ import { rtcConnectionSlice } from "./slices/rtcConnection";
 import { spotlightsSlice } from "./slices/spotlights";
 import { streamingSlice } from "./slices/streaming";
 import { waitingParticipantsSlice } from "./slices/waitingParticipants";
+import { cameraEffectsSlice } from "./slices/cameraEffects";
 
 const IS_DEV = process.env.REACT_APP_IS_DEV === "true";
 
@@ -30,6 +31,7 @@ const appReducer = combineReducers({
     app: appSlice.reducer,
     authorization: authorizationSlice.reducer,
     breakout: breakoutSlice.reducer,
+    cameraEffects: cameraEffectsSlice.reducer,
     chat: chatSlice.reducer,
     cloudRecording: cloudRecordingSlice.reducer,
     connectionMonitor: connectionMonitorSlice.reducer,
