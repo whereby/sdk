@@ -3,50 +3,57 @@ import { simd } from "wasm-feature-detect";
 
 import createTflite from "../../../assets/tflite/tflite.js";
 import createTfliteSimd from "../../../assets/tflite/tflite-simd.js";
-import tfliteWasmUrl from "../../../assets/tflite/tflite.wasm";
-import tfliteSimdWasmUrl from "../../../assets/tflite/tflite-simd.wasm";
 
-import modelMeetLiteUrl from "../../../assets/tflite/models/segm_lite_v681.tflite";
-import modelMeetFullUrl from "../../../assets/tflite/models/segm_full_v679.tflite";
-import modelMLKitUrl from "../../../assets/tflite/models/selfiesegmentation_mlkit-256x256-2021_01_19-v1215.f16.tflite";
+import tfliteWasmUrl from "../../../assets/tflite/tflite.wasm?url";
+import tfliteSimdWasmUrl from "../../../assets/tflite/tflite-simd.wasm?url";
+
+import modelMeetLiteUrl from "../../../assets/tflite/models/segm_lite_v681.tflite?url";
+import modelMeetFullUrl from "../../../assets/tflite/models/segm_full_v679.tflite?url";
+import modelMLKitUrl from "../../../assets/tflite/models/selfiesegmentation_mlkit-256x256-2021_01_19-v1215.f16.tflite?url";
 
 export const SEGMENTATIONMODEL_TYPE_BACKGROUND_PERSON = 1;
 export const SEGMENTATIONMODEL_TYPE_PERSON = 2;
 
-const fixWebPackGeneratedFileUrl = (url) => {
-    // Resolve asset relative to this module URL so bundlers/dev servers serve from node_modules correctly
+const resolveAssetUrl = (url) => {
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) {
+        return url;
+    }
     return new URL(url, import.meta.url).href;
 };
 
 const models = {
     meetlite: {
-        url: fixWebPackGeneratedFileUrl(modelMeetLiteUrl),
+        url: resolveAssetUrl(modelMeetLiteUrl),
         type: SEGMENTATIONMODEL_TYPE_BACKGROUND_PERSON,
     },
     meetfull: {
-        url: fixWebPackGeneratedFileUrl(modelMeetFullUrl),
+        url: resolveAssetUrl(modelMeetFullUrl),
         type: SEGMENTATIONMODEL_TYPE_BACKGROUND_PERSON,
     },
     mlkit: {
-        url: fixWebPackGeneratedFileUrl(modelMLKitUrl),
+        url: resolveAssetUrl(modelMLKitUrl),
         type: SEGMENTATIONMODEL_TYPE_PERSON,
     },
 };
 
 let _tflite = null;
+
 // Returns tensorflow lite, SIMD version if supported
 const loadTFLite = async () => {
     if (_tflite) return _tflite; // only load tflite+wasm once
     const simdIsSupported = await simd();
+
     _tflite = await (simdIsSupported ? createTfliteSimd : createTflite)({
         // override default path hardcoded in tflite.js
         locateFile(path) {
             if (path.endsWith(".wasm")) {
-                return fixWebPackGeneratedFileUrl(simdIsSupported ? tfliteSimdWasmUrl : tfliteWasmUrl);
+                const wasmUrl = simdIsSupported ? tfliteSimdWasmUrl : tfliteWasmUrl;
+                return resolveAssetUrl(wasmUrl);
             }
             return path;
         },
     });
+
     return _tflite;
 };
 
