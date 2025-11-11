@@ -595,6 +595,9 @@ importers:
 
   packages/camera-effects:
     dependencies:
+      events:
+        specifier: ^3.3.0
+        version: 3.3.0
       wasm-feature-detect:
         specifier: ^1.8.0
         version: 1.8.0
@@ -602,6 +605,9 @@ importers:
         specifier: ^8.1.0
         version: 8.2.4
     devDependencies:
+      '@rollup/plugin-wasm':
+        specifier: ^6.2.2
+        version: 6.2.2(rollup@4.44.1)
       '@whereby.com/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
@@ -3369,6 +3375,15 @@ packages:
 
   '@rollup/plugin-url@8.0.2':
     resolution: {integrity: sha512-5yW2LP5NBEgkvIRSSEdJkmxe5cUNZKG3eenKtfJvSkxVm/xTTu7w+ayBtNwhozl1ZnTUCU0xFaRQR+cBl2H7TQ==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
+  '@rollup/plugin-wasm@6.2.2':
+    resolution: {integrity: sha512-gpC4R1G9Ni92ZIRTexqbhX7U+9estZrbhP+9SRb0DW9xpB9g7j34r+J2hqrcW/lRI7dJaU84MxZM0Rt82tqYPQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -12579,6 +12594,12 @@ snapshots:
       '@rollup/pluginutils': 5.2.0(rollup@4.44.1)
       make-dir: 3.1.0
       mime: 3.0.0
+    optionalDependencies:
+      rollup: 4.44.1
+
+  '@rollup/plugin-wasm@6.2.2(rollup@4.44.1)':
+    dependencies:
+      '@rollup/pluginutils': 5.2.0(rollup@4.44.1)
     optionalDependencies:
       rollup: 4.44.1
 

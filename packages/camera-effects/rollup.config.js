@@ -19,24 +19,41 @@ const replaceValues = baseConfig(__dirname, {}).replaceValues;
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 const dependencies = [...Object.keys(pkg.dependencies || {})];
-const external = [...dependencies, ...peerDependencies];
+const external = [...dependencies.filter((dep) => dep !== "events"), ...peerDependencies];
 
 const tsOptions = {
     tsconfig: "tsconfig.build.json",
 };
 
-// Plugin to handle binary assets (WASM, images, videos, models)
-const assetPlugin = url({
-    include: ["**/*.wasm", "**/*.tflite", "**/*.jpg", "**/*.png", "**/*.mp4"],
-    limit: 0, // Never inline, always emit as separate files
+const wasmPlugin = url({
+    include: ["**/*.wasm"],
+    limit: 0,
+    fileName: "assets/tflite/[name][extname]",
+    publicPath: "./",
+});
+
+const tflitePlugin = url({
+    include: ["**/*.tflite"],
+    limit: 0,
+    fileName: "assets/tflite/models/[name][extname]",
+    publicPath: "./",
+});
+
+const imageAssetPlugin = url({
+    include: ["**/*.jpg", "**/*.png", "**/*.mp4"],
+    limit: 0,
     fileName: "assets/[dirname][name][extname]",
     publicPath: "./",
 });
 
-// Plugin to resolve .js imports to .ts files in assets directory
-const resolveJsToTs = () => ({
-    name: "resolve-js-to-ts",
+const handleUrlImports = () => ({
+    name: "handle-url-imports",
     resolveId(source, importer) {
+        if (source.includes("?url")) {
+            const cleanSource = source.replace("?url", "");
+            const resolved = path.resolve(path.dirname(importer || __dirname), cleanSource);
+            return resolved;
+        }
         if (source.endsWith(".js") && source.includes("assets/tflite")) {
             const tsPath = source.replace(/\.js$/, ".ts");
             return path.resolve(path.dirname(importer || __dirname), tsPath);
@@ -58,51 +75,19 @@ const externalizeWorkers = () => ({
 
 const plugins = [
     externalizeWorkers(),
-    resolveJsToTs(),
-    assetPlugin,
+    handleUrlImports(),
+    wasmPlugin,
+    tflitePlugin,
+    imageAssetPlugin,
     replace(replaceValues),
     nodeResolve({
-        preferBuiltins: true,
+        preferBuiltins: false,
+        browser: true,
         extensions: [".mjs", ".js", ".ts", ".json", ".node"],
     }),
     commonjs(),
     typescript(tsOptions),
 ];
-
-// Plugin to copy assets to dist folder
-const copyAssets = () => ({
-    name: "copy-assets",
-    writeBundle() {
-        const assetsDir = path.join(__dirname, "assets");
-        const distDir = path.join(__dirname, "dist", "assets");
-
-        // Recursively copy directory
-        const copyDir = (src, dest) => {
-            if (!fs.existsSync(dest)) {
-                fs.mkdirSync(dest, { recursive: true });
-            }
-
-            const entries = fs.readdirSync(src, { withFileTypes: true });
-
-            for (const entry of entries) {
-                const srcPath = path.join(src, entry.name);
-                const destPath = path.join(dest, entry.name);
-
-                if (entry.isDirectory()) {
-                    copyDir(srcPath, destPath);
-                } else if (!entry.name.endsWith(".ts") && !entry.name.endsWith(".js")) {
-                    // Skip .ts and .js files - they should be handled by rollup
-                    fs.copyFileSync(srcPath, destPath);
-                }
-            }
-        };
-
-        if (fs.existsSync(assetsDir)) {
-            copyDir(assetsDir, distDir);
-            console.log("✓ Copied assets to dist/assets");
-        }
-    },
-});
 
 module.exports = [
     // Main entry point - ESM build
@@ -116,7 +101,7 @@ module.exports = [
                 inlineDynamicImports: true,
             },
         ],
-        plugins: [...plugins, copyAssets()],
+        plugins: [...plugins],
         external,
     },
 
@@ -164,8 +149,10 @@ module.exports = [
             return id.includes("timer.worker");
         },
         plugins: [
-            resolveJsToTs(),
-            assetPlugin,
+            handleUrlImports(),
+            wasmPlugin,
+            tflitePlugin,
+            imageAssetPlugin,
             replace(replaceValues),
             nodeResolve({
                 preferBuiltins: false,
@@ -187,8 +174,10 @@ module.exports = [
             },
         ],
         plugins: [
-            resolveJsToTs(),
-            assetPlugin,
+            handleUrlImports(),
+            wasmPlugin,
+            tflitePlugin,
+            imageAssetPlugin,
             replace(replaceValues),
             nodeResolve({
                 preferBuiltins: false,
