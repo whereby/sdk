@@ -15,14 +15,17 @@
             "require": "./dist/index.cjs",
             "default": "./dist/index.mjs"
         },
-        "./assets/*": "./dist/assets/*",
         "./workers/*": "./dist/workers/*"
     },
     "files": [
-        "dist"
+        "dist/**",
+        "!dist/cdn",
+        "!dist/assets"
     ],
     "scripts": {
         "build": "rollup -c",
+        "build:dev": "REACT_APP_IS_DEV=true rollup -c",
+        "build:prod": "REACT_APP_IS_DEV=false rollup -c",
         "clean": "rimraf dist",
         "lint": "eslint .",
         "lint:fix": "eslint --fix ."
