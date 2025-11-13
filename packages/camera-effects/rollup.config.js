@@ -32,6 +32,20 @@ function makeCdnPath() {
     return `v${major}${tag}`;
 }
 
+const CDN_BASE_URL = process.env.CDN_BASE_URL || "https://cdn.srv.whereby.com/camera-effects";
+
+const IS_DEV = process.env.REACT_APP_IS_DEV === "true";
+
+const createReplaceValues = () => ({
+    preventAssignment: true,
+    delimiters: ["", ""],
+    values: {
+        ...replaceValues.values,
+        __ASSET_CDN_BASE_URL__: IS_DEV ? "" : `${CDN_BASE_URL}/${makeCdnPath()}`,
+        __USE_CDN_ASSETS__: IS_DEV ? "false" : "true",
+    },
+});
+
 const copyAssetsToCdn = () => ({
     name: "copy-assets-to-cdn",
     async generateBundle() {
@@ -76,7 +90,45 @@ const tsOptions = {
     tsconfig: "tsconfig.build.json",
 };
 
-// Plugin to handle worker imports by making them external
+const url = require("@rollup/plugin-url");
+
+const wasmPlugin = url({
+    include: ["**/*.wasm"],
+    limit: 0,
+    fileName: "assets/tflite/[name][extname]",
+    publicPath: "./",
+});
+
+const tflitePlugin = url({
+    include: ["**/*.tflite"],
+    limit: 0,
+    fileName: "assets/tflite/models/[name][extname]",
+    publicPath: "./",
+});
+
+const imageAssetPlugin = url({
+    include: ["**/*.jpg", "**/*.png", "**/*.mp4"],
+    limit: 0,
+    fileName: "assets/[dirname][name][extname]",
+    publicPath: "./",
+});
+
+const handleUrlImports = () => ({
+    name: "handle-url-imports",
+    resolveId(source, importer) {
+        if (source.includes("?url")) {
+            const cleanSource = source.replace("?url", "");
+            const resolved = path.resolve(path.dirname(importer || __dirname), cleanSource);
+            return resolved;
+        }
+        if (source.endsWith(".js") && source.includes("assets/tflite")) {
+            const tsPath = source.replace(/\.js$/, ".ts");
+            return path.resolve(path.dirname(importer || __dirname), tsPath);
+        }
+        return null;
+    },
+});
+
 const externalizeWorkers = () => ({
     name: "externalize-workers",
     resolveId(source) {
@@ -87,16 +139,10 @@ const externalizeWorkers = () => ({
     },
 });
 
-// Plugin to externalize asset imports (they will be loaded from CDN)
 const externalizeAssets = () => ({
     name: "externalize-assets",
-    resolveId(source) {
-        // Externalize asset imports with ?url suffix
-        if (source.includes("?url") || source.match(/\.(wasm|tflite|jpg|png|mp4)$/)) {
-            return { id: source, external: true };
-        }
-        // Also externalize the tflite.js and tflite-simd.js imports from assets
-        if (source.includes("assets/tflite/tflite") && source.endsWith(".js")) {
+    resolveId(source, importer) {
+        if (source.includes("assets/") && !source.endsWith(".js") && !source.endsWith(".ts")) {
             return { id: source, external: true };
         }
         return null;
@@ -105,8 +151,7 @@ const externalizeAssets = () => ({
 
 const plugins = [
     externalizeWorkers(),
-    externalizeAssets(),
-    replace(replaceValues),
+    ...(IS_DEV ? [handleUrlImports(), wasmPlugin, tflitePlugin, imageAssetPlugin] : [externalizeAssets()]),
     nodeResolve({
         preferBuiltins: false,
         browser: true,
@@ -114,6 +159,7 @@ const plugins = [
     }),
     commonjs(),
     typescript(tsOptions),
+    replace(createReplaceValues()),
 ];
 
 module.exports = [
@@ -128,7 +174,7 @@ module.exports = [
                 inlineDynamicImports: true,
             },
         ],
-        plugins: [...plugins],
+        plugins,
         external,
     },
 
@@ -169,19 +215,17 @@ module.exports = [
             {
                 format: "iife",
                 file: "dist/workers/ProcessorProxy.worker.js",
+                inlineDynamicImports: true,
             },
         ],
         external: (id) => {
             // Mark timer.worker as external, but not the entry point
             if (id.includes("timer.worker")) return true;
-            // Also externalize assets
-            if (id.includes("?url") || id.match(/\.(wasm|tflite|jpg|png|mp4)$/)) return true;
-            if (id.includes("assets/tflite/tflite") && id.endsWith(".js")) return true;
             return false;
         },
         plugins: [
-            externalizeAssets(),
-            replace(replaceValues),
+            // In dev: bundle assets locally; In production: externalize for CDN
+            ...(IS_DEV ? [handleUrlImports(), wasmPlugin, tflitePlugin, imageAssetPlugin] : [externalizeAssets()]),
             nodeResolve({
                 preferBuiltins: false,
                 browser: true,
@@ -189,6 +233,7 @@ module.exports = [
             }),
             commonjs(),
             typescript(tsOptions),
+            replace(createReplaceValues()),
         ],
     },
 
@@ -199,11 +244,11 @@ module.exports = [
             {
                 format: "iife",
                 file: "dist/workers/timer.worker.js",
+                inlineDynamicImports: true,
             },
         ],
         plugins: [
-            externalizeAssets(),
-            replace(replaceValues),
+            ...(IS_DEV ? [handleUrlImports(), wasmPlugin, tflitePlugin, imageAssetPlugin] : [externalizeAssets()]),
             nodeResolve({
                 preferBuiltins: false,
                 browser: true,
@@ -211,6 +256,7 @@ module.exports = [
             }),
             commonjs(),
             typescript(tsOptions),
+            replace(createReplaceValues()),
         ],
     },
 

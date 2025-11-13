@@ -4,6 +4,53 @@ import * as tfliteSegmentCanvasEffectsModule from "./pipelines/tfliteSegmentCanv
 import { loadSegmentationModel } from "./pipelines/tfliteSegmentCanvasEffects/segmentationModel";
 import { createBackgroundElement, fixBackgroundUrlPromise } from "./pipelines/shared";
 import { Params, Pipeline, Preset } from "./types";
+import { assetUrls, USE_CDN_ASSETS } from "./assetUrls";
+
+// Helper to load background URLs
+const getBackgroundUrl = async (name: keyof typeof assetUrls.backgrounds): Promise<{ default: string }> => {
+    if (USE_CDN_ASSETS) {
+        return { default: assetUrls.backgrounds[name]! };
+    } else {
+        // Load from local assets - using dynamic import with full path
+        const backgrounds: Record<string, () => Promise<{ default: string }>> = {
+            "cabin-720p.jpg": () => import("../assets/backgrounds/cabin-720p.jpg"),
+            "concrete-720p.jpg": () => import("../assets/backgrounds/concrete-720p.jpg"),
+            "brick-720p.jpg": () => import("../assets/backgrounds/brick-720p.jpg"),
+            "sunrise-720p.png": () => import("../assets/backgrounds/sunrise-720p.png"),
+            "day-720p.png": () => import("../assets/backgrounds/day-720p.png"),
+            "night-720p.png": () => import("../assets/backgrounds/night-720p.png"),
+            "clay.png": () => import("../assets/backgrounds/clay.png"),
+            "focus.png": () => import("../assets/backgrounds/focus.png"),
+            "glow.png": () => import("../assets/backgrounds/glow.png"),
+            "haven.png": () => import("../assets/backgrounds/haven.png"),
+            "pulse.png": () => import("../assets/backgrounds/pulse.png"),
+            "studio.png": () => import("../assets/backgrounds/studio.png"),
+            "neon.mp4": () => import("../assets/backgrounds/neon.mp4"),
+            "bubbles.mp4": () => import("../assets/backgrounds/bubbles.mp4"),
+        };
+
+        // Map the asset name to the filename
+        const filenameMap: Record<keyof typeof assetUrls.backgrounds, string> = {
+            cabin: "cabin-720p.jpg",
+            concrete: "concrete-720p.jpg",
+            brick: "brick-720p.jpg",
+            sunrise: "sunrise-720p.png",
+            day: "day-720p.png",
+            night: "night-720p.png",
+            clay: "clay.png",
+            focus: "focus.png",
+            glow: "glow.png",
+            haven: "haven.png",
+            pulse: "pulse.png",
+            studio: "studio.png",
+            neon: "neon.mp4",
+            bubbles: "bubbles.mp4",
+        };
+
+        const filename = filenameMap[name];
+        return await backgrounds[filename]();
+    }
+};
 
 // check for webgl2 support
 const canUseWebGL = (function () {
@@ -93,25 +140,25 @@ const presets: Preset[] = [
 
 presets.push(
     ...[
-        { id: "cabin", backgroundUrl: import("../assets/backgrounds/cabin-720p.jpg") },
-        { id: "concrete", backgroundUrl: import("../assets/backgrounds/concrete-720p.jpg") },
-        { id: "brick", backgroundUrl: import("../assets/backgrounds/brick-720p.jpg") },
-        { id: "sunrise", backgroundUrl: import("../assets/backgrounds/sunrise-720p.png") },
-        { id: "day", backgroundUrl: import("../assets/backgrounds/day-720p.png") },
-        { id: "night", backgroundUrl: import("../assets/backgrounds/night-720p.png") },
-        { id: "clay", backgroundUrl: import("../assets/backgrounds/clay.png") },
-        { id: "focus", backgroundUrl: import("../assets/backgrounds/focus.png") },
-        { id: "glow", backgroundUrl: import("../assets/backgrounds/glow.png") },
-        { id: "haven", backgroundUrl: import("../assets/backgrounds/haven.png") },
-        { id: "pulse", backgroundUrl: import("../assets/backgrounds/pulse.png") },
-        { id: "studio", backgroundUrl: import("../assets/backgrounds/studio.png") },
+        { id: "cabin", backgroundName: "cabin" as const },
+        { id: "concrete", backgroundName: "concrete" as const },
+        { id: "brick", backgroundName: "brick" as const },
+        { id: "sunrise", backgroundName: "sunrise" as const },
+        { id: "day", backgroundName: "day" as const },
+        { id: "night", backgroundName: "night" as const },
+        { id: "clay", backgroundName: "clay" as const },
+        { id: "focus", backgroundName: "focus" as const },
+        { id: "glow", backgroundName: "glow" as const },
+        { id: "haven", backgroundName: "haven" as const },
+        { id: "pulse", backgroundName: "pulse" as const },
+        { id: "studio", backgroundName: "studio" as const },
         { id: "custom" },
-    ].map(({ id, backgroundUrl }) => ({
+    ].map(({ id, backgroundName }) => ({
         id: `image-${id}`,
         pipelineConfigs: {
             tfliteSegmentCanvasEffects: {
                 params: {
-                    backgroundUrl,
+                    backgroundUrl: backgroundName ? getBackgroundUrl(backgroundName) : undefined,
                 },
             },
         },
@@ -120,19 +167,20 @@ presets.push(
 
 // video works as well
 presets.push(
-    ...[import("../assets/backgrounds/neon.mp4"), import("../assets/backgrounds/bubbles.mp4")].map(
-        (urlModule, index) => ({
-            id: `video-${index + 1}`,
-            pipelineConfigs: {
-                tfliteSegmentCanvasEffects: {
-                    params: {
-                        backgroundType: "video" as const,
-                        backgroundUrl: urlModule,
-                    },
+    ...[
+        { name: "neon" as const, index: 1 },
+        { name: "bubbles" as const, index: 2 },
+    ].map(({ name, index }) => ({
+        id: `video-${index}`,
+        pipelineConfigs: {
+            tfliteSegmentCanvasEffects: {
+                params: {
+                    backgroundType: "video" as const,
+                    backgroundUrl: getBackgroundUrl(name),
                 },
             },
-        }),
-    ),
+        },
+    })),
 );
 
 // merges the default setup/params, with anything set by the preset, with anything set by the api user

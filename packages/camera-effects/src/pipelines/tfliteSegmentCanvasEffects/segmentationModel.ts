@@ -1,15 +1,49 @@
 // @ts-nocheck
 import { simd } from "wasm-feature-detect";
+import { assetUrls, USE_CDN_ASSETS } from "../../assetUrls";
 
-import createTflite from "../../../assets/tflite/tflite.js";
-import createTfliteSimd from "../../../assets/tflite/tflite-simd.js";
+const loadTfliteModule = async (isSimd: boolean) => {
+    const createTfliteModule = isSimd
+        ? await import("../../../assets/tflite/tflite-simd.js").then((m) => m.default)
+        : await import("../../../assets/tflite/tflite.js").then((m) => m.default);
+    return createTfliteModule;
+};
 
-import tfliteWasmUrl from "../../../assets/tflite/tflite.wasm?url";
-import tfliteSimdWasmUrl from "../../../assets/tflite/tflite-simd.wasm?url";
+const getModelUrl = async (modelId: string) => {
+    if (USE_CDN_ASSETS) {
+        switch (modelId) {
+            case "meetlite":
+                return assetUrls.models.segmLite;
+            case "meetfull":
+                return assetUrls.models.segmFull;
+            case "mlkit":
+                return assetUrls.models.mlkit;
+        }
+    } else {
+        switch (modelId) {
+            case "meetlite":
+                return (await import("../../../assets/tflite/models/segm_lite_v681.tflite?url")).default;
+            case "meetfull":
+                return (await import("../../../assets/tflite/models/segm_full_v679.tflite?url")).default;
+            case "mlkit":
+                return (
+                    await import(
+                        "../../../assets/tflite/models/selfiesegmentation_mlkit-256x256-2021_01_19-v1215.f16.tflite?url"
+                    )
+                ).default;
+        }
+    }
+};
 
-import modelMeetLiteUrl from "../../../assets/tflite/models/segm_lite_v681.tflite?url";
-import modelMeetFullUrl from "../../../assets/tflite/models/segm_full_v679.tflite?url";
-import modelMLKitUrl from "../../../assets/tflite/models/selfiesegmentation_mlkit-256x256-2021_01_19-v1215.f16.tflite?url";
+const getWasmUrl = async (isSimd: boolean) => {
+    if (USE_CDN_ASSETS) {
+        return isSimd ? assetUrls.tflite.wasmSimd : assetUrls.tflite.wasm;
+    } else {
+        return isSimd
+            ? (await import("../../../assets/tflite/tflite-simd.wasm?url")).default
+            : (await import("../../../assets/tflite/tflite.wasm?url")).default;
+    }
+};
 
 export const SEGMENTATIONMODEL_TYPE_BACKGROUND_PERSON = 1;
 export const SEGMENTATIONMODEL_TYPE_PERSON = 2;
@@ -23,31 +57,31 @@ const resolveAssetUrl = (url) => {
 
 const models = {
     meetlite: {
-        url: resolveAssetUrl(modelMeetLiteUrl),
+        id: "meetlite",
         type: SEGMENTATIONMODEL_TYPE_BACKGROUND_PERSON,
     },
     meetfull: {
-        url: resolveAssetUrl(modelMeetFullUrl),
+        id: "meetfull",
         type: SEGMENTATIONMODEL_TYPE_BACKGROUND_PERSON,
     },
     mlkit: {
-        url: resolveAssetUrl(modelMLKitUrl),
+        id: "mlkit",
         type: SEGMENTATIONMODEL_TYPE_PERSON,
     },
 };
 
 let _tflite = null;
 
-// Returns tensorflow lite, SIMD version if supported
 const loadTFLite = async () => {
-    if (_tflite) return _tflite; // only load tflite+wasm once
+    if (_tflite) return _tflite;
     const simdIsSupported = await simd();
 
-    _tflite = await (simdIsSupported ? createTfliteSimd : createTflite)({
-        // override default path hardcoded in tflite.js
+    const createTfliteModule = await loadTfliteModule(simdIsSupported);
+    const wasmUrl = await getWasmUrl(simdIsSupported);
+
+    _tflite = await createTfliteModule({
         locateFile(path) {
             if (path.endsWith(".wasm")) {
-                const wasmUrl = simdIsSupported ? tfliteSimdWasmUrl : tfliteWasmUrl;
                 return resolveAssetUrl(wasmUrl);
             }
             return path;
@@ -58,14 +92,14 @@ const loadTFLite = async () => {
 };
 
 let _currentModelAndInfo;
-// Returns tensorflow lite loaded with segmentation model, and model details
 export const loadSegmentationModel = async (segmentationModelId) => {
     const model = models[segmentationModelId];
+    const modelUrl = resolveAssetUrl(await getModelUrl(model.id));
     const tflite = await loadTFLite();
-    if (_currentModelAndInfo?.url === model.url) return _currentModelAndInfo; // only load model once
+    if (_currentModelAndInfo?.url === modelUrl) return _currentModelAndInfo; // only load model once
 
     // fetch model
-    const modelResponse = await fetch(model.url);
+    const modelResponse = await fetch(modelUrl);
     const modelBuffer = await modelResponse.arrayBuffer();
     // copy model to tflite and initialize
     const modelBufferOffset = tflite._getModelBufferMemoryOffset();
@@ -85,7 +119,7 @@ export const loadSegmentationModel = async (segmentationModelId) => {
     _currentModelAndInfo = {
         tflite,
         model,
-        url: model.url,
+        url: modelUrl,
         inputHeight,
         inputWidth,
         inputMemoryOffset,

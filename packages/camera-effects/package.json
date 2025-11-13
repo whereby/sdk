@@ -24,6 +24,8 @@
     ],
     "scripts": {
         "build": "rollup -c",
+        "build:dev": "REACT_APP_IS_DEV=true rollup -c",
+        "build:prod": "REACT_APP_IS_DEV=false rollup -c",
         "clean": "rimraf dist",
         "lint": "eslint .",
         "lint:fix": "eslint --fix ."
