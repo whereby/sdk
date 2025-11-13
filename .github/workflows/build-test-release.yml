@@ -62,6 +62,15 @@ jobs:
                   package: "browser-sdk"
                   dest_dir: "embed"
 
+            - name: Deploy CDN assets - camera-effects
+              if: steps.changesets.outputs.published == 'true' && contains(fromJSON(steps.changesets.outputs.publishedPackages).*.name, '@whereby.com/camera-effects')
+              uses: ./.github/actions/deploy-cdn
+              with:
+                  aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  package: "camera-effects"
+                  dest_dir: "camera-effects"
+
             - name: Send Slack message
               if: steps.changesets.outputs.published == 'true'
               uses: ./.github/actions/notify-slack

@@ -629,6 +629,9 @@ importers:
       rollup:
         specifier: ^4.22.4
         version: 4.44.1
+      rollup-plugin-web-worker-loader:
+        specifier: ^1.7.0
+        version: 1.7.0(rollup@4.44.1)
 
   packages/core:
     dependencies:
@@ -8306,6 +8309,11 @@ packages:
     peerDependencies:
       rollup: '>=1.26.3'
       typescript: '>=2.4.0'
+
+  rollup-plugin-web-worker-loader@1.7.0:
+    resolution: {integrity: sha512-msfN4FpdoTtfSCbeTZ8yPYmfi2/66Q53gQGmvOrEz/UfqZgCkSkGjaxsZt7TQ1V0s0tLJAe6HL+EdA7IBaUF6w==}
+    peerDependencies:
+      rollup: ^1.9.2 || ^2.0.0 || ^3.0.0 || ^4.0.0
 
   rollup@4.44.1:
     resolution: {integrity: sha512-x8H8aPvD+xbl0Do8oez5f5o8eMS3trfCghc4HhLAnCkj7Vl0d1JWGs0UF/D886zLW2rOj2QymV/JcSSsw+XDNg==}
@@ -18799,6 +18807,10 @@ snapshots:
       semver: 7.7.2
       tslib: 2.8.1
       typescript: 5.8.3
+
+  rollup-plugin-web-worker-loader@1.7.0(rollup@4.44.1):
+    dependencies:
+      rollup: 4.44.1
 
   rollup@4.44.1:
     dependencies:
