@@ -15,11 +15,12 @@
             "require": "./dist/index.cjs",
             "default": "./dist/index.mjs"
         },
-        "./assets/*": "./dist/assets/*",
         "./workers/*": "./dist/workers/*"
     },
     "files": [
-        "dist"
+        "dist/**",
+        "!dist/cdn",
+        "!dist/assets"
     ],
     "scripts": {
         "build": "rollup -c",
