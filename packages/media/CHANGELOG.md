@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.5.2
+
+### Patch Changes
+
+- 96ff5f3: Handle null error on GUM calls
+
 ## 2.5.1
 
 ### Patch Changes
