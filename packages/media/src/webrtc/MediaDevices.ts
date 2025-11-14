@@ -320,8 +320,8 @@ export async function getStream(
                 }
             }
         } else if (!e) {
-            // Probably a null exception was thrown.
-            // If both video and audio was requested, retry both seperatly.
+            // Probably a null error was thrown.
+            // If both video and audio was requested, retry both separately.
             await getSingleStream(e);
         }
     }
