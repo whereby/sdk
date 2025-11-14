@@ -471,10 +471,92 @@ describe("getStream", () => {
         expect(result.stream).toBeDefined();
         expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
         expect(mockGUM.mock.calls[0][0].video).toEqual(expect.any(Object));
-        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined();
+        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined(); // We re-request video only first
         expect(mockGUM.mock.calls[1][0].video).toEqual(expect.any(Object));
-        expect(mockGUM.mock.calls[2][0].video).toBeUndefined();
+        expect(mockGUM.mock.calls[2][0].video).toBeUndefined(); // We re-request audio only second
         expect(mockGUM.mock.calls[2][0].audio).toEqual(expect.any(Object));
+    });
+
+    it("should obtain video only stream if GUM failed with null error because of audio", async () => {
+        let callCount = 0;
+        const mockGUM: any = jest.fn(() => {
+            if (callCount === 1) return Promise.resolve(helpers.createMockedMediaStream([videoTrack1]));
+            else {
+                callCount++;
+                return Promise.reject(null);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        const result = await MediaDevices.getStream(
+            {
+                devices,
+                videoId: vdev1.deviceId,
+                audioId: adev1.deviceId,
+                type,
+            },
+            { replaceStream: stream },
+        );
+
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[0][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined(); // We re-request video only first
+        expect(mockGUM.mock.calls[1][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls.length).toEqual(2);
+    });
+
+    it("should obtain audio only stream if GUM failed with null error because of video", async () => {
+        let callCount = 0;
+        const mockGUM: any = jest.fn(() => {
+            if (callCount === 2) return Promise.resolve(helpers.createMockedMediaStream([audioTrack1]));
+            else {
+                callCount++;
+                return Promise.reject(null);
+            }
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        const result = await MediaDevices.getStream(
+            {
+                devices,
+                videoId: vdev1.deviceId,
+                audioId: adev1.deviceId,
+                type,
+            },
+            { replaceStream: stream },
+        );
+
+        expect(result.stream).toBeDefined();
+        expect(mockGUM.mock.calls[0][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[0][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[1][0].audio).toBeUndefined(); // We re-request video only first
+        expect(mockGUM.mock.calls[1][0].video).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls[2][0].video).toBeUndefined(); // We re-request audio only second
+        expect(mockGUM.mock.calls[2][0].audio).toEqual(expect.any(Object));
+        expect(mockGUM.mock.calls.length).toEqual(3);
+    });
+
+    it("should throw if null error can't obtain a stream", async () => {
+        const mockGUM: any = jest.fn(() => {
+            return Promise.reject(null);
+        });
+        global.navigator.mediaDevices.getUserMedia = mockGUM;
+        const type = "exact";
+
+        await expect(
+            MediaDevices.getStream(
+                {
+                    devices,
+                    videoId: vdev1.deviceId,
+                    audioId: adev1.deviceId,
+                    type,
+                },
+                { replaceStream: stream },
+            ),
+        ).rejects.toThrow();
     });
 
     it("should stop tracks and retry with same constraints on NotAllowedError", async () => {

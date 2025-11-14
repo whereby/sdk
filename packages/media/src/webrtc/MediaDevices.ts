@@ -213,16 +213,20 @@ export async function getStream(
     // unless required.
     const stopTracks = isMobile || only !== "video";
     const constraints = getConstraints(constraintOpt);
-    const addDetails = (err: any, orgErr?: any) => {
-        err.details = {
-            constraints,
-            constraint: err.constraint || orgErr?.constraint,
-            newConstraints,
-            fallback,
-            stopTracks,
-            ...(err !== error && { error: String(error) }),
-        };
-        return err;
+    const addDetails = (err?: any, orgErr?: any) => {
+        if (err) {
+            err.details = {
+                constraints,
+                constraint: err.constraint || orgErr?.constraint,
+                newConstraints,
+                fallback,
+                stopTracks,
+                ...(err !== error && { error: String(error) }),
+            };
+            return err;
+        } else {
+            return new Error("Unknown error");
+        }
     };
 
     const getSingleStream = async (e?: any) => {
@@ -234,7 +238,7 @@ export async function getStream(
             try {
                 stream = await getUserMedia(getConstraints({ ...constraintOpt, audioId: false }));
             } catch (e2: any) {
-                if (e2.name !== "NotFoundError") {
+                if (e2?.name !== "NotFoundError") {
                     addDetails(e2, e);
                 }
             }
@@ -254,7 +258,7 @@ export async function getStream(
         if (!fallback) {
             throw addDetails(e);
         }
-        if (e.name === "OverconstrainedError") {
+        if (e?.name === "OverconstrainedError") {
             const laxConstraints = {
                 deviceId: { videoId: null, audioId: null },
                 width: { lax: true },
@@ -262,9 +266,9 @@ export async function getStream(
                 "": { audioId: null, videoId: null, lax: true },
             } as any;
             retryConstraintOpt = laxConstraints[e.constraint || ""];
-        } else if (e.name === "NotFoundError") {
+        } else if (e?.name === "NotFoundError") {
             await getSingleStream(e);
-        } else if (e.name === "NotAllowedError" || e.name === "NotReadableError" || e.name === "AbortError") {
+        } else if (e?.name === "NotAllowedError" || e?.name === "NotReadableError" || e?.name === "AbortError") {
             // NotAllowedError - User didn't allow us
             // NotReadableError - OS can't read
             // AbortError - Other error for browser giving us this
@@ -274,7 +278,7 @@ export async function getStream(
                 stopStreamTracks(replaceStream, only);
                 retryConstraintOpt = constraintOpt;
             }
-            if (e.name === "NotAllowedError") {
+            if (e?.name === "NotAllowedError") {
                 await getSingleStream(e);
             }
             // No existing stream, try to get a new stream
@@ -315,6 +319,10 @@ export async function getStream(
                     }
                 }
             }
+        } else if (!e) {
+            // Probably a null error was thrown.
+            // If both video and audio was requested, retry both separately.
+            await getSingleStream(e);
         }
     }
     if (retryConstraintOpt) {
