@@ -14,7 +14,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager } from "./types";
-import { sortCodecs } from "../utils";
+import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 
 // @ts-ignore
@@ -49,7 +49,7 @@ export default class P2pRtcManager implements RtcManager {
     _socketListenerDeregisterFunctions: any[];
     _localStreamDeregisterFunction: any;
     _emitter: any;
-    _serverSocket: any;
+    _serverSocket: ServerSocket;
     _webrtcProvider: any;
     _features: any;
     _isAudioOnlyMode: boolean;
@@ -74,6 +74,8 @@ export default class P2pRtcManager implements RtcManager {
     icePublicIPGatheringTimeoutID: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
+    _closed: boolean;
+    skipEmittingServerMessageCount: number;
 
     constructor({
         selfId,
@@ -86,7 +88,7 @@ export default class P2pRtcManager implements RtcManager {
         selfId: any;
         room: any;
         emitter: any;
-        serverSocket: any;
+        serverSocket: ServerSocket;
         webrtcProvider: any;
         features: any;
     }) {
@@ -106,6 +108,8 @@ export default class P2pRtcManager implements RtcManager {
         this._webrtcProvider = webrtcProvider;
         this._features = features || {};
         this._isAudioOnlyMode = false;
+        this._closed = false;
+        this.skipEmittingServerMessageCount = 0;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
@@ -219,6 +223,11 @@ export default class P2pRtcManager implements RtcManager {
             this._monitorVideoTrack(newTrack);
         }
         return this._replaceTrackToPeerConnections(oldTrack, newTrack);
+    }
+
+    close() {
+        this._closed = true;
+        this.disconnectAll();
     }
 
     disconnectAll() {
@@ -449,8 +458,17 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _emitServerEvent(eventName: string, data?: any, callback?: any) {
-        this._serverSocket.emit(eventName, data, callback);
+    _emitServerEvent(eventName: string, data?: any) {
+        if (this._closed) {
+            logger.warn("RtcManager closed. Will not send event", eventName, data);
+            return;
+        }
+        if (this._features.awaitJoinRoomFinished && !this._serverSocket.joinRoomFinished) {
+            rtcStats.sendEvent("skip_emitting_server_message", { eventName });
+            this.skipEmittingServerMessageCount++;
+        } else {
+            this._serverSocket.emit(eventName, data);
+        }
     }
 
     _emit(eventName: string, data?: any) {

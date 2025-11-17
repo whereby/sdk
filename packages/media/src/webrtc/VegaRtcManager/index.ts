@@ -1648,6 +1648,10 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
+    close() {
+        this.disconnectAll();
+    }
+
     disconnectAll() {
         this._reconnect = false;
         if (this._reconnectTimeOut) {

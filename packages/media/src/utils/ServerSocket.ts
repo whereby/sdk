@@ -3,6 +3,7 @@ import adapterRaw from "webrtc-adapter";
 import { ReconnectManager } from "./ReconnectManager";
 import { PROTOCOL_RESPONSES } from "../model/protocol";
 import { RtcManager } from "../webrtc";
+import { RoomJoinedEvent, RoomJoinedErrors } from "./types";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -20,6 +21,7 @@ export class ServerSocket {
     noopKeepaliveInterval: any;
     _wasConnectedUsingWebsocket?: boolean;
     disconnectTimestamp: number | undefined;
+    joinRoomFinished: boolean;
 
     constructor(hostName: string, optionsOverrides?: any, glitchFree = false) {
         this._wasConnectedUsingWebsocket = false;
@@ -34,6 +36,7 @@ export class ServerSocket {
             withCredentials: true,
             ...optionsOverrides,
         });
+        this.joinRoomFinished = false;
         this._socket.io.on("reconnect", () => {
             this._socket.sendBuffer = [];
         });
@@ -54,6 +57,13 @@ export class ServerSocket {
 
         if (glitchFree) this._reconnectManager = new ReconnectManager(this._socket);
 
+        this._socket.on("room_joined", (payload: RoomJoinedEvent) => {
+            const { error } = payload as RoomJoinedErrors;
+            if (!error) {
+                this.joinRoomFinished = true;
+            }
+        });
+
         this._socket.on("connect", () => {
             const transport = this.getTransport();
             if (transport === "websocket") {
@@ -73,6 +83,7 @@ export class ServerSocket {
         });
 
         this._socket.on("disconnect", () => {
+            this.joinRoomFinished = false;
             this.disconnectTimestamp = Date.now();
             if (this.noopKeepaliveInterval) {
                 clearInterval(this.noopKeepaliveInterval);
@@ -98,31 +109,12 @@ export class ServerSocket {
         this._socket.disconnect();
     }
 
-    disconnectOnConnect() {
-        this._socket.once("connect", () => {
-            this._socket.disconnect();
-        });
-    }
-
     emit(eventName: string, ...args: any[]) {
         this._socket.emit.apply(this._socket, arguments);
     }
 
-    emitIfConnected(eventName: string, data: any) {
-        if (!this.isConnected()) {
-            return;
-        }
-        this.emit(eventName, data);
-    }
-
     getTransport() {
-        return (
-            this._socket &&
-            this._socket.io &&
-            this._socket.io.engine &&
-            this._socket.io.engine.transport &&
-            this._socket.io.engine.transport.name
-        );
+        return this._socket?.io?.engine?.transport?.name;
     }
 
     getManager() {
