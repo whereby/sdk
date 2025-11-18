@@ -3,6 +3,7 @@ const typescript = require("rollup-plugin-typescript2");
 const commonjs = require("@rollup/plugin-commonjs");
 const replace = require("@rollup/plugin-replace");
 const nodeResolve = require("@rollup/plugin-node-resolve");
+const webWorkerLoader = require("rollup-plugin-web-worker-loader");
 const pkg = require("./package.json");
 const { dts } = require("rollup-plugin-dts");
 const dotenv = require("dotenv");
@@ -129,16 +130,6 @@ const handleUrlImports = () => ({
     },
 });
 
-const externalizeWorkers = () => ({
-    name: "externalize-workers",
-    resolveId(source) {
-        if (source.includes(".worker.js") || source.includes(".worker.ts")) {
-            return { id: source, external: true };
-        }
-        return null;
-    },
-});
-
 const externalizeAssets = () => ({
     name: "externalize-assets",
     resolveId(source, importer) {
@@ -150,8 +141,13 @@ const externalizeAssets = () => ({
 });
 
 const plugins = [
-    externalizeWorkers(),
     ...(IS_DEV ? [handleUrlImports(), wasmPlugin, tflitePlugin, imageAssetPlugin] : [externalizeAssets()]),
+    webWorkerLoader({
+        extensions: ["js", "ts"],
+        inline: true,
+        preserveSource: true,
+        targetPlatform: "browser",
+    }),
     nodeResolve({
         preferBuiltins: false,
         browser: true,
@@ -206,58 +202,6 @@ module.exports = [
         ],
         plugins,
         external,
-    },
-
-    // Web Worker - ProcessorProxy worker
-    {
-        input: "src/pipelines/tfliteSegmentCanvasEffects/ProcessorProxy.worker.ts",
-        output: [
-            {
-                format: "iife",
-                file: "dist/workers/ProcessorProxy.worker.js",
-                inlineDynamicImports: true,
-            },
-        ],
-        external: (id) => {
-            // Mark timer.worker as external, but not the entry point
-            if (id.includes("timer.worker")) return true;
-            return false;
-        },
-        plugins: [
-            // In dev: bundle assets locally; In production: externalize for CDN
-            ...(IS_DEV ? [handleUrlImports(), wasmPlugin, tflitePlugin, imageAssetPlugin] : [externalizeAssets()]),
-            nodeResolve({
-                preferBuiltins: false,
-                browser: true,
-                extensions: [".mjs", ".js", ".ts", ".json", ".node"],
-            }),
-            commonjs(),
-            typescript(tsOptions),
-            replace(createReplaceValues()),
-        ],
-    },
-
-    // Web Worker - Timer worker
-    {
-        input: "src/pipelines/timer.worker.ts",
-        output: [
-            {
-                format: "iife",
-                file: "dist/workers/timer.worker.js",
-                inlineDynamicImports: true,
-            },
-        ],
-        plugins: [
-            ...(IS_DEV ? [handleUrlImports(), wasmPlugin, tflitePlugin, imageAssetPlugin] : [externalizeAssets()]),
-            nodeResolve({
-                preferBuiltins: false,
-                browser: true,
-                extensions: [".mjs", ".js", ".ts", ".json", ".node"],
-            }),
-            commonjs(),
-            typescript(tsOptions),
-            replace(createReplaceValues()),
-        ],
     },
 
     // CDN Assets - Copy assets to CDN

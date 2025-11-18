@@ -14,13 +14,13 @@
             "import": "./dist/index.mjs",
             "require": "./dist/index.cjs",
             "default": "./dist/index.mjs"
-        },
-        "./workers/*": "./dist/workers/*"
+        }
     },
     "files": [
         "dist/**",
         "!dist/cdn",
-        "!dist/assets"
+        "!dist/assets",
+        "!dist/workers"
     ],
     "scripts": {
         "build": "rollup -c",
@@ -38,7 +38,8 @@
         "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
         "rimraf": "^5.0.5",
-        "rollup": "^4.22.4"
+        "rollup": "^4.22.4",
+        "rollup-plugin-web-worker-loader": "^1.7.0"
     },
     "dependencies": {
         "events": "^3.3.0",
