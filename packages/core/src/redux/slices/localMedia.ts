@@ -248,7 +248,6 @@ export const localMediaSlice = createSlice({
             return {
                 ...state,
                 isSwitchingStream: false,
-                // beforeEffectTracks: { ...state.beforeEffectTracks, ...payload.beforeEffectTracks },
             };
         });
         builder.addCase(doSwitchLocalStream.rejected, (state) => {

@@ -6,12 +6,10 @@ import { createBackgroundElement, fixBackgroundUrlPromise } from "./pipelines/sh
 import { Params, Pipeline, Preset } from "./types";
 import { assetUrls, USE_CDN_ASSETS } from "./assetUrls";
 
-// Helper to load background URLs
 const getBackgroundUrl = async (name: keyof typeof assetUrls.backgrounds): Promise<{ default: string }> => {
     if (USE_CDN_ASSETS) {
         return { default: assetUrls.backgrounds[name]! };
     } else {
-        // Load from local assets - using dynamic import with full path
         const backgrounds: Record<string, () => Promise<{ default: string }>> = {
             "cabin-720p.jpg": () => import("../assets/backgrounds/cabin-720p.jpg"),
             "concrete-720p.jpg": () => import("../assets/backgrounds/concrete-720p.jpg"),
@@ -29,7 +27,6 @@ const getBackgroundUrl = async (name: keyof typeof assetUrls.backgrounds): Promi
             "bubbles.mp4": () => import("../assets/backgrounds/bubbles.mp4"),
         };
 
-        // Map the asset name to the filename
         const filenameMap: Record<keyof typeof assetUrls.backgrounds, string> = {
             cabin: "cabin-720p.jpg",
             concrete: "concrete-720p.jpg",
@@ -140,18 +137,18 @@ const presets: Preset[] = [
 
 presets.push(
     ...[
+        { id: "clay", backgroundName: "clay" as const },
+        { id: "haven", backgroundName: "haven" as const },
+        { id: "focus", backgroundName: "focus" as const },
+        { id: "studio", backgroundName: "studio" as const },
+        { id: "glow", backgroundName: "glow" as const },
+        { id: "pulse", backgroundName: "pulse" as const },
         { id: "cabin", backgroundName: "cabin" as const },
         { id: "concrete", backgroundName: "concrete" as const },
         { id: "brick", backgroundName: "brick" as const },
         { id: "sunrise", backgroundName: "sunrise" as const },
         { id: "day", backgroundName: "day" as const },
         { id: "night", backgroundName: "night" as const },
-        { id: "clay", backgroundName: "clay" as const },
-        { id: "focus", backgroundName: "focus" as const },
-        { id: "glow", backgroundName: "glow" as const },
-        { id: "haven", backgroundName: "haven" as const },
-        { id: "pulse", backgroundName: "pulse" as const },
-        { id: "studio", backgroundName: "studio" as const },
         { id: "custom" },
     ].map(({ id, backgroundName }) => ({
         id: `image-${id}`,
@@ -288,13 +285,19 @@ export const createEffectStream = async (
 
 // returns list of usable presets. A custom filter ( ()=>true ) can be provided to test effects on unsupported browsers
 export const getUsablePresets = (
-    filter = (pipeline: Pipeline, options: { allowSafari?: boolean }) => pipeline.canUse(options),
-    options: { allowSafari?: boolean },
+    {
+        filter,
+        options,
+    }: {
+        filter?: (pipeline: Pipeline, options: { allowSafari?: boolean }) => boolean;
+        options?: { allowSafari?: boolean };
+    } = { filter: (p, o) => p.canUse(o), options: {} },
 ) =>
     presets
+        .filter((preset) => (preset.id === "image-custom" ? false : true))
         .filter((preset) =>
             Object.keys(preset.pipelineConfigs ?? []).find((pipelineId) =>
-                filter(pipelines[pipelineId as keyof typeof pipelines], options),
+                filter?.(pipelines[pipelineId as keyof typeof pipelines], options ?? {}),
             ),
         )
         .map((preset) => preset.id);
@@ -320,7 +323,8 @@ export const warmup = async (
     params: Params = {},
 ) => {
     // choose preset (fallback to first usable or first defined)
-    const chosenPresetId = presetId || getUsablePresets((p) => p.canUse({}), {}).at(0) || presets.at(0)?.id;
+    const chosenPresetId =
+        presetId || getUsablePresets({ filter: (p) => p.canUse({}), options: {} }).at(0) || presets.at(0)?.id;
     if (!chosenPresetId) return;
 
     const merged = getPresetAndMergedParams(chosenPresetId, setup, params);

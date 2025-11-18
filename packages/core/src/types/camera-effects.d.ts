@@ -14,7 +14,13 @@ declare module "@whereby.com/camera-effects" {
         [key: string]: string | number | boolean | undefined;
     }
 
-    export function getUsablePresets(filter?: (s: string) => boolean, opts?: { allowSafari?: boolean }): string[];
+    export function getUsablePresets({
+        filter,
+        opts,
+    }?: {
+        filter?: (s: string) => boolean;
+        options?: { allowSafari?: boolean };
+    } = {}): string[];
     export function createEffectStream(
         inputStream: MediaStream,
         presetId: string,

@@ -133,7 +133,7 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
             }
 
             const { createEffectStream, getUsablePresets } = mod;
-            const usable = getUsablePresets(() => true, { allowSafari });
+            const usable = getUsablePresets({ filter: () => true, options: { allowSafari } });
             if (!usable.includes(effectId)) {
                 throw new Error(`Unknown or unsupported effect preset: ${effectId}`);
             }
