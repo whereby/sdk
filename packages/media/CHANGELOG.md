@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.5.3
+
+### Patch Changes
+
+- f95668e: Add feature to await valid room connection
+
 ## 2.5.2
 
 ### Patch Changes
