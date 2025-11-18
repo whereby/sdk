@@ -793,6 +793,7 @@ startAppListening({
         doUpdateDeviceList.fulfilled,
         doSwitchLocalStream.fulfilled,
         doSwitchLocalStream.rejected,
+        doLocalStreamEffect.fulfilled,
     ),
     effect: (_action, { dispatch, getState }) => {
         const state = getState();
