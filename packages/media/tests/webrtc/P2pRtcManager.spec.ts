@@ -293,7 +293,6 @@ describe("P2pRtcManager", () => {
                         expect(serverSocket.emit).toHaveBeenCalledWith(
                             PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
                             undefined,
-                            undefined,
                         );
                     });
 
@@ -311,7 +310,6 @@ describe("P2pRtcManager", () => {
 
                         expect(serverSocket.emit).toHaveBeenCalledWith(
                             PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
-                            undefined,
                             undefined,
                         );
                     });
@@ -353,11 +351,9 @@ describe("P2pRtcManager", () => {
             it("emits READY_TO_RECEIVE_OFFER on the server socket", () => {
                 rtcManager.acceptNewStream({ clientId, streamId: "0" });
 
-                expect(serverSocketStub.socket.emit).toHaveBeenCalledWith(
-                    RELAY_MESSAGES.READY_TO_RECEIVE_OFFER,
-                    { receiverId: clientId },
-                    undefined,
-                );
+                expect(serverSocketStub.socket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
+                    receiverId: clientId,
+                });
             });
         });
 
@@ -664,14 +660,10 @@ describe("P2pRtcManager", () => {
                 const candidatePackage = helpers.getValidCandidatePackage();
                 pc.onicecandidate({ candidate: candidatePackage });
 
-                expect(serverSocket.emit).toHaveBeenCalledWith(
-                    RELAY_MESSAGES.ICE_CANDIDATE,
-                    {
-                        receiverId: clientId,
-                        message: candidatePackage,
-                    },
-                    undefined,
-                );
+                expect(serverSocket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.ICE_CANDIDATE, {
+                    receiverId: clientId,
+                    message: candidatePackage,
+                });
             });
 
             // TODO: Is this test relevant? We do not filter candidates in this path..
@@ -682,14 +674,10 @@ describe("P2pRtcManager", () => {
                 const candidatePackage = helpers.getValidRelayCandidatePackage();
                 pc.onicecandidate({ candidate: candidatePackage });
 
-                expect(serverSocket.emit).toHaveBeenCalledWith(
-                    RELAY_MESSAGES.ICE_CANDIDATE,
-                    {
-                        receiverId: clientId,
-                        message: candidatePackage,
-                    },
-                    undefined,
-                );
+                expect(serverSocket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.ICE_CANDIDATE, {
+                    receiverId: clientId,
+                    message: candidatePackage,
+                });
             });
         });
 

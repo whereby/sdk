@@ -261,7 +261,7 @@ export interface RoomJoinedSuccess {
 
 export type RoomJoinedEvent = RoomJoinedErrors | RoomJoinedSuccess;
 
-export interface BreakoutSessionUpdatedEvent extends BreakoutConfig { }
+export interface BreakoutSessionUpdatedEvent extends BreakoutConfig {}
 
 export interface RoomKnockedEvent {
     clientId: string;
