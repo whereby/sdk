@@ -93,7 +93,7 @@ export default function VideoExperience({
         if (!showCameraEffects) return;
 
         const { getUsablePresets } = await import("@whereby.com/camera-effects");
-        const usablePresets = getUsablePresets(() => true, { allowSafari: true });
+        const usablePresets = getUsablePresets();
         setEffectPresets(usablePresets);
     }
 

@@ -89,6 +89,7 @@ const copyAssetsToCdn = () => ({
 
 const tsOptions = {
     tsconfig: "tsconfig.build.json",
+    filter: (id) => !id.includes("rollup-plugin-worker-loader"),
 };
 
 const url = require("@rollup/plugin-url");
@@ -98,6 +99,8 @@ const wasmPlugin = url({
     limit: 0,
     fileName: "assets/tflite/[name][extname]",
     publicPath: "./",
+    destDir: path.join(__dirname, "dist"),
+    emitFiles: true,
 });
 
 const tflitePlugin = url({
@@ -105,6 +108,8 @@ const tflitePlugin = url({
     limit: 0,
     fileName: "assets/tflite/models/[name][extname]",
     publicPath: "./",
+    destDir: path.join(__dirname, "dist"),
+    emitFiles: true,
 });
 
 const imageAssetPlugin = url({
@@ -112,19 +117,27 @@ const imageAssetPlugin = url({
     limit: 0,
     fileName: "assets/[dirname][name][extname]",
     publicPath: "./",
+    destDir: path.join(__dirname, "dist"),
+    emitFiles: true,
 });
 
 const handleUrlImports = () => ({
     name: "handle-url-imports",
     resolveId(source, importer) {
+        if (source.includes("rollup-plugin-worker-loader")) {
+            return null;
+        }
+
+        const baseDir = importer ? path.dirname(importer) : __dirname;
+
         if (source.includes("?url")) {
             const cleanSource = source.replace("?url", "");
-            const resolved = path.resolve(path.dirname(importer || __dirname), cleanSource);
+            const resolved = path.resolve(baseDir, cleanSource);
             return resolved;
         }
         if (source.endsWith(".js") && source.includes("assets/tflite")) {
             const tsPath = source.replace(/\.js$/, ".ts");
-            return path.resolve(path.dirname(importer || __dirname), tsPath);
+            return path.resolve(baseDir, tsPath);
         }
         return null;
     },
@@ -142,12 +155,6 @@ const externalizeAssets = () => ({
 
 const plugins = [
     ...(IS_DEV ? [handleUrlImports(), wasmPlugin, tflitePlugin, imageAssetPlugin] : [externalizeAssets()]),
-    webWorkerLoader({
-        extensions: ["js", "ts"],
-        inline: true,
-        preserveSource: true,
-        targetPlatform: "browser",
-    }),
     nodeResolve({
         preferBuiltins: false,
         browser: true,
@@ -155,6 +162,11 @@ const plugins = [
     }),
     commonjs(),
     typescript(tsOptions),
+    webWorkerLoader({
+        extensions: ["js", "ts"],
+        inline: true,
+        targetPlatform: "browser",
+    }),
     replace(createReplaceValues()),
 ];
 
