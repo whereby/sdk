@@ -41,6 +41,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
 
     const connection = {
         connected: false,
+        attemptedConnectedAtLeastOnce: false,
         trace: (...args: any) => {
             args.push(Date.now());
 
@@ -114,6 +115,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             connectionAttempt += 1;
             ws?.close();
             connection.connected = true;
+            connection.attemptedConnectedAtLeastOnce = true;
             ws = new WebSocket(wsURL + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
 
             ws.onerror = (e: Event) => {

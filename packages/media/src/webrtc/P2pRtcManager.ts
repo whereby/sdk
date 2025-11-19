@@ -379,12 +379,18 @@ export default class P2pRtcManager implements RtcManager {
         rtcStats.sendEvent(eventName, data);
     }
 
+    rtcStatsConnect() {
+        if (!rtcStats.server.connected) {
+            rtcStats.server.connect();
+        }
+    }
+
     rtcStatsDisconnect() {
         rtcStats.server.close();
     }
 
     rtcStatsReconnect() {
-        if (!rtcStats.server.connected) {
+        if (!rtcStats.server.connected && rtcStats.server.attemptedConnectedAtLeastOnce) {
             rtcStats.server.connect();
         }
     }
@@ -888,6 +894,11 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     _connect(clientId: string) {
+        // bring rtcstats back up if disconnected
+        try {
+            this.rtcStatsReconnect();
+        } catch (_) {}
+
         let session = this._getSession(clientId);
         let initialBandwidth = (session && session.bandwidth) || 0;
         if (session) {
