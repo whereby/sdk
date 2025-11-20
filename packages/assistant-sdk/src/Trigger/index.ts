@@ -12,6 +12,8 @@ import {
     WherebyWebhookRoomSessionStarted,
     WherebyWebhookRoomClientLeft,
     WherebyWebhookRoomSessionEnded,
+    WherebyWebhookAssistantRequested,
+    WebhookEventType,
 } from "./types.js";
 
 import { buildRoomUrl } from "../utils/buildRoomUrl.js";
@@ -21,6 +23,62 @@ export * from "./types.js";
 export interface TriggerOptions {
     webhookTriggers: WherebyWebhookTriggers;
     port?: number;
+}
+
+async function calculateTrigger({
+    body: rawBody,
+    eventType,
+    webhookTriggers,
+}: {
+    body: WherebyWebhookType;
+    eventType: WebhookEventType;
+    webhookTriggers: WherebyWebhookTriggers;
+}): Promise<{ data: WherebyWebhookType["data"]; shouldTriggerOnReceivedWebhook: boolean } | null> {
+    if (!webhookTriggers[eventType]) {
+        return null;
+    }
+    switch (eventType) {
+        case "assistant.requested": {
+            const body = rawBody as WherebyWebhookAssistantRequested;
+            const trigger = webhookTriggers["assistant.requested"]!;
+            return {
+                data: body.data,
+                shouldTriggerOnReceivedWebhook: await trigger(body),
+            };
+        }
+        case "room.client.joined": {
+            const body = rawBody as WherebyWebhookRoomClientJoined;
+            const trigger = webhookTriggers["room.client.joined"]!;
+            return {
+                data: body.data,
+                shouldTriggerOnReceivedWebhook: await trigger(body),
+            };
+        }
+        case "room.client.left": {
+            const body = rawBody as WherebyWebhookRoomClientLeft;
+            const trigger = webhookTriggers["room.client.left"]!;
+            return {
+                data: body.data,
+                shouldTriggerOnReceivedWebhook: await trigger(body),
+            };
+        }
+        case "room.session.started": {
+            const body = rawBody as WherebyWebhookRoomSessionStarted;
+            const trigger = webhookTriggers["room.session.started"]!;
+            return {
+                data: body.data,
+                shouldTriggerOnReceivedWebhook: await trigger(body),
+            };
+        }
+        case "room.session.ended": {
+            const body = rawBody as WherebyWebhookRoomSessionEnded;
+            const trigger = webhookTriggers["room.session.ended"]!;
+            return {
+                data: body.data,
+                shouldTriggerOnReceivedWebhook: await trigger(body),
+            };
+        }
+    }
 }
 
 const webhookRouter = (webhookTriggers: WherebyWebhookTriggers, emitter: EventEmitter<TriggerEvents>) => {
@@ -37,32 +95,14 @@ const webhookRouter = (webhookTriggers: WherebyWebhookTriggers, emitter: EventEm
         assert(req.body, "message body is required");
         assert("type" in req.body, "webhook type is required");
 
-        let shouldTriggerOnReceivedWebhook: boolean = false;
-
-        switch (req.body.type) {
-            case "room.client.joined":
-                shouldTriggerOnReceivedWebhook =
-                    (await webhookTriggers["room.client.joined"]?.(req.body as WherebyWebhookRoomClientJoined)) ??
-                    false;
-                break;
-            case "room.client.left":
-                shouldTriggerOnReceivedWebhook =
-                    (await webhookTriggers["room.client.left"]?.(req.body as WherebyWebhookRoomClientLeft)) ?? false;
-                break;
-            case "room.session.started":
-                shouldTriggerOnReceivedWebhook =
-                    (await webhookTriggers["room.session.started"]?.(req.body as WherebyWebhookRoomSessionStarted)) ??
-                    false;
-                break;
-            case "room.session.ended":
-                shouldTriggerOnReceivedWebhook =
-                    (await webhookTriggers["room.session.ended"]?.(req.body as WherebyWebhookRoomSessionEnded)) ??
-                    false;
-                break;
-        }
-
-        if (shouldTriggerOnReceivedWebhook) {
-            const roomUrl = buildRoomUrl(req.body.data.roomName, req.body.data.subdomain);
+        const result = await calculateTrigger({
+            body: req.body,
+            eventType: req.body.type,
+            webhookTriggers,
+        });
+        if (result?.shouldTriggerOnReceivedWebhook) {
+            const { data } = result;
+            const roomUrl = buildRoomUrl(data.roomName, data.subdomain);
 
             emitter.emit(TRIGGER_EVENT_SUCCESS, { roomUrl, triggerWebhook: req.body });
         }
