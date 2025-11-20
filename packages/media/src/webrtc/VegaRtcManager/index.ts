@@ -1698,12 +1698,18 @@ export default class VegaRtcManager implements RtcManager {
         rtcStats.sendEvent(eventName, data);
     }
 
+    rtcStatsConnect() {
+        if (!rtcStats.server.connected) {
+            rtcStats.server.connect();
+        }
+    }
+
     rtcStatsDisconnect() {
         rtcStats.server.close();
     }
 
     rtcStatsReconnect() {
-        if (!rtcStats.server.connected) {
+        if (!rtcStats.server.connected && rtcStats.server.attemptedConnectedAtLeastOnce) {
             rtcStats.server.connect();
         }
     }
