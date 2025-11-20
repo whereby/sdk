@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.5.4
+
+### Patch Changes
+
+- cd89873: media: Fixes rtcstats disconnecting and never reconnecting
+
 ## 2.5.3
 
 ### Patch Changes
