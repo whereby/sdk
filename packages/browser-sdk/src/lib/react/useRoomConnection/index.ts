@@ -117,6 +117,15 @@ export function useRoomConnection(
     const endMeeting = React.useCallback((stayBehind?: boolean) => client.endMeeting(stayBehind), [client]);
     const joinBreakoutGroup = React.useCallback((group: string) => client.joinBreakoutGroup(group), [client]);
     const joinBreakoutMainRoom = React.useCallback(() => client.joinBreakoutMainRoom(), [client]);
+    const switchCameraEffect = React.useCallback(
+        async (effectId: string) => {
+            await client.switchCameraEffect(effectId);
+        },
+        [client],
+    );
+    const clearCameraEffect = React.useCallback(async () => {
+        await client.clearCameraEffect();
+    }, [client]);
 
     const { events, ...state } = roomConnectionState;
 
@@ -150,6 +159,8 @@ export function useRoomConnection(
             removeSpotlight,
             joinBreakoutGroup,
             joinBreakoutMainRoom,
+            switchCameraEffect,
+            clearCameraEffect,
         },
     };
 }

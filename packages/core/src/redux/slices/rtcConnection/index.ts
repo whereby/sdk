@@ -1,4 +1,4 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import {
@@ -23,6 +23,7 @@ import {
     doSetDevice,
     doSwitchLocalStream,
     doStartLocalMedia,
+    doLocalStreamEffect,
 } from "../localMedia";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
@@ -399,7 +400,7 @@ startAppListening({
 });
 
 startAppListening({
-    actionCreator: doSwitchLocalStream.fulfilled,
+    matcher: isAnyOf(doSwitchLocalStream.fulfilled, doLocalStreamEffect.fulfilled),
     effect: ({ payload }, { getState }) => {
         const stream = selectLocalMediaStream(getState());
         const { rtcManager } = selectRtcConnectionRaw(getState());
@@ -409,6 +410,8 @@ startAppListening({
                 const track = stream.getTracks().find((t) => t.kind === kind);
                 return track && rtcManager.replaceTrack(oldTrack, track);
             };
+
+            // @ts-expect-error - Both actions have replacedTracks in the payload, but the payload is not typed when using isAnyOf
             payload?.replacedTracks?.forEach((t) => {
                 replace(t.kind, t);
             });
