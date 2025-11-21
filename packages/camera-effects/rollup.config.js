@@ -23,6 +23,8 @@ const external = [...dependencies.filter((dep) => dep !== "events"), ...peerDepe
 
 function makeCdnPath() {
     const major = pkg.version.split(".")[0];
+    const minor = pkg.version.split(".")[1];
+    const patch = pkg.version.split(".")[2];
 
     let tag = "";
     const preRelease = pkg.version.split("-")[1];
@@ -30,7 +32,7 @@ function makeCdnPath() {
         tag = `-${preRelease.split(".")[0]}`;
     }
 
-    return `v${major}${tag}`;
+    return `v${major}-${minor}-${patch}${tag}`;
 }
 
 const CDN_BASE_URL = process.env.CDN_BASE_URL || "https://cdn.srv.whereby.com/camera-effects";
