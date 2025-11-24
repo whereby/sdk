@@ -23,6 +23,7 @@ export default function VideoExperience({
     hostOptions,
     joinRoomOnLoad,
     showBreakoutGroups,
+    showCameraEffects,
 }: {
     displayName?: string;
     roomName: string;
@@ -33,9 +34,11 @@ export default function VideoExperience({
     hostOptions?: Array<string>;
     joinRoomOnLoad?: boolean;
     showBreakoutGroups?: boolean;
+    showCameraEffects?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
+    const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
 
     const { state, actions, events } = useRoomConnection(roomName, {
         localMediaOptions: {
@@ -82,7 +85,17 @@ export default function VideoExperience({
         askToTurnOnCamera,
         joinBreakoutGroup,
         joinBreakoutMainRoom,
+        switchCameraEffect,
+        clearCameraEffect,
     } = actions;
+
+    async function loadBackgroundEffects() {
+        if (!showCameraEffects) return;
+
+        const { getUsablePresets } = await import("@whereby.com/camera-effects");
+        const usablePresets = getUsablePresets();
+        setEffectPresets(usablePresets);
+    }
 
     useEffect(() => {
         if (!joinRoomOnLoad) return;
@@ -90,6 +103,12 @@ export default function VideoExperience({
         joinRoom();
         return () => leaveRoom();
     }, []);
+
+    useEffect(() => {
+        if (!localParticipant?.stream) return;
+
+        loadBackgroundEffects();
+    }, [localParticipant?.stream]);
 
     function showIncomingChatMessageNotification({ message }: ChatMessageEvent) {
         toast(message, {
@@ -326,6 +345,27 @@ export default function VideoExperience({
                             {breakout.isActive ? (
                                 <button onClick={() => joinBreakoutMainRoom()}>Join main room</button>
                             ) : null}
+                        </div>
+                    ) : null}
+
+                    {showCameraEffects ? (
+                        <div>
+                            <button onClick={() => clearCameraEffect()}>Remove background effect</button>
+                            <select
+                                value=""
+                                onChange={(e) => {
+                                    switchCameraEffect(e.target.value);
+                                }}
+                            >
+                                <option value="" disabled>
+                                    Select background effect
+                                </option>
+                                {effectPresets.map((preset) => (
+                                    <option key={preset} value={preset}>
+                                        {preset}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     ) : null}
 

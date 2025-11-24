@@ -67,6 +67,7 @@ import {
 import { selectRoomConnectionState } from "./selector";
 import { coreVersion } from "../../version";
 import { BaseClient } from "../BaseClient";
+import { doCameraEffectsSwitchPreset } from "../../redux/slices/cameraEffects";
 
 export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomConnectionEvents> {
     private options: WherebyClientOptions;
@@ -554,6 +555,33 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public reportStreamResolution(streamId: string, width: number, height: number) {
         this.store.dispatch(doRtcReportStreamResolution({ streamId, width, height }));
+    }
+
+    /**
+     * Replace the local stream with a new effect stream.
+     * @param effectId - The ID of the effect to use.
+     */
+    public async switchCameraEffect(effectId: string): Promise<void> {
+        try {
+            await this.store.dispatch(doCameraEffectsSwitchPreset({ effectId }));
+        } catch (error) {
+            return Promise.reject(error);
+        }
+
+        return Promise.resolve();
+    }
+
+    /**
+     * Remove the effect stream and revert to the original local stream.
+     */
+    public async clearCameraEffect(): Promise<void> {
+        try {
+            await this.store.dispatch(doCameraEffectsSwitchPreset({ effectId: null }));
+        } catch (error) {
+            return Promise.reject(error);
+        }
+
+        return Promise.resolve();
     }
 
     /**

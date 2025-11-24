@@ -1,0 +1,50 @@
+{
+    "name": "@whereby.com/camera-effects",
+    "version": "0.1.0",
+    "description": "Effects on top of camera stream",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "publishConfig": {
+        "access": "public"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs",
+            "default": "./dist/index.mjs"
+        }
+    },
+    "files": [
+        "dist/**",
+        "!dist/cdn",
+        "!dist/assets",
+        "!dist/workers"
+    ],
+    "scripts": {
+        "build": "rollup -c",
+        "build:dev": "REACT_APP_IS_DEV=true rollup -c",
+        "build:prod": "REACT_APP_IS_DEV=false rollup -c",
+        "clean": "rimraf dist",
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix ."
+    },
+    "devDependencies": {
+        "@rollup/plugin-wasm": "^6.2.2",
+        "@whereby.com/eslint-config": "workspace:*",
+        "@whereby.com/jest-config": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/rollup-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
+        "rimraf": "^5.0.5",
+        "rollup": "^4.22.4",
+        "rollup-plugin-web-worker-loader": "^1.7.0"
+    },
+    "dependencies": {
+        "events": "^3.3.0",
+        "wasm-feature-detect": "^1.8.0",
+        "webrtc-adapter": "^8.1.0"
+    },
+    "prettier": "@whereby.com/prettier-config"
+}

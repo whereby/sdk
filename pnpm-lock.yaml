@@ -523,6 +523,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.2.1
         version: 4.6.0(vite@5.4.19(@types/node@22.15.34)(lightningcss@1.30.2)(terser@5.43.1))
+      '@whereby.com/camera-effects':
+        specifier: workspace:*
+        version: link:../camera-effects
       '@whereby.com/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
@@ -590,11 +593,54 @@ importers:
         specifier: ^1.0.0-pre.53
         version: 1.0.0-pre.53
 
+  packages/camera-effects:
+    dependencies:
+      events:
+        specifier: ^3.3.0
+        version: 3.3.0
+      wasm-feature-detect:
+        specifier: ^1.8.0
+        version: 1.8.0
+      webrtc-adapter:
+        specifier: ^8.1.0
+        version: 8.2.4
+    devDependencies:
+      '@rollup/plugin-wasm':
+        specifier: ^6.2.2
+        version: 6.2.2(rollup@4.44.1)
+      '@whereby.com/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@whereby.com/jest-config':
+        specifier: workspace:*
+        version: link:../../tooling/jest
+      '@whereby.com/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@whereby.com/rollup-config':
+        specifier: workspace:*
+        version: link:../../tooling/rollup
+      '@whereby.com/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      rollup:
+        specifier: ^4.22.4
+        version: 4.44.1
+      rollup-plugin-web-worker-loader:
+        specifier: ^1.7.0
+        version: 1.7.0(rollup@4.44.1)
+
   packages/core:
     dependencies:
       '@reduxjs/toolkit':
         specifier: ^2.2.3
         version: 2.8.2(react-redux@9.2.0(@types/react@19.1.8)(react@19.1.0)(redux@5.0.1))(react@19.1.0)
+      '@whereby.com/camera-effects':
+        specifier: '*'
+        version: link:../camera-effects
       '@whereby.com/media':
         specifier: 2.5.4
         version: link:../media
@@ -895,6 +941,9 @@ importers:
       '@rollup/plugin-replace':
         specifier: ^5.0.5
         version: 5.0.7(rollup@4.44.1)
+      '@rollup/plugin-url':
+        specifier: ^8.0.2
+        version: 8.0.2(rollup@4.44.1)
       rollup:
         specifier: ^4.22.4
         version: 4.44.1
@@ -3320,6 +3369,24 @@ packages:
 
   '@rollup/plugin-replace@5.0.7':
     resolution: {integrity: sha512-PqxSfuorkHz/SPpyngLyg5GCEkOcee9M1bkxiVDr41Pd61mqP1PLOoDPbpl44SB2mQGKwV/In74gqQmGITOhEQ==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
+  '@rollup/plugin-url@8.0.2':
+    resolution: {integrity: sha512-5yW2LP5NBEgkvIRSSEdJkmxe5cUNZKG3eenKtfJvSkxVm/xTTu7w+ayBtNwhozl1ZnTUCU0xFaRQR+cBl2H7TQ==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
+  '@rollup/plugin-wasm@6.2.2':
+    resolution: {integrity: sha512-gpC4R1G9Ni92ZIRTexqbhX7U+9estZrbhP+9SRb0DW9xpB9g7j34r+J2hqrcW/lRI7dJaU84MxZM0Rt82tqYPQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -7181,6 +7248,11 @@ packages:
     engines: {node: '>=4.0.0'}
     hasBin: true
 
+  mime@3.0.0:
+    resolution: {integrity: sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A==}
+    engines: {node: '>=10.0.0'}
+    hasBin: true
+
   mimic-fn@1.2.0:
     resolution: {integrity: sha512-jf84uxzwiuiIVKiOLpfYk7N46TSy8ubTonmneY9vrpHNAnp0QBt2BxWV9dO3/j+BoVAb+a5G6YDPW3M5HOdMWQ==}
     engines: {node: '>=4'}
@@ -8238,6 +8310,11 @@ packages:
       rollup: '>=1.26.3'
       typescript: '>=2.4.0'
 
+  rollup-plugin-web-worker-loader@1.7.0:
+    resolution: {integrity: sha512-msfN4FpdoTtfSCbeTZ8yPYmfi2/66Q53gQGmvOrEz/UfqZgCkSkGjaxsZt7TQ1V0s0tLJAe6HL+EdA7IBaUF6w==}
+    peerDependencies:
+      rollup: ^1.9.2 || ^2.0.0 || ^3.0.0 || ^4.0.0
+
   rollup@4.44.1:
     resolution: {integrity: sha512-x8H8aPvD+xbl0Do8oez5f5o8eMS3trfCghc4HhLAnCkj7Vl0d1JWGs0UF/D886zLW2rOj2QymV/JcSSsw+XDNg==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
@@ -9206,6 +9283,9 @@ packages:
   warn-once@0.1.1:
     resolution: {integrity: sha512-VkQZJbO8zVImzYFteBXvBOZEl1qL175WH8VmZcxF2fZAoudNhNDvHi+doCaAEdU2l2vtcIwa2zn0QK5+I1HQ3Q==}
 
+  wasm-feature-detect@1.8.0:
+    resolution: {integrity: sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==}
+
   watchpack@2.4.4:
     resolution: {integrity: sha512-c5EGNOiyxxV5qmTtAB7rbiXxi1ooX1pQKMLX/MIabJjRA0SJBQOjKF+KSVfHkr9U1cADPon0mRiVe/riyaiDUA==}
     engines: {node: '>=10.13.0'}
@@ -9243,6 +9323,10 @@ packages:
     peerDependenciesMeta:
       webpack-cli:
         optional: true
+
+  webrtc-adapter@8.2.4:
+    resolution: {integrity: sha512-VwtwbYNKnVQW8koB9qb8YcxNwpSVHTvvKEZLzY6uQ3gFrA9E87VPbB5xE+m1AGwUjL1UgN35jRR9hQgteZI5bg==}
+    engines: {node: '>=6.0.0', npm: '>=3.10.0'}
 
   webrtc-adapter@9.0.3:
     resolution: {integrity: sha512-5fALBcroIl31OeXAdd1YUntxiZl1eHlZZWzNg3U4Fn+J9/cGL3eT80YlrsWGvj2ojuz1rZr2OXkgCzIxAZ7vRQ==}
@@ -12510,6 +12594,20 @@ snapshots:
     dependencies:
       '@rollup/pluginutils': 5.2.0(rollup@4.44.1)
       magic-string: 0.30.17
+    optionalDependencies:
+      rollup: 4.44.1
+
+  '@rollup/plugin-url@8.0.2(rollup@4.44.1)':
+    dependencies:
+      '@rollup/pluginutils': 5.2.0(rollup@4.44.1)
+      make-dir: 3.1.0
+      mime: 3.0.0
+    optionalDependencies:
+      rollup: 4.44.1
+
+  '@rollup/plugin-wasm@6.2.2(rollup@4.44.1)':
+    dependencies:
+      '@rollup/pluginutils': 5.2.0(rollup@4.44.1)
     optionalDependencies:
       rollup: 4.44.1
 
@@ -17530,6 +17628,8 @@ snapshots:
   mime@2.6.0:
     optional: true
 
+  mime@3.0.0: {}
+
   mimic-fn@1.2.0: {}
 
   mimic-fn@2.1.0: {}
@@ -18708,6 +18808,10 @@ snapshots:
       tslib: 2.8.1
       typescript: 5.8.3
 
+  rollup-plugin-web-worker-loader@1.7.0(rollup@4.44.1):
+    dependencies:
+      rollup: 4.44.1
+
   rollup@4.44.1:
     dependencies:
       '@types/estree': 1.0.8
@@ -19783,6 +19887,8 @@ snapshots:
 
   warn-once@0.1.1: {}
 
+  wasm-feature-detect@1.8.0: {}
+
   watchpack@2.4.4:
     dependencies:
       glob-to-regexp: 0.4.1
@@ -19834,6 +19940,10 @@ snapshots:
       - '@swc/core'
       - esbuild
       - uglify-js
+
+  webrtc-adapter@8.2.4:
+    dependencies:
+      sdp: 3.2.1
 
   webrtc-adapter@9.0.3:
     dependencies:

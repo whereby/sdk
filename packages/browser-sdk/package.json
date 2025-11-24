@@ -55,6 +55,7 @@
         "build-storybook": "storybook build"
     },
     "devDependencies": {
+        "@whereby.com/camera-effects": "workspace:*",
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/jest-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
