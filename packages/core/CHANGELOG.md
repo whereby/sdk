@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.3.0
+
+### Minor Changes
+
+- c5c67f6: Add camera-effects support
+
 ## 1.2.9
 
 ### Patch Changes

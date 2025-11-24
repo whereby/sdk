@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 3.15.0
+
+### Minor Changes
+
+- c5c67f6: Add camera-effects support
+
+### Patch Changes
+
+- Updated dependencies [c5c67f6]
+    - @whereby.com/core@1.3.0
+
 ## 3.14.11
 
 ### Patch Changes

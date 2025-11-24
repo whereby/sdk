@@ -1,7 +1,7 @@
 {
     "name": "@whereby.com/rollup-config",
     "private": true,
-    "version": "0.1.0",
+    "version": "0.1.1",
     "type": "commonjs",
     "exports": {
         "./base": "./base.js"
