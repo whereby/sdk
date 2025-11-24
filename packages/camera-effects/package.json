@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/camera-effects",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "Effects on top of camera stream",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
