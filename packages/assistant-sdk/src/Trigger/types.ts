@@ -1,12 +1,17 @@
 import type { EventEmitter } from "events";
 import type { Request, Response } from "express";
 
-export type WebhookType = "room.client.joined" | "room.client.left" | "room.session.started" | "room.session.ended";
+export type WebhookEventType =
+    | "assistant.requested"
+    | "room.client.joined"
+    | "room.client.left"
+    | "room.session.started"
+    | "room.session.ended";
 
 export const TRIGGER_EVENT_SUCCESS = "trigger_event_success";
 
 interface WherebyWebhookBase {
-    type: WebhookType;
+    type: WebhookEventType;
     apiVersion: "1.0";
     id: string;
     createdAt: string;
@@ -45,6 +50,10 @@ interface WherebyWebhookDataClientJoinLeave {
     numClientsByRoleName: Record<WherebyRoleName, number>;
 }
 
+export interface WherebyWebhookAssistantRequested extends WherebyWebhookBase {
+    data: WherebyWebhookInRoom;
+}
+
 export interface WherebyWebhookRoomClientJoined extends WherebyWebhookBase {
     data: WherebyWebhookInRoom & WherebyWebhookDataClientJoinLeave & WherebyWebhookDataClient;
 }
@@ -66,12 +75,14 @@ export type TriggerEvents = {
 };
 
 export type WherebyWebhookType =
+    | WherebyWebhookAssistantRequested
     | WherebyWebhookRoomClientJoined
     | WherebyWebhookRoomClientLeft
     | WherebyWebhookRoomSessionStarted
     | WherebyWebhookRoomSessionEnded;
 
 export type WherebyWebhookTriggerTypes = {
+    "assistant.requested": WherebyWebhookAssistantRequested;
     "room.client.joined": WherebyWebhookRoomClientJoined;
     "room.client.left": WherebyWebhookRoomClientLeft;
     "room.session.started": WherebyWebhookRoomSessionStarted;
