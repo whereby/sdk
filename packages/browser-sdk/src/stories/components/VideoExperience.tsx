@@ -86,6 +86,7 @@ export default function VideoExperience({
         joinBreakoutGroup,
         joinBreakoutMainRoom,
         switchCameraEffect,
+        switchCameraEffectCustom,
         clearCameraEffect,
     } = actions;
 
@@ -351,6 +352,32 @@ export default function VideoExperience({
                     {showCameraEffects ? (
                         <div>
                             <button onClick={() => clearCameraEffect()}>Remove background effect</button>
+                            <button
+                                onClick={async () => {
+                                    const imageUrl =
+                                        "https://framerusercontent.com/images/7SWEqaKqLoCBQ5Z1jGyEVMOYtI.png?width=800&height=772";
+                                    await switchCameraEffectCustom(imageUrl);
+                                }}
+                            >
+                                Set custom background effect (Image URL)
+                            </button>
+                            <input
+                                type={"file"}
+                                accept={"image/*"}
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = async () => {
+                                            const base64data = reader.result;
+                                            if (typeof base64data === "string") {
+                                                await switchCameraEffectCustom(base64data);
+                                            }
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                }}
+                            />
                             <select
                                 value=""
                                 onChange={(e) => {

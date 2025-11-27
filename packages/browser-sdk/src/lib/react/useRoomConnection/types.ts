@@ -42,5 +42,6 @@ export interface RoomConnectionActions {
     joinBreakoutGroup: (group: string) => void;
     joinBreakoutMainRoom: () => void;
     switchCameraEffect: (effectId: string) => Promise<void>;
+    switchCameraEffectCustom: (imageUrl: string) => Promise<void>;
     clearCameraEffect: () => Promise<void>;
 }

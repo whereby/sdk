@@ -572,6 +572,26 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     }
 
     /**
+     * Replace the local stream with a custom image effect stream.
+     * @param imageUrl - The URL of the custom image to use as the background. This needs to be a base64 encoded image or a URL accessible from the browser.
+     */
+
+    public async switchCameraEffectCustom(imageUrl: string): Promise<void> {
+        try {
+            await this.store.dispatch(
+                doCameraEffectsSwitchPreset({
+                    effectId: "image-custom",
+                    backgroundUrl: imageUrl,
+                }),
+            );
+        } catch (error) {
+            return Promise.reject(error);
+        }
+
+        return Promise.resolve();
+    }
+
+    /**
      * Remove the effect stream and revert to the original local stream.
      */
     public async clearCameraEffect(): Promise<void> {

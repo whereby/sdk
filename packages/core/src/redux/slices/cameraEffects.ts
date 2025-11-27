@@ -79,7 +79,8 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
             setup,
             params,
             allowSafari,
-        }: { effectId: string | null; setup?: Setup; params?: Params; allowSafari?: boolean },
+            backgroundUrl,
+        }: { effectId: string | null; setup?: Setup; params?: Params; allowSafari?: boolean; backgroundUrl?: string },
         { getState, dispatch, rejectWithValue },
     ) => {
         const state = getState();
@@ -87,6 +88,8 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
         if (selectLocalMediaIsSwitchingStream(state)) {
             return;
         }
+
+        const mergedParams = { ...params, ...(backgroundUrl ? { backgroundUrl } : {}) };
 
         dispatch(cameraEffectsSwitching({ isSwitching: true }));
 
@@ -111,7 +114,7 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
             }
 
             if (raw.tryUpdate) {
-                const ok = await raw.tryUpdate(effectId, { ...(setup || {}) }, { ...(params || {}) });
+                const ok = await raw.tryUpdate(effectId, { ...(setup || {}) }, mergedParams);
                 if (ok) {
                     dispatch(cameraEffectsUpdated({ effectId, setup, params }));
                     return;
@@ -134,7 +137,7 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
 
             const { createEffectStream, getUsablePresets } = mod;
             const usable = getUsablePresets({ filter: () => true, options: { allowSafari } });
-            if (!usable.includes(effectId)) {
+            if (!usable.includes(effectId) && effectId !== "image-custom") {
                 throw new Error(`Unknown or unsupported effect preset: ${effectId}`);
             }
 
@@ -142,7 +145,7 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
                 stream: effectStream,
                 stop,
                 tryUpdate,
-            } = await createEffectStream(localStream, effectId, setup, params);
+            } = await createEffectStream(localStream, effectId, setup, mergedParams);
 
             // Replace local media video track
             await dispatch(doLocalStreamEffect({ effectStream, only: "video" }));
