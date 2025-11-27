@@ -1,5 +1,11 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.0
+
+### Minor Changes
+
+- 0f3eb74: Add assistant.requested webhook event to Trigger
+
 ## 1.1.10
 
 ### Patch Changes
