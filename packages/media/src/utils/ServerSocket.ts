@@ -44,7 +44,7 @@ export class ServerSocket {
         });
         this.joinRoomFinished = false;
         this._socket.io.on("reconnect", () => {
-            if (disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
+            if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
                 return;
@@ -52,7 +52,7 @@ export class ServerSocket {
             this._socket.sendBuffer = [];
         });
         this._socket.io.on("reconnect_attempt", () => {
-            if (disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
+            if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
                 return;
@@ -102,7 +102,7 @@ export class ServerSocket {
         });
 
         this._socket.on("disconnect", () => {
-            if (disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
+            if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
                 return;
