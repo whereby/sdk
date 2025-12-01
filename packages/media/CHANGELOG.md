@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.5.5
+
+### Patch Changes
+
+- a5f001d: Add disconnectDurationLimitOn feature
+
 ## 2.5.4
 
 ### Patch Changes
