@@ -123,6 +123,12 @@ export function useRoomConnection(
         },
         [client],
     );
+    const switchCameraEffectCustom = React.useCallback(
+        async (imageUrl: string) => {
+            await client.switchCameraEffectCustom(imageUrl);
+        },
+        [client],
+    );
     const clearCameraEffect = React.useCallback(async () => {
         await client.clearCameraEffect();
     }, [client]);
@@ -160,6 +166,7 @@ export function useRoomConnection(
             joinBreakoutGroup,
             joinBreakoutMainRoom,
             switchCameraEffect,
+            switchCameraEffectCustom,
             clearCameraEffect,
         },
     };
