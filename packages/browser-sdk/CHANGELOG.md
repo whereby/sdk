@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 3.16.0
+
+### Minor Changes
+
+- 9fe1ad1: Enable custom image camera effects
+
+### Patch Changes
+
+- Updated dependencies [9fe1ad1]
+    - @whereby.com/core@1.4.0
+
 ## 3.15.1
 
 ### Patch Changes
