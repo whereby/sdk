@@ -432,8 +432,8 @@ importers:
   packages/assistant-sdk:
     dependencies:
       '@roamhq/wrtc':
-        specifier: github:whereby/node-webrtc#patch/rtc_audio_source
-        version: https://codeload.github.com/whereby/node-webrtc/tar.gz/cd43d297d7c2ac8b4739644d40d3a5702867b8dd
+        specifier: ^0.9.1
+        version: 0.9.1
       '@types/web':
         specifier: ^0.0.267
         version: 0.0.267
@@ -3299,34 +3299,33 @@ packages:
       react-redux:
         optional: true
 
-  '@roamhq/wrtc-darwin-arm64@0.8.0':
-    resolution: {integrity: sha512-OtV2KWO7zOG3L8TF3KCt9aucynVCD/ww2xeXXgg+FLkya3ca0uzehN8EQJ3BL4tkInksbFJ2ssyu9cehfJ3ZuA==}
+  '@roamhq/wrtc-darwin-arm64@0.9.1':
+    resolution: {integrity: sha512-+g0+nLeZrsAeuzD663y9wbkRns8s/u5nMt/swiUa0G0mQaIRc7zSe77gRGd3E4lMgQ2VyUMV607SCM1OjVdmyg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@roamhq/wrtc-darwin-x64@0.8.0':
-    resolution: {integrity: sha512-VY7Vzt/SDDDCpW//h8GW9bOZrOr8gWXPZVD9473ypl4jyBIoO57yyLbHzd1G0vBUkS6szsHlQCz1WwpI30YL+g==}
+  '@roamhq/wrtc-darwin-x64@0.9.1':
+    resolution: {integrity: sha512-W24zSe9s6c9Tu1owP8RHg7xqW/JRMl6TRAf8pLWGgXuIeI79jVx1A9MvKTlwLM4AAZmWY0rMHYOzJg6aTb+qkQ==}
     cpu: [x64]
     os: [darwin]
 
-  '@roamhq/wrtc-linux-arm64@0.8.1':
-    resolution: {integrity: sha512-FBJLLazlWkGQUXaokC/rTbrUQbb0CNFYry52fZGstufrGLTWu+g4HcwXdVvxh1tnVtVMvkQGk+mlOL52sCxw0A==}
+  '@roamhq/wrtc-linux-arm64@0.9.1':
+    resolution: {integrity: sha512-PeXkYGNcojjXvpHbI+R/YIUUkTWVrFaS5iQD55iGYbGBcBzU23wzpK0x/TvCQ0Ok4gimK985tgHKimbsVrs2Yw==}
     cpu: [arm64]
     os: [linux]
 
-  '@roamhq/wrtc-linux-x64@0.8.1':
-    resolution: {integrity: sha512-I9oWG7b4uvWO1IOR/aF34n+ID6TKVuSs0jd19h5KdhfRtw7FFh9xxuwN9rONPxLVa6fS0q+MCZgAf8Scz89L8Q==}
+  '@roamhq/wrtc-linux-x64@0.9.1':
+    resolution: {integrity: sha512-LuhzPdMM3i8vs/ifdj1F1pjpX2OhJSCWdh03UQXjRHoX+Fi1oJXiZRwKoVKu1BbsKCYfJ8m9jZB1ZU4Lhi8yHw==}
     cpu: [x64]
     os: [linux]
 
-  '@roamhq/wrtc-win32-x64@0.8.0':
-    resolution: {integrity: sha512-R2fxl41BLWPiP4eaTHGLzbbVvRjx1mV/OsgINCvawO7Hwz5Zx9I45+Fhrw3hd4n5amIeSG9VIF7Kz8eeTFXTGQ==}
+  '@roamhq/wrtc-win32-x64@0.9.1':
+    resolution: {integrity: sha512-xyxqCpHxp71MY/3LaFTj3WDvOnu8GaDht1M0LAIGamwkQUg45X/zkzbfeIS7g8f/ZvItAjFa6cUkSUuhK3/rGg==}
     cpu: [x64]
     os: [win32]
 
-  '@roamhq/wrtc@https://codeload.github.com/whereby/node-webrtc/tar.gz/cd43d297d7c2ac8b4739644d40d3a5702867b8dd':
-    resolution: {tarball: https://codeload.github.com/whereby/node-webrtc/tar.gz/cd43d297d7c2ac8b4739644d40d3a5702867b8dd}
-    version: 0.8.0
+  '@roamhq/wrtc@0.9.1':
+    resolution: {integrity: sha512-WQH9DaN3kGv9+wxeRtxkSykmVQWl44VTX9XsMLmR5jtcsGxin+72U9uGlDjME0gwNNBHDKY3CgUGYI8ZYg8Jdw==}
 
   '@rolldown/pluginutils@1.0.0-beta.19':
     resolution: {integrity: sha512-3FL3mnMbPu0muGOCaKAhhFEYmqv9eTfPSJRJmANrCwtgK8VuxpsZDGK+m0LYAGoyO8+0j5uRe4PeyPDK1yA/hA==}
@@ -12529,28 +12528,28 @@ snapshots:
       react: 19.1.0
       react-redux: 9.2.0(@types/react@19.1.8)(react@19.1.0)(redux@5.0.1)
 
-  '@roamhq/wrtc-darwin-arm64@0.8.0':
+  '@roamhq/wrtc-darwin-arm64@0.9.1':
     optional: true
 
-  '@roamhq/wrtc-darwin-x64@0.8.0':
+  '@roamhq/wrtc-darwin-x64@0.9.1':
     optional: true
 
-  '@roamhq/wrtc-linux-arm64@0.8.1':
+  '@roamhq/wrtc-linux-arm64@0.9.1':
     optional: true
 
-  '@roamhq/wrtc-linux-x64@0.8.1':
+  '@roamhq/wrtc-linux-x64@0.9.1':
     optional: true
 
-  '@roamhq/wrtc-win32-x64@0.8.0':
+  '@roamhq/wrtc-win32-x64@0.9.1':
     optional: true
 
-  '@roamhq/wrtc@https://codeload.github.com/whereby/node-webrtc/tar.gz/cd43d297d7c2ac8b4739644d40d3a5702867b8dd':
+  '@roamhq/wrtc@0.9.1':
     optionalDependencies:
-      '@roamhq/wrtc-darwin-arm64': 0.8.0
-      '@roamhq/wrtc-darwin-x64': 0.8.0
-      '@roamhq/wrtc-linux-arm64': 0.8.1
-      '@roamhq/wrtc-linux-x64': 0.8.1
-      '@roamhq/wrtc-win32-x64': 0.8.0
+      '@roamhq/wrtc-darwin-arm64': 0.9.1
+      '@roamhq/wrtc-darwin-x64': 0.9.1
+      '@roamhq/wrtc-linux-arm64': 0.9.1
+      '@roamhq/wrtc-linux-x64': 0.9.1
+      '@roamhq/wrtc-win32-x64': 0.9.1
       domexception: 4.0.0
 
   '@rolldown/pluginutils@1.0.0-beta.19': {}
