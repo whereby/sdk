@@ -928,7 +928,7 @@ export default class VegaRtcManager implements RtcManager {
                 currentPaused ? producer.pause() : producer.resume();
 
                 // this adds the cpu watch (detection) if feature is enabled.
-                const cleanUpCpuWatch = this._features.producerCpuOveruseWatchOn
+                const cleanUpCpuWatch = !this._features.producerCpuOveruseWatchOff
                     ? addProducerCpuOveruseWatch({
                           producer,
                           onOveruse: () => {
