@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.0
+
+### Minor Changes
+
+- 9bacea2: media: Producer CPU overuse watch default
+
 ## 2.5.5
 
 ### Patch Changes
