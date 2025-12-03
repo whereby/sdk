@@ -366,7 +366,7 @@ define("WherebyEmbed", {
         title=${title || "Video calling component"}
         ref=${this.iframe}
         src=${this.roomUrl}
-        allow="autoplay; camera; microphone; fullscreen; speaker; display-capture; media-capture" />
+        allow="autoplay; camera; microphone; fullscreen; speaker; display-capture; media-capture; compute-pressure; screen-wake-lock" />
       `;
     },
 });
