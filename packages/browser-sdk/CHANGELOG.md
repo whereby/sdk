@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.17.0
+
+### Minor Changes
+
+- bebe42c: Add embed element iframe permissions
+
 ## 3.16.1
 
 ### Patch Changes
