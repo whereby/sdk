@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.18.0
+
+### Minor Changes
+
+- 4b95fd0: Add cancel knock action
+
+### Patch Changes
+
+- Updated dependencies [4b95fd0]
+- Updated dependencies [4b95fd0]
+    - @whereby.com/media@2.6.1
+    - @whereby.com/core@1.5.0
+
 ## 3.17.0
 
 ### Minor Changes
