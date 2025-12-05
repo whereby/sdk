@@ -62,6 +62,7 @@ export default function VideoExperience({
     } = state;
     const {
         knock,
+        cancelKnock,
         sendChatMessage,
         setDisplayName,
         joinRoom,
@@ -275,7 +276,12 @@ export default function VideoExperience({
                     <button onClick={() => knock()}>Knock</button>
                 </div>
             )}
-            {connectionStatus === "knocking" && <span>Knocking...</span>}
+            {connectionStatus === "knocking" && (
+                <div>
+                    <span>Knocking...</span>
+                    <button onClick={() => cancelKnock()}>Cancel</button>
+                </div>
+            )}
             {connectionStatus === "knock_rejected" && <span>Rejected :(</span>}
             {connectionStatus === "connected" && (
                 <>

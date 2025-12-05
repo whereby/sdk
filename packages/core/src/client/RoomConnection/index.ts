@@ -6,6 +6,7 @@ import {
     doAcceptWaitingParticipant,
     doAppStart,
     doAppStop,
+    doCancelKnock,
     doBreakoutJoin,
     doEndMeeting,
     doKickParticipant,
@@ -358,6 +359,13 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public knock() {
         this.store.dispatch(doKnockRoom());
+    }
+
+    /**
+     * Cancel the knock request.
+     */
+    public cancelKnock() {
+        this.store.dispatch(doCancelKnock());
     }
 
     /**

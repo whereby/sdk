@@ -182,6 +182,20 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     dispatch(connectionStatusChanged("knocking"));
 });
 
+export const doCancelKnock = createAppThunk(() => (dispatch, getState) => {
+    const state = getState();
+    const socket = selectSignalConnectionRaw(state).socket;
+    const connectionStatus = selectRoomConnectionStatus(state);
+
+    if (connectionStatus !== "knocking") {
+        console.warn("Not knocking, cancel knock aborted");
+        return;
+    }
+
+    socket?.emit("cancel_room_knock");
+    dispatch(connectionStatusChanged("ready"));
+});
+
 export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;

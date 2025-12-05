@@ -70,6 +70,7 @@ export function useRoomConnection(
     }, [client]);
     const sendChatMessage = React.useCallback((text: string) => client.sendChatMessage(text), [client]);
     const knock = React.useCallback(() => client.knock(), [client]);
+    const cancelKnock = React.useCallback(() => client.cancelKnock(), [client]);
     const setDisplayName = React.useCallback((displayName: string) => client.setDisplayName(displayName), [client]);
     const toggleCamera = React.useCallback((enabled?: boolean) => client.toggleCamera(enabled), [client]);
     const toggleMicrophone = React.useCallback((enabled?: boolean) => client.toggleMicrophone(enabled), [client]);
@@ -145,6 +146,7 @@ export function useRoomConnection(
             askToTurnOnCamera,
             acceptWaitingParticipant,
             knock,
+            cancelKnock,
             joinRoom,
             leaveRoom,
             lockRoom,
