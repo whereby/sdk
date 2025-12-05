@@ -21,6 +21,7 @@ export interface RoomConnectionActions {
     askToTurnOnCamera: (participantId: string) => void;
     acceptWaitingParticipant: (participantId: string) => void;
     knock: () => void;
+    cancelKnock: () => void;
     joinRoom: () => Promise<RoomJoinedSuccess>;
     leaveRoom: () => void;
     lockRoom: (locked: boolean) => void;

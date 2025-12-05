@@ -3,6 +3,7 @@
 // Requests: messages from the client to the server
 export const PROTOCOL_REQUESTS = {
     BLOCK_CLIENT: "block_client",
+    CANCEL_ROOM_KNOCK: "cancel_room_knock",
     CLAIM_ROOM: "claim_room",
     CLEAR_CHAT_HISTORY: "clear_chat_history",
     ENABLE_AUDIO: "enable_audio",
