@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.1
+
+### Patch Changes
+
+- 4b95fd0: Add cancel knock protocol request
+
 ## 2.6.0
 
 ### Minor Changes
