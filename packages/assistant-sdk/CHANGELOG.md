@@ -1,5 +1,11 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.5
+
+### Patch Changes
+
+- f8fabe8: Sync node-webrtc with upstream package
+
 ## 1.2.4
 
 ### Patch Changes
