@@ -1,12 +1,9 @@
 import { Device } from "mediasoup-client";
 import adapterRaw from "webrtc-adapter";
 import { v4 as uuidv4 } from "uuid";
-// of the provided ones, this seems to work best in NodeJS
-import { Safari12 as NodeDeviceHandler } from "mediasoup-client/lib/handlers/Safari12.js";
 
 import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
-import VegaConnection from "../VegaConnection";
 import createMicAnalyser from "../VegaMicAnalyser";
 import { CustomMediaStreamTrack, RtcManager } from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
@@ -271,8 +268,10 @@ export default class VegaRtcManager implements RtcManager {
             this._features.turnServerOverrideHost,
         );
 
-        this._sendTransport?.updateIceServers(iceServersList);
-        this._receiveTransport?.updateIceServers(iceServersList);
+        if (browserName !== "firefox") {
+            this._sendTransport?.updateIceServers(iceServersList);
+            this._receiveTransport?.updateIceServers(iceServersList);
+        }
 
         this._clearMediaServersRefresh();
         if (!mediaserverConfigTtlSeconds) {
