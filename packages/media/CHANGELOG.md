@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.2
+
+### Patch Changes
+
+- 8da9afa: Don't update ICE servers for Firefox in SFU calls
+
 ## 2.6.1
 
 ### Patch Changes
