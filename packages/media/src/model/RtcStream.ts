@@ -66,9 +66,4 @@ export class RtcStream {
     static getCameraId() {
         return CAMERA_STREAM_ID;
     }
-
-    static getTypeFromId(id: string) {
-        const streamId = "" + id;
-        return streamId === CAMERA_STREAM_ID ? STREAM_TYPES.CAMERA : STREAM_TYPES.SCREEN_SHARE;
-    }
 }
