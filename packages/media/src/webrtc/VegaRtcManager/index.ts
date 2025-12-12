@@ -19,6 +19,17 @@ import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumb
 import { ServerSocket } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
+import {
+    VegaCreateTransportResponse,
+    VegaGetCapabilitiesResponse,
+    VegaRestartIceResponse,
+    VegaProduceDataResponse,
+    VegaProduceResponse,
+    VegaAnalytics,
+    ClientState,
+    VegaTransportDirection,
+} from "./types";
+import { TransportOptions } from "mediasoup-client/lib/Transport";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -34,19 +45,6 @@ const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 
 if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
-type MediaSteamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
-
-type ClientState = {
-    hasAcceptedWebcamStream: Boolean;
-    hasAcceptedScreenStream: Boolean;
-    hasEmittedWebcamStream: Boolean;
-    hasEmittedScreenStream: Boolean;
-    webcamStream?: MediaSteamWhichMayHaveInboundId;
-    screenStream?: MediaSteamWhichMayHaveInboundId;
-    screenShareStreamId?: string;
-    camStreamId?: string;
-};
-
 export default class VegaRtcManager implements RtcManager {
     _selfId: any;
     _room: any;
@@ -56,7 +54,7 @@ export default class VegaRtcManager implements RtcManager {
     _webrtcProvider: any;
     _features: any;
     _eventClaim?: any;
-    _vegaConnection: any;
+    _vegaConnection: VegaConnection | null;
     _micAnalyser: any;
     _micAnalyserDebugger: any;
     _mediasoupDeviceInitializedAsync: Promise<Device | null>;
@@ -107,6 +105,7 @@ export default class VegaRtcManager implements RtcManager {
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
     _cpuOveruseDetected: boolean;
+    analytics: VegaAnalytics;
 
     constructor({
         selfId,
@@ -221,6 +220,15 @@ export default class VegaRtcManager implements RtcManager {
 
         this._networkIsDetectedUpBySignal = false;
         this._cpuOveruseDetected = false;
+
+        this.analytics = {
+            vegaJoinFailed: 0,
+            vegaJoinWithoutVegaConnection: 0,
+            vegaCreateTransportWithoutVegaConnection: 0,
+            vegaIceRestarts: 0,
+            vegaIceRestartMissingTransport: 0,
+            vegaIceRestartWrongTransportId: 0,
+        };
     }
 
     _updateAndScheduleMediaServersRefresh({
@@ -425,12 +433,20 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     async _join() {
-        logger.info("join()");
+        logger.info("_join()");
         this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_OPEN);
 
         try {
+            if (!this._vegaConnection) {
+                logger.error("_join() No VegaConnection found");
+                this.analytics.vegaJoinWithoutVegaConnection++;
+                rtcStats.sendEvent("JoinWithoutVegaConnection", {});
+                throw new Error("No VegaConnection found");
+            }
             // We need to always do this, as this triggers the join logic on the SFU
-            const { routerRtpCapabilities } = await this._vegaConnection.request("getCapabilities");
+            const { routerRtpCapabilities } = (await this._vegaConnection.request(
+                "getCapabilities",
+            )) as VegaGetCapabilitiesResponse;
 
             if (!this._routerRtpCapabilities) {
                 const modifiedCapabilities = modifyMediaCapabilities(routerRtpCapabilities, {
@@ -466,14 +482,22 @@ export default class VegaRtcManager implements RtcManager {
             await Promise.all(mediaPromises);
         } catch (error) {
             logger.error("_join() [error:%o]", error);
+            this.analytics.vegaJoinFailed++;
+            rtcStats.sendEvent("VegaJoinFailed", { error });
             // TODO: handle this error, rejoin?
         }
     }
 
     async _createTransport(send: any) {
+        if (!this._vegaConnection) {
+            logger.error("_createTransport() No VegaConnection found");
+            this.analytics.vegaCreateTransportWithoutVegaConnection++;
+            rtcStats.sendEvent("CreateTransportWithoutVegaConnection", {});
+            throw new Error("No VegaConnection found");
+        }
         const creator = send ? "createSendTransport" : "createRecvTransport";
 
-        const transportOptions = await this._vegaConnection.request("createTransport", {
+        const optionsFromSfu = (await this._vegaConnection.request("createTransport", {
             producing: send,
             consuming: !send,
             enableTcp: true,
@@ -488,7 +512,11 @@ export default class VegaRtcManager implements RtcManager {
                 maxSctpMessageSize: 262144,
                 sctpSendBufferSize: 262144,
             },
-        });
+        })) as VegaCreateTransportResponse;
+
+        const transportOptions = {
+            ...optionsFromSfu,
+        } as TransportOptions;
 
         transportOptions.iceServers = turnServerOverride(
             this._features.turnServersOn ? this._turnServers : this._iceServers,
@@ -504,19 +532,23 @@ export default class VegaRtcManager implements RtcManager {
                 return;
             }
             if (send) {
-                if (this._sndTransportIceRestartPromise) {
+                if (this._sndTransportIceRestartPromise || !transport?.id) {
                     return;
                 }
-                this._sndTransportIceRestartPromise = this._restartIce(transport).finally(() => {
-                    this._sndTransportIceRestartPromise = null;
-                });
+                this._sndTransportIceRestartPromise = this._restartIce("send", transport.id)
+                    .catch((e) => logger.error(e))
+                    .finally(() => {
+                        this._sndTransportIceRestartPromise = null;
+                    });
             } else {
-                if (this._rcvTransportIceRestartPromise) {
+                if (this._rcvTransportIceRestartPromise || !transport?.id) {
                     return;
                 }
-                this._rcvTransportIceRestartPromise = this._restartIce(transport).finally(() => {
-                    this._rcvTransportIceRestartPromise = null;
-                });
+                this._rcvTransportIceRestartPromise = this._restartIce("recv", transport.id)
+                    .catch((e) => logger.error(e))
+                    .finally(() => {
+                        this._rcvTransportIceRestartPromise = null;
+                    });
             }
         };
         transport
@@ -553,13 +585,13 @@ export default class VegaRtcManager implements RtcManager {
                     try {
                         const { paused } = appData;
 
-                        const { id } = await this._vegaConnection?.request("produce", {
+                        const { id } = (await this._vegaConnection?.request("produce", {
                             transportId: transport.id,
                             kind,
                             rtpParameters,
                             paused,
                             appData,
-                        });
+                        })) as VegaProduceResponse;
 
                         callback({ id });
                     } catch (error) {
@@ -581,11 +613,11 @@ export default class VegaRtcManager implements RtcManager {
                     errback: any,
                 ) => {
                     try {
-                        const { id } = await this._vegaConnection?.request("produceData", {
+                        const { id } = (await this._vegaConnection?.request("produceData", {
                             transportId: transport.id,
                             sctpStreamParameters,
                             appData,
-                        });
+                        })) as VegaProduceDataResponse;
                         callback({ id });
                     } catch (error) {
                         errback(error);
@@ -599,9 +631,25 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    async _restartIce(transport: any, retried = 0) {
-        if (!transport || !("closed" in transport) || !("connectionState" in transport)) {
-            logger.info("_restartIce: No transport or property closed or connectionState!");
+    async _restartIce(direction: VegaTransportDirection, transportId: string, retried = 0) {
+        this.analytics.vegaIceRestarts++;
+        const transport = direction === "send" ? this._sendTransport : this._receiveTransport;
+        if (!transport) {
+            logger.info(`_restartIce: No transport found with id ${transportId}`);
+            this.analytics.vegaIceRestartMissingTransport++;
+            return;
+        }
+
+        if (transport.id !== transportId) {
+            logger.info(
+                `_restartIce: Transport ids does not match [expected: ${transportId}, actual: ${transport.id}]`,
+            );
+            this.analytics.vegaIceRestartWrongTransportId++;
+            return;
+        }
+
+        if (!("closed" in transport) || !("connectionState" in transport)) {
+            logger.info("_restartIce: Transport is missing closed or connectionState property");
             return;
         }
 
@@ -632,7 +680,9 @@ export default class VegaRtcManager implements RtcManager {
             logger.info(`_restartIce: Connection is undefined`);
             return;
         }
-        const { iceParameters } = await this._vegaConnection.request("restartIce", { transportId: transport.id });
+        const { iceParameters } = (await this._vegaConnection.request("restartIce", {
+            transportId: transport.id,
+        })) as VegaRestartIceResponse;
 
         logger.info("_restartIce: ICE restart iceParameters received from SFU: ", iceParameters);
         const error = await transport
@@ -657,7 +707,7 @@ export default class VegaRtcManager implements RtcManager {
                             Math.min(RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS * 2 ** retried, 60000),
                         );
                     });
-                    await this._restartIce(transport, retried + 1);
+                    await this._restartIce(direction, transportId, retried + 1);
                     break;
             }
             return;
@@ -671,7 +721,7 @@ export default class VegaRtcManager implements RtcManager {
             );
         });
         if (transport.connectionState === "failed" || transport.connectionState === "disconnected") {
-            await this._restartIce(transport, retried + 1);
+            await this._restartIce(direction, transportId, retried + 1);
             return;
         }
     }
