@@ -30,6 +30,7 @@ import {
     VegaTransportDirection,
 } from "./types";
 import { TransportOptions } from "mediasoup-client/lib/Transport";
+import VegaConnection from "../VegaConnection";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
