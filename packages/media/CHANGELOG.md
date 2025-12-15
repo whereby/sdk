@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 2.6.3
+
+### Patch Changes
+
+- b804fd2: Handle SFU ICE restarts during ws reconnect
+- 7c27cdb: Add missing import
+
 ## 2.6.2
 
 ### Patch Changes
