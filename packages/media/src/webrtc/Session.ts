@@ -273,7 +273,7 @@ export default class Session {
         return this.pc && this.pc.connectionState === "connected";
     }
 
-    replaceTrack(oldTrack: CustomMediaStreamTrack | undefined, newTrack: MediaStreamTrack) {
+    replaceTrack(oldTrack: CustomMediaStreamTrack | undefined | null, newTrack: MediaStreamTrack) {
         const pc = this.pc;
         // This shouldn't really happen
         if (!pc) return false;
@@ -356,7 +356,7 @@ export default class Session {
             return pc.addTrack(newTrack, stream);
         }
 
-        if (oldTrackToReplace && !this.canModifyPeerConnection()) {
+        if (!this.canModifyPeerConnection()) {
             this.pending.push(() => {
                 this.replaceTrack(oldTrackToReplace, newTrack);
             });
