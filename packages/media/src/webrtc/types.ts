@@ -145,4 +145,5 @@ export type GetDeviceDataResult = {
 
 export interface CustomMediaStreamTrack extends MediaStreamTrack {
     effectTrack?: boolean;
+    replaced?: boolean;
 }
