@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.4
+
+### Patch Changes
+
+- ae27326: Add analytics for P2P replace track failure
+
 ## 2.6.3
 
 ### Patch Changes
