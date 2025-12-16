@@ -2,6 +2,8 @@ import * as sdpModifier from "./sdpModifier";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
+import rtcStats from "./rtcStatsService";
+import { CustomMediaStreamTrack } from "./types";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -271,19 +273,19 @@ export default class Session {
         return this.pc && this.pc.connectionState === "connected";
     }
 
-    replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) {
+    replaceTrack(oldTrack: CustomMediaStreamTrack | undefined, newTrack: MediaStreamTrack) {
         const pc = this.pc;
         // This shouldn't really happen
         if (!pc) return false;
-        const senders = pc.getSenders();
-        // If we didn't specify oldTrack, replace with first of its kind
-        if (!oldTrack) {
-            oldTrack = (senders.find((s: RTCRtpSender) => s.track && s.track.kind === newTrack.kind) || {}).track;
-        }
+        const senders = pc.getSenders() as RTCRtpSender[];
+        // If we didn't specify oldTrack, try to find a previously added track of the same kind
+        const oldTrackFallback = senders.find((s: RTCRtpSender) => s.track?.kind === newTrack.kind)?.track;
+        const oldTrackToReplace = oldTrack || oldTrackFallback;
+
         // Modern browsers makes things simple.
         // @ts-ignore
         if (window.RTCRtpSender && window.RTCRtpSender.prototype.replaceTrack) {
-            if (oldTrack) {
+            if (oldTrackToReplace) {
                 const process = () => {
                     for (let i = 0; i < senders.length; i++) {
                         const sender: RTCRtpSender = senders[i];
@@ -291,41 +293,58 @@ export default class Session {
                         if (track?.id === newTrack.id) {
                             return Promise.resolve(newTrack);
                         }
-                        if (track?.id === oldTrack.id) {
+                        if (track?.id === oldTrackToReplace.id) {
                             return senders[i].replaceTrack(newTrack);
                         }
                     }
                     return null;
                 };
-                let result = process();
+                const result = process();
                 if (result) {
                     return result;
                 }
-                let resolve: any = null;
-                let reject: any = null;
-                result = new Promise((_resolve, _reject) => {
-                    resolve = _resolve;
-                    reject = _reject;
-                });
-                let retried = 0;
-                let timer: any = setInterval(async () => {
-                    const trackReplacedPromise = process();
-                    if (!trackReplacedPromise) {
-                        if (3 < ++retried) {
-                            clearInterval(timer);
-                            timer = null;
-                            reject("No sender track to replace");
-                        }
-                        return;
-                    }
-                    clearInterval(timer);
-                    timer = null;
-                    const trackReplaced = await trackReplacedPromise;
-                    resolve(trackReplaced);
-                }, 1000);
-                // if we have an oldtrack, we should not go forward, because
+
+                // If we have an oldtrack, we should not go forward, because
                 // we already know that the track has been added at least to the mediastream
-                return result;
+                return new Promise((resolve, reject) => {
+                    let retried = 0;
+                    let timer: any = setInterval(async () => {
+                        const trackReplacedPromise = process();
+                        if (!trackReplacedPromise) {
+                            if (3 < ++retried) {
+                                clearInterval(timer);
+                                timer = null;
+
+                                // Add some analytics to get more context when we end up here.
+                                const sendersAnalytics = senders.map((s) => {
+                                    const track: CustomMediaStreamTrack | null = s.track;
+                                    if (track) {
+                                        return {
+                                            id: track.id,
+                                            kind: track.kind,
+                                            readyState: track.readyState,
+                                            replaced: track.replaced,
+                                        };
+                                    }
+                                });
+                                rtcStats.sendEvent("P2PReplaceTrackFailed", {
+                                    newTrackId: newTrack?.id,
+                                    oldTrackId: oldTrack?.id,
+                                    oldTrackFallbackId: oldTrackFallback?.id,
+                                    sendersCount: senders?.length,
+                                    sendersAnalytics,
+                                });
+
+                                reject("No sender track to replace");
+                            }
+                            return;
+                        }
+                        clearInterval(timer);
+                        timer = null;
+                        const trackReplaced = await trackReplacedPromise;
+                        resolve(trackReplaced);
+                    }, 1000);
+                });
             }
             const stream =
                 this.streams.find((s) => s.getTracks().find((t: any) => t.id === newTrack.id)) || this.streams[0];
@@ -337,16 +356,18 @@ export default class Session {
             return pc.addTrack(newTrack, stream);
         }
 
-        if (!this.canModifyPeerConnection()) {
+        if (oldTrackToReplace && !this.canModifyPeerConnection()) {
             this.pending.push(() => {
-                this.replaceTrack(oldTrack, newTrack);
+                this.replaceTrack(oldTrackToReplace, newTrack);
             });
             return;
         }
         this.isOperationPending = true;
         const onn = pc.onnegotiationneeded;
         pc.onnegotiationneeded = null;
-        this.removeTrack(oldTrack);
+        if (oldTrackToReplace) {
+            this.removeTrack(oldTrackToReplace);
+        }
         this.addTrack(newTrack);
         setTimeout(() => {
             // negotiationneeded is fired async, restore it async.
