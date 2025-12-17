@@ -66,6 +66,15 @@ type P2PAnalytics = {
     P2PChangeBandwidthEmptySDPType: number;
     P2PNegotiationNeeded: number;
     P2PSessionAlreadyCreated: number;
+    P2PReplaceTrackNoStream: number;
+    P2PReplaceTrackNewTrackEnded: number;
+    P2PReplaceTrackNoNewTrack: number;
+    P2PReplaceTrackNewTrackNotInStream: number;
+    P2PReplaceTrackOldTrackNotFound: number;
+    P2PRemoveStreamNoPC: number;
+    P2PReplaceTrackToPCsPendingActionsNull: number;
+    P2PReplaceTrackReturnedFalse: number;
+    P2PReplaceTrackWithoutPC: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -94,7 +103,6 @@ export default class P2pRtcManager implements RtcManager {
     _pendingActionsForConnectedPeerConnections: any[];
     _audioTrackOnEnded: () => void;
     _videoTrackOnEnded: () => void;
-    totalSessionsCreated: number;
     _iceServers: any;
     _turnServers: any;
     _sfuServer: any;
@@ -169,8 +177,6 @@ export default class P2pRtcManager implements RtcManager {
             mediaserverConfigTtlSeconds,
         });
 
-        this.totalSessionsCreated = 0;
-
         this.analytics = {
             P2PReplaceTrackNoPC: 0,
             P2PNonErrorRejectionValueGUMError: 0,
@@ -191,6 +197,15 @@ export default class P2pRtcManager implements RtcManager {
             P2PChangeBandwidthEmptySDPType: 0,
             P2PNegotiationNeeded: 0,
             P2PSessionAlreadyCreated: 0,
+            P2PReplaceTrackNoStream: 0,
+            P2PReplaceTrackNoNewTrack: 0,
+            P2PReplaceTrackNewTrackEnded: 0,
+            P2PReplaceTrackNewTrackNotInStream: 0,
+            P2PReplaceTrackOldTrackNotFound: 0,
+            P2PRemoveStreamNoPC: 0,
+            P2PReplaceTrackToPCsPendingActionsNull: 0,
+            P2PReplaceTrackReturnedFalse: 0,
+            P2PReplaceTrackWithoutPC: 0,
         };
     }
 
@@ -566,8 +581,6 @@ export default class P2pRtcManager implements RtcManager {
                 shouldAddLocalVideo,
                 incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
             });
-
-            this.totalSessionsCreated++;
         } else {
             this.analytics.P2PSessionAlreadyCreated++;
             rtcStats.sendEvent("P2PSessionAlreadyCreated", {
@@ -861,9 +874,13 @@ export default class P2pRtcManager implements RtcManager {
         const promises: any = [];
         this._forEachPeerConnection((session: any) => {
             if (!session.hasConnectedPeerConnection()) {
+                rtcStats.sendEvent("P2PReplaceTrackWithoutPC", {});
+                this.analytics.P2PReplaceTrackWithoutPC++;
                 logger.info("Session doesn't have a connected PeerConnection, adding pending action!");
                 const pendingActions = this._pendingActionsForConnectedPeerConnections;
                 if (!pendingActions) {
+                    rtcStats.sendEvent("P2PReplaceTrackToPCsPendingActionsNull", {});
+                    this.analytics.P2PReplaceTrackToPCsPendingActionsNull++;
                     logger.warn(
                         `No pending action is created to replace track, because the pending actions array is null`,
                     );
@@ -873,6 +890,8 @@ export default class P2pRtcManager implements RtcManager {
                     const action = () => {
                         const replacedTrackPromise = session.replaceTrack(oldTrack, newTrack);
                         if (!replacedTrackPromise) {
+                            rtcStats.sendEvent("P2PReplaceTrackReturnedFalse", {});
+                            this.analytics.P2PReplaceTrackReturnedFalse++;
                             logger.error("replaceTrack returned false!");
                             reject(`ReplaceTrack returned false`);
                             return;
@@ -886,6 +905,8 @@ export default class P2pRtcManager implements RtcManager {
             }
             const replacedTrackResult = session.replaceTrack(oldTrack, newTrack);
             if (!replacedTrackResult) {
+                rtcStats.sendEvent("P2PReplaceTrackReturnedFalse", {});
+                this.analytics.P2PReplaceTrackReturnedFalse++;
                 logger.error("replaceTrack returned false!");
                 return;
             }
