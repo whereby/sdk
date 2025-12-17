@@ -11,6 +11,7 @@ import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
+import { RtcStatsConnection } from "../../src";
 
 const originalNavigator = global.navigator;
 
@@ -43,6 +44,7 @@ describe("P2pRtcManager", () => {
     let webrtcProvider: any;
     let clientId: any;
     let mediaContstraints: any;
+    let rtcStatsConnectionStub: RtcStatsConnection;
 
     beforeEach(() => {
         // @ts-ignore
@@ -60,6 +62,7 @@ describe("P2pRtcManager", () => {
         };
         emitter = helpers.createEmitterStub();
         clientId = helpers.randomString("client-");
+        rtcStatsConnectionStub = helpers.createRtcStatsConnectionStub();
 
         navigator = {
             mediaDevices: {
@@ -96,6 +99,7 @@ describe("P2pRtcManager", () => {
             serverSocket: _serverSocket,
             webrtcProvider,
             features,
+            rtcStats: rtcStatsConnectionStub,
         });
     }
 

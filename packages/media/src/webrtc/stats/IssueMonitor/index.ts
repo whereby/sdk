@@ -1,6 +1,7 @@
 import { IssueCheckData, IssueDetector, issueDetectors } from "./issueDetectors";
 import { subscribeStats } from "../StatsMonitor";
 import { StatsClient, ViewStats } from "../types";
+import { RtcStatsConnection } from "../../rtcStatsService";
 
 type IssueSubscription = {
     onUpdatedIssues: (
@@ -502,11 +503,12 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
     );
 }
 
-export function subscribeIssues(subscription: IssueSubscription): { stop: () => void } {
+export function subscribeIssues(subscription: IssueSubscription, rtcStats: RtcStatsConnection): { stop: () => void } {
+    if (!rtcStats) throw new Error("rtcStats connection must be passed to `subscribeIssues`");
     subscriptions.push(subscription);
 
     // start the stats on first subscription
-    if (!stopStats) stopStats = subscribeStats({ onUpdatedStats }).stop;
+    if (!stopStats) stopStats = subscribeStats({ onUpdatedStats }, rtcStats).stop;
 
     return {
         stop() {

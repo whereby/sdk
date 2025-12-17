@@ -9,7 +9,7 @@ import {
 import { getPeerConnectionsWithStatsReports } from "./peerConnection";
 import { getPeerConnectionIndex, removePeerConnection } from "./peerConnectionTracker";
 import { StatsClient, ViewStats } from "../types";
-import rtcStats from "../../rtcStatsService";
+import type { RtcStatsConnection } from "../../rtcStatsService";
 
 const getOrCreateSsrcMetricsContainer = (
     statsByView: Record<string, ViewStats>,
@@ -78,9 +78,10 @@ const DEFAULT_CLIENT: StatsClient = {
 export async function collectStats(
     state: StatsMonitorState,
     { logger, interval }: StatsMonitorOptions,
+    rtcStats: RtcStatsConnection,
     immediate: boolean,
 ): Promise<Record<string, ViewStats> | undefined> {
-    const collectStatsBound = collectStats.bind(null, state, { interval, logger });
+    const collectStatsBound = collectStats.bind(null, state, { interval, logger }, rtcStats);
 
     try {
         // refresh provided clients before each run
@@ -110,7 +111,7 @@ export async function collectStats(
         state.lastUpdateTime = Date.now();
 
         // loop through current peer connections
-        (await getPeerConnectionsWithStatsReports()).forEach(([pc, report, pcData]) => {
+        (await getPeerConnectionsWithStatsReports(rtcStats)).forEach(([pc, report, pcData]) => {
             // each new peer connection will get +1, to be able to see/count/correlate data
             const pcIndex = getPeerConnectionIndex(pc);
 

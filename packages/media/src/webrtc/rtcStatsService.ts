@@ -12,16 +12,19 @@ const RTCSTATS_PROTOCOL_VERSION = "1.0";
 // as they are delta compressed and we need the initial properties
 const GETSTATS_BUFFER_SIZE = 20;
 
-const clientInfo = {
-    id: uuidv4(), // shared id across rtcstats reconnects
-    connectionNumber: 0,
-};
-
 const noop = () => {};
-let resetDelta = noop;
-
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
-function rtcStatsConnection(wsURL: string, logger: any = console) {
+function rtcStatsConnection({
+    url,
+    clientInfo,
+    getStatsBufferSize,
+    logger = console,
+}: {
+    url: string;
+    clientInfo: any;
+    getStatsBufferSize: number;
+    logger?: any;
+}) {
     const buffer: any = [];
     let ws: WebSocket;
     let organizationId: number;
@@ -42,6 +45,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     const connection = {
         connected: false,
         attemptedConnectedAtLeastOnce: false,
+        resetDelta: noop,
         trace: (...args: any) => {
             args.push(Date.now());
 
@@ -86,7 +90,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             } else if (args[0] === "getstats") {
                 // only buffer getStats for a while
                 // we don't want this to pile up, but we need at least the initial reports
-                if (getStatsBufferUsed < GETSTATS_BUFFER_SIZE) {
+                if (getStatsBufferUsed < getStatsBufferSize) {
                     getStatsBufferUsed++;
                     buffer.push(args);
                 }
@@ -116,7 +120,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             ws?.close();
             connection.connected = true;
             connection.attemptedConnectedAtLeastOnce = true;
-            ws = new WebSocket(wsURL + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
+            ws = new WebSocket(url + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
 
             ws.onerror = (e: Event) => {
                 connection.connected = false;
@@ -125,7 +129,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             ws.onclose = (e: CloseEvent) => {
                 connection.connected = false;
                 logger.info(`[RTCSTATS] Closed ${e.code}`);
-                resetDelta();
+                connection.resetDelta();
             };
             ws.onopen = () => {
                 // send client info after each connection, so analysis tools can handle reconnections
@@ -175,29 +179,47 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     return connection;
 }
 
-const RTCSTATS_URL = process.env.RTCSTATS_URL;
-const server = rtcStatsConnection(RTCSTATS_URL || "wss://rtcstats.srv.whereby.com");
-const stats = rtcstats(
-    server.trace,
-    10000, // query once every 10 seconds.
-    [""], // only shim unprefixed RTCPeerConnecion.
-);
-// on node clients this function can be undefined
-resetDelta = stats?.resetDelta || noop;
+export function createRtcStatsConnection({
+    url,
+    getStatsBufferSize = GETSTATS_BUFFER_SIZE,
+    getStatsInterval = 10000,
+}: {
+    url: string;
+    getStatsBufferSize?: number;
+    getStatsInterval?: number;
+}) {
+    const clientInfo = {
+        id: uuidv4(), // shared id across rtcstats reconnects
+        connectionNumber: 0,
+    };
 
-const rtcStats = {
-    sendEvent: (type: any, value: any) => {
-        server.trace("customEvent", null, {
-            type,
-            value,
-        });
-    },
-    sendAudioMuted: (muted: boolean) => {
-        rtcStats.sendEvent("audio_muted", { muted });
-    },
-    sendVideoMuted: (muted: boolean) => {
-        rtcStats.sendEvent("video_muted", { muted });
-    },
-    server,
-};
-export default rtcStats;
+    const server = rtcStatsConnection({ url, clientInfo, getStatsBufferSize });
+    const stats = rtcstats(
+        server.trace,
+        getStatsInterval,
+        [""], // only shim unprefixed RTCPeerConnecion.
+    );
+    // on node clients this function can be undefined
+    server.resetDelta = stats?.resetDelta || noop;
+
+    const rtcStats = {
+        clientInfo,
+        sendEvent: (type: any, value: any) => {
+            server.trace("customEvent", null, {
+                type,
+                value,
+            });
+        },
+        sendAudioMuted: (muted: boolean) => {
+            rtcStats.sendEvent("audio_muted", { muted });
+        },
+        sendVideoMuted: (muted: boolean) => {
+            rtcStats.sendEvent("video_muted", { muted });
+        },
+        server,
+    };
+
+    return rtcStats;
+}
+
+export type RtcStatsConnection = ReturnType<typeof createRtcStatsConnection>;

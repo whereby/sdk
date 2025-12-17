@@ -8,21 +8,29 @@ import { PROTOCOL_RESPONSES } from "../../src/model/protocol";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
+import { RtcStatsConnection } from "../../src";
 
 const originalMediasoupDevice = mediasoupClient.Device;
 
 describe("RtcManagerDispatcher", () => {
     let emitter: any;
     let serverSocketStub: any;
+    let rtcStatsConnectionStub: RtcStatsConnection;
     const features: any = {};
 
     beforeEach(() => {
         emitter = new EventEmitter();
         serverSocketStub = helpers.createServerSocketStub();
-
+        rtcStatsConnectionStub = helpers.createRtcStatsConnectionStub();
         const serverSocket = serverSocketStub.socket;
 
-        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider: {}, features });
+        new RtcManagerDispatcher({
+            emitter,
+            serverSocket,
+            webrtcProvider: {},
+            features,
+            rtcStats: rtcStatsConnectionStub,
+        });
         Object.defineProperty(mediasoupClient, "Device", {
             value: jest.fn(),
         });

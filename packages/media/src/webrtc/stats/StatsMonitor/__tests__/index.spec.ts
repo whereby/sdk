@@ -1,4 +1,6 @@
 import { StatsMonitorOptions, StatsMonitorState, subscribeStats } from "..";
+import { createRtcStatsConnectionStub } from "../../../../../tests/webrtc/webRtcHelpers";
+import { RtcStatsConnection } from "../../../rtcStatsService";
 import { collectStats } from "../collectStats";
 import { startCpuObserver } from "../cpuObserver";
 
@@ -10,6 +12,7 @@ jest.useFakeTimers();
 describe("subscribeStats", () => {
     let options: StatsMonitorOptions;
     let baseState: StatsMonitorState;
+    let rtcStatsConnectionStub: RtcStatsConnection;
 
     beforeEach(() => {
         baseState = {
@@ -21,6 +24,7 @@ describe("subscribeStats", () => {
             numFailedStatsReports: 0,
         };
         options = { interval: 2000, logger: { debug: jest.fn(), error: jest.fn(), info: jest.fn(), warn: jest.fn() } };
+        rtcStatsConnectionStub = createRtcStatsConnectionStub();
     });
 
     describe("with current monitor", () => {
@@ -34,7 +38,7 @@ describe("subscribeStats", () => {
             const state = { ...baseState, currentMonitor };
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state);
+            subscribeStats(subscription, rtcStatsConnectionStub, options, state);
 
             expect(state.subscriptions).toEqual([subscription]);
         });
@@ -43,7 +47,7 @@ describe("subscribeStats", () => {
             const state = { ...baseState, currentMonitor };
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state).stop();
+            subscribeStats(subscription, rtcStatsConnectionStub, options, state).stop();
 
             expect(state.subscriptions).toEqual([]);
             expect(currentMonitor?.stop).toHaveBeenCalled();
@@ -56,7 +60,7 @@ describe("subscribeStats", () => {
             const state = { ...baseState };
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state);
+            subscribeStats(subscription, rtcStatsConnectionStub, options, state);
 
             expect(startCpuObserver).toHaveBeenCalled();
         });
@@ -65,7 +69,7 @@ describe("subscribeStats", () => {
             const state = { ...baseState };
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state);
+            subscribeStats(subscription, rtcStatsConnectionStub, options, state);
             jest.advanceTimersByTime(options.interval);
 
             expect(collectStats).toHaveBeenCalled();
@@ -75,7 +79,7 @@ describe("subscribeStats", () => {
             const state = { ...baseState, currentMonitor: null };
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state);
+            subscribeStats(subscription, rtcStatsConnectionStub, options, state);
 
             expect(state.currentMonitor).toMatchObject({
                 getUpdatedStats: expect.any(Function),
@@ -89,7 +93,7 @@ describe("subscribeStats", () => {
             (startCpuObserver as jest.Mock).mockReturnValueOnce({ stop });
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state).stop();
+            subscribeStats(subscription, rtcStatsConnectionStub, options, state).stop();
 
             expect(stop).toHaveBeenCalled();
         });

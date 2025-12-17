@@ -1,9 +1,11 @@
 import { issueDetectorOrMetricEnabled, Metric, subscribeIssues } from "..";
 import {
     createMockedMediaStreamTrack,
+    createRtcStatsConnectionStub,
     mockCheckData,
     mockStatsClient,
 } from "../../../../../tests/webrtc/webRtcHelpers";
+import { RtcStatsConnection } from "../../../rtcStatsService";
 import { setClientProvider } from "../../StatsMonitor";
 import { setPeerConnectionsForTests } from "../../StatsMonitor/peerConnectionTracker";
 import { StatsClient } from "../../types";
@@ -142,6 +144,7 @@ describe("IssueMonitor", () => {
     });
 
     let onUpdatedIssues: jest.Mock;
+    let rtcStatsConnectionStub: RtcStatsConnection;
 
     const statsIntervalTick = async () => {
         jest.advanceTimersByTime(2000);
@@ -163,6 +166,7 @@ describe("IssueMonitor", () => {
 
     beforeEach(() => {
         onUpdatedIssues = jest.fn();
+        rtcStatsConnectionStub = createRtcStatsConnectionStub();
 
         localCam = createMockClient("localcam", true);
         remoteCam1 = createMockClient("remotecam1", false);
@@ -175,7 +179,7 @@ describe("IssueMonitor", () => {
 
         setClientProvider(() => [localCam, remoteCam1, remoteCam2]);
 
-        stopSubscription = subscribeIssues({ onUpdatedIssues }).stop;
+        stopSubscription = subscribeIssues({ onUpdatedIssues }, rtcStatsConnectionStub).stop;
     });
 
     afterEach(async () => {
