@@ -1,5 +1,5 @@
-import rtcStats from "../../rtcStatsService";
 import { PCData } from "../types";
+import { RtcStatsConnection } from "../../rtcStatsService";
 import { getCurrentPeerConnections } from "./peerConnectionTracker";
 
 // peer connection related data
@@ -7,7 +7,7 @@ const PC_DATA_BY_PC = new WeakMap<RTCPeerConnection, PCData>();
 export let numMissingTrackSsrcLookups = 0;
 export let numFailedTrackSsrcLookups = 0;
 
-export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =>
+export const getPeerConnectionsWithStatsReports = (rtcStats: RtcStatsConnection, pcDataByPc = PC_DATA_BY_PC) =>
     Promise.all(
         getCurrentPeerConnections().map(async (pc: RTCPeerConnection) => {
             let pcData = pcDataByPc.get(pc);

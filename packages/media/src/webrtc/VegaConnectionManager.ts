@@ -1,3 +1,4 @@
+import { RtcStatsConnection } from "./rtcStatsService";
 import VegaConnection from "./VegaConnection";
 import { VegaIncrementAnalyticMetric } from "./VegaRtcManager/types";
 
@@ -47,14 +48,17 @@ export function convertToProperHostList(hostList: string | HostListEntryOptional
 }
 // responsible for checking and nominating (delivering) 1 working sfu websocket connection
 // it will use a prioritized list of hosts to try
-export function createVegaConnectionManager(config: {
-    initialHostList: string | any[];
-    getUrlForHost?: (host: string) => string;
-    onConnected?: (vegaConnection: VegaConnection, info: ConnectionInfo) => void;
-    onDisconnected?: () => void;
-    onFailed?: () => void;
-    onAttemptFailed?: (info: { host: string; dc: string }) => void;
-}) {
+export function createVegaConnectionManager(
+    rtcStats: RtcStatsConnection,
+    config: {
+        initialHostList: string | any[];
+        getUrlForHost?: (host: string) => string;
+        onConnected?: (vegaConnection: VegaConnection, info: ConnectionInfo) => void;
+        onDisconnected?: () => void;
+        onFailed?: () => void;
+        onAttemptFailed?: (info: { host: string; dc: string }) => void;
+    },
+) {
     let connectionInfo: ConnectionInfo;
     let lastDisconnectTime: number | undefined;
     let lastNetworkUpTime: number | undefined;
@@ -165,7 +169,7 @@ export function createVegaConnectionManager(config: {
                         return;
                     }
 
-                    const vegaConnection = new VegaConnection(config.getUrlForHost?.(host) || host, {
+                    const vegaConnection = new VegaConnection(config.getUrlForHost?.(host) || host, rtcStats, {
                         protocol: "whereby-sfu#v4",
                         incrementAnalyticMetric,
                     });

@@ -6,6 +6,7 @@ import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelp
 import WS from "jest-websocket-mock";
 import { setTimeout } from "timers/promises";
 import { GetConstraintsOptions, WebRTCProvider } from "../../types";
+import { RtcStatsConnection } from "../../rtcStatsService";
 
 jest.mock("../../../utils/getMediasoupDevice");
 const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
@@ -31,6 +32,7 @@ describe("VegaRtcManager", () => {
     let sfuWebsocketServerUrl: string;
 
     let mockSendTransport: MockTransport;
+    let rtcStatsConnectionStub: RtcStatsConnection;
 
     beforeEach(() => {
         mediaConstraints = {
@@ -54,6 +56,7 @@ describe("VegaRtcManager", () => {
             getMediaOptions: () => mediaConstraints,
         };
         mockSendTransport = new MockTransport();
+        rtcStatsConnectionStub = helpers.createRtcStatsConnectionStub();
 
         emitter = helpers.createEmitterStub();
 
@@ -100,6 +103,7 @@ describe("VegaRtcManager", () => {
             webrtcProvider,
             features: {},
             eventClaim: helpers.randomString("/claim-"),
+            rtcStats: rtcStatsConnectionStub,
         });
     });
 
@@ -139,6 +143,7 @@ describe("VegaRtcManager", () => {
                 serverSocket,
                 webrtcProvider,
                 features: { isNodeSdk: true },
+                rtcStats: rtcStatsConnectionStub,
             });
 
             expect(getMediasoupDeviceAsync).toHaveBeenCalledWith({ isNodeSdk: true });

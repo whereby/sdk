@@ -4,6 +4,7 @@ import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import VegaRtcManager from "./VegaRtcManager";
 import { RoomJoinedEvent, ServerSocket } from "../utils";
 import { RtcManager, RtcEvents, RtcEventEmitter, WebRTCProvider } from "./types";
+import { RtcStatsConnection } from "./rtcStatsService";
 
 export default class RtcManagerDispatcher {
     emitter: { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
@@ -14,11 +15,13 @@ export default class RtcManagerDispatcher {
         serverSocket,
         webrtcProvider,
         features,
+        rtcStats,
     }: {
         emitter: RtcEventEmitter;
         serverSocket: ServerSocket;
         webrtcProvider: WebRTCProvider;
         features: any;
+        rtcStats: RtcStatsConnection;
     }) {
         this.emitter = emitter;
         this.currentManager = null;
@@ -34,6 +37,7 @@ export default class RtcManagerDispatcher {
                 webrtcProvider,
                 features,
                 eventClaim,
+                rtcStats,
             };
             const isSfu = !!room.sfuServer;
             roomMode = isSfu ? "group" : "normal";
@@ -42,6 +46,7 @@ export default class RtcManagerDispatcher {
                     if (this.currentManager.setEventClaim && eventClaim) {
                         this.currentManager.setEventClaim(eventClaim);
                     }
+
                     return;
                 }
                 this.currentManager.disconnectAll();

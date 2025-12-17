@@ -5,8 +5,6 @@ jest.mock("webrtc-adapter", () => {
 });
 import assert from "node:assert";
 
-import rtcStats from "../../src/webrtc/rtcStatsService";
-
 import * as helpers from "./webRtcHelpers";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import P2pRtcManager, { ICE_RESTART_DELAY } from "../../src/webrtc/P2pRtcManager";
@@ -14,6 +12,7 @@ import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
 import { CAMERA_STREAM_ID, GetConstraintsOptions, WebRTCProvider } from "../../src";
+import { RtcStatsConnection } from "../../src";
 
 const originalNavigator = global.navigator;
 
@@ -49,6 +48,7 @@ describe("P2pRtcManager", () => {
     let mediaConstraints: GetConstraintsOptions;
     let rtcManager: P2pRtcManager;
     let mediaserverConfigTtlSeconds: number;
+    let rtcStatsConnectionStub: RtcStatsConnection;
 
     beforeEach(() => {
         jest.useFakeTimers();
@@ -74,6 +74,7 @@ describe("P2pRtcManager", () => {
         emitterStub = helpers.createEmitterStub();
         iceServers = helpers.createIceServersConfig();
         clientId = helpers.randomString("client-");
+        rtcStatsConnectionStub = helpers.createRtcStatsConnectionStub();
 
         navigator = {
             mediaDevices: {
@@ -131,6 +132,7 @@ describe("P2pRtcManager", () => {
             serverSocket: _serverSocket,
             webrtcProvider,
             features,
+            rtcStats: rtcStatsConnectionStub,
         });
     }
 
@@ -477,10 +479,10 @@ describe("P2pRtcManager", () => {
         });
 
         it("should disconnect rtcStats", () => {
-            jest.spyOn(rtcStats.server, "close");
+            jest.spyOn(rtcStatsConnectionStub.server, "close");
             rtcManager.disconnectAll();
 
-            expect(rtcStats.server.close).toHaveBeenCalled();
+            expect(rtcStatsConnectionStub.server.close).toHaveBeenCalled();
         });
     });
 

@@ -2,8 +2,6 @@ import SDPUtils from "sdp";
 import adapterRaw from "webrtc-adapter";
 import * as sdpTransform from "sdp-transform";
 import Logger from "../utils/Logger";
-import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
-import rtcStats from "./rtcStatsService";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
