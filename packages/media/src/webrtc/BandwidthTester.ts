@@ -417,9 +417,11 @@ export default class BandwidthTester extends EventEmitter {
             this._receiveTransport.getStats(),
         ]);
 
-        const { recvStats: [remoteRecvStats = null] = [] } = await this._vegaConnection.request("getTransportStats");
-
-        const { availableOutgoingBitrate = 5000000 } = remoteRecvStats || {};
+        let availableOutgoingBitrate = 5000000;
+        try {
+            availableOutgoingBitrate = (await this._vegaConnection.request("getTransportStats")).recvStats[0]
+                .availableOutgoingBitrate;
+        } catch {}
 
         let outboundPackets = 0;
         let remotePacketsLost = 0;
