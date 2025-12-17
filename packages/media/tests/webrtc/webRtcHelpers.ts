@@ -3,6 +3,7 @@ import WS from "jest-websocket-mock";
 import { ServerSocket } from "../../src/utils/ServerSocket";
 import { SsrcStats, StatsClient, TrackStats, ViewStats } from "../../src/webrtc/stats/types";
 import { IssueCheckData } from "../../src/webrtc/stats/IssueMonitor/issueDetectors";
+import { RtcStatsConnection } from "../../src";
 jest.mock("../../src/utils/ServerSocket");
 
 export function createServerSocketStub() {
@@ -52,6 +53,15 @@ export function createServerSocketStub() {
             return listeners[eventName] || [];
         },
     };
+}
+
+export function createRtcStatsConnectionStub() {
+    return {
+        sendEvent: jest.fn(),
+        sendAudioMuted: jest.fn(),
+        sendVideoMuted: jest.fn(),
+        server: { connect: jest.fn(), close: jest.fn(), trace: jest.fn() },
+    } as unknown as RtcStatsConnection;
 }
 
 export function createRTCPeerConnectionStub(
@@ -311,4 +321,28 @@ export function mockCheckData(args?: Partial<IssueCheckData>): IssueCheckData {
         metrics: {},
         ...args,
     };
+}
+
+// INFO: The websocket mocks are very incomplete, only added for rtcstats tests
+export function mockWebSocket(): WebSocket {
+    return {
+        close: jest.fn(),
+        send: jest.fn(),
+    } as unknown as WebSocket;
+}
+
+export function mockWebSocketConstructor() {
+    const ClassMock: jest.Mock<WebSocket> = jest.fn().mockImplementation(function () {
+        // @ts-ignore
+        Object.assign(this, mockWebSocket());
+
+        // IMPORTANT! Dont return anything here to allow mock.instances to be populated
+    });
+
+    // @ts-ignore
+    ClassMock.CLOSED = "CLOSED";
+    // @ts-ignore
+    ClassMock.OPEN = "OPEN";
+
+    return ClassMock;
 }

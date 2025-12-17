@@ -2,7 +2,7 @@ import * as sdpModifier from "./sdpModifier";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
-import rtcStats from "./rtcStatsService";
+import { RtcStatsConnection } from "./rtcStatsService";
 import { CustomMediaStreamTrack } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 
@@ -39,19 +39,23 @@ export default class Session {
     signalingState: any;
     srdComplete: any;
     _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
+    _rtcStats: RtcStatsConnection;
 
     constructor({
         peerConnectionId,
         bandwidth,
         deprioritizeH264Encoding,
         incrementAnalyticMetric,
+        rtcStats,
     }: {
         peerConnectionId: any;
         bandwidth: any;
         deprioritizeH264Encoding: any;
         incrementAnalyticMetric: P2PIncrementAnalyticMetric;
+        rtcStats: RtcStatsConnection;
     }) {
         this.peerConnectionId = peerConnectionId;
+        this._rtcStats = rtcStats;
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
         this.publicHostCandidateSeen = false;
@@ -283,7 +287,7 @@ export default class Session {
         // This shouldn't really happen
         if (!pc) {
             // ...and if it does not, we'll remove this guard.
-            rtcStats.sendEvent("P2PReplaceTrackNoPC", {
+            this._rtcStats.sendEvent("P2PReplaceTrackNoPC", {
                 oldTrackId: oldTrack?.id,
                 newTrackId: newTrack?.id,
             });
@@ -340,7 +344,7 @@ export default class Session {
                                         };
                                     }
                                 });
-                                rtcStats.sendEvent("P2PReplaceTrackFailed", {
+                                this._rtcStats.sendEvent("P2PReplaceTrackFailed", {
                                     newTrackId: newTrack?.id,
                                     oldTrackId: oldTrack?.id,
                                     oldTrackFallbackId: oldTrackFallback?.id,

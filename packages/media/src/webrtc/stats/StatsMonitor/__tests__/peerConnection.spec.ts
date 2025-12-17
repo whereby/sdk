@@ -2,12 +2,18 @@ import {
     createMockedMediaStreamTrack,
     createRTCPeerConnectionStub,
     createRTCTrancieverStub,
+    createRtcStatsConnectionStub,
 } from "../../../../../tests/webrtc/webRtcHelpers";
+import { RtcStatsConnection } from "../../../rtcStatsService";
 import { getPeerConnectionsWithStatsReports } from "../peerConnection";
 import { setPeerConnectionsForTests } from "../peerConnectionTracker";
 
 describe("peerConnection", () => {
     describe("getPeerConnectionsWithStatsReports", () => {
+        let rtcStatsConnectionStub: RtcStatsConnection;
+        beforeEach(() => {
+            rtcStatsConnectionStub = createRtcStatsConnectionStub();
+        });
         it("should return correct amount of peer connections", async () => {
             const pcStats = [new Map(), new Map(), new Map()];
             const existingPeerConnections = [
@@ -17,7 +23,7 @@ describe("peerConnection", () => {
             ];
             setPeerConnectionsForTests(existingPeerConnections);
 
-            const result = await getPeerConnectionsWithStatsReports();
+            const result = await getPeerConnectionsWithStatsReports(rtcStatsConnectionStub);
 
             result.forEach(([pc, report], index) => {
                 expect(pc).toEqual(existingPeerConnections[index]);
@@ -31,7 +37,7 @@ describe("peerConnection", () => {
             const existingPeerConnections = [peerConnection];
             setPeerConnectionsForTests(existingPeerConnections);
 
-            const result = await getPeerConnectionsWithStatsReports();
+            const result = await getPeerConnectionsWithStatsReports(rtcStatsConnectionStub);
 
             existingPeerConnections.forEach((_, index) => {
                 expect(result[index][1]).toEqual([]);
@@ -138,7 +144,10 @@ describe("peerConnection", () => {
                 const pcDataByPc = new Map([[pc, pcData]]);
                 setPeerConnectionsForTests([pc]);
 
-                const [[_resultPc, _resultReport, resultPcData]] = await getPeerConnectionsWithStatsReports(pcDataByPc);
+                const [[_resultPc, _resultReport, resultPcData]] = await getPeerConnectionsWithStatsReports(
+                    rtcStatsConnectionStub,
+                    pcDataByPc,
+                );
 
                 expect(resultPcData).toEqual(expectedPcData);
             });

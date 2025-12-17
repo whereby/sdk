@@ -3,7 +3,8 @@ import adapterRaw from "webrtc-adapter";
 import { v4 as uuidv4 } from "uuid";
 
 import rtcManagerEvents from "../rtcManagerEvents";
-import rtcStats from "../rtcStatsService";
+import type { RtcStatsConnection } from "../rtcStatsService";
+import VegaConnection from "../VegaConnection";
 import createMicAnalyser from "../VegaMicAnalyser";
 import { CustomMediaStreamTrack, RtcManager } from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
@@ -30,7 +31,6 @@ import {
     VegaTransportDirection,
 } from "./types";
 import { TransportOptions } from "mediasoup-client/lib/Transport";
-import VegaConnection from "../VegaConnection";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -107,6 +107,7 @@ export default class VegaRtcManager implements RtcManager {
     _networkIsDetectedUpBySignal: boolean;
     _cpuOveruseDetected: boolean;
     analytics: VegaAnalytics;
+    _rtcStats: RtcStatsConnection;
 
     constructor({
         selfId,
@@ -116,6 +117,7 @@ export default class VegaRtcManager implements RtcManager {
         webrtcProvider,
         features,
         eventClaim,
+        rtcStats,
     }: {
         selfId: any;
         room: any;
@@ -124,6 +126,7 @@ export default class VegaRtcManager implements RtcManager {
         webrtcProvider: any;
         features?: any;
         eventClaim?: string;
+        rtcStats: RtcStatsConnection;
     }) {
         const { session, iceServers, turnServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
 
@@ -135,6 +138,7 @@ export default class VegaRtcManager implements RtcManager {
         this._webrtcProvider = webrtcProvider;
         this._features = features || {};
         this._eventClaim = eventClaim;
+        this._rtcStats = rtcStats;
 
         this._vegaConnection = null;
 
@@ -191,11 +195,11 @@ export default class VegaRtcManager implements RtcManager {
             // One of them is getting unplugged. The other is the Chrome audio
             // process crashing. The third is the tab being closed.
             // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
-            rtcStats.sendEvent("audio_ended", { unloading });
+            this._rtcStats.sendEvent("audio_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
         };
         this._videoTrackOnEnded = () => {
-            rtcStats.sendEvent("video_ended", { unloading });
+            this._rtcStats.sendEvent("video_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         };
 
@@ -442,7 +446,7 @@ export default class VegaRtcManager implements RtcManager {
             if (!this._vegaConnection) {
                 logger.error("_join() No VegaConnection found");
                 this.analytics.vegaJoinWithoutVegaConnection++;
-                rtcStats.sendEvent("JoinWithoutVegaConnection", {});
+                this._rtcStats.sendEvent("JoinWithoutVegaConnection", {});
                 throw new Error("No VegaConnection found");
             }
             // We need to always do this, as this triggers the join logic on the SFU
@@ -485,7 +489,7 @@ export default class VegaRtcManager implements RtcManager {
         } catch (error) {
             logger.error("_join() [error:%o]", error);
             this.analytics.vegaJoinFailed++;
-            rtcStats.sendEvent("VegaJoinFailed", { error });
+            this._rtcStats.sendEvent("VegaJoinFailed", { error });
             // TODO: handle this error, rejoin?
         }
     }
@@ -494,7 +498,7 @@ export default class VegaRtcManager implements RtcManager {
         if (!this._vegaConnection) {
             logger.error("_createTransport() No VegaConnection found");
             this.analytics.vegaCreateTransportWithoutVegaConnection++;
-            rtcStats.sendEvent("CreateTransportWithoutVegaConnection", {});
+            this._rtcStats.sendEvent("CreateTransportWithoutVegaConnection", {});
             throw new Error("No VegaConnection found");
         }
         const creator = send ? "createSendTransport" : "createRecvTransport";
@@ -938,7 +942,7 @@ export default class VegaRtcManager implements RtcManager {
                 const targetMaxSpatialLayer = simulcastLayer3ShouldBeActive ? 2 : 1;
                 if (this._webcamProducer.maxSpatialLayer !== targetMaxSpatialLayer) {
                     this._webcamProducer.setMaxSpatialLayer(targetMaxSpatialLayer);
-                    rtcStats.sendEvent("simulcast_layer_activation_changed", {
+                    this._rtcStats.sendEvent("simulcast_layer_activation_changed", {
                         layerIndex: 2,
                         active: simulcastLayer3ShouldBeActive,
                     });
@@ -983,7 +987,7 @@ export default class VegaRtcManager implements RtcManager {
                     ? addProducerCpuOveruseWatch({
                           producer,
                           onOveruse: () => {
-                              rtcStats.sendEvent("producer_cpuoveruse_detected", {});
+                              this._rtcStats.sendEvent("producer_cpuoveruse_detected", {});
 
                               // we stop monitoring once we detect
                               cleanUpCpuWatch();
@@ -1315,7 +1319,7 @@ export default class VegaRtcManager implements RtcManager {
 
         this._syncMicAnalyser();
 
-        rtcStats.sendEvent("colocation_changed", { colocation });
+        this._rtcStats.sendEvent("colocation_changed", { colocation });
     }
 
     /**
@@ -1749,30 +1753,30 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     sendAudioMutedStats(muted: boolean) {
-        rtcStats.sendEvent("audio_muted", { muted });
+        this._rtcStats.sendEvent("audio_muted", { muted });
     }
 
     sendVideoMutedStats(muted: boolean) {
-        rtcStats.sendEvent("video_muted", { muted });
+        this._rtcStats.sendEvent("video_muted", { muted });
     }
 
     sendStatsCustomEvent(eventName: string, data?: any) {
-        rtcStats.sendEvent(eventName, data);
+        this._rtcStats.sendEvent(eventName, data);
     }
 
     rtcStatsConnect() {
-        if (!rtcStats.server.connected) {
-            rtcStats.server.connect();
+        if (!this._rtcStats.server.connected) {
+            this._rtcStats.server.connect();
         }
     }
 
     rtcStatsDisconnect() {
-        rtcStats.server.close();
+        this._rtcStats.server.close();
     }
 
     rtcStatsReconnect() {
-        if (!rtcStats.server.connected && rtcStats.server.attemptedConnectedAtLeastOnce) {
-            rtcStats.server.connect();
+        if (!this._rtcStats.server.connected && this._rtcStats.server.attemptedConnectedAtLeastOnce) {
+            this._rtcStats.server.connect();
         }
     }
 
