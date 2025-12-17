@@ -4,6 +4,7 @@ import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
 import { CustomMediaStreamTrack } from "./types";
+import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -37,15 +38,18 @@ export default class Session {
     shouldAddLocalVideo: any;
     signalingState: any;
     srdComplete: any;
+    _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
 
     constructor({
         peerConnectionId,
         bandwidth,
         deprioritizeH264Encoding,
+        incrementAnalyticMetric,
     }: {
         peerConnectionId: any;
         bandwidth: any;
         deprioritizeH264Encoding: any;
+        incrementAnalyticMetric: P2PIncrementAnalyticMetric;
     }) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
@@ -74,6 +78,7 @@ export default class Session {
         });
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._deprioritizeH264Encoding = deprioritizeH264Encoding;
+        this._incrementAnalyticMetric = incrementAnalyticMetric;
     }
 
     setAndGetPeerConnection({
@@ -124,6 +129,7 @@ export default class Session {
                 this.pc.addTrack(track, stream);
             });
         } else {
+            rtcStats.sendEvent("P2PNoAddTrackSupport", {});
             // legacy addStream fallback.
             this.pc.addStream(stream);
         }
@@ -163,8 +169,12 @@ export default class Session {
                     }
                 });
             } else if (this.pc.removeStream) {
+                rtcStats.sendEvent("P2PNoRemoveTrackSupport", {});
                 this.pc.removeStream(stream);
             }
+        } else {
+            rtcStats.sendEvent("P2PRemoveStreamNoPC", {});
+            this._incrementAnalyticMetric("P2PRemoveStreamNoPC");
         }
     }
 
@@ -273,100 +283,90 @@ export default class Session {
         return this.pc && this.pc.connectionState === "connected";
     }
 
-    replaceTrack(oldTrack: CustomMediaStreamTrack | undefined | null, newTrack: MediaStreamTrack) {
-        const pc = this.pc;
+    replaceTrack(oldTrack: CustomMediaStreamTrack | undefined, newTrack: CustomMediaStreamTrack | undefined) {
+        logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s]", oldTrack?.id, newTrack?.id);
+        if (!newTrack) {
+            rtcStats.sendEvent("P2PReplaceTrackNoNewTrack", {});
+            this._incrementAnalyticMetric("P2PReplaceTrackNoNewTrack");
+            return false;
+        }
+
+        if (newTrack.readyState === "ended") {
+            rtcStats.sendEvent("P2PReplaceTrackNewTrackEnded", {});
+            this._incrementAnalyticMetric("P2PReplaceTrackNewTrackEnded");
+            return false;
+        }
+
+        const pc = this.pc as RTCPeerConnection | undefined;
         // This shouldn't really happen
-        if (!pc) return false;
-        const senders = pc.getSenders() as RTCRtpSender[];
-        // If we didn't specify oldTrack, try to find a previously added track of the same kind
-        const oldTrackFallback = senders.find((s: RTCRtpSender) => s.track?.kind === newTrack.kind)?.track;
-        const oldTrackToReplace = oldTrack || oldTrackFallback;
+        if (!pc) {
+            // ...and if it does not, we'll remove this guard.
+            rtcStats.sendEvent("P2PReplaceTrackNoPC", {});
+            this._incrementAnalyticMetric("P2PReplaceTrackNoPC");
+            return false;
+        }
 
         // Modern browsers makes things simple.
         // @ts-ignore
-        if (window.RTCRtpSender && window.RTCRtpSender.prototype.replaceTrack) {
-            if (oldTrackToReplace) {
-                const process = () => {
-                    for (let i = 0; i < senders.length; i++) {
-                        const sender: RTCRtpSender = senders[i];
-                        const track = sender.track;
-                        if (track?.id === newTrack.id) {
-                            return Promise.resolve(newTrack);
-                        }
-                        if (track?.id === oldTrackToReplace.id) {
-                            return senders[i].replaceTrack(newTrack);
-                        }
-                    }
-                    return null;
-                };
-                const result = process();
-                if (result) {
-                    return result;
+        if (window.RTCRtpSender?.prototype?.replaceTrack) {
+            if (oldTrack) {
+                const sender = pc.getSenders().find((s) => s.track?.id === oldTrack.id);
+                if (sender) {
+                    sender.replaceTrack(newTrack);
+                    return Promise.resolve(newTrack);
                 }
-
-                // If we have an oldtrack, we should not go forward, because
-                // we already know that the track has been added at least to the mediastream
-                return new Promise((resolve, reject) => {
-                    let retried = 0;
-                    let timer: any = setInterval(async () => {
-                        const trackReplacedPromise = process();
-                        if (!trackReplacedPromise) {
-                            if (3 < ++retried) {
-                                clearInterval(timer);
-                                timer = null;
-
-                                // Add some analytics to get more context when we end up here.
-                                const sendersAnalytics = senders.map((s) => {
-                                    const track: CustomMediaStreamTrack | null = s.track;
-                                    if (track) {
-                                        return {
-                                            id: track.id,
-                                            kind: track.kind,
-                                            readyState: track.readyState,
-                                            replaced: track.replaced,
-                                        };
-                                    }
-                                });
-                                rtcStats.sendEvent("P2PReplaceTrackFailed", {
-                                    newTrackId: newTrack?.id,
-                                    oldTrackId: oldTrack?.id,
-                                    oldTrackFallbackId: oldTrackFallback?.id,
-                                    sendersCount: senders?.length,
-                                    sendersAnalytics,
-                                });
-
-                                reject("No sender track to replace");
-                            }
-                            return;
-                        }
-                        clearInterval(timer);
-                        timer = null;
-                        const trackReplaced = await trackReplacedPromise;
-                        resolve(trackReplaced);
-                    }, 1000);
-                });
             }
-            const stream =
-                this.streams.find((s) => s.getTracks().find((t: any) => t.id === newTrack.id)) || this.streams[0];
+            // We may already have added a non-screenshare track of same kind.
+            // If so, we replace it even if it's not the track given as oldTrack.
+            // Ideally, this should never happen if the function was called correctly.
+            const sender = pc.getSenders().find((s) => {
+                const track = s.track as CustomMediaStreamTrack;
+                return track?.kind === newTrack.kind && track?.sourceKind !== "screenshare";
+            });
+            if (sender) {
+                this._incrementAnalyticMetric("P2PReplaceTrackOldTrackNotFound");
+                const track = sender.track as CustomMediaStreamTrack;
+                rtcStats.sendEvent("P2PReplaceTrackOldTrackNotFound", {
+                    id: track?.id,
+                    kind: track?.kind,
+                    sourceKind: track.sourceKind,
+                    readyState: track.readyState,
+                });
+                sender.replaceTrack(newTrack);
+                return Promise.resolve(newTrack);
+            }
+
+            // We falsely believe we've already added a track that we now want to replace.
+            let stream = this.streams.find((s: MediaStream) =>
+                s.getTracks().find((t: MediaStreamTrack) => t.id === newTrack.id),
+            );
             if (!stream) {
+                rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {});
+                this._incrementAnalyticMetric("P2PReplaceTrackNewTrackNotInStream");
+            }
+            // TODO: Don't depend on array index for the stream.
+            stream = this.streams[0];
+            if (!stream) {
+                rtcStats.sendEvent("P2PReplaceTrackNoStream", {});
+                this._incrementAnalyticMetric("P2PReplaceTrackNoStream");
                 return Promise.reject(new Error("replaceTrack: No stream?"));
             }
-            // Let's just add the track if we couldn't figure out a better way.
-            // We'll get here if you had no camera and plugged one in.
             return pc.addTrack(newTrack, stream);
         }
+        // Let's see if this ever happens.
+        rtcStats.sendEvent("P2PNoReplaceTrackSupport", {});
 
         if (!this.canModifyPeerConnection()) {
             this.pending.push(() => {
-                this.replaceTrack(oldTrackToReplace, newTrack);
+                this.replaceTrack(oldTrack, newTrack);
             });
             return;
         }
         this.isOperationPending = true;
         const onn = pc.onnegotiationneeded;
         pc.onnegotiationneeded = null;
-        if (oldTrackToReplace) {
-            this.removeTrack(oldTrackToReplace);
+        if (oldTrack) {
+            this.removeTrack(oldTrack);
         }
         this.addTrack(newTrack);
         setTimeout(() => {
@@ -374,11 +374,11 @@ export default class Session {
             pc.onnegotiationneeded = onn;
         }, 0);
 
-        if (pc.localDescription.type === "offer") {
+        if (pc.localDescription?.type === "offer") {
             return pc
                 .createOffer()
                 .then((offer: any) => {
-                    offer.sdp = sdpModifier.replaceSSRCs(pc.localDescription.sdp, offer.sdp);
+                    offer.sdp = sdpModifier.replaceSSRCs(pc.localDescription?.sdp, offer.sdp);
                     return pc.setLocalDescription(offer);
                 })
                 .then(() => {
@@ -390,7 +390,7 @@ export default class Session {
                     return pc.createAnswer();
                 })
                 .then((answer: any) => {
-                    answer.sdp = sdpModifier.replaceSSRCs(pc.localDescription.sdp, answer.sdp);
+                    answer.sdp = sdpModifier.replaceSSRCs(pc.localDescription?.sdp, answer.sdp);
                     return pc.setLocalDescription(answer);
                 });
         }

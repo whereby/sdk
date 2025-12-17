@@ -5,7 +5,6 @@ jest.mock("webrtc-adapter", () => {
 });
 
 import * as helpers from "./webRtcHelpers";
-import { itShouldThrowIfMissing } from "../helpers";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
