@@ -4,15 +4,6 @@ import { randomDeviceCredentials } from "../../../__mocks__/appMocks";
 import { diff } from "deep-object-diff";
 import { ServerSocket } from "@whereby.com/media";
 
-jest.mock("@whereby.com/media", () => {
-    return {
-        __esModule: true,
-        ServerSocket: jest.fn().mockImplementation(() => {
-            return mockServerSocket;
-        }),
-    };
-});
-
 describe("signalConnectionSlice", () => {
     describe("actions", () => {
         it("doSignalConnect", () => {

@@ -4,7 +4,7 @@ import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
 import { createReactor } from "../listenerMiddleware";
 import { selectRoomConnectionStatus } from "./roomConnection/selectors";
-import { selectRtcManager } from "./rtcConnection";
+import { selectRtcManager, selectRtcStatsConnection } from "./rtcConnection";
 import { selectAllClientViews } from "./room";
 
 /**
@@ -50,6 +50,12 @@ export const connectionMonitorSlice = createSlice({
 export const { connectionMonitorStarted, connectionMonitorStopped } = connectionMonitorSlice.actions;
 
 export const doStartConnectionMonitor = createAppThunk(() => (dispatch, getState) => {
+    const rtcStatsConnection = selectRtcStatsConnection(getState());
+
+    if (!rtcStatsConnection) {
+        return;
+    }
+
     setClientProvider(() => {
         const state = getState();
 
@@ -72,40 +78,43 @@ export const doStartConnectionMonitor = createAppThunk(() => (dispatch, getState
         return clientViews;
     });
 
-    const issueMonitorSubscription = subscribeIssues({
-        onUpdatedIssues: (issuesAndMetricsByClients) => {
-            const state = getState();
-            const rtcManager = selectRtcManager(state);
+    const issueMonitorSubscription = subscribeIssues(
+        {
+            onUpdatedIssues: (issuesAndMetricsByClients) => {
+                const state = getState();
+                const rtcManager = selectRtcManager(state);
 
-            if (!rtcManager) {
-                return;
-            }
+                if (!rtcManager) {
+                    return;
+                }
 
-            // gather a selection of aggregate metrics
-            let lossSend = 0;
-            let lossReceive = 0;
-            let bitrateSend = 0;
-            let bitrateReceive = 0;
-            Object.entries(issuesAndMetricsByClients.aggregated.metrics).forEach(
-                ([key, value]: [string, { curMax: number; curSum: number }]) => {
-                    if (/loc.*packetloss/.test(key)) lossSend = Math.max(lossSend, value.curMax);
-                    if (/rem.*packetloss/.test(key)) lossReceive = Math.max(lossReceive, value.curMax);
-                    if (/loc.*bitrate/.test(key)) bitrateSend += value.curSum;
-                    if (/rem.*bitrate/.test(key)) bitrateReceive += value.curSum;
-                },
-            );
+                // gather a selection of aggregate metrics
+                let lossSend = 0;
+                let lossReceive = 0;
+                let bitrateSend = 0;
+                let bitrateReceive = 0;
+                Object.entries(issuesAndMetricsByClients.aggregated.metrics).forEach(
+                    ([key, value]: [string, { curMax: number; curSum: number }]) => {
+                        if (/loc.*packetloss/.test(key)) lossSend = Math.max(lossSend, value.curMax);
+                        if (/rem.*packetloss/.test(key)) lossReceive = Math.max(lossReceive, value.curMax);
+                        if (/loc.*bitrate/.test(key)) bitrateSend += value.curSum;
+                        if (/rem.*bitrate/.test(key)) bitrateReceive += value.curSum;
+                    },
+                );
 
-            // send the selection of aggregate metrics to rtcstats
-            rtcManager.sendStatsCustomEvent("insightsStats", {
-                ls: Math.round(lossSend * 1000) / 1000,
-                lr: Math.round(lossReceive * 1000) / 1000,
-                bs: Math.round(bitrateSend),
-                br: Math.round(bitrateReceive),
-                cpu: issuesAndMetricsByClients.aggregated.metrics["global-cpu-pressure"]?.curSum,
-                _time: Date.now(),
-            });
+                // send the selection of aggregate metrics to rtcstats
+                rtcManager.sendStatsCustomEvent("insightsStats", {
+                    ls: Math.round(lossSend * 1000) / 1000,
+                    lr: Math.round(lossReceive * 1000) / 1000,
+                    bs: Math.round(bitrateSend),
+                    br: Math.round(bitrateReceive),
+                    cpu: issuesAndMetricsByClients.aggregated.metrics["global-cpu-pressure"]?.curSum,
+                    _time: Date.now(),
+                });
+            },
         },
-    });
+        rtcStatsConnection,
+    );
 
     dispatch(connectionMonitorStarted({ stopIssueSubscription: issueMonitorSubscription.stop }));
 });

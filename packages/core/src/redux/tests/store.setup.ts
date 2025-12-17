@@ -1,5 +1,23 @@
-import { RtcEvents } from "@whereby.com/media";
+import { RtcEvents, createRtcStatsConnection } from "@whereby.com/media";
 import { RootState, createStore as createRealStore } from "../store";
+
+jest.mock("@whereby.com/media", () => {
+    return {
+        ...jest.requireActual("@whereby.com/media"),
+        __esModule: true,
+        createRtcStatsConnection: jest.fn().mockReturnValue({}),
+        RtcManagerDispatcher: jest.fn(),
+        ServerSocket: jest.fn().mockImplementation(() => {
+            return mockServerSocket;
+        }),
+        setClientProvider: jest.fn(),
+        subscribeIssues: jest.fn().mockImplementation(() => {
+            return {
+                stop: jest.fn(),
+            };
+        }),
+    };
+});
 
 export const mockSignalEmit = jest.fn();
 export const mockServerSocket = {
@@ -102,6 +120,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rtcManager: mockRtcManager as any,
             isAcceptingStreams: false,
+            rtcStatsConnection: createRtcStatsConnection({ url: "wss://rtcstats.test" }),
             ...initialState.rtcConnection,
         };
     }

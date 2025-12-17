@@ -28,6 +28,7 @@ jest.mock("@whereby.com/media", () => ({
     __esModule: true,
     getStream: jest.fn(() => Promise.resolve()),
     getUpdatedDevices: jest.fn(() => Promise.resolve({ addedDevices: {}, changedDevices: {} })),
+    createRtcStatsConnection: jest.fn(),
 }));
 
 const mockedGetStream = jest.mocked(MediaDevices.getStream);
