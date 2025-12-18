@@ -1,6 +1,7 @@
 import getConstraints from "./mediaConstraints";
 import Logger from "../utils/Logger";
 import {
+    CustomMediaStreamTrack,
     GetDeviceDataResult,
     GetStreamOptions,
     GetStreamResult,
@@ -349,6 +350,8 @@ export async function getStream(
         replacedTracks = replaceTracksInStream(replaceStream, stream, only);
         stream = replaceStream;
     }
+    // Annotate tracks
+    stream?.getTracks().forEach((t: CustomMediaStreamTrack) => (t.sourceKind = t.kind === "video" ? "webcam" : "mic"));
     return { error: error && addDetails(error), stream, replacedTracks };
 }
 
@@ -384,6 +387,8 @@ export function getDisplayMedia(
                 t.contentHint = contentHint;
             }
         });
+        // Annotate tracks
+        stream.getTracks().forEach((t: CustomMediaStreamTrack) => (t.sourceKind = "screenshare"));
         return stream;
     });
 }
