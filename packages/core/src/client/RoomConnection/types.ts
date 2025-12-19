@@ -10,13 +10,14 @@ export type LocalMediaOptions = {
 };
 
 export interface WherebyClientOptions {
-    localMediaOptions?: LocalMediaOptions;
-    displayName?: string;
-    roomUrl?: string;
     assistantKey?: string | null;
-    roomKey?: string | null;
+    displayName?: string;
     externalId?: string | null;
+    isDialIn?: boolean;
     isNodeSdk?: boolean;
+    localMediaOptions?: LocalMediaOptions;
+    roomKey?: string | null;
+    roomUrl?: string;
 }
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 export interface LocalParticipantState extends LocalParticipant {
