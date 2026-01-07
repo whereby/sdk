@@ -40,10 +40,10 @@ if (browserName === "chrome") {
 
 type P2PAnalytics = {
     P2PReplaceTrackNoPC: number;
+    P2PNonErrorRejectionValueGUMError: number;
 };
 
-type P2PAnalyticMetric =
-    | "P2PReplaceTrackNoPC"
+type P2PAnalyticMetric = keyof P2PAnalytics;
 
 export type P2PIncrementAnalyticMetric = (metric: P2PAnalyticMetric) => void;
 
@@ -149,6 +149,7 @@ export default class P2pRtcManager implements RtcManager {
 
         this.analytics = {
             P2PReplaceTrackNoPC: 0,
+            P2PNonErrorRejectionValueGUMError: 0,
         };
     }
 
@@ -1346,18 +1347,29 @@ export default class P2pRtcManager implements RtcManager {
                     // device has been plugged out or similar
                     return;
                 }
-                navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
-                    const track = stream.getVideoTracks()[0];
-                    localStream.addTrack(track);
-                    this._monitorVideoTrack(track);
-                    this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {
-                        streamId: localStream.id,
-                        tracks: [track],
-                        screenShare: false,
-                    });
+                navigator.mediaDevices
+                    .getUserMedia({ video: constraints })
+                    .then((stream) => {
+                        const track = stream.getVideoTracks()[0];
+                        localStream.addTrack(track);
+                        this._monitorVideoTrack(track);
+                        this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {
+                            streamId: localStream.id,
+                            tracks: [track],
+                            screenShare: false,
+                        });
 
-                    this._handleStopOrResumeVideo({ enable, track });
-                });
+                        this._handleStopOrResumeVideo({ enable, track });
+                    })
+                    .catch((e) => {
+                        // we are seeing getUserMedia errors in sentry with no information, so if the value
+                        // here isn't an error we create one so we can get a stack trace at least
+                        if (!(e instanceof Error)) {
+                            this.analytics.P2PNonErrorRejectionValueGUMError++;
+                            e = new Error(`non-error gUM rejection value: ${JSON.stringify(e)}`);
+                        }
+                        throw e;
+                    });
             }
         }
     }

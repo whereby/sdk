@@ -37,6 +37,7 @@ type VegaAnalytics = {
     vegaIceRestarts: number;
     vegaIceRestartMissingTransport: number;
     vegaIceRestartWrongTransportId: number;
+    vegaNonErrorRejectionValueGUMError: number;
 };
 
 type MediaStreamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
