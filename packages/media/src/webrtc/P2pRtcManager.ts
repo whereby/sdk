@@ -246,28 +246,6 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    /* the Chrome audio process crashed (probably?)
-     * try to fix it. Constraints are the audio device constraints
-     * used in getUserMedia.
-     */
-    fixChromeAudio(constraints: any) {
-        if (browserName !== "chrome") {
-            return;
-        }
-        const localStream = this._getLocalCameraStream();
-        const audioTrack = localStream.getAudioTracks()[0];
-        if (!audioTrack || audioTrack.readyState !== "ended") {
-            return;
-        }
-        return navigator.mediaDevices.getUserMedia({ audio: constraints }).then((stream) => {
-            const track = stream.getAudioTracks()[0];
-            track.enabled = audioTrack.enabled; // retain mute state and don't accidentally unmute.
-            localStream.removeTrack(audioTrack); // remove the old track.
-            localStream.addTrack(track); // add the new track.
-            return this.replaceTrack(audioTrack, track);
-        });
-    }
-
     setupSocketListeners() {
         this._socketListenerDeregisterFunctions = [
             () => this._clearMediaServersRefresh(),
