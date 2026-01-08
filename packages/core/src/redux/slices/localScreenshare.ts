@@ -3,6 +3,7 @@ import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../thun
 import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { localMediaStopped } from "./localMedia";
+import { getDisplayMedia } from "@whereby.com/media";
 
 export interface LocalScreenshareState {
     status: "inactive" | "starting" | "active";
@@ -75,7 +76,7 @@ export const doStartScreenshare = createAsyncRoomConnectedThunk(
                 return { stream: screenshareStream };
             }
 
-            const stream = await navigator.mediaDevices.getDisplayMedia();
+            const stream = await getDisplayMedia();
 
             const onEnded = () => {
                 dispatch(doStopScreenshare());
