@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 2.6.5
+
+### Patch Changes
+
+- 5059e3b: Align investigation analytics for roommodes
+- d18d170: Remove deprecated functions
+
 ## 2.6.4
 
 ### Patch Changes
