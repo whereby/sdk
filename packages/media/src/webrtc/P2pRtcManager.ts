@@ -38,6 +38,15 @@ if (browserName === "chrome") {
     });
 }
 
+type P2PAnalytics = {
+    P2PReplaceTrackNoPC: number;
+};
+
+type P2PAnalyticMetric =
+    | "P2PReplaceTrackNoPC"
+
+export type P2PIncrementAnalyticMetric = (metric: P2PAnalyticMetric) => void;
+
 export default class P2pRtcManager implements RtcManager {
     _selfId: any;
     _roomName: any;
@@ -76,6 +85,7 @@ export default class P2pRtcManager implements RtcManager {
     _audioTrackBeingMonitored?: CustomMediaStreamTrack;
     _closed: boolean;
     skipEmittingServerMessageCount: number;
+    analytics: P2PAnalytics;
 
     constructor({
         selfId,
@@ -136,6 +146,10 @@ export default class P2pRtcManager implements RtcManager {
         });
 
         this.totalSessionsCreated = 0;
+
+        this.analytics = {
+            P2PReplaceTrackNoPC: 0,
+        };
     }
 
     numberOfPeerconnections() {
@@ -493,6 +507,7 @@ export default class P2pRtcManager implements RtcManager {
                 peerConnectionId,
                 bandwidth: initialBandwidth,
                 deprioritizeH264Encoding,
+                incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
             });
 
             this.totalSessionsCreated++;

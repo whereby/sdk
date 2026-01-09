@@ -4,6 +4,7 @@ import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
 import { CustomMediaStreamTrack } from "./types";
+import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -37,15 +38,18 @@ export default class Session {
     shouldAddLocalVideo: any;
     signalingState: any;
     srdComplete: any;
+    _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
 
     constructor({
         peerConnectionId,
         bandwidth,
         deprioritizeH264Encoding,
+        incrementAnalyticMetric,
     }: {
         peerConnectionId: any;
         bandwidth: any;
         deprioritizeH264Encoding: any;
+        incrementAnalyticMetric: P2PIncrementAnalyticMetric;
     }) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
@@ -74,6 +78,7 @@ export default class Session {
         });
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._deprioritizeH264Encoding = deprioritizeH264Encoding;
+        this._incrementAnalyticMetric = incrementAnalyticMetric;
     }
 
     setAndGetPeerConnection({
@@ -276,7 +281,15 @@ export default class Session {
     replaceTrack(oldTrack: CustomMediaStreamTrack | undefined | null, newTrack: MediaStreamTrack) {
         const pc = this.pc;
         // This shouldn't really happen
-        if (!pc) return false;
+        if (!pc) {
+            // ...and if it does not, we'll remove this guard.
+            rtcStats.sendEvent("P2PReplaceTrackNoPC", {
+                oldTrackId: oldTrack?.id,
+                newTrackId: newTrack?.id,
+            });
+            this._incrementAnalyticMetric("P2PReplaceTrackNoPC");
+            return false;
+        }
         const senders = pc.getSenders() as RTCRtpSender[];
         // If we didn't specify oldTrack, try to find a previously added track of the same kind
         const oldTrackFallback = senders.find((s: RTCRtpSender) => s.track?.kind === newTrack.kind)?.track;
