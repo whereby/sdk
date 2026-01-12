@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.6
+
+### Patch Changes
+
+- 74333fd: Add error information to non-error getUserMedia promise rejections
+
 ## 2.6.5
 
 ### Patch Changes
