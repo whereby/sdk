@@ -13,7 +13,7 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { CustomMediaStreamTrack, RtcManager } from "./types";
+import { CustomMediaStreamTrack, RtcManager, SDPAnswerRelayMessage, SDPOfferRelayMessage } from "./types";
 import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 
@@ -50,6 +50,11 @@ type P2PAnalytics = {
     numIceIpv6TeredoSeen: number;
     numIceIpv6SixToFour: number;
     numIceMdnsSeen: number;
+    micTrackEndedCount: number;
+    camTrackEndedCount: number;
+    numPcOnAnswerFailure: number,
+    numPcOnOfferFailure: number,
+    numPcSldFailure: number,
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -137,11 +142,13 @@ export default class P2pRtcManager implements RtcManager {
             // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
             rtcStats.sendEvent("audio_ended", { unloading });
             this._emit(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
+            this.analytics.micTrackEndedCount++;
         };
 
         this._videoTrackOnEnded = () => {
             rtcStats.sendEvent("video_ended", { unloading });
             this._emit(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
+            this.analytics.camTrackEndedCount++;
         };
 
         this._updateAndScheduleMediaServersRefresh({
@@ -165,6 +172,11 @@ export default class P2pRtcManager implements RtcManager {
             numIceIpv6TeredoSeen: 0,
             numIceIpv6SixToFour: 0,
             numIceMdnsSeen: 0,
+            micTrackEndedCount: 0,
+            camTrackEndedCount: 0,
+            numPcSldFailure: 0,
+            numPcOnAnswerFailure: 0,
+            numPcOnOfferFailure: 0,
         };
     }
 
@@ -311,7 +323,7 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // when a new SDP offer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SDPOfferRelayMessage) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
@@ -327,12 +339,12 @@ export default class P2pRtcManager implements RtcManager {
                         });
                     })
                     .catch?.((e: any) => {
-                        this._emit(rtcManagerEvents.PC_ON_OFFER_FAILURE, e);
+                        this.analytics.numPcOnOfferFailure++;
                     });
             }),
 
             // when a new SDP answer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: SDPAnswerRelayMessage) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
@@ -340,7 +352,8 @@ export default class P2pRtcManager implements RtcManager {
                 }
                 const answer = this._transformIncomingSdp(data.message, session.pc);
                 session.handleAnswer(answer)?.catch?.((e: any) => {
-                    this._emit(rtcManagerEvents.PC_ON_ANSWER_FAILURE, e);
+                    logger.warn("Could not set remote description from remote answer: ", e);
+                    this.analytics.numPcOnAnswerFailure++;
                 });
             }),
 
@@ -1044,9 +1057,7 @@ export default class P2pRtcManager implements RtcManager {
                     pc.setLocalDescription(offer)
                         .catch((e: any) => {
                             logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
-
-                            // let app track this error
-                            this._emit(rtcManagerEvents.PC_SLD_FAILURE, e);
+                            this.analytics.numPcSldFailure++;
 
                             throw e;
                         })
