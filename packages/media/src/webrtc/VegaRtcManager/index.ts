@@ -229,6 +229,7 @@ export default class VegaRtcManager implements RtcManager {
             vegaIceRestarts: 0,
             vegaIceRestartMissingTransport: 0,
             vegaIceRestartWrongTransportId: 0,
+            vegaNonErrorRejectionValueGUMError: 0,
         };
     }
 
@@ -1596,19 +1597,30 @@ export default class VegaRtcManager implements RtcManager {
         } else if (localStream.getVideoTracks().length === 0) {
             // re-enable the stream
             const constraints = this._webrtcProvider.getMediaConstraints().video;
-            navigator.mediaDevices.getUserMedia({ video: constraints }).then((stream) => {
-                const track = stream.getVideoTracks()[0];
-                localStream.addTrack(track);
-                this._monitorVideoTrack(track);
+            navigator.mediaDevices
+                .getUserMedia({ video: constraints })
+                .then((stream) => {
+                    const track = stream.getVideoTracks()[0];
+                    localStream.addTrack(track);
+                    this._monitorVideoTrack(track);
 
-                this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
-                    streamId: localStream.id,
-                    tracks: [track],
-                    screenShare: false,
+                    this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
+                        streamId: localStream.id,
+                        tracks: [track],
+                        screenShare: false,
+                    });
+
+                    this._handleStopOrResumeVideo({ enable, track });
+                })
+                .catch((e) => {
+                    // we are seeing getUserMedia errors in sentry with no information, so if the value
+                    // here isn't an error we create one so we can get a stack trace at least
+                    if (!(e instanceof Error)) {
+                        this.analytics.vegaNonErrorRejectionValueGUMError++;
+                        e = new Error(`non-error gUM rejection value: ${JSON.stringify(e)}`);
+                    }
+                    throw e;
                 });
-
-                this._handleStopOrResumeVideo({ enable, track });
-            });
         }
     }
 
