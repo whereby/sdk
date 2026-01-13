@@ -1,4 +1,4 @@
-import rtcStats from "./rtcStatsService";
+import { RtcStatsConnection } from "./rtcStatsService";
 import Session from "./Session";
 import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import * as webrtcBugDetector from "./bugDetector";
@@ -92,10 +92,12 @@ export default class P2pRtcManager implements RtcManager {
     _closed: boolean;
     skipEmittingServerMessageCount: number;
     analytics: P2PAnalytics;
+    _rtcStats: RtcStatsConnection;
 
     constructor({
         selfId,
         room,
+        rtcStats,
         emitter,
         serverSocket,
         webrtcProvider,
@@ -103,6 +105,7 @@ export default class P2pRtcManager implements RtcManager {
     }: {
         selfId: any;
         room: any;
+        rtcStats: RtcStatsConnection;
         emitter: any;
         serverSocket: ServerSocket;
         webrtcProvider: any;
@@ -126,6 +129,7 @@ export default class P2pRtcManager implements RtcManager {
         this._isAudioOnlyMode = false;
         this._closed = false;
         this.skipEmittingServerMessageCount = 0;
+        this._rtcStats = rtcStats;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._pendingActionsForConnectedPeerConnections = [];
@@ -135,12 +139,12 @@ export default class P2pRtcManager implements RtcManager {
             // One of them is getting unplugged. The other is the Chrome audio
             // process crashing. The third is the tab being closed.
             // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
-            rtcStats.sendEvent("audio_ended", { unloading });
+            this._rtcStats.sendEvent("audio_ended", { unloading });
             this._emit(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
         };
 
         this._videoTrackOnEnded = () => {
-            rtcStats.sendEvent("video_ended", { unloading });
+            this._rtcStats.sendEvent("video_ended", { unloading });
             this._emit(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         };
 
@@ -376,30 +380,30 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     sendAudioMutedStats(muted: boolean) {
-        rtcStats.sendEvent("audio_muted", { muted });
+        this._rtcStats.sendEvent("audio_muted", { muted });
     }
 
     sendVideoMutedStats(muted: boolean) {
-        rtcStats.sendEvent("video_muted", { muted });
+        this._rtcStats.sendEvent("video_muted", { muted });
     }
 
     sendStatsCustomEvent(eventName: string, data: any) {
-        rtcStats.sendEvent(eventName, data);
+        this._rtcStats.sendEvent(eventName, data);
     }
 
     rtcStatsConnect() {
-        if (!rtcStats.server.connected) {
-            rtcStats.server.connect();
+        if (!this._rtcStats.server.connected) {
+            this._rtcStats.server.connect();
         }
     }
 
     rtcStatsDisconnect() {
-        rtcStats.server.close();
+        this._rtcStats.server.close();
     }
 
     rtcStatsReconnect() {
-        if (!rtcStats.server.connected && rtcStats.server.attemptedConnectedAtLeastOnce) {
-            rtcStats.server.connect();
+        if (!this._rtcStats.server.connected && this._rtcStats.server.attemptedConnectedAtLeastOnce) {
+            this._rtcStats.server.connect();
         }
     }
 
@@ -481,7 +485,7 @@ export default class P2pRtcManager implements RtcManager {
             return;
         }
         if (this._features.awaitJoinRoomFinished && !this._serverSocket.joinRoomFinished) {
-            rtcStats.sendEvent("skip_emitting_server_message", { eventName });
+            this._rtcStats.sendEvent("skip_emitting_server_message", { eventName });
             this.skipEmittingServerMessageCount++;
         } else {
             this._serverSocket.emit(eventName, data);
@@ -527,6 +531,7 @@ export default class P2pRtcManager implements RtcManager {
                 bandwidth: initialBandwidth,
                 deprioritizeH264Encoding,
                 incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
+                rtcStats: this._rtcStats,
             });
 
             this.totalSessionsCreated++;

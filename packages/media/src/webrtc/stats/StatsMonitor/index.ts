@@ -3,6 +3,7 @@ import { PressureObserver, startCpuObserver } from "./cpuObserver";
 import { numFailedTrackSsrcLookups, numMissingTrackSsrcLookups } from "./peerConnection";
 
 import { PressureRecord, StatsClient, ViewStats } from "../types";
+import type { RtcStatsConnection } from "../../rtcStatsService";
 import Logger from "../../../utils/Logger";
 
 interface StatsMonitor {
@@ -59,8 +60,12 @@ export const getUpdatedStats = () => STATE.currentMonitor?.getUpdatedStats();
 
 export const setClientProvider = (provider: () => StatsClient[]) => (STATE.getClients = provider);
 
-function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
-    const collectStatsBound = collectStats.bind(null, state, { interval, logger });
+function startStatsMonitor(
+    state: StatsMonitorState,
+    { interval, logger }: StatsMonitorOptions,
+    rtcStats: RtcStatsConnection,
+) {
+    const collectStatsBound = collectStats.bind(null, state, { interval, logger }, rtcStats);
 
     let cpuObserver: ReturnType<typeof startCpuObserver>;
 
@@ -86,13 +91,15 @@ function startStatsMonitor(state: StatsMonitorState, { interval, logger }: Stats
 
 export function subscribeStats(
     subscription: StatsSubscription,
+    rtcStats: RtcStatsConnection,
     options: StatsMonitorOptions = OPTIONS,
     state: StatsMonitorState = STATE,
 ) {
+    if (!rtcStats) throw new Error("rtcStats connection must be passed to `subscribeStats`");
     state.subscriptions.push(subscription);
 
     // start the monitor on first subscription
-    if (!state.currentMonitor) state.currentMonitor = startStatsMonitor(state, options);
+    if (!state.currentMonitor) state.currentMonitor = startStatsMonitor(state, options, rtcStats);
 
     return {
         stop() {

@@ -6,6 +6,7 @@ import {
     RtcManagerDispatcher,
     RtcEvents,
     RtcManagerCreatedPayload,
+    RtcStatsConnection,
     RtcStreamAddedPayload,
     RtcClientConnectionStatusChangedPayload,
 } from "@whereby.com/media";
@@ -45,6 +46,8 @@ function isDeferrable({ client, breakoutCurrentId }: { client?: RemoteParticipan
 import { rtcEvents } from "./actions";
 export { rtcEvents } from "./actions";
 
+const RTCSTATS_URL = "wss://rtcstats.srv.whereby.com";
+
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
         emit: (eventName: keyof RtcEvents, data: RtcEvents[keyof RtcEvents]) => {
@@ -82,6 +85,7 @@ export interface RtcConnectionState {
     };
     rtcManager: RtcManager | null;
     rtcManagerDispatcher: RtcManagerDispatcher | null;
+    rtcStatsConnection: RtcStatsConnection;
     rtcManagerInitialized: boolean;
     status: "inactive" | "ready" | "reconnecting";
     isAcceptingStreams: boolean;
@@ -93,6 +97,7 @@ export const rtcConnectionSliceInitialState: RtcConnectionState = {
     isCreatingDispatcher: false,
     reportedStreamResolutions: {},
     rtcManager: null,
+    rtcStatsConnection: new RtcStatsConnection({ url: RTCSTATS_URL }),
     rtcManagerDispatcher: null,
     rtcManagerInitialized: false,
     status: "inactive",
@@ -204,6 +209,8 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
+    const rtcStatsConnection = selectRtcStatsConnection(state);
+
     const isCameraEnabled = selectIsCameraEnabled(state);
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
@@ -228,6 +235,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const rtcManagerDispatcher = new RtcManagerDispatcher({
         emitter: createWebRtcEmitter(dispatch),
         serverSocket: socket,
+        rtcStats: rtcStatsConnection,
         webrtcProvider,
         features: {
             isNodeSdk,
@@ -347,6 +355,7 @@ export const selectRtcDispatcherCreated = (state: RootState) => state.rtcConnect
 export const selectRtcIsCreatingDispatcher = (state: RootState) => state.rtcConnection.isCreatingDispatcher;
 export const selectRtcStatus = (state: RootState) => state.rtcConnection.status;
 export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnection.isAcceptingStreams;
+export const selectRtcStatsConnection = (state: RootState) => state.rtcConnection.rtcStatsConnection;
 
 /**
  * Reactors

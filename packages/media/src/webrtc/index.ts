@@ -13,7 +13,7 @@ export { default as P2pRtcManager } from "./P2pRtcManager";
 export { default as RtcManagerDispatcher } from "./RtcManagerDispatcher";
 export { default as rtcManagerEvents } from "./rtcManagerEvents";
 export * from "./rtcrtpsenderHelper";
-export { default as rtcStats } from "./rtcStatsService";
+export * from "./rtcStatsService";
 export * from "./sdpModifier";
 export { default as Session } from "./Session";
 export { default as SfuV2Parser } from "./SfuV2Parser";
