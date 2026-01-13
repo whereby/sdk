@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.7
+
+### Patch Changes
+
+- ec4d584: Encapsulate ice candidate analytics in rtcmanager
+
 ## 2.6.6
 
 ### Patch Changes
