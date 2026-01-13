@@ -41,6 +41,15 @@ if (browserName === "chrome") {
 type P2PAnalytics = {
     P2PReplaceTrackNoPC: number;
     P2PNonErrorRejectionValueGUMError: number;
+    numNewPc: number;
+    numIceConnected: number;
+    numIceRestart: number;
+    numIceNoPublicIpGathered: number;
+    numIceNoPublicIpGatheredIn3sec: number;
+    numIceIpv6Seen: number;
+    numIceIpv6TeredoSeen: number;
+    numIceIpv6SixToFour: number;
+    numIceMdnsSeen: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -76,9 +85,6 @@ export default class P2pRtcManager implements RtcManager {
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: any;
     _wasScreenSharing: any;
-    ipv6HostCandidateTeredoSeen: any;
-    ipv6HostCandidate6to4Seen: any;
-    mdnsHostCandidateSeen: any;
     _stoppedVideoTrack: any;
     icePublicIPGatheringTimeoutID: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
@@ -150,6 +156,15 @@ export default class P2pRtcManager implements RtcManager {
         this.analytics = {
             P2PReplaceTrackNoPC: 0,
             P2PNonErrorRejectionValueGUMError: 0,
+            numNewPc: 0,
+            numIceConnected: 0,
+            numIceRestart: 0,
+            numIceNoPublicIpGathered: 0,
+            numIceNoPublicIpGatheredIn3sec: 0,
+            numIceIpv6Seen: 0,
+            numIceIpv6TeredoSeen: 0,
+            numIceIpv6SixToFour: 0,
+            numIceMdnsSeen: 0,
         };
     }
 
@@ -441,6 +456,9 @@ export default class P2pRtcManager implements RtcManager {
                 previous: previousStatus,
             });
         }, 0);
+        if (newStatus === CONNECTION_STATUS.TYPES.CONNECTION_SUCCESSFUL) {
+            this.analytics.numIceConnected++;
+        }
     }
 
     _setJitterBufferTarget(pc: any) {
@@ -598,6 +616,7 @@ export default class P2pRtcManager implements RtcManager {
         });
 
         setTimeout(() => this._emit(rtcManagerEvents.NEW_PC), 0);
+        this.analytics.numNewPc++;
 
         pc.ontrack = (event: any) => {
             const stream = event.streams[0];
@@ -926,11 +945,11 @@ export default class P2pRtcManager implements RtcManager {
             session.serverReflexiveCandidateSeen = false;
             session.publicHostCandidateSeen = false;
             session.ipv6HostCandidateSeen = false;
-            this.ipv6HostCandidateTeredoSeen = false;
-            this.ipv6HostCandidate6to4Seen = false;
-            this.mdnsHostCandidateSeen = false;
+            session.ipv6HostCandidateTeredoSeen = false;
+            session.ipv6HostCandidate6to4Seen = false;
+            session.mdnsHostCandidateSeen = false;
 
-            this._emit(rtcManagerEvents.ICE_RESTART);
+            this.analytics.numIceRestart++;
 
             this._negotiatePeerConnection(
                 clientId,
@@ -1145,7 +1164,7 @@ export default class P2pRtcManager implements RtcManager {
                             !session.serverReflexiveCandidateSeen
                         ) {
                             if (pc.iceConnectionState !== "connected" || pc.iceConnectionState !== "completed")
-                                this._emit(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED_3SEC);
+                                this.analytics.numIceNoPublicIpGatheredIn3sec++;
                         }
                     }, ICE_PUBLIC_IP_GATHERING_TIMEOUT);
                     break;
@@ -1189,15 +1208,11 @@ export default class P2pRtcManager implements RtcManager {
                         }
                         break;
                     case "srflx":
-                        if (!session.serverReflexiveCandidateSeen) {
-                            session.serverReflexiveCandidateSeen = true;
-                        }
+                        session.serverReflexiveCandidateSeen = true;
                         break;
                     case "relay":
                     case "relayed":
-                        if (!session.relayCandidateSeen) {
-                            session.relayCandidateSeen = true;
-                        }
+                        session.relayCandidateSeen = true;
                         break;
                     default:
                         break;
@@ -1217,15 +1232,14 @@ export default class P2pRtcManager implements RtcManager {
                     pc.iceConnectionState !== "connected" &&
                     pc.iceConnectionState !== "completed"
                 ) {
-                    this._emit(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED);
+                    this.analytics.numIceNoPublicIpGathered++;
                 }
                 if (session.ipv6HostCandidateSeen) {
-                    this._emit(rtcManagerEvents.ICE_IPV6_SEEN, {
-                        teredoSeen: session.ipv6HostCandidateTeredoSeen,
-                        sixtofourSeen: session.ipv6HostCandidate6to4Seen,
-                    });
+                    this.analytics.numIceIpv6Seen++;
+                    if (session.ipv6HostCandidate6to4Seen) this.analytics.numIceIpv6SixToFour++;
+                    if (session.ipv6HostCandidateTeredoSeen) this.analytics.numIceIpv6TeredoSeen++;
                 }
-                if (session.mdnsHostCandidateSeen) this._emit(rtcManagerEvents.ICE_MDNS_SEEN);
+                if (session.mdnsHostCandidateSeen) this.analytics.numIceMdnsSeen++;
             }
         };
 

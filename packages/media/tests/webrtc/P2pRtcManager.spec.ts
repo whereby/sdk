@@ -682,34 +682,36 @@ describe("P2pRtcManager", () => {
         });
 
         describe("icerestart", () => {
-            it("P2pRtcManager emits ICE restart event", async () => {
-                const p2pRtcManager = createRtcManager();
-                const { pc } = await p2pRtcManager._connect(clientId);
+            it("adds analytics for ICE restarts", async () => {
+                const manager = createRtcManager();
+                const { pc } = await manager._connect(clientId);
                 pc.iceConnectionState = "disconnected";
                 pc.localDescription = { type: "offer" };
                 const session: any = { pc };
                 session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
-                p2pRtcManager._maybeRestartIce(clientId, session);
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_RESTART, undefined);
+                manager._maybeRestartIce(clientId, session);
+                expect(manager.analytics.numIceRestart).toBe(1)
             });
         });
 
         describe("onicecandidate", () => {
-            it("P2pRtcManager emits new PC and no public IP gathered in 3sec events", async () => {
-                const { pc } = await createRtcManager()._connect(clientId);
+            it("emits new PC and adds analytics for no public IP gathered in 3sec", async () => {
+                const manager = createRtcManager()
+                const { pc} = await manager._connect(clientId);
 
                 const address = "192.168.1.1"; // ipv4 private rfc1918
                 pc.onicegatheringstatechange({ target: { iceGatheringState: "gathering" } });
                 pc.onicecandidate({ candidate: { address, type: "host" } });
                 await new Promise((r) => setTimeout(r, 3001));
                 expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.NEW_PC, undefined);
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED_3SEC, undefined);
+                expect(manager.analytics.numIceNoPublicIpGatheredIn3sec).toBe(1)
             });
         });
 
         describe("onicecandidate", () => {
-            it("P2pRtcManager emits no public IP gathered event", async () => {
-                const { pc } = await createRtcManager()._connect(clientId);
+            it("adds analytics for no public IP gathered", async () => {
+                const manager = createRtcManager()
+                const { pc} = await manager._connect(clientId);
 
                 pc.onicegatheringstatechange({ target: { iceGatheringState: "gathering" } });
                 const address = "192.168.1.1"; // ipv4 private rfc1918
@@ -718,13 +720,14 @@ describe("P2pRtcManager", () => {
                 // gathering finished
                 pc.onicecandidate({ candidate: null });
 
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_NO_PUBLIC_IP_GATHERED, undefined);
+                expect(manager.analytics.numIceNoPublicIpGathered).toBe(1)
             });
         });
 
         describe("onicecandidate", () => {
-            it("P2pRtcManager emits mDNS seen event", async () => {
-                const { pc } = await createRtcManager()._connect(clientId);
+            it("adds analytics for mDNS seen", async () => {
+                const manager = createRtcManager()
+                const { pc} = await manager._connect(clientId);
 
                 const address = "31703155-6932-43d7-9d9b-44dda8daea28.local"; // mDNS
 
@@ -733,13 +736,14 @@ describe("P2pRtcManager", () => {
                 // gathering finished
                 pc.onicecandidate({ candidate: null });
 
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_MDNS_SEEN, undefined);
+                expect(manager.analytics.numIceMdnsSeen).toBe(1)
             });
         });
 
         describe("onicecandidate", () => {
-            it("P2pRtcManager emits IPv6 seen event", async () => {
-                const { pc } = await createRtcManager()._connect(clientId);
+            it("adds analytics for IPv6 seen", async () => {
+                const manager = createRtcManager()
+                const { pc} = await manager._connect(clientId);
 
                 const address = "[2001:738::1]"; // ipv6 unicast global in brackets
 
@@ -748,16 +752,16 @@ describe("P2pRtcManager", () => {
                 // gathering finished
                 pc.onicecandidate({ candidate: null });
 
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_IPV6_SEEN, {
-                    sixtofourSeen: false,
-                    teredoSeen: false,
-                });
+                expect(manager.analytics.numIceIpv6Seen).toBe(1)
+                expect(manager.analytics.numIceIpv6SixToFour).toBe(0)
+                expect(manager.analytics.numIceIpv6TeredoSeen).toBe(0)
             });
         });
 
         describe("onicecandidate", () => {
-            it("P2pRtcManager emits IPv6 and mDNS seen events", async () => {
-                const { pc } = await createRtcManager()._connect(clientId);
+            it("adds analytics for IPv6 and mDNS seen events", async () => {
+                const manager = createRtcManager()
+                const { pc} = await manager._connect(clientId);
 
                 const CANDIDATE_ADDRESSES = [
                     "31703155-6932-43d7-9d9b-44dda8daea28.local", // mDNS
@@ -776,11 +780,9 @@ describe("P2pRtcManager", () => {
 
                 // gathering finished
                 pc.onicecandidate({ candidate: null });
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_IPV6_SEEN, {
-                    sixtofourSeen: true,
-                    teredoSeen: true,
-                });
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.ICE_MDNS_SEEN, undefined);
+                expect(manager.analytics.numIceIpv6SixToFour).toBe(1)
+                expect(manager.analytics.numIceIpv6TeredoSeen).toBe(1)
+                expect(manager.analytics.numIceMdnsSeen).toBe(1)
             });
         });
 
