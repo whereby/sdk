@@ -10,7 +10,4 @@ export default {
     SFU_CONNECTION_INFO: "sfu_connection_info",
     COLOCATION_SPEAKER: "colocation_speaker",
     DOMINANT_SPEAKER: "dominant_speaker",
-    PC_SLD_FAILURE: "pc_sld_failure",
-    PC_ON_ANSWER_FAILURE: "pc_on_answer_failure",
-    PC_ON_OFFER_FAILURE: "pc_on_offer_failure",
 };

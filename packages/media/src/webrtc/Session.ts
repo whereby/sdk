@@ -185,7 +185,7 @@ export default class Session {
         });
     }
 
-    handleOffer(message: any) {
+    handleOffer(message: RTCSessionDescription) {
         if (!this.canModifyPeerConnection()) {
             return new Promise((resolve) => {
                 this.pending.push(() => this.handleOffer(message).then(resolve));
@@ -217,17 +217,14 @@ export default class Session {
             });
     }
 
-    handleAnswer(message: any) {
+    handleAnswer(message: RTCSessionDescription) {
         const sdp = sdpModifier.filterMsidSemantic(message.sdp);
 
         const desc = { type: message.type, sdp };
         return this._setRemoteDescription(desc).then(
             () => {
                 return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
-            },
-            (e: any) => {
-                logger.warn("Could not set remote description from remote answer: ", e);
-            },
+            }
         );
     }
 

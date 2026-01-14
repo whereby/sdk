@@ -73,6 +73,16 @@ export type RtcEvents = {
     remote_stream_track_removed: void;
 };
 
+export type SDPOfferRelayMessage = {
+    clientId: string,
+    message: RTCSessionDescription
+}
+
+export type SDPAnswerRelayMessage = {
+    clientId: string,
+    message: RTCSessionDescription
+}
+
 /*
     Media Devices
 */

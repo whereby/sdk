@@ -193,10 +193,12 @@ export default class VegaRtcManager implements RtcManager {
             // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
             rtcStats.sendEvent("audio_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
+            this.analytics.micTrackEndedCount++;
         };
         this._videoTrackOnEnded = () => {
             rtcStats.sendEvent("video_ended", { unloading });
             this._emitToPWA(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
+            this.analytics.camTrackEndedCount++;
         };
 
         this._updateAndScheduleMediaServersRefresh({
@@ -230,6 +232,8 @@ export default class VegaRtcManager implements RtcManager {
             vegaIceRestartMissingTransport: 0,
             vegaIceRestartWrongTransportId: 0,
             vegaNonErrorRejectionValueGUMError: 0,
+            micTrackEndedCount: 0,
+            camTrackEndedCount: 0,
         };
     }
 

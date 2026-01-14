@@ -38,6 +38,8 @@ type VegaAnalytics = {
     vegaIceRestartMissingTransport: number;
     vegaIceRestartWrongTransportId: number;
     vegaNonErrorRejectionValueGUMError: number;
+    micTrackEndedCount: number;
+    camTrackEndedCount: number;
 };
 
 type MediaStreamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
