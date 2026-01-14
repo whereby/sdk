@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.8
+
+### Patch Changes
+
+- 345168f: Encapsulate more analytics in rtcmanagers
+
 ## 2.6.7
 
 ### Patch Changes
