@@ -275,15 +275,22 @@ export default class Session {
     }
 
     replaceTrack(oldTrack: CustomMediaStreamTrack | undefined, newTrack: CustomMediaStreamTrack | undefined) {
-        logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s]", oldTrack?.id, newTrack?.id);
+        logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s, sourceKind: %s]", oldTrack?.id, newTrack?.id, newTrack?.sourceKind);
         if (!newTrack) {
-            rtcStats.sendEvent("P2PReplaceTrackNoNewTrack", {});
+            rtcStats.sendEvent("P2PReplaceTrackNoNewTrack", {
+                sourceKind: oldTrack?.sourceKind,
+                effectTrack: oldTrack?.effectTrack,
+            });
             this._incrementAnalyticMetric("P2PReplaceTrackNoNewTrack");
             return false;
         }
 
         if (newTrack.readyState === "ended") {
-            rtcStats.sendEvent("P2PReplaceTrackNewTrackEnded", {});
+            rtcStats.sendEvent("P2PReplaceTrackNewTrackEnded", {
+                newTrackId: newTrack.id,
+                sourceKind: newTrack.sourceKind,
+                effectTrack: newTrack.effectTrack,
+            });
             this._incrementAnalyticMetric("P2PReplaceTrackNewTrackEnded");
             return false;
         }
@@ -294,7 +301,7 @@ export default class Session {
             // ...and if it does not, we'll remove this guard.
             rtcStats.sendEvent("P2PReplaceTrackNoPC", {
                 oldTrackId: oldTrack?.id,
-                newTrackId: newTrack?.id,
+                newTrackId: newTrack.id,
             });
             this._incrementAnalyticMetric("P2PReplaceTrackNoPC");
             return false;
@@ -321,21 +328,32 @@ export default class Session {
                 this._incrementAnalyticMetric("P2PReplaceTrackOldTrackNotFound");
                 const track = sender.track as CustomMediaStreamTrack;
                 rtcStats.sendEvent("P2PReplaceTrackOldTrackNotFound", {
-                    id: track?.id,
-                    kind: track?.kind,
-                    sourceKind: track.sourceKind,
-                    readyState: track.readyState,
+                    targetTrackId: track?.id,
+                    targetTrackKind: track?.kind,
+                    targetTrackSourceKind: track?.sourceKind,
+                    targetTrackReadyState: track?.readyState,
+                    newTrackIsEffect: newTrack.effectTrack,
+                    oldTrackIsEffect: oldTrack?.effectTrack
                 });
                 sender.replaceTrack(newTrack);
                 return Promise.resolve(newTrack);
             }
 
-            // We falsely believe we've already added a track that we now want to replace.
+            // If we get here, we falsely believe we've added a track to the webrtc layer.
+            // Actually, this is the first track of its sourceKind.
+
             let stream = this.streams.find((s: MediaStream) =>
                 s.getTracks().find((t: MediaStreamTrack) => t.id === newTrack.id),
             );
             if (!stream) {
-                rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {});
+                // This check was here from before, let's see if it ever happens.
+                rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {
+                    sourceKind: newTrack.sourceKind,
+                    oldTrackId: oldTrack?.id,
+                    newTrackId: newTrack.id,
+                    newTrackIsEffect: newTrack.effectTrack,
+                    oldTrackIsEffect: oldTrack?.effectTrack
+                });
                 this._incrementAnalyticMetric("P2PReplaceTrackNewTrackNotInStream");
             }
             // TODO: Don't depend on array index for the stream.
@@ -345,6 +363,15 @@ export default class Session {
                 this._incrementAnalyticMetric("P2PReplaceTrackNoStream");
                 return Promise.reject(new Error("replaceTrack: No stream?"));
             }
+
+            rtcStats.sendEvent("P2PReplaceTrackSourceKindNotFound", {
+                    sourceKind: newTrack.sourceKind,
+                    oldTrackId: oldTrack?.id,
+                    newTrackId: newTrack.id,
+                    newTrackIsEffect: newTrack.effectTrack,
+                    oldTrackIsEffect: oldTrack?.effectTrack
+            });
+            this._incrementAnalyticMetric("P2PReplaceTrackSourceKindNotFound");
             return pc.addTrack(newTrack, stream);
         }
         // Let's see if this ever happens.

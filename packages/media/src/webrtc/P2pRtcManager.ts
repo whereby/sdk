@@ -75,6 +75,7 @@ type P2PAnalytics = {
     P2PReplaceTrackToPCsPendingActionsNull: number;
     P2PReplaceTrackReturnedFalse: number;
     P2PReplaceTrackWithoutPC: number;
+    P2PReplaceTrackSourceKindNotFound: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -206,6 +207,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackToPCsPendingActionsNull: 0,
             P2PReplaceTrackReturnedFalse: 0,
             P2PReplaceTrackWithoutPC: 0,
+            P2PReplaceTrackSourceKindNotFound: 0,
         };
     }
 
