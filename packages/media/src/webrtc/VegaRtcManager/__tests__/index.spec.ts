@@ -355,4 +355,14 @@ describe("VegaRtcManager", () => {
             });
         });
     });
+
+    describe("disconnectAll", () => {
+        it("closes the VegaQualityMonitor connection", () => {
+            jest.spyOn(rtcManager._qualityMonitor, "close");
+
+            rtcManager.disconnectAll();
+
+            expect(rtcManager._qualityMonitor.close).toHaveBeenCalled();
+        });
+    });
 });

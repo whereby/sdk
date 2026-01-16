@@ -108,6 +108,7 @@ export default class P2pRtcManager implements RtcManager {
     _closed: boolean;
     skipEmittingServerMessageCount: number;
     analytics: P2PAnalytics;
+    _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
 
     constructor({
         selfId,
@@ -300,6 +301,8 @@ export default class P2pRtcManager implements RtcManager {
             this._localStreamDeregisterFunction();
             this._localStreamDeregisterFunction = null;
         }
+
+        this.rtcStatsDisconnect();
     }
 
     setupSocketListeners() {
@@ -423,6 +426,8 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     rtcStatsDisconnect() {
+        clearTimeout(this._rtcStatsDisconnectTimeout);
+
         rtcStats.server.close();
     }
 
@@ -1346,7 +1351,7 @@ export default class P2pRtcManager implements RtcManager {
         this._changeBandwidthForAllClients(false);
         const numPeers = this.numberOfPeerconnections();
         if (numPeers === 0) {
-            setTimeout(() => {
+            this._rtcStatsDisconnectTimeout = setTimeout(() => {
                 const numPeers = this.numberOfPeerconnections();
                 if (numPeers === 0) {
                     this.rtcStatsDisconnect();
