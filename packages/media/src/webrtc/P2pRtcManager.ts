@@ -13,9 +13,17 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { CustomMediaStreamTrack, RtcManager, SDPAnswerRelayMessage, SDPOfferRelayMessage } from "./types";
+import { CustomMediaStreamTrack, RtcManager, SDPRelayMessage, UnifiedPlanSDP } from "./types";
 import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
+
+interface GetOrCreateSessionOptions {
+    peerConnectionId: string;
+    clientId: string;
+    shouldAddLocalVideo: boolean;
+    initialBandwidth: number;
+    peerConnectionConfig: RTCConfiguration;
+}
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -52,9 +60,12 @@ type P2PAnalytics = {
     numIceMdnsSeen: number;
     micTrackEndedCount: number;
     camTrackEndedCount: number;
-    numPcOnAnswerFailure: number,
-    numPcOnOfferFailure: number,
-    numPcSldFailure: number,
+    numPcOnAnswerFailure: number;
+    numPcOnOfferFailure: number;
+    numPcSldFailure: number;
+    P2PChangeBandwidthEmptySDPType: number;
+    P2PNegotiationNeeded: number;
+    P2PSessionAlreadyCreated: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -65,10 +76,10 @@ export default class P2pRtcManager implements RtcManager {
     _selfId: any;
     _roomName: any;
     _roomSessionId: any;
-    peerConnections: any;
+    peerConnections: Record<string, Session>;
     localStreams: any;
     enabledLocalStreamIds: any[];
-    _screenshareVideoTrackIds: any[];
+    _screenshareVideoTrackIds: string[];
     _socketListenerDeregisterFunctions: any[];
     _localStreamDeregisterFunction: any;
     _emitter: any;
@@ -177,6 +188,9 @@ export default class P2pRtcManager implements RtcManager {
             numPcSldFailure: 0,
             numPcOnAnswerFailure: 0,
             numPcOnOfferFailure: 0,
+            P2PChangeBandwidthEmptySDPType: 0,
+            P2PNegotiationNeeded: 0,
+            P2PSessionAlreadyCreated: 0,
         };
     }
 
@@ -323,13 +337,14 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // when a new SDP offer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SDPOfferRelayMessage) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SDPRelayMessage) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
                     return;
                 }
-                const offer = this._transformIncomingSdp(data.message, session.pc);
+                // TODO: Remove unified plan - plan b transformation code.
+                const offer = this._transformIncomingSdp(data.message);
                 session
                     .handleOffer(offer)
                     .then((answer: any) => {
@@ -344,13 +359,14 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // when a new SDP answer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: SDPAnswerRelayMessage) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: SDPRelayMessage) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
                     return;
                 }
-                const answer = this._transformIncomingSdp(data.message, session.pc);
+                // TODO: Remove unified plan - plan b transformation code.
+                const answer = this._transformIncomingSdp(data.message);
                 session.handleAnswer(answer)?.catch?.((e: any) => {
                     logger.warn("Could not set remote description from remote answer: ", e);
                     this.analytics.numPcOnAnswerFailure++;
@@ -523,7 +539,13 @@ export default class P2pRtcManager implements RtcManager {
         return this.peerConnections[peerConnectionId];
     }
 
-    _getOrCreateSession(peerConnectionId: string, initialBandwidth: any) {
+    _getOrCreateSession({
+        peerConnectionId,
+        clientId,
+        initialBandwidth,
+        peerConnectionConfig,
+        shouldAddLocalVideo,
+    }: GetOrCreateSessionOptions) {
         let session = this.peerConnections[peerConnectionId];
 
         if (session === undefined) {
@@ -537,12 +559,21 @@ export default class P2pRtcManager implements RtcManager {
 
             this.peerConnections[peerConnectionId] = session = new Session({
                 peerConnectionId,
+                clientId,
+                peerConnectionConfig,
                 bandwidth: initialBandwidth,
                 deprioritizeH264Encoding,
+                shouldAddLocalVideo,
                 incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
             });
 
             this.totalSessionsCreated++;
+        } else {
+            this.analytics.P2PSessionAlreadyCreated++;
+            rtcStats.sendEvent("P2PSessionAlreadyCreated", {
+                clientId,
+                peerConnectionId,
+            });
         }
         return session;
     }
@@ -564,11 +595,11 @@ export default class P2pRtcManager implements RtcManager {
         return streamIds.length === 0 ? null : this.localStreams[streamIds[0]];
     }
 
-    _transformIncomingSdp(original: any, _: any) {
-        return { type: original.type, sdp: original.sdpU };
+    _transformIncomingSdp(original: UnifiedPlanSDP) {
+        return { type: original.type, sdp: original.sdpU } as RTCSessionDescription;
     }
 
-    _transformOutgoingSdp(original: any) {
+    _transformOutgoingSdp(original: RTCSessionDescription): UnifiedPlanSDP {
         return { type: original.type, sdpU: original.sdp };
     }
 
@@ -591,23 +622,26 @@ export default class P2pRtcManager implements RtcManager {
         if (!clientId) {
             throw new Error("clientId is missing");
         }
-        const session = this._getOrCreateSession(peerConnectionId, initialBandwidth);
-        const constraints: any = { optional: [] };
-        if (browserName === "chrome") {
-            constraints.optional.push({
-                googCpuOveruseDetection: true,
-            });
-        }
 
+        const peerConnectionConfig: any = {
+            iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
+        };
+
+        // TODO: constraints are not used, decide what to do about them.
+        const constraints: any = { optional: [] };
         // rtcstats integration
         constraints.optional.push({ rtcStatsRoomSessionId: this._roomSessionId });
         constraints.optional.push({ rtcStatsClientId: this._selfId });
         constraints.optional.push({ rtcStatsPeerId: peerConnectionId });
         constraints.optional.push({ rtcStatsConferenceId: this._roomName });
 
-        const peerConnectionConfig: any = {
-            iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
-        };
+        // Chrome specific PC configuration.
+        if (browserName === "chrome") {
+            constraints.optional.push({
+                googCpuOveruseDetection: true,
+            });
+            peerConnectionConfig.sdpSemantics = "unified-plan";
+        }
 
         peerConnectionConfig.iceServers = turnServerOverride(
             peerConnectionConfig.iceServers,
@@ -617,19 +651,18 @@ export default class P2pRtcManager implements RtcManager {
         external_stun_servers(peerConnectionConfig, this._features);
         maybeTurnOnly(peerConnectionConfig, this._features);
 
-        if (browserName === "chrome") {
-            peerConnectionConfig.sdpSemantics = "unified-plan";
-        }
-
-        const pc = session.setAndGetPeerConnection({
-            constraints,
+        const session = this._getOrCreateSession({
+            peerConnectionId,
+            clientId,
+            initialBandwidth,
             peerConnectionConfig,
             shouldAddLocalVideo,
-            clientId,
         });
 
         setTimeout(() => this._emit(rtcManagerEvents.NEW_PC), 0);
         this.analytics.numNewPc++;
+
+        const { pc } = session;
 
         pc.ontrack = (event: any) => {
             const stream = event.streams[0];
@@ -723,6 +756,8 @@ export default class P2pRtcManager implements RtcManager {
             }
             this._setConnectionStatus(session, newStatus, clientId);
         };
+        // TODO: investigate impact of erroneous connectionstate event handler.
+        // @ts-ignore
         pc.onconnectionstate = () => {
             // since Chrome insists on not going to failed for unified-plan
             // (/new-iceconnectionstate)... listen for connectionState.
@@ -1074,9 +1109,9 @@ export default class P2pRtcManager implements RtcManager {
         );
     }
 
-    _withForcedRenegotiation(session: any, action: any) {
+    _withForcedRenegotiation(session: Session, action: any) {
         const pc = session.pc;
-        const originalOnnegotationneeded = pc.onnegotationneeded;
+        const originalOnnegotationneeded = pc.onnegotiationneeded;
         pc.onnegotiationneeded = null;
         action();
         this._negotiatePeerConnection(session.clientId, session);
@@ -1174,7 +1209,7 @@ export default class P2pRtcManager implements RtcManager {
                             !session.relayCandidateSeen &&
                             !session.serverReflexiveCandidateSeen
                         ) {
-                            if (pc.iceConnectionState !== "connected" || pc.iceConnectionState !== "completed")
+                            if (pc.iceConnectionState !== "connected" && pc.iceConnectionState !== "completed")
                                 this.analytics.numIceNoPublicIpGatheredIn3sec++;
                         }
                     }, ICE_PUBLIC_IP_GATHERING_TIMEOUT);
@@ -1255,6 +1290,8 @@ export default class P2pRtcManager implements RtcManager {
         };
 
         pc.onnegotiationneeded = () => {
+            this.analytics.P2PNegotiationNeeded++;
+            rtcStats.sendEvent("P2PNegotiationNeeded", {});
             if (pc.iceConnectionState === "new" || !session.connectionStatus) {
                 // initial negotiation is handled by our CLIENT_READY/READY_TO_RECEIVE_OFFER exchange
                 return;

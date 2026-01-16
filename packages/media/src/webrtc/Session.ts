@@ -10,6 +10,16 @@ import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
+interface P2PSessionOptions {
+    peerConnectionId: string;
+    clientId: string;
+    bandwidth: number;
+    peerConnectionConfig: RTCConfiguration;
+    deprioritizeH264Encoding: boolean;
+    shouldAddLocalVideo: boolean;
+    incrementAnalyticMetric: P2PIncrementAnalyticMetric;
+}
+
 export default class Session {
     peerConnectionId: any;
     relayCandidateSeen: boolean;
@@ -19,7 +29,7 @@ export default class Session {
     ipv6HostCandidateTeredoSeen: boolean;
     ipv6HostCandidate6to4Seen: boolean;
     mdnsHostCandidateSeen: boolean;
-    pc: any;
+    pc: RTCPeerConnection;
     wasEverConnected: boolean;
     connectionStatus: any;
     stats: { totalSent: number; totalRecv: number };
@@ -27,30 +37,28 @@ export default class Session {
     pending: any[];
     isOperationPending: boolean;
     streamIds: any[];
-    streams: any[];
+    streams: MediaStream[];
     earlyIceCandidates: any[];
     afterConnected: Promise<unknown>;
     registerConnected: any;
     offerOptions: { offerToReceiveAudio: boolean; offerToReceiveVideo: boolean };
     _deprioritizeH264Encoding: any;
     clientId: any;
-    peerConnectionConfig: any;
-    shouldAddLocalVideo: any;
+    peerConnectionConfig: RTCConfiguration;
+    shouldAddLocalVideo: boolean;
     signalingState: any;
     srdComplete: any;
     _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
 
     constructor({
         peerConnectionId,
+        clientId,
         bandwidth,
+        peerConnectionConfig,
         deprioritizeH264Encoding,
+        shouldAddLocalVideo,
         incrementAnalyticMetric,
-    }: {
-        peerConnectionId: any;
-        bandwidth: any;
-        deprioritizeH264Encoding: any;
-        incrementAnalyticMetric: P2PIncrementAnalyticMetric;
-    }) {
+    }: P2PSessionOptions) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
@@ -60,7 +68,29 @@ export default class Session {
         this.ipv6HostCandidate6to4Seen = false;
         this.mdnsHostCandidateSeen = false;
 
-        this.pc = null;
+        // Create PC.
+        this.peerConnectionConfig = peerConnectionConfig;
+        this.shouldAddLocalVideo = shouldAddLocalVideo;
+        this.clientId = clientId;
+        this.pc = new RTCPeerConnection(this.peerConnectionConfig);
+        this.signalingState = this.pc.signalingState;
+
+        this.pc.addEventListener("signalingstatechange", () => {
+            if (this.signalingState === this.pc.signalingState) {
+                return;
+            }
+            this.signalingState = this.pc.signalingState;
+            // implements a simple queue of pending operations
+            // like doing an ice restart or setting the bandwidth
+            if (this.pc.signalingState === "stable") {
+                this.isOperationPending = false;
+                const action = this.pending.shift();
+                if (action) {
+                    action.apply();
+                }
+            }
+        });
+
         this.wasEverConnected = false;
         this.connectionStatus = null;
         this.stats = {
@@ -81,42 +111,6 @@ export default class Session {
         this._incrementAnalyticMetric = incrementAnalyticMetric;
     }
 
-    setAndGetPeerConnection({
-        clientId,
-        constraints,
-        peerConnectionConfig,
-        shouldAddLocalVideo,
-    }: {
-        clientId: any;
-        constraints: any;
-        peerConnectionConfig: any;
-        shouldAddLocalVideo: any;
-    }) {
-        this.peerConnectionConfig = peerConnectionConfig;
-        this.shouldAddLocalVideo = shouldAddLocalVideo;
-        this.clientId = clientId;
-        // this.pc = new RTCPeerConnection(peerConnectionConfig, constraints);
-        this.pc = new RTCPeerConnection(peerConnectionConfig);
-        this.signalingState = this.pc.signalingState;
-
-        this.pc.addEventListener("signalingstatechange", () => {
-            if (this.signalingState === this.pc.signalingState) {
-                return;
-            }
-            this.signalingState = this.pc.signalingState;
-            // implements a simple queue of pending operations
-            // like doing an ice restart or setting the bandwidth
-            if (this.pc.signalingState === "stable") {
-                this.isOperationPending = false;
-                const action = this.pending.shift();
-                if (action) {
-                    action.apply();
-                }
-            }
-        });
-        return this.pc;
-    }
-
     addStream(stream: MediaStream) {
         this.streamIds.push(stream.id);
         this.streams.push(stream);
@@ -130,6 +124,7 @@ export default class Session {
             });
         } else {
             // legacy addStream fallback.
+            // @ts-ignore
             this.pc.addStream(stream);
         }
     }
@@ -167,7 +162,9 @@ export default class Session {
                         this.pc.removeTrack(sender);
                     }
                 });
+                // @ts-ignore
             } else if (this.pc.removeStream) {
+                // @ts-ignore
                 this.pc.removeStream(stream);
             }
         }
@@ -221,11 +218,9 @@ export default class Session {
         const sdp = sdpModifier.filterMsidSemantic(message.sdp);
 
         const desc = { type: message.type, sdp };
-        return this._setRemoteDescription(desc).then(
-            () => {
-                return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
-            }
-        );
+        return this._setRemoteDescription(desc).then(() => {
+            return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
+        });
     }
 
     addIceCandidate(candidate: any) {
@@ -384,11 +379,11 @@ export default class Session {
             pc.onnegotiationneeded = onn;
         }, 0);
 
-        if (pc.localDescription.type === "offer") {
+        if (pc.localDescription?.type === "offer") {
             return pc
                 .createOffer()
                 .then((offer: any) => {
-                    offer.sdp = sdpModifier.replaceSSRCs(pc.localDescription.sdp, offer.sdp);
+                    offer.sdp = sdpModifier.replaceSSRCs(pc.localDescription?.sdp, offer.sdp);
                     return pc.setLocalDescription(offer);
                 })
                 .then(() => {
@@ -400,7 +395,7 @@ export default class Session {
                     return pc.createAnswer();
                 })
                 .then((answer: any) => {
-                    answer.sdp = sdpModifier.replaceSSRCs(pc.localDescription.sdp, answer.sdp);
+                    answer.sdp = sdpModifier.replaceSSRCs(pc.localDescription?.sdp, answer.sdp);
                     return pc.setLocalDescription(answer);
                 });
         }
@@ -420,16 +415,24 @@ export default class Session {
         }
 
         this.bandwidth = bandwidth;
-        if (!this.pc.localDescription || this.pc.localDescription.type === "") {
+
+        // @ts-ignore
+        if (this.pc.localDescription?.type === "") {
+            // Let's see if this ever happens.
+            this._incrementAnalyticMetric("P2PChangeBandwidthEmptySDPType");
+            return;
+        }
+
+        if (!this.pc.localDescription) {
             return;
         }
 
         setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
     }
 
-    setAudioOnly(enable: boolean, excludedTrackIds: any[] = []) {
+    setAudioOnly(enable: boolean, excludedTrackIds: string[] = []) {
         this.pc
-            .getTransceivers()
+            ?.getTransceivers()
             .filter(
                 (videoTransceiver: any) =>
                     videoTransceiver?.direction !== "recvonly" &&

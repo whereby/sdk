@@ -587,25 +587,25 @@ describe("P2pRtcManager", () => {
 
     describe("acceptNewStream", () => {
         it("registers a callback for oniceconnectionstatechange on the peer connection", async () => {
-            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.oniceconnectionstatechange).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onnegotiationneeded on the peer connection", async () => {
-            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.onnegotiationneeded).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onicecandidate on the peer connection", async () => {
-            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.onicecandidate).toEqual(expect.any(Function));
         });
 
         it("registers a callback for ontrack on the peer connection", async () => {
-            const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
             expect(pc.ontrack).toEqual(expect.any(Function));
         });
@@ -614,11 +614,12 @@ describe("P2pRtcManager", () => {
     describe("peerConnection callback", () => {
         describe("onnegotiationneeded", () => {
             it("negotiates the peer connection after it is connected", async () => {
-                const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+                const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+                // @ts-ignore
                 pc.iceConnectionState = "connected";
-                pc.oniceconnectionstatechange();
+                pc.oniceconnectionstatechange?.({} as Event);
 
-                pc.onnegotiationneeded();
+                pc.onnegotiationneeded?.({} as Event);
 
                 // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
                 await new Promise(process.nextTick);
@@ -627,10 +628,11 @@ describe("P2pRtcManager", () => {
             });
 
             it('does not negotiate peer connection when iceConnectionState is "new"', async () => {
-                const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+                const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
+                // @ts-ignore
                 pc.iceConnectionState = "new";
-                pc.onnegotiationneeded();
+                pc.onnegotiationneeded?.({} as Event);
 
                 // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
                 await new Promise(process.nextTick);
@@ -639,12 +641,13 @@ describe("P2pRtcManager", () => {
             });
 
             it("does not re-negotiate peer connection during initial negotiation", async () => {
-                const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+                const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: "0" });
 
                 // during initial negotiation, iceConnectionState changes from "new" before the
                 // oniceconnectionstatechanged event is delivered
+                // @ts-ignore
                 pc.iceConnectionState = "checking";
-                pc.onnegotiationneeded();
+                pc.onnegotiationneeded?.({} as Event);
 
                 // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
                 await new Promise(process.nextTick);
@@ -658,7 +661,7 @@ describe("P2pRtcManager", () => {
                 const { pc } = await createRtcManager()._connect(clientId);
 
                 const candidatePackage = helpers.getValidCandidatePackage();
-                pc.onicecandidate({ candidate: candidatePackage });
+                pc.onicecandidate?.({ candidate: candidatePackage } as RTCPeerConnectionIceEvent);
 
                 expect(serverSocket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.ICE_CANDIDATE, {
                     receiverId: clientId,
@@ -672,7 +675,7 @@ describe("P2pRtcManager", () => {
                 const { pc } = await createRtcManager({ features })._connect(clientId);
 
                 const candidatePackage = helpers.getValidRelayCandidatePackage();
-                pc.onicecandidate({ candidate: candidatePackage });
+                pc.onicecandidate?.({ candidate: candidatePackage } as RTCPeerConnectionIceEvent);
 
                 expect(serverSocket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.ICE_CANDIDATE, {
                     receiverId: clientId,
@@ -685,83 +688,86 @@ describe("P2pRtcManager", () => {
             it("adds analytics for ICE restarts", async () => {
                 const manager = createRtcManager();
                 const { pc } = await manager._connect(clientId);
+
+                // @ts-ignore
                 pc.iceConnectionState = "disconnected";
+                // @ts-ignore
                 pc.localDescription = { type: "offer" };
                 const session: any = { pc };
                 session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
                 manager._maybeRestartIce(clientId, session);
-                expect(manager.analytics.numIceRestart).toBe(1)
+                expect(manager.analytics.numIceRestart).toBe(1);
             });
         });
 
         describe("onicecandidate", () => {
             it("emits new PC and adds analytics for no public IP gathered in 3sec", async () => {
-                const manager = createRtcManager()
-                const { pc} = await manager._connect(clientId);
+                const manager = createRtcManager();
+                const { pc } = await manager._connect(clientId);
 
                 const address = "192.168.1.1"; // ipv4 private rfc1918
-                pc.onicegatheringstatechange({ target: { iceGatheringState: "gathering" } });
-                pc.onicecandidate({ candidate: { address, type: "host" } });
+                pc.onicegatheringstatechange?.({ target: { iceGatheringState: "gathering" } } as unknown as Event);
+                pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
                 await new Promise((r) => setTimeout(r, 3001));
                 expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.NEW_PC, undefined);
-                expect(manager.analytics.numIceNoPublicIpGatheredIn3sec).toBe(1)
+                expect(manager.analytics.numIceNoPublicIpGatheredIn3sec).toBe(1);
             });
         });
 
         describe("onicecandidate", () => {
             it("adds analytics for no public IP gathered", async () => {
-                const manager = createRtcManager()
-                const { pc} = await manager._connect(clientId);
+                const manager = createRtcManager();
+                const { pc } = await manager._connect(clientId);
 
-                pc.onicegatheringstatechange({ target: { iceGatheringState: "gathering" } });
+                pc.onicegatheringstatechange?.({ target: { iceGatheringState: "gathering" } } as unknown as Event);
                 const address = "192.168.1.1"; // ipv4 private rfc1918
-                pc.onicecandidate({ candidate: { address, type: "host" } });
-                pc.onicegatheringstatechange({ target: { iceGatheringState: "complete" } });
+                pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
+                pc.onicegatheringstatechange?.({ target: { iceGatheringState: "complete" } } as unknown as Event);
                 // gathering finished
-                pc.onicecandidate({ candidate: null });
+                pc.onicecandidate?.({ candidate: null } as RTCPeerConnectionIceEvent);
 
-                expect(manager.analytics.numIceNoPublicIpGathered).toBe(1)
+                expect(manager.analytics.numIceNoPublicIpGathered).toBe(1);
             });
         });
 
         describe("onicecandidate", () => {
             it("adds analytics for mDNS seen", async () => {
-                const manager = createRtcManager()
-                const { pc} = await manager._connect(clientId);
+                const manager = createRtcManager();
+                const { pc } = await manager._connect(clientId);
 
                 const address = "31703155-6932-43d7-9d9b-44dda8daea28.local"; // mDNS
 
-                pc.onicecandidate({ candidate: { address, type: "host" } });
+                pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
 
                 // gathering finished
-                pc.onicecandidate({ candidate: null });
+                pc.onicecandidate?.({ candidate: null } as RTCPeerConnectionIceEvent);
 
-                expect(manager.analytics.numIceMdnsSeen).toBe(1)
+                expect(manager.analytics.numIceMdnsSeen).toBe(1);
             });
         });
 
         describe("onicecandidate", () => {
             it("adds analytics for IPv6 seen", async () => {
-                const manager = createRtcManager()
-                const { pc} = await manager._connect(clientId);
+                const manager = createRtcManager();
+                const { pc } = await manager._connect(clientId);
 
                 const address = "[2001:738::1]"; // ipv6 unicast global in brackets
 
-                pc.onicecandidate({ candidate: { address, type: "host" } });
+                pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
 
                 // gathering finished
-                pc.onicecandidate({ candidate: null });
+                pc.onicecandidate?.({ candidate: null } as RTCPeerConnectionIceEvent);
 
-                expect(manager.analytics.numIceIpv6Seen).toBe(1)
-                expect(manager.analytics.numIceIpv6SixToFour).toBe(0)
-                expect(manager.analytics.numIceIpv6TeredoSeen).toBe(0)
+                expect(manager.analytics.numIceIpv6Seen).toBe(1);
+                expect(manager.analytics.numIceIpv6SixToFour).toBe(0);
+                expect(manager.analytics.numIceIpv6TeredoSeen).toBe(0);
             });
         });
 
         describe("onicecandidate", () => {
             it("adds analytics for IPv6 and mDNS seen events", async () => {
-                const manager = createRtcManager()
-                const { pc} = await manager._connect(clientId);
+                const manager = createRtcManager();
+                const { pc } = await manager._connect(clientId);
 
                 const CANDIDATE_ADDRESSES = [
                     "31703155-6932-43d7-9d9b-44dda8daea28.local", // mDNS
@@ -775,14 +781,14 @@ describe("P2pRtcManager", () => {
                     "", // empty address
                 ];
                 CANDIDATE_ADDRESSES.forEach((address) => {
-                    pc.onicecandidate({ candidate: { address, type: "host" } });
+                    pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
                 });
 
                 // gathering finished
-                pc.onicecandidate({ candidate: null });
-                expect(manager.analytics.numIceIpv6SixToFour).toBe(1)
-                expect(manager.analytics.numIceIpv6TeredoSeen).toBe(1)
-                expect(manager.analytics.numIceMdnsSeen).toBe(1)
+                pc.onicecandidate?.({ candidate: null } as RTCPeerConnectionIceEvent);
+                expect(manager.analytics.numIceIpv6SixToFour).toBe(1);
+                expect(manager.analytics.numIceIpv6TeredoSeen).toBe(1);
+                expect(manager.analytics.numIceMdnsSeen).toBe(1);
             });
         });
 
@@ -810,11 +816,13 @@ describe("P2pRtcManager", () => {
                     const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
 
                     it("broadcasts when ice connection state becomes " + iceState, async () => {
-                        const { pc } = await createRtcManager().acceptNewStream({ clientId, streamId: "0" });
+                        const { pc } = await createRtcManager()._connect(clientId);
 
+                        // @ts-ignore
                         pc.iceConnectionState = iceState;
+                        // @ts-ignore
                         pc.localDescription = { type: "offer" };
-                        pc.oniceconnectionstatechange();
+                        pc.oniceconnectionstatechange?.({} as Event);
                         jest.advanceTimersByTime(0);
 
                         expect(emitter.emit).toHaveBeenCalledWith(
