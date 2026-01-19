@@ -7,14 +7,14 @@ const { dts } = require("rollup-plugin-dts");
 const dotenv = require("dotenv");
 
 dotenv.config({
-  path: `../../.env`,
+    path: `../../.env`,
 });
 
 const dependencies = [...Object.keys(pkg.dependencies || {})];
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
 const tsOptions = {
-  tsconfig: "tsconfig.build.json",
+    tsconfig: "tsconfig.build.json",
 };
 
 const baseConfig = require("@whereby.com/rollup-config/base");

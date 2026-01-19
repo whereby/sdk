@@ -73,15 +73,16 @@ export type RtcEvents = {
     remote_stream_track_removed: void;
 };
 
-export type SDPOfferRelayMessage = {
-    clientId: string,
-    message: RTCSessionDescription
-}
+// TODO: Remove unified plan - plan b transformation code.
+export type UnifiedPlanSDP = {
+    sdpU: string;
+    type: RTCSdpType;
+};
 
-export type SDPAnswerRelayMessage = {
-    clientId: string,
-    message: RTCSessionDescription
-}
+export type SDPRelayMessage = {
+    clientId: string;
+    message: UnifiedPlanSDP;
+};
 
 /*
     Media Devices
