@@ -16,6 +16,7 @@ import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager, SDPRelayMessage, UnifiedPlanSDP } from "./types";
 import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
+import { getAnnotations } from "../utils/annotations";
 
 interface GetOrCreateSessionOptions {
     peerConnectionId: string;
@@ -1436,6 +1437,7 @@ export default class P2pRtcManager implements RtcManager {
                     .getUserMedia({ video: constraints })
                     .then((stream) => {
                         const track = stream.getVideoTracks()[0];
+                        getAnnotations(track).sourceKind = "webcam"; // Annotate track sourceKind.
                         localStream.addTrack(track);
                         this._monitorVideoTrack(track);
                         this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {

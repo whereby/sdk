@@ -8,6 +8,7 @@ import {
     GetUpdatedDevicesResult,
     UpdatedDevicesInfo,
 } from "./types";
+import { getAnnotations } from "../utils/annotations";
 
 const logger = new Logger();
 
@@ -351,7 +352,9 @@ export async function getStream(
         stream = replaceStream;
     }
     // Annotate tracks
-    stream?.getTracks().forEach((t: CustomMediaStreamTrack) => (t.sourceKind = t.kind === "video" ? "webcam" : "mic"));
+    stream?.getTracks().forEach((t: CustomMediaStreamTrack) => {
+        getAnnotations(t).sourceKind = t.kind === "video" ? "webcam" : "mic";
+    });
     return { error: error && addDetails(error), stream, replacedTracks };
 }
 
@@ -388,7 +391,9 @@ export function getDisplayMedia(
             }
         });
         // Annotate tracks
-        stream.getTracks().forEach((t: CustomMediaStreamTrack) => (t.sourceKind = "screenshare"));
+        stream.getTracks().forEach((t: CustomMediaStreamTrack) => {
+            getAnnotations(t).sourceKind = "screenshare";
+        });
         return stream;
     });
 }

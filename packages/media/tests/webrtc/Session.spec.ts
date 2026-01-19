@@ -1,5 +1,12 @@
 import { CustomMediaStreamTrack, Session } from "../../src";
+import { getAnnotations } from "../../src/utils/annotations";
 import { createMockedMediaStream } from "./webRtcHelpers";
+
+class RtcPeerConnection {
+    addEventListener = jest.fn();
+    getSenders = jest.fn().mockReturnValue([]);
+    addTrack = jest.fn();
+}
 
 describe("Session", () => {
     const mockRTCRtpSender = {
@@ -11,16 +18,30 @@ describe("Session", () => {
     // @ts-ignore
     window.RTCRtpSender = mockRTCRtpSender;
     const peerConnectionId = "id";
+    const clientId = "id";
     let session: Session;
     let bandwidth: number;
+    let peerConnectionConfig: RTCConfiguration;
 
     beforeEach(() => {
+        // @ts-ignore
+        window.globalThis.RTCPeerConnection = RtcPeerConnection;
         bandwidth = 1;
+        peerConnectionConfig = {};
         session = new Session({
             peerConnectionId,
+            clientId,
+            peerConnectionConfig,
             bandwidth,
             deprioritizeH264Encoding: false,
+            shouldAddLocalVideo: false,
             incrementAnalyticMetric: jest.fn(),
+        });
+    });
+
+    describe("Constructor", () => {
+        it("should create RTCPeerConnection", () => {
+            expect(session.pc).toBeInstanceOf(RtcPeerConnection);
         });
     });
 
@@ -32,10 +53,11 @@ describe("Session", () => {
                 getSenders: () => [],
                 addTrack: (track: CustomMediaStreamTrack) => tracksAddedToPC.push(track),
             };
-
+            // @ts-ignore
             session.pc = pc;
+
             const spyAddTrack = jest.spyOn(pc, "addTrack");
-            const stream = createMockedMediaStream();
+            const stream = createMockedMediaStream() as unknown as MediaStream;
             session.streams.push(stream);
 
             session.replaceTrack(undefined, newTrack);
@@ -52,13 +74,14 @@ describe("Session", () => {
             const sender = {
                 track: nonScreenshareTrackOfSameKind,
                 replaceTrack: (track: CustomMediaStreamTrack) => tracksAddedToPC.push(track),
-            };
+            } as unknown as RTCRtpSender;
             const replaceTrackSpy = jest.spyOn(sender, "replaceTrack");
             session.pc = {
                 getSenders: () => [sender],
+                // @ts-ignore
                 addTrack: (track: CustomMediaStreamTrack) => tracksAddedToPC.push(track),
             };
-            session.streams.push(createMockedMediaStream());
+            session.streams.push(createMockedMediaStream() as unknown as MediaStream);
 
             session.replaceTrack(oldTrack, newTrack);
 
@@ -69,7 +92,11 @@ describe("Session", () => {
         it("Should not replace any screenshare track of same kind if oldTrack is not found in RTPSender", () => {
             const tracksAddedToPC = [] as CustomMediaStreamTrack[];
             const oldTrack = { id: "oldId" } as CustomMediaStreamTrack;
-            const screenshareTrackOfSameKind = { id: "otherId", sourceKind: "screenshare" } as CustomMediaStreamTrack;
+
+            // Create and annotate screenshare track.
+            const screenshareTrackOfSameKind = { id: "otherId" } as CustomMediaStreamTrack;
+            getAnnotations(screenshareTrackOfSameKind).sourceKind = "screenshare";
+
             const newTrack = { id: "newId" } as CustomMediaStreamTrack;
             const sender = {
                 track: screenshareTrackOfSameKind,
@@ -81,8 +108,9 @@ describe("Session", () => {
                 addTrack: (track: CustomMediaStreamTrack) => tracksAddedToPC.push(track),
             };
             const addTrackSpy = jest.spyOn(pc, "addTrack");
-            const stream = createMockedMediaStream();
+            const stream = createMockedMediaStream() as unknown as MediaStream;
             stream.addTrack(newTrack);
+            // @ts-ignore
             session.pc = pc;
             session.streams.push(stream);
 
@@ -100,13 +128,14 @@ describe("Session", () => {
             const sender = {
                 track: oldTrack,
                 replaceTrack: (track: CustomMediaStreamTrack) => tracksAddedToPC.push(track),
-            };
+            } as unknown as RTCRtpSender;
             const replaceTrackSpy = jest.spyOn(sender, "replaceTrack");
             session.pc = {
                 getSenders: () => [sender],
+                // @ts-ignore
                 addTrack: (track: CustomMediaStreamTrack) => tracksAddedToPC.push(track),
             };
-            session.streams.push(createMockedMediaStream());
+            session.streams.push(createMockedMediaStream() as unknown as MediaStream);
 
             session.replaceTrack(oldTrack, newTrack);
 

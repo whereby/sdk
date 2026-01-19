@@ -5,6 +5,7 @@ import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
 import { CustomMediaStreamTrack } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
+import { getAnnotations } from "../utils/annotations";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -275,7 +276,12 @@ export default class Session {
     }
 
     replaceTrack(oldTrack: CustomMediaStreamTrack | undefined, newTrack: CustomMediaStreamTrack | undefined) {
-        logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s, sourceKind: %s]", oldTrack?.id, newTrack?.id, newTrack?.sourceKind);
+        logger.info(
+            "replacetrack() [oldTrackId: %s, newTrackId: %s, sourceKind: %s]",
+            oldTrack?.id,
+            newTrack?.id,
+            newTrack?.sourceKind,
+        );
         if (!newTrack) {
             rtcStats.sendEvent("P2PReplaceTrackNoNewTrack", {
                 sourceKind: oldTrack?.sourceKind,
@@ -295,17 +301,7 @@ export default class Session {
             return false;
         }
 
-        const pc = this.pc as RTCPeerConnection | undefined;
-        // This shouldn't really happen
-        if (!pc) {
-            // ...and if it does not, we'll remove this guard.
-            rtcStats.sendEvent("P2PReplaceTrackNoPC", {
-                oldTrackId: oldTrack?.id,
-                newTrackId: newTrack.id,
-            });
-            this._incrementAnalyticMetric("P2PReplaceTrackNoPC");
-            return false;
-        }
+        const pc = this.pc;
 
         // Modern browsers makes things simple.
         // @ts-ignore
@@ -322,7 +318,7 @@ export default class Session {
             // Ideally, this should never happen if the function was called correctly.
             const sender = pc.getSenders().find((s) => {
                 const track = s.track as CustomMediaStreamTrack;
-                return track?.kind === newTrack.kind && track?.sourceKind !== "screenshare";
+                return track?.kind === newTrack.kind && getAnnotations(track).sourceKind !== "screenshare";
             });
             if (sender) {
                 this._incrementAnalyticMetric("P2PReplaceTrackOldTrackNotFound");
@@ -333,7 +329,7 @@ export default class Session {
                     targetTrackSourceKind: track?.sourceKind,
                     targetTrackReadyState: track?.readyState,
                     newTrackIsEffect: newTrack.effectTrack,
-                    oldTrackIsEffect: oldTrack?.effectTrack
+                    oldTrackIsEffect: oldTrack?.effectTrack,
                 });
                 sender.replaceTrack(newTrack);
                 return Promise.resolve(newTrack);
@@ -352,7 +348,7 @@ export default class Session {
                     oldTrackId: oldTrack?.id,
                     newTrackId: newTrack.id,
                     newTrackIsEffect: newTrack.effectTrack,
-                    oldTrackIsEffect: oldTrack?.effectTrack
+                    oldTrackIsEffect: oldTrack?.effectTrack,
                 });
                 this._incrementAnalyticMetric("P2PReplaceTrackNewTrackNotInStream");
             }
@@ -365,11 +361,11 @@ export default class Session {
             }
 
             rtcStats.sendEvent("P2PReplaceTrackSourceKindNotFound", {
-                    sourceKind: newTrack.sourceKind,
-                    oldTrackId: oldTrack?.id,
-                    newTrackId: newTrack.id,
-                    newTrackIsEffect: newTrack.effectTrack,
-                    oldTrackIsEffect: oldTrack?.effectTrack
+                sourceKind: newTrack.sourceKind,
+                oldTrackId: oldTrack?.id,
+                newTrackId: newTrack.id,
+                newTrackIsEffect: newTrack.effectTrack,
+                oldTrackIsEffect: oldTrack?.effectTrack,
             });
             this._incrementAnalyticMetric("P2PReplaceTrackSourceKindNotFound");
             return pc.addTrack(newTrack, stream);
