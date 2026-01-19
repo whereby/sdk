@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 2.6.9
+
+### Patch Changes
+
+- 9cc0be3: Restore onnegotiationneeded handler after forced renegotiation
+- eb00d2b: media: Handles websocket close while running Bandwidth tester
+
 ## 2.6.8
 
 ### Patch Changes
