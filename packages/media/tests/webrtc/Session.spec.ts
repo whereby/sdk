@@ -1,5 +1,5 @@
 import { CustomMediaStreamTrack, Session } from "../../src";
-import { getAnnotations } from "../../src/utils/annotations";
+import { trackAnnotations } from "../../src/utils/annotations";
 import { createMockedMediaStream } from "./webRtcHelpers";
 
 class RtcPeerConnection {
@@ -95,7 +95,7 @@ describe("Session", () => {
 
             // Create and annotate screenshare track.
             const screenshareTrackOfSameKind = { id: "otherId" } as CustomMediaStreamTrack;
-            getAnnotations(screenshareTrackOfSameKind).sourceKind = "screenshare";
+            trackAnnotations(screenshareTrackOfSameKind).sourceKind = "screenshare";
 
             const newTrack = { id: "newId" } as CustomMediaStreamTrack;
             const sender = {

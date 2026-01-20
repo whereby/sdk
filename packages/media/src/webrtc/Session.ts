@@ -5,7 +5,7 @@ import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
 import { CustomMediaStreamTrack } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
-import { getAnnotations } from "../utils/annotations";
+import { trackAnnotations } from "../utils/annotations";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -318,7 +318,7 @@ export default class Session {
             // Ideally, this should never happen if the function was called correctly.
             const sender = pc.getSenders().find((s) => {
                 const track = s.track as CustomMediaStreamTrack;
-                return track?.kind === newTrack.kind && getAnnotations(track).sourceKind !== "screenshare";
+                return track?.kind === newTrack.kind && trackAnnotations(track).sourceKind !== "screenshare";
             });
             if (sender) {
                 this._incrementAnalyticMetric("P2PReplaceTrackOldTrackNotFound");

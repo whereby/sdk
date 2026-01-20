@@ -16,7 +16,7 @@ import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager, SDPRelayMessage, UnifiedPlanSDP } from "./types";
 import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
-import { getAnnotations } from "../utils/annotations";
+import { trackAnnotations } from "../utils/annotations";
 
 interface GetOrCreateSessionOptions {
     peerConnectionId: string;
@@ -48,7 +48,6 @@ if (browserName === "chrome") {
 }
 
 type P2PAnalytics = {
-    P2PReplaceTrackNoPC: number;
     P2PNonErrorRejectionValueGUMError: number;
     numNewPc: number;
     numIceConnected: number;
@@ -72,11 +71,11 @@ type P2PAnalytics = {
     P2PReplaceTrackNoNewTrack: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2PReplaceTrackOldTrackNotFound: number;
-    P2PRemoveStreamNoPC: number;
     P2PReplaceTrackToPCsPendingActionsNull: number;
     P2PReplaceTrackReturnedFalse: number;
     P2PReplaceTrackWithoutPC: number;
     P2PReplaceTrackSourceKindNotFound: number;
+    P2PRemoveStreamNoPC: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -180,7 +179,6 @@ export default class P2pRtcManager implements RtcManager {
         });
 
         this.analytics = {
-            P2PReplaceTrackNoPC: 0,
             P2PNonErrorRejectionValueGUMError: 0,
             numNewPc: 0,
             numIceConnected: 0,
@@ -204,11 +202,11 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackNewTrackEnded: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2PReplaceTrackOldTrackNotFound: 0,
-            P2PRemoveStreamNoPC: 0,
             P2PReplaceTrackToPCsPendingActionsNull: 0,
             P2PReplaceTrackReturnedFalse: 0,
             P2PReplaceTrackWithoutPC: 0,
             P2PReplaceTrackSourceKindNotFound: 0,
+            P2PRemoveStreamNoPC: 0,
         };
     }
 
@@ -1437,7 +1435,7 @@ export default class P2pRtcManager implements RtcManager {
                     .getUserMedia({ video: constraints })
                     .then((stream) => {
                         const track = stream.getVideoTracks()[0];
-                        getAnnotations(track).sourceKind = "webcam"; // Annotate track sourceKind.
+                        trackAnnotations(track).sourceKind = "webcam";
                         localStream.addTrack(track);
                         this._monitorVideoTrack(track);
                         this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {

@@ -1,10 +1,16 @@
-const annotations = new WeakMap();
+import { MediaSourceKind } from "../webrtc";
 
-export function getAnnotations(o: any) {
-    let props = annotations.get(o);
+type TrackAnnotation = {
+    sourceKind: MediaSourceKind;
+};
+
+const _trackAnnotations = new WeakMap();
+
+export function trackAnnotations(o: MediaStreamTrack): TrackAnnotation {
+    let props = _trackAnnotations.get(o);
     if (!props) {
         props = {};
-        annotations.set(o, props);
+        _trackAnnotations.set(o, props);
     }
     return props;
 }
