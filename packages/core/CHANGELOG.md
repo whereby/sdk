@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.5.9
+
+### Patch Changes
+
+- aa8925c: Use getDisplayMedia utility function
+- Updated dependencies [aa8925c]
+    - @whereby.com/media@2.6.10
+
 ## 1.5.8
 
 ### Patch Changes
