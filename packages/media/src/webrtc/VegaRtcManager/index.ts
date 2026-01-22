@@ -31,7 +31,6 @@ import {
 } from "./types";
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
-import { trackAnnotations } from "../../utils/annotations";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -1606,7 +1605,6 @@ export default class VegaRtcManager implements RtcManager {
                 .getUserMedia({ video: constraints })
                 .then((stream) => {
                     const track = stream.getVideoTracks()[0];
-                    trackAnnotations(track).sourceKind = "webcam";
                     localStream.addTrack(track);
                     this._monitorVideoTrack(track);
 

@@ -1435,7 +1435,6 @@ export default class P2pRtcManager implements RtcManager {
                     .getUserMedia({ video: constraints })
                     .then((stream) => {
                         const track = stream.getVideoTracks()[0];
-                        trackAnnotations(track).sourceKind = "webcam";
                         localStream.addTrack(track);
                         this._monitorVideoTrack(track);
                         this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {

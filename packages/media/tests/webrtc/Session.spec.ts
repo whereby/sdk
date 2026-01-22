@@ -95,7 +95,7 @@ describe("Session", () => {
 
             // Create and annotate screenshare track.
             const screenshareTrackOfSameKind = { id: "otherId" } as CustomMediaStreamTrack;
-            trackAnnotations(screenshareTrackOfSameKind).sourceKind = "screenshare";
+            trackAnnotations(screenshareTrackOfSameKind).fromGetDisplayMedia = true;
 
             const newTrack = { id: "newId" } as CustomMediaStreamTrack;
             const sender = {

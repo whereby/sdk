@@ -1,7 +1,5 @@
-import { MediaSourceKind } from "../webrtc";
-
 type TrackAnnotation = {
-    sourceKind: MediaSourceKind;
+    fromGetDisplayMedia: boolean;
 };
 
 const _trackAnnotations = new WeakMap();

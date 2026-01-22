@@ -276,16 +276,12 @@ export default class Session {
     }
 
     replaceTrack(oldTrack: CustomMediaStreamTrack | undefined, newTrack: CustomMediaStreamTrack | undefined) {
-        logger.info(
-            "replacetrack() [oldTrackId: %s, newTrackId: %s, sourceKind: %s]",
-            oldTrack?.id,
-            newTrack?.id,
-            newTrack?.sourceKind,
-        );
+        logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s]", oldTrack?.id, newTrack?.id);
         if (!newTrack) {
             rtcStats.sendEvent("P2PReplaceTrackNoNewTrack", {
-                sourceKind: oldTrack?.sourceKind,
-                effectTrack: oldTrack?.effectTrack,
+                oldTrackId: oldTrack?.id,
+                oldTrackKind: oldTrack?.kind,
+                oldTrackIsEffect: oldTrack?.effectTrack,
             });
             this._incrementAnalyticMetric("P2PReplaceTrackNoNewTrack");
             return false;
@@ -294,8 +290,8 @@ export default class Session {
         if (newTrack.readyState === "ended") {
             rtcStats.sendEvent("P2PReplaceTrackNewTrackEnded", {
                 newTrackId: newTrack.id,
-                sourceKind: newTrack.sourceKind,
-                effectTrack: newTrack.effectTrack,
+                newTrackKind: newTrack.kind,
+                newTrackIsEffect: newTrack.effectTrack,
             });
             this._incrementAnalyticMetric("P2PReplaceTrackNewTrackEnded");
             return false;
@@ -313,12 +309,13 @@ export default class Session {
                     return Promise.resolve(newTrack);
                 }
             }
-            // We may already have added a non-screenshare track of same kind.
+            // We may already have added a track of same kind obtained from gUM.
             // If so, we replace it even if it's not the track given as oldTrack.
             // Ideally, this should never happen if the function was called correctly.
             const sender = pc.getSenders().find((s) => {
                 const track = s.track as CustomMediaStreamTrack;
-                return track?.kind === newTrack.kind && trackAnnotations(track).sourceKind !== "screenshare";
+                // We do not want to replace tracks obtained from gDM.
+                return track?.kind === newTrack.kind && !trackAnnotations(track).fromGetDisplayMedia;
             });
             if (sender) {
                 this._incrementAnalyticMetric("P2PReplaceTrackOldTrackNotFound");
@@ -326,9 +323,13 @@ export default class Session {
                 rtcStats.sendEvent("P2PReplaceTrackOldTrackNotFound", {
                     targetTrackId: track?.id,
                     targetTrackKind: track?.kind,
-                    targetTrackSourceKind: track?.sourceKind,
+                    targetTrackIsEffect: track?.effectTrack,
                     targetTrackReadyState: track?.readyState,
+                    newTrackId: newTrack.id,
+                    newTrackKind: newTrack.kind,
                     newTrackIsEffect: newTrack.effectTrack,
+                    oldTrackId: oldTrack?.id,
+                    oldTrackKind: oldTrack?.kind,
                     oldTrackIsEffect: oldTrack?.effectTrack,
                 });
                 sender.replaceTrack(newTrack);
@@ -336,7 +337,7 @@ export default class Session {
             }
 
             // If we get here, we falsely believe we've added a track to the webrtc layer.
-            // Actually, this is the first track of its sourceKind.
+            // Actually, this is the first track of its kind obtained from gUM.
 
             let stream = this.streams.find((s: MediaStream) =>
                 s.getTracks().find((t: MediaStreamTrack) => t.id === newTrack.id),
@@ -344,11 +345,12 @@ export default class Session {
             if (!stream) {
                 // This check was here from before, let's see if it ever happens.
                 rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {
-                    sourceKind: newTrack.sourceKind,
                     oldTrackId: oldTrack?.id,
-                    newTrackId: newTrack.id,
-                    newTrackIsEffect: newTrack.effectTrack,
+                    oldTrackKind: oldTrack?.kind,
                     oldTrackIsEffect: oldTrack?.effectTrack,
+                    newTrackId: newTrack.id,
+                    newTrackKind: newTrack.kind,
+                    newTrackIsEffect: newTrack.effectTrack,
                 });
                 this._incrementAnalyticMetric("P2PReplaceTrackNewTrackNotInStream");
             }
@@ -361,11 +363,12 @@ export default class Session {
             }
 
             rtcStats.sendEvent("P2PReplaceTrackSourceKindNotFound", {
-                sourceKind: newTrack.sourceKind,
                 oldTrackId: oldTrack?.id,
-                newTrackId: newTrack.id,
-                newTrackIsEffect: newTrack.effectTrack,
+                oldTrackKind: oldTrack?.kind,
                 oldTrackIsEffect: oldTrack?.effectTrack,
+                newTrackId: newTrack.id,
+                newTrackKind: newTrack.kind,
+                newTrackIsEffect: newTrack.effectTrack,
             });
             this._incrementAnalyticMetric("P2PReplaceTrackSourceKindNotFound");
             return pc.addTrack(newTrack, stream);

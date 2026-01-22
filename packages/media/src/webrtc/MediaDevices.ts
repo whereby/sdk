@@ -350,9 +350,6 @@ export async function getStream(
         replacedTracks = replaceTracksInStream(replaceStream, stream, only);
         stream = replaceStream;
     }
-    stream?.getTracks().forEach((t) => {
-        trackAnnotations(t).sourceKind = t.kind === "video" ? "webcam" : "mic";
-    });
     return { error: error && addDetails(error), stream, replacedTracks };
 }
 
@@ -389,7 +386,7 @@ export function getDisplayMedia(
             }
         });
         stream.getTracks().forEach((t) => {
-            trackAnnotations(t).sourceKind = "screenshare";
+            trackAnnotations(t).fromGetDisplayMedia = true;
         });
         return stream;
     });
