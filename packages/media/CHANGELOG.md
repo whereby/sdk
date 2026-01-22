@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.7.0
+
+### Minor Changes
+
+- 6b25d18: Ensure all handles are closed when leaving a room
+
 ## 2.6.10
 
 ### Patch Changes
