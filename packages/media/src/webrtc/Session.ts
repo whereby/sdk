@@ -5,6 +5,7 @@ import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
 import { CustomMediaStreamTrack } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
+import { trackAnnotations } from "../utils/annotations";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -123,6 +124,7 @@ export default class Session {
                 this.pc.addTrack(track, stream);
             });
         } else {
+            rtcStats.sendEvent("P2PNoAddTrackSupport", {});
             // legacy addStream fallback.
             // @ts-ignore
             this.pc.addStream(stream);
@@ -167,6 +169,9 @@ export default class Session {
                 // @ts-ignore
                 this.pc.removeStream(stream);
             }
+        } else {
+            rtcStats.sendEvent("P2PRemoveStreamNoPC", {});
+            this._incrementAnalyticMetric("P2PRemoveStreamNoPC");
         }
     }
 
@@ -270,108 +275,118 @@ export default class Session {
         return this.pc && this.pc.connectionState === "connected";
     }
 
-    replaceTrack(oldTrack: CustomMediaStreamTrack | undefined | null, newTrack: MediaStreamTrack) {
-        const pc = this.pc;
-        // This shouldn't really happen
-        if (!pc) {
-            // ...and if it does not, we'll remove this guard.
-            rtcStats.sendEvent("P2PReplaceTrackNoPC", {
+    replaceTrack(oldTrack: CustomMediaStreamTrack | undefined, newTrack: CustomMediaStreamTrack | undefined) {
+        logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s]", oldTrack?.id, newTrack?.id);
+        if (!newTrack) {
+            rtcStats.sendEvent("P2PReplaceTrackNoNewTrack", {
                 oldTrackId: oldTrack?.id,
-                newTrackId: newTrack?.id,
+                oldTrackKind: oldTrack?.kind,
+                oldTrackIsEffect: oldTrack?.effectTrack,
             });
-            this._incrementAnalyticMetric("P2PReplaceTrackNoPC");
+            this._incrementAnalyticMetric("P2PReplaceTrackNoNewTrack");
             return false;
         }
-        const senders = pc.getSenders() as RTCRtpSender[];
-        // If we didn't specify oldTrack, try to find a previously added track of the same kind
-        const oldTrackFallback = senders.find((s: RTCRtpSender) => s.track?.kind === newTrack.kind)?.track;
-        const oldTrackToReplace = oldTrack || oldTrackFallback;
+
+        if (newTrack.readyState === "ended") {
+            rtcStats.sendEvent("P2PReplaceTrackNewTrackEnded", {
+                newTrackId: newTrack.id,
+                newTrackKind: newTrack.kind,
+                newTrackIsEffect: newTrack.effectTrack,
+            });
+            this._incrementAnalyticMetric("P2PReplaceTrackNewTrackEnded");
+            return false;
+        }
+
+        const pc = this.pc;
 
         // Modern browsers makes things simple.
         // @ts-ignore
-        if (window.RTCRtpSender && window.RTCRtpSender.prototype.replaceTrack) {
-            if (oldTrackToReplace) {
-                const process = () => {
-                    for (let i = 0; i < senders.length; i++) {
-                        const sender: RTCRtpSender = senders[i];
-                        const track = sender.track;
-                        if (track?.id === newTrack.id) {
-                            return Promise.resolve(newTrack);
-                        }
-                        if (track?.id === oldTrackToReplace.id) {
-                            return senders[i].replaceTrack(newTrack);
-                        }
-                    }
-                    return null;
-                };
-                const result = process();
-                if (result) {
-                    return result;
+        if (window.RTCRtpSender?.prototype?.replaceTrack) {
+            if (oldTrack) {
+                const sender = pc.getSenders().find((s) => s.track?.id === oldTrack.id);
+                if (sender) {
+                    sender.replaceTrack(newTrack);
+                    return Promise.resolve(newTrack);
                 }
-
-                // If we have an oldtrack, we should not go forward, because
-                // we already know that the track has been added at least to the mediastream
-                return new Promise((resolve, reject) => {
-                    let retried = 0;
-                    let timer: any = setInterval(async () => {
-                        const trackReplacedPromise = process();
-                        if (!trackReplacedPromise) {
-                            if (3 < ++retried) {
-                                clearInterval(timer);
-                                timer = null;
-
-                                // Add some analytics to get more context when we end up here.
-                                const sendersAnalytics = senders.map((s) => {
-                                    const track: CustomMediaStreamTrack | null = s.track;
-                                    if (track) {
-                                        return {
-                                            id: track.id,
-                                            kind: track.kind,
-                                            readyState: track.readyState,
-                                            replaced: track.replaced,
-                                        };
-                                    }
-                                });
-                                rtcStats.sendEvent("P2PReplaceTrackFailed", {
-                                    newTrackId: newTrack?.id,
-                                    oldTrackId: oldTrack?.id,
-                                    oldTrackFallbackId: oldTrackFallback?.id,
-                                    sendersCount: senders?.length,
-                                    sendersAnalytics,
-                                });
-
-                                reject("No sender track to replace");
-                            }
-                            return;
-                        }
-                        clearInterval(timer);
-                        timer = null;
-                        const trackReplaced = await trackReplacedPromise;
-                        resolve(trackReplaced);
-                    }, 1000);
-                });
             }
-            const stream =
-                this.streams.find((s) => s.getTracks().find((t: any) => t.id === newTrack.id)) || this.streams[0];
+            // We may already have added a track of same kind obtained from gUM.
+            // If so, we replace it even if it's not the track given as oldTrack.
+            // Ideally, this should never happen if the function was called correctly.
+            const sender = pc.getSenders().find((s) => {
+                const track = s.track as CustomMediaStreamTrack;
+                // We do not want to replace tracks obtained from gDM.
+                return track?.kind === newTrack.kind && !trackAnnotations(track).fromGetDisplayMedia;
+            });
+            if (sender) {
+                this._incrementAnalyticMetric("P2PReplaceTrackOldTrackNotFound");
+                const track = sender.track as CustomMediaStreamTrack;
+                rtcStats.sendEvent("P2PReplaceTrackOldTrackNotFound", {
+                    targetTrackId: track?.id,
+                    targetTrackKind: track?.kind,
+                    targetTrackIsEffect: track?.effectTrack,
+                    targetTrackReadyState: track?.readyState,
+                    newTrackId: newTrack.id,
+                    newTrackKind: newTrack.kind,
+                    newTrackIsEffect: newTrack.effectTrack,
+                    oldTrackId: oldTrack?.id,
+                    oldTrackKind: oldTrack?.kind,
+                    oldTrackIsEffect: oldTrack?.effectTrack,
+                });
+                sender.replaceTrack(newTrack);
+                return Promise.resolve(newTrack);
+            }
+
+            // If we get here, we falsely believe we've added a track to the webrtc layer.
+            // Actually, this is the first track of its kind obtained from gUM.
+
+            let stream = this.streams.find((s: MediaStream) =>
+                s.getTracks().find((t: MediaStreamTrack) => t.id === newTrack.id),
+            );
             if (!stream) {
+                // This check was here from before, let's see if it ever happens.
+                rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {
+                    oldTrackId: oldTrack?.id,
+                    oldTrackKind: oldTrack?.kind,
+                    oldTrackIsEffect: oldTrack?.effectTrack,
+                    newTrackId: newTrack.id,
+                    newTrackKind: newTrack.kind,
+                    newTrackIsEffect: newTrack.effectTrack,
+                });
+                this._incrementAnalyticMetric("P2PReplaceTrackNewTrackNotInStream");
+            }
+            // TODO: Don't depend on array index for the stream.
+            stream = this.streams[0];
+            if (!stream) {
+                rtcStats.sendEvent("P2PReplaceTrackNoStream", {});
+                this._incrementAnalyticMetric("P2PReplaceTrackNoStream");
                 return Promise.reject(new Error("replaceTrack: No stream?"));
             }
-            // Let's just add the track if we couldn't figure out a better way.
-            // We'll get here if you had no camera and plugged one in.
+
+            rtcStats.sendEvent("P2PReplaceTrackSourceKindNotFound", {
+                oldTrackId: oldTrack?.id,
+                oldTrackKind: oldTrack?.kind,
+                oldTrackIsEffect: oldTrack?.effectTrack,
+                newTrackId: newTrack.id,
+                newTrackKind: newTrack.kind,
+                newTrackIsEffect: newTrack.effectTrack,
+            });
+            this._incrementAnalyticMetric("P2PReplaceTrackSourceKindNotFound");
             return pc.addTrack(newTrack, stream);
         }
+        // Let's see if this ever happens.
+        rtcStats.sendEvent("P2PNoReplaceTrackSupport", {});
 
         if (!this.canModifyPeerConnection()) {
             this.pending.push(() => {
-                this.replaceTrack(oldTrackToReplace, newTrack);
+                this.replaceTrack(oldTrack, newTrack);
             });
             return;
         }
         this.isOperationPending = true;
         const onn = pc.onnegotiationneeded;
         pc.onnegotiationneeded = null;
-        if (oldTrackToReplace) {
-            this.removeTrack(oldTrackToReplace);
+        if (oldTrack) {
+            this.removeTrack(oldTrack);
         }
         this.addTrack(newTrack);
         setTimeout(() => {

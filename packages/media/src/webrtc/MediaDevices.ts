@@ -7,6 +7,7 @@ import {
     GetUpdatedDevicesResult,
     UpdatedDevicesInfo,
 } from "./types";
+import { trackAnnotations } from "../utils/annotations";
 
 const logger = new Logger();
 
@@ -383,6 +384,9 @@ export function getDisplayMedia(
             if ("contentHint" in t) {
                 t.contentHint = contentHint;
             }
+        });
+        stream.getTracks().forEach((t) => {
+            trackAnnotations(t).fromGetDisplayMedia = true;
         });
         return stream;
     });
