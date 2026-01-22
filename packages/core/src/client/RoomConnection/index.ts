@@ -31,6 +31,7 @@ import {
     toggleCameraEnabled,
     toggleLowDataModeEnabled,
     toggleMicrophoneEnabled,
+    AppConfig,
 } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import type {
@@ -307,7 +308,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             throw new Error("Room URL is required to join a room.");
         }
 
-        const roomConfig = {
+        const roomConfig: AppConfig & { sdkVersion: string } = {
             localMediaOptions: this.options.localMediaOptions || undefined,
             displayName: this.options.displayName || "Guest",
             roomKey: this.options.roomKey || null,
@@ -316,6 +317,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             roomUrl,
             assistantKey: this.options.assistantKey || null,
             isNodeSdk: this.options.isNodeSdk || false,
+            isDialIn: this.options.isDialIn ?? false,
         };
 
         this.store.dispatch(doAppStart(roomConfig));
