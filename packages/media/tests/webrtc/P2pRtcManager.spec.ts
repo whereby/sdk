@@ -4,6 +4,8 @@ jest.mock("webrtc-adapter", () => {
     };
 });
 
+import rtcStats from "../../src/webrtc/rtcStatsService";
+
 import * as helpers from "./webRtcHelpers";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
@@ -159,6 +161,13 @@ describe("P2pRtcManager", () => {
                 deregisterFunctions.forEach((deregisterFunction: any) => {
                     expect(deregisterFunction).toHaveBeenCalled();
                 });
+            });
+
+            it("should disconnect rtcStats", () => {
+                jest.spyOn(rtcStats.server, "close");
+                rtcManager.disconnectAll();
+
+                expect(rtcStats.server.close).toHaveBeenCalled();
             });
         });
 

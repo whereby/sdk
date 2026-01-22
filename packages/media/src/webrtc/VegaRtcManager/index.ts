@@ -93,7 +93,7 @@ export default class VegaRtcManager implements RtcManager {
     _socketListenerDeregisterFunctions: any;
     _reconnect: any;
     _reconnectTimeOut: any;
-    _qualityMonitor: any;
+    _qualityMonitor: VegaMediaQualityMonitor;
     _fetchMediaServersTimer: any;
     _iceServers: any;
     _turnServers: any;
@@ -1750,6 +1750,7 @@ export default class VegaRtcManager implements RtcManager {
         this._streamIdToVideoConsumerId.clear();
 
         this._mediasoupDeviceInitializedAsync = Promise.resolve(null);
+        this._qualityMonitor.close();
     }
 
     sendAudioMutedStats(muted: boolean) {

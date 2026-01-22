@@ -126,7 +126,7 @@ async function joinRoom({
     await page.getByRole("button", { name: "Enter" }).click();
 
     if (expectLockScreen) {
-        await expect(page.locator("h1")).toContainText(/Room locked/);
+        await expect(page.getByTestId("room-locked-notification")).toBeAttached();
     } else {
         await expect(page.locator("h1")).toContainText(/Room/);
         await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("connected");

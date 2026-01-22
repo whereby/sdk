@@ -8,6 +8,8 @@ import {
     StickyReactionEvent,
     NotificationEvents,
     SignalClientEvent,
+    LocalParticipantState,
+    ConnectionStatus,
 } from "@whereby.com/core";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -16,7 +18,7 @@ import "./App.css";
 const WaitingArea = ({ knock }: { knock: () => void }) => {
     return (
         <div>
-            <h1>Room locked</h1>
+            <h1 data-testid="room-locked-notification">Room locked</h1>
             <p>Waiting for host to let you in</p>
             <button onClick={knock}>Knock</button>
         </div>
@@ -41,6 +43,124 @@ const ChatInput = ({ sendChatMessage }: { sendChatMessage: (message: string) => 
         </div>
     );
 };
+
+function RoomStatus({
+    localParticipantId,
+    cloudRecordingStatus,
+    liveStreamStatus,
+    connectionStatus,
+}: {
+    localParticipantId?: string;
+    cloudRecordingStatus?: string;
+    liveStreamStatus?: string;
+    connectionStatus: string;
+}) {
+    return (
+        <dl>
+            <dt>Connection Status</dt>
+            <dd data-testid="connectionStatus">{connectionStatus}</dd>
+            <dt>Local client ID</dt>
+            <dd data-testid="localClientId">{localParticipantId || "N/A"}</dd>
+            <dt>Cloud recording status</dt>
+            <dd data-testid="cloudRecordingStatus">{cloudRecordingStatus || "N/A"}</dd>
+            <dt>Streaming status</dt>
+            <dd data-testid="streamingStatus">{liveStreamStatus || "N/A"}</dd>
+        </dl>
+    );
+}
+
+function RoomControls({
+    startScreenshare,
+    stopScreenshare,
+    startCloudRecording,
+    stopCloudRecording,
+    localParticipant,
+    isCameraEnabled,
+    isMicrophoneEnabled,
+    onToggleMicrophone,
+    onToggleCamera,
+    toggleRaiseHand,
+    leaveRoom,
+    connectionStatus,
+    joinRoom,
+    knock,
+}: {
+    startScreenshare: () => void;
+    stopScreenshare: () => void;
+    startCloudRecording: () => void;
+    stopCloudRecording: () => void;
+    localParticipant?: LocalParticipantState;
+    isCameraEnabled: boolean;
+    isMicrophoneEnabled: boolean;
+    onToggleMicrophone: () => void;
+    onToggleCamera: () => void;
+    toggleRaiseHand: () => void;
+    leaveRoom: () => void;
+    joinRoom: () => void;
+    connectionStatus: ConnectionStatus;
+    knock: () => void;
+}) {
+    if (connectionStatus === "ready") {
+        return (
+            <button data-testid="joinRoomBtn" onClick={() => joinRoom()}>
+                Join room
+            </button>
+        );
+    }
+
+    if (connectionStatus === "left" || connectionStatus === "kicked") {
+        return (
+            <button data-testid="rejoinRoomBtn" onClick={() => joinRoom()}>
+                Re-join {connectionStatus} room
+            </button>
+        );
+    }
+
+    if (connectionStatus === "room_locked") {
+        return <WaitingArea knock={knock} />;
+    }
+
+    if (connectionStatus === "knock_rejected") {
+        return <p data-testid="knockRejectedMessage">You have been rejected access</p>;
+    }
+
+    return (
+        <div className="Controls">
+            <button data-testid="startScreenshareBtn" onClick={() => startScreenshare()}>
+                Start screen share
+            </button>
+            <button data-testid="stopScreenshareBtn" onClick={() => stopScreenshare()}>
+                Stop screen share
+            </button>
+            <button data-testid="startCloudRecordingBtn" onClick={() => startCloudRecording()}>
+                Start cloud recording
+            </button>
+            <button data-testid="stopCloudRecordingBtn" onClick={() => stopCloudRecording()}>
+                Stop cloud recording
+            </button>
+            {localParticipant && (
+                <>
+                    <button data-testid="toggleCameraBtn" onClick={onToggleCamera}>
+                        {isCameraEnabled ? "Disable" : "Enable"} camera
+                    </button>
+                    <button
+                        data-testid="toggleMicrophoneBtn"
+                        disabled={!localParticipant.stream?.getAudioTracks().length}
+                        onClick={onToggleMicrophone}
+                    >
+                        {isMicrophoneEnabled ? "Disable" : "Enable"} microphone
+                    </button>
+                    <button data-testid="toggleRaisedHandBtn" onClick={() => toggleRaiseHand()}>
+                        {localParticipant?.stickyReaction ? "Lower" : "Raise"} hand
+                    </button>
+                </>
+            )}
+            <button data-testid="leaveRoomBtn" onClick={() => leaveRoom()}>
+                Leave room
+            </button>
+        </div>
+    );
+}
 
 type RoomProps = {
     roomUrl: string;
@@ -223,86 +343,37 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         };
     }, [roomConnection.events, roomConnection.state, roomConnection.actions]);
 
-    if (connectionStatus === "ready") {
-        return (
-            <button data-testid="joinRoomBtn" onClick={() => joinRoom()}>
-                Join room
-            </button>
-        );
-    }
-
-    if (connectionStatus === "left" || connectionStatus === "kicked") {
-        return (
-            <button data-testid="rejoinRoomBtn" onClick={() => joinRoom()}>
-                Re-join {connectionStatus} room
-            </button>
-        );
-    }
-
-    if (connectionStatus === "room_locked") {
-        return <WaitingArea knock={knock} />;
-    }
-
-    if (connectionStatus === "knock_rejected") {
-        return <p data-testid="knockRejectedMessage">You have been rejected access</p>;
-    }
-
     return (
         <div>
             <h1>Room</h1>
-            <dl>
-                <dt>Connection Status</dt>
-                <dd data-testid="connectionStatus">{connectionStatus}</dd>
-                <dt>Local client ID</dt>
-                <dd data-testid="localClientId">{localParticipant?.id || "N/A"}</dd>
-                <dt>Cloud recording status</dt>
-                <dd data-testid="cloudRecordingStatus">{cloudRecording?.status || "N/A"}</dd>
-                <dt>Streaming status</dt>
-                <dd data-testid="streamingStatus">{liveStream?.status || "N/A"}</dd>
-            </dl>
-            <div className="Controls">
-                <button data-testid="startScreenshareBtn" onClick={() => startScreenshare()}>
-                    Start screen share
-                </button>
-                <button data-testid="stopScreenshareBtn" onClick={() => stopScreenshare()}>
-                    Stop screen share
-                </button>
-                <button data-testid="startCloudRecordingBtn" onClick={() => startCloudRecording()}>
-                    Start cloud recording
-                </button>
-                <button data-testid="stopCloudRecordingBtn" onClick={() => stopCloudRecording()}>
-                    Stop cloud recording
-                </button>
-                {localParticipant && (
-                    <>
-                        <button
-                            data-testid="toggleCameraBtn"
-                            onClick={() => {
-                                toggleCamera(!isCameraEnabled);
-                                setIsCameraEnabled(!isCameraEnabled);
-                            }}
-                        >
-                            {isCameraEnabled ? "Disable" : "Enable"} camera
-                        </button>
-                        <button
-                            data-testid="toggleMicrophoneBtn"
-                            disabled={!localParticipant.stream?.getAudioTracks().length}
-                            onClick={() => {
-                                toggleMicrophone(!isMicrophoneEnabled);
-                                setIsMicrophoneEnabled(!isMicrophoneEnabled);
-                            }}
-                        >
-                            {isMicrophoneEnabled ? "Disable" : "Enable"} microphone
-                        </button>
-                        <button data-testid="toggleRaisedHandBtn" onClick={() => toggleRaiseHand()}>
-                            {localParticipant?.stickyReaction ? "Lower" : "Raise"} hand
-                        </button>
-                    </>
-                )}
-                <button data-testid="leaveRoomBtn" onClick={() => leaveRoom()}>
-                    Leave room
-                </button>
-            </div>
+            <RoomStatus
+                localParticipantId={localParticipant?.id}
+                connectionStatus={connectionStatus}
+                liveStreamStatus={liveStream?.status}
+                cloudRecordingStatus={cloudRecording?.status}
+            />
+            <RoomControls
+                knock={knock}
+                connectionStatus={connectionStatus}
+                joinRoom={joinRoom}
+                startScreenshare={startScreenshare}
+                stopScreenshare={stopScreenshare}
+                startCloudRecording={startCloudRecording}
+                stopCloudRecording={stopCloudRecording}
+                localParticipant={localParticipant}
+                isCameraEnabled={isCameraEnabled}
+                isMicrophoneEnabled={isMicrophoneEnabled}
+                onToggleMicrophone={() => {
+                    toggleMicrophone(!isMicrophoneEnabled);
+                    setIsMicrophoneEnabled(!isMicrophoneEnabled);
+                }}
+                onToggleCamera={() => {
+                    toggleCamera(!isCameraEnabled);
+                    setIsCameraEnabled(!isCameraEnabled);
+                }}
+                toggleRaiseHand={toggleRaiseHand}
+                leaveRoom={leaveRoom}
+            />
             {isHost && waitingParticipants.length > 0 && (
                 <div>
                     <h3>Knocking participants ({waitingParticipants.length})</h3>
