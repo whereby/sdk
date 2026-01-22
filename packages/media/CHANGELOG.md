@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.6.10
+
+### Patch Changes
+
+- aa8925c: Fix P2P replaceTrack function
+
 ## 2.6.9
 
 ### Patch Changes
