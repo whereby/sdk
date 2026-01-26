@@ -365,12 +365,26 @@ export function createFfmpegMixer() {
         const stdio = ["pipe", "pipe", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
         const args = getFFmpegArguments();
         const ffmpegProcess = spawn("ffmpeg", args, { stdio });
+        const stream = ffmpegProcess.stdio[3];
 
         startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
 
         ffmpegProcess.stderr.setEncoding("utf8");
         ffmpegProcess.stderr.on("data", (d) => console.error("[ffmpeg]", String(d).trim()));
         ffmpegProcess.on("error", () => console.error("FFmpeg process error: is ffmpeg installed?"));
+        ffmpegProcess.stdin?.on("error", (e: any) => {
+            if (e?.code === "EPIPE") return;
+            console.error("[ffmpeg stdin error]", e);
+        });
+        ffmpegProcess.stdout?.on("error", (e: any) => console.error("[ffmpeg stdout error]", e));
+        ffmpegProcess.stderr?.on("error", (e: any) => console.error("[ffmpeg stderr error]", e));
+
+        for (let slot = 0; slot < PARTICIPANT_SLOTS; slot++) {
+            const w = ffmpegProcess.stdio[3 + slot];
+            w?.on?.("error", (e: any) => {
+                if (e?.code === "EPIPE") return; // common during teardown
+            });
+        }
         let audioBuffer = Buffer.alloc(0);
         const FRAME_SIZE_BYTES = FRAME_10MS_SAMPLES * BYTES_PER_SAMPLE; // 480 samples * 2 bytes = 960 bytes
 
@@ -444,27 +458,47 @@ export function createFfmpegMixer() {
      */
     function stopFFmpegProcess(ffmpegProcess: ChildProcessWithoutNullStreams) {
         stopPacer();
-        if (ffmpegProcess && !ffmpegProcess.killed) {
+        if (!ffmpegProcess || ffmpegProcess.exitCode !== null) {
+            return;
+        }
+
+        try {
+            ffmpegProcess.stdout.unpipe();
+        } catch {
+            console.error("Failed to unpipe ffmpeg stdout");
+        }
+        for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
+            const w = ffmpegProcess.stdio[3 + i] as Stream.Writable;
             try {
-                ffmpegProcess.stdout.unpipe();
+                w.end();
+                w.destroy();
             } catch {
-                console.error("Failed to unpipe ffmpeg stdout");
-            }
-            for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
-                const w = ffmpegProcess.stdio[3 + i] as Stream.Writable;
-                try {
-                    w.end();
-                } catch {
-                    console.error("Failed to end ffmpeg writable stream");
-                }
-            }
-            try {
-                ffmpegProcess.stdin?.write("q\n");
-                ffmpegProcess.stdin?.end();
-            } catch {
-                console.error("Failed to end ffmpeg stdin");
+                console.error("Failed to end ffmpeg writable stream");
             }
         }
+        try {
+            ffmpegProcess.stdout?.destroy?.();
+        } catch {}
+        try {
+            ffmpegProcess.stderr?.destroy?.();
+        } catch {}
+
+        try {
+            ffmpegProcess.stdin?.end();
+        } catch {
+            console.error("Failed to end ffmpeg stdin");
+        }
+        ffmpegProcess.kill("SIGTERM");
+
+        const t = setTimeout(() => {
+            if (ffmpegProcess.exitCode == null) {
+                try {
+                    ffmpegProcess.kill("SIGKILL");
+                } catch {}
+            }
+        }, 2000);
+
+        ffmpegProcess.once("exit", () => clearTimeout(t));
     }
     return {
         spawnFFmpegProcess,
