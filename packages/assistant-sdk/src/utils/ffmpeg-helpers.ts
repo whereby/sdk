@@ -365,6 +365,7 @@ export function createFfmpegMixer() {
         const stdio = ["pipe", "pipe", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
         const args = getFFmpegArguments();
         const ffmpegProcess = spawn("ffmpeg", args, { stdio });
+        const stream = ffmpegProcess.stdio[3];
 
         startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
 
@@ -452,6 +453,9 @@ export function createFfmpegMixer() {
             }
             for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
                 const w = ffmpegProcess.stdio[3 + i] as Stream.Writable;
+                w.on("error", (e) => {
+                    console.warn("FFMpeg stdio writable error during shutdown", e);
+                });
                 try {
                     w.end();
                 } catch {
@@ -464,6 +468,7 @@ export function createFfmpegMixer() {
             } catch {
                 console.error("Failed to end ffmpeg stdin");
             }
+            ffmpegProcess.kill();
         }
     }
     return {
