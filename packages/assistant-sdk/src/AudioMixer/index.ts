@@ -20,7 +20,7 @@ export class AudioMixer extends EventEmitter {
     private activeSlots: Record<number, SlotBinding | undefined> = {};
     private mixer = createFfmpegMixer();
 
-    constructor() {
+    constructor(private log = console) {
         super();
         this.participantSlots = new Map(Array.from({ length: PARTICIPANT_SLOTS }, (_, i) => [i, ""]));
     }
@@ -114,7 +114,7 @@ export class AudioMixer extends EventEmitter {
             try {
                 existing.stop();
             } catch (e) {
-                console.error("Failed to stop existing audio track", { error: e });
+                this.log.error("Failed to stop existing audio track", { error: e });
             }
             this.activeSlots[slot] = undefined;
         }
@@ -134,7 +134,7 @@ export class AudioMixer extends EventEmitter {
             try {
                 binding.stop();
             } catch (e) {
-                console.error("Failed to stop existing audio track", { error: e });
+                this.log.error("Failed to stop existing audio track", { error: e });
             }
             this.activeSlots[slot] = undefined;
         }

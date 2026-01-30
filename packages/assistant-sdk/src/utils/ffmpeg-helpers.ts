@@ -13,7 +13,7 @@ const BYTES_PER_SAMPLE = 2;
 // 480 samples per 10ms frame at 48kHz
 const FRAME_10MS_SAMPLES = 480;
 
-export function createFfmpegMixer() {
+export function createFfmpegMixer(log = console) {
     const slotBuffers: Map<number, Int16Array> = new Map();
 
     function appendAndDrainTo480(slot: number, newSamples: Int16Array) {
@@ -45,8 +45,7 @@ export function createFfmpegMixer() {
     if (ENABLE_METERS) {
         setInterval(() => {
             for (let s = 0; s < PARTICIPANT_SLOTS; s++) {
-                // eslint-disable-next-line no-console
-                console.log(
+                log.info(
                     `[slot ${s}] enqF=${meter.enqFrames[s]}/s enqS=${meter.enqSamples[s]} ` +
                         `wroteF=${meter.wroteFrames[s]}/s wroteS=${meter.wroteSamples[s]} ` +
                         `lastFrames=${meter.lastFramesSeen[s]}`,
@@ -347,8 +346,8 @@ export function createFfmpegMixer() {
         startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
 
         ffmpegProcess.stderr.setEncoding("utf8");
-        ffmpegProcess.stderr.on("data", (d) => console.error("[ffmpeg]", String(d).trim()));
-        ffmpegProcess.on("error", () => console.error("FFmpeg process error (debug): is ffmpeg installed?"));
+        ffmpegProcess.stderr.on("data", (d) => log.error("[ffmpeg]", String(d).trim()));
+        ffmpegProcess.on("error", () => log.error("FFmpeg process error (debug): is ffmpeg installed?"));
 
         return ffmpegProcess;
     }
@@ -370,14 +369,13 @@ export function createFfmpegMixer() {
         startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
 
         ffmpegProcess.stderr.setEncoding("utf8");
-        ffmpegProcess.stderr.on("data", (d) => console.error("[ffmpeg]", String(d).trim()));
-        ffmpegProcess.on("error", () => console.error("FFmpeg process error: is ffmpeg installed?"));
+        ffmpegProcess.stderr.on("data", (d) => log.error("[ffmpeg]", String(d).trim()));
+        ffmpegProcess.on("error", () => log.error("FFmpeg process error: is ffmpeg installed?"));
         ffmpegProcess.stdin?.on("error", (e: any) => {
-            if (e?.code === "EPIPE") return;
-            console.error("[ffmpeg stdin error]", e);
+            if ("code" in e && e.code === "EPIPE") return;
         });
-        ffmpegProcess.stdout?.on("error", (e: any) => console.error("[ffmpeg stdout error]", e));
-        ffmpegProcess.stderr?.on("error", (e: any) => console.error("[ffmpeg stderr error]", e));
+        ffmpegProcess.stdout?.on("error", (e) => log.error("[ffmpeg stdout error]", e));
+        ffmpegProcess.stderr?.on("error", (e) => log.error("[ffmpeg stderr error]", e));
 
         for (let slot = 0; slot < PARTICIPANT_SLOTS; slot++) {
             const w = ffmpegProcess.stdio[3 + slot];
@@ -444,7 +442,7 @@ export function createFfmpegMixer() {
                 unsubscribe();
                 sink.stop();
             } catch {
-                console.error("Failed to stop AudioSink");
+                log.error("Failed to stop AudioSink");
             }
         };
         return { sink, writer, stop };
@@ -465,7 +463,7 @@ export function createFfmpegMixer() {
         try {
             ffmpegProcess.stdout.unpipe();
         } catch {
-            console.error("Failed to unpipe ffmpeg stdout");
+            log.error("Failed to unpipe ffmpeg stdout");
         }
         for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
             const w = ffmpegProcess.stdio[3 + i] as Stream.Writable;
@@ -473,7 +471,7 @@ export function createFfmpegMixer() {
                 w.end();
                 w.destroy();
             } catch {
-                console.error("Failed to end ffmpeg writable stream");
+                log.error("Failed to end ffmpeg writable stream");
             }
         }
         try {
@@ -486,13 +484,15 @@ export function createFfmpegMixer() {
         try {
             ffmpegProcess.stdin?.end();
         } catch {
-            console.error("Failed to end ffmpeg stdin");
+            log.error("Failed to end ffmpeg stdin");
         }
+        log.info("Terming mixer ffmpeg");
         ffmpegProcess.kill("SIGTERM");
 
         const t = setTimeout(() => {
             if (ffmpegProcess.exitCode == null) {
                 try {
+                    log.warn("Killing mixer ffmpeg");
                     ffmpegProcess.kill("SIGKILL");
                 } catch {}
             }
