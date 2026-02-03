@@ -29,7 +29,7 @@ function makeCdnPath() {
     let tag = "";
     const preRelease = pkg.version.split("-")[1];
     if (preRelease) {
-        tag = `-${preRelease.split(".")[0]}`;
+        tag = `-${preRelease.replace(/\./g, "-")}`;
     }
 
     return `v${major}-${minor}-${patch}${tag}`;
