@@ -20,9 +20,8 @@ export class AudioMixer extends EventEmitter {
     private activeSlots: Record<number, SlotBinding | undefined> = {};
     private mixer = createFfmpegMixer();
 
-    constructor() {
+    constructor(private log = console) {
         super();
-        this.setupMediaStream();
         this.participantSlots = new Map(Array.from({ length: PARTICIPANT_SLOTS }, (_, i) => [i, ""]));
     }
 
@@ -34,6 +33,9 @@ export class AudioMixer extends EventEmitter {
     }
 
     public getCombinedAudioStream(): MediaStream | null {
+        if (!this.combinedAudioStream) {
+            this.setupMediaStream();
+        }
         return this.combinedAudioStream;
     }
 
@@ -59,14 +61,17 @@ export class AudioMixer extends EventEmitter {
     }
 
     public stopAudioMixer(): void {
+        Object.values(this.activeSlots).forEach((binding) => binding?.stop());
+        this.combinedAudioStream?.getTracks().forEach((track) => track.stop());
         if (this.ffmpegProcess) {
             this.mixer.stopFFmpegProcess(this.ffmpegProcess);
             this.ffmpegProcess = null;
         }
+
         this.participantSlots = new Map(Array.from({ length: PARTICIPANT_SLOTS }, (_, i) => [i, ""]));
         this.activeSlots = {};
-        // Recreate the media stream to avoid stale references
-        this.setupMediaStream();
+        // remove the media stream to avoid stale references
+        this.combinedAudioStream = null;
     }
 
     private slotForParticipant(participantId: string): number | null {
@@ -109,7 +114,7 @@ export class AudioMixer extends EventEmitter {
             try {
                 existing.stop();
             } catch (e) {
-                console.error("Failed to stop existing audio track", { error: e });
+                this.log.error("Failed to stop existing audio track", { error: e });
             }
             this.activeSlots[slot] = undefined;
         }
@@ -129,7 +134,7 @@ export class AudioMixer extends EventEmitter {
             try {
                 binding.stop();
             } catch (e) {
-                console.error("Failed to stop existing audio track", { error: e });
+                this.log.error("Failed to stop existing audio track", { error: e });
             }
             this.activeSlots[slot] = undefined;
         }
