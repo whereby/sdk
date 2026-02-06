@@ -19,10 +19,10 @@ export class ServerSocket {
     _socket: any;
     _reconnectManager?: ReconnectManager | null;
     noopKeepaliveInterval: any;
-    _noopKeepaliveTimestamp: number | undefined;
     _wasConnectedUsingWebsocket?: boolean;
     disconnectTimestamp: number | undefined;
     disconnectDurationLimitExceeded: boolean;
+    _disconnectDurationLimitOnTimestamps: number[]; // TODO: Remove this when disconnectDurationLimitOn is no longer needed.
     joinRoomFinished: boolean;
     _disconnectDurationLimitOn: boolean;
     _disconnectDurationLimitInMs: number | undefined;
@@ -73,6 +73,9 @@ export class ServerSocket {
 
         if (glitchFree) this._reconnectManager = new ReconnectManager(this._socket);
 
+        // TODO: Remove this when disconnectDurationLimitOn is no longer needed.
+        this._disconnectDurationLimitOnTimestamps = [];
+
         this._socket.on("room_joined", (payload: RoomJoinedEvent) => {
             const { error } = payload as RoomJoinedErrors;
             if (!error) {
@@ -92,7 +95,10 @@ export class ServerSocket {
                             // send a noop message if it thinks it is connected (might not be)
                             if (this._socket.connected) {
                                 if (this._disconnectDurationLimitOn) {
-                                    this._noopKeepaliveTimestamp = Date.now();
+                                    this._disconnectDurationLimitOnTimestamps.push(Date.now());
+                                    if (this._disconnectDurationLimitOnTimestamps.length > 3) {
+                                        this._disconnectDurationLimitOnTimestamps.shift();
+                                    }
                                 }
                                 this._socket.io.engine.sendPacket("noop");
                             }
@@ -119,13 +125,12 @@ export class ServerSocket {
     _didExceedDisconnectDurationLimit() {
         if (!this._disconnectDurationLimitOn) return false;
 
-        if (this._disconnectDurationLimitInMs && this._noopKeepaliveTimestamp) {
-            const disconnectedDuration = Date.now() - this._noopKeepaliveTimestamp;
-            if (disconnectedDuration > this._disconnectDurationLimitInMs) {
-                return true;
+        return this._disconnectDurationLimitOnTimestamps.some((timestamp) => {
+            if (this._disconnectDurationLimitInMs) {
+                const duration = Date.now() - timestamp;
+                return duration > this._disconnectDurationLimitInMs;
             }
-            return false;
-        }
+        });
     }
 
     setDisconnectDurationLimit(limitInMs: number) {
