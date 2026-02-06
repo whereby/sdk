@@ -86,18 +86,22 @@ export class ServerSocket {
                 this._wasConnectedUsingWebsocket = true;
 
                 // start noop keepalive loop to detect client side disconnects fast
-                if (!this.noopKeepaliveInterval)
+                if (!this.noopKeepaliveInterval) {
+                    let lastConnectedKeepAliveTimestamp = Date.now();
+
                     this.noopKeepaliveInterval = setInterval(() => {
                         try {
                             // send a noop message if it thinks it is connected (might not be)
                             if (this._socket.connected) {
                                 if (this._disconnectDurationLimitOn) {
-                                    this._noopKeepaliveTimestamp = Date.now();
+                                    this._noopKeepaliveTimestamp = lastConnectedKeepAliveTimestamp;
                                 }
                                 this._socket.io.engine.sendPacket("noop");
+                                lastConnectedKeepAliveTimestamp = Date.now();
                             }
                         } catch (ex) {}
                     }, NOOP_KEEPALIVE_INTERVAL);
+                }
             }
         });
 
