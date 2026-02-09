@@ -4,6 +4,7 @@ import { ReconnectManager } from "./ReconnectManager";
 import { PROTOCOL_RESPONSES } from "../model/protocol";
 import { RtcManager } from "../webrtc";
 import { RoomJoinedEvent, RoomJoinedErrors } from "./types";
+import Logger from "./Logger";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -11,6 +12,8 @@ const adapter = adapterRaw.default ?? adapterRaw;
 const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 
 const NOOP_KEEPALIVE_INTERVAL = 2000;
+
+const logger = new Logger()
 
 /**
  * Wrapper class that extends the Socket.IO client library.
@@ -44,6 +47,7 @@ export class ServerSocket {
         });
         this.joinRoomFinished = false;
         this._socket.io.on("reconnect", () => {
+            logger.debug("reconnect", new Date().toISOString())
             if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
@@ -52,6 +56,7 @@ export class ServerSocket {
             this._socket.sendBuffer = [];
         });
         this._socket.io.on("reconnect_attempt", () => {
+            logger.debug("reconnect_attempt", new Date().toISOString())
             if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
@@ -81,6 +86,7 @@ export class ServerSocket {
         });
 
         this._socket.on("connect", () => {
+            logger.debug("connect", new Date().toISOString())
             const transport = this.getTransport();
             if (transport === "websocket") {
                 this._wasConnectedUsingWebsocket = true;
@@ -94,10 +100,12 @@ export class ServerSocket {
                             // send a noop message if it thinks it is connected (might not be)
                             if (this._socket.connected) {
                                 if (this._disconnectDurationLimitOn) {
+                                    logger.debug("last known timestamp:", new Date().toISOString())
                                     this._noopKeepaliveTimestamp = lastConnectedKeepAliveTimestamp;
                                 }
                                 this._socket.io.engine.sendPacket("noop");
                                 lastConnectedKeepAliveTimestamp = Date.now();
+                                logger.debug("last connected timestamp:", new Date().toISOString())
                             }
                         } catch (ex) {}
                     }, NOOP_KEEPALIVE_INTERVAL);
@@ -106,6 +114,7 @@ export class ServerSocket {
         });
 
         this._socket.on("disconnect", () => {
+            logger.debug("disconnect", new Date().toISOString())
             if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
@@ -125,6 +134,7 @@ export class ServerSocket {
 
         if (this._disconnectDurationLimitInMs && this._noopKeepaliveTimestamp) {
             const disconnectedDuration = Date.now() - this._noopKeepaliveTimestamp;
+            logger.debug("didExceed", disconnectedDuration)
             if (disconnectedDuration > this._disconnectDurationLimitInMs) {
                 return true;
             }
