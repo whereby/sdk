@@ -51,7 +51,6 @@ export class ServerSocket {
             if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
-                return;
             }
             this._socket.sendBuffer = [];
         });
@@ -60,7 +59,6 @@ export class ServerSocket {
             if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
-                return;
             }
             if (this._wasConnectedUsingWebsocket) {
                 this._socket.io.opts.transports = ["websocket"];
@@ -118,7 +116,6 @@ export class ServerSocket {
             if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
-                return;
             }
             this.joinRoomFinished = false;
             this.disconnectTimestamp = Date.now();
