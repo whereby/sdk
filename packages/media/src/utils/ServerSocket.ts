@@ -10,7 +10,6 @@ const adapter = adapterRaw.default ?? adapterRaw;
 
 const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 
-const NOOP_KEEPALIVE_INTERVAL = 2000;
 const DISCONNECT_DURATION_LIMIT_MS = 60000;
 
 /**
@@ -19,15 +18,16 @@ const DISCONNECT_DURATION_LIMIT_MS = 60000;
 export class ServerSocket {
     _socket: any;
     _reconnectManager?: ReconnectManager | null;
-    noopKeepaliveInterval: any;
     _wasConnectedUsingWebsocket?: boolean;
     disconnectTimestamp: number | undefined;
     disconnectDurationLimitExceeded: boolean;
     joinRoomFinished: boolean;
     _disconnectDurationLimitOn: boolean;
     _disconnectDurationLimitEnabled: boolean;
-    _disconnectDurationLimitInMs: number | undefined;
-    _disconnectDurationLimitLatestTimestamp: number | undefined;
+    _pingTimer: ReturnType<typeof setTimeout> | undefined;
+    _pingInterval = 2000; // pingInterval set on server-side
+    _maxLatency = 1000; // network latency > 1 second is very unhealthy
+    _lastPingTimestamp = Date.now();
 
     constructor(hostName: string, optionsOverrides?: any, glitchFree = false, disconnectDurationLimitOn = false) {
         this._wasConnectedUsingWebsocket = false;
@@ -47,23 +47,9 @@ export class ServerSocket {
         this._disconnectDurationLimitEnabled = false;
         this.joinRoomFinished = false;
         this._socket.io.on("reconnect", () => {
-            if (
-                this._disconnectDurationLimitOn &&
-                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
-            ) {
-                this._socket.close();
-                this.disconnectDurationLimitExceeded = true;
-            }
             this._socket.sendBuffer = [];
         });
         this._socket.io.on("reconnect_attempt", () => {
-            if (
-                this._disconnectDurationLimitOn &&
-                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
-            ) {
-                this._socket.close();
-                this.disconnectDurationLimitExceeded = true;
-            }
             if (this._wasConnectedUsingWebsocket) {
                 this._socket.io.opts.transports = ["websocket"];
                 // only fallback to polling if not safari
@@ -75,6 +61,14 @@ export class ServerSocket {
                 }
             } else {
                 this._socket.io.opts.transports = ["websocket", "polling"];
+            }
+
+            if (this._disconnectDurationLimitEnabled) {
+                this.disconnectDurationLimitExceeded = this._didExceedDisconnectDurationLimit();
+
+                if (this.disconnectDurationLimitExceeded) {
+                    this._socket.close();
+                }
             }
         });
 
@@ -91,56 +85,40 @@ export class ServerSocket {
             const transport = this.getTransport();
             if (transport === "websocket") {
                 this._wasConnectedUsingWebsocket = true;
-
-                // start noop keepalive loop to detect client side disconnects fast
-                if (!this.noopKeepaliveInterval) {
-                    let disconnectDurationLimitTimestampCandidate = Date.now();
-
-                    this.noopKeepaliveInterval = setInterval(() => {
-                        try {
-                            // send a noop message if it thinks it is connected (might not be)
-                            if (this._socket.connected) {
-                                if (
-                                    this._disconnectDurationLimitOn &&
-                                    !this._didExceedDisconnectDurationLimit(disconnectDurationLimitTimestampCandidate)
-                                ) {
-                                    this._disconnectDurationLimitLatestTimestamp =
-                                        disconnectDurationLimitTimestampCandidate;
-                                    disconnectDurationLimitTimestampCandidate = Date.now();
-                                }
-                                this._socket.io.engine.sendPacket("noop");
-                            }
-                        } catch (ex) {}
-                    }, NOOP_KEEPALIVE_INTERVAL);
-                }
             }
+            this._heartbeat();
+        });
+
+        this._socket.io.on("ping", () => {
+            this._heartbeat();
         });
 
         this._socket.on("disconnect", () => {
-            if (
-                this._disconnectDurationLimitOn &&
-                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
-            ) {
-                this._socket.close();
-                this.disconnectDurationLimitExceeded = true;
+            if (this._disconnectDurationLimitEnabled) {
+                clearTimeout(this._pingTimer);
             }
+
             this.joinRoomFinished = false;
             this.disconnectTimestamp = Date.now();
-            if (this.noopKeepaliveInterval) {
-                clearInterval(this.noopKeepaliveInterval);
-                this.noopKeepaliveInterval = null;
-            }
         });
     }
 
-    _didExceedDisconnectDurationLimit(timestamp: number | undefined) {
-        if (!timestamp || !this._disconnectDurationLimitOn || !this._disconnectDurationLimitEnabled) return false;
+    _heartbeat() {
+        if (this._disconnectDurationLimitEnabled) {
+            clearTimeout(this._pingTimer);
 
-        const disconnectedDuration = Date.now() - timestamp;
-        if (disconnectedDuration > DISCONNECT_DURATION_LIMIT_MS) {
-            return true;
+            this._pingTimer = setTimeout(() => {
+                this.disconnect();
+            }, this._pingInterval + this._maxLatency);
+
+            this._lastPingTimestamp = Date.now();
         }
-        return false;
+    }
+
+    _didExceedDisconnectDurationLimit() {
+        return Boolean(
+            this._disconnectDurationLimitEnabled && Date.now() - this._lastPingTimestamp > DISCONNECT_DURATION_LIMIT_MS,
+        );
     }
 
     enableDisconnectDurationLimit() {
