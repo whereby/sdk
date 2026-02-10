@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.7.1
+
+### Patch Changes
+
+- 67fca41: Disregard disconnectDurationLimitOn timestamps when they exceed the duration limit
+
 ## 2.7.0
 
 ### Minor Changes
