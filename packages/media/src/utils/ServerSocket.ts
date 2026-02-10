@@ -11,6 +11,7 @@ const adapter = adapterRaw.default ?? adapterRaw;
 const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 
 const NOOP_KEEPALIVE_INTERVAL = 2000;
+const DISCONNECT_DURATION_LIMIT_MS = 60000;
 
 /**
  * Wrapper class that extends the Socket.IO client library.
@@ -19,13 +20,14 @@ export class ServerSocket {
     _socket: any;
     _reconnectManager?: ReconnectManager | null;
     noopKeepaliveInterval: any;
-    _noopKeepaliveTimestamp: number | undefined;
     _wasConnectedUsingWebsocket?: boolean;
     disconnectTimestamp: number | undefined;
     disconnectDurationLimitExceeded: boolean;
     joinRoomFinished: boolean;
     _disconnectDurationLimitOn: boolean;
+    _disconnectDurationLimitEnabled: boolean;
     _disconnectDurationLimitInMs: number | undefined;
+    _disconnectDurationLimitLatestTimestamp: number | undefined; // TODO: Remove once we don't need disconnectDurationLimitOn. Don't use for anything else.
 
     constructor(hostName: string, optionsOverrides?: any, glitchFree = false, disconnectDurationLimitOn = false) {
         this._wasConnectedUsingWebsocket = false;
@@ -42,16 +44,23 @@ export class ServerSocket {
             withCredentials: true,
             ...optionsOverrides,
         });
+        this._disconnectDurationLimitEnabled = false;
         this.joinRoomFinished = false;
         this._socket.io.on("reconnect", () => {
-            if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
+            if (
+                this._disconnectDurationLimitOn &&
+                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
+            ) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
             }
             this._socket.sendBuffer = [];
         });
         this._socket.io.on("reconnect_attempt", () => {
-            if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
+            if (
+                this._disconnectDurationLimitOn &&
+                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
+            ) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
             }
@@ -85,17 +94,21 @@ export class ServerSocket {
 
                 // start noop keepalive loop to detect client side disconnects fast
                 if (!this.noopKeepaliveInterval) {
-                    let lastConnectedKeepAliveTimestamp = Date.now();
+                    let disconnectDurationLimitTimestampCandidate = Date.now();
 
                     this.noopKeepaliveInterval = setInterval(() => {
                         try {
                             // send a noop message if it thinks it is connected (might not be)
                             if (this._socket.connected) {
-                                if (this._disconnectDurationLimitOn) {
-                                    this._noopKeepaliveTimestamp = lastConnectedKeepAliveTimestamp;
+                                if (
+                                    this._disconnectDurationLimitOn &&
+                                    !this._didExceedDisconnectDurationLimit(disconnectDurationLimitTimestampCandidate)
+                                ) {
+                                    this._disconnectDurationLimitLatestTimestamp =
+                                        disconnectDurationLimitTimestampCandidate;
+                                    disconnectDurationLimitTimestampCandidate = Date.now();
                                 }
                                 this._socket.io.engine.sendPacket("noop");
-                                lastConnectedKeepAliveTimestamp = Date.now();
                             }
                         } catch (ex) {}
                     }, NOOP_KEEPALIVE_INTERVAL);
@@ -104,7 +117,10 @@ export class ServerSocket {
         });
 
         this._socket.on("disconnect", () => {
-            if (this._disconnectDurationLimitOn && this._didExceedDisconnectDurationLimit()) {
+            if (
+                this._disconnectDurationLimitOn &&
+                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
+            ) {
                 this._socket.close();
                 this.disconnectDurationLimitExceeded = true;
             }
@@ -117,21 +133,19 @@ export class ServerSocket {
         });
     }
 
-    _didExceedDisconnectDurationLimit() {
-        if (!this._disconnectDurationLimitOn) return false;
+    _didExceedDisconnectDurationLimit(timestamp: number | undefined) {
+        if (!timestamp || !this._disconnectDurationLimitOn || !this._disconnectDurationLimitEnabled) return false;
 
-        if (this._disconnectDurationLimitInMs && this._noopKeepaliveTimestamp) {
-            const disconnectedDuration = Date.now() - this._noopKeepaliveTimestamp;
-            if (disconnectedDuration > this._disconnectDurationLimitInMs) {
-                return true;
-            }
-            return false;
+        const disconnectedDuration = Date.now() - timestamp;
+        if (disconnectedDuration > DISCONNECT_DURATION_LIMIT_MS) {
+            return true;
         }
+        return false;
     }
 
-    setDisconnectDurationLimit(limitInMs: number) {
+    enableDisconnectDurationLimit() {
         if (this._disconnectDurationLimitOn) {
-            this._disconnectDurationLimitInMs = limitInMs;
+            this._disconnectDurationLimitEnabled = true;
         }
     }
 
