@@ -27,7 +27,7 @@ export class ServerSocket {
     _disconnectDurationLimitOn: boolean;
     _disconnectDurationLimitEnabled: boolean;
     _disconnectDurationLimitInMs: number | undefined;
-    _disconnectDurationLimitLatestTimestamp: number | undefined; // TODO: Remove once we don't need disconnectDurationLimitOn. Don't use for anything else.
+    _disconnectDurationLimitLatestTimestamp: number | undefined;
 
     constructor(hostName: string, optionsOverrides?: any, glitchFree = false, disconnectDurationLimitOn = false) {
         this._wasConnectedUsingWebsocket = false;
