@@ -138,6 +138,7 @@ describe("AudioMixer", () => {
             expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalledWith(expect.any(Object));
         });
 
+
         it("should spawn debug FFmpeg process when DEBUG_MIXER_OUTPUT is true", () => {
             const participant = createMockParticipant({ id: "p1" });
             audioMixer.handleRemoteParticipants([participant]);
@@ -190,6 +191,45 @@ describe("AudioMixer", () => {
             audioMixer.handleRemoteParticipants([participant1]);
 
             expect(mixerInstance.clearSlotQueue).toHaveBeenCalledWith(1);
+            expect(mockSlotBinding.stop).toHaveBeenCalled();
+        });
+
+        it("should detach participants with audio diabled", () => {
+            const participant = createMockParticipant({ id: "p1" });
+            audioMixer.handleRemoteParticipants([participant]);
+
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(1);
+
+            participant.isAudioEnabled = false;
+            audioMixer.handleRemoteParticipants([participant]);
+
+            expect(mixerInstance.clearSlotQueue).toHaveBeenCalledWith(0);
+            expect(mockSlotBinding.stop).toHaveBeenCalled();
+        });
+
+        it("should detach participants with no audio track", () => {
+            const participant = createMockParticipant({ id: "p1" });
+            audioMixer.handleRemoteParticipants([participant]);
+
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(1);
+
+            participant.stream = { getTracks: () => [{ id: "video-track", kind: "video" }] } as unknown as MediaStream;
+            audioMixer.handleRemoteParticipants([participant]);
+
+            expect(mixerInstance.clearSlotQueue).toHaveBeenCalledWith(0);
+            expect(mockSlotBinding.stop).toHaveBeenCalled();
+        });
+
+        it("should detach participants with no stream", () => {
+            const participant = createMockParticipant({ id: "p1" });
+            audioMixer.handleRemoteParticipants([participant]);
+
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(1);
+
+            participant.stream = null;
+            audioMixer.handleRemoteParticipants([participant]);
+
+            expect(mixerInstance.clearSlotQueue).toHaveBeenCalledWith(0);
             expect(mockSlotBinding.stop).toHaveBeenCalled();
         });
 
