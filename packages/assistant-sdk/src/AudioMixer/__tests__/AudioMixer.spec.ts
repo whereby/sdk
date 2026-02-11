@@ -48,12 +48,17 @@ jest.mock("@roamhq/wrtc", () => ({
 
 // moved above to be used in mixer mock
 
-const createMockParticipant = (
-    id: string,
+const createMockParticipant = ({
+    id,
     isAudioEnabled = true,
     hasStream = true,
     trackId = "track-123",
-): RemoteParticipantState => ({
+}: {
+    id: string;
+    isAudioEnabled?: boolean;
+    hasStream?: boolean;
+    trackId?: string;
+}): RemoteParticipantState => ({
     id,
     displayName: `Participant ${id}`,
     deviceId: "device-123",
@@ -127,21 +132,21 @@ describe("AudioMixer", () => {
         });
 
         it("should spawn FFmpeg process for first participant", () => {
-            const participant = createMockParticipant("p1");
+            const participant = createMockParticipant({ id: "p1" });
             audioMixer.handleRemoteParticipants([participant]);
 
             expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalledWith(expect.any(Object));
         });
 
         it("should spawn debug FFmpeg process when DEBUG_MIXER_OUTPUT is true", () => {
-            const participant = createMockParticipant("p1");
+            const participant = createMockParticipant({ id: "p1" });
             audioMixer.handleRemoteParticipants([participant]);
 
             expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalled();
         });
 
         it("should attach participants with audio tracks", () => {
-            const participant = createMockParticipant("p1");
+            const participant = createMockParticipant({ id: "p1" });
             audioMixer.handleRemoteParticipants([participant]);
 
             expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledWith(
@@ -152,21 +157,21 @@ describe("AudioMixer", () => {
         });
 
         it("should not attach participants without audio enabled", () => {
-            const participant = createMockParticipant("p1", false);
+            const participant = createMockParticipant({ id: "p1", isAudioEnabled: false });
             audioMixer.handleRemoteParticipants([participant]);
 
             expect(mixerInstance.writeAudioDataToFFmpeg).not.toHaveBeenCalled();
         });
 
         it("should not attach participants without stream", () => {
-            const participant = createMockParticipant("p1", true, false);
+            const participant = createMockParticipant({ id: "p1", hasStream: false });
             audioMixer.handleRemoteParticipants([participant]);
 
             expect(mixerInstance.writeAudioDataToFFmpeg).not.toHaveBeenCalled();
         });
 
         it("should not attach participants without audio track", () => {
-            const participant = createMockParticipant("p1");
+            const participant = createMockParticipant({ id: "p1" });
             participant.stream = {
                 getTracks: () => [{ id: "video-track", kind: "video" }],
             } as unknown as MediaStream;
@@ -176,8 +181,8 @@ describe("AudioMixer", () => {
         });
 
         it("should detach participants that are no longer present", () => {
-            const participant1 = createMockParticipant("p1");
-            const participant2 = createMockParticipant("p2");
+            const participant1 = createMockParticipant({ id: "p1" });
+            const participant2 = createMockParticipant({ id: "p2" });
             audioMixer.handleRemoteParticipants([participant1, participant2]);
 
             expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenCalledTimes(2);
@@ -190,9 +195,9 @@ describe("AudioMixer", () => {
 
         it("should handle multiple participants", () => {
             const participants = [
-                createMockParticipant("p1", true, true, "track-1"),
-                createMockParticipant("p2", true, true, "track-2"),
-                createMockParticipant("p3", true, true, "track-3"),
+                createMockParticipant({ id: "p1", trackId: "track-1" }),
+                createMockParticipant({ id: "p2", trackId: "track-2" }),
+                createMockParticipant({ id: "p3", trackId: "track-3" }),
             ];
 
             audioMixer.handleRemoteParticipants(participants);
@@ -216,7 +221,7 @@ describe("AudioMixer", () => {
         });
 
         it("should reuse existing slot for same participant", () => {
-            const participant = createMockParticipant("p1");
+            const participant = createMockParticipant({ id: "p1" });
 
             audioMixer.handleRemoteParticipants([participant]);
             audioMixer.handleRemoteParticipants([participant]);
@@ -225,10 +230,10 @@ describe("AudioMixer", () => {
         });
 
         it("should handle participant track changes", () => {
-            const participant1 = createMockParticipant("p1", true, true, "track-1");
+            const participant1 = createMockParticipant({ id: "p1", trackId: "track-1" });
             audioMixer.handleRemoteParticipants([participant1]);
 
-            const participant2 = createMockParticipant("p1", true, true, "track-2");
+            const participant2 = createMockParticipant({ id: "p1", trackId: "track-2" });
             audioMixer.handleRemoteParticipants([participant2]);
 
             expect(mockSlotBinding.stop).toHaveBeenCalled();
@@ -237,7 +242,7 @@ describe("AudioMixer", () => {
 
         it("should handle up to PARTICIPANT_SLOTS participants", () => {
             const participants = Array.from({ length: PARTICIPANT_SLOTS + 5 }, (_, i) =>
-                createMockParticipant(`p${i}`, true, true, `track-${i}`),
+                createMockParticipant({ id: `p${i}`, trackId: `track-${i}` }),
             );
 
             audioMixer.handleRemoteParticipants(participants);
@@ -248,7 +253,7 @@ describe("AudioMixer", () => {
 
     describe("stopAudioMixer", () => {
         it("should stop FFmpeg process if running", () => {
-            const participant = createMockParticipant("p1");
+            const participant = createMockParticipant({ id: "p1" });
             audioMixer.handleRemoteParticipants([participant]);
 
             audioMixer.stopAudioMixer();
@@ -257,12 +262,12 @@ describe("AudioMixer", () => {
         });
 
         it("should clear all participant slots", () => {
-            const participants = [createMockParticipant("p1"), createMockParticipant("p2")];
+            const participants = [createMockParticipant({ id: "p1" }), createMockParticipant({ id: "p2" })];
             audioMixer.handleRemoteParticipants(participants);
 
             audioMixer.stopAudioMixer();
 
-            const newParticipant = createMockParticipant("p3");
+            const newParticipant = createMockParticipant({ id: "p3" });
             audioMixer.handleRemoteParticipants([newParticipant]);
 
             expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenLastCalledWith(
@@ -293,14 +298,14 @@ describe("AudioMixer", () => {
                 throw error;
             });
 
-            const participant = createMockParticipant("p1");
+            const participant = createMockParticipant({ id: "p1" });
 
             expect(() => audioMixer.handleRemoteParticipants([participant])).toThrow("FFmpeg write failed");
         });
 
         it("should handle stop() throwing on slot binding", () => {
-            const participant1 = createMockParticipant("p1");
-            const participant2 = createMockParticipant("p2");
+            const participant1 = createMockParticipant({ id: "p1" });
+            const participant2 = createMockParticipant({ id: "p2" });
             const faultyBinding = {
                 ...mockSlotBinding,
                 stop: jest.fn().mockImplementation(() => {
@@ -321,9 +326,9 @@ describe("AudioMixer", () => {
     describe("slot management", () => {
         it("should allocate slots sequentially", () => {
             const participants = [
-                createMockParticipant("p1"),
-                createMockParticipant("p2"),
-                createMockParticipant("p3"),
+                createMockParticipant({ id: "p1" }),
+                createMockParticipant({ id: "p2" }),
+                createMockParticipant({ id: "p3" }),
             ];
 
             audioMixer.handleRemoteParticipants(participants);
@@ -335,15 +340,15 @@ describe("AudioMixer", () => {
 
         it("should reuse slots when participants leave", () => {
             const participants = [
-                createMockParticipant("p1"),
-                createMockParticipant("p2"),
-                createMockParticipant("p3"),
+                createMockParticipant({ id: "p1" }),
+                createMockParticipant({ id: "p2" }),
+                createMockParticipant({ id: "p3" }),
             ];
             audioMixer.handleRemoteParticipants(participants);
 
             audioMixer.handleRemoteParticipants([participants[0], participants[2]]);
 
-            const newParticipant = createMockParticipant("p4");
+            const newParticipant = createMockParticipant({ id: "p4" });
             audioMixer.handleRemoteParticipants([participants[0], participants[2], newParticipant]);
 
             expect(mixerInstance.clearSlotQueue).toHaveBeenCalledWith(1);
