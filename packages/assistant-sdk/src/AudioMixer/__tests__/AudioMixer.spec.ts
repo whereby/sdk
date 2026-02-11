@@ -23,6 +23,14 @@ const mixerInstance = {
     clearSlotQueue: jest.fn(),
 };
 
+const mockCombinedAudioTrack = {
+    id: "mock-track-id",
+    kind: "audio",
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    stop: jest.fn(),
+};
+
 jest.mock("../../utils/ffmpeg-helpers", () => ({
     createFfmpegMixer: jest.fn(() => mixerInstance),
     MIXER_SLOTS: 20,
@@ -36,12 +44,7 @@ jest.mock("@roamhq/wrtc", () => ({
     })),
     nonstandard: {
         RTCAudioSource: jest.fn().mockImplementation(() => ({
-            createTrack: jest.fn().mockReturnValue({
-                id: "mock-track-id",
-                kind: "audio",
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-            }),
+            createTrack: jest.fn().mockReturnValue(mockCombinedAudioTrack),
         })),
     },
 }));
@@ -644,6 +647,26 @@ describe("AudioMixer", () => {
             audioMixer.stopAudioMixer();
 
             expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+        });
+
+        it("should stop all active slots", () => {
+            const participant1 = createMockParticipant({ id: "p1" });
+            const participant2 = createMockParticipant({ id: "p2" });
+            const screenshare1 = createMockScreenshare({ id: "s1" });
+            const screenshare2 = createMockScreenshare({ id: "s2" });
+            audioMixer.handleRemoteParticipants([participant1, participant2]);
+            audioMixer.handleScreenshares([screenshare1, screenshare2]);
+
+            audioMixer.stopAudioMixer();
+
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+            expect(mockSlotBinding.stop).toHaveBeenCalledTimes(4);
+        });
+
+        it("should stop the combined audio stream tracks", () => {
+            audioMixer.stopAudioMixer();
+
+            expect(mockCombinedAudioTrack.stop).toHaveBeenCalled();
         });
 
         it("should clear all participant slots", () => {
