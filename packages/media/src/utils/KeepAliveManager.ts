@@ -1,0 +1,55 @@
+import type { ServerSocket } from "./ServerSocket";
+
+const DISCONNECT_DURATION_LIMIT_MS = 60000;
+const SIGNAL_PING_INTERVAL = 2000; // pingInterval set on server-side
+const SIGNAL_PING_MAX_LATENCY = 1000; // network latency > 1 second is very unhealthy
+
+export class KeepAliveManager {
+    private serverSocket: ServerSocket;
+
+    private pingTimer: ReturnType<typeof setTimeout> | undefined;
+    private lastPingTimestamp = Date.now();
+
+    public disconnectDurationLimitExceeded = false;
+
+    constructor(serverSocket: ServerSocket) {
+        this.serverSocket = serverSocket;
+
+        this.serverSocket.on("connect", () => this.onConnect());
+        this.serverSocket.onEngineEvent("ping", () => this.onPing());
+        this.serverSocket.on("disconnect", () => this.onDisconnect());
+        this.serverSocket.onEngineEvent("reconnect_attempt", () => this.onReconnectAttempt());
+    }
+
+    private pingHeartbeat() {
+        clearTimeout(this.pingTimer);
+
+        this.pingTimer = setTimeout(() => {
+            this.serverSocket.disconnect();
+        }, SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY);
+
+        this.lastPingTimestamp = Date.now();
+    }
+
+    private onConnect() {
+        this.pingHeartbeat();
+    }
+
+    private onPing() {
+        this.pingHeartbeat();
+    }
+
+    private onDisconnect() {
+        clearTimeout(this.pingTimer);
+    }
+
+    private onReconnectAttempt() {
+        this.disconnectDurationLimitExceeded = Boolean(
+            Date.now() - this.lastPingTimestamp > DISCONNECT_DURATION_LIMIT_MS,
+        );
+
+        if (this.disconnectDurationLimitExceeded) {
+            this.serverSocket._socket.close();
+        }
+    }
+}
