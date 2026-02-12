@@ -45,13 +45,6 @@ export class AudioMixer extends EventEmitter {
     }
 
     public handleRemoteParticipants(participants: RemoteParticipantState[]): void {
-        if (participants.length === 0) {
-            // this doesn't take screenshares into account, but since we can't have a screenshare without a participant
-            // this behaviour is OK
-            this.stopAudioMixer();
-            return;
-        }
-
         const liveIds = new Set(participants.map((p) => p.id).filter(Boolean) as string[]);
         const typedSlots = this.slotsByType("participant");
 

@@ -161,7 +161,7 @@ describe("AudioMixer", () => {
     });
 
     describe("handleRemoteParticipants", () => {
-        it("should stop mixer when no participants", () => {
+        it("should not stop mixer when no participants", () => {
             audioMixer.handleRemoteParticipants([]);
             expect(mixerInstance.stopFFmpegProcess).not.toHaveBeenCalled(); // No process started yet
         });
@@ -173,6 +173,13 @@ describe("AudioMixer", () => {
             expect(mixerInstance.spawnFFmpegProcess).toHaveBeenCalledWith(expect.any(Object));
         });
 
+        it("should not stop mixer when all participants leave", () => {
+            const participant = createMockParticipant({ id: "p1" });
+            audioMixer.handleRemoteParticipants([participant]);
+
+            audioMixer.handleRemoteParticipants([]);
+            expect(mixerInstance.stopFFmpegProcess).not.toHaveBeenCalled();
+        });
 
         it("should spawn debug FFmpeg process when DEBUG_MIXER_OUTPUT is true", () => {
             const participant = createMockParticipant({ id: "p1" });
