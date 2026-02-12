@@ -85,6 +85,7 @@ export interface RtcConnectionState {
     rtcManagerInitialized: boolean;
     status: "inactive" | "ready" | "reconnecting";
     isAcceptingStreams: boolean;
+    isAudioOnlyModeEnabled: boolean;
 }
 
 export const rtcConnectionSliceInitialState: RtcConnectionState = {
@@ -97,12 +98,19 @@ export const rtcConnectionSliceInitialState: RtcConnectionState = {
     rtcManagerInitialized: false,
     status: "inactive",
     isAcceptingStreams: false,
+    isAudioOnlyModeEnabled: false,
 };
 
 export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",
     initialState: rtcConnectionSliceInitialState,
     reducers: {
+        isAudioOnlyModeEnabled: (state, action: PayloadAction<boolean>) => {
+            return {
+                ...state,
+                isAudioOnlyModeEnabled: action.payload,
+            };
+        },
         isAcceptingStreams: (state, action: PayloadAction<boolean>) => {
             return {
                 ...state,
@@ -197,6 +205,7 @@ export const {
     rtcManagerDestroyed,
     rtcManagerInitialized,
     isAcceptingStreams,
+    isAudioOnlyModeEnabled,
     rtcClientConnectionStatusChanged,
 } = rtcConnectionSlice.actions;
 
@@ -250,6 +259,22 @@ export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
         rtcManager.disconnectAll();
     }
     dispatch(rtcDisconnected());
+});
+
+export const doEnableAudioOnlyMode = createAppThunk(() => (dispatch, getState) => {
+    const rtcManager = selectRtcManager(getState());
+    if (rtcManager) {
+        rtcManager.setAudioOnly(true);
+    }
+    dispatch(isAudioOnlyModeEnabled(true));
+});
+
+export const doDisableAudioOnlyMode = createAppThunk(() => (dispatch, getState) => {
+    const rtcManager = selectRtcManager(getState());
+    if (rtcManager) {
+        rtcManager.setAudioOnly(false);
+        dispatch(isAudioOnlyModeEnabled(false));
+    }
 });
 
 export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
@@ -347,6 +372,7 @@ export const selectRtcDispatcherCreated = (state: RootState) => state.rtcConnect
 export const selectRtcIsCreatingDispatcher = (state: RootState) => state.rtcConnection.isCreatingDispatcher;
 export const selectRtcStatus = (state: RootState) => state.rtcConnection.status;
 export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnection.isAcceptingStreams;
+export const selectIsAudioOnlyModeEnabled = (state: RootState) => state.rtcConnection.isAudioOnlyModeEnabled;
 
 /**
  * Reactors

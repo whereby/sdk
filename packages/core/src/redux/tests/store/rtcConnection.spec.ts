@@ -6,6 +6,9 @@ import {
     doRtcReportStreamResolution,
     doRtcManagerInitialize,
     selectRtcManager,
+    doEnableAudioOnlyMode,
+    RtcConnectionState,
+    doDisableAudioOnlyMode,
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
@@ -45,7 +48,7 @@ describe("actions", () => {
             ]),
         );
 
-        expect(JSON.stringify(mockRtcManager.acceptNewStream.mock.calls)).toStrictEqual(
+        expect(JSON.stringify((mockRtcManager.acceptNewStream as jest.Mock).mock.calls)).toStrictEqual(
             JSON.stringify([
                 [{ streamId: id1, clientId: participant1.id, shouldAddLocalVideo: false, activeBreakout: false }],
                 [{ streamId: id3, clientId: participant2.id, shouldAddLocalVideo: false, activeBreakout: false }],
@@ -165,6 +168,48 @@ describe("actions", () => {
         expect(mockRtcManager.addNewStream).toHaveBeenCalledTimes(1);
         expect(mockRtcManager.addNewStream).toHaveBeenCalledWith("0", store.getState().localMedia.stream, true, true);
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
+    });
+
+    it("doEnableAudioOnlyMode", () => {
+        const mockSetAudioOnly = jest.fn();
+        const store = createStore({
+            withRtcManager: true,
+            initialState: {
+                localMedia: {
+                    ...initialLocalMediaState,
+                    stream: new MockMediaStream(),
+                },
+                rtcConnection: {
+                    rtcManager: {
+                        setAudioOnly: mockSetAudioOnly,
+                    },
+                } as unknown as RtcConnectionState,
+            },
+        });
+
+        store.dispatch(doEnableAudioOnlyMode());
+        expect(mockSetAudioOnly).toHaveBeenCalledWith(true);
+    });
+
+    it("doDisableAudioOnlyMode", () => {
+        const mockSetAudioOnly = jest.fn();
+        const store = createStore({
+            withRtcManager: true,
+            initialState: {
+                localMedia: {
+                    ...initialLocalMediaState,
+                    stream: new MockMediaStream(),
+                },
+                rtcConnection: {
+                    rtcManager: {
+                        setAudioOnly: mockSetAudioOnly,
+                    },
+                } as unknown as RtcConnectionState,
+            },
+        });
+
+        store.dispatch(doDisableAudioOnlyMode());
+        expect(mockSetAudioOnly).toHaveBeenCalledWith(false);
     });
 });
 

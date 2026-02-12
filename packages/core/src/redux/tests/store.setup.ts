@@ -1,4 +1,4 @@
-import { RtcEvents } from "@whereby.com/media";
+import { RtcEvents, RtcManager } from "@whereby.com/media";
 import { RootState, createStore as createRealStore } from "../store";
 
 export const mockSignalEmit = jest.fn();
@@ -12,16 +12,20 @@ export const mockServerSocket = {
     once: jest.fn(),
     emit: mockSignalEmit,
 };
-export const mockRtcManager = {
-    addNewStream: jest.fn(),
+export const mockRtcManager: RtcManager = {
     acceptNewStream: jest.fn(),
-    replaceTrack: jest.fn(),
-    removeStream: jest.fn(),
+    addNewStream: jest.fn(),
     disconnect: jest.fn(),
     disconnectAll: jest.fn(),
+    hasClient: jest.fn(),
+    isInitializedWith: jest.fn(),
+    removeStream: jest.fn(),
+    replaceTrack: jest.fn(),
     rtcStatsDisconnect: jest.fn(),
-    updateStreamResolution: jest.fn(),
+    rtcStatsReconnect: jest.fn(),
     sendStatsCustomEvent: jest.fn(),
+    setAudioOnly: jest.fn(),
+    updateStreamResolution: jest.fn(),
 };
 export const mockRtcEmitter = {
     emit: jest.fn(),
@@ -45,11 +49,11 @@ beforeEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    console.error = (msg) => {
-        throw new Error(`Got console.error: ${msg}`);
+    console.error = (msg, ...rest) => {
+        throw new Error(`Got console.error: ${msg} ${rest}`);
     };
-    console.warn = (msg) => {
-        throw new Error(`Got console.warn: ${msg}`);
+    console.warn = (msg, ...rest) => {
+        throw new Error(`Got console.warn: ${msg} ${rest}`);
     };
 });
 
@@ -100,8 +104,9 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             rtcManagerDispatcher: createRtcDispatcher({ emitter: mockRtcEmitter }) as any,
             rtcManagerInitialized: true,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            rtcManager: mockRtcManager as any,
+            rtcManager: mockRtcManager,
             isAcceptingStreams: false,
+            isAudioOnlyModeEnabled: false,
             ...initialState.rtcConnection,
         };
     }

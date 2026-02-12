@@ -8,6 +8,8 @@ import {
     doAppStop,
     doCancelKnock,
     doBreakoutJoin,
+    doEnableAudioOnlyMode,
+    doDisableAudioOnlyMode,
     doEndMeeting,
     doKickParticipant,
     doKnockRoom,
@@ -610,6 +612,14 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         }
 
         return Promise.resolve();
+    }
+
+    public enableAudioOnlyMode() {
+        this.store.dispatch(doEnableAudioOnlyMode());
+    }
+
+    public disableAudioOnlyMode() {
+        this.store.dispatch(doDisableAudioOnlyMode());
     }
 
     /**
