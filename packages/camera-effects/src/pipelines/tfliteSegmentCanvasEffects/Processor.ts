@@ -21,7 +21,6 @@ class Processor extends EventEmitter {
         this.params = params;
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
-        this._engineLock = Promise.resolve();
 
         // when run in a background thread we override emit
         if (emit) this.emit = emit;
@@ -55,15 +54,11 @@ class Processor extends EventEmitter {
     }
 
     async updateVideoSize({ videoWidth, videoHeight }) {
-        // Wait for any pending engine operations and lock engine access
-        this._engineLock = this._engineLock.then(async () => {
-            const oldBackgroundFrame = this.currentBackgroundFrame;
-            this.currentBackgroundFrame = null;
-            const oldEngine = this.engine;
-            await this.setupEngine(videoWidth, videoHeight, this.effectCanvas, oldBackgroundFrame);
-            oldEngine.dispose();
-        });
-        await this._engineLock;
+        const oldBackgroundFrame = this.currentBackgroundFrame;
+        this.currentBackgroundFrame = null;
+        const oldEngine = this.engine;
+        await this.setupEngine(videoWidth, videoHeight, this.effectCanvas, oldBackgroundFrame);
+        oldEngine.dispose();
     }
 
     // initialize the Processor, loading tensorflow and everything async needed before ready to
@@ -133,10 +128,7 @@ class Processor extends EventEmitter {
     }
 
     // updates params for adjusting or achieving a different effect
-    async updateParams({ params, initialBackgroundFrame }) {
-        // Wait for any pending engine operations before accessing this.engine
-        await this._engineLock;
-        
+    updateParams({ params, initialBackgroundFrame }) {
         this.params = params;
 
         // reset background in case it has changed

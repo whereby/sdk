@@ -250,7 +250,7 @@ export const createEffectStream = async (inputStream, setup, params) => {
     const updateParams = async (params) => {
         await fixBackgroundUrlPromise(params);
         getBackgroundFrame = await updateBackgroundProvider(params);
-        await processor.updateParams({
+        processor.updateParams({
             params,
             initialBackgroundFrame: await getBackgroundFrame(),
         });
