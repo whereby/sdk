@@ -25,7 +25,9 @@ export class KeepAliveManager {
         clearTimeout(this.pingTimer);
 
         this.pingTimer = setTimeout(() => {
-            this.serverSocket.disconnect();
+            // Terminate the underlying websocket transport to trigger
+            // websocket reconnection flow
+            this.serverSocket._socket.io.engine.transport.ws.close();
         }, SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY);
 
         this.lastPingTimestamp = Date.now();
@@ -49,7 +51,8 @@ export class KeepAliveManager {
         );
 
         if (this.disconnectDurationLimitExceeded) {
-            this.serverSocket._socket.close();
+            // Permanently close the websocket and prevent reconnection flow
+            this.serverSocket.disconnect();
         }
     }
 }
