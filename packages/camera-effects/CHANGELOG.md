@@ -1,5 +1,11 @@
 # @whereby.com/camera-effects
 
+## 1.0.2
+
+### Patch Changes
+
+- a0d057a: Revert "Lock Processor.engine access when it's recreated"
+
 ## 1.0.1
 
 ### Patch Changes
