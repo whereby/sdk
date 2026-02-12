@@ -37,6 +37,7 @@
         "STORYBOOK_ROOM",
         "STORYBOOK_ROOM_HOST_ROOMKEY",
         "IS_LOCAL",
-        "BIND_INTERFACE"
+        "BIND_INTERFACE",
+        "DEBUG_MIXER_OUTPUT"
     ]
 }

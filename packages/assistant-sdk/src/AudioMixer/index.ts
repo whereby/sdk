@@ -17,7 +17,7 @@ type SlotBinding = {
 };
 
 // Debug: set to true to enable debug output (and write audio to .wav files)
-const DEBUG_MIXER_OUTPUT = false;
+const DEBUG_MIXER_OUTPUT = process.env.DEBUG_MIXER_OUTPUT ?? false;
 
 export class AudioMixer extends EventEmitter {
     private ffmpegProcess: ChildProcessWithoutNullStreams | null = null;
