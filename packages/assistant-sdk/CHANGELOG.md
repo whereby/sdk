@@ -1,5 +1,11 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.17
+
+### Patch Changes
+
+- 097105b: Add screenshare support to AudioMixer
+
 ## 1.2.16
 
 ### Patch Changes
