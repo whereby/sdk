@@ -1,6 +1,6 @@
 import { Credentials } from "../api";
 import Organization from "../api/models/Organization";
-import { SignalClient } from "@whereby.com/media";
+import { ChatMessage, SignalClient } from "@whereby.com/media";
 import { LocalParticipantState } from "../redux/slices/localParticipant";
 import { RemoteParticipant } from "../RoomParticipant";
 import * as uuidPkg from "uuid";
@@ -99,6 +99,28 @@ export const randomSignalClient = ({
         startedCloudRecordingAt,
         externalId,
         isDialIn,
+    };
+};
+
+export const randomChatMessage = ({
+    text = randomString(),
+    id = randomString(),
+    messageType = "text",
+    senderId = randomString(),
+    sig = randomString(),
+    timestamp = new Date().toDateString(),
+    roomName = randomString(),
+    userId = randomString(),
+}: Partial<ChatMessage> = {}): ChatMessage => {
+    return {
+        text,
+        id,
+        messageType,
+        senderId,
+        sig,
+        timestamp,
+        roomName,
+        userId,
     };
 };
 

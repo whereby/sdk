@@ -103,7 +103,6 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rtcManagerDispatcher: createRtcDispatcher({ emitter: mockRtcEmitter }) as any,
             rtcManagerInitialized: true,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rtcManager: mockRtcManager,
             isAcceptingStreams: false,
             isAudioOnlyModeEnabled: false,
