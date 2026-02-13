@@ -184,4 +184,11 @@ export class AudioMixer extends EventEmitter {
         // Recreate the media stream to avoid stale references
         this.setupMediaStream();
     }
+
+    public destroy(): void {
+        this.stopAudioMixer();
+
+        this.combinedAudioStream = null;
+        this.rtcAudioSource = null;
+    }
 }

@@ -699,6 +699,186 @@ describe("AudioMixer", () => {
         });
     });
 
+    describe("destroy", () => {
+        it("should stop FFmpeg process if running", () => {
+            const participant = createMockParticipant({ id: "p1" });
+            audioMixer.handleRemoteParticipants([participant]);
+
+            audioMixer.destroy();
+
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+        });
+
+        it("should stop all active slots", () => {
+            const participant1 = createMockParticipant({ id: "p1" });
+            const participant2 = createMockParticipant({ id: "p2" });
+            const screenshare1 = createMockScreenshare({ id: "s1" });
+            const screenshare2 = createMockScreenshare({ id: "s2" });
+            audioMixer.handleRemoteParticipants([participant1, participant2]);
+            audioMixer.handleScreenshares([screenshare1, screenshare2]);
+
+            audioMixer.destroy();
+
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+            expect(mockSlotBinding.stop).toHaveBeenCalledTimes(4);
+        });
+
+        it("should stop the combined audio stream tracks", () => {
+            audioMixer.destroy();
+
+            expect(mockCombinedAudioTrack.stop).toHaveBeenCalled();
+        });
+
+        it("should clear all participant slots", () => {
+            const participants = [createMockParticipant({ id: "p1" }), createMockParticipant({ id: "p2" })];
+            audioMixer.handleRemoteParticipants(participants);
+
+            audioMixer.destroy();
+
+            const newParticipant = createMockParticipant({ id: "p3" });
+            audioMixer.handleRemoteParticipants([newParticipant]);
+
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenLastCalledWith(
+                expect.any(Object),
+                0,
+                expect.any(Object),
+            );
+        });
+
+        it("should not recreate media stream", () => {
+            const streamBefore = audioMixer.getCombinedAudioStream();
+            audioMixer.destroy();
+            const streamAfter = audioMixer.getCombinedAudioStream();
+
+            expect(streamBefore).toBeDefined();
+            expect(streamAfter).toEqual(null);
+        });
+
+        it("should handle being called when no FFmpeg process is running", () => {
+            expect(() => audioMixer.destroy()).not.toThrow();
+        });
+    });
+
+    describe("destroy", () => {
+        it("should stop FFmpeg process if running", () => {
+            const participant = createMockParticipant({ id: "p1" });
+            audioMixer.handleRemoteParticipants([participant]);
+
+            audioMixer.destroy();
+
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+        });
+
+        it("should stop all active slots", () => {
+            const participant1 = createMockParticipant({ id: "p1" });
+            const participant2 = createMockParticipant({ id: "p2" });
+            const screenshare1 = createMockScreenshare({ id: "s1" });
+            const screenshare2 = createMockScreenshare({ id: "s2" });
+            audioMixer.handleRemoteParticipants([participant1, participant2]);
+            audioMixer.handleScreenshares([screenshare1, screenshare2]);
+
+            audioMixer.destroy();
+
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+            expect(mockSlotBinding.stop).toHaveBeenCalledTimes(4);
+        });
+
+        it("should stop the combined audio stream tracks", () => {
+            audioMixer.destroy();
+
+            expect(mockCombinedAudioTrack.stop).toHaveBeenCalled();
+        });
+
+        it("should clear all participant slots", () => {
+            const participants = [createMockParticipant({ id: "p1" }), createMockParticipant({ id: "p2" })];
+            audioMixer.handleRemoteParticipants(participants);
+
+            audioMixer.destroy();
+
+            const newParticipant = createMockParticipant({ id: "p3" });
+            audioMixer.handleRemoteParticipants([newParticipant]);
+
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenLastCalledWith(
+                expect.any(Object),
+                0,
+                expect.any(Object),
+            );
+        });
+
+        it("should not recreate media stream", () => {
+            const streamBefore = audioMixer.getCombinedAudioStream();
+            audioMixer.destroy();
+            const streamAfter = audioMixer.getCombinedAudioStream();
+
+            expect(streamBefore).toBeDefined();
+            expect(streamAfter).toEqual(null);
+        });
+
+        it("should handle being called when no FFmpeg process is running", () => {
+            expect(() => audioMixer.destroy()).not.toThrow();
+        });
+    });
+
+    describe("destroy", () => {
+        it("should stop FFmpeg process if running", () => {
+            const participant = createMockParticipant({ id: "p1" });
+            audioMixer.handleRemoteParticipants([participant]);
+
+            audioMixer.destroy();
+
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+        });
+
+        it("should stop all active slots", () => {
+            const participant1 = createMockParticipant({ id: "p1" });
+            const participant2 = createMockParticipant({ id: "p2" });
+            const screenshare1 = createMockScreenshare({ id: "s1" });
+            const screenshare2 = createMockScreenshare({ id: "s2" });
+            audioMixer.handleRemoteParticipants([participant1, participant2]);
+            audioMixer.handleScreenshares([screenshare1, screenshare2]);
+
+            audioMixer.destroy();
+
+            expect(mixerInstance.stopFFmpegProcess).toHaveBeenCalledWith(mockFFmpegProcess);
+            expect(mockSlotBinding.stop).toHaveBeenCalledTimes(4);
+        });
+
+        it("should stop the combined audio stream tracks", () => {
+            audioMixer.destroy();
+
+            expect(mockCombinedAudioTrack.stop).toHaveBeenCalled();
+        });
+
+        it("should clear all participant slots", () => {
+            const participants = [createMockParticipant({ id: "p1" }), createMockParticipant({ id: "p2" })];
+            audioMixer.handleRemoteParticipants(participants);
+
+            audioMixer.destroy();
+
+            const newParticipant = createMockParticipant({ id: "p3" });
+            audioMixer.handleRemoteParticipants([newParticipant]);
+
+            expect(mixerInstance.writeAudioDataToFFmpeg).toHaveBeenLastCalledWith(
+                expect.any(Object),
+                0,
+                expect.any(Object),
+            );
+        });
+
+        it("should not recreate media stream", () => {
+            const streamBefore = audioMixer.getCombinedAudioStream();
+            audioMixer.destroy();
+            const streamAfter = audioMixer.getCombinedAudioStream();
+
+            expect(streamBefore).toBeDefined();
+            expect(streamAfter).toEqual(null);
+        });
+
+        it("should handle being called when no FFmpeg process is running", () => {
+            expect(() => audioMixer.destroy()).not.toThrow();
+        });
+    });
+
     describe("error handling", () => {
         it("should handle writeAudioDataToFFmpeg throwing", () => {
             const error = new Error("FFmpeg write failed");
