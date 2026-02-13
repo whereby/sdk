@@ -5,6 +5,15 @@ const {
 } = wrtc;
 
 export class VideoSource extends RTCVideoSource {}
+type VideoTrackEvent = {
+    type: "frame";
+    frame: {
+        width: number;
+        height: number;
+        rotation: number;
+        data: Uint8Array;
+    };
+};
 
 export class VideoSink extends RTCVideoSink {
     private _sink: wrtc.nonstandard.RTCVideoSink;
@@ -14,7 +23,7 @@ export class VideoSink extends RTCVideoSink {
         this._sink = new RTCVideoSink(track);
     }
 
-    subscribe(cb: (d: { width: number; height: number; data: Uint8ClampedArray; rotation: number }) => void) {
+    subscribe(cb: (d: VideoTrackEvent) => void) {
         this._sink.onframe = cb;
         return () => {
             this._sink.onframe = undefined;
