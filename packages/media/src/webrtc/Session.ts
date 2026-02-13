@@ -450,13 +450,21 @@ export default class Session {
             ?.getTransceivers()
             .filter(
                 (videoTransceiver: any) =>
-                    videoTransceiver?.direction !== "recvonly" &&
                     videoTransceiver?.receiver?.track?.kind === "video" &&
                     !excludedTrackIds.includes(videoTransceiver?.receiver?.track?.id) &&
                     !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id),
             )
             .forEach((videoTransceiver: any) => {
-                videoTransceiver.direction = enable ? "sendonly" : "sendrecv";
+                const wantRecv = !enable;
+                const isSending = ["sendrecv", "sendonly"].includes(videoTransceiver.direction);
+
+                videoTransceiver.direction = wantRecv
+                    ? isSending
+                        ? "sendrecv"
+                        : "recvonly"
+                    : isSending
+                      ? "sendonly"
+                      : "inactive";
             });
     }
 }
