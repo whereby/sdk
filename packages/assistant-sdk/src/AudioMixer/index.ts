@@ -40,70 +40,6 @@ export class AudioMixer extends EventEmitter {
         this.combinedAudioStream = new wrtc.MediaStream([audioTrack]);
     }
 
-    public getCombinedAudioStream(): MediaStream | null {
-        return this.combinedAudioStream;
-    }
-
-    public handleRemoteParticipants(participants: RemoteParticipantState[]): void {
-        const liveIds = new Set(participants.map((p) => p.id).filter(Boolean) as string[]);
-        const typedSlots = this.slotsByType("participant");
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for (const [slot, pid] of typedSlots) {
-            if (pid && !liveIds.has(pid)) this.detachMixable(pid);
-        }
-
-        if (!this.ffmpegProcess && this.rtcAudioSource) {
-            this.ffmpegProcess = DEBUG_MIXER_OUTPUT
-                ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource)
-                : this.mixer.spawnFFmpegProcess(this.rtcAudioSource);
-        }
-
-        for (const p of participants) this.attachMixableIfNeeded({ ...p, type: "participant" });
-    }
-
-    public handleScreenshares(screenshares: ScreenshareState[]): void {
-        const screensharesWithAudio = screenshares.filter(
-            (screenshare) =>
-                screenshare.hasAudioTrack &&
-                screenshare.stream &&
-                screenshare.stream.getTracks().filter(({ kind }) => kind === "audio").length > 0,
-        );
-        const liveIds = new Set(screensharesWithAudio.map((p) => p.id).filter(Boolean) as string[]);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for (const [slot, sid] of this.slotsByType("screenshare")) {
-            if (sid && !liveIds.has(sid)) this.detachMixable(sid);
-        }
-
-        if (screensharesWithAudio.length === 0) {
-            return;
-        }
-
-        if (!this.ffmpegProcess && this.rtcAudioSource) {
-            this.ffmpegProcess = DEBUG_MIXER_OUTPUT
-                ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource)
-                : this.mixer.spawnFFmpegProcess(this.rtcAudioSource);
-        }
-
-        const mixables = screensharesWithAudio.map(({ id, stream, hasAudioTrack }) => ({
-            id,
-            stream,
-            isAudioEnabled: hasAudioTrack,
-        }));
-        for (const s of mixables) this.attachMixableIfNeeded({ ...s, type: "screenshare" });
-    }
-
-    public stopAudioMixer(): void {
-        if (this.ffmpegProcess) {
-            this.mixer.stopFFmpegProcess(this.ffmpegProcess);
-            this.ffmpegProcess = null;
-        }
-        this.mixableSlots = new Map(Array.from({ length: MIXER_SLOTS }, (_, i) => [i, ""]));
-        this.activeSlots = {};
-        // Recreate the media stream to avoid stale references
-        this.setupMediaStream();
-    }
-
     private slotForMixable(mixableId: string): number | null {
         const found = [...this.mixableSlots.entries()].find(([, id]) => id === mixableId)?.[0];
         return found === undefined ? null : found;
@@ -181,5 +117,69 @@ export class AudioMixer extends EventEmitter {
         // Clear any queued audio data for this slot to prevent stale audio
         this.mixer.clearSlotQueue(slot);
         this.mixableSlots.set(slot, "");
+    }
+
+    public getCombinedAudioStream(): MediaStream | null {
+        return this.combinedAudioStream;
+    }
+
+    public handleRemoteParticipants(participants: RemoteParticipantState[]): void {
+        const liveIds = new Set(participants.map((p) => p.id).filter(Boolean) as string[]);
+        const typedSlots = this.slotsByType("participant");
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for (const [slot, pid] of typedSlots) {
+            if (pid && !liveIds.has(pid)) this.detachMixable(pid);
+        }
+
+        if (!this.ffmpegProcess && this.rtcAudioSource) {
+            this.ffmpegProcess = DEBUG_MIXER_OUTPUT
+                ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource)
+                : this.mixer.spawnFFmpegProcess(this.rtcAudioSource);
+        }
+
+        for (const p of participants) this.attachMixableIfNeeded({ ...p, type: "participant" });
+    }
+
+    public handleScreenshares(screenshares: ScreenshareState[]): void {
+        const screensharesWithAudio = screenshares.filter(
+            (screenshare) =>
+                screenshare.hasAudioTrack &&
+                screenshare.stream &&
+                screenshare.stream.getTracks().filter(({ kind }) => kind === "audio").length > 0,
+        );
+        const liveIds = new Set(screensharesWithAudio.map((p) => p.id).filter(Boolean) as string[]);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for (const [slot, sid] of this.slotsByType("screenshare")) {
+            if (sid && !liveIds.has(sid)) this.detachMixable(sid);
+        }
+
+        if (screensharesWithAudio.length === 0) {
+            return;
+        }
+
+        if (!this.ffmpegProcess && this.rtcAudioSource) {
+            this.ffmpegProcess = DEBUG_MIXER_OUTPUT
+                ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource)
+                : this.mixer.spawnFFmpegProcess(this.rtcAudioSource);
+        }
+
+        const mixables = screensharesWithAudio.map(({ id, stream, hasAudioTrack }) => ({
+            id,
+            stream,
+            isAudioEnabled: hasAudioTrack,
+        }));
+        for (const s of mixables) this.attachMixableIfNeeded({ ...s, type: "screenshare" });
+    }
+
+    public stopAudioMixer(): void {
+        if (this.ffmpegProcess) {
+            this.mixer.stopFFmpegProcess(this.ffmpegProcess);
+            this.ffmpegProcess = null;
+        }
+        this.mixableSlots = new Map(Array.from({ length: MIXER_SLOTS }, (_, i) => [i, ""]));
+        this.activeSlots = {};
+        // Recreate the media stream to avoid stale references
+        this.setupMediaStream();
     }
 }
