@@ -4,8 +4,8 @@ import wrtc from "@roamhq/wrtc";
 import { AudioSink } from "./AudioEndpoints";
 
 // Number of pipes in the ffmpeg process. We predefine a fixed number of slots, and then we dynamically assign
-// participants to these slots based on mute/unmute state.
-export const PARTICIPANT_SLOTS = 20;
+// participants/screenshares to these slots based on mute/unmute state.
+export const MIXER_SLOTS = 20;
 // Each sample is 2 bytes (16 bits) for PCM audio - s16le format
 // 48000 Hz is the standard sample rate for WebRTC audio
 const STREAM_INPUT_SAMPLE_RATE_IN_HZ = 48000;
@@ -36,15 +36,15 @@ export function createFfmpegMixer() {
     // Debug: use to get per-slot stats
     const ENABLE_METERS = false;
     const meter = {
-        enqFrames: new Array(PARTICIPANT_SLOTS).fill(0),
-        enqSamples: new Array(PARTICIPANT_SLOTS).fill(0),
-        wroteFrames: new Array(PARTICIPANT_SLOTS).fill(0),
-        wroteSamples: new Array(PARTICIPANT_SLOTS).fill(0),
-        lastFramesSeen: new Array(PARTICIPANT_SLOTS).fill(0),
+        enqFrames: new Array(MIXER_SLOTS).fill(0),
+        enqSamples: new Array(MIXER_SLOTS).fill(0),
+        wroteFrames: new Array(MIXER_SLOTS).fill(0),
+        wroteSamples: new Array(MIXER_SLOTS).fill(0),
+        lastFramesSeen: new Array(MIXER_SLOTS).fill(0),
     };
     if (ENABLE_METERS) {
         setInterval(() => {
-            for (let s = 0; s < PARTICIPANT_SLOTS; s++) {
+            for (let s = 0; s < MIXER_SLOTS; s++) {
                 // eslint-disable-next-line no-console
                 console.log(
                     `[slot ${s}] enqF=${meter.enqFrames[s]}/s enqS=${meter.enqSamples[s]} ` +
@@ -123,13 +123,13 @@ export function createFfmpegMixer() {
      * Call this once right after spawning FFmpeg:
      * ```ts
      * const ff = spawnFFmpegProcess();
-     * startPacer(ff, PARTICIPANT_SLOTS);
+     * startPacer(ff, MIXER_SLOTS);
      * ```
      *
      * When tearing down the mixer, always call `stopPacer()` before killing FFmpeg.
      *
      * @param ff        Child process handle from spawn("ffmpeg", ...)
-     * @param slotCount Number of participant input slots (0..N-1 → fd 3..3+N-1)
+     * @param slotCount Number of mixer input slots (0..N-1 → fd 3..3+N-1)
      */
     function startPacer(
         ff: ChildProcessWithoutNullStreams,
@@ -242,7 +242,7 @@ export function createFfmpegMixer() {
     }
 
     /**
-     * Clear the audio queue for a specific slot when a participant leaves.
+     * Clear the audio queue for a specific slot when a participant leaves or screenshare stops.
      * This prevents stale audio data from continuing to play after disconnect.
      */
     function clearSlotQueue(slot: number) {
@@ -257,12 +257,12 @@ export function createFfmpegMixer() {
     }
 
     /**
-     * Get the FFmpeg arguments for debugging, which writes each participant's audio to a separate WAV file
+     * Get the FFmpeg arguments for debugging, which writes each participant/screenshare's audio to a separate WAV file
      * and also mixes them into a single WAV file.
-     * This is useful for inspecting the audio quality and timing of each participant.
+     * This is useful for inspecting the audio quality and timing of each participant/screenshare.
      */
     function getFFmpegArgumentsDebug() {
-        const N = PARTICIPANT_SLOTS;
+        const N = MIXER_SLOTS;
         const SR = STREAM_INPUT_SAMPLE_RATE_IN_HZ;
         const ffArgs: string[] = [];
 
@@ -288,12 +288,12 @@ export function createFfmpegMixer() {
     }
 
     /**
-     * Get the FFmpeg arguments for mixing audio from multiple participants.
+     * Get the FFmpeg arguments for mixing audio from multiple participants/screenshares.
      * This will read from the input pipes (3..3+N-1) and output a single mixed audio stream.
      * The output is in PCM 16-bit little-endian format at 48kHz sample rate.
      */
     function getFFmpegArguments() {
-        const N = PARTICIPANT_SLOTS;
+        const N = MIXER_SLOTS;
         const SR = STREAM_INPUT_SAMPLE_RATE_IN_HZ;
         const ffArgs: string[] = [];
 
@@ -334,17 +334,17 @@ export function createFfmpegMixer() {
 
     /*
      * Spawn a new FFmpeg process for debugging purposes.
-     * This will write each participant's audio to a separate WAV file and also mix them into a single WAV file.
+     * This will write each participant/screenshare's audio to a separate WAV file and also mix them into a single WAV file.
      * The output files will be named pre0.wav, pre1.wav, ..., and mixed.wav.
      * The process will log its output to stderr.
      * @return The spawned FFmpeg process.
      */
     function spawnFFmpegProcessDebug(rtcAudioSource: wrtc.nonstandard.RTCAudioSource) {
-        const stdio = ["ignore", "ignore", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
+        const stdio = ["ignore", "ignore", "pipe", ...Array(MIXER_SLOTS).fill("pipe")];
         const args = getFFmpegArgumentsDebug();
         const ffmpegProcess = spawn("ffmpeg", args, { stdio });
 
-        startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
+        startPacer(ffmpegProcess, MIXER_SLOTS, rtcAudioSource);
 
         ffmpegProcess.stderr.setEncoding("utf8");
         ffmpegProcess.stderr.on("data", (d) => console.error("[ffmpeg]", String(d).trim()));
@@ -354,7 +354,7 @@ export function createFfmpegMixer() {
     }
 
     /**
-     * Spawn a new FFmpeg process for mixing audio from multiple participants.
+     * Spawn a new FFmpeg process for mixing audio from multiple participants/screenshares.
      * This will read from the input pipes (3..3+N-1) and output a single mixed audio stream.
      * The output is in PCM 16-bit little-endian format at 48kHz sample rate.
      * The process will log its output to stderr.
@@ -362,11 +362,11 @@ export function createFfmpegMixer() {
      * @return The spawned FFmpeg process.
      */
     function spawnFFmpegProcess(rtcAudioSource: wrtc.nonstandard.RTCAudioSource) {
-        const stdio = ["pipe", "pipe", "pipe", ...Array(PARTICIPANT_SLOTS).fill("pipe")];
+        const stdio = ["pipe", "pipe", "pipe", ...Array(MIXER_SLOTS).fill("pipe")];
         const args = getFFmpegArguments();
         const ffmpegProcess = spawn("ffmpeg", args, { stdio });
 
-        startPacer(ffmpegProcess, PARTICIPANT_SLOTS, rtcAudioSource);
+        startPacer(ffmpegProcess, MIXER_SLOTS, rtcAudioSource);
 
         ffmpegProcess.stderr.setEncoding("utf8");
         ffmpegProcess.stderr.on("data", (d) => console.error("[ffmpeg]", String(d).trim()));
@@ -399,7 +399,7 @@ export function createFfmpegMixer() {
      * that enqueues audio frames into the pacer.
      *
      * @param ffmpegProcess The FFmpeg process to which audio data will be written.
-     * @param slot The participant slot number (0..N-1) to which this track belongs.
+     * @param slot The mixer slot number (0..N-1) to which this track belongs.
      * @param audioTrack The MediaStreamTrack containing the audio data.
      * @return An object containing the AudioSink, the writable stream, and a stop function.
      */
@@ -438,7 +438,7 @@ export function createFfmpegMixer() {
 
     /**
      * Stop the FFmpeg process and clean up all resources.
-     * This function will unpipe the stdout, end all writable streams for each participant slot,
+     * This function will unpipe the stdout, end all writable streams for each mixer slot,
      * and kill the FFmpeg process.
      * @param ffmpegProcess The FFmpeg process to stop.
      */
@@ -450,7 +450,7 @@ export function createFfmpegMixer() {
             } catch {
                 console.error("Failed to unpipe ffmpeg stdout");
             }
-            for (let i = 0; i < PARTICIPANT_SLOTS; i++) {
+            for (let i = 0; i < MIXER_SLOTS; i++) {
                 const w = ffmpegProcess.stdio[3 + i] as Stream.Writable;
                 try {
                     w.end();
