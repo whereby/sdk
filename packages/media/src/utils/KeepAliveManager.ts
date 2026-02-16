@@ -1,14 +1,14 @@
 import type { ServerSocket } from "./ServerSocket";
 
-const DISCONNECT_DURATION_LIMIT_MS = 60000;
-const SIGNAL_PING_INTERVAL = 2000; // pingInterval set on server-side
-const SIGNAL_PING_MAX_LATENCY = 1000; // network latency > 1 second is very unhealthy
+export const DISCONNECT_DURATION_LIMIT_MS = 60000;
+export const SIGNAL_PING_INTERVAL = 2000; // pingInterval set on server-side
+export const SIGNAL_PING_MAX_LATENCY = 1000; // network latency > 1 second is very unhealthy
 
 export class KeepAliveManager {
     private serverSocket: ServerSocket;
 
     private pingTimer: ReturnType<typeof setTimeout> | undefined;
-    private lastPingTimestamp = Date.now();
+    public lastPingTimestamp = Date.now();
 
     private _disconnectDurationLimitEnabled = false;
     public disconnectDurationLimitExceeded = false;
