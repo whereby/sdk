@@ -10,6 +10,7 @@ export class KeepAliveManager {
     private pingTimer: ReturnType<typeof setTimeout> | undefined;
     private lastPingTimestamp = Date.now();
 
+    private _disconnectDurationLimitEnabled = false;
     public disconnectDurationLimitExceeded = false;
 
     constructor(serverSocket: ServerSocket) {
@@ -19,6 +20,10 @@ export class KeepAliveManager {
         this.serverSocket.onEngineEvent("ping", () => this.onPing());
         this.serverSocket.on("disconnect", () => this.onDisconnect());
         this.serverSocket.onEngineEvent("reconnect_attempt", () => this.onReconnectAttempt());
+    }
+
+    public enableDisconnectDurationLimit() {
+        this._disconnectDurationLimitEnabled = true;
     }
 
     private pingHeartbeat() {
@@ -46,13 +51,15 @@ export class KeepAliveManager {
     }
 
     private onReconnectAttempt() {
-        this.disconnectDurationLimitExceeded = Boolean(
-            Date.now() - this.lastPingTimestamp > DISCONNECT_DURATION_LIMIT_MS,
-        );
+        if (this._disconnectDurationLimitEnabled) {
+            this.disconnectDurationLimitExceeded = Boolean(
+                Date.now() - this.lastPingTimestamp > DISCONNECT_DURATION_LIMIT_MS,
+            );
 
-        if (this.disconnectDurationLimitExceeded) {
-            // Permanently close the websocket and prevent reconnection flow
-            this.serverSocket.disconnect();
+            if (this.disconnectDurationLimitExceeded) {
+                // Permanently close the websocket and prevent reconnection flow
+                this.serverSocket.disconnect();
+            }
         }
     }
 }

@@ -89,6 +89,7 @@ export class ServerSocket {
         });
 
         if (glitchFree) this._reconnectManager = new ReconnectManager(this._socket);
+        if (this._serverSideDisconnectDurationLimitOn) this._keepAliveManager = new KeepAliveManager(this);
 
         this._socket.on("room_joined", (payload: RoomJoinedEvent) => {
             const { error } = payload as RoomJoinedErrors;
@@ -101,6 +102,8 @@ export class ServerSocket {
             const transport = this.getTransport();
             if (transport === "websocket") {
                 this._wasConnectedUsingWebsocket = true;
+
+                if (this._serverSideDisconnectDurationLimitOn) return;
 
                 // start noop keepalive loop to detect client side disconnects fast
                 if (!this.noopKeepaliveInterval) {
@@ -118,9 +121,7 @@ export class ServerSocket {
                                         disconnectDurationLimitTimestampCandidate;
                                     disconnectDurationLimitTimestampCandidate = Date.now();
                                 }
-                                if (!this._serverSideDisconnectDurationLimitOn) {
-                                    this._socket.io.engine.sendPacket("noop");
-                                }
+                                this._socket.io.engine.sendPacket("noop");
                             }
                         } catch (ex) {}
                     }, NOOP_KEEPALIVE_INTERVAL);
@@ -129,6 +130,11 @@ export class ServerSocket {
         });
 
         this._socket.on("disconnect", () => {
+            this.joinRoomFinished = false;
+            this.disconnectTimestamp = Date.now();
+
+            if (this._serverSideDisconnectDurationLimitOn) return;
+
             if (
                 this._disconnectDurationLimitOn &&
                 this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
@@ -137,8 +143,6 @@ export class ServerSocket {
                 this._disconnectDurationLimitExceeded = true;
             }
 
-            this.joinRoomFinished = false;
-            this.disconnectTimestamp = Date.now();
             if (this.noopKeepaliveInterval) {
                 clearInterval(this.noopKeepaliveInterval);
                 this.noopKeepaliveInterval = null;
@@ -157,8 +161,8 @@ export class ServerSocket {
     }
 
     get disconnectDurationLimitExceeded(): boolean {
-        if (this._serverSideDisconnectDurationLimitOn && this._keepAliveManager) {
-            return this._keepAliveManager.disconnectDurationLimitExceeded;
+        if (this._serverSideDisconnectDurationLimitOn) {
+            return this._keepAliveManager?.disconnectDurationLimitExceeded ?? false;
         } else if (this._disconnectDurationLimitOn) {
             return this._disconnectDurationLimitExceeded;
         }
@@ -167,7 +171,7 @@ export class ServerSocket {
 
     enableDisconnectDurationLimit() {
         if (this._serverSideDisconnectDurationLimitOn) {
-            this._keepAliveManager = new KeepAliveManager(this);
+            this._keepAliveManager?.enableDisconnectDurationLimit();
         } else if (this._disconnectDurationLimitOn) {
             this._disconnectDurationLimitEnabled = true;
         }
