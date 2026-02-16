@@ -25,9 +25,9 @@ export class KeepAliveManager {
         clearTimeout(this.pingTimer);
 
         this.pingTimer = setTimeout(() => {
-            // Terminate the underlying websocket transport to trigger
+            // Terminate the underlying websocket to trigger
             // websocket reconnection flow
-            this.serverSocket._socket.io.engine.transport.ws.close();
+            this.serverSocket._socket.io.engine.close();
         }, SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY);
 
         this.lastPingTimestamp = Date.now();
