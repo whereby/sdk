@@ -118,7 +118,7 @@ export class ServerSocket {
                                         disconnectDurationLimitTimestampCandidate;
                                     disconnectDurationLimitTimestampCandidate = Date.now();
                                 }
-                                if (!this._keepAliveManager) {
+                                if (!this._serverSideDisconnectDurationLimitOn) {
                                     this._socket.io.engine.sendPacket("noop");
                                 }
                             }
