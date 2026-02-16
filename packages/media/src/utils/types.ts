@@ -60,6 +60,7 @@ export interface SignalClient {
     breakoutGroup: string | null;
     externalId: string | null;
     isDialIn: boolean;
+    isAudioRecorder: boolean;
 }
 
 export interface Spotlight {

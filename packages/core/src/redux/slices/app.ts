@@ -8,43 +8,46 @@ import { coreVersion } from "../../version";
  */
 
 export interface AppConfig {
-    isNodeSdk?: boolean;
-    isDialIn?: boolean;
-    ignoreBreakoutGroups?: boolean;
+    assistantKey?: string | null;
     displayName: string;
+    externalId: string | null;
+    ignoreBreakoutGroups?: boolean;
+    isAudioRecorder?: boolean;
+    isDialIn?: boolean;
+    isNodeSdk?: boolean;
     localMediaOptions?: LocalMediaOptions;
     roomKey: string | null;
-    assistantKey?: string | null;
     roomUrl: string;
     userAgent?: string;
-    externalId: string | null;
 }
 
 export interface AppState {
-    isNodeSdk: boolean;
-    isActive: boolean;
-    isDialIn: boolean;
-    isAssistant: boolean;
-    ignoreBreakoutGroups: boolean;
-    roomUrl: string | null;
-    roomName: string | null;
     displayName: string | null;
-    userAgent: string | null;
     externalId: string | null;
+    ignoreBreakoutGroups: boolean;
     initialConfig?: AppConfig;
+    isActive: boolean;
+    isAssistant: boolean;
+    isAudioRecorder: boolean;
+    isDialIn: boolean;
+    isNodeSdk: boolean;
+    roomName: string | null;
+    roomUrl: string | null;
+    userAgent: string | null;
 }
 
 export const initialState: AppState = {
-    isNodeSdk: false,
-    isActive: false,
-    isDialIn: false,
-    isAssistant: false,
+    displayName: null,
+    externalId: null,
     ignoreBreakoutGroups: false,
+    isActive: false,
+    isAssistant: false,
+    isAudioRecorder: false,
+    isDialIn: false,
+    isNodeSdk: false,
     roomName: null,
     roomUrl: null,
-    displayName: null,
     userAgent: `core:${coreVersion}`,
-    externalId: null,
 };
 
 export const appSlice = createSlice({
@@ -82,6 +85,7 @@ export const { doAppStop, doAppStart } = appSlice.actions;
 export const selectAppRaw = (state: RootState) => state.app;
 export const selectAppIsActive = (state: RootState) => state.app.isActive;
 export const selectAppIsDialIn = (state: RootState) => state.app.isDialIn;
+export const selectAppIsAudioRecorder = (state: RootState) => state.app.isAudioRecorder;
 export const selectAppIsAssistant = (state: RootState) => state.app.isAssistant;
 export const selectAppRoomName = (state: RootState) => state.app.roomName;
 export const selectAppRoomUrl = (state: RootState) => state.app.roomUrl;

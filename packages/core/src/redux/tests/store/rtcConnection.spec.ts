@@ -77,16 +77,17 @@ describe("actions", () => {
                     withSignalConnection: true,
                     initialState: {
                         app: {
-                            isNodeSdk: true,
-                            isActive: false,
-                            isDialIn: false,
-                            isAssistant: false,
+                            displayName: null,
+                            externalId: null,
                             ignoreBreakoutGroups: false,
+                            isActive: false,
+                            isAssistant: false,
+                            isAudioRecorder: false,
+                            isDialIn: false,
+                            isNodeSdk: true,
                             roomName: null,
                             roomUrl: null,
-                            displayName: null,
                             userAgent: `core:${coreVersion}`,
-                            externalId: null,
                         },
                     },
                 });

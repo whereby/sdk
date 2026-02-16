@@ -6,14 +6,15 @@ export interface StickyReaction {
 }
 
 interface RoomParticipantData {
+    breakoutGroup: string | null;
     displayName: string;
     id: string;
-    stream?: MediaStream;
     isAudioEnabled: boolean;
-    isVideoEnabled: boolean;
-    breakoutGroup: string | null;
-    stickyReaction?: StickyReaction | null;
+    isAudioRecorder: boolean;
     isDialIn: boolean;
+    isVideoEnabled: boolean;
+    stickyReaction?: StickyReaction | null;
+    stream?: MediaStream;
 }
 
 export default class RoomParticipant {
@@ -26,16 +27,18 @@ export default class RoomParticipant {
     public readonly breakoutGroup;
     public readonly stickyReaction?: StickyReaction | null;
     public readonly isDialIn: boolean;
+    public readonly isAudioRecorder: boolean;
 
     constructor({
+        breakoutGroup,
         displayName,
         id,
-        stream,
         isAudioEnabled,
-        isVideoEnabled,
-        breakoutGroup,
-        stickyReaction,
+        isAudioRecorder,
         isDialIn,
+        isVideoEnabled,
+        stickyReaction,
+        stream,
     }: RoomParticipantData) {
         this.displayName = displayName;
         this.id = id;
@@ -45,6 +48,7 @@ export default class RoomParticipant {
         this.breakoutGroup = breakoutGroup;
         this.stickyReaction = stickyReaction;
         this.isDialIn = isDialIn;
+        this.isAudioRecorder = isAudioRecorder;
     }
 }
 
@@ -68,37 +72,49 @@ interface Stream {
 }
 
 export interface RemoteParticipant {
-    id: string;
-    displayName: string;
-    deviceId: string;
-    roleName: RoleName;
-    isAudioEnabled: boolean;
-    isVideoEnabled: boolean;
-    isLocalParticipant: boolean;
     breakoutGroup: string | null;
-    stream: (MediaStream & { inboundId?: string }) | null;
-    streams: Stream[];
+    deviceId: string;
+    displayName: string;
+    externalId: string | null;
+    id: string;
+    isAudioEnabled: boolean;
+    isAudioRecorder: boolean;
+    isDialIn: boolean;
+    isLocalParticipant: boolean;
+    isVideoEnabled: boolean;
     newJoiner: boolean;
     presentationStream: (MediaStream & { inboundId?: string }) | null;
-    externalId: string | null;
+    roleName: RoleName;
     stickyReaction?: StickyReaction | null;
-    isDialIn: boolean;
+    stream: (MediaStream & { inboundId?: string }) | null;
+    streams: Stream[];
 }
 
 export class LocalParticipant extends RoomParticipant {
     public readonly isLocalParticipant = true;
 
     constructor({
+        breakoutGroup,
         displayName,
         id,
-        stream,
         isAudioEnabled,
-        isVideoEnabled,
-        breakoutGroup,
-        stickyReaction,
+        isAudioRecorder,
         isDialIn,
+        isVideoEnabled,
+        stickyReaction,
+        stream,
     }: RoomParticipantData) {
-        super({ displayName, id, stream, isAudioEnabled, isVideoEnabled, breakoutGroup, stickyReaction, isDialIn });
+        super({
+            breakoutGroup,
+            displayName,
+            id,
+            isAudioEnabled,
+            isAudioRecorder,
+            isDialIn,
+            isVideoEnabled,
+            stickyReaction,
+            stream,
+        });
     }
 }
 
