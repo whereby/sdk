@@ -18,7 +18,6 @@ import {
     RtcManagerOptions,
     SDPRelayMessage,
     SignalMediaServerConfig,
-    UnifiedPlanSDP,
 } from "./types";
 import { RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
@@ -352,14 +351,12 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
                     return;
                 }
-                // TODO: Remove unified plan - plan b transformation code.
-                const offer = this._transformIncomingSdp(data.message);
                 session
-                    .handleOffer(offer)
+                    .handleOffer(data.message)
                     .then((answer: any) => {
                         this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
                             receiverId: data.clientId,
-                            message: this._transformOutgoingSdp(answer),
+                            message: answer,
                         });
                     })
                     .catch?.((e: any) => {
@@ -374,9 +371,7 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
                     return;
                 }
-                // TODO: Remove unified plan - plan b transformation code.
-                const answer = this._transformIncomingSdp(data.message);
-                session.handleAnswer(answer)?.catch?.((e: any) => {
+                session.handleAnswer(data.message)?.catch?.((e: any) => {
                     logger.warn("Could not set remote description from remote answer: ", e);
                     this.analytics.numPcOnAnswerFailure++;
                 });
@@ -602,15 +597,6 @@ export default class P2pRtcManager implements RtcManager {
     _getFirstLocalNonCameraStream() {
         const streamIds = this._getNonLocalCameraStreamIds();
         return streamIds.length === 0 ? null : this.localStreams[streamIds[0]];
-    }
-
-    _transformIncomingSdp(original: UnifiedPlanSDP) {
-        const sdp = original.sdp ? original.sdp : original.sdpU;
-        return { type: original.type, sdp } as RTCSessionDescription;
-    }
-
-    _transformOutgoingSdp(original: RTCSessionDescription): UnifiedPlanSDP {
-        return { type: original.type, sdpU: original.sdp, sdp: original.sdp };
     }
 
     _createSession({
@@ -1100,7 +1086,7 @@ export default class P2pRtcManager implements RtcManager {
                         .then(() => {
                             this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                                 receiverId: clientId,
-                                message: this._transformOutgoingSdp(offer),
+                                message: offer,
                             });
                         });
                 })
