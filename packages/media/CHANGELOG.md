@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.7.3
+
+### Patch Changes
+
+- 45b940c: Prepare for deprecation of unified plan - plan b transformation
+
 ## 2.7.2
 
 ### Patch Changes
