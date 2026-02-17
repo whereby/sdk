@@ -16,7 +16,6 @@ import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager, SDPRelayMessage, UnifiedPlanSDP } from "./types";
 import { ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
-import { trackAnnotations } from "../utils/annotations";
 
 interface GetOrCreateSessionOptions {
     peerConnectionId: string;
