@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.7.2
+
+### Patch Changes
+
+- 8311ad3: Assume replaceTrack support
+
 ## 2.7.1
 
 ### Patch Changes
