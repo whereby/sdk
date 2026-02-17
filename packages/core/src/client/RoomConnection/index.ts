@@ -31,6 +31,7 @@ import {
     toggleCameraEnabled,
     toggleLowDataModeEnabled,
     toggleMicrophoneEnabled,
+    AppConfig,
 } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import type {
@@ -71,7 +72,7 @@ import { BaseClient } from "../BaseClient";
 import { doCameraEffectsSwitchPreset } from "../../redux/slices/cameraEffects";
 
 export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomConnectionEvents> {
-    private options: WherebyClientOptions;
+    protected options: Partial<AppConfig>;
     private selfId: string | null = null;
 
     private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
@@ -316,6 +317,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             roomUrl,
             assistantKey: this.options.assistantKey || null,
             isNodeSdk: this.options.isNodeSdk || false,
+            isAudioRecorder: this.options.isAudioRecorder ?? false,
         };
 
         this.store.dispatch(doAppStart(roomConfig));
