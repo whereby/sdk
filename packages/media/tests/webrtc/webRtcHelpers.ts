@@ -77,6 +77,7 @@ export function createRTCPeerConnectionStub(
             signalingState: "stable",
             addEventListener: jest.fn(),
             close: jest.fn(),
+            getTransceivers: jest.fn(() => [...senders, ...receivers]),
             getReceivers: jest.fn(() => receivers),
             getSenders: jest.fn(() => senders),
             getStats: jest.fn(() => stats),

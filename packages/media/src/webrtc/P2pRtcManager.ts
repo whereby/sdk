@@ -76,6 +76,7 @@ type P2PAnalytics = {
     P2PReplaceTrackWithoutPC: number;
     P2PReplaceTrackSourceKindNotFound: number;
     P2PRemoveStreamNoPC: number;
+    P2PRecvonlyNonScreenshareVideoStream: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -208,6 +209,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackWithoutPC: 0,
             P2PReplaceTrackSourceKindNotFound: 0,
             P2PRemoveStreamNoPC: 0,
+            P2PRecvonlyNonScreenshareVideoStream: 0,
         };
     }
 
@@ -370,6 +372,19 @@ export default class P2pRtcManager implements RtcManager {
                         this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
                             receiverId: data.clientId,
                             message: this._transformOutgoingSdp(answer),
+                        });
+                    })
+                    .then(() => {
+                        const recvonlyVideoTransceiversExcludingScreenshares = session.pc
+                            .getTransceivers()
+                            .filter(
+                                (t) =>
+                                    t.direction === "recvonly" &&
+                                    t.receiver.track.kind === "video" &&
+                                    !this._screenshareVideoTrackIds.includes(t?.receiver?.track?.id),
+                            );
+                        recvonlyVideoTransceiversExcludingScreenshares.forEach(() => {
+                            this.analytics.P2PRecvonlyNonScreenshareVideoStream += 1;
                         });
                     })
                     .catch?.((e: any) => {
@@ -1081,7 +1096,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _negotiatePeerConnection(clientId: string, session: any, constraints?: any) {
+    _negotiatePeerConnection(clientId: string, session?: Session | null, constraints?: any) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;
@@ -1127,6 +1142,19 @@ export default class P2pRtcManager implements RtcManager {
                             this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                                 receiverId: clientId,
                                 message: this._transformOutgoingSdp(offer),
+                            });
+                        })
+                        .then(() => {
+                            const recvonlyVideoTransceiversExcludingScreenshares = session.pc
+                                .getTransceivers()
+                                .filter(
+                                    (t) =>
+                                        t.direction === "recvonly" &&
+                                        t.receiver.track.kind === "video" &&
+                                        !this._screenshareVideoTrackIds.includes(t?.receiver?.track?.id),
+                                );
+                            recvonlyVideoTransceiversExcludingScreenshares.forEach(() => {
+                                this.analytics.P2PRecvonlyNonScreenshareVideoStream += 1;
                             });
                         });
                 })
