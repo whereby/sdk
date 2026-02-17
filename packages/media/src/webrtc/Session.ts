@@ -37,7 +37,7 @@ export default class Session {
     bandwidth: any;
     pending: any[];
     isOperationPending: boolean;
-    streamIds: any[];
+    streamIds: string[];
     streams: MediaStream[];
     earlyIceCandidates: any[];
     afterConnected: Promise<unknown>;
@@ -149,11 +149,14 @@ export default class Session {
     }
 
     removeStream(stream: MediaStream) {
-        for (let i = 0; i < this.streamIds.length; i++) {
-            if (this.streamIds[i] === stream.id) {
-                this.streamIds.splice(i, 1);
-                this.streams.splice(i, 1);
-            }
+        logger.debug("removeStream()", stream.id)
+        const streamIdIndex = this.streamIds.indexOf(stream.id)
+        if (streamIdIndex !== -1) {
+            this.streamIds.splice(streamIdIndex, 1);
+        }
+        const streamIndex = this.streams.indexOf(stream)
+        if (streamIndex !== -1) {
+            this.streams.splice(streamIndex, 1);
         }
 
         if (this.pc) {
