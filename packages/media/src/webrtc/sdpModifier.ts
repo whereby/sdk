@@ -151,22 +151,6 @@ export function deprioritizeH264(sdp: any) {
         .join("");
 }
 
-// TODO: currently assumes video, look at track.kind
-// ensures that SSRCs in new description match ssrcs in old description
-export function replaceSSRCs(currentDescription: any, newDescription: any) {
-    let ssrcs = currentDescription.match(/a=ssrc-group:FID (\d+) (\d+)\r\n/);
-    let newssrcs = newDescription.match(/a=ssrc-group:FID (\d+) (\d+)\r\n/);
-    // Firefox offers dont have a FID ssrc group (yet)
-    if (!ssrcs) {
-        ssrcs = currentDescription.match(/a=ssrc:(\d+) cname:(.*)\r\n/g)[1].match(/a=ssrc:(\d+)/);
-        newssrcs = newDescription.match(/a=ssrc:(\d+) cname:(.*)\r\n/g)[1].match(/a=ssrc:(\d+)/);
-    }
-    for (let i = 1; i < ssrcs.length; i++) {
-        newDescription = newDescription.replace(new RegExp(newssrcs[i], "g"), ssrcs[i]);
-    }
-    return newDescription;
-}
-
 // Firefox < 63 (but not Firefox ESR 60) is affected by this:
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1478685
 // filter out the mid rtp header extension
