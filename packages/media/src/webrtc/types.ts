@@ -75,6 +75,7 @@ export type RtcEvents = {
 
 // TODO: Remove unified plan - plan b transformation code.
 export type UnifiedPlanSDP = {
+    sdp: string;
     sdpU: string;
     type: RTCSdpType;
 };
