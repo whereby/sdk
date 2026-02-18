@@ -615,7 +615,8 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     _transformIncomingSdp(original: UnifiedPlanSDP) {
-        return { type: original.type, sdp: original.sdpU } as RTCSessionDescription;
+        const sdp = original.sdp ? original.sdp : original.sdpU;
+        return { type: original.type, sdp } as RTCSessionDescription;
     }
 
     _transformOutgoingSdp(original: RTCSessionDescription): UnifiedPlanSDP {
