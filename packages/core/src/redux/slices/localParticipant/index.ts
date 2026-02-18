@@ -24,19 +24,20 @@ export interface LocalParticipantState extends LocalParticipant {
 }
 
 export const localParticipantSliceInitialState: LocalParticipantState = {
-    displayName: "",
-    id: "",
     breakoutGroup: null,
     breakoutGroupAssigned: "",
-    isAudioEnabled: true,
-    isVideoEnabled: true,
-    isLocalParticipant: true,
-    stream: undefined,
-    isScreenSharing: false,
-    roleName: "none",
     clientClaim: undefined,
-    stickyReaction: undefined,
+    displayName: "",
+    id: "",
+    isAudioEnabled: true,
+    isAudioRecorder: false,
     isDialIn: false,
+    isLocalParticipant: true,
+    isScreenSharing: false,
+    isVideoEnabled: true,
+    roleName: "none",
+    stickyReaction: undefined,
+    stream: undefined,
 };
 
 /**

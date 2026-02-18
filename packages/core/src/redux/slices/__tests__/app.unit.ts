@@ -5,32 +5,34 @@ describe("appSlice", () => {
         describe("doAppStart", () => {
             it("should change the state", () => {
                 const initialConfig = {
-                    isNodeSdk: true,
-                    isDialIn: true,
-                    isAssistant: false,
-                    ignoreBreakoutGroups: true,
-                    roomUrl: "https://some.url/roomName",
-                    roomKey: "roomKey",
                     displayName: "displayName",
-                    userAgent: "userAgent",
                     externalId: "externalId",
+                    ignoreBreakoutGroups: true,
+                    isAssistant: false,
+                    isAudioRecorder: false,
+                    isDialIn: true,
+                    isNodeSdk: true,
+                    roomKey: "roomKey",
+                    roomUrl: "https://some.url/roomName",
+                    userAgent: "userAgent",
                 };
 
                 const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
 
                 expect(result).toEqual({
-                    isActive: true,
-                    isDialIn: true,
-                    isAssistant: false,
+                    displayName: "displayName",
+                    externalId: "externalId",
                     ignoreBreakoutGroups: true,
+                    initialConfig,
+                    isActive: true,
+                    isAssistant: false,
+                    isAudioRecorder: false,
+                    isDialIn: true,
+                    isNodeSdk: true,
+                    roomKey: "roomKey",
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
-                    roomKey: "roomKey",
-                    displayName: "displayName",
                     userAgent: "userAgent",
-                    externalId: "externalId",
-                    isNodeSdk: true,
-                    initialConfig,
                 });
             });
 
@@ -46,18 +48,19 @@ describe("appSlice", () => {
                 const result = appSlice.reducer(undefined, appSlice.actions.doAppStart(initialConfig));
 
                 expect(result).toEqual({
-                    isActive: true,
-                    isDialIn: false,
-                    isAssistant: false,
+                    displayName: "displayName",
+                    externalId: "externalId",
                     ignoreBreakoutGroups: false,
+                    initialConfig,
+                    isActive: true,
+                    isAssistant: false,
+                    isAudioRecorder: false,
+                    isDialIn: false,
+                    isNodeSdk: true,
+                    roomKey: "roomKey",
                     roomName: "/roomName",
                     roomUrl: "https://some.url/roomName",
-                    roomKey: "roomKey",
-                    displayName: "displayName",
                     userAgent: "core:__PKG_VERSION__",
-                    externalId: "externalId",
-                    isNodeSdk: true,
-                    initialConfig,
                 });
             });
         });

@@ -82,6 +82,7 @@ const createMockParticipant = ({
     presentationStream: null,
     externalId: null,
     isDialIn: false,
+    isAudioRecorder: false,
 });
 
 const createMockScreenshare = ({

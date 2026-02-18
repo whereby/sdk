@@ -5,10 +5,10 @@ import { LocalMediaClient } from "./LocalMedia";
 import { RoomConnectionClient } from "./RoomConnection";
 
 export class WherebyClient {
-    private store: AppStore;
+    protected store: AppStore;
     private services: ReturnType<typeof createServices>;
     private localMediaClient: LocalMediaClient;
-    private roomConnectionClient: RoomConnectionClient;
+    protected roomConnectionClient: RoomConnectionClient;
     private gridClient: GridClient;
 
     constructor() {
