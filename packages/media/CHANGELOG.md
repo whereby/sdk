@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.1
+
+### Patch Changes
+
+- e79e430: Add 'serverSideDisconnectDurationLimitOn' experiment to move ServerSocket keep-alive mechanism to rely on pings being received from the server-side
+
 ## 2.8.0
 
 ### Minor Changes
