@@ -1,5 +1,13 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.21
+
+### Patch Changes
+
+- f2b6c9f: Add `isAudioRecorder` client property
+- Updated dependencies [f2b6c9f]
+    - @whereby.com/core@1.6.0
+
 ## 1.2.20
 
 ### Patch Changes
