@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.7.4
+
+### Patch Changes
+
+- 6218c82: Use sdp if available for incoming offer/answer
+
 ## 2.7.3
 
 ### Patch Changes
