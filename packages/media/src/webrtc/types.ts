@@ -30,6 +30,7 @@ export interface RtcManager {
     sendStatsCustomEvent(eventName: string, data: unknown): void;
     isInitializedWith({ selfId, roomName, isSfu }: { selfId: string; roomName: string; isSfu: boolean }): boolean;
     setEventClaim?(eventClaim: string): void;
+    setAudioOnly(audioOnly: boolean): void;
     hasClient(clientId: string): boolean;
 }
 
