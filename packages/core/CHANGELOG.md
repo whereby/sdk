@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 1.6.0
+
+### Minor Changes
+
+- f2b6c9f: Add `isAudioRecorder` client property
+
+### Patch Changes
+
+- Updated dependencies [f2b6c9f]
+    - @whereby.com/media@2.8.0
+
 ## 1.5.14
 
 ### Patch Changes

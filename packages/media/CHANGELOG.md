@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.0
+
+### Minor Changes
+
+- f2b6c9f: Add `isAudioRecorder` client property
+
 ## 2.7.4
 
 ### Patch Changes
