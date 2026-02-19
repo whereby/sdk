@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.2
+
+### Patch Changes
+
+- 6688afd: Handle ontrack firing without stream
+
 ## 2.8.1
 
 ### Patch Changes
