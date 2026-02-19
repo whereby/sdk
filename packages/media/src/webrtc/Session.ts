@@ -149,7 +149,6 @@ export default class Session {
     }
 
     removeStream(stream: MediaStream) {
-        logger.debug("removeStream()", stream.id)
         const streamIdIndex = this.streamIds.indexOf(stream.id)
         if (streamIdIndex !== -1) {
             this.streamIds.splice(streamIdIndex, 1);
