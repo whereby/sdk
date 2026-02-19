@@ -76,6 +76,7 @@ type P2PAnalytics = {
     P2PReplaceTrackWithoutPC: number;
     P2PReplaceTrackSourceKindNotFound: number;
     P2PRemoveStreamNoPC: number;
+    P2POnTrackNoStream: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -208,6 +209,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackWithoutPC: 0,
             P2PReplaceTrackSourceKindNotFound: 0,
             P2PRemoveStreamNoPC: 0,
+            P2POnTrackNoStream: 0,
         };
     }
 
@@ -686,32 +688,20 @@ export default class P2pRtcManager implements RtcManager {
 
         pc.ontrack = (event: any) => {
             const stream = event.streams[0];
-            if (stream.id === "default" && stream.getAudioTracks().length === 0) {
-                // due to our PlanB / UnifiedPlan conversion we can run into this:
-                // https://bugs.chromium.org/p/webrtc/issues/detail?id=8228
-                // and ignore it.
+            if (!stream) {
+                this.analytics.P2POnTrackNoStream++;
+                rtcStats.sendEvent("P2POnTrackNoStream", {
+                    trackKind: event.track.kind,
+                    trackId: event.track.id
+                })
                 return;
             }
-            // ontrack fires for each track of a stream. Emulate old onaddstream behaviour.
             if (session.streamIds.indexOf(stream.id) === -1) {
                 session.streamIds.push(stream.id);
                 this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
                     clientId,
                     stream,
                 });
-
-                // when adding a new stream to an already established connection
-                // we need to tell the GUI about it.
-                if (session.connectionStatus === CONNECTION_STATUS.TYPES.CONNECTION_SUCCESSFUL) {
-                    setTimeout(() => {
-                        this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED as string, {
-                            streamIds: session.streamIds,
-                            clientId,
-                            status: session.connectionStatus,
-                            previous: CONNECTION_STATUS.TYPES.CONNECTING,
-                        });
-                    }, 0);
-                }
             }
         };
 
