@@ -9,7 +9,11 @@ import { ServerSocket } from "../../src/utils/ServerSocket";
 
 class MockSocket extends EventEmitter {}
 
-const createSocketIoEngine = () => ({ disconnect: jest.fn(), engine: { close: jest.fn() }, opts: { transports: [] } });
+const createSocketIoEngine = () => ({
+    disconnect: jest.fn(),
+    engine: { readyState: "open", sendPacket: jest.fn() },
+    opts: { transports: [] },
+});
 
 const createMockSocketIoSocket = () => {
     const mockSocket = new MockSocket();
@@ -65,54 +69,56 @@ describe("KeepAliveManager", () => {
         expect(pingTimestamp - initialTimestamp).toEqual(1000);
     });
 
-    it("should force close underlying socket if zero pings received after connect", () => {
+    it("should test underlying socket if zero pings received after connect", () => {
         serverSocket._socket.emit("connect");
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(0);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
 
         jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY + 1);
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(1);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(1);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledWith("noop");
     });
 
-    it("should force close underlying socket on any missed ping", () => {
+    it("should test underlying socket on any missed ping", () => {
         serverSocket._socket.emit("connect");
 
         jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY - 1);
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(0);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
 
         serverSocket._socket.io.emit("ping");
 
         jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY - 1);
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(0);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
 
         serverSocket._socket.io.emit("ping");
 
         jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY + 1);
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(1);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(1);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledWith("noop");
     });
 
-    it("should not force close underlying socket after socket is disconnected", () => {
+    it("should not test underlying socket after socket is disconnected", () => {
         serverSocket._socket.emit("connect");
 
         jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY - 1);
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(0);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
 
         serverSocket._socket.io.emit("ping");
 
         jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY - 1);
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(0);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
 
         serverSocket._socket.emit("disconnect");
 
         jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY + 1);
 
-        expect(serverSocket._socket.io.engine.close).toHaveBeenCalledTimes(0);
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
     });
 
     describe("disconnectDurationLimitExceeded", () => {
