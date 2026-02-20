@@ -1,6 +1,7 @@
 import { createStore, mockSignalEmit } from "../store.setup";
 import { doRemoveSpotlight, doSpotlightParticipant } from "../../slices/spotlights";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
+import { CAMERA_STREAM_ID } from "@whereby.com/media";
 
 describe("actions", () => {
     describe("doSpotlightParticipant", () => {
@@ -20,7 +21,7 @@ describe("actions", () => {
 
                 expect(mockSignalEmit).toHaveBeenCalledWith("add_spotlight", {
                     clientId: participantId,
-                    streamId: "0",
+                    streamId: CAMERA_STREAM_ID,
                 });
             });
         });
@@ -59,7 +60,7 @@ describe("actions", () => {
 
                 expect(mockSignalEmit).toHaveBeenCalledWith("remove_spotlight", {
                     clientId: participantId,
-                    streamId: "0",
+                    streamId: CAMERA_STREAM_ID,
                 });
             });
         });

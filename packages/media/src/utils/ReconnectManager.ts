@@ -160,8 +160,8 @@ export class ReconnectManager extends EventEmitter {
             delete this._clients[clientId];
         }
 
-        // Old RTCManager only takes one argument, so rest is ignored.
-        this.rtcManager?.disconnect(clientId, /* activeBreakout */ null, payload.eventClaim);
+        // TODO: Remove this code and disconnect clients from consuming app.
+        this.rtcManager?.disconnect(clientId, payload.eventClaim);
 
         this.emit(PROTOCOL_RESPONSES.CLIENT_LEFT, payload);
     }

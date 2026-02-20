@@ -8,6 +8,7 @@ import {
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
     RtcClientConnectionStatusChangedPayload,
+    CAMERA_STREAM_ID,
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
@@ -28,7 +29,7 @@ import {
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
-import { selectBreakoutActive, selectBreakoutCurrentId } from "../breakout";
+import { selectBreakoutCurrentId } from "../breakout";
 import { selectLocalParticipantRaw } from "../localParticipant/selectors";
 import { selectSpotlights } from "../spotlights";
 
@@ -262,8 +263,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         throw new Error("No rtc manager");
     }
 
-    const activeBreakout = selectBreakoutActive(state);
-    const shouldAcceptNewClients = rtcManager.shouldAcceptStreamsFromBothSides?.();
+    const shouldAcceptNewClients = rtcManager.shouldAcceptStreamsFromBothSides();
 
     const updates: StreamStatusUpdate[] = [];
 
@@ -276,16 +276,14 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
             (state === "old_accept" && !shouldAcceptNewClients) // these are done to enable broadcast in legacy/p2p
         ) {
             rtcManager.acceptNewStream({
-                streamId: streamId === "0" ? clientId : streamId,
+                streamId: streamId === CAMERA_STREAM_ID ? clientId : streamId,
                 clientId,
-                shouldAddLocalVideo: streamId === "0",
-                activeBreakout,
             });
         } else if (state === "new_accept" || state === "old_accept") {
             // do nothing - let this be marked as done_accept as the rtcManager
             // will trigger accept from other end
         } else if (state === "to_unaccept") {
-            rtcManager?.disconnect(streamId === "0" ? clientId : streamId, activeBreakout);
+            rtcManager?.disconnect(streamId === CAMERA_STREAM_ID ? clientId : streamId);
         } else if (state !== "done_accept") {
             continue;
             // console.warn(`Stream state not handled: ${state} for ${clientId}-${streamId}`);
@@ -330,7 +328,7 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
     if (localMediaStream && rtcManager) {
-        rtcManager.addNewStream("0", localMediaStream, !isMicrophoneEnabled, !isCameraEnabled);
+        rtcManager.addNewStream(CAMERA_STREAM_ID, localMediaStream, !isMicrophoneEnabled, !isCameraEnabled);
     }
 
     dispatch(rtcManagerInitialized());
@@ -439,7 +437,7 @@ startAppListening({
         const { stream } = payload;
 
         if (stream) {
-            rtcManager.addNewStream("0", payload.stream, !isMicrophoneEnabled, !isCameraEnabled);
+            rtcManager.addNewStream(CAMERA_STREAM_ID, payload.stream, !isMicrophoneEnabled, !isCameraEnabled);
         }
     },
 });
@@ -514,13 +512,13 @@ export const selectStreamsToAccept = createSelector(
         for (const client of remoteParticipants) {
             const { streams, id: clientId, newJoiner } = client;
 
-            const clientSpotlight = spotlights.find((s) => s.clientId === client.id && s.streamId === "0");
+            const clientSpotlight = spotlights.find((s) => s.clientId === client.id && s.streamId === CAMERA_STREAM_ID);
 
             for (let i = 0; i < streams.length; i++) {
                 let streamId = streams[i].id;
                 let state = streams[i].state;
 
-                if (streams?.length > 1 && streams[1].id === "0") {
+                if (streams?.length > 1 && streams[1].id === CAMERA_STREAM_ID) {
                     // Handle case where we get reversed streams from signal-server
                     // To avoid sending 2 ready_to_receieve_offer and potentially ending up in failed ice state
                     if (i === 0) {
@@ -543,7 +541,7 @@ export const selectStreamsToAccept = createSelector(
                     upd.push({
                         clientId,
                         streamId,
-                        state: `${newJoiner && streamId === "0" ? "new" : "to"}_accept` as StreamState,
+                        state: `${newJoiner && streamId === CAMERA_STREAM_ID ? "new" : "to"}_accept` as StreamState,
                     });
                 } else {
                     // Already disconnected

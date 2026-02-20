@@ -8,24 +8,20 @@ export enum RtcEventNames {
 
 export interface RtcManager {
     acceptNewStream: ({
-        activeBreakout,
         clientId,
-        shouldAddLocalVideo,
         streamId,
     }: {
-        activeBreakout: boolean;
         clientId: string;
-        shouldAddLocalVideo: boolean;
         streamId: string;
     }) => void;
     addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean): void;
-    disconnect(streamId: string, activeBreakout: boolean | null, eventClaim?: string): void;
+    disconnect(streamId: string, eventClaim?: string): void;
     disconnectAll(): void;
     rtcStatsDisconnect(): void;
     rtcStatsReconnect(): void;
     replaceTrack(oldTrack: CustomMediaStreamTrack, newTrack: CustomMediaStreamTrack): void;
     removeStream(streamId: string, _stream: MediaStream, requestedByClientId: string | null): void;
-    shouldAcceptStreamsFromBothSides?: () => boolean;
+    shouldAcceptStreamsFromBothSides: () => boolean;
     updateStreamResolution(streamId: string, ignored: null, resolution: { width: number; height: number }): void;
     sendStatsCustomEvent(eventName: string, data: unknown): void;
     isInitializedWith({ selfId, roomName, isSfu }: { selfId: string; roomName: string; isSfu: boolean }): boolean;

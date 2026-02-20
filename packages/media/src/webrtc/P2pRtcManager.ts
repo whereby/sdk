@@ -4,7 +4,6 @@ import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
-import { RtcStream } from "../model/RtcStream";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
@@ -14,14 +13,13 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import { CustomMediaStreamTrack, RtcManager, SDPRelayMessage, UnifiedPlanSDP } from "./types";
-import { ServerSocket, sortCodecs } from "../utils";
+import { RoomJoinedErrors, RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
-import { trackAnnotations } from "../utils/annotations";
+import { CAMERA_STREAM_ID } from "../model";
 
 interface GetOrCreateSessionOptions {
     peerConnectionId: string;
     clientId: string;
-    shouldAddLocalVideo: boolean;
     initialBandwidth: number;
     peerConnectionConfig: RTCConfiguration;
 }
@@ -31,7 +29,6 @@ const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
-const CAMERA_STREAM_ID = RtcStream.getCameraId();
 const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
@@ -395,14 +392,11 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // if this is a reconnect to signal-server during screen-share we must let signal-server know
-            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: any) => {
-                if (payload?.error) {
+            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: RoomJoinedEvent) => {
+                const { error } = payload as RoomJoinedErrors;
+                if (error || !this._wasScreenSharing) {
                     return;
                 }
-
-                const isSfu = payload?.room?.sfuServer ?? false;
-
-                if (isSfu || !this._wasScreenSharing) return;
 
                 const screenShareStreamId = Object.keys(this.localStreams).find((id) => id !== CAMERA_STREAM_ID);
                 if (!screenShareStreamId) {
@@ -421,6 +415,17 @@ export default class P2pRtcManager implements RtcManager {
                     streamId: screenShareStreamId,
                     hasAudioTrack,
                 });
+            }),
+
+            // Clean up session.streamIds after stopped screenshare from remote peer.
+            this._serverSocket.on(PROTOCOL_RESPONSES.SCREENSHARE_STOPPED, (payload: ScreenshareStoppedEvent) => {
+                const session = this._getSession(payload.clientId);
+                if (session) {
+                    const streamIdIndex = session.streamIds.indexOf(payload.streamId);
+                    if (streamIdIndex !== -1) {
+                        session.streamIds.splice(streamIdIndex, 1);
+                    }
+                }
             }),
         ];
     }
@@ -567,7 +572,6 @@ export default class P2pRtcManager implements RtcManager {
         clientId,
         initialBandwidth,
         peerConnectionConfig,
-        shouldAddLocalVideo,
     }: GetOrCreateSessionOptions) {
         let session = this.peerConnections[peerConnectionId];
 
@@ -586,7 +590,6 @@ export default class P2pRtcManager implements RtcManager {
                 peerConnectionConfig,
                 bandwidth: initialBandwidth,
                 deprioritizeH264Encoding,
-                shouldAddLocalVideo,
                 incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
             });
         } else {
@@ -630,13 +633,11 @@ export default class P2pRtcManager implements RtcManager {
         initialBandwidth,
         isOfferer,
         peerConnectionId,
-        shouldAddLocalVideo,
     }: {
         clientId: string;
         initialBandwidth: any;
         isOfferer: any;
         peerConnectionId: string;
-        shouldAddLocalVideo: boolean;
     }) {
         if (!peerConnectionId) {
             throw new Error("peerConnectionId is missing");
@@ -678,7 +679,6 @@ export default class P2pRtcManager implements RtcManager {
             clientId,
             initialBandwidth,
             peerConnectionConfig,
-            shouldAddLocalVideo,
         });
 
         setTimeout(() => this._emit(rtcManagerEvents.NEW_PC), 0);
@@ -692,8 +692,8 @@ export default class P2pRtcManager implements RtcManager {
                 this.analytics.P2POnTrackNoStream++;
                 rtcStats.sendEvent("P2POnTrackNoStream", {
                     trackKind: event.track.kind,
-                    trackId: event.track.id
-                })
+                    trackId: event.track.id,
+                });
                 return;
             }
             if (session.streamIds.indexOf(stream.id) === -1) {
@@ -806,35 +806,31 @@ export default class P2pRtcManager implements RtcManager {
         };
 
         const localCameraStream = this.localStreams[CAMERA_STREAM_ID];
-        if (shouldAddLocalVideo && localCameraStream) {
+        if (localCameraStream) {
             session.addStream(localCameraStream);
         }
 
-        // Don't add existing screenshare-streams when using SFU as those will be
-        // added in a separate session/peerConnection by SfuV2RtcManager
-        if (shouldAddLocalVideo) {
-            Object.keys(this.localStreams).forEach((id) => {
-                if (id === CAMERA_STREAM_ID) {
-                    return;
-                }
-                const screenshareStream = this.localStreams[id];
-                // if we are offering it's safe to add screensharing streams in initial offer
-                if (isOfferer) {
-                    session.addStream(screenshareStream);
-                } else {
-                    // if not we are here because of reconnecting, and will need to start screenshare
-                    // after connection is ready
-                    session.afterConnected.then(() => {
-                        this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
-                            receiverId: session.clientId,
-                            streamId: screenshareStream.id,
-                            hasAudioTrack: !!screenshareStream.getAudioTracks().length,
-                        });
-                        this._withForcedRenegotiation(session, () => session.addStream(screenshareStream));
+        Object.keys(this.localStreams).forEach((id) => {
+            if (id === CAMERA_STREAM_ID) {
+                return;
+            }
+            const screenshareStream = this.localStreams[id];
+            // if we are offering it's safe to add screensharing streams in initial offer
+            if (isOfferer) {
+                session.addStream(screenshareStream);
+            } else {
+                // if not we are here because of reconnecting, and will need to start screenshare
+                // after connection is ready
+                session.afterConnected.then(() => {
+                    this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
+                        receiverId: session.clientId,
+                        streamId: screenshareStream.id,
+                        hasAudioTrack: !!screenshareStream.getAudioTracks().length,
                     });
-                }
-            });
-        }
+                    this._withForcedRenegotiation(session, () => session.addStream(screenshareStream));
+                });
+            }
+        });
 
         return session;
     }
@@ -990,7 +986,6 @@ export default class P2pRtcManager implements RtcManager {
         session = this._createP2pSession({
             clientId,
             initialBandwidth,
-            shouldAddLocalVideo: true,
             isOfferer: true,
         });
         this._negotiatePeerConnection(clientId, session);
@@ -1180,19 +1175,16 @@ export default class P2pRtcManager implements RtcManager {
     _createP2pSession({
         clientId,
         initialBandwidth,
-        shouldAddLocalVideo = false,
         isOfferer = false,
     }: {
         clientId: string;
         initialBandwidth: number;
-        shouldAddLocalVideo: boolean;
         isOfferer: boolean;
     }) {
         const session = this._createSession({
             peerConnectionId: clientId,
             clientId,
             initialBandwidth,
-            shouldAddLocalVideo,
             isOfferer,
         });
         const pc = session.pc;
@@ -1206,12 +1198,7 @@ export default class P2pRtcManager implements RtcManager {
          * replace it when the video is re-enabled.
          */
         const localCameraStream = this.localStreams[CAMERA_STREAM_ID];
-        if (
-            shouldAddLocalVideo &&
-            localCameraStream &&
-            !localCameraStream.getVideoTracks().length &&
-            this._stoppedVideoTrack
-        ) {
+        if (localCameraStream && !localCameraStream.getVideoTracks().length && this._stoppedVideoTrack) {
             pc.addTrack(this._stoppedVideoTrack, localCameraStream);
         }
 
@@ -1322,15 +1309,7 @@ export default class P2pRtcManager implements RtcManager {
     /**
      * Possibly start a new peer connection for the new stream if needed.
      */
-    acceptNewStream({
-        streamId,
-        clientId,
-        shouldAddLocalVideo,
-    }: {
-        streamId: string;
-        clientId: string;
-        shouldAddLocalVideo?: boolean;
-    }) {
+    acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
         let session = this._getSession(clientId);
         if (session && streamId !== clientId) {
             // we are adding a screenshare stream to existing session/pc
@@ -1350,7 +1329,6 @@ export default class P2pRtcManager implements RtcManager {
         session = this._createP2pSession({
             clientId,
             initialBandwidth,
-            shouldAddLocalVideo: !!shouldAddLocalVideo,
             isOfferer: false,
         });
         this._emitServerEvent(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
@@ -1472,5 +1450,10 @@ export default class P2pRtcManager implements RtcManager {
 
     hasClient(clientId: string) {
         return Object.keys(this.peerConnections).includes(clientId);
+    }
+
+    // In P2P, joining clients accept streams from existing clients.
+    shouldAcceptStreamsFromBothSides() {
+        return false;
     }
 }
