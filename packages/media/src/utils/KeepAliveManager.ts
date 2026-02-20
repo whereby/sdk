@@ -30,6 +30,8 @@ export class KeepAliveManager {
         clearTimeout(this.pingTimer);
 
         this.pingTimer = setTimeout(() => {
+            if (this.serverSocket._socket.io.engine.readyState === "closed") return;
+
             // try sending a noop message if socket still thinks it is connected (might not be)
             // If this fails it will trigger the websocket reconnection flow.
             this.serverSocket._socket.io.engine.sendPacket("noop");
