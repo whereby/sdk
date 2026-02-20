@@ -121,6 +121,16 @@ describe("KeepAliveManager", () => {
         expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
     });
 
+    it("should not test underlying socket if socket is already in a closed state", () => {
+        serverSocket._socket.io.engine.readyState = "closed";
+
+        serverSocket._socket.io.emit("ping");
+
+        jest.advanceTimersByTime(SIGNAL_PING_INTERVAL + SIGNAL_PING_MAX_LATENCY + 1);
+
+        expect(serverSocket._socket.io.engine.sendPacket).toHaveBeenCalledTimes(0);
+    });
+
     describe("disconnectDurationLimitExceeded", () => {
         describe("when enabled", () => {
             beforeEach(() => {
