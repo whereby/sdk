@@ -17,7 +17,6 @@ interface P2PSessionOptions {
     bandwidth: number;
     peerConnectionConfig: RTCConfiguration;
     deprioritizeH264Encoding: boolean;
-    shouldAddLocalVideo: boolean;
     incrementAnalyticMetric: P2PIncrementAnalyticMetric;
 }
 
@@ -46,7 +45,6 @@ export default class Session {
     _deprioritizeH264Encoding: any;
     clientId: any;
     peerConnectionConfig: RTCConfiguration;
-    shouldAddLocalVideo: boolean;
     signalingState: any;
     srdComplete: any;
     _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
@@ -57,7 +55,6 @@ export default class Session {
         bandwidth,
         peerConnectionConfig,
         deprioritizeH264Encoding,
-        shouldAddLocalVideo,
         incrementAnalyticMetric,
     }: P2PSessionOptions) {
         this.peerConnectionId = peerConnectionId;
@@ -71,7 +68,6 @@ export default class Session {
 
         // Create PC.
         this.peerConnectionConfig = peerConnectionConfig;
-        this.shouldAddLocalVideo = shouldAddLocalVideo;
         this.clientId = clientId;
         this.pc = new RTCPeerConnection(this.peerConnectionConfig);
         this.signalingState = this.pc.signalingState;
@@ -149,11 +145,11 @@ export default class Session {
     }
 
     removeStream(stream: MediaStream) {
-        const streamIdIndex = this.streamIds.indexOf(stream.id)
+        const streamIdIndex = this.streamIds.indexOf(stream.id);
         if (streamIdIndex !== -1) {
             this.streamIds.splice(streamIdIndex, 1);
         }
-        const streamIndex = this.streams.indexOf(stream)
+        const streamIndex = this.streams.indexOf(stream);
         if (streamIndex !== -1) {
             this.streams.splice(streamIndex, 1);
         }

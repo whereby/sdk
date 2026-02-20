@@ -7,6 +7,7 @@ import { CustomMediaStreamTrack } from "../../types";
 import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
+import { CAMERA_STREAM_ID } from "../../../model";
 
 jest.mock("../../../utils/getMediasoupDevice");
 const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
@@ -124,7 +125,7 @@ describe("VegaRtcManager", () => {
                 else localStream.removeTrack(t);
             });
             rtcManager.setupSocketListeners();
-            rtcManager.addNewStream("0", localStream, false, false);
+            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
             await setTimeout(100);
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(0);
@@ -154,7 +155,7 @@ describe("VegaRtcManager", () => {
             });
 
             rtcManager.setupSocketListeners();
-            rtcManager.addNewStream("0", localStream, false, false);
+            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
             rtcManager.replaceTrack(oldTrack, newTrack);
             await setTimeout(250);
 
@@ -173,7 +174,7 @@ describe("VegaRtcManager", () => {
                 else return new MockProducer({ kind: "audio" });
             });
 
-            rtcManager.addNewStream("0", localStream, false, false);
+            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
             rtcManager.replaceTrack(oldTrack, newTrack);
             await setTimeout(100);
             rtcManager.setupSocketListeners();
@@ -304,7 +305,7 @@ describe("VegaRtcManager", () => {
 
         beforeEach(() => {
             localStream = helpers.createMockedMediaStream();
-            rtcManager.addNewStream("0", localStream, false, false);
+            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
         });
 
         describe("when enable", () => {

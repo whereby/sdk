@@ -31,6 +31,7 @@ import {
 } from "./types";
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
+import { CAMERA_STREAM_ID, STREAM_TYPES } from "../../model";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -1344,25 +1345,20 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     /**
-     * The first parameter is either a clientId if the client actually leaves
-     * or a streamId if the client stops its screen share. The eventClaim must
-     * be sent to the SFU to ensure that the SFU knows that the client has left.
+     * The eventClaim is only used for SFU meetings.
+     * It must be sent to the SFU to ensure that the SFU knows that the client has left.
      *
-     * @param {string} clientIdOrStreamId
-     * @param {ignored} _activeBreakout
+     * @param {string} clientId
      * @param {string} eventClaim
      */
-    disconnect(clientIdOrStreamId: string, _activeBreakout: any, eventClaim?: string) {
-        logger.info("disconnect() [clientIdOrStreamId:%s, eventClaim:%s]", clientIdOrStreamId, eventClaim);
+    disconnect(clientId: string, eventClaim?: string) {
+        logger.info("disconnect() [clientId:%s, eventClaim:%s]", clientId, eventClaim);
 
-        const clientState = this._clientStates.get(clientIdOrStreamId);
+        const clientState = this._clientStates.get(clientId);
         if (clientState) {
-            // In this case this is a disconnect from an actual client, not just a screen share.
-
             clientState.hasAcceptedWebcamStream = false;
             clientState.hasAcceptedScreenStream = false;
-
-            this._syncIncomingStreamsWithPWA(clientIdOrStreamId);
+            this._syncIncomingStreamsWithPWA(clientId);
         }
 
         if (eventClaim) {
@@ -1452,7 +1448,7 @@ export default class VegaRtcManager implements RtcManager {
         videoPaused: boolean,
         beforeEffectTracks: CustomMediaStreamTrack[] = [],
     ) {
-        if (streamId === "0") {
+        if (streamId === CAMERA_STREAM_ID) {
             this._micPaused = audioPaused;
             this._webcamPaused = videoPaused;
 
@@ -2072,7 +2068,7 @@ export default class VegaRtcManager implements RtcManager {
                 clientId,
                 stream: webcamStream,
                 streamId: camStreamId,
-                streamType: "webcam",
+                streamType: STREAM_TYPES.webcam,
             });
 
             clientState.hasEmittedWebcamStream = true;
@@ -2084,7 +2080,7 @@ export default class VegaRtcManager implements RtcManager {
                 clientId,
                 stream: screenStream,
                 streamId: screenShareStreamId,
-                streamType: "screenshare",
+                streamType: STREAM_TYPES.screenshare,
             });
 
             clientState.hasEmittedScreenStream = true;
@@ -2116,7 +2112,7 @@ export default class VegaRtcManager implements RtcManager {
         this._serverSocket.emit(eventName, data, callback);
     }
 
-    // this tells PWA that clients/streams should be accepted from both sides (in contrast with current P2P manager)
+    // For SFU we accept streams from both sides (in contrast with current P2P manager)
     shouldAcceptStreamsFromBothSides() {
         return true;
     }
