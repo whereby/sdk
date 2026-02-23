@@ -1,5 +1,11 @@
 # @whereby.com/camera-effects
 
+## 1.0.3
+
+### Patch Changes
+
+- a5f5c8a: Reduce background image size
+
 ## 1.0.2
 
 ### Patch Changes
