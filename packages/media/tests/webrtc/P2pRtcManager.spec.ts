@@ -714,6 +714,7 @@ describe("P2pRtcManager", () => {
                 pc.localDescription = { type: "offer" };
                 const session: any = { pc };
                 session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
+                session.isClosed = jest.fn().mockReturnValue(false);
                 manager._maybeRestartIce(clientId, session);
                 expect(manager.analytics.numIceRestart).toBe(1);
             });
