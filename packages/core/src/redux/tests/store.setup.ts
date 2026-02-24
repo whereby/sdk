@@ -22,6 +22,7 @@ export const mockRtcManager = {
     rtcStatsDisconnect: jest.fn(),
     updateStreamResolution: jest.fn(),
     sendStatsCustomEvent: jest.fn(),
+    shouldAcceptStreamsFromBothSides: jest.fn(),
 };
 export const mockRtcEmitter = {
     emit: jest.fn(),

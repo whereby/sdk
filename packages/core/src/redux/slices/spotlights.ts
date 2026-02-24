@@ -1,7 +1,7 @@
 import { createSelector, createSlice, isAnyOf } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { ClientView } from "../types";
-import { AddSpotlightRequest, type RemoveSpotlightRequest, type Spotlight } from "@whereby.com/media";
+import { AddSpotlightRequest, CAMERA_STREAM_ID, type RemoveSpotlightRequest, type Spotlight } from "@whereby.com/media";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 import { selectLocalParticipantRaw } from "./localParticipant/selectors";
 import { createAppAuthorizedThunk } from "../thunk";
@@ -16,7 +16,7 @@ import { startAppListening } from "../listenerMiddleware";
 
 export function streamIdForClient({ isPresentation, stream }: Pick<ClientView, "isPresentation" | "stream">) {
     // outboundId and inboundId are the streamId's used by SFU V2
-    return isPresentation ? stream?.outboundId ?? stream?.inboundId ?? stream?.id : "0";
+    return isPresentation ? stream?.outboundId ?? stream?.inboundId ?? stream?.id : CAMERA_STREAM_ID;
 }
 
 export function isClientSpotlighted({
@@ -146,7 +146,7 @@ export const doSpotlightParticipant = createAppAuthorizedThunk(
             }
             const { socket } = selectSignalConnectionRaw(state);
             const streamId = streamIdForClient(clientView);
-            const payload: AddSpotlightRequest = { clientId: clientView.id, streamId: streamId ?? "0" };
+            const payload: AddSpotlightRequest = { clientId: clientView.id, streamId: streamId ?? CAMERA_STREAM_ID };
             socket?.emit("add_spotlight", payload);
         },
 );
@@ -163,7 +163,7 @@ export const doRemoveSpotlight = createAppAuthorizedThunk(
             }
             const { socket } = selectSignalConnectionRaw(state);
             const streamId = streamIdForClient(clientView);
-            const payload: RemoveSpotlightRequest = { clientId: clientView.id, streamId: streamId ?? "0" };
+            const payload: RemoveSpotlightRequest = { clientId: clientView.id, streamId: streamId ?? CAMERA_STREAM_ID };
 
             socket?.emit("remove_spotlight", payload);
         },

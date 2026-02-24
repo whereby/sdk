@@ -9,7 +9,7 @@ import {
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
-import { RtcManagerDispatcher } from "@whereby.com/media";
+import { CAMERA_STREAM_ID, RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
@@ -47,8 +47,8 @@ describe("actions", () => {
 
         expect(JSON.stringify(mockRtcManager.acceptNewStream.mock.calls)).toStrictEqual(
             JSON.stringify([
-                [{ streamId: id1, clientId: participant1.id, shouldAddLocalVideo: false, activeBreakout: false }],
-                [{ streamId: id3, clientId: participant2.id, shouldAddLocalVideo: false, activeBreakout: false }],
+                [{ streamId: id1, clientId: participant1.id }],
+                [{ streamId: id3, clientId: participant2.id }],
             ]),
         );
         expect(mockRtcManager.acceptNewStream).toHaveBeenCalledTimes(2);
@@ -164,7 +164,7 @@ describe("actions", () => {
         store.dispatch(doRtcManagerInitialize());
 
         expect(mockRtcManager.addNewStream).toHaveBeenCalledTimes(1);
-        expect(mockRtcManager.addNewStream).toHaveBeenCalledWith("0", store.getState().localMedia.stream, true, true);
+        expect(mockRtcManager.addNewStream).toHaveBeenCalledWith(CAMERA_STREAM_ID, store.getState().localMedia.stream, true, true);
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
     });
 });

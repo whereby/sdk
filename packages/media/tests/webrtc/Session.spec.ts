@@ -34,7 +34,6 @@ describe("Session", () => {
             peerConnectionConfig,
             bandwidth,
             deprioritizeH264Encoding: false,
-            shouldAddLocalVideo: false,
             incrementAnalyticMetric: jest.fn(),
         });
     });
