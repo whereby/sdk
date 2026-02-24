@@ -1,6 +1,7 @@
 import { roomSlice, roomSliceInitialState, selectScreenshares } from "../room";
 import { signalEvents } from "../signalConnection/actions";
 import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
+import { SignalRoom } from "@whereby.com/media";
 
 describe("roomSlice", () => {
     describe("reducers", () => {
@@ -25,6 +26,7 @@ describe("roomSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: "",
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "normal",
                                 clients: [],
@@ -33,7 +35,7 @@ describe("roomSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
-                            },
+                            } as unknown as SignalRoom,
                         }),
                     );
                     expect(result.isLocked).toEqual(true);

@@ -1,5 +1,6 @@
 import { waitingParticipantsSlice, waitingParticipantsSliceInitialState } from "../waitingParticipants";
 import { signalEvents } from "../signalConnection/actions";
+import { SignalRoom } from "@whereby.com/media";
 
 describe("reducer", () => {
     describe("signalEvents.roomJoined", () => {
@@ -26,6 +27,7 @@ describe("reducer", () => {
                         selfId: "self-id",
                         breakoutGroup: null,
                         clientClaim: "client-claim",
+                        eventClaim: "",
                         room: {
                             mode: "normal",
                             clients: [],
@@ -43,7 +45,7 @@ describe("reducer", () => {
                             session: null,
                             isClaimed: true,
                             isLocked: true,
-                        },
+                        } as unknown as SignalRoom,
                     }),
                 );
 

@@ -8,6 +8,7 @@ import {
 } from "../authorization";
 import { signalEvents } from "../signalConnection/actions";
 import { doAppStart } from "../app";
+import { SignalRoom } from "@whereby.com/media";
 
 describe("authorizationSlice", () => {
     describe("reducers", () => {
@@ -51,6 +52,7 @@ describe("authorizationSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: null,
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "normal",
                                 clients: [
@@ -76,7 +78,7 @@ describe("authorizationSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
-                            },
+                            } as unknown as SignalRoom,
                         }),
                     );
                     expect(result.roleName).toEqual("host");

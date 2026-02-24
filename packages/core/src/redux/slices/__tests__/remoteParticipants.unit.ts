@@ -12,6 +12,7 @@ import {
     randomString,
     randomMediaStream,
 } from "../../../__mocks__/appMocks";
+import { SignalRoom } from "@whereby.com/media";
 
 describe("remoteParticipantsSlice", () => {
     describe("reducers", () => {
@@ -44,6 +45,7 @@ describe("remoteParticipantsSlice", () => {
                             ...localParticipant,
                             selfId: localClient.id,
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "group",
                                 clients: [localClient, remoteClient],
@@ -52,7 +54,7 @@ describe("remoteParticipantsSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
-                            },
+                            } as unknown as SignalRoom,
                         }),
                     );
 

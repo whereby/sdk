@@ -1,6 +1,7 @@
 import { breakoutSlice, breakoutSliceInitialState } from "../breakout";
 import { signalEvents } from "../signalConnection";
 import { randomLocalParticipant, randomSignalClient } from "../../../__mocks__/appMocks";
+import { SignalRoom } from "@whereby.com/media";
 
 const breakoutConfig = {
     assignments: null,
@@ -54,6 +55,7 @@ describe("breakoutSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: null,
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "normal",
                                 clients: [localClient, remoteClient],
@@ -62,7 +64,7 @@ describe("breakoutSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
-                            },
+                            } as unknown as SignalRoom,
                             breakout: breakoutConfig,
                         }),
                     );

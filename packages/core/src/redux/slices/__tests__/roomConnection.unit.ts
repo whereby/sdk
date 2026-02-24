@@ -1,3 +1,4 @@
+import { SignalRoom } from "@whereby.com/media";
 import { oneOf } from "../../../__mocks__/appMocks";
 import { roomConnectionSlice, selectShouldConnectRoom } from "../roomConnection";
 import { signalEvents } from "../signalConnection/actions";
@@ -49,6 +50,7 @@ describe("roomConnectionSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: "",
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "group",
                                 clients: [],
@@ -57,7 +59,7 @@ describe("roomConnectionSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
-                            },
+                            } as unknown as SignalRoom,
                         }),
                     );
 

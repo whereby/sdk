@@ -1,6 +1,7 @@
 import { localParticipantSlice, localParticipantSliceInitialState } from "../localParticipant";
 import { signalEvents } from "../signalConnection/actions";
 import { randomSignalClient, randomLocalParticipant } from "../../../__mocks__/appMocks";
+import { SignalRoom } from "@whereby.com/media";
 
 describe("localParticipantSlice", () => {
     describe("reducers", () => {
@@ -51,8 +52,9 @@ describe("localParticipantSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
-                            },
+                            } as unknown as SignalRoom,
                             clientClaim: localParticipant.clientClaim as string,
+                            eventClaim: "",
                         }),
                     );
 
