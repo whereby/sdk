@@ -4,8 +4,7 @@
 
 ### Patch Changes
 
-- 0e44dbb: Clean up screenshare stream when removed
-
+- 0e44dbb: Clean up stream handling
 ## 2.8.2
 
 ### Patch Changes
