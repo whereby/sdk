@@ -1,3 +1,5 @@
+import { SignalIceServer, SignalSFUServer, SignalTurnServer } from "../webrtc";
+
 export interface Credentials {
     credentials: {
         uuid: string;
@@ -241,23 +243,34 @@ export type RoomJoinedErrors =
     | OrganizationAssistantNotFoundError
     | OrganizationAssistantNotEnabledError;
 
-export interface RoomJoinedSuccess {
-    room: {
-        mode: RoomMode;
-        isClaimed: boolean;
-        isLocked: boolean;
-        clients: SignalClient[];
-        knockers: SignalKnocker[];
-        spotlights: Spotlight[];
-        session: {
-            createdAt: string;
-            id: string;
-        } | null;
+export type SignalRoom = {
+    clients: SignalClient[];
+    iceServers: {
+        iceServers: SignalIceServer[];
     };
+    isClaimed: boolean;
+    isLocked: boolean;
+    knockers: SignalKnocker[];
+    mediaserverConfigTtlSeconds: number;
+    mode: RoomMode;
+    name: string;
+    organizationId: string;
+    spotlights: Spotlight[];
+    session: {
+        createdAt: string;
+        id: string;
+    } | null;
+    sfuServer?: SignalSFUServer;
+    turnServers: SignalTurnServer[];
+};
+
+export interface RoomJoinedSuccess {
+    room: SignalRoom;
     selfId: string;
     breakoutGroup?: string | null;
     clientClaim: string;
     breakout?: BreakoutConfig;
+    eventClaim: string;
 }
 
 export type RoomJoinedEvent = RoomJoinedErrors | RoomJoinedSuccess;

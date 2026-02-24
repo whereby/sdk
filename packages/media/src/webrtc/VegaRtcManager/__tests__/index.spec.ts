@@ -3,11 +3,12 @@ import VegaRtcManager from "../";
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
-import { CustomMediaStreamTrack } from "../../types";
+import { CustomMediaStreamTrack, RtcManagerOptions } from "../../types";
 import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
 import { CAMERA_STREAM_ID } from "../../../model";
+import { SignalRoom } from "../../../utils";
 
 jest.mock("../../../utils/getMediasoupDevice");
 const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
@@ -73,12 +74,14 @@ describe("VegaRtcManager", () => {
         rtcManager = new VegaRtcManager({
             selfId: helpers.randomString("client-"),
             room: {
-                iceServers: [],
+                iceServers: {
+                    iceServers: [],
+                },
                 sfuServer: { url: sfuWebsocketServerUrl },
                 name: "name",
                 organizationId: "id",
                 isClaimed: true,
-            },
+            } as unknown as SignalRoom,
             emitter,
             serverSocket,
             webrtcProvider,
@@ -95,7 +98,7 @@ describe("VegaRtcManager", () => {
 
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
-        const room = { name: helpers.randomString("/room-"), iceServers: {} };
+        const room = { name: helpers.randomString("/room-"), iceServers: {} } as SignalRoom;
 
         it("gets a mediasoup device", async () => {
             const device = jest.fn();
@@ -108,7 +111,7 @@ describe("VegaRtcManager", () => {
                 serverSocket,
                 webrtcProvider,
                 features: { isNodeSdk: true },
-            });
+            } as RtcManagerOptions);
 
             expect(getMediasoupDeviceAsync).toHaveBeenCalledWith({ isNodeSdk: true });
             expect(await rtcManager._mediasoupDeviceInitializedAsync).toEqual(device);

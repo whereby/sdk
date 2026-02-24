@@ -12,7 +12,7 @@ import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
-import { CAMERA_STREAM_ID } from "../../src";
+import { CAMERA_STREAM_ID, RtcManagerOptions, SignalRoom } from "../../src";
 
 const originalNavigator = global.navigator;
 
@@ -91,14 +91,15 @@ describe("P2pRtcManager", () => {
         features = {},
         roomData = {},
     } = {}) {
+        const room = Object.assign({ name: roomName, iceServers: { iceServers } }, roomData) as unknown as SignalRoom;
         return new P2pRtcManager({
             selfId,
-            room: Object.assign({ name: roomName, iceServers: { iceServers } }, roomData),
+            room,
             emitter: _emitter,
             serverSocket: _serverSocket,
             webrtcProvider,
             features,
-        });
+        } as RtcManagerOptions);
     }
 
     afterEach(() => {
@@ -284,7 +285,6 @@ describe("P2pRtcManager", () => {
 
                 describe("MEDIASERVER_CONFIG", () => {
                     const mediaserverConfigTtlSeconds = 3600;
-                    const sfuServer = { url: helpers.randomString("sfu-") + ":443" };
                     const iceServers = helpers.createIceServersConfig();
 
                     function mockServerResponse() {
@@ -292,7 +292,6 @@ describe("P2pRtcManager", () => {
                         serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, {
                             mediaserverConfigTtlSeconds,
                             iceServers,
-                            sfuServer,
                         });
                     }
 
@@ -309,7 +308,6 @@ describe("P2pRtcManager", () => {
                         mockServerResponse();
 
                         expect(rtcManager._iceServers).toEqual(iceServers);
-                        expect(rtcManager._sfuServer).toEqual(sfuServer);
                     });
 
                     it("issues refresh request when TTL expires", () => {

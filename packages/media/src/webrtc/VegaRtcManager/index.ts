@@ -5,7 +5,13 @@ import { v4 as uuidv4 } from "uuid";
 import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
 import createMicAnalyser from "../VegaMicAnalyser";
-import { CustomMediaStreamTrack, RtcManager } from "../types";
+import {
+    CustomMediaStreamTrack,
+    RtcManager,
+    RtcManagerOptions,
+    SignalMediaServerConfig,
+    SignalSFUServer,
+} from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
 import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
 
@@ -98,7 +104,7 @@ export default class VegaRtcManager implements RtcManager {
     _fetchMediaServersTimer: any;
     _iceServers: any;
     _turnServers: any;
-    _sfuServer: any;
+    _sfuServer?: SignalSFUServer;
     _sfuServers?: HostListEntryOptionalDC[];
     _mediaserverConfigTtlSeconds: any;
     _videoTrackBeingMonitored?: CustomMediaStreamTrack;
@@ -109,24 +115,8 @@ export default class VegaRtcManager implements RtcManager {
     _cpuOveruseDetected: boolean;
     analytics: VegaAnalytics;
 
-    constructor({
-        selfId,
-        room,
-        emitter,
-        serverSocket,
-        webrtcProvider,
-        features,
-        eventClaim,
-    }: {
-        selfId: any;
-        room: any;
-        emitter: any;
-        serverSocket: any;
-        webrtcProvider: any;
-        features?: any;
-        eventClaim?: string;
-    }) {
-        const { session, iceServers, turnServers, sfuServer, sfuServers, mediaserverConfigTtlSeconds } = room;
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim }: RtcManagerOptions) {
+        const { session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
         this._room = room;
@@ -204,7 +194,6 @@ export default class VegaRtcManager implements RtcManager {
 
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
-            sfuServers,
             iceServers: iceServers?.iceServers || [],
             turnServers: turnServers || [],
             mediaserverConfigTtlSeconds,
@@ -242,22 +231,17 @@ export default class VegaRtcManager implements RtcManager {
         iceServers,
         turnServers,
         sfuServer,
-        sfuServers,
         mediaserverConfigTtlSeconds,
-    }: {
-        iceServers: any;
-        turnServers: any;
-        sfuServer: any;
-        sfuServers: any;
-        mediaserverConfigTtlSeconds: any;
-    }) {
+    }: SignalMediaServerConfig) {
         this._iceServers = iceServers;
         this._turnServers = turnServers;
-        this._sfuServer = sfuServer;
-        this._sfuServers = sfuServers;
+        
+        if (sfuServer) {
+            this._sfuServer = sfuServer;
+        }
 
         // support packing list of sfuServers inside existing sfuServer prop
-        if (!sfuServers && sfuServer?.fallbackServers) {
+        if (sfuServer?.fallbackServers) {
             this._sfuServers = sfuServer.fallbackServers.map((entry: any) => ({
                 host: entry.host || entry.fqdn,
                 dc: entry.dc,
@@ -271,7 +255,7 @@ export default class VegaRtcManager implements RtcManager {
             this._features.sfuServersOverride ||
                 this._sfuServers ||
                 this._features.sfuServerOverrideHost ||
-                sfuServer.url,
+                this._sfuServer?.url,
         );
 
         const iceServersList = {
@@ -322,7 +306,7 @@ export default class VegaRtcManager implements RtcManager {
         this._socketListenerDeregisterFunctions.push(
             () => this._clearMediaServersRefresh(),
 
-            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data: any) => {
+            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data: SignalMediaServerConfig) => {
                 if (data.error) {
                     logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
                     return;
@@ -377,7 +361,7 @@ export default class VegaRtcManager implements RtcManager {
                 this._features.sfuServersOverride ||
                 this._sfuServers ||
                 this._features.sfuServerOverrideHost ||
-                this._sfuServer.url;
+                this._sfuServer?.url;
 
             this._vegaConnectionManager = createVegaConnectionManager({
                 initialHostList: hostList,
