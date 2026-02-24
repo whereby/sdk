@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.3
+
+### Patch Changes
+
+- 0e44dbb: Clean up screenshare stream when removed
+
 ## 2.8.2
 
 ### Patch Changes
