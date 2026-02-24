@@ -2,7 +2,7 @@
     "name": "@whereby.com/assistant-sdk",
     "description": "Assistant SDK for whereby.com",
     "author": "Whereby AS",
-    "version": "1.2.23",
+    "version": "1.2.24",
     "license": "MIT",
     "scripts": {
         "clean": "rimraf dist node_modules .turbo",

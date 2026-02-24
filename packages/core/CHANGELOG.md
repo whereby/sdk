@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.6.3
+
+### Patch Changes
+
+- 0e44dbb: Remove deprecated media stream handling
+- Updated dependencies [0e44dbb]
+    - @whereby.com/media@2.8.3
+
 ## 1.6.2
 
 ### Patch Changes
