@@ -7,13 +7,7 @@ export enum RtcEventNames {
 }
 
 export interface RtcManager {
-    acceptNewStream: ({
-        clientId,
-        streamId,
-    }: {
-        clientId: string;
-        streamId: string;
-    }) => void;
+    acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
     addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean): void;
     disconnect(streamId: string, eventClaim?: string): void;
     disconnectAll(): void;
