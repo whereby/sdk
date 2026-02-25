@@ -235,7 +235,7 @@ export default class VegaRtcManager implements RtcManager {
     }: SignalMediaServerConfig) {
         this._iceServers = iceServers;
         this._turnServers = turnServers;
-        
+
         if (sfuServer) {
             this._sfuServer = sfuServer;
         }

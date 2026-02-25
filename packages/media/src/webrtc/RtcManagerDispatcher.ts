@@ -23,10 +23,9 @@ export default class RtcManagerDispatcher {
         this.emitter = emitter;
         this.currentManager = null;
         serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: RoomJoinedEvent) => {
-            const { error } = payload as RoomJoinedErrors;
-            if (error) return; // ignore error responses which lack room
+            if ("error" in payload) return; // ignore error responses which lack room
 
-            const { room, selfId, eventClaim } = payload as RoomJoinedSuccess;
+            const { room, selfId, eventClaim } = payload;
             const config = {
                 selfId,
                 room,

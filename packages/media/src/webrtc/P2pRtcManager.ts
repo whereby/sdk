@@ -20,7 +20,7 @@ import {
     SignalMediaServerConfig,
     UnifiedPlanSDP,
 } from "./types";
-import { RoomJoinedErrors, RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
+import { RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
 
@@ -384,8 +384,7 @@ export default class P2pRtcManager implements RtcManager {
 
             // if this is a reconnect to signal-server during screen-share we must let signal-server know
             this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: RoomJoinedEvent) => {
-                const { error } = payload as RoomJoinedErrors;
-                if (error || !this._wasScreenSharing) {
+                if ("error" in payload || !this._wasScreenSharing) {
                     return;
                 }
 
