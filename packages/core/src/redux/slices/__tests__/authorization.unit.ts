@@ -8,7 +8,6 @@ import {
 } from "../authorization";
 import { signalEvents } from "../signalConnection/actions";
 import { doAppStart } from "../app";
-import { SignalRoom } from "@whereby.com/media";
 
 describe("authorizationSlice", () => {
     describe("reducers", () => {
@@ -78,7 +77,14 @@ describe("authorizationSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
-                            } as unknown as SignalRoom,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
+                            },
                         }),
                     );
                     expect(result.roleName).toEqual("host");

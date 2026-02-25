@@ -12,7 +12,6 @@ import {
     randomString,
     randomMediaStream,
 } from "../../../__mocks__/appMocks";
-import { SignalRoom } from "@whereby.com/media";
 
 describe("remoteParticipantsSlice", () => {
     describe("reducers", () => {
@@ -54,7 +53,14 @@ describe("remoteParticipantsSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
-                            } as unknown as SignalRoom,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
+                            },
                         }),
                     );
 

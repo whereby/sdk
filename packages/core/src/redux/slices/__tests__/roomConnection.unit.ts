@@ -1,4 +1,3 @@
-import { SignalRoom } from "@whereby.com/media";
 import { oneOf } from "../../../__mocks__/appMocks";
 import { roomConnectionSlice, selectShouldConnectRoom } from "../roomConnection";
 import { signalEvents } from "../signalConnection/actions";
@@ -59,7 +58,14 @@ describe("roomConnectionSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
-                            } as unknown as SignalRoom,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
+                            },
                         }),
                     );
 

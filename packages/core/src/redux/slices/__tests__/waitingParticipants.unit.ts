@@ -1,6 +1,5 @@
 import { waitingParticipantsSlice, waitingParticipantsSliceInitialState } from "../waitingParticipants";
 import { signalEvents } from "../signalConnection/actions";
-import { SignalRoom } from "@whereby.com/media";
 
 describe("reducer", () => {
     describe("signalEvents.roomJoined", () => {
@@ -45,7 +44,14 @@ describe("reducer", () => {
                             session: null,
                             isClaimed: true,
                             isLocked: true,
-                        } as unknown as SignalRoom,
+                            iceServers: {
+                                iceServers: [],
+                            },
+                            mediaserverConfigTtlSeconds: 0,
+                            name: "",
+                            organizationId: "",
+                            turnServers: [],
+                        },
                     }),
                 );
 

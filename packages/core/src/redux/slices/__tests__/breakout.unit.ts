@@ -1,7 +1,6 @@
 import { breakoutSlice, breakoutSliceInitialState } from "../breakout";
 import { signalEvents } from "../signalConnection";
 import { randomLocalParticipant, randomSignalClient } from "../../../__mocks__/appMocks";
-import { SignalRoom } from "@whereby.com/media";
 
 const breakoutConfig = {
     assignments: null,
@@ -64,7 +63,14 @@ describe("breakoutSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
-                            } as unknown as SignalRoom,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
+                            },
                             breakout: breakoutConfig,
                         }),
                     );

@@ -1,7 +1,6 @@
 import { roomSlice, roomSliceInitialState, selectScreenshares } from "../room";
 import { signalEvents } from "../signalConnection/actions";
 import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
-import { SignalRoom } from "@whereby.com/media";
 
 describe("roomSlice", () => {
     describe("reducers", () => {
@@ -35,7 +34,14 @@ describe("roomSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
-                            } as unknown as SignalRoom,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
+                            },
                         }),
                     );
                     expect(result.isLocked).toEqual(true);
