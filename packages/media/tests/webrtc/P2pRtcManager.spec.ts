@@ -12,7 +12,7 @@ import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
-import { CAMERA_STREAM_ID, RtcManagerOptions, SignalRoom } from "../../src";
+import { CAMERA_STREAM_ID } from "../../src";
 
 const originalNavigator = global.navigator;
 
@@ -91,15 +91,30 @@ describe("P2pRtcManager", () => {
         features = {},
         roomData = {},
     } = {}) {
-        const room = Object.assign({ name: roomName, iceServers: { iceServers } }, roomData) as unknown as SignalRoom;
         return new P2pRtcManager({
             selfId,
-            room,
+            room: {
+                name: roomName,
+                iceServers: {
+                    iceServers,
+                },
+                clients: [],
+                isClaimed: false,
+                isLocked: false,
+                knockers: [],
+                mediaserverConfigTtlSeconds: 3600,
+                mode: "group",
+                organizationId: "",
+                spotlights: [],
+                session: null,
+                turnServers: [],
+                ...roomData,
+            },
             emitter: _emitter,
             serverSocket: _serverSocket,
             webrtcProvider,
             features,
-        } as RtcManagerOptions);
+        });
     }
 
     afterEach(() => {

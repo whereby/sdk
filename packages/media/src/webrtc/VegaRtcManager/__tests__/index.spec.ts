@@ -3,12 +3,11 @@ import VegaRtcManager from "../";
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
-import { CustomMediaStreamTrack, RtcManagerOptions } from "../../types";
+import { CustomMediaStreamTrack } from "../../types";
 import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
 import { CAMERA_STREAM_ID } from "../../../model";
-import { SignalRoom } from "../../../utils";
 
 jest.mock("../../../utils/getMediasoupDevice");
 const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
@@ -81,7 +80,15 @@ describe("VegaRtcManager", () => {
                 name: "name",
                 organizationId: "id",
                 isClaimed: true,
-            } as unknown as SignalRoom,
+                clients: [],
+                isLocked: false,
+                knockers: [],
+                mediaserverConfigTtlSeconds: 3600,
+                mode: "group",
+                spotlights: [],
+                session: null,
+                turnServers: [],
+            },
             emitter,
             serverSocket,
             webrtcProvider,
@@ -98,7 +105,6 @@ describe("VegaRtcManager", () => {
 
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
-        const room = { name: helpers.randomString("/room-"), iceServers: {} } as SignalRoom;
 
         it("gets a mediasoup device", async () => {
             const device = jest.fn();
@@ -106,12 +112,28 @@ describe("VegaRtcManager", () => {
 
             const rtcManager = new VegaRtcManager({
                 selfId,
-                room,
+                eventClaim: "claim",
+                room: {
+                    name: helpers.randomString("/room-"),
+                    turnServers: [],
+                    clients: [],
+                    isLocked: false,
+                    isClaimed: false,
+                    iceServers: {
+                        iceServers: [],
+                    },
+                    knockers: [],
+                    mediaserverConfigTtlSeconds: 0,
+                    mode: "group",
+                    organizationId: "",
+                    spotlights: [],
+                    session: null,
+                },
                 emitter,
                 serverSocket,
                 webrtcProvider,
                 features: { isNodeSdk: true },
-            } as RtcManagerOptions);
+            });
 
             expect(getMediasoupDeviceAsync).toHaveBeenCalledWith({ isNodeSdk: true });
             expect(await rtcManager._mediasoupDeviceInitializedAsync).toEqual(device);

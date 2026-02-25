@@ -8,9 +8,9 @@ import createMicAnalyser from "../VegaMicAnalyser";
 import {
     CustomMediaStreamTrack,
     RtcManager,
-    RtcManagerOptions,
     SignalMediaServerConfig,
     SignalSFUServer,
+    VegaRtcManagerOptions,
 } from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
 import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
@@ -115,7 +115,7 @@ export default class VegaRtcManager implements RtcManager {
     _cpuOveruseDetected: boolean;
     analytics: VegaAnalytics;
 
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim }: RtcManagerOptions) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim }: VegaRtcManagerOptions) {
         const { session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;

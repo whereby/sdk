@@ -1,4 +1,4 @@
-import { SignalRoom, RoomJoinedSuccess, ServerSocket } from "../utils";
+import { SignalRoom, ServerSocket } from "../utils";
 
 /*
     RTC
@@ -10,15 +10,18 @@ export enum RtcEventNames {
 
 export type RtcEventEmitter = { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
 
-export type RtcManagerOptions = {
+export interface RtcManagerOptions {
     selfId: string;
     room: SignalRoom;
     emitter: RtcEventEmitter;
     serverSocket: ServerSocket;
     webrtcProvider: any;
     features: any;
+}
+
+export interface VegaRtcManagerOptions extends RtcManagerOptions {
     eventClaim: string;
-};
+}
 
 export interface RtcManager {
     acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
