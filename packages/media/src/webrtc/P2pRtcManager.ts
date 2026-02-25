@@ -635,14 +635,6 @@ export default class P2pRtcManager implements RtcManager {
             iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
         };
 
-        // TODO: constraints are not used, decide what to do about them.
-        const constraints: any = { optional: [] };
-        // rtcstats integration
-        constraints.optional.push({ rtcStatsRoomSessionId: this._roomSessionId });
-        constraints.optional.push({ rtcStatsClientId: this._selfId });
-        constraints.optional.push({ rtcStatsPeerId: peerConnectionId });
-        constraints.optional.push({ rtcStatsConferenceId: this._roomName });
-
         // Chrome specific PC configuration.
         if (browserName === "chrome") {
             peerConnectionConfig.sdpSemantics = "unified-plan";
