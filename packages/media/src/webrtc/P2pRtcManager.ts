@@ -645,9 +645,6 @@ export default class P2pRtcManager implements RtcManager {
 
         // Chrome specific PC configuration.
         if (browserName === "chrome") {
-            constraints.optional.push({
-                googCpuOveruseDetection: true,
-            });
             peerConnectionConfig.sdpSemantics = "unified-plan";
         }
 
