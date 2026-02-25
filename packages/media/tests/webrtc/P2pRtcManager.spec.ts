@@ -518,6 +518,62 @@ describe("P2pRtcManager", () => {
         });
     });
 
+    describe("closed session", () => {
+        it("should not replace tracks in PC when session is closed", async () => {
+            const rtcManager = createRtcManager();
+            const session = await rtcManager._connect(clientId);
+            jest.spyOn(session, "replaceTrack");
+            session.close();
+
+            await rtcManager._replaceTrackToPeerConnections(
+                helpers.createMockedMediaStreamTrack({ kind: "audio" }),
+                helpers.createMockedMediaStreamTrack({ kind: "audio" }),
+            );
+
+            expect(session.replaceTrack).not.toHaveBeenCalled();
+        });
+
+        it("should not do forced renegotiation for PC when session is closed", async () => {
+            const rtcManager = createRtcManager();
+            const session = await rtcManager._connect(clientId);
+            jest.spyOn(session, "removeStream");
+            session.close();
+
+            rtcManager.removeStream("id", helpers.createMockedMediaStream(), "id");
+
+            expect(session.removeStream).not.toHaveBeenCalled();
+        });
+
+        it("should not add ICE candidates to PC when session is closed", async () => {
+            const rtcManager = createRtcManager();
+            rtcManager.setupSocketListeners();
+            const session = await rtcManager._connect(clientId);
+            jest.spyOn(session, "addIceCandidate");
+            session.close();
+
+            serverSocketStub.emitFromServer(RELAY_MESSAGES.ICE_CANDIDATE, { clientId });
+            serverSocketStub.emitFromServer(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, { clientId });
+
+            expect(session.addIceCandidate).not.toHaveBeenCalled();
+        });
+
+        it("should not handle offer/answer for PC when session is closed", async () => {
+            const rtcManager = createRtcManager();
+            rtcManager.setupSocketListeners();
+            const session = await rtcManager._connect(clientId);
+            jest.spyOn(session, "handleOffer");
+            jest.spyOn(session, "handleAnswer");
+            session.close();
+
+            const data = { clientId, message: { sdp: "" } };
+            serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, data);
+            serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_ANSWER, data);
+
+            expect(session.handleOffer).not.toHaveBeenCalled();
+            expect(session.handleAnswer).not.toHaveBeenCalled();
+        });
+    });
+
     describe("_connect", () => {
         const iceServers = helpers.createIceServersConfig();
 
