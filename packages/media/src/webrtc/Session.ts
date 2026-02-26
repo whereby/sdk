@@ -22,6 +22,7 @@ interface P2PSessionOptions {
 
 export default class Session {
     peerConnectionId: any;
+    _closed: boolean;
     relayCandidateSeen: boolean;
     serverReflexiveCandidateSeen: boolean;
     publicHostCandidateSeen: boolean;
@@ -57,6 +58,7 @@ export default class Session {
         deprioritizeH264Encoding,
         incrementAnalyticMetric,
     }: P2PSessionOptions) {
+        this._closed = false;
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
@@ -251,6 +253,10 @@ export default class Session {
         return this.pc.signalingState === "stable" && !this.isOperationPending;
     }
 
+    isClosed() {
+        return this.pc.connectionState === "closed" || this._closed;
+    }
+
     close() {
         const pc = this.pc;
         if (!pc) {
@@ -260,6 +266,7 @@ export default class Session {
         pc.oniceconnectionstatechange = null;
         pc.onicecandidate = null;
         pc.ontrack = null;
+        this._closed = true;
         try {
             // do not handle state change events when we close the connection explicitly
             pc.close();
