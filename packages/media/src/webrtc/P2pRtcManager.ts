@@ -683,9 +683,11 @@ export default class P2pRtcManager implements RtcManager {
             }
             if (session.streamIds.indexOf(stream.id) === -1) {
                 session.streamIds.push(stream.id);
-                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
+                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                     clientId,
                     stream,
+                    streamId: stream.id,
+                    streamType: "webcam",
                 });
             }
         };

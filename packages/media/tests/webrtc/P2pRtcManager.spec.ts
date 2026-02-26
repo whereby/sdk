@@ -381,8 +381,13 @@ describe("P2pRtcManager", () => {
 
         describe("peerConnection callback", () => {
             describe("ontrack", () => {
-                const fakeStream = helpers.randomString("stream-");
-                const fakeTrack = helpers.randomString("track-");
+                const fakeStreamId = helpers.randomString("stream-");
+                const fakeStream = {
+                    id: fakeStreamId,
+                };
+                const fakeTrack = {
+                    id: helpers.randomString("track-"),
+                };
                 it("broadcasts a STREAM_ADDED event on the root scope", async () => {
                     const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
 
@@ -391,6 +396,8 @@ describe("P2pRtcManager", () => {
                     expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                         clientId,
                         stream: fakeStream,
+                        streamId: fakeStreamId,
+                        streamType: "webcam",
                     });
                 });
 
