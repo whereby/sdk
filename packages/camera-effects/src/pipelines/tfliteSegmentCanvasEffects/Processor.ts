@@ -12,7 +12,7 @@ import { EventEmitter } from "events";
 import { createCanvas } from "../shared";
 import { createCanvasEngine } from "./engines/canvas";
 import { createWebGLEngine } from "./engines/webgl";
-import TimerWorker from "web-worker:../timer.worker";
+import TimerWorker from "web-worker:./timer.worker";
 
 class Processor extends EventEmitter {
     constructor({ setup, params, videoWidth, videoHeight, emit }) {
