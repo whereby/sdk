@@ -715,8 +715,8 @@ importers:
         specifier: ^9.0.5
         version: 9.0.5
       mediasoup-client:
-        specifier: 3.15.7
-        version: 3.15.7
+        specifier: 3.18.7
+        version: 3.18.7
       rtcstats:
         specifier: github:whereby/rtcstats#5.4.1
         version: https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d
@@ -2655,6 +2655,14 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
+  '@lukeed/csprng@1.1.0':
+    resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
+    engines: {node: '>=8'}
+
+  '@lukeed/uuid@2.0.1':
+    resolution: {integrity: sha512-qC72D4+CDdjGqJvkFMMEAtancHUQ7/d/tAiHf64z8MopFDmcrtbcJuerDtFceuAfQJ2pDSfCKCtbqoGBNnwg0w==}
+    engines: {node: '>=8'}
+
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
 
@@ -4437,8 +4445,8 @@ packages:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
 
-  awaitqueue@3.2.4:
-    resolution: {integrity: sha512-aZMQSpozgcAfKFLkhTRUMtiDo40EUb8KkXBrI2uHOysDzgRt/prnrt0oh9N8Mp7tRKtusmWxOimt8npn1vorug==}
+  awaitqueue@3.3.0:
+    resolution: {integrity: sha512-zLxDhzQbzHmOyvxi7g3OlfR7jLrcmElStPxfLPpJkrFSDm71RSrY/MvsDA8Btlx8X1nOHUzGhQvc6bdUjL2f2w==}
     engines: {node: '>=20'}
 
   axe-core@4.10.3:
@@ -4575,10 +4583,6 @@ packages:
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
-
-  browser-dtector@4.1.0:
-    resolution: {integrity: sha512-ZnLAE4aknz8f7UWJ9/QJ9rNlHjBi59aVu6a73WGnUUAIXak6+2AbY/I1fnRPJhuqn94Lce63u9ecKNP+D9f71w==}
-    engines: {node: '>=16'}
 
   browserslist@4.25.1:
     resolution: {integrity: sha512-KGj0KoOMXLpSNkkEI6Z6mShmQy0bc1I+T7K9N81k4WWMrfz+6fQ6es80B/YLAeRoKvjYE1YSHHOW1qe9xIVzHw==}
@@ -5722,9 +5726,9 @@ packages:
     resolution: {integrity: sha512-hMQ4CX1p1izmuLYyZqLMO/qGNw10wSv9QDCPfzXfyFrOaCSSoRfqE1Kf1s5an66J5JZC62NewG+mK49jOCtQew==}
     engines: {node: '>=4'}
 
-  fake-mediastreamtrack@2.1.4:
-    resolution: {integrity: sha512-dvhHee735zKWp6RQ2YJW8dkwsT42br54tqMGDmsxzXbRPOsDv+0njbZW29B+ObS+AJlIPDIQFGEAJTr1OKh6pw==}
-    engines: {node: '>=18'}
+  fake-mediastreamtrack@2.2.1:
+    resolution: {integrity: sha512-SITLc7UTDirSdgLGORrlmqjWLJtbtfIz/xO7DwVbJH3f0ds+NQok4ccl/WEzz49NSgiUlXf2wDW0+y5C+TO6EA==}
+    engines: {node: '>=20'}
 
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
@@ -5989,12 +5993,12 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@9.3.5:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
@@ -6040,9 +6044,9 @@ packages:
     resolution: {integrity: sha512-5gghUc24tP9HRznNpV2+FIoq3xKkj5dTQqf4v0CpdPbFVwFkWoxOM+o+2OC9ZSvjEMTjfmG9QT+gcvggTwW1zw==}
     engines: {node: '>= 10.x'}
 
-  h264-profile-level-id@2.2.3:
-    resolution: {integrity: sha512-LhhB3zIIu2TTZFyBC57s+pBddH6eTz8NMr6CwlWWRdy2kurhxxOU5TS0CguJ3i9MEc2B6a0aElAwBxMqS6FdLA==}
-    engines: {node: '>=18'}
+  h264-profile-level-id@2.3.2:
+    resolution: {integrity: sha512-hnq1UDlw7WGJV6GCr/g7wnkHYUjdAY2bis9rgn2JqSdQS2WfVvnt1ZE9g8nTguracodf5LLKZOwURsDN49YtBQ==}
+    engines: {node: '>=20'}
 
   has-bigints@1.1.0:
     resolution: {integrity: sha512-R3pbpkcIqv2Pm3dUwgjclDRVmWpTJW2DcMzcIhEXEx1oh/CEMObMm3KLmRJOdvhM7o4uQBnwr8pzRK2sJWIqfg==}
@@ -6966,9 +6970,9 @@ packages:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
 
-  mediasoup-client@3.15.7:
-    resolution: {integrity: sha512-nQQQKH5HaLH+8JC+bm89ry+fg0vVV0rHHqR34Ch1zzrmmBkonifePbI0bBHNAw/rDJP/I07yA84lu9Egn26lCw==}
-    engines: {node: '>=18'}
+  mediasoup-client@3.18.7:
+    resolution: {integrity: sha512-110f+zYEvSllYoF6didbIznIvSrTwMY9CqDhdWpq1M0goX1HWLoBdguiYB/MqcA858R2dOKDarP1R4vv5RAg1w==}
+    engines: {node: '>=20'}
 
   memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
@@ -8381,6 +8385,10 @@ packages:
 
   sdp-transform@2.15.0:
     resolution: {integrity: sha512-KrOH82c/W+GYQ0LHqtr3caRpM3ITglq3ljGUIb8LTki7ByacJZ9z+piSGiwZDsRyhQbYBOBJgr2k6X4BZXi3Kw==}
+    hasBin: true
+
+  sdp-transform@3.0.0:
+    resolution: {integrity: sha512-gfYVRGxjHkGF2NPeUWHw5u6T/KGFtS5/drPms73gaSuMaVHKCY3lpLnGDfswVQO0kddeePoti09AwhYP4zA8dQ==}
     hasBin: true
 
   sdp@3.2.1:
@@ -11711,6 +11719,12 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.2
     optional: true
 
+  '@lukeed/csprng@1.1.0': {}
+
+  '@lukeed/uuid@2.0.1':
+    dependencies:
+      '@lukeed/csprng': 1.1.0
+
   '@manypkg/find-root@1.1.0':
     dependencies:
       '@babel/runtime': 7.27.6
@@ -13759,7 +13773,7 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.1.0
 
-  awaitqueue@3.2.4(supports-color@10.2.2):
+  awaitqueue@3.3.0(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -13983,8 +13997,6 @@ snapshots:
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
-
-  browser-dtector@4.1.0: {}
 
   browserslist@4.25.1:
     dependencies:
@@ -15385,9 +15397,9 @@ snapshots:
       iconv-lite: 0.4.24
       tmp: 0.0.33
 
-  fake-mediastreamtrack@2.1.4:
+  fake-mediastreamtrack@2.2.1:
     dependencies:
-      uuid: 11.1.0
+      '@lukeed/uuid': 2.0.1
 
   fast-deep-equal@3.1.3: {}
 
@@ -15732,7 +15744,7 @@ snapshots:
   graphql@15.8.0:
     optional: true
 
-  h264-profile-level-id@2.2.3(supports-color@10.2.2):
+  h264-profile-level-id@2.3.2(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -16885,17 +16897,16 @@ snapshots:
 
   media-typer@1.1.0: {}
 
-  mediasoup-client@3.15.7:
+  mediasoup-client@3.18.7:
     dependencies:
       '@types/debug': 4.1.12
       '@types/events-alias': '@types/events@3.0.3'
-      awaitqueue: 3.2.4(supports-color@10.2.2)
-      browser-dtector: 4.1.0
+      awaitqueue: 3.3.0(supports-color@10.2.2)
       debug: 4.4.3(supports-color@10.2.2)
       events-alias: events@3.3.0
-      fake-mediastreamtrack: 2.1.4
-      h264-profile-level-id: 2.2.3(supports-color@10.2.2)
-      sdp-transform: 2.15.0
+      fake-mediastreamtrack: 2.2.1
+      h264-profile-level-id: 2.3.2(supports-color@10.2.2)
+      sdp-transform: 3.0.0
       supports-color: 10.2.2
 
   memoize-one@5.2.1: {}
@@ -18908,6 +18919,8 @@ snapshots:
       ajv-keywords: 5.1.0(ajv@8.17.1)
 
   sdp-transform@2.15.0: {}
+
+  sdp-transform@3.0.0: {}
 
   sdp@3.2.1: {}
 
