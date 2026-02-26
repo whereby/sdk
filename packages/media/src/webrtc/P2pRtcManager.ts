@@ -1069,7 +1069,7 @@ export default class P2pRtcManager implements RtcManager {
                 .then((offer) => {
                     if (!offer.sdp) {
                         this.analytics.P2PCreateOfferNoSDP++;
-                        rtcStats.sendEvent("P2PCreateOfferNoSDP", { sdpType: offer.type });
+                        rtcStats.sendEvent("P2PCreateOfferNoSDP", {});
                         throw new Error("SDP undefined while creating offer");
                     }
                     // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
