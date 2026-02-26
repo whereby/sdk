@@ -1,10 +1,17 @@
 # @whereby.com/media
 
+## 2.8.4
+
+### Patch Changes
+
+- 8475b93: Remove unused code and add typing for RTC managers
+
 ## 2.8.3
 
 ### Patch Changes
 
 - 0e44dbb: Clean up stream handling
+
 ## 2.8.2
 
 ### Patch Changes
