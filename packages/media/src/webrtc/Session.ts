@@ -210,14 +210,14 @@ export default class Session {
                     this._incrementAnalyticMetric("P2PCreateAnswerNoSDP");
                     rtcStats.sendEvent("P2PCreateAnswerNoSDP", {});
                     throw new Error("SDP undefined while creating answer");
+                } else {
+                    answerToSignal = {
+                        sdp: answer.sdp,
+                        type: answer.type,
+                    };
+
+                    return this.pc.setLocalDescription(answer);
                 }
-
-                answerToSignal = {
-                    sdp: answer.sdp as string,
-                    type: answer.type,
-                };
-
-                return this.pc.setLocalDescription(answer);
             })
             .then(() => {
                 return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
