@@ -26,6 +26,7 @@ describe("reducer", () => {
                         selfId: "self-id",
                         breakoutGroup: null,
                         clientClaim: "client-claim",
+                        eventClaim: "",
                         room: {
                             mode: "normal",
                             clients: [],
@@ -43,6 +44,13 @@ describe("reducer", () => {
                             session: null,
                             isClaimed: true,
                             isLocked: true,
+                            iceServers: {
+                                iceServers: [],
+                            },
+                            mediaserverConfigTtlSeconds: 0,
+                            name: "",
+                            organizationId: "",
+                            turnServers: [],
                         },
                     }),
                 );

@@ -93,7 +93,23 @@ describe("P2pRtcManager", () => {
     } = {}) {
         return new P2pRtcManager({
             selfId,
-            room: Object.assign({ name: roomName, iceServers: { iceServers } }, roomData),
+            room: {
+                name: roomName,
+                iceServers: {
+                    iceServers,
+                },
+                clients: [],
+                isClaimed: false,
+                isLocked: false,
+                knockers: [],
+                mediaserverConfigTtlSeconds: 3600,
+                mode: "group",
+                organizationId: "",
+                spotlights: [],
+                session: null,
+                turnServers: [],
+                ...roomData,
+            },
             emitter: _emitter,
             serverSocket: _serverSocket,
             webrtcProvider,
@@ -284,7 +300,6 @@ describe("P2pRtcManager", () => {
 
                 describe("MEDIASERVER_CONFIG", () => {
                     const mediaserverConfigTtlSeconds = 3600;
-                    const sfuServer = { url: helpers.randomString("sfu-") + ":443" };
                     const iceServers = helpers.createIceServersConfig();
 
                     function mockServerResponse() {
@@ -292,7 +307,6 @@ describe("P2pRtcManager", () => {
                         serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, {
                             mediaserverConfigTtlSeconds,
                             iceServers,
-                            sfuServer,
                         });
                     }
 
@@ -309,7 +323,6 @@ describe("P2pRtcManager", () => {
                         mockServerResponse();
 
                         expect(rtcManager._iceServers).toEqual(iceServers);
-                        expect(rtcManager._sfuServer).toEqual(sfuServer);
                     });
 
                     it("issues refresh request when TTL expires", () => {

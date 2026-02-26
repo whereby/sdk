@@ -51,8 +51,16 @@ describe("localParticipantSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
                             },
                             clientClaim: localParticipant.clientClaim as string,
+                            eventClaim: "",
                         }),
                     );
 

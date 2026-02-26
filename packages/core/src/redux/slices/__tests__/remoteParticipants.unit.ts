@@ -44,6 +44,7 @@ describe("remoteParticipantsSlice", () => {
                             ...localParticipant,
                             selfId: localClient.id,
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "group",
                                 clients: [localClient, remoteClient],
@@ -52,6 +53,13 @@ describe("remoteParticipantsSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
                             },
                         }),
                     );

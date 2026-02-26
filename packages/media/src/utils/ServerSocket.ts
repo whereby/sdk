@@ -4,7 +4,7 @@ import { ReconnectManager } from "./ReconnectManager";
 import { KeepAliveManager } from "./KeepAliveManager";
 import { PROTOCOL_RESPONSES } from "../model/protocol";
 import { RtcManager } from "../webrtc";
-import { RoomJoinedEvent, RoomJoinedErrors } from "./types";
+import { RoomJoinedEvent } from "./types";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -92,8 +92,7 @@ export class ServerSocket {
         if (this._serverSideDisconnectDurationLimitOn) this._keepAliveManager = new KeepAliveManager(this);
 
         this._socket.on("room_joined", (payload: RoomJoinedEvent) => {
-            const { error } = payload as RoomJoinedErrors;
-            if (!error) {
+            if (!("error" in payload)) {
                 this.joinRoomFinished = true;
             }
         });

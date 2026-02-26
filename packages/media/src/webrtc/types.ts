@@ -1,3 +1,5 @@
+import { SignalRoom, ServerSocket } from "../utils";
+
 /*
     RTC
 */
@@ -6,14 +8,23 @@ export enum RtcEventNames {
     stream_added = "stream_added",
 }
 
+export type RtcEventEmitter = { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
+
+export interface RtcManagerOptions {
+    selfId: string;
+    room: SignalRoom;
+    emitter: RtcEventEmitter;
+    serverSocket: ServerSocket;
+    webrtcProvider: any;
+    features: any;
+}
+
+export interface VegaRtcManagerOptions extends RtcManagerOptions {
+    eventClaim: string;
+}
+
 export interface RtcManager {
-    acceptNewStream: ({
-        clientId,
-        streamId,
-    }: {
-        clientId: string;
-        streamId: string;
-    }) => void;
+    acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
     addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean): void;
     disconnect(streamId: string, eventClaim?: string): void;
     disconnectAll(): void;
@@ -155,3 +166,30 @@ export interface CustomMediaStreamTrack extends MediaStreamTrack {
     effectTrack?: boolean;
     replaced?: boolean;
 }
+
+export type SignalIceServer = {
+    credential: string;
+    url: string;
+    urls: string[];
+    username: string;
+};
+
+export type SignalTurnServer = {
+    credential: string;
+    urls: string | string[];
+    username: string;
+};
+
+export type SignalMediaServerConfig = {
+    error?: any;
+    mediaserverConfigTtlSeconds: number;
+    iceServers: SignalIceServer[];
+    turnServers: SignalTurnServer[];
+    sfuServer?: SignalSFUServer;
+};
+
+export type SignalSFUServer = {
+    url: string;
+    fallbackUrl?: string;
+    fallbackServers?: any[];
+};

@@ -54,6 +54,7 @@ describe("breakoutSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: null,
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "normal",
                                 clients: [localClient, remoteClient],
@@ -62,6 +63,13 @@ describe("breakoutSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: false,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
                             },
                             breakout: breakoutConfig,
                         }),

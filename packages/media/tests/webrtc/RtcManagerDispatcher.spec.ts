@@ -35,27 +35,31 @@ describe("RtcManagerDispatcher", () => {
     });
 
     function mockEmitRoomJoined({
-        // selfId = helpers.randomString("client-"),
         selfId = uuidv4(),
         name = helpers.randomString("/room-"),
         sfuServer = null,
-        error = null,
+        error = false,
     }: {
         selfId?: string;
         name?: string;
         sfuServer?: any;
-        error?: any;
+        error?: boolean;
     } = {}) {
         let emitted;
         emitter.on(
             CONNECTION_STATUS.EVENTS.RTC_MANAGER_CREATED,
             ({ rtcManager }: { rtcManager: any }) => (emitted = rtcManager),
         );
-        serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.ROOM_JOINED, {
-            selfId,
-            room: { name, sfuServer, iceServers: {} },
-            error,
-        });
+        if (error) {
+            serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.ROOM_JOINED, {
+                error: "some-error",
+            });
+        } else {
+            serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.ROOM_JOINED, {
+                selfId,
+                room: { name, sfuServer, iceServers: {} },
+            });
+        }
         return emitted;
     }
 
@@ -70,7 +74,7 @@ describe("RtcManagerDispatcher", () => {
     });
 
     it("emits nothing when error is set", () => {
-        const rtcManager = mockEmitRoomJoined({ error: "yo" });
+        const rtcManager = mockEmitRoomJoined({ error: true });
         expect(rtcManager).toEqual(undefined);
     });
 

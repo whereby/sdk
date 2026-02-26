@@ -25,6 +25,7 @@ describe("roomSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: "",
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "normal",
                                 clients: [],
@@ -33,6 +34,13 @@ describe("roomSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
                             },
                         }),
                     );

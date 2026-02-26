@@ -51,6 +51,7 @@ describe("authorizationSlice", () => {
                             selfId: "selfId",
                             breakoutGroup: null,
                             clientClaim: "clientClaim",
+                            eventClaim: "",
                             room: {
                                 mode: "normal",
                                 clients: [
@@ -76,6 +77,13 @@ describe("authorizationSlice", () => {
                                 session: null,
                                 isClaimed: true,
                                 isLocked: true,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
                             },
                         }),
                     );

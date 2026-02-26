@@ -12,8 +12,15 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { CustomMediaStreamTrack, RtcManager, SDPRelayMessage, UnifiedPlanSDP } from "./types";
-import { RoomJoinedErrors, RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
+import {
+    CustomMediaStreamTrack,
+    RtcManager,
+    RtcManagerOptions,
+    SDPRelayMessage,
+    SignalMediaServerConfig,
+    UnifiedPlanSDP,
+} from "./types";
+import { RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
 
@@ -104,7 +111,6 @@ export default class P2pRtcManager implements RtcManager {
     _videoTrackOnEnded: () => void;
     _iceServers: any;
     _turnServers: any;
-    _sfuServer: any;
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: any;
     _wasScreenSharing: any;
@@ -117,22 +123,8 @@ export default class P2pRtcManager implements RtcManager {
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
 
-    constructor({
-        selfId,
-        room,
-        emitter,
-        serverSocket,
-        webrtcProvider,
-        features,
-    }: {
-        selfId: any;
-        room: any;
-        emitter: any;
-        serverSocket: ServerSocket;
-        webrtcProvider: any;
-        features: any;
-    }) {
-        const { name, session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
+        const { name, session, iceServers, turnServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
         this._roomName = name;
@@ -171,7 +163,6 @@ export default class P2pRtcManager implements RtcManager {
         };
 
         this._updateAndScheduleMediaServersRefresh({
-            sfuServer,
             iceServers: iceServers?.iceServers || [],
             turnServers: turnServers || [],
             mediaserverConfigTtlSeconds,
@@ -214,8 +205,8 @@ export default class P2pRtcManager implements RtcManager {
         return Object.keys(this.peerConnections).length;
     }
 
-    isInitializedWith({ selfId, roomName, isSfu }: { selfId: any; roomName: any; isSfu: any }) {
-        return this._selfId === selfId && this._roomName === roomName && isSfu === !!this._sfuServer;
+    isInitializedWith({ selfId, roomName, isSfu }: { selfId: string; roomName: string; isSfu: boolean }) {
+        return this._selfId === selfId && this._roomName === roomName && !isSfu;
     }
 
     supportsScreenShareAudio() {
@@ -324,7 +315,7 @@ export default class P2pRtcManager implements RtcManager {
         this._socketListenerDeregisterFunctions = [
             () => this._clearMediaServersRefresh(),
 
-            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data: any) => {
+            this._serverSocket.on(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, (data: SignalMediaServerConfig) => {
                 if (data.error) {
                     logger.warn("FETCH_MEDIASERVER_CONFIG failed:", data.error);
                     return;
@@ -393,8 +384,7 @@ export default class P2pRtcManager implements RtcManager {
 
             // if this is a reconnect to signal-server during screen-share we must let signal-server know
             this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: RoomJoinedEvent) => {
-                const { error } = payload as RoomJoinedErrors;
-                if (error || !this._wasScreenSharing) {
+                if ("error" in payload || !this._wasScreenSharing) {
                     return;
                 }
 
@@ -488,11 +478,6 @@ export default class P2pRtcManager implements RtcManager {
     _setConnectionStatus(session: any, newStatus: any, clientId: string) {
         const previousStatus = session.connectionStatus;
         if (previousStatus === newStatus) {
-            return;
-        }
-
-        // prevent showing 'connecting' in the SFU case.
-        if (session.peerConnectionId === this._selfId) {
             return;
         }
 
@@ -930,10 +915,13 @@ export default class P2pRtcManager implements RtcManager {
         this._deleteEnabledLocalStreamId(streamId);
     }
 
-    _updateAndScheduleMediaServersRefresh({ iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds }: any) {
+    _updateAndScheduleMediaServersRefresh({
+        iceServers,
+        turnServers,
+        mediaserverConfigTtlSeconds,
+    }: SignalMediaServerConfig) {
         this._iceServers = iceServers;
         this._turnServers = turnServers;
-        this._sfuServer = sfuServer;
         this._mediaserverConfigTtlSeconds = mediaserverConfigTtlSeconds;
 
         this._clearMediaServersRefresh();

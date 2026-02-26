@@ -73,11 +73,21 @@ describe("VegaRtcManager", () => {
         rtcManager = new VegaRtcManager({
             selfId: helpers.randomString("client-"),
             room: {
-                iceServers: [],
+                iceServers: {
+                    iceServers: [],
+                },
                 sfuServer: { url: sfuWebsocketServerUrl },
                 name: "name",
                 organizationId: "id",
                 isClaimed: true,
+                clients: [],
+                isLocked: false,
+                knockers: [],
+                mediaserverConfigTtlSeconds: 3600,
+                mode: "group",
+                spotlights: [],
+                session: null,
+                turnServers: [],
             },
             emitter,
             serverSocket,
@@ -95,7 +105,6 @@ describe("VegaRtcManager", () => {
 
     describe("constructor", () => {
         const selfId = helpers.randomString("client-");
-        const room = { name: helpers.randomString("/room-"), iceServers: {} };
 
         it("gets a mediasoup device", async () => {
             const device = jest.fn();
@@ -103,7 +112,23 @@ describe("VegaRtcManager", () => {
 
             const rtcManager = new VegaRtcManager({
                 selfId,
-                room,
+                eventClaim: "claim",
+                room: {
+                    name: helpers.randomString("/room-"),
+                    turnServers: [],
+                    clients: [],
+                    isLocked: false,
+                    isClaimed: false,
+                    iceServers: {
+                        iceServers: [],
+                    },
+                    knockers: [],
+                    mediaserverConfigTtlSeconds: 0,
+                    mode: "group",
+                    organizationId: "",
+                    spotlights: [],
+                    session: null,
+                },
                 emitter,
                 serverSocket,
                 webrtcProvider,
