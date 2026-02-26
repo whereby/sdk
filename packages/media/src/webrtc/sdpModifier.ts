@@ -2,6 +2,8 @@ import SDPUtils from "sdp";
 import adapterRaw from "webrtc-adapter";
 import * as sdpTransform from "sdp-transform";
 import Logger from "../utils/Logger";
+import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
+import rtcStats from "./rtcStatsService";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -10,7 +12,13 @@ const logger = new Logger();
 const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
-export function setCodecPreferenceSDP(sdp: any, redOn?: boolean) {
+interface SetCodecPreferenceSDPOptions {
+    sdp: string;
+    redOn: boolean;
+    incrementAnalyticMetric: P2PIncrementAnalyticMetric;
+}
+
+export function setCodecPreferenceSDP({ sdp, redOn, incrementAnalyticMetric }: SetCodecPreferenceSDPOptions) {
     try {
         const sdpObject = sdpTransform.parse(sdp);
         if (Array.isArray(sdpObject?.media)) {
@@ -48,7 +56,10 @@ export function setCodecPreferenceSDP(sdp: any, redOn?: boolean) {
         const newSdp = sdpTransform.write(sdpObject);
         return newSdp;
     } catch (error) {
+        incrementAnalyticMetric("P2PSetCodecPreferenceError");
+        rtcStats.sendEvent("P2PSetCodecPreferenceError", { error });
         logger.error("setCodecPreferenceSDP error:", error);
+        return sdp;
     }
 }
 

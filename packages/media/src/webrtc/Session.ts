@@ -3,7 +3,7 @@ import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
-import { CustomMediaStreamTrack } from "./types";
+import { CustomMediaStreamTrack, RTCSessionDescription } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 import { trackAnnotations } from "../utils/annotations";
 
@@ -173,7 +173,7 @@ export default class Session {
         }
     }
 
-    _setRemoteDescription(desc: any) {
+    _setRemoteDescription(desc: RTCSessionDescription): Promise<void> {
         // deprioritize H264 Encoding if set by option/flag
         if (this._deprioritizeH264Encoding) desc.sdp = sdpModifier.deprioritizeH264(desc.sdp);
 
@@ -185,28 +185,38 @@ export default class Session {
         });
     }
 
-    handleOffer(message: RTCSessionDescription) {
+    handleOffer(offer: RTCSessionDescription): Promise<RTCSessionDescription> {
         if (!this.canModifyPeerConnection()) {
             return new Promise((resolve) => {
-                this.pending.push(() => this.handleOffer(message).then(resolve));
+                this.pending.push(() => this.handleOffer(offer).then(resolve));
             });
         }
         this.isOperationPending = true;
-        let sdp = message.sdp;
+        let sdp = offer.sdp;
 
         sdp = sdpModifier.filterMidExtension(sdp);
         sdp = sdpModifier.filterMsidSemantic(sdp);
 
-        const desc = { type: message.type, sdp };
+        const desc = { type: offer.type, sdp };
         // Create an answer to send to the client that sent the offer
-        let answerToSignal: any;
+        let answerToSignal: RTCSessionDescription;
 
         return this._setRemoteDescription(desc)
             .then(() => {
                 return this.pc.createAnswer();
             })
-            .then((answer: any) => {
-                answerToSignal = answer;
+            .then((answer) => {
+                if (!answer.sdp) {
+                    this._incrementAnalyticMetric("P2PCreateAnswerNoSDP");
+                    rtcStats.sendEvent("P2PCreateAnswerNoSDP", {});
+                    throw new Error("SDP undefined while creating answer");
+                }
+
+                answerToSignal = {
+                    sdp: answer.sdp as string,
+                    type: answer.type,
+                };
+
                 return this.pc.setLocalDescription(answer);
             })
             .then(() => {

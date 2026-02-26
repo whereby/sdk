@@ -80,6 +80,11 @@ export type RtcEvents = {
     remote_stream_track_removed: void;
 };
 
+export type RTCSessionDescription = {
+    sdp: string;
+    type: RTCSdpType;
+};
+
 export type SDPRelayMessage = {
     clientId: string;
     message: RTCSessionDescription;

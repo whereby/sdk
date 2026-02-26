@@ -1,5 +1,5 @@
 // use https://w3c.github.io/webrtc-pc/#dom-rtcrtpsender-setparameters to change the video bandwidth.
-export function setVideoBandwidthUsingSetParameters(pc: any, bandwidth: any, logger: any = console) {
+export function setVideoBandwidthUsingSetParameters(pc: RTCPeerConnection, bandwidth: number, logger: any = console) {
     const sender = pc.getSenders().find((s: any) => s.track && s.track.kind === "video");
     if (!sender) {
         return Promise.resolve();
