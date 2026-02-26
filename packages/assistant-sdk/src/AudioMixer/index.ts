@@ -67,6 +67,7 @@ export class AudioMixer extends EventEmitter {
         type: MixableType;
     }): void {
         const { id: mixableId, stream: mixableStream, isAudioEnabled, type } = mixable;
+        console.log("AudioMixer.attachMixableIfNeeded", { mixable });
         if (!mixableId) return;
 
         if (!mixableStream || !isAudioEnabled) {
@@ -81,9 +82,11 @@ export class AudioMixer extends EventEmitter {
         }
 
         const slot = this.acquireSlot(mixableId);
+        console.log("AudioMixer.attachMixableIfNeeded", { audioTrack, slot });
         if (slot === null) return;
 
         const existing = this.activeSlots[slot];
+        console.log("AudioMixer.attachMixableIfNeeded", { existing });
         if (existing && existing.trackId === audioTrack.id) return;
         if (existing) {
             try {
@@ -94,6 +97,7 @@ export class AudioMixer extends EventEmitter {
             this.activeSlots[slot] = undefined;
         }
 
+        console.log("AudioMixer.attachMixableIfNeeded, writeDataToFfmpeg");
         const { sink, writer, stop } = this.mixer.writeAudioDataToFFmpeg(this.ffmpegProcess!, slot, audioTrack);
         this.activeSlots[slot] = { sink, writer, stop, trackId: audioTrack.id, type };
 
@@ -126,6 +130,12 @@ export class AudioMixer extends EventEmitter {
     public handleRemoteParticipants(participants: RemoteParticipantState[]): void {
         const liveIds = new Set(participants.map((p) => p.id).filter(Boolean) as string[]);
         const typedSlots = this.slotsByType("participant");
+
+        console.log("AudioMixer.handleRemoteParticipants", {
+            liveIds,
+            typedSlots,
+            ffmpegProcess: !!this.ffmpegProcess,
+        });
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const [slot, pid] of typedSlots) {
