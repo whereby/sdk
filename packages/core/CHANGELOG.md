@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.6.4
+
+### Patch Changes
+
+- 8475b93: Update unit-tests
+- Updated dependencies [8475b93]
+    - @whereby.com/media@2.8.4
+
 ## 1.6.3
 
 ### Patch Changes
