@@ -357,8 +357,12 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
                     return;
                 }
+                const sdp = {
+                    sdp: data.message.sdp || data.message.sdpU,
+                    type: data.message.type,
+                };
                 session
-                    .handleOffer(data.message)
+                    .handleOffer(sdp)
                     .then((answer) => {
                         this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
                             receiverId: data.clientId,
@@ -377,7 +381,11 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
                     return;
                 }
-                session.handleAnswer(data.message)?.catch?.((e: any) => {
+                const sdp = {
+                    sdp: data.message.sdp || data.message.sdpU,
+                    type: data.message.type,
+                };
+                session.handleAnswer(sdp)?.catch?.((e: any) => {
                     logger.warn("Could not set remote description from remote answer: ", e);
                     this.analytics.numPcOnAnswerFailure++;
                 });
@@ -1099,9 +1107,14 @@ export default class P2pRtcManager implements RtcManager {
                             throw e;
                         })
                         .then(() => {
+                            const message = {
+                                sdp: offer.sdp,
+                                sdpU: offer.sdp,
+                                type: offer.type,
+                            };
                             this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                                 receiverId: clientId,
-                                message: offer,
+                                message,
                             });
                         });
                 })

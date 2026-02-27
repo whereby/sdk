@@ -213,6 +213,7 @@ export default class Session {
                 } else {
                     answerToSignal = {
                         sdp: answer.sdp,
+                        sdpU: answer.sdp,
                         type: answer.type,
                     };
 

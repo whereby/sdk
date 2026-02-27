@@ -81,7 +81,8 @@ export type RtcEvents = {
 };
 
 export type RTCSessionDescription = {
-    sdp: string;
+    sdp?: string;
+    sdpU?: string;
     type: RTCSdpType;
 };
 
