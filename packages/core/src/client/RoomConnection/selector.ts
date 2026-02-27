@@ -15,6 +15,7 @@ import {
     selectBreakoutActive,
     selectBreakoutGroupedParticipants,
     selectAllClientViewsInCurrentGroup,
+    selectRoomConnectionError,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
@@ -31,6 +32,7 @@ export const selectRoomConnectionState = createSelector(
     selectRemoteParticipants,
     selectScreenshares,
     selectRoomConnectionStatus,
+    selectRoomConnectionError,
     selectStreamingRaw,
     selectWaitingParticipants,
     selectNotificationsEmitter,
@@ -47,6 +49,7 @@ export const selectRoomConnectionState = createSelector(
         remoteParticipants,
         screenshares,
         connectionStatus,
+        connectionError,
         streaming,
         waitingParticipants,
         notificationsEmitter,
@@ -62,6 +65,7 @@ export const selectRoomConnectionState = createSelector(
                 participantsInCurrentGroup: clientViewsInCurrentGroup,
             },
             connectionStatus,
+            connectionError,
             events: notificationsEmitter,
             liveStream: streaming.isStreaming
                 ? {
