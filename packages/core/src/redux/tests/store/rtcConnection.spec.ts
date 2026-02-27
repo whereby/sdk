@@ -45,7 +45,7 @@ describe("actions", () => {
             ]),
         );
 
-        expect(JSON.stringify(mockRtcManager.acceptNewStream.mock.calls)).toStrictEqual(
+        expect(JSON.stringify((mockRtcManager.acceptNewStream as jest.Mock).mock.calls)).toStrictEqual(
             JSON.stringify([
                 [{ streamId: id1, clientId: participant1.id, shouldAddLocalVideo: false, activeBreakout: false }],
                 [{ streamId: id3, clientId: participant2.id, shouldAddLocalVideo: false, activeBreakout: false }],
