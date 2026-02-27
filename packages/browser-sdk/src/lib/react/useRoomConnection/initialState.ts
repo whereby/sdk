@@ -13,6 +13,7 @@ export const initialState: RoomConnectionState = {
     remoteParticipants: [],
     screenshares: [],
     connectionStatus: "ready",
+    connectionError: null,
     waitingParticipants: [],
     spotlightedParticipants: [],
 };

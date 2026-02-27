@@ -68,6 +68,7 @@ export type BreakoutState = {
 
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
+    connectionError: string | null;
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
