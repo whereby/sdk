@@ -18,7 +18,6 @@ import {
     RtcManagerOptions,
     SDPRelayMessage,
     SignalMediaServerConfig,
-    UnifiedPlanSDP,
 } from "./types";
 import { RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
@@ -81,6 +80,9 @@ type P2PAnalytics = {
     P2PReplaceTrackSourceKindNotFound: number;
     P2PRemoveStreamNoPC: number;
     P2POnTrackNoStream: number;
+    P2PSetCodecPreferenceError: number;
+    P2PCreateOfferNoSDP: number;
+    P2PCreateAnswerNoSDP: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -198,6 +200,9 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackSourceKindNotFound: 0,
             P2PRemoveStreamNoPC: 0,
             P2POnTrackNoStream: 0,
+            P2PSetCodecPreferenceError: 0,
+            P2PCreateOfferNoSDP: 0,
+            P2PCreateAnswerNoSDP: 0,
         };
     }
 
@@ -352,14 +357,12 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
                     return;
                 }
-                // TODO: Remove unified plan - plan b transformation code.
-                const offer = this._transformIncomingSdp(data.message);
                 session
-                    .handleOffer(offer)
-                    .then((answer: any) => {
+                    .handleOffer(data.message)
+                    .then((answer) => {
                         this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
                             receiverId: data.clientId,
-                            message: this._transformOutgoingSdp(answer),
+                            message: answer,
                         });
                     })
                     .catch?.((e: any) => {
@@ -374,9 +377,7 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
                     return;
                 }
-                // TODO: Remove unified plan - plan b transformation code.
-                const answer = this._transformIncomingSdp(data.message);
-                session.handleAnswer(answer)?.catch?.((e: any) => {
+                session.handleAnswer(data.message)?.catch?.((e: any) => {
                     logger.warn("Could not set remote description from remote answer: ", e);
                     this.analytics.numPcOnAnswerFailure++;
                 });
@@ -602,15 +603,6 @@ export default class P2pRtcManager implements RtcManager {
     _getFirstLocalNonCameraStream() {
         const streamIds = this._getNonLocalCameraStreamIds();
         return streamIds.length === 0 ? null : this.localStreams[streamIds[0]];
-    }
-
-    _transformIncomingSdp(original: UnifiedPlanSDP) {
-        const sdp = original.sdp ? original.sdp : original.sdpU;
-        return { type: original.type, sdp } as RTCSessionDescription;
-    }
-
-    _transformOutgoingSdp(original: RTCSessionDescription): UnifiedPlanSDP {
-        return { type: original.type, sdpU: original.sdp, sdp: original.sdp };
     }
 
     _createSession({
@@ -1055,7 +1047,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _negotiatePeerConnection(clientId: string, session: any, constraints?: any) {
+    _negotiatePeerConnection(clientId: string, session: Session, constraints?: any) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;
@@ -1074,12 +1066,21 @@ export default class P2pRtcManager implements RtcManager {
         this._setCodecPreferences(pc).then(() =>
             pc
                 .createOffer(constraints || this.offerOptions)
-                .then((offer: any) => {
+                .then((offer) => {
+                    if (!offer.sdp) {
+                        this.analytics.P2PCreateOfferNoSDP++;
+                        rtcStats.sendEvent("P2PCreateOfferNoSDP", {});
+                        throw new Error("SDP undefined while creating offer");
+                    }
                     // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
                     if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
                     // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
                     if (browserName === "firefox") {
-                        offer.sdp = setCodecPreferenceSDP(offer.sdp, redOn);
+                        offer.sdp = setCodecPreferenceSDP({
+                            sdp: offer.sdp as string,
+                            redOn,
+                            incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
+                        });
                     }
 
                     // workaround for two different browser bugs:
@@ -1088,7 +1089,7 @@ export default class P2pRtcManager implements RtcManager {
                     //  when running setCodecPreferences on existing tranceivers.
                     // (preventing setCodecPreferences on existing tranceivers, limiting to new only
                     // , might be a better fix for firefox, but does not apply to chrome)
-                    if (cleanSdpOn) offer.sdp = cleanSdp(offer.sdp);
+                    if (cleanSdpOn) offer.sdp = cleanSdp(offer.sdp as string);
 
                     pc.setLocalDescription(offer)
                         .catch((e: any) => {
@@ -1100,7 +1101,7 @@ export default class P2pRtcManager implements RtcManager {
                         .then(() => {
                             this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                                 receiverId: clientId,
-                                message: this._transformOutgoingSdp(offer),
+                                message: offer,
                             });
                         });
                 })
