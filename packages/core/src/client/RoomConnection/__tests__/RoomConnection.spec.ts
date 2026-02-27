@@ -1,4 +1,4 @@
-import { ChatMessage, RtcStreamAddedPayload } from "@whereby.com/media";
+import { ChatMessage, RoomJoinedEvent, RtcStreamAddedPayload } from "@whereby.com/media";
 import { RoomConnectionClient } from "..";
 import { doHandleStreamingStarted, rtcEvents, setDisplayName, signalEvents } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
@@ -83,6 +83,35 @@ describe("RoomConnection", () => {
                 unsubscribe();
 
                 store.dispatch(signalEvents.disconnect());
+
+                expect(callback).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("subscribeToConnectionError", () => {
+            it("triggers when connection error is updated", () => {
+                const callback = jest.fn();
+                roomConnectionClient.subscribeToConnectionError(callback);
+
+                store.dispatch(
+                    signalEvents.roomJoined({
+                        error: "room_full",
+                    } as RoomJoinedEvent),
+                );
+
+                expect(callback).toHaveBeenCalledWith("room_full");
+            });
+
+            it("stops triggering after unsubscribe", () => {
+                const callback = jest.fn();
+                const unsubscribe = roomConnectionClient.subscribeToConnectionError(callback);
+                unsubscribe();
+
+                store.dispatch(
+                    signalEvents.roomJoined({
+                        error: "room_full",
+                    } as RoomJoinedEvent),
+                );
 
                 expect(callback).not.toHaveBeenCalled();
             });

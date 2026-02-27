@@ -50,6 +50,7 @@ import {
     BREAKOUT_CONFIG_CHANGED,
     CHAT_NEW_MESSAGE,
     CLOUD_RECORDING_STATUS_CHANGED,
+    CONNECTION_ERROR_CHANGED,
     CONNECTION_STATUS_CHANGED,
     LOCAL_PARTICIPANT_CHANGED,
     LOCAL_SCREENSHARE_STATUS_CHANGED,
@@ -79,6 +80,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private cloudRecordingSubscribers = new Set<(status: { status: "recording" } | undefined) => void>();
     private breakoutSubscribers = new Set<(config: BreakoutState) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
+    private connectionErrorSubscribers = new Set<(error: string | null) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
     private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
     private localParticipantSubscribers = new Set<(participant?: LocalParticipantState) => void>();
@@ -113,6 +115,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.connectionStatus !== previousState.connectionStatus) {
             this.connectionStatusSubscribers.forEach((cb) => cb(state.connectionStatus));
             this.emit(CONNECTION_STATUS_CHANGED, state.connectionStatus);
+        }
+
+        if (state.connectionError !== previousState.connectionError) {
+            this.connectionErrorSubscribers.forEach((cb) => cb(state.connectionError));
+            this.emit(CONNECTION_ERROR_CHANGED, state.connectionError);
         }
 
         if (state.liveStream !== previousState.liveStream) {
@@ -235,6 +242,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToConnectionStatus(callback: (status: ConnectionStatus) => void): () => void {
         this.connectionStatusSubscribers.add(callback);
         return () => this.connectionStatusSubscribers.delete(callback);
+    }
+
+    public subscribeToConnectionError(callback: (error: string | null) => void): () => void {
+        this.connectionErrorSubscribers.add(callback);
+        return () => this.connectionErrorSubscribers.delete(callback);
     }
 
     public subscribeToLiveStream(callback: (status: { status: "streaming" } | undefined) => void): () => void {
@@ -627,6 +639,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.cloudRecordingSubscribers.clear();
         this.breakoutSubscribers.clear();
         this.connectionStatusSubscribers.clear();
+        this.connectionErrorSubscribers.clear();
         this.liveStreamSubscribers.clear();
         this.localScreenshareStatusSubscribers.clear();
         this.localParticipantSubscribers.clear();

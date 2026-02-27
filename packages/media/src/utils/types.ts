@@ -240,6 +240,7 @@ export type RoomJoinedErrors =
     | InvalidAssistantKeyError
     | OrganizationAssistantNotFoundError
     | OrganizationAssistantNotEnabledError;
+export type RoomJoinedErrorMessage = RoomJoinedErrors["error"];
 
 export interface RoomJoinedSuccess {
     room: {

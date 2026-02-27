@@ -18,6 +18,7 @@ export const CHAT_NEW_MESSAGE = "chat:new-message";
 export const CLOUD_RECORDING_STATUS_CHANGED = "cloud-recording:status-changed";
 /* Connection Status Events */
 export const CONNECTION_STATUS_CHANGED = "connection:status-changed";
+export const CONNECTION_ERROR_CHANGED = "connection:error-changed";
 /* Local participant events */
 export const LOCAL_PARTICIPANT_CHANGED = "local-participant:changed";
 export const LOCAL_SCREENSHARE_STATUS_CHANGED = "local-screenshare:status-changed";
@@ -54,6 +55,7 @@ export type RoomConnectionEvents = {
     [CHAT_NEW_MESSAGE]: [message: ChatMessage];
     [CLOUD_RECORDING_STATUS_CHANGED]: [status: CloudRecordingState | undefined];
     [CONNECTION_STATUS_CHANGED]: [status: ConnectionStatus];
+    [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
     [LOCAL_SCREENSHARE_STATUS_CHANGED]: [status?: LocalScreenshareStatus];
     [REMOTE_PARTICIPANTS_CHANGED]: [participants: RemoteParticipantState[]];
