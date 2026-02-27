@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.6
+
+### Patch Changes
+
+- 16e9618: Readd sdpU property in P2P offer/answer exchange
+
 ## 2.8.5
 
 ### Patch Changes
