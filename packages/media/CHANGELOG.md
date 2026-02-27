@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.5
+
+### Patch Changes
+
+- 008c27f: Deprecate Unified plan - Plan B transformation
+
 ## 2.8.4
 
 ### Patch Changes
