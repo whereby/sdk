@@ -44,7 +44,7 @@
     "dependencies": {
         "events": "^3.3.0",
         "wasm-feature-detect": "^1.8.0",
-        "webrtc-adapter": "^8.1.0"
+        "webrtc-adapter": "9.0.4"
     },
     "prettier": "@whereby.com/prettier-config"
 }
