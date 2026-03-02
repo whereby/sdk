@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.7
+
+### Patch Changes
+
+- 046a040: Remove unused P2P PeerConnection constraints
+
 ## 2.8.6
 
 ### Patch Changes
