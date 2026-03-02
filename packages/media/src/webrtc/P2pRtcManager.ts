@@ -631,25 +631,9 @@ export default class P2pRtcManager implements RtcManager {
             throw new Error("clientId is missing");
         }
 
-        const peerConnectionConfig: any = {
+        const peerConnectionConfig: RTCConfiguration = {
             iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
         };
-
-        // TODO: constraints are not used, decide what to do about them.
-        const constraints: any = { optional: [] };
-        // rtcstats integration
-        constraints.optional.push({ rtcStatsRoomSessionId: this._roomSessionId });
-        constraints.optional.push({ rtcStatsClientId: this._selfId });
-        constraints.optional.push({ rtcStatsPeerId: peerConnectionId });
-        constraints.optional.push({ rtcStatsConferenceId: this._roomName });
-
-        // Chrome specific PC configuration.
-        if (browserName === "chrome") {
-            constraints.optional.push({
-                googCpuOveruseDetection: true,
-            });
-            peerConnectionConfig.sdpSemantics = "unified-plan";
-        }
 
         peerConnectionConfig.iceServers = turnServerOverride(
             peerConnectionConfig.iceServers,
@@ -671,7 +655,7 @@ export default class P2pRtcManager implements RtcManager {
 
         const { pc } = session;
 
-        pc.ontrack = (event: any) => {
+        pc.ontrack = (event: RTCTrackEvent) => {
             const stream = event.streams[0];
             if (!stream) {
                 this.analytics.P2POnTrackNoStream++;

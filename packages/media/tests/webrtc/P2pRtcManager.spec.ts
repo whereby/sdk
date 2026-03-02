@@ -353,7 +353,7 @@ describe("P2pRtcManager", () => {
                 rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
 
                 // The object should be constructed with the given ice servers.
-                expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers, sdpSemantics: "unified-plan" });
+                expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers });
             });
 
             it("stores the new peer connection", async () => {
@@ -540,7 +540,6 @@ describe("P2pRtcManager", () => {
             // The object should be constructed with the given peer connection config.
             expect(window.RTCPeerConnection).toHaveBeenCalledWith({
                 iceServers,
-                sdpSemantics: "unified-plan",
             });
         });
 
@@ -554,14 +553,13 @@ describe("P2pRtcManager", () => {
 
             expect(window.RTCPeerConnection).toHaveBeenCalledWith({
                 iceServers: updatedIceServers,
-                sdpSemantics: "unified-plan",
             });
         });
 
         it("defaults to creating a new peer connection with unified semantics", () => {
             createRtcManager({ iceServers })._connect(clientId);
 
-            expect(window.RTCPeerConnection).toHaveBeenCalledWith({ sdpSemantics: "unified-plan", iceServers });
+            expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers });
         });
 
         it("creates a new peer connection with iceTransports set to relay if useOnlyTurn feature is set", () => {
@@ -570,7 +568,6 @@ describe("P2pRtcManager", () => {
             // The object should be constructed some TURN servers and iceTransportPolicy set to 'relay'.
             expect(window.RTCPeerConnection).toHaveBeenCalledWith({
                 iceTransportPolicy: "relay",
-                sdpSemantics: "unified-plan",
                 iceServers,
             });
         });
