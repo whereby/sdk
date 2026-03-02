@@ -83,7 +83,6 @@ type P2PAnalytics = {
     P2PSetCodecPreferenceError: number;
     P2PCreateOfferNoSDP: number;
     P2PCreateAnswerNoSDP: number;
-    P2PNegotiateWithoutSession: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -204,7 +203,6 @@ export default class P2pRtcManager implements RtcManager {
             P2PSetCodecPreferenceError: 0,
             P2PCreateOfferNoSDP: 0,
             P2PCreateAnswerNoSDP: 0,
-            P2PNegotiateWithoutSession: 0,
         };
     }
 
@@ -340,9 +338,6 @@ export default class P2pRtcManager implements RtcManager {
                     logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
                     return;
                 }
-                if (session.isClosed()) {
-                    return;
-                }
                 session.addIceCandidate(data.message);
             }),
 
@@ -350,9 +345,6 @@ export default class P2pRtcManager implements RtcManager {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
-                    return;
-                }
-                if (session.isClosed()) {
                     return;
                 }
                 session.addIceCandidate(null);
@@ -363,9 +355,6 @@ export default class P2pRtcManager implements RtcManager {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
-                    return;
-                }
-                if (session.isClosed()) {
                     return;
                 }
                 const sdp = {
@@ -390,9 +379,6 @@ export default class P2pRtcManager implements RtcManager {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
-                    return;
-                }
-                if (session.isClosed()) {
                     return;
                 }
                 const sdp = {
@@ -840,7 +826,7 @@ export default class P2pRtcManager implements RtcManager {
         });
     }
 
-    _addTrackToPeerConnections(track: MediaStreamTrack, stream?: MediaStream) {
+    _addTrackToPeerConnections(track: any, stream?: any) {
         this._forEachPeerConnection((session: any) => {
             this._withForcedRenegotiation(session, () => session.addTrack(track, stream));
         });
@@ -849,9 +835,6 @@ export default class P2pRtcManager implements RtcManager {
     _replaceTrackToPeerConnections(oldTrack: any, newTrack: any) {
         const promises: any = [];
         this._forEachPeerConnection((session: any) => {
-            if (session.isClosed()) {
-                return;
-            }
             if (!session.hasConnectedPeerConnection()) {
                 rtcStats.sendEvent("P2PReplaceTrackWithoutPC", {});
                 this.analytics.P2PReplaceTrackWithoutPC++;
@@ -894,19 +877,19 @@ export default class P2pRtcManager implements RtcManager {
         return Promise.all(promises);
     }
 
-    _removeStreamFromPeerConnections(stream: MediaStream) {
-        this._forEachPeerConnection((session: Session) => {
+    _removeStreamFromPeerConnections(stream: any) {
+        this._forEachPeerConnection((session: any) => {
             this._withForcedRenegotiation(session, () => session.removeStream(stream));
         });
     }
 
-    _removeTrackFromPeerConnections(track: MediaStreamTrack) {
-        this._forEachPeerConnection((session: Session) => {
+    _removeTrackFromPeerConnections(track: any) {
+        this._forEachPeerConnection((session: any) => {
             this._withForcedRenegotiation(session, () => session.removeTrack(track));
         });
     }
 
-    _addLocalStream(streamId: string, stream: MediaStream) {
+    _addLocalStream(streamId: string, stream: any) {
         this._addEnabledLocalStreamId(streamId);
         this.localStreams[streamId] = stream;
     }
@@ -941,7 +924,7 @@ export default class P2pRtcManager implements RtcManager {
         this._fetchMediaServersTimer = null;
     }
 
-    _monitorAudioTrack(track: MediaStreamTrack) {
+    _monitorAudioTrack(track: any) {
         if (this._audioTrackBeingMonitored?.id === track.id) return;
 
         this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded);
@@ -949,7 +932,7 @@ export default class P2pRtcManager implements RtcManager {
         this._audioTrackBeingMonitored = track;
     }
 
-    _monitorVideoTrack(track: MediaStreamTrack) {
+    _monitorVideoTrack(track: CustomMediaStreamTrack) {
         if (this._videoTrackBeingMonitored?.id === track.id) return;
 
         this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
@@ -1018,7 +1001,7 @@ export default class P2pRtcManager implements RtcManager {
                 .getTransceivers()
                 .filter((transceiver: any) => transceiver?.sender?.track?.kind === "audio");
 
-            audioTransceivers.forEach((audioTransceiver: RTCRtpTransceiver) => {
+            audioTransceivers.forEach((audioTransceiver: any) => {
                 // If not implemented return
                 if (typeof RTCRtpSender.getCapabilities === "undefined") return;
                 const capabilities: any = RTCRtpSender.getCapabilities("audio");
@@ -1059,10 +1042,6 @@ export default class P2pRtcManager implements RtcManager {
     _negotiatePeerConnection(clientId: string, session: Session, constraints?: any) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
-            this.analytics.P2PNegotiateWithoutSession++;
-            return;
-        }
-        if (session.isClosed()) {
             return;
         }
         const pc = session.pc;
@@ -1130,9 +1109,6 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     _withForcedRenegotiation(session: Session, action: any) {
-        if (session.isClosed()) {
-            return;
-        }
         const pc = session.pc;
         const originalOnnegotationneeded = pc.onnegotiationneeded;
         pc.onnegotiationneeded = null;
@@ -1176,9 +1152,7 @@ export default class P2pRtcManager implements RtcManager {
         }
 
         this._forEachPeerConnection((session: any) => {
-            if (!session.isclosed()) {
-                session.changeBandwidth(bandwidth);
-            }
+            session.changeBandwidth(bandwidth);
         });
 
         return bandwidth;
@@ -1201,7 +1175,7 @@ export default class P2pRtcManager implements RtcManager {
         });
         const pc = session.pc;
 
-        if (this._features.increaseIncomingMediaBufferOn && !session.isClosed()) {
+        if (this._features.increaseIncomingMediaBufferOn) {
             this._setJitterBufferTarget(pc);
         }
 
