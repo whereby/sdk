@@ -184,8 +184,8 @@ export function replaceTracksInStream(stream: MediaStream, newStream: MediaStrea
             stream.addTrack(track);
         });
     }
-    replacedTracks.forEach((track: any) => {
-        track.replaced = true;
+    replacedTracks.forEach((track) => {
+        trackAnnotations(track).replaced = true;
         stream.removeTrack(track);
     });
     return replacedTracks;

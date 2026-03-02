@@ -1,7 +1,7 @@
 import rtcStats from "./rtcStatsService";
 import Session from "./Session";
 import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
-import * as webrtcBugDetector from "./bugDetector";
+// import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
@@ -12,22 +12,16 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import {
-    CustomMediaStreamTrack,
-    RtcManager,
-    RtcManagerOptions,
-    SDPRelayMessage,
-    SignalMediaServerConfig,
-} from "./types";
-import { RoomJoinedEvent, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
+import { RtcManager, RtcManagerOptions, SDPRelayMessage, SignalMediaServerConfig } from "./types";
+import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
 
-interface GetOrCreateSessionOptions {
+interface CreateSessionOptions {
     peerConnectionId: string;
     clientId: string;
     initialBandwidth: number;
-    peerConnectionConfig: RTCConfiguration;
+    isOfferer: boolean;
 }
 
 // @ts-ignore
@@ -67,11 +61,9 @@ type P2PAnalytics = {
     numPcOnOfferFailure: number;
     numPcSldFailure: number;
     P2PChangeBandwidthEmptySDPType: number;
-    P2PNegotiationNeeded: number;
     P2PSessionAlreadyCreated: number;
     P2PReplaceTrackNoStream: number;
     P2PReplaceTrackNewTrackEnded: number;
-    P2PReplaceTrackNoNewTrack: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2PReplaceTrackOldTrackNotFound: number;
     P2PReplaceTrackToPCsPendingActionsNull: number;
@@ -108,7 +100,6 @@ export default class P2pRtcManager implements RtcManager {
         offerToReceiveAudio: boolean;
         offerToReceiveVideo: boolean;
     };
-    _pendingActionsForConnectedPeerConnections: any[];
     _audioTrackOnEnded: () => void;
     _videoTrackOnEnded: () => void;
     _iceServers: any;
@@ -118,8 +109,8 @@ export default class P2pRtcManager implements RtcManager {
     _wasScreenSharing: any;
     _stoppedVideoTrack: any;
     icePublicIPGatheringTimeoutID: any;
-    _videoTrackBeingMonitored?: CustomMediaStreamTrack;
-    _audioTrackBeingMonitored?: CustomMediaStreamTrack;
+    _videoTrackBeingMonitored?: MediaStreamTrack;
+    _audioTrackBeingMonitored?: MediaStreamTrack;
     _closed: boolean;
     skipEmittingServerMessageCount: number;
     analytics: P2PAnalytics;
@@ -146,7 +137,6 @@ export default class P2pRtcManager implements RtcManager {
         this.skipEmittingServerMessageCount = 0;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
-        this._pendingActionsForConnectedPeerConnections = [];
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -187,10 +177,8 @@ export default class P2pRtcManager implements RtcManager {
             numPcOnAnswerFailure: 0,
             numPcOnOfferFailure: 0,
             P2PChangeBandwidthEmptySDPType: 0,
-            P2PNegotiationNeeded: 0,
             P2PSessionAlreadyCreated: 0,
             P2PReplaceTrackNoStream: 0,
-            P2PReplaceTrackNoNewTrack: 0,
             P2PReplaceTrackNewTrackEnded: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2PReplaceTrackOldTrackNotFound: 0,
@@ -223,7 +211,7 @@ export default class P2pRtcManager implements RtcManager {
         stream: MediaStream,
         audioPaused: boolean,
         videoPaused: boolean,
-        beforeEffectTracks: CustomMediaStreamTrack[] = [],
+        beforeEffectTracks: MediaStreamTrack[] = [],
     ) {
         if (stream === this.localStreams[streamId]) {
             // this can happen after reconnect. We do not want to add the stream to the
@@ -235,10 +223,10 @@ export default class P2pRtcManager implements RtcManager {
 
         if (streamId === CAMERA_STREAM_ID) {
             this._addStreamToPeerConnections(stream);
-            const audioTrack = stream.getAudioTracks()[0] as CustomMediaStreamTrack;
-            const videoTrack = stream.getVideoTracks()[0] as CustomMediaStreamTrack;
+            const audioTrack = stream.getAudioTracks()[0];
+            const videoTrack = stream.getVideoTracks()[0];
             if (audioTrack) {
-                if (!audioTrack.effectTrack) {
+                if (!trackAnnotations(audioTrack).isEffectTrack) {
                     this._monitorAudioTrack(audioTrack);
                 }
                 const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
@@ -248,7 +236,7 @@ export default class P2pRtcManager implements RtcManager {
             }
 
             if (videoTrack) {
-                if (!videoTrack.effectTrack) {
+                if (!trackAnnotations(videoTrack).isEffectTrack) {
                     this._monitorVideoTrack(videoTrack);
                 }
 
@@ -283,11 +271,11 @@ export default class P2pRtcManager implements RtcManager {
         return;
     }
 
-    replaceTrack(oldTrack: CustomMediaStreamTrack | null, newTrack: CustomMediaStreamTrack) {
-        if (newTrack.kind === "audio" && !newTrack.effectTrack) {
+    replaceTrack(oldTrack: MediaStreamTrack | null, newTrack: MediaStreamTrack) {
+        if (newTrack.kind === "audio" && !trackAnnotations(newTrack).isEffectTrack) {
             this._monitorAudioTrack(newTrack);
         }
-        if (newTrack.kind === "video" && !newTrack.effectTrack) {
+        if (newTrack.kind === "video" && !trackAnnotations(newTrack).isEffectTrack) {
             this._monitorVideoTrack(newTrack);
         }
         return this._replaceTrackToPeerConnections(oldTrack, newTrack);
@@ -388,31 +376,6 @@ export default class P2pRtcManager implements RtcManager {
                 session.handleAnswer(sdp)?.catch?.((e: any) => {
                     logger.warn("Could not set remote description from remote answer: ", e);
                     this.analytics.numPcOnAnswerFailure++;
-                });
-            }),
-
-            // if this is a reconnect to signal-server during screen-share we must let signal-server know
-            this._serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, (payload: RoomJoinedEvent) => {
-                if ("error" in payload || !this._wasScreenSharing) {
-                    return;
-                }
-
-                const screenShareStreamId = Object.keys(this.localStreams).find((id) => id !== CAMERA_STREAM_ID);
-                if (!screenShareStreamId) {
-                    return;
-                }
-
-                const screenshareStream = this.localStreams[screenShareStreamId];
-                if (!screenshareStream) {
-                    logger.warn("screenshare stream %s not found", screenShareStreamId);
-                    return;
-                }
-
-                const hasAudioTrack = screenshareStream.getAudioTracks().length > 0;
-
-                this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
-                    streamId: screenShareStreamId,
-                    hasAudioTrack,
                 });
             }),
 
@@ -561,41 +524,6 @@ export default class P2pRtcManager implements RtcManager {
         return this.peerConnections[peerConnectionId];
     }
 
-    _getOrCreateSession({
-        peerConnectionId,
-        clientId,
-        initialBandwidth,
-        peerConnectionConfig,
-    }: GetOrCreateSessionOptions) {
-        let session = this.peerConnections[peerConnectionId];
-
-        if (session === undefined) {
-            // Some macs + ios devices have troubles using h264 encoder since safari 14
-            // this will make them encode VP8 instead if available
-            const deprioritizeH264Encoding =
-                browserName === "safari" &&
-                browserVersion &&
-                browserVersion >= 14 &&
-                this._features.deprioritizeH264OnSafari;
-
-            this.peerConnections[peerConnectionId] = session = new Session({
-                peerConnectionId,
-                clientId,
-                peerConnectionConfig,
-                bandwidth: initialBandwidth,
-                deprioritizeH264Encoding,
-                incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
-            });
-        } else {
-            this.analytics.P2PSessionAlreadyCreated++;
-            rtcStats.sendEvent("P2PSessionAlreadyCreated", {
-                clientId,
-                peerConnectionId,
-            });
-        }
-        return session;
-    }
-
     _getLocalCameraStream() {
         return this.localStreams[CAMERA_STREAM_ID];
     }
@@ -613,17 +541,7 @@ export default class P2pRtcManager implements RtcManager {
         return streamIds.length === 0 ? null : this.localStreams[streamIds[0]];
     }
 
-    _createSession({
-        clientId,
-        initialBandwidth,
-        isOfferer,
-        peerConnectionId,
-    }: {
-        clientId: string;
-        initialBandwidth: any;
-        isOfferer: any;
-        peerConnectionId: string;
-    }) {
+    _createSession({ clientId, initialBandwidth, isOfferer, peerConnectionId }: CreateSessionOptions) {
         if (!peerConnectionId) {
             throw new Error("peerConnectionId is missing");
         }
@@ -643,12 +561,23 @@ export default class P2pRtcManager implements RtcManager {
         external_stun_servers(peerConnectionConfig, this._features);
         maybeTurnOnly(peerConnectionConfig, this._features);
 
-        const session = this._getOrCreateSession({
+        // Some macs + ios devices have troubles using h264 encoder since safari 14
+        // this will make them encode VP8 instead if available
+        const deprioritizeH264Encoding =
+            browserName === "safari" &&
+            browserVersion &&
+            browserVersion >= 14 &&
+            this._features.deprioritizeH264OnSafari;
+
+        const session = new Session({
             peerConnectionId,
             clientId,
-            initialBandwidth,
             peerConnectionConfig,
+            bandwidth: initialBandwidth,
+            deprioritizeH264Encoding,
+            incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
         });
+        this.peerConnections[peerConnectionId] = session;
 
         setTimeout(() => this._emit(rtcManagerEvents.NEW_PC), 0);
         this.analytics.numNewPc++;
@@ -684,14 +613,10 @@ export default class P2pRtcManager implements RtcManager {
                 case "connected":
                 case "completed":
                     newStatus = CONNECTION_STATUS.TYPES.CONNECTION_SUCCESSFUL;
-                    if (!session.wasEverConnected) {
-                        this._pendingActionsForConnectedPeerConnections.forEach((action) => {
-                            if (typeof action === "function") {
-                                action();
-                            }
-                        });
-                        this._pendingActionsForConnectedPeerConnections = [];
-                    }
+                    session.pendingReplaceTrackActions.forEach(async (action) => {
+                        await action();
+                    });
+                    session.pendingReplaceTrackActions = [];
                     // working around the fact that chrome does not go to completed for the
                     // ice-controlled answerer
                     if (
@@ -706,7 +631,7 @@ export default class P2pRtcManager implements RtcManager {
                         session.setAudioOnly(true, this._screenshareVideoTrackIds);
                     }
 
-                    session.registerConnected();
+                    session.registerConnected?.({});
                     break;
                 case "disconnected":
                     newStatus = CONNECTION_STATUS.TYPES.CONNECTION_DISCONNECTED;
@@ -737,7 +662,7 @@ export default class P2pRtcManager implements RtcManager {
         };
         // TODO: investigate impact of erroneous connectionstate event handler.
         // @ts-ignore
-        pc.onconnectionstate = () => {
+        pc.onconnectionstatechange = () => {
             // since Chrome insists on not going to failed for unified-plan
             // (/new-iceconnectionstate)... listen for connectionState.
             // See also
@@ -745,31 +670,39 @@ export default class P2pRtcManager implements RtcManager {
             //   https://bugs.chromium.org/p/chromium/issues/detail?id=982793
             switch (pc.connectionState) {
                 case "connected":
+                    // TODO: decide if we still want the code below to execute.
+
                     // try to detect audio problems.
                     // this waits 3 seconds after the connection is up
                     // to be sure the DTLS handshake is done even in Firefox.
-                    setTimeout(() => {
-                        webrtcBugDetector.detectMicrophoneNotWorking(session.pc).then((failureDirection: any) => {
-                            if (failureDirection !== false) {
-                                this._emit(rtcManagerEvents.MICROPHONE_NOT_WORKING, {
-                                    failureDirection,
-                                    clientId,
-                                });
-                            }
-                        });
-                    }, 3000);
-                    session.registerConnected();
+                    // setTimeout(() => {
+                    //     webrtcBugDetector.detectMicrophoneNotWorking(session.pc).then((failureDirection: any) => {
+                    //         if (failureDirection !== false) {
+                    //             this._emit(rtcManagerEvents.MICROPHONE_NOT_WORKING, {
+                    //                 failureDirection,
+                    //                 clientId,
+                    //             });
+                    //         }
+                    //     });
+                    // }, 3000);
+                    session.registerConnected?.({});
                     break;
                 case "failed":
                     const newStatus = CONNECTION_STATUS.TYPES.CONNECTION_FAILED;
-                    if (session.relayCandidateSeen === null && !session.wasEverConnected) {
-                        // this means we did not gather any relay candidates.
-                        // which shows that we are on a restricted network and it is an
-                        // issue on the local end.
-                        // Should not trigger if we  were ever connected.
-                        this._emit(rtcManagerEvents.CONNECTION_BLOCKED_BY_NETWORK);
-                    }
+
+                    // TODO: decide if we still want the code below to execute.
+
+                    // if (session.relayCandidateSeen === null && !session.wasEverConnected) {
+                    //     // this means we did not gather any relay candidates.
+                    //     // which shows that we are on a restricted network and it is an
+                    //     // issue on the local end.
+                    //     // Should not trigger if we  were ever connected.
+                    //     this._emit(rtcManagerEvents.CONNECTION_BLOCKED_BY_NETWORK);
+                    // }
                     this._setConnectionStatus(session, newStatus, clientId);
+                    break;
+                case "closed":
+                    this._cleanup(session.clientId);
                     break;
             }
         };
@@ -833,48 +766,35 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     _replaceTrackToPeerConnections(oldTrack: any, newTrack: any) {
-        const promises: any = [];
-        this._forEachPeerConnection((session: any) => {
+        const promises: Promise<any>[] = [];
+        this._forEachPeerConnection((session: Session) => {
             if (!session.hasConnectedPeerConnection()) {
-                rtcStats.sendEvent("P2PReplaceTrackWithoutPC", {});
-                this.analytics.P2PReplaceTrackWithoutPC++;
+                if (session.pc.connectionState === "closed") return;
                 logger.info("Session doesn't have a connected PeerConnection, adding pending action!");
-                const pendingActions = this._pendingActionsForConnectedPeerConnections;
-                if (!pendingActions) {
-                    rtcStats.sendEvent("P2PReplaceTrackToPCsPendingActionsNull", {});
-                    this.analytics.P2PReplaceTrackToPCsPendingActionsNull++;
-                    logger.warn(
-                        `No pending action is created to replace track, because the pending actions array is null`,
-                    );
-                    return;
-                }
+                this.analytics.P2PReplaceTrackWithoutPC++;
+                rtcStats.sendEvent("P2PReplaceTrackWithoutPC", {
+                    connectionState: session.pc.connectionState,
+                    iceConnectionState: session.pc.iceConnectionState,
+                });
                 const promise = new Promise((resolve, reject) => {
-                    const action = () => {
-                        const replacedTrackPromise = session.replaceTrack(oldTrack, newTrack);
-                        if (!replacedTrackPromise) {
-                            rtcStats.sendEvent("P2PReplaceTrackReturnedFalse", {});
-                            this.analytics.P2PReplaceTrackReturnedFalse++;
-                            logger.error("replaceTrack returned false!");
-                            reject(`ReplaceTrack returned false`);
-                            return;
+                    const action = async () => {
+                        try {
+                            await session.replaceTrack(oldTrack, newTrack);
+                            resolve({});
+                        } catch (error) {
+                            reject(error);
                         }
-                        replacedTrackPromise.then((track: any) => resolve(track)).catch((error: any) => reject(error));
                     };
-                    pendingActions.push(action);
+                    session.pendingReplaceTrackActions.push(action);
                 });
                 promises.push(promise);
                 return;
             }
-            const replacedTrackResult = session.replaceTrack(oldTrack, newTrack);
-            if (!replacedTrackResult) {
-                rtcStats.sendEvent("P2PReplaceTrackReturnedFalse", {});
-                this.analytics.P2PReplaceTrackReturnedFalse++;
-                logger.error("replaceTrack returned false!");
-                return;
-            }
-            promises.push(replacedTrackResult);
+            promises.push(session.replaceTrack(oldTrack, newTrack));
         });
-        return Promise.all(promises);
+        return Promise.all(promises).catch((error) => {
+            logger.error(String(error));
+        });
     }
 
     _removeStreamFromPeerConnections(stream: any) {
@@ -932,7 +852,7 @@ export default class P2pRtcManager implements RtcManager {
         this._audioTrackBeingMonitored = track;
     }
 
-    _monitorVideoTrack(track: CustomMediaStreamTrack) {
+    _monitorVideoTrack(track: MediaStreamTrack) {
         if (this._videoTrackBeingMonitored?.id === track.id) return;
 
         this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
@@ -961,7 +881,7 @@ export default class P2pRtcManager implements RtcManager {
             isOfferer: true,
         });
         this._negotiatePeerConnection(clientId, session);
-        return Promise.resolve(session);
+        return session;
     }
 
     _maybeRestartIce(clientId: string, session: any) {
@@ -1281,8 +1201,6 @@ export default class P2pRtcManager implements RtcManager {
         };
 
         pc.onnegotiationneeded = () => {
-            this.analytics.P2PNegotiationNeeded++;
-            rtcStats.sendEvent("P2PNegotiationNeeded", {});
             if (pc.iceConnectionState === "new" || !session.connectionStatus) {
                 // initial negotiation is handled by our CLIENT_READY/READY_TO_RECEIVE_OFFER exchange
                 return;
@@ -1305,7 +1223,6 @@ export default class P2pRtcManager implements RtcManager {
         if (session) {
             // this will happen on a signal-server reconnect
             // before we tried an ice-restart here, now we recreate the session/pc
-            logger.warn("Replacing peer session", clientId);
             this._cleanup(clientId); // will cleanup and delete session/pc
         } else {
             // we adjust bandwidth based on number of sessions/pcs
@@ -1357,16 +1274,14 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    stopOrResumeVideo(localStream: any, enable: boolean) {
+    stopOrResumeVideo(localStream: MediaStream, enable: boolean) {
         // actually turn off the camera. Chrome-only (Firefox has different plans)
         if (!["chrome", "safari"].includes(browserName)) {
             return;
         }
         if (enable === false) {
             const stopCameraDelay =
-                localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended"
-                    ? 0
-                    : 5000;
+                localStream.getVideoTracks().find((t) => !t.enabled)?.readyState === "ended" ? 0 : 5000;
             // try to stop the local camera so the camera light goes off.
             setTimeout(() => {
                 localStream.getVideoTracks().forEach((track: any) => {
