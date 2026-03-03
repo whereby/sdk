@@ -771,8 +771,11 @@ describe("getDeviceData", () => {
         const videoId = helpers.randomString("videoId");
         const audioId = helpers.randomString("audioId");
         vtrack.getSettings = () => ({ deviceId: videoId });
+        // @ts-ignore
         delete atrack.getSettings;
+        // @ts-ignore
         atrack.label = "My mic";
+        // @ts-ignore
         vtrack.label = "My cam";
         const devices = [{ deviceId: audioId, kind: "audioinput", label: "My mic" }];
 
