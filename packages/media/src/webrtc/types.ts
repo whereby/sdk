@@ -30,7 +30,7 @@ export interface RtcManager {
     disconnectAll(): void;
     rtcStatsDisconnect(): void;
     rtcStatsReconnect(): void;
-    replaceTrack(oldTrack: CustomMediaStreamTrack, newTrack: CustomMediaStreamTrack): void;
+    replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack): void;
     removeStream(streamId: string, _stream: MediaStream, requestedByClientId: string | null): void;
     shouldAcceptStreamsFromBothSides: () => boolean;
     updateStreamResolution(streamId: string, ignored: null, resolution: { width: number; height: number }): void;
@@ -160,11 +160,6 @@ export type GetDeviceDataResult = {
         kind: string;
     };
 };
-
-export interface CustomMediaStreamTrack extends MediaStreamTrack {
-    effectTrack?: boolean;
-    replaced?: boolean;
-}
 
 export type SignalIceServer = {
     credential: string;

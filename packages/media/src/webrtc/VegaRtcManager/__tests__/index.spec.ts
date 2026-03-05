@@ -3,7 +3,6 @@ import VegaRtcManager from "../";
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
-import { CustomMediaStreamTrack } from "../../types";
 import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
@@ -160,14 +159,14 @@ describe("VegaRtcManager", () => {
 
     describe("replaceTrack", () => {
         let localStream: MediaStream;
-        let newTrack: CustomMediaStreamTrack;
+        let newTrack: MediaStreamTrack;
 
         beforeEach(() => {
             localStream = helpers.createMockedMediaStream() as unknown as MediaStream;
             newTrack = helpers.createMockedMediaStreamTrack({
                 id: "id",
                 kind: "video",
-            }) as unknown as CustomMediaStreamTrack;
+            });
         });
 
         it("should not create duplicate producers", async () => {

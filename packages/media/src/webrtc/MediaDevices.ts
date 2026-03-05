@@ -172,22 +172,13 @@ export function replaceTracksInStream(stream: MediaStream, newStream: MediaStrea
     const replacedTracks = [];
     if (!only || only === "audio") {
         replacedTracks.push(...stream.getAudioTracks());
-        newStream.getAudioTracks().forEach((track: any) => {
-            track.replacement = true;
-            stream.addTrack(track);
-        });
+        newStream.getAudioTracks().forEach((track) => stream.addTrack(track));
     }
     if (!only || only === "video") {
         replacedTracks.push(...stream.getVideoTracks());
-        newStream.getVideoTracks().forEach((track: any) => {
-            track.replacement = true;
-            stream.addTrack(track);
-        });
+        newStream.getVideoTracks().forEach((track) => stream.addTrack(track));
     }
-    replacedTracks.forEach((track: any) => {
-        track.replaced = true;
-        stream.removeTrack(track);
-    });
+    replacedTracks.forEach((track) => stream.removeTrack(track));
     return replacedTracks;
 }
 

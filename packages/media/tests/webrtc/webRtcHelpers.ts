@@ -199,7 +199,7 @@ export function createMockedMediaStream(existingTracks?: any) {
             return foundTracks[0];
         },
     };
-    return Object.assign(new EventTarget(), result);
+    return Object.assign(new EventTarget(), result) as unknown as MediaStream;
 }
 
 export class MockTransport {

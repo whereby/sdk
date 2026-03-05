@@ -210,7 +210,7 @@ export class ReconnectManager extends EventEmitter {
         this.emit(PROTOCOL_RESPONSES.NEW_CLIENT, payload);
     }
 
-    // Evaluate if we should send send client_left before getting it from signal-server
+    // Evaluate if we should send client_left before getting it from signal-server
     async _abortIfNotActive(payload: any) {
         const { clientId } = payload;
 
