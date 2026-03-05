@@ -1,7 +1,6 @@
 type TrackAnnotation = {
     fromGetDisplayMedia: boolean;
     isEffectTrack: boolean;
-    replaced: boolean;
 };
 
 const _trackAnnotations = new WeakMap();
