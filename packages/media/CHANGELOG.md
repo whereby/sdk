@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.8
+
+### Patch Changes
+
+- 27cea25: Fix errors in track handling
+
 ## 2.8.7
 
 ### Patch Changes
