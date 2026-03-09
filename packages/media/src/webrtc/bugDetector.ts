@@ -11,20 +11,20 @@ const adapter = adapterRaw.default ?? adapterRaw;
  *
  * @see Bug report {@link https://bugs.chromium.org/p/webrtc/issues/detail?id=4799}
  */
-export function detectMicrophoneNotWorking(pc: any) {
+export function detectMicrophoneNotWorking(pc: RTCPeerConnection) {
     if (
         adapter.browserDetails?.browser !== "chrome" ||
         // @ts-ignore
         adapter.browserDetails?.browser < 58 || // legacy getStats is no longer supported.
         pc.signalingState === "closed"
     ) {
-        return Promise.resolve(false);
+        return Promise.resolve("");
     }
-    const sendingAudio = pc.getSenders().some((sender: any) => sender.track && sender.track.kind === "audio");
-    const receivingAudio = pc.getReceivers().some((receiver: any) => receiver.track && receiver.track.kind === "audio");
-    return pc.getStats(null).then((result: any) => {
-        let microphoneFailed: any = false;
-        result.forEach((report: any) => {
+    const sendingAudio = pc.getSenders().some((sender) => sender.track?.kind === "audio");
+    const receivingAudio = pc.getReceivers().some((receiver) => receiver.track?.kind === "audio");
+    return pc.getStats(null).then((result) => {
+        let microphoneFailed = "";
+        result.forEach((report) => {
             if (
                 report.type === "outbound-rtp" &&
                 (report.kind === "audio" || report.mediaType === "audio") &&
