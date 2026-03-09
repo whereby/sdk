@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.8.9
+
+### Patch Changes
+
+- cdf52c8: Add typing for webrtc provider
+
 ## 2.8.8
 
 ### Patch Changes
