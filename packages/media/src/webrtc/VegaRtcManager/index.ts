@@ -5,13 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
 import createMicAnalyser from "../VegaMicAnalyser";
-import {
-    CustomMediaStreamTrack,
-    RtcManager,
-    SignalMediaServerConfig,
-    SignalSFUServer,
-    VegaRtcManagerOptions,
-} from "../types";
+import { RtcManager, SignalMediaServerConfig, SignalSFUServer, VegaRtcManagerOptions } from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
 import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
 
@@ -22,7 +16,7 @@ import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
 import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
-import { ServerSocket } from "../../utils";
+import { ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import {
@@ -107,8 +101,8 @@ export default class VegaRtcManager implements RtcManager {
     _sfuServer?: SignalSFUServer;
     _sfuServers?: HostListEntryOptionalDC[];
     _mediaserverConfigTtlSeconds: any;
-    _videoTrackBeingMonitored?: CustomMediaStreamTrack;
-    _audioTrackBeingMonitored?: CustomMediaStreamTrack;
+    _videoTrackBeingMonitored?: MediaStreamTrack;
+    _audioTrackBeingMonitored?: MediaStreamTrack;
     _isConnectingOrConnected: boolean;
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
@@ -1362,9 +1356,9 @@ export default class VegaRtcManager implements RtcManager {
      * @param {MediaStreamTrack | null} _oldTrack
      * @param {MediaStreamTrack} track
      */
-    replaceTrack(oldTrack: CustomMediaStreamTrack | null, track: CustomMediaStreamTrack) {
+    replaceTrack(oldTrack: MediaStreamTrack | null, track: MediaStreamTrack) {
         if (track.kind === "audio") {
-            if (!track.effectTrack) {
+            if (!trackAnnotations(track).isEffectTrack) {
                 this._monitorAudioTrack(track);
             }
             this._micTrack = track;
@@ -1372,7 +1366,7 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         if (track.kind === "video") {
-            if (!track.effectTrack) {
+            if (!trackAnnotations(track).isEffectTrack) {
                 this._monitorVideoTrack(track);
             }
             this._webcamTrack = track;
@@ -1430,18 +1424,18 @@ export default class VegaRtcManager implements RtcManager {
         stream: MediaStream,
         audioPaused: boolean,
         videoPaused: boolean,
-        beforeEffectTracks: CustomMediaStreamTrack[] = [],
+        beforeEffectTracks: MediaStreamTrack[] = [],
     ) {
         if (streamId === CAMERA_STREAM_ID) {
             this._micPaused = audioPaused;
             this._webcamPaused = videoPaused;
 
-            const videoTrack = stream.getVideoTracks()[0] as CustomMediaStreamTrack;
-            const audioTrack = stream.getAudioTracks()[0] as CustomMediaStreamTrack;
+            const videoTrack = stream.getVideoTracks()[0];
+            const audioTrack = stream.getAudioTracks()[0];
 
             if (videoTrack) {
                 this._sendWebcam(videoTrack);
-                if (!videoTrack.effectTrack) {
+                if (!trackAnnotations(videoTrack).isEffectTrack) {
                     this._monitorVideoTrack(videoTrack);
                 }
                 const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
@@ -1452,7 +1446,7 @@ export default class VegaRtcManager implements RtcManager {
             if (audioTrack) {
                 this._sendMic(audioTrack);
                 this._syncMicAnalyser();
-                if (!audioTrack.effectTrack) {
+                if (!trackAnnotations(audioTrack).isEffectTrack) {
                     this._monitorAudioTrack(audioTrack);
                 }
                 const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
@@ -1558,9 +1552,7 @@ export default class VegaRtcManager implements RtcManager {
             clearTimeout(this._stopCameraTimeout);
 
             const stopCameraDelay =
-                localStream.getVideoTracks().find((t: CustomMediaStreamTrack) => !t.enabled)?.readyState === "ended"
-                    ? 0
-                    : 5000;
+                localStream.getVideoTracks().find((t) => !t.enabled)?.readyState === "ended" ? 0 : 5000;
 
             // try to stop the local camera so the camera light goes off.
             this._stopCameraTimeout = setTimeout(() => {
@@ -1769,7 +1761,7 @@ export default class VegaRtcManager implements RtcManager {
         this._audioTrackBeingMonitored = track;
     }
 
-    _monitorVideoTrack(track: CustomMediaStreamTrack) {
+    _monitorVideoTrack(track: MediaStreamTrack) {
         if (this._videoTrackBeingMonitored?.id === track.id) return;
 
         this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
