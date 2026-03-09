@@ -15,7 +15,7 @@ export interface RtcManagerOptions {
     room: SignalRoom;
     emitter: RtcEventEmitter;
     serverSocket: ServerSocket;
-    webrtcProvider: any;
+    webrtcProvider: WebRTCProvider;
     features: any;
 }
 
@@ -94,6 +94,10 @@ export type SDPRelayMessage = {
 /*
     Media Devices
 */
+
+export interface WebRTCProvider {
+    getMediaConstraints: () => MediaStreamConstraints;
+}
 
 export type GetMediaConstraintsOptions = {
     disableAEC: boolean;

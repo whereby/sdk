@@ -74,10 +74,10 @@ export function getMediaConstraints({
  * High level mediaConstraints helper
  */
 export default function getConstraints({ devices, videoId, audioId, options, type = "ideal" }: GetConstraintsOptions) {
-    const audioDevices = devices.filter((d: any) => d.kind === "audioinput");
-    const videoDevices = devices.filter((d: any) => d.kind === "videoinput");
-    const useDefaultAudio = !audioId || !audioDevices.some((d: any) => d.deviceId === audioId);
-    const useDefaultVideo = !videoId || !videoDevices.some((d: any) => d.deviceId === videoId);
+    const audioDevices = devices.filter((d) => d.kind === "audioinput");
+    const videoDevices = devices.filter((d) => d.kind === "videoinput");
+    const useDefaultAudio = !audioId || !audioDevices.some((d) => d.deviceId === audioId);
+    const useDefaultVideo = !videoId || !videoDevices.some((d) => d.deviceId === videoId);
     const constraints = getMediaConstraints({
         preferredDeviceIds: {
             audioId: useDefaultAudio ? null : { [type]: audioId },

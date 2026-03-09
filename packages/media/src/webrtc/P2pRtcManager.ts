@@ -12,7 +12,7 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { RtcManager, RtcManagerOptions, SDPRelayMessage, SignalMediaServerConfig } from "./types";
+import { RtcManager, RtcManagerOptions, SDPRelayMessage, SignalMediaServerConfig, WebRTCProvider } from "./types";
 import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
@@ -93,7 +93,7 @@ export default class P2pRtcManager implements RtcManager {
     _localStreamDeregisterFunction: any;
     _emitter: any;
     _serverSocket: ServerSocket;
-    _webrtcProvider: any;
+    _webrtcProvider: WebRTCProvider;
     _features: any;
     _isAudioOnlyMode: boolean;
     offerOptions: {
