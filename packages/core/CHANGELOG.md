@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 1.6.10
+
+### Patch Changes
+
+- Updated dependencies [bfa4873]
+    - @whereby.com/media@2.9.0
+
 ## 1.6.9
 
 ### Patch Changes

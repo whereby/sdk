@@ -1,5 +1,11 @@
 # @whereby.com/camera-effects
 
+## 1.1.0
+
+### Minor Changes
+
+- bfa4873: Pin webrtc-adapter to 9.0.4
+
 ## 1.0.3
 
 ### Patch Changes

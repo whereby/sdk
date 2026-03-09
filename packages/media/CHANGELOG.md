@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 2.9.0
+
+### Minor Changes
+
+- bfa4873: Pin webrtc-adapter to 9.0.4
+
 ## 2.8.9
 
 ### Patch Changes
