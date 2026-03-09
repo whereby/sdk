@@ -60,7 +60,7 @@
         "socket.io-client": "4.7.2",
         "uuid": "^9.0.1",
         "uuid-validate": "^0.0.3",
-        "webrtc-adapter": "^9.0.1"
+        "webrtc-adapter": "9.0.4"
     },
     "devDependencies": {
         "@babel/core": "^7.23.2",

@@ -602,8 +602,8 @@ importers:
         specifier: ^1.8.0
         version: 1.8.0
       webrtc-adapter:
-        specifier: ^8.1.0
-        version: 8.2.4
+        specifier: 9.0.4
+        version: 9.0.4
     devDependencies:
       '@rollup/plugin-wasm':
         specifier: ^6.2.2
@@ -736,8 +736,8 @@ importers:
         specifier: ^0.0.3
         version: 0.0.3
       webrtc-adapter:
-        specifier: ^9.0.1
-        version: 9.0.3
+        specifier: 9.0.4
+        version: 9.0.4
     devDependencies:
       '@babel/core':
         specifier: ^7.23.2
@@ -5989,12 +5989,12 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@9.3.5:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
@@ -9328,12 +9328,8 @@ packages:
       webpack-cli:
         optional: true
 
-  webrtc-adapter@8.2.4:
-    resolution: {integrity: sha512-VwtwbYNKnVQW8koB9qb8YcxNwpSVHTvvKEZLzY6uQ3gFrA9E87VPbB5xE+m1AGwUjL1UgN35jRR9hQgteZI5bg==}
-    engines: {node: '>=6.0.0', npm: '>=3.10.0'}
-
-  webrtc-adapter@9.0.3:
-    resolution: {integrity: sha512-5fALBcroIl31OeXAdd1YUntxiZl1eHlZZWzNg3U4Fn+J9/cGL3eT80YlrsWGvj2ojuz1rZr2OXkgCzIxAZ7vRQ==}
+  webrtc-adapter@9.0.4:
+    resolution: {integrity: sha512-5ZZY1+lGq8LEKuDlg9M2RPJHlH3R7OVwyHqMcUsLKCgd9Wvf+QrFTCItkXXYPmrJn8H6gRLXbSgxLLdexiqHxw==}
     engines: {node: '>=6.0.0', npm: '>=3.10.0'}
 
   whatwg-encoding@2.0.0:
@@ -19946,11 +19942,7 @@ snapshots:
       - esbuild
       - uglify-js
 
-  webrtc-adapter@8.2.4:
-    dependencies:
-      sdp: 3.2.1
-
-  webrtc-adapter@9.0.3:
+  webrtc-adapter@9.0.4:
     dependencies:
       sdp: 3.2.1
 
