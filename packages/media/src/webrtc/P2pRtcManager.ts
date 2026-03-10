@@ -12,7 +12,14 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { RtcManager, RtcManagerOptions, SDPRelayMessage, SignalMediaServerConfig, WebRTCProvider } from "./types";
+import {
+    RtcManager,
+    RtcManagerFeatures,
+    RtcManagerOptions,
+    SDPRelayMessage,
+    SignalMediaServerConfig,
+    WebRTCProvider,
+} from "./types";
 import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
@@ -95,7 +102,7 @@ export default class P2pRtcManager implements RtcManager {
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
-    _features: any;
+    _features: RtcManagerFeatures;
     _isAudioOnlyMode: boolean;
     offerOptions: {
         offerToReceiveAudio: boolean;
@@ -978,7 +985,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { redOn = false, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         this._setCodecPreferences(pc).then(() =>
             pc

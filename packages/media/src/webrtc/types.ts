@@ -1,4 +1,5 @@
 import { SignalRoom, ServerSocket } from "../utils";
+import { HostListEntryOptionalDC } from "./VegaConnectionManager";
 
 /*
     RTC
@@ -10,13 +11,39 @@ export enum RtcEventNames {
 
 export type RtcEventEmitter = { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
 
+export type RtcManagerFeatures = Partial<{
+    awaitJoinRoomFinished: boolean;
+    turnServersOn: boolean;
+    turnServerOverrideHost: string;
+    deprioritizeH264OnSafari: boolean;
+    bandwidth: string;
+    increaseIncomingMediaBufferOn: boolean;
+    sfuServersOverride: HostListEntryOptionalDC[];
+    sfuServerOverrideHost: string;
+    sfuVp9On: boolean;
+    producerCpuOveruseWatchOff: boolean;
+    isNodeSdk: boolean;
+    redOn: boolean;
+    rtpAbsCaptureTimeOn: boolean;
+    cleanSdpOn: boolean;
+    p2pAv1On: boolean;
+    addGoogleStunServers: string;
+    addCloudflareStunServers: string;
+    useOnlyTURN: string;
+    uncappedSingleRemoteVideoOn: boolean;
+    safari17HandlerOn: boolean;
+    neverReceiveVideo: boolean;
+    h264On: boolean;
+    lowDataModeEnabled: boolean;
+    simulcastScreenshareOn: boolean;
+}>;
 export interface RtcManagerOptions {
     selfId: string;
     room: SignalRoom;
     emitter: RtcEventEmitter;
     serverSocket: ServerSocket;
     webrtcProvider: WebRTCProvider;
-    features: any;
+    features: RtcManagerFeatures;
 }
 
 export interface VegaRtcManagerOptions extends RtcManagerOptions {

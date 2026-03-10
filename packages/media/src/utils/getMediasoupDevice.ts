@@ -1,8 +1,9 @@
 import { detectDeviceAsync, Device } from "mediasoup-client";
 import { BuiltinHandlerName } from "mediasoup-client/lib/types";
+import { RtcManagerFeatures } from "../webrtc";
 
 type SupportedDevice = BuiltinHandlerName | "NodeJS" | undefined;
-export const getMediasoupDeviceAsync = async (features: Record<string, boolean | undefined>): Promise<Device> => {
+export const getMediasoupDeviceAsync = async (features: RtcManagerFeatures): Promise<Device> => {
     if (features.isNodeSdk) {
         return new Device({ handlerName: "Safari12" });
     }
