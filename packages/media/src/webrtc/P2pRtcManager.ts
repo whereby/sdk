@@ -32,11 +32,6 @@ const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
 const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
-if (browserName === "firefox" && adapter.browserShim && "shimGetDisplayMedia" in adapter.browserShim) {
-    // @ts-ignore
-    adapter.browserShim?.shimGetDisplayMedia(window, "screen");
-}
-
 let unloading = false;
 if (browserName === "chrome") {
     window.document.addEventListener("beforeunload", () => {
