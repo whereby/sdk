@@ -1,5 +1,13 @@
 # @whereby.com/media
 
+## 2.9.2
+
+### Patch Changes
+
+- d1793e1: Remove Firefox getDisplayMedia shim
+- f0b9026: Remove unused SDP-modifying functions
+- e09ac63: Stop filtering out mid extension for Safari when being answerer in P2P
+
 ## 2.9.1
 
 ### Patch Changes
