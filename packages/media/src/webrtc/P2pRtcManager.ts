@@ -68,7 +68,6 @@ type P2PAnalytics = {
     P2PReplaceTrackOldTrackNotFound: number;
     P2PReplaceTrackWithoutPC: number;
     P2PReplaceTrackSourceKindNotFound: number;
-    P2PRemoveStreamNoPC: number;
     P2POnTrackNoStream: number;
     P2PSetCodecPreferenceError: number;
     P2PCreateOfferNoSDP: number;
@@ -185,7 +184,6 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackOldTrackNotFound: 0,
             P2PReplaceTrackWithoutPC: 0,
             P2PReplaceTrackSourceKindNotFound: 0,
-            P2PRemoveStreamNoPC: 0,
             P2POnTrackNoStream: 0,
             P2PSetCodecPreferenceError: 0,
             P2PCreateOfferNoSDP: 0,
