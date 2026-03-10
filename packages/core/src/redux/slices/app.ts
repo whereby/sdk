@@ -7,6 +7,7 @@ import { coreVersion } from "../../version";
  * Reducer
  */
 
+type RemoteMediaOptions = { receiveVideo: boolean; receiveAudio: boolean };
 export interface AppConfig {
     assistantKey?: string | null;
     displayName: string;
@@ -16,6 +17,7 @@ export interface AppConfig {
     isDialIn?: boolean;
     isNodeSdk?: boolean;
     localMediaOptions?: LocalMediaOptions;
+    remoteMediaOptions?: RemoteMediaOptions;
     roomKey: string | null;
     roomUrl: string;
     userAgent?: string;
@@ -31,6 +33,7 @@ export interface AppState {
     isAudioRecorder: boolean;
     isDialIn: boolean;
     isNodeSdk: boolean;
+    remoteMediaOptions: RemoteMediaOptions;
     roomName: string | null;
     roomUrl: string | null;
     userAgent: string | null;
@@ -45,6 +48,7 @@ export const initialState: AppState = {
     isAudioRecorder: false,
     isDialIn: false,
     isNodeSdk: false,
+    remoteMediaOptions: { receiveAudio: true, receiveVideo: true },
     roomName: null,
     roomUrl: null,
     userAgent: `core:${coreVersion}`,
@@ -95,3 +99,4 @@ export const selectAppExternalId = (state: RootState) => state.app.externalId;
 export const selectAppIsNodeSdk = (state: RootState) => state.app.isNodeSdk;
 export const selectAppInitialConfig = (state: RootState) => state.app.initialConfig;
 export const selectAppIgnoreBreakoutGroups = (state: RootState) => state.app.ignoreBreakoutGroups;
+export const selectAppRemoteMediaOptions = (state: RootState) => state.app.remoteMediaOptions;
