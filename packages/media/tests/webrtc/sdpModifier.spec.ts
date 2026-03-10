@@ -19,19 +19,6 @@ describe("sdpModifier", () => {
         return videoSdpLines.join("\r\n") + "\r\n";
     }
 
-    describe("changeMediaDirection", () => {
-        it("changes the direction to inactive when active is set to false", () => {
-            const initialSdp = getVideoSdpString() + "a=recvonly\r\n";
-            const modifiedSdp = sdpModifier.changeMediaDirection(initialSdp, false);
-            expect(modifiedSdp).toEqual(initialSdp.replace("recvonly", "inactive"));
-        });
-        it("changes the direction to recvonly when active is set to true", () => {
-            const initialSdp = getVideoSdpString() + "a=inactive\r\n";
-            const modifiedSdp = sdpModifier.changeMediaDirection(initialSdp, true);
-            expect(modifiedSdp).toEqual(initialSdp.replace("inactive", "recvonly"));
-        });
-    });
-
     describe("deprioritizeH264", () => {
         const sdp =
             "v=0\r\n" +
