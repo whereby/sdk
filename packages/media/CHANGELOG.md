@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 2.9.1
+
+### Patch Changes
+
+- a549b28: Only use MSID semantics fix for Firefox version < 68
+- 8f85f09: Re-enable local network issue detection in P2P
+
 ## 2.9.0
 
 ### Minor Changes
