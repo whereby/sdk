@@ -134,10 +134,7 @@ export function deprioritizeH264(sdp: any) {
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1478685
 // filter out the mid rtp header extension
 export function filterMidExtension(sdp: any) {
-    if (
-        browserName !== "safari" &&
-        (browserName !== "firefox" || (browserVersion && browserVersion >= 63) || browserVersion === 60)
-    ) {
+    if (browserName !== "firefox" || (browserVersion && browserVersion >= 63) || browserVersion === 60) {
         return sdp;
     }
     return (
