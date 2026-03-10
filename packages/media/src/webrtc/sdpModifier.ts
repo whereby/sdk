@@ -100,38 +100,6 @@ export function cleanSdp(sdp: string) {
     return sdp;
 }
 
-// Safari does not like VP8-only offers
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=4957
-// This sets the m-line as rejected.
-export function maybeRejectNoH264(sdp: any) {
-    if (browserName !== "safari") {
-        return sdp;
-    }
-    const sections = SDPUtils.splitSections(sdp);
-    for (let i = 1; i < sections.length; i++) {
-        if (SDPUtils.getKind(sections[i]) !== "video") {
-            continue;
-        }
-        const codecs = SDPUtils.matchPrefix(sections[i], "a=rtpmap:")
-            .map((line) => {
-                return SDPUtils.parseRtpMap(line);
-            })
-            .map((codec) => {
-                return codec.name.toUpperCase();
-            });
-
-        // this m-line has...
-        if (
-            codecs.indexOf("H264") === -1 && // no H264
-            sections[i][8] === "9"
-        ) {
-            // and is not rejected
-            sections[i] = sections[i].replace("m=video 9 ", "m=video 0 "); // reject it.
-        }
-    }
-    return sections.join("");
-}
-
 // SDP mangling for deprioritizing H264
 export function deprioritizeH264(sdp: any) {
     return SDPUtils.splitSections(sdp)
@@ -197,19 +165,6 @@ export function filterMsidSemantic(sdp: any) {
         SDPUtils.splitLines(sdp.trim())
             .map((line) => (line.startsWith("a=msid-semantic:") ? "a=msid-semantic: WMS *" : line))
             .join("\r\n") + "\r\n"
-    );
-}
-
-export function changeMediaDirection(sdp: any, active: any) {
-    const sections = SDPUtils.splitSections(sdp);
-    return (
-        sections.shift() +
-        sections
-            .map((section) => {
-                const currentDirection = SDPUtils.getDirection(section, SDPUtils.getKind(section));
-                return section.replace("a=" + currentDirection, "a=" + (active ? "recvonly" : "inactive"));
-            })
-            .join("")
     );
 }
 
