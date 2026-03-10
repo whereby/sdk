@@ -18,6 +18,7 @@ interface P2PSessionOptions {
     peerConnectionConfig: RTCConfiguration;
     deprioritizeH264Encoding: boolean;
     incrementAnalyticMetric: P2PIncrementAnalyticMetric;
+    remoteMediaOptions: { receiveAudio: boolean; receiveVideo: boolean };
 }
 
 export default class Session {
@@ -49,6 +50,7 @@ export default class Session {
     srdComplete: any;
     _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
     pendingReplaceTrackActions: (() => Promise<void>)[];
+    remoteMediaOptions: { receiveAudio: boolean; receiveVideo: boolean };
 
     constructor({
         peerConnectionId,
@@ -57,6 +59,7 @@ export default class Session {
         peerConnectionConfig,
         deprioritizeH264Encoding,
         incrementAnalyticMetric,
+        remoteMediaOptions,
     }: P2PSessionOptions) {
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
@@ -67,6 +70,7 @@ export default class Session {
         this.ipv6HostCandidate6to4Seen = false;
         this.mdnsHostCandidateSeen = false;
         this.pendingReplaceTrackActions = [];
+        this.remoteMediaOptions = remoteMediaOptions;
 
         // Create PC.
         this.peerConnectionConfig = peerConnectionConfig;
@@ -176,10 +180,25 @@ export default class Session {
 
         // wrapper around SRD which stores a promise
         this.srdComplete = this.pc.setRemoteDescription(desc);
-        return this.srdComplete.then(() => {
-            this.earlyIceCandidates.forEach((candidate) => this.pc.addIceCandidate(candidate));
-            this.earlyIceCandidates = [];
-        });
+        return this.srdComplete
+            .then(() => {
+                this.earlyIceCandidates.forEach((candidate) => this.pc.addIceCandidate(candidate));
+                this.earlyIceCandidates = [];
+            })
+            .then(() => {
+                if (!this.remoteMediaOptions.receiveVideo) {
+                    this.pc
+                        .getTransceivers()
+                        .filter((transceiver) => transceiver.receiver.track.kind === "video")
+                        .map((transceiver) => (transceiver.direction = "inactive"));
+                }
+                if (!this.remoteMediaOptions.receiveAudio) {
+                    this.pc
+                        .getTransceivers()
+                        .filter((transceiver) => transceiver.receiver.track.kind === "audio")
+                        .map((transceiver) => (transceiver.direction = "inactive"));
+                }
+            });
     }
 
     handleOffer(offer: RTCSessionDescription): Promise<RTCSessionDescription> {

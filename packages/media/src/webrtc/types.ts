@@ -12,30 +12,30 @@ export enum RtcEventNames {
 export type RtcEventEmitter = { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
 
 export type RtcManagerFeatures = Partial<{
+    addCloudflareStunServers: string;
+    addGoogleStunServers: string;
     awaitJoinRoomFinished: boolean;
-    turnServersOn: boolean;
-    turnServerOverrideHost: string;
-    deprioritizeH264OnSafari: boolean;
     bandwidth: string;
+    cleanSdpOn: boolean;
+    deprioritizeH264OnSafari: boolean;
+    h264On: boolean;
     increaseIncomingMediaBufferOn: boolean;
-    sfuServersOverride: HostListEntryOptionalDC[];
-    sfuServerOverrideHost: string;
-    sfuVp9On: boolean;
-    producerCpuOveruseWatchOff: boolean;
     isNodeSdk: boolean;
+    lowDataModeEnabled: boolean;
+    p2pAv1On: boolean;
+    producerCpuOveruseWatchOff: boolean;
     redOn: boolean;
     rtpAbsCaptureTimeOn: boolean;
-    cleanSdpOn: boolean;
-    p2pAv1On: boolean;
-    addGoogleStunServers: string;
-    addCloudflareStunServers: string;
-    useOnlyTURN: string;
-    uncappedSingleRemoteVideoOn: boolean;
     safari17HandlerOn: boolean;
-    neverReceiveVideo: boolean;
-    h264On: boolean;
-    lowDataModeEnabled: boolean;
+    sfuServerOverrideHost: string;
+    sfuServersOverride: HostListEntryOptionalDC[];
+    sfuVp9On: boolean;
+    remoteMediaOptions: { receiveAudio: boolean; receiveVideo: boolean };
     simulcastScreenshareOn: boolean;
+    turnServerOverrideHost: string;
+    turnServersOn: boolean;
+    uncappedSingleRemoteVideoOn: boolean;
+    useOnlyTURN: string;
 }>;
 export interface RtcManagerOptions {
     selfId: string;

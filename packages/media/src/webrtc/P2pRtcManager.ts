@@ -102,12 +102,9 @@ export default class P2pRtcManager implements RtcManager {
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
-    _features: RtcManagerFeatures;
+    _features: RtcManagerFeatures & { remoteMediaOptions: { receiveAudio: boolean; receiveVideo: boolean } };
     _isAudioOnlyMode: boolean;
-    offerOptions: {
-        offerToReceiveAudio: boolean;
-        offerToReceiveVideo: boolean;
-    };
+    offerOptions: RTCOfferOptions;
     _audioTrackOnEnded: () => void;
     _videoTrackOnEnded: () => void;
     _iceServers: any;
@@ -139,12 +136,18 @@ export default class P2pRtcManager implements RtcManager {
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
-        this._features = features || {};
+        this._features = {
+            ...(features || {}),
+            remoteMediaOptions: features.remoteMediaOptions ?? { receiveAudio: true, receiveVideo: true },
+        };
         this._isAudioOnlyMode = false;
         this._closed = false;
         this.skipEmittingServerMessageCount = 0;
 
-        this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
+        this.offerOptions = {
+            offerToReceiveAudio: this._features.remoteMediaOptions.receiveAudio,
+            offerToReceiveVideo: this._features.remoteMediaOptions.receiveVideo,
+        };
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -585,6 +588,7 @@ export default class P2pRtcManager implements RtcManager {
             bandwidth: initialBandwidth,
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
+            remoteMediaOptions: this._features.remoteMediaOptions,
         });
         this.peerConnections[peerConnectionId] = session;
 
@@ -971,7 +975,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _negotiatePeerConnection(clientId: string, session: Session, constraints?: any) {
+    _negotiatePeerConnection(clientId: string, session: Session, constraints?: RTCOfferOptions) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;

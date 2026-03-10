@@ -38,6 +38,7 @@ import {
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
 import { CAMERA_STREAM_ID, STREAM_TYPES } from "../../model";
+import { ConsumerOptions } from "mediasoup-client/lib/Consumer";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -60,7 +61,7 @@ export default class VegaRtcManager implements RtcManager {
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: any;
-    _features: RtcManagerFeatures;
+    _features: RtcManagerFeatures & { remoteMediaOptions: { receiveAudio: boolean; receiveVideo: boolean } };
     _eventClaim?: any;
     _vegaConnection: VegaConnection | null;
     _micAnalyser: any;
@@ -124,7 +125,10 @@ export default class VegaRtcManager implements RtcManager {
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
-        this._features = features || {};
+        this._features = {
+            ...(features || {}),
+            remoteMediaOptions: features.remoteMediaOptions ?? { receiveAudio: true, receiveVideo: true },
+        };
         this._eventClaim = eventClaim;
 
         this._vegaConnection = null;
@@ -1812,8 +1816,16 @@ export default class VegaRtcManager implements RtcManager {
             });
     }
 
-    async _onConsumerReady(options: any) {
+    async _onConsumerReady(options: ConsumerOptions) {
         logger.info("_onConsumerReady()", { id: options.id, producerId: options.producerId });
+
+        if (
+            (options.kind === "video" && !this._features.remoteMediaOptions.receiveVideo) ||
+            (options.kind === "audio" && !this._features.remoteMediaOptions.receiveAudio)
+        ) {
+            this._vegaConnection?.message("closeConsumers", { consumerIds: [options.id] });
+            return;
+        }
 
         const consumer = await this._receiveTransport.consume(options);
 
