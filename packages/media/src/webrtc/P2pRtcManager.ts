@@ -1,7 +1,7 @@
 import rtcStats from "./rtcStatsService";
 import Session from "./Session";
 import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
-// import * as webrtcBugDetector from "./bugDetector";
+import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
@@ -66,8 +66,6 @@ type P2PAnalytics = {
     P2PReplaceTrackNewTrackEnded: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2PReplaceTrackOldTrackNotFound: number;
-    P2PReplaceTrackToPCsPendingActionsNull: number;
-    P2PReplaceTrackReturnedFalse: number;
     P2PReplaceTrackWithoutPC: number;
     P2PReplaceTrackSourceKindNotFound: number;
     P2PRemoveStreamNoPC: number;
@@ -75,6 +73,9 @@ type P2PAnalytics = {
     P2PSetCodecPreferenceError: number;
     P2PCreateOfferNoSDP: number;
     P2PCreateAnswerNoSDP: number;
+    P2PMicNotWorking: number;
+    P2PLocalNetworkFailed: number;
+    P2PRelayedIceCandidate: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -182,8 +183,6 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackNewTrackEnded: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2PReplaceTrackOldTrackNotFound: 0,
-            P2PReplaceTrackToPCsPendingActionsNull: 0,
-            P2PReplaceTrackReturnedFalse: 0,
             P2PReplaceTrackWithoutPC: 0,
             P2PReplaceTrackSourceKindNotFound: 0,
             P2PRemoveStreamNoPC: 0,
@@ -191,6 +190,9 @@ export default class P2pRtcManager implements RtcManager {
             P2PSetCodecPreferenceError: 0,
             P2PCreateOfferNoSDP: 0,
             P2PCreateAnswerNoSDP: 0,
+            P2PMicNotWorking: 0,
+            P2PLocalNetworkFailed: 0,
+            P2PRelayedIceCandidate: 0,
         };
     }
 
@@ -646,11 +648,14 @@ export default class P2pRtcManager implements RtcManager {
                     if (currentStatus !== newStatus) {
                         this._maybeRestartIce(clientId, session);
                     }
-                    if (session.relayCandidateSeen === null && !session.wasEverConnected) {
-                        // this means we did not gather any relay candidates.
-                        // which shows that we are on a restricted network and it is an
-                        // issue on the local end.
-                        // Should not trigger if we  were ever connected.
+                    if (!session.relayCandidateSeen && !session.wasEverConnected) {
+                        // We did not gather any relay candidates and we were never connected.
+                        // At that point we consider it a local network problem.
+                        this.analytics.P2PLocalNetworkFailed++;
+                        rtcStats.sendEvent("P2PLocalNetworkFailed", {
+                            from: "iceConnectionStateChange",
+                            clientId,
+                        });
                         this._emit(rtcManagerEvents.CONNECTION_BLOCKED_BY_NETWORK);
                     }
                     break;
@@ -660,45 +665,45 @@ export default class P2pRtcManager implements RtcManager {
             }
             this._setConnectionStatus(session, newStatus, clientId);
         };
-        // TODO: investigate impact of erroneous connectionstate event handler.
-        // @ts-ignore
         pc.onconnectionstatechange = () => {
-            // since Chrome insists on not going to failed for unified-plan
-            // (/new-iceconnectionstate)... listen for connectionState.
-            // See also
-            //   https://bugs.chromium.org/p/chromium/issues/detail?id=933786
-            //   https://bugs.chromium.org/p/chromium/issues/detail?id=982793
             switch (pc.connectionState) {
                 case "connected":
-                    // TODO: decide if we still want the code below to execute.
-
                     // try to detect audio problems.
                     // this waits 3 seconds after the connection is up
                     // to be sure the DTLS handshake is done even in Firefox.
-                    // setTimeout(() => {
-                    //     webrtcBugDetector.detectMicrophoneNotWorking(session.pc).then((failureDirection: any) => {
-                    //         if (failureDirection !== false) {
-                    //             this._emit(rtcManagerEvents.MICROPHONE_NOT_WORKING, {
-                    //                 failureDirection,
-                    //                 clientId,
-                    //             });
-                    //         }
-                    //     });
-                    // }, 3000);
+                    setTimeout(() => {
+                        webrtcBugDetector.detectMicrophoneNotWorking(session.pc).then((failureDirection) => {
+                            if (failureDirection) {
+                                this.analytics.P2PMicNotWorking++;
+                                rtcStats.sendEvent("P2PMicNotWorking", { clientId, failureDirection });
+                                // TODO: Decide if we want to act on this or not.
+
+                                // this._emit(rtcManagerEvents.MICROPHONE_NOT_WORKING, {
+                                //     failureDirection,
+                                //     clientId,
+                                // });
+                            }
+                        });
+                    }, 3000);
                     session.registerConnected?.({});
                     break;
                 case "failed":
                     const newStatus = CONNECTION_STATUS.TYPES.CONNECTION_FAILED;
-
-                    // TODO: decide if we still want the code below to execute.
-
-                    // if (session.relayCandidateSeen === null && !session.wasEverConnected) {
-                    //     // this means we did not gather any relay candidates.
-                    //     // which shows that we are on a restricted network and it is an
-                    //     // issue on the local end.
-                    //     // Should not trigger if we  were ever connected.
-                    //     this._emit(rtcManagerEvents.CONNECTION_BLOCKED_BY_NETWORK);
-                    // }
+                    // Chrome insists on not going to failed for unified-plan
+                    // (new iceconnectionstate)... listen for connectionState.
+                    // See also
+                    //   https://bugs.chromium.org/p/chromium/issues/detail?id=933786
+                    //   https://bugs.chromium.org/p/chromium/issues/detail?id=982793
+                    if (!session.relayCandidateSeen && !session.wasEverConnected) {
+                        // We did not gather any relay candidates and we were never connected.
+                        // At that point we consider it a local network problem.
+                        this.analytics.P2PLocalNetworkFailed++;
+                        rtcStats.sendEvent("P2PLocalNetworkFailed", {
+                            from: "connectionStateChange",
+                            clientId,
+                        });
+                        this._emit(rtcManagerEvents.CONNECTION_BLOCKED_BY_NETWORK);
+                    }
                     this._setConnectionStatus(session, newStatus, clientId);
                     break;
                 case "closed":
@@ -1132,11 +1137,21 @@ export default class P2pRtcManager implements RtcManager {
             }
         };
 
-        pc.onicecandidate = (event: any) => {
+        pc.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
             if (event.candidate) {
-                switch (event.candidate?.type) {
+                // TODO: remove relayed candidate from ICE candidate analytics if it never happens.
+
+                // @ts-ignore
+                if (event.candidate.type === "relayed") {
+                    this.analytics.P2PRelayedIceCandidate++;
+                }
+
+                switch (event.candidate.type) {
                     case "host":
-                        const address = event?.candidate?.address;
+                        const address = event.candidate.address;
+                        if (!address) {
+                            break;
+                        }
                         try {
                             if (ipRegex.v4({ exact: true }).test(address)) {
                                 const ipv4 = checkIp(address);
@@ -1167,8 +1182,10 @@ export default class P2pRtcManager implements RtcManager {
                     case "srflx":
                         session.serverReflexiveCandidateSeen = true;
                         break;
-                    case "relay":
+                    // TODO: remove relayed candidate from ICE candidate analytics if it never happens.
+                    // @ts-ignore
                     case "relayed":
+                    case "relay":
                         session.relayCandidateSeen = true;
                         break;
                     default:
