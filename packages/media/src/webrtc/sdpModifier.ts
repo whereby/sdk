@@ -190,7 +190,7 @@ export function filterMidExtension(sdp: any) {
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1534673
 // Filter out a:msid-semantic header
 export function filterMsidSemantic(sdp: any) {
-    if (browserName !== "firefox") {
+    if (browserName !== "firefox" && browserVersion < 68) {
         return sdp;
     }
     return (
