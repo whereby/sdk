@@ -35,6 +35,7 @@ describe("Session", () => {
             bandwidth,
             deprioritizeH264Encoding: false,
             incrementAnalyticMetric: jest.fn(),
+            audioOnlyMode: "off",
         });
     });
 

@@ -3,15 +3,17 @@ import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
-import { RTCSessionDescription } from "./types";
+import { AudioOnlyMode, RTCSessionDescription } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 import { trackAnnotations } from "../utils/annotations";
+import { resolveAudioOnlyModeChanges } from "./util";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 interface P2PSessionOptions {
+    audioOnlyMode: AudioOnlyMode;
     peerConnectionId: string;
     clientId: string;
     bandwidth: number;
@@ -41,7 +43,7 @@ export default class Session {
     earlyIceCandidates: any[];
     afterConnected: Promise<unknown>;
     registerConnected?: (value: unknown) => void;
-    offerOptions: { offerToReceiveAudio: boolean; offerToReceiveVideo: boolean };
+    private audioOnlyMode: AudioOnlyMode;
     _deprioritizeH264Encoding: any;
     clientId: any;
     peerConnectionConfig: RTCConfiguration;
@@ -51,6 +53,7 @@ export default class Session {
     pendingReplaceTrackActions: (() => Promise<void>)[];
 
     constructor({
+        audioOnlyMode,
         peerConnectionId,
         clientId,
         bandwidth,
@@ -58,6 +61,7 @@ export default class Session {
         deprioritizeH264Encoding,
         incrementAnalyticMetric,
     }: P2PSessionOptions) {
+        this.audioOnlyMode = audioOnlyMode;
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
@@ -105,7 +109,6 @@ export default class Session {
         this.afterConnected = new Promise((resolve) => {
             this.registerConnected = resolve;
         });
-        this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._deprioritizeH264Encoding = deprioritizeH264Encoding;
         this._incrementAnalyticMetric = incrementAnalyticMetric;
     }
@@ -394,18 +397,34 @@ export default class Session {
         setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
     }
 
-    setAudioOnly(enable: boolean, excludedTrackIds: string[] = []) {
+    setAudioOnly(audioOnlyMode: AudioOnlyMode, screenshareTrackIds: string[] = []) {
+        const previousAudioOnlyMode = this.audioOnlyMode;
+        const { startScreenshare, startWebcam, stopScreenshare, stopWebcam } = resolveAudioOnlyModeChanges({
+            previousAudioOnlyMode,
+            nextAudioOnlyMode: audioOnlyMode,
+        });
+        this.audioOnlyMode = audioOnlyMode;
         this.pc
             ?.getTransceivers()
             .filter(
-                (videoTransceiver: any) =>
-                    videoTransceiver?.direction !== "recvonly" &&
-                    videoTransceiver?.receiver?.track?.kind === "video" &&
-                    !excludedTrackIds.includes(videoTransceiver?.receiver?.track?.id) &&
-                    !excludedTrackIds.includes(videoTransceiver?.sender?.track?.id),
+                (videoTransceiver) =>
+                    videoTransceiver?.direction !== "recvonly" && videoTransceiver?.receiver?.track?.kind === "video",
             )
-            .forEach((videoTransceiver: any) => {
-                videoTransceiver.direction = enable ? "sendonly" : "sendrecv";
+            .forEach((videoTransceiver) => {
+                const senderTrackId = videoTransceiver?.sender?.track?.id;
+                const receiverTrackId = videoTransceiver?.receiver?.track?.id;
+                const isScreenshareTransceiver =
+                    (senderTrackId && screenshareTrackIds.includes(senderTrackId)) ||
+                    (receiverTrackId && screenshareTrackIds.includes(receiverTrackId));
+                const isWebcamTransceiver = !isScreenshareTransceiver;
+
+                if ((stopScreenshare && isScreenshareTransceiver) || (stopWebcam && isWebcamTransceiver)) {
+                    videoTransceiver.direction = "sendonly";
+                }
+
+                if ((startScreenshare && isScreenshareTransceiver) || (startWebcam && isWebcamTransceiver)) {
+                    videoTransceiver.direction = "sendrecv";
+                }
             });
     }
 }

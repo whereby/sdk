@@ -12,7 +12,7 @@ import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
-import { CAMERA_STREAM_ID } from "../../src";
+import { CAMERA_STREAM_ID, RtcManager } from "../../src";
 
 const originalNavigator = global.navigator;
 
@@ -131,7 +131,7 @@ describe("P2pRtcManager", () => {
             mediaserverConfigTtlSeconds: 60,
         };
 
-        let rtcManager: any;
+        let rtcManager: P2pRtcManager;
         let emitterStub: any;
         let serverSocketStub: any;
         let serverSocket: any;
@@ -371,29 +371,27 @@ describe("P2pRtcManager", () => {
                     disconnected: "CONNECTION_DISCONNECTED",
                 };
 
-                describe("broadcasts when ice connection state becomes", () => {
-                    Object.keys(iceStateToConnectionStatus).forEach((iceState: any) => {
-                        const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
+                Object.keys(iceStateToConnectionStatus).forEach((iceState: any) => {
+                    const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
 
-                        it("broadcasts when ice connection state becomes " + iceState, async () => {
-                            const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                    it("broadcasts when ice connection state becomes " + iceState, async () => {
+                        const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
 
-                            pc.iceConnectionState = iceState;
-                            pc.localDescription = { type: "offer" };
+                        pc.iceConnectionState = iceState;
+                        pc.localDescription = { type: "offer" };
 
-                            pc.oniceconnectionstatechange();
+                        pc.oniceconnectionstatechange();
 
-                            jest.advanceTimersByTime(0);
+                        jest.advanceTimersByTime(0);
 
-                            expect(emitterStub.emit).toHaveBeenCalledWith(
-                                CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
-                                expect.objectContaining({
-                                    clientId,
-                                    streamIds: [],
-                                    status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
-                                }),
-                            );
-                        });
+                        expect(emitterStub.emit).toHaveBeenCalledWith(
+                            CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
+                            expect.objectContaining({
+                                clientId,
+                                streamIds: [],
+                                status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
+                            }),
+                        );
                     });
                 });
 

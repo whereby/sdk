@@ -13,6 +13,7 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import {
+    AudioOnlyMode,
     RtcManager,
     RtcManagerFeatures,
     RtcManagerOptions,
@@ -103,11 +104,8 @@ export default class P2pRtcManager implements RtcManager {
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
     _features: RtcManagerFeatures;
-    _isAudioOnlyMode: boolean;
-    offerOptions: {
-        offerToReceiveAudio: boolean;
-        offerToReceiveVideo: boolean;
-    };
+    _audioOnlyMode: AudioOnlyMode;
+    offerOptions: RTCOfferOptions;
     _audioTrackOnEnded: () => void;
     _videoTrackOnEnded: () => void;
     _iceServers: any;
@@ -124,7 +122,7 @@ export default class P2pRtcManager implements RtcManager {
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
 
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, audioOnlyMode, features }: RtcManagerOptions) {
         const { name, session, iceServers, turnServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
@@ -139,12 +137,15 @@ export default class P2pRtcManager implements RtcManager {
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
-        this._features = features || {};
-        this._isAudioOnlyMode = false;
+        this._features = features;
+        this._audioOnlyMode = audioOnlyMode ?? "off";
         this._closed = false;
         this.skipEmittingServerMessageCount = 0;
 
-        this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
+        this.offerOptions = {
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: audioOnlyMode !== "on",
+        };
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -431,19 +432,19 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    setAudioOnly(audioOnly: any) {
-        this._isAudioOnlyMode = audioOnly;
+    setAudioOnly(audioOnly: AudioOnlyMode) {
+        this._audioOnlyMode = audioOnly;
 
         this._forEachPeerConnection((session: any) => {
             if (session.hasConnectedPeerConnection()) {
                 this._withForcedRenegotiation(session, () =>
-                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds),
+                    session.setAudioOnly(this._audioOnlyMode, this._screenshareVideoTrackIds),
                 );
             }
         });
     }
 
-    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds: string[] = []) {
         const localScreenshareStream = this._getFirstLocalNonCameraStream();
 
         this._screenshareVideoTrackIds = [
@@ -585,6 +586,7 @@ export default class P2pRtcManager implements RtcManager {
             bandwidth: initialBandwidth,
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
+            audioOnlyMode: this._audioOnlyMode,
         });
         this.peerConnections[peerConnectionId] = session;
 
@@ -636,8 +638,8 @@ export default class P2pRtcManager implements RtcManager {
                         session.wasEverConnected = true;
                     }
 
-                    if (this._isAudioOnlyMode) {
-                        session.setAudioOnly(true, this._screenshareVideoTrackIds);
+                    if (this._audioOnlyMode) {
+                        session.setAudioOnly(this._audioOnlyMode, this._screenshareVideoTrackIds);
                     }
 
                     session.registerConnected?.({});
@@ -971,7 +973,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _negotiatePeerConnection(clientId: string, session: Session, constraints?: any) {
+    _negotiatePeerConnection(clientId: string, session: Session, constraints?: RTCOfferOptions) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;

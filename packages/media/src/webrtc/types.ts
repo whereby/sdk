@@ -11,33 +11,35 @@ export enum RtcEventNames {
 
 export type RtcEventEmitter = { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
 
+export type AudioOnlyMode = "on" | "off" | "allowScreenshareVideo";
+
 export type RtcManagerFeatures = Partial<{
+    addCloudflareStunServers: string;
+    addGoogleStunServers: string;
     awaitJoinRoomFinished: boolean;
-    turnServersOn: boolean;
-    turnServerOverrideHost: string;
-    deprioritizeH264OnSafari: boolean;
     bandwidth: string;
+    cleanSdpOn: boolean;
+    deprioritizeH264OnSafari: boolean;
+    h264On: boolean;
     increaseIncomingMediaBufferOn: boolean;
-    sfuServersOverride: HostListEntryOptionalDC[];
-    sfuServerOverrideHost: string;
-    sfuVp9On: boolean;
-    producerCpuOveruseWatchOff: boolean;
     isNodeSdk: boolean;
+    lowDataModeEnabled: boolean;
+    p2pAv1On: boolean;
+    producerCpuOveruseWatchOff: boolean;
     redOn: boolean;
     rtpAbsCaptureTimeOn: boolean;
-    cleanSdpOn: boolean;
-    p2pAv1On: boolean;
-    addGoogleStunServers: string;
-    addCloudflareStunServers: string;
-    useOnlyTURN: string;
-    uncappedSingleRemoteVideoOn: boolean;
     safari17HandlerOn: boolean;
-    neverReceiveVideo: boolean;
-    h264On: boolean;
-    lowDataModeEnabled: boolean;
+    sfuServerOverrideHost: string;
+    sfuServersOverride: HostListEntryOptionalDC[];
+    sfuVp9On: boolean;
     simulcastScreenshareOn: boolean;
+    turnServerOverrideHost: string;
+    turnServersOn: boolean;
+    uncappedSingleRemoteVideoOn: boolean;
+    useOnlyTURN: string;
 }>;
 export interface RtcManagerOptions {
+    audioOnlyMode?: AudioOnlyMode;
     selfId: string;
     room: SignalRoom;
     emitter: RtcEventEmitter;
@@ -65,6 +67,7 @@ export interface RtcManager {
     isInitializedWith({ selfId, roomName, isSfu }: { selfId: string; roomName: string; isSfu: boolean }): boolean;
     setEventClaim?(eventClaim: string): void;
     hasClient(clientId: string): boolean;
+    setRemoteScreenshareVideoTrackIds(screenshareVideoTrackIds: string[]): void;
 }
 
 export interface RtcManagerCreatedPayload {
