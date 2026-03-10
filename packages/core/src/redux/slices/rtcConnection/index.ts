@@ -14,7 +14,13 @@ import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnec
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { RemoteParticipant, StreamState } from "../../../RoomParticipant";
-import { selectAppIsNodeSdk, selectAppIsActive, doAppStop, selectAppIgnoreBreakoutGroups } from "../app";
+import {
+    selectAppIsNodeSdk,
+    selectAppIsActive,
+    doAppStop,
+    selectAppIgnoreBreakoutGroups,
+    selectAppAudioOnlyMode,
+} from "../app";
 
 import {
     selectIsCameraEnabled,
@@ -44,6 +50,7 @@ function isDeferrable({ client, breakoutCurrentId }: { client?: RemoteParticipan
     return false;
 }
 import { rtcEvents } from "./actions";
+import { selectRemoteScreenshares } from "../room";
 export { rtcEvents } from "./actions";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
@@ -208,6 +215,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const isCameraEnabled = selectIsCameraEnabled(state);
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
+    const audioOnlyMode = selectAppAudioOnlyMode(state);
 
     if (dispatcher || !socket) {
         return;
@@ -227,6 +235,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     };
 
     const rtcManagerDispatcher = new RtcManagerDispatcher({
+        audioOnlyMode,
         emitter: createWebRtcEmitter(dispatch),
         serverSocket: socket,
         webrtcProvider,
@@ -562,3 +571,13 @@ createReactor(
         }
     },
 );
+
+createReactor([selectRemoteScreenshares], ({ getState }, remoteScreenshares) => {
+    const rtcManager = selectRtcManager(getState());
+    if (rtcManager) {
+        const screenshareVideoTrackIds = remoteScreenshares
+            .flatMap((screenshare) => screenshare.stream?.getVideoTracks() ?? [])
+            .map((track) => track.id);
+        rtcManager.setRemoteScreenshareVideoTrackIds(screenshareVideoTrackIds);
+    }
+});
