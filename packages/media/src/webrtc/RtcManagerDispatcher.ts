@@ -3,7 +3,7 @@ import { PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import VegaRtcManager from "./VegaRtcManager";
 import { RoomJoinedEvent, ServerSocket } from "../utils";
-import { RtcManager, RtcEvents, RtcEventEmitter, WebRTCProvider } from "./types";
+import { RtcManager, RtcEvents, RtcEventEmitter, WebRTCProvider, RtcManagerFeatures } from "./types";
 
 export default class RtcManagerDispatcher {
     emitter: { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
@@ -18,7 +18,7 @@ export default class RtcManagerDispatcher {
         emitter: RtcEventEmitter;
         serverSocket: ServerSocket;
         webrtcProvider: WebRTCProvider;
-        features: any;
+        features: RtcManagerFeatures;
     }) {
         this.emitter = emitter;
         this.currentManager = null;

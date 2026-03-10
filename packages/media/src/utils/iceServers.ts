@@ -1,4 +1,4 @@
-export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN: string }) => {
+export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN?: string }) => {
     if (!features.useOnlyTURN) {
         return;
     }
@@ -25,7 +25,7 @@ export const maybeTurnOnly = (iceConfig: any, features: { useOnlyTURN: string })
 
 export const external_stun_servers = (
     iceConfig: any,
-    features: { addGoogleStunServers: string; addCloudflareStunServers: string },
+    features: { addGoogleStunServers?: string; addCloudflareStunServers?: string },
 ) => {
     if (features.addGoogleStunServers) {
         iceConfig.iceServers = [

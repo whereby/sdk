@@ -16,13 +16,14 @@ import {
     AddCameraStreamOptions,
     RemoveScreenshareStreamOptions,
     RtcManager,
+    RtcManagerFeatures,
     RtcManagerOptions,
-    SignalSDPMessage,
-    SignalMediaServerConfig,
-    WebRTCProvider,
     SignalIceCandidateMessage,
-    SignalReadyToReceiveOfferMessage,
     SignalIceEndOfCandidatesMessage,
+    SignalMediaServerConfig,
+    SignalReadyToReceiveOfferMessage,
+    SignalSDPMessage,
+    WebRTCProvider,
 } from "./types";
 import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
@@ -104,7 +105,7 @@ export default class P2pRtcManager implements RtcManager {
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
-    _features: any;
+    _features: RtcManagerFeatures;
     _isAudioOnlyMode: boolean;
     offerOptions: {
         offerToReceiveAudio: boolean;
@@ -979,7 +980,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { redOn = false, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         this._setCodecPreferences(pc).then(() =>
             pc
