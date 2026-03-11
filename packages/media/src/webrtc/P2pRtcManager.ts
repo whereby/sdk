@@ -197,10 +197,6 @@ export default class P2pRtcManager implements RtcManager {
         return this._selfId === selfId && this._roomName === roomName && !isSfu;
     }
 
-    supportsScreenShareAudio() {
-        return true;
-    }
-
     addNewStream(
         streamId: string,
         stream: MediaStream,
