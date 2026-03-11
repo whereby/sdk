@@ -80,15 +80,29 @@ export type RtcEvents = {
     remote_stream_track_removed: void;
 };
 
-export type RTCSessionDescription = {
+export type SignalRTCSessionDescription = {
     sdp?: string;
     sdpU?: string;
     type: RTCSdpType;
+    iceRestart?: boolean;
 };
 
-export type SDPRelayMessage = {
+export type SignalSDPMessage = {
     clientId: string;
-    message: RTCSessionDescription;
+    message: SignalRTCSessionDescription;
+};
+
+export type SignalIceCandidateMessage = {
+    clientId: string;
+    message: RTCIceCandidate;
+};
+
+export type SignalReadyToReceiveOfferMessage = {
+    clientId: string;
+};
+
+export type SignalIceEndOfCandidatesMessage = {
+    clientId: string;
 };
 
 /*

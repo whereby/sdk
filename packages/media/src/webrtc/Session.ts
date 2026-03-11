@@ -3,7 +3,7 @@ import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
-import { RTCSessionDescription } from "./types";
+import { SignalRTCSessionDescription } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 import { trackAnnotations } from "../utils/annotations";
 
@@ -170,7 +170,7 @@ export default class Session {
         }
     }
 
-    _setRemoteDescription(desc: RTCSessionDescription): Promise<void> {
+    _setRemoteDescription(desc: SignalRTCSessionDescription): Promise<void> {
         // deprioritize H264 Encoding if set by option/flag
         if (this._deprioritizeH264Encoding) desc.sdp = sdpModifier.deprioritizeH264(desc.sdp);
 
@@ -182,7 +182,7 @@ export default class Session {
         });
     }
 
-    handleOffer(offer: RTCSessionDescription): Promise<RTCSessionDescription> {
+    handleOffer(offer: SignalRTCSessionDescription): Promise<SignalRTCSessionDescription> {
         if (!this.canModifyPeerConnection()) {
             return new Promise((resolve) => {
                 this.pending.push(() => this.handleOffer(offer).then(resolve));
@@ -196,7 +196,7 @@ export default class Session {
 
         const desc = { type: offer.type, sdp };
         // Create an answer to send to the client that sent the offer
-        let answerToSignal: RTCSessionDescription;
+        let answerToSignal: SignalRTCSessionDescription;
 
         return this._setRemoteDescription(desc)
             .then(() => {
@@ -225,7 +225,7 @@ export default class Session {
             });
     }
 
-    handleAnswer(message: RTCSessionDescription) {
+    handleAnswer(message: SignalRTCSessionDescription) {
         const sdp = sdpModifier.filterMsidSemantic(message.sdp);
 
         const desc = { type: message.type, sdp };
@@ -234,7 +234,7 @@ export default class Session {
         });
     }
 
-    addIceCandidate(candidate: any) {
+    addIceCandidate(candidate: RTCIceCandidate | null) {
         if (!this.srdComplete) {
             // In theory this is a protocol violation. However, our Javascript can signal an
             // answer after the first candidates.

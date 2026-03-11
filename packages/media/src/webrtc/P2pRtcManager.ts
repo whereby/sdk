@@ -12,7 +12,16 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { RtcManager, RtcManagerOptions, SDPRelayMessage, SignalMediaServerConfig, WebRTCProvider } from "./types";
+import {
+    RtcManager,
+    RtcManagerOptions,
+    SignalSDPMessage,
+    SignalMediaServerConfig,
+    WebRTCProvider,
+    SignalIceCandidateMessage,
+    SignalReadyToReceiveOfferMessage,
+    SignalIceEndOfCandidatesMessage,
+} from "./types";
 import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
@@ -29,6 +38,7 @@ const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
+export const ICE_RESTART_DELAY = 2 * 1000;
 const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
@@ -70,6 +80,7 @@ type P2PAnalytics = {
     P2PMicNotWorking: number;
     P2PLocalNetworkFailed: number;
     P2PRelayedIceCandidate: number;
+    P2PIceRestartIgnored: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -186,6 +197,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PMicNotWorking: 0,
             P2PLocalNetworkFailed: 0,
             P2PRelayedIceCandidate: 0,
+            P2PIceRestartIgnored: 0,
         };
     }
 
@@ -311,11 +323,12 @@ export default class P2pRtcManager implements RtcManager {
                 this._updateAndScheduleMediaServersRefresh(data);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data: SignalReadyToReceiveOfferMessage) => {
+                logger.info(`got ready_to_receive_offer from ${data.clientId}`);
                 this._connect(data.clientId);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data: SignalIceCandidateMessage) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
@@ -324,7 +337,8 @@ export default class P2pRtcManager implements RtcManager {
                 session.addIceCandidate(data.message);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, (data: SignalIceEndOfCandidatesMessage) => {
+                logger.info(`got end_of_ice_candidates from ${data.clientId}`);
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
@@ -334,7 +348,8 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // when a new SDP offer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SDPRelayMessage) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SignalSDPMessage) => {
+                logger.info(`got offer from ${data.clientId}, ice-restart: ${Boolean(data.message.iceRestart)}`);
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
@@ -344,6 +359,19 @@ export default class P2pRtcManager implements RtcManager {
                     sdp: data.message.sdp || data.message.sdpU,
                     type: data.message.type,
                 };
+                if (data.message.iceRestart) {
+                    // If the remote peer initiated an ICE restart while we reconnected we need to ignore the offer.
+                    if (
+                        session.pc.connectionState === "new" &&
+                        session.pc.iceConnectionState === "new" &&
+                        !session.connectionStatus
+                    ) {
+                        logger.info("ignoring ICE restart for newly created PC");
+                        this.analytics.P2PIceRestartIgnored++;
+                        rtcStats.sendEvent("P2PIceRestartIgnored", { clientId: session.clientId });
+                        return;
+                    }
+                }
                 session
                     .handleOffer(sdp)
                     .then((answer) => {
@@ -358,7 +386,8 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // when a new SDP answer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: SDPRelayMessage) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: SignalSDPMessage) => {
+                logger.info(`got offer from ${data.clientId}`);
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
@@ -599,6 +628,7 @@ export default class P2pRtcManager implements RtcManager {
         };
 
         pc.oniceconnectionstatechange = () => {
+            logger.info(`iceConnectionState changed to ${pc.iceConnectionState} for session ${session.clientId}`);
             let newStatus;
             const currentStatus = session.connectionStatus;
             switch (pc.iceConnectionState) {
@@ -634,7 +664,7 @@ export default class P2pRtcManager implements RtcManager {
                         if (pc.iceConnectionState === "disconnected") {
                             this._maybeRestartIce(clientId, session);
                         }
-                    }, 2000);
+                    }, ICE_RESTART_DELAY);
                     break;
                 case "failed":
                     newStatus = CONNECTION_STATUS.TYPES.CONNECTION_FAILED;
@@ -659,6 +689,7 @@ export default class P2pRtcManager implements RtcManager {
             this._setConnectionStatus(session, newStatus, clientId);
         };
         pc.onconnectionstatechange = () => {
+            logger.info(`connectionState changed to ${pc.connectionState} for session ${session.clientId}`);
             switch (pc.connectionState) {
                 case "connected":
                     // try to detect audio problems.
@@ -902,11 +933,7 @@ export default class P2pRtcManager implements RtcManager {
 
             this.analytics.numIceRestart++;
 
-            this._negotiatePeerConnection(
-                clientId,
-                session,
-                Object.assign({}, this.offerOptions, { iceRestart: true }),
-            );
+            this._negotiatePeerConnection(clientId, session, { ...this.offerOptions, iceRestart: true });
         }
     }
 
@@ -957,7 +984,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _negotiatePeerConnection(clientId: string, session: Session, constraints?: any) {
+    _negotiatePeerConnection(clientId: string, session: Session, constraints?: RTCOfferOptions) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;
@@ -1013,6 +1040,7 @@ export default class P2pRtcManager implements RtcManager {
                                 sdp: offer.sdp,
                                 sdpU: offer.sdp,
                                 type: offer.type,
+                                iceRestart: Boolean(constraints?.iceRestart),
                             };
                             this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                                 receiverId: clientId,
