@@ -84,7 +84,7 @@ export type SignalRTCSessionDescription = {
     sdp?: string;
     sdpU?: string;
     type: RTCSdpType;
-    iceRestart?: boolean;
+    isInitialOffer?: boolean;
 };
 
 export type SignalSDPMessage = {

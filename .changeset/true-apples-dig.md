@@ -1,5 +1,5 @@
 ---
-"@whereby.com/media": patch
+"@whereby.com/media": minor
 ---
 
-Ignore ICE restarts in P2P for new PC
+Ignore invalid initial offer in P2P if signal protocol supports it

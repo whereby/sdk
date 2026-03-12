@@ -190,21 +190,24 @@ describe("P2pRtcManager", () => {
                 it("sets the remote description", async () => {
                     const session = rtcManager._connect(clientId);
                     const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
-                    const offer = { type: "offer", sdpU: validSdp };
+                    const offer = { type: "offer", sdp: validSdp };
 
-                    session.isOperationPending = false; // HACK
+                    session.isOperationPending = false;
                     serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message: offer });
 
                     expect(session.pc.setRemoteDescription).toHaveBeenCalled();
                 });
 
-                it("ignores the remote description if it's an ICE restart for a new PC", async () => {
+                it.each([
+                    ["rejects invalid", false, 0],
+                    ["accepts valid", true, 1],
+                ])("%s initial offer for new session", async (_, isInitialOffer, calledTimes) => {
                     const session = rtcManager.acceptNewStream({ clientId, streamId: "id" });
                     const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
                     const message = {
-                        iceRestart: true,
+                        isInitialOffer,
                         type: "offer",
-                        sdpU: validSdp,
+                        sdp: validSdp,
                     };
                     // @ts-ignore
                     session.pc.connectionState = "new";
@@ -214,7 +217,26 @@ describe("P2pRtcManager", () => {
                     session.isOperationPending = false;
                     serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message });
 
-                    expect(session.pc.setRemoteDescription).not.toHaveBeenCalled();
+                    expect(session.pc.setRemoteDescription).toHaveBeenCalledTimes(calledTimes);
+                });
+
+                it("is backwards compatible for invalid initial offer for new session", async () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: "id" });
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    const message = {
+                        type: "offer",
+                        sdp: validSdp,
+                        // isInitialOffer undefined = validation unsupported by signal protocol
+                    };
+                    // @ts-ignore
+                    session.pc.connectionState = "new";
+                    // @ts-ignore
+                    session.pc.iceConnectionState = "new";
+                    session.isOperationPending = false;
+
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message });
+
+                    expect(session.pc.setRemoteDescription).toHaveBeenCalled();
                 });
             });
 
@@ -607,32 +629,6 @@ describe("P2pRtcManager", () => {
                 session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
                 manager._maybeRestartIce(clientId, session);
                 expect(manager.analytics.numIceRestart).toBe(1);
-            });
-
-            it("sends ICE restart property to signal", async () => {
-                const manager = createRtcManager();
-                const { pc } = manager._connect(clientId);
-                jest.advanceTimersToNextTimerAsync();
-                await new Promise(process.nextTick);
-
-                // @ts-ignore
-                pc.iceConnectionState = "disconnected";
-                // @ts-ignore
-                pc.localDescription = { type: "offer" };
-                const session: any = { pc };
-                session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
-
-                manager._maybeRestartIce(clientId, session);
-
-                jest.advanceTimersToNextTimerAsync();
-                await new Promise(process.nextTick);
-
-                expect(
-                    serverSocketStub.socket.emit.mock.calls.some(
-                        ([method, payload]: [string, any]) =>
-                            method === RELAY_MESSAGES.SDP_OFFER && payload.message.iceRestart === true,
-                    ),
-                ).toBe(true);
             });
         });
 
