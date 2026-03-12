@@ -24,7 +24,7 @@ export interface RtcManager {
     acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
     addCameraStream(options: AddCameraStreamOptions): void;
     addScreenshareStream(stream: MediaStream): void;
-    removeScreenshareStream(options: RemoveScreenShareStreamOptions): void;
+    removeScreenshareStream(options: RemoveScreenshareStreamOptions): void;
     disconnect(streamId: string, eventClaim?: string): void;
     disconnectAll(): void;
     rtcStatsDisconnect(): void;
@@ -207,7 +207,7 @@ export interface AddCameraStreamOptions {
     beforeEffectTracks?: MediaStreamTrack[];
 }
 
-export interface RemoveScreenShareStreamOptions {
-    requestedByClientId: string;
+export interface RemoveScreenshareStreamOptions {
+    requestedByClientId?: string;
     stream: MediaStream;
 }

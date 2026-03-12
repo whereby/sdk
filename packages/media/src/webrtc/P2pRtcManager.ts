@@ -14,7 +14,7 @@ import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import {
     AddCameraStreamOptions,
-    RemoveScreenShareStreamOptions,
+    RemoveScreenshareStreamOptions,
     RtcManager,
     RtcManagerOptions,
     SignalSDPMessage,
@@ -97,7 +97,7 @@ export default class P2pRtcManager implements RtcManager {
     _roomSessionId: string | null;
     peerConnections: Record<string, Session>;
     _localCameraStream?: MediaStream;
-    _localScreenShareStream?: MediaStream;
+    _localScreenshareStream?: MediaStream;
     _screenshareVideoTrackIds: string[];
     _socketListenerDeregisterFunctions: any[];
     _localStreamDeregisterFunction: any;
@@ -264,7 +264,7 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     addScreenshareStream(stream: MediaStream) {
-        this._localScreenShareStream = stream;
+        this._localScreenshareStream = stream;
         this._screenshareVideoTrackIds.push(stream.getVideoTracks()[0].id);
         this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
             streamId: stream.id,
@@ -452,7 +452,7 @@ export default class P2pRtcManager implements RtcManager {
     setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
         this._screenshareVideoTrackIds = [...remoteScreenshareVideoTrackIds];
 
-        const localScreenShareTrack = this._localScreenShareStream?.getVideoTracks()?.[0];
+        const localScreenShareTrack = this._localScreenshareStream?.getVideoTracks()?.[0];
         if (localScreenShareTrack) {
             this._screenshareVideoTrackIds.push(localScreenShareTrack.id);
         }
@@ -703,27 +703,27 @@ export default class P2pRtcManager implements RtcManager {
             session.addStream(this._localCameraStream);
         }
 
-        if (this._localScreenShareStream) {
+        if (this._localScreenshareStream) {
             // if we are offering it's safe to add screensharing streams in initial offer
             if (isOfferer) {
-                session.addStream(this._localScreenShareStream);
+                session.addStream(this._localScreenshareStream);
             } else {
                 // if not we are here because of reconnecting, and will need to start screenshare
                 // after connection is ready
                 session.afterConnected.then(() => {
-                    if (!this._localScreenShareStream) return;
+                    if (!this._localScreenshareStream) return;
 
                     this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
                         receiverId: session.clientId,
-                        streamId: this._localScreenShareStream.id,
-                        hasAudioTrack: !!this._localScreenShareStream.getAudioTracks().length,
+                        streamId: this._localScreenshareStream.id,
+                        hasAudioTrack: !!this._localScreenshareStream.getAudioTracks().length,
                     });
                     this._withForcedRenegotiation(session, () => {
-                        if (this._localScreenShareStream) {
-                            session.addStream(this._localScreenShareStream)
+                        if (this._localScreenshareStream) {
+                            session.addStream(this._localScreenshareStream);
                         } else {
                             this.analytics.P2PStartScreenshareNoStream++;
-                            rtcStats.sendEvent("P2PStartScreenshareNoStream", {})
+                            rtcStats.sendEvent("P2PStartScreenshareNoStream", {});
                         }
                     });
                 });
@@ -1330,10 +1330,10 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenShareStreamOptions) {
+    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenshareStreamOptions) {
         this._removeStreamFromPeerConnections(stream);
         this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId: stream.id, requestedByClientId });
-        delete this._localScreenShareStream;
+        delete this._localScreenshareStream;
     }
 
     hasClient(clientId: string) {
