@@ -1419,6 +1419,36 @@ export default class VegaRtcManager implements RtcManager {
                 this._monitorAudioTrack(beforeEffectTrack);
             }
         }
+
+        this._enableStopResumeVideoForBrowserSDK(stream);
+    }
+
+    /**
+     * browser-sdk can dispatch custom `stopresumevideo` event on the localStream.
+     * This function allows it to get the desired side-effects when toggling video,
+     * but without maintaining a direct reference to the rtc manager itself.
+     */
+    _enableStopResumeVideoForBrowserSDK(stream: MediaStream) {
+        // This should not be needed, but checking nonetheless
+        if (this._localStreamDeregisterFunction) {
+            this._localStreamDeregisterFunction();
+            this._localStreamDeregisterFunction = null;
+        }
+
+        const localStreamHandler = (e: any) => {
+            const { enable, track } = e.detail;
+
+            // This is a hack
+            this._webcamPaused = !enable;
+            this._pauseResumeWebcam();
+
+            this._handleStopOrResumeVideo({ enable, track });
+        };
+
+        stream.addEventListener("stopresumevideo", localStreamHandler);
+        this._localStreamDeregisterFunction = () => {
+            stream.removeEventListener("stopresumevideo", localStreamHandler);
+        };
     }
 
     addScreenshareStream(stream: MediaStream) {

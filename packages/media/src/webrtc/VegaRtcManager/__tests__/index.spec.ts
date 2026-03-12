@@ -321,6 +321,63 @@ describe("VegaRtcManager", () => {
         });
     });
 
+    describe("handling localStream `stopresumevideo` event", () => {
+        let stream: any;
+
+        beforeEach(() => {
+            stream = helpers.createMockedMediaStream();
+            rtcManager.addCameraStream({ stream, audioPaused: false, videoPaused: false });
+        });
+
+        describe("when enable", () => {
+            it("should _sendWebcam with the new track", () => {
+                jest.spyOn(rtcManager, "_sendWebcam");
+                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+                stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
+
+                expect(rtcManager._sendWebcam).toHaveBeenCalledWith(track);
+            });
+        });
+
+        describe("when disable", () => {
+            describe("when there is already a webcam producer for the track", () => {
+                let track: any;
+                let webcamProducer: any;
+
+                beforeEach(() => {
+                    track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                    webcamProducer = {
+                        closed: false,
+                        track,
+                        pause: () => {
+                            webcamProducer.paused = true;
+                        },
+                        resume: () => {
+                            webcamProducer.paused = false;
+                        },
+                        paused: false,
+                    };
+                    rtcManager._webcamProducer = webcamProducer;
+                    rtcManager._webcamPaused = false;
+                    rtcManager._stopProducer = jest.fn();
+                });
+
+                it("should stop the webcam producer", () => {
+                    stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
+
+                    expect(rtcManager._stopProducer).toHaveBeenCalledWith(webcamProducer);
+                });
+
+                it("should not keep track of the old producer", () => {
+                    stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
+
+                    expect(rtcManager._webcamProducer).toEqual(null);
+                });
+            });
+        });
+    });
+
     describe("disconnectAll", () => {
         it("closes the VegaQualityMonitor connection", () => {
             jest.spyOn(rtcManager._qualityMonitor, "close");
