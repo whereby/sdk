@@ -13,6 +13,8 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import {
+    AddCameraStreamOptions,
+    RemoveScreenShareStreamOptions,
     RtcManager,
     RtcManagerOptions,
     SignalSDPMessage,
@@ -24,7 +26,6 @@ import {
 } from "./types";
 import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
-import { CAMERA_STREAM_ID } from "../model";
 
 interface CreateSessionOptions {
     peerConnectionId: string;
@@ -76,11 +77,7 @@ type P2PAnalytics = {
     P2PChangeBandwidthEmptySDPType: number;
     P2PSessionAlreadyCreated: number;
     P2PReplaceTrackNoStream: number;
-    P2PReplaceTrackNewTrackEnded: number;
     P2PReplaceTrackNewTrackNotInStream: number;
-    P2PReplaceTrackOldTrackNotFound: number;
-    P2PReplaceTrackWithoutPC: number;
-    P2PReplaceTrackSourceKindNotFound: number;
     P2POnTrackNoStream: number;
     P2PSetCodecPreferenceError: number;
     P2PCreateOfferNoSDP: number;
@@ -99,11 +96,10 @@ export default class P2pRtcManager implements RtcManager {
     _roomName: any;
     _roomSessionId: any;
     peerConnections: Record<string, Session>;
-    localStreams: any;
-    enabledLocalStreamIds: any[];
+    _localCameraStream?: MediaStream;
+    _localScreenShareStream?: MediaStream;
     _screenshareVideoTrackIds: string[];
     _socketListenerDeregisterFunctions: any[];
-    _localStreamDeregisterFunction: any;
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
@@ -119,13 +115,11 @@ export default class P2pRtcManager implements RtcManager {
     _turnServers: any;
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: any;
-    _wasScreenSharing: any;
-    _stoppedVideoTrack: any;
+    _stoppedVideoTrack?: MediaStreamTrack;
     icePublicIPGatheringTimeoutID: any;
     _videoTrackBeingMonitored?: MediaStreamTrack;
     _audioTrackBeingMonitored?: MediaStreamTrack;
     _closed: boolean;
-    skipEmittingServerMessageCount: number;
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
 
@@ -136,18 +130,14 @@ export default class P2pRtcManager implements RtcManager {
         this._roomName = name;
         this._roomSessionId = session && session.id;
         this.peerConnections = {};
-        this.localStreams = {};
-        this.enabledLocalStreamIds = [];
         this._screenshareVideoTrackIds = [];
         this._socketListenerDeregisterFunctions = [];
-        this._localStreamDeregisterFunction = null;
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
         this._features = features || {};
         this._isAudioOnlyMode = false;
         this._closed = false;
-        this.skipEmittingServerMessageCount = 0;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
 
@@ -193,11 +183,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PChangeBandwidthEmptySDPType: 0,
             P2PSessionAlreadyCreated: 0,
             P2PReplaceTrackNoStream: 0,
-            P2PReplaceTrackNewTrackEnded: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
-            P2PReplaceTrackOldTrackNotFound: 0,
-            P2PReplaceTrackWithoutPC: 0,
-            P2PReplaceTrackSourceKindNotFound: 0,
             P2POnTrackNoStream: 0,
             P2PSetCodecPreferenceError: 0,
             P2PCreateOfferNoSDP: 0,
@@ -216,69 +202,48 @@ export default class P2pRtcManager implements RtcManager {
         return this._selfId === selfId && this._roomName === roomName && !isSfu;
     }
 
-    addNewStream(
-        streamId: string,
-        stream: MediaStream,
-        audioPaused: boolean,
-        videoPaused: boolean,
-        beforeEffectTracks: MediaStreamTrack[] = [],
-    ) {
-        if (stream === this.localStreams[streamId]) {
+    addCameraStream({ stream, beforeEffectTracks = [] }: AddCameraStreamOptions) {
+        if (stream === this._localCameraStream) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
             return;
         }
 
-        this._addLocalStream(streamId, stream);
-
-        if (streamId === CAMERA_STREAM_ID) {
-            this._addStreamToPeerConnections(stream);
-            const audioTrack = stream.getAudioTracks()[0];
-            const videoTrack = stream.getVideoTracks()[0];
-            if (audioTrack) {
-                if (!trackAnnotations(audioTrack).isEffectTrack) {
-                    this._monitorAudioTrack(audioTrack);
-                }
-                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
-                if (beforeEffectTrack) {
-                    this._monitorAudioTrack(beforeEffectTrack);
-                }
+        this._localCameraStream = stream;
+        this._addStreamToPeerConnections(stream);
+        
+        const audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+            if (!trackAnnotations(audioTrack).isEffectTrack) {
+                this._monitorAudioTrack(audioTrack);
             }
-
-            if (videoTrack) {
-                if (!trackAnnotations(videoTrack).isEffectTrack) {
-                    this._monitorVideoTrack(videoTrack);
-                }
-
-                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
-                if (beforeEffectTrack) {
-                    this._monitorVideoTrack(beforeEffectTrack);
-                }
+            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
+            if (beforeEffectTrack) {
+                this._monitorAudioTrack(beforeEffectTrack);
             }
-
-            // This should not be needed, but checking nonetheless
-            if (this._localStreamDeregisterFunction) {
-                this._localStreamDeregisterFunction();
-                this._localStreamDeregisterFunction = null;
-            }
-
-            const localStreamHandler = (e: any) => {
-                const { enable, track } = e.detail;
-                this._handleStopOrResumeVideo({ enable, track });
-            };
-
-            stream.addEventListener("stopresumevideo", localStreamHandler);
-            this._localStreamDeregisterFunction = () => {
-                stream.removeEventListener("stopresumevideo", localStreamHandler);
-            };
-
-            return;
         }
 
-        // at this point it is clearly a screensharing stream.
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+            if (!trackAnnotations(videoTrack).isEffectTrack) {
+                this._monitorVideoTrack(videoTrack);
+            }
+
+            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
+            if (beforeEffectTrack) {
+                this._monitorVideoTrack(beforeEffectTrack);
+            }
+        }
+    }
+
+    addScreenshareStream(stream: MediaStream) {
+        this._localScreenShareStream = stream;
         this._screenshareVideoTrackIds.push(stream.getVideoTracks()[0].id);
-        this._shareScreen(streamId, stream);
-        return;
+        this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
+            streamId: stream.id,
+            hasAudioTrack: !!stream.getAudioTracks().length,
+        });
+        this._addStreamToPeerConnections(stream);
     }
 
     replaceTrack(oldTrack: MediaStreamTrack | null, newTrack: MediaStreamTrack) {
@@ -305,11 +270,6 @@ export default class P2pRtcManager implements RtcManager {
             func();
         });
         this._socketListenerDeregisterFunctions = [];
-
-        if (this._localStreamDeregisterFunction) {
-            this._localStreamDeregisterFunction();
-            this._localStreamDeregisterFunction = null;
-        }
 
         this.rtcStatsDisconnect();
     }
@@ -463,12 +423,12 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
-        const localScreenshareStream = this._getFirstLocalNonCameraStream();
+        this._screenshareVideoTrackIds = [...remoteScreenshareVideoTrackIds];
 
-        this._screenshareVideoTrackIds = [
-            ...(localScreenshareStream?.track ? [localScreenshareStream.track.id] : []),
-            ...remoteScreenshareVideoTrackIds,
-        ];
+        const localScreenShareTrack = this._localScreenShareStream?.getVideoTracks()?.[0];
+        if (localScreenShareTrack) {
+            this._screenshareVideoTrackIds.push(localScreenShareTrack.id);
+        }
     }
 
     setRoomSessionId(roomSessionId: string) {
@@ -524,7 +484,6 @@ export default class P2pRtcManager implements RtcManager {
         }
         if (this._features.awaitJoinRoomFinished && !this._serverSocket.joinRoomFinished) {
             rtcStats.sendEvent("skip_emitting_server_message", { eventName });
-            this.skipEmittingServerMessageCount++;
         } else {
             this._serverSocket.emit(eventName, data);
         }
@@ -534,39 +493,11 @@ export default class P2pRtcManager implements RtcManager {
         this._emitter.emit(eventName, data);
     }
 
-    _addEnabledLocalStreamId(streamId: string) {
-        this.enabledLocalStreamIds.push(streamId);
-    }
-
-    _deleteEnabledLocalStreamId(streamId: string) {
-        const index = this.enabledLocalStreamIds.indexOf(streamId);
-        if (index !== -1) {
-            this.enabledLocalStreamIds.splice(index, 1);
-        }
-    }
-
     _getSession(peerConnectionId: string) {
         if (!(peerConnectionId in this.peerConnections)) {
             return null;
         }
         return this.peerConnections[peerConnectionId];
-    }
-
-    _getLocalCameraStream() {
-        return this.localStreams[CAMERA_STREAM_ID];
-    }
-
-    _getNonLocalCameraStreamIds() {
-        return Object.keys(this.localStreams).filter((streamId) => streamId !== CAMERA_STREAM_ID);
-    }
-
-    _isScreensharingLocally() {
-        return this._getNonLocalCameraStreamIds().length > 0;
-    }
-
-    _getFirstLocalNonCameraStream() {
-        const streamIds = this._getNonLocalCameraStreamIds();
-        return streamIds.length === 0 ? null : this.localStreams[streamIds[0]];
     }
 
     _createSession({ clientId, initialBandwidth, isOfferer, peerConnectionId }: CreateSessionOptions) {
@@ -741,33 +672,29 @@ export default class P2pRtcManager implements RtcManager {
             }
         };
 
-        const localCameraStream = this.localStreams[CAMERA_STREAM_ID];
-        if (localCameraStream) {
-            session.addStream(localCameraStream);
+        if (this._localCameraStream) {
+            session.addStream(this._localCameraStream);
         }
 
-        Object.keys(this.localStreams).forEach((id) => {
-            if (id === CAMERA_STREAM_ID) {
-                return;
-            }
-            const screenshareStream = this.localStreams[id];
+        if (this._localScreenShareStream) {
             // if we are offering it's safe to add screensharing streams in initial offer
             if (isOfferer) {
-                session.addStream(screenshareStream);
+                session.addStream(this._localScreenShareStream);
             } else {
                 // if not we are here because of reconnecting, and will need to start screenshare
                 // after connection is ready
                 session.afterConnected.then(() => {
+                    if (!this._localScreenShareStream) return;
+
                     this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
                         receiverId: session.clientId,
-                        streamId: screenshareStream.id,
-                        hasAudioTrack: !!screenshareStream.getAudioTracks().length,
+                        streamId: this._localScreenShareStream.id,
+                        hasAudioTrack: !!this._localScreenShareStream.getAudioTracks().length,
                     });
-                    this._withForcedRenegotiation(session, () => session.addStream(screenshareStream));
+                    this._withForcedRenegotiation(session, () => session.addStream(this._localScreenShareStream));
                 });
             }
-        });
-
+        }
         return session;
     }
 
@@ -787,14 +714,14 @@ export default class P2pRtcManager implements RtcManager {
         });
     }
 
-    _addStreamToPeerConnections(stream: any) {
-        this._forEachPeerConnection((session: any) => {
+    _addStreamToPeerConnections(stream: MediaStream) {
+        this._forEachPeerConnection((session: Session) => {
             this._withForcedRenegotiation(session, () => session.addStream(stream));
         });
     }
 
-    _addTrackToPeerConnections(track: any, stream?: any) {
-        this._forEachPeerConnection((session: any) => {
+    _addTrackToPeerConnections(track: MediaStreamTrack, stream?: MediaStream) {
+        this._forEachPeerConnection((session: Session) => {
             this._withForcedRenegotiation(session, () => session.addTrack(track, stream));
         });
     }
@@ -805,11 +732,6 @@ export default class P2pRtcManager implements RtcManager {
             if (!session.hasConnectedPeerConnection()) {
                 if (session.pc.connectionState === "closed") return;
                 logger.info("Session doesn't have a connected PeerConnection, adding pending action!");
-                this.analytics.P2PReplaceTrackWithoutPC++;
-                rtcStats.sendEvent("P2PReplaceTrackWithoutPC", {
-                    connectionState: session.pc.connectionState,
-                    iceConnectionState: session.pc.iceConnectionState,
-                });
                 const promise = new Promise((resolve, reject) => {
                     const action = async () => {
                         try {
@@ -841,16 +763,6 @@ export default class P2pRtcManager implements RtcManager {
         this._forEachPeerConnection((session: any) => {
             this._withForcedRenegotiation(session, () => session.removeTrack(track));
         });
-    }
-
-    _addLocalStream(streamId: string, stream: any) {
-        this._addEnabledLocalStreamId(streamId);
-        this.localStreams[streamId] = stream;
-    }
-
-    _removeLocalStream(streamId: string) {
-        delete this.localStreams[streamId];
-        this._deleteEnabledLocalStreamId(streamId);
     }
 
     _updateAndScheduleMediaServersRefresh({
@@ -1143,9 +1055,8 @@ export default class P2pRtcManager implements RtcManager {
          * Explicitly add the video track so that stopOrResumeVideo() can
          * replace it when the video is re-enabled.
          */
-        const localCameraStream = this.localStreams[CAMERA_STREAM_ID];
-        if (localCameraStream && !localCameraStream.getVideoTracks().length && this._stoppedVideoTrack) {
-            pc.addTrack(this._stoppedVideoTrack, localCameraStream);
+        if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
+            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
         }
 
         pc.onicegatheringstatechange = (event: any) => {
@@ -1385,20 +1296,10 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _shareScreen(streamId: string, stream: any) {
-        this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
-            streamId,
-            hasAudioTrack: !!stream.getAudioTracks().length,
-        });
-        this._wasScreenSharing = true;
-        this._addStreamToPeerConnections(stream);
-    }
-
-    removeStream(streamId: string, stream: any, requestedByClientId: any) {
-        this._removeLocalStream(streamId);
+    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenShareStreamOptions) {
         this._removeStreamFromPeerConnections(stream);
-        this._wasScreenSharing = false;
-        this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId, requestedByClientId });
+        this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId: stream.id, requestedByClientId });
+        delete this._localScreenShareStream;
     }
 
     hasClient(clientId: string) {
