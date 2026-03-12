@@ -7,7 +7,7 @@ import rtcStats from "../rtcStatsService";
 import createMicAnalyser from "../VegaMicAnalyser";
 import {
     AddCameraStreamOptions,
-    RemoveScreenShareStreamOptions,
+    RemoveScreenshareStreamOptions,
     RtcManager,
     SignalMediaServerConfig,
     SignalSFUServer,
@@ -1370,8 +1370,8 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenShareStreamOptions) {
-        logger.info("stopScreenShare() [streamId:%s, requestedByClientId:%s]", stream.id, requestedByClientId);
+    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenshareStreamOptions) {
+        logger.info("removeScreenshareStream() [streamId:%s, requestedByClientId:%s]", stream.id, requestedByClientId);
 
         this._emitToSignal(PROTOCOL_REQUESTS.STOP_SCREENSHARE, {
             streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,

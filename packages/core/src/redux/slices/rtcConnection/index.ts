@@ -392,9 +392,8 @@ startAppListening({
     effect: ({ payload }, { getState }) => {
         const { stream } = payload;
         const { rtcManager } = selectRtcConnectionRaw(getState());
-        const requestedByClientId = getState().localParticipant.id
 
-        rtcManager?.removeScreenshareStream({ stream, requestedByClientId });
+        rtcManager?.removeScreenshareStream({ stream });
     },
 });
 
