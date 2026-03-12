@@ -13,7 +13,8 @@ export const mockServerSocket = {
     emit: mockSignalEmit,
 };
 export const mockRtcManager = {
-    addNewStream: jest.fn(),
+    addCameraStream: jest.fn(),
+    addScreenshareStream: jest.fn(),
     acceptNewStream: jest.fn(),
     replaceTrack: jest.fn(),
     removeStream: jest.fn(),
