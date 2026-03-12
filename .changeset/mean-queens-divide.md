@@ -1,5 +1,5 @@
 ---
-"@whereby.com/media": minor
+"@whereby.com/media": major
 ---
 
 Refactor RTC managers
