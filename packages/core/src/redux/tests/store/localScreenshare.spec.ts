@@ -34,7 +34,7 @@ describe("actions", () => {
         const after = store.getState().localScreenshare;
 
         expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalled();
-        expect(mockRtcManager.addNewStream).toHaveBeenCalledWith(stream.id, stream, false, true);
+        expect(mockRtcManager.addScreenshareStream).toHaveBeenCalledWith(stream);
         expect(diff(before, after)).toEqual({
             status: "active",
             stream,

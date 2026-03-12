@@ -322,13 +322,13 @@ export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPay
 });
 
 export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) => {
-    const localMediaStream = selectLocalMediaStream(getState());
+    const stream = selectLocalMediaStream(getState());
     const rtcManager = selectRtcConnectionRaw(getState()).rtcManager;
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
-    if (localMediaStream && rtcManager) {
-        rtcManager.addNewStream(CAMERA_STREAM_ID, localMediaStream, !isMicrophoneEnabled, !isCameraEnabled);
+    if (stream && rtcManager) {
+        rtcManager.addCameraStream({ stream, audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
     }
 
     dispatch(rtcManagerInitialized());
@@ -374,7 +374,7 @@ startAppListening({
         const { stream } = payload;
         const { rtcManager } = selectRtcConnectionRaw(getState());
 
-        rtcManager?.addNewStream(stream.id, stream, false, true);
+        rtcManager?.addScreenshareStream(stream);
     },
 });
 
@@ -392,8 +392,9 @@ startAppListening({
     effect: ({ payload }, { getState }) => {
         const { stream } = payload;
         const { rtcManager } = selectRtcConnectionRaw(getState());
+        const requestedByClientId = getState().localParticipant.id
 
-        rtcManager?.removeStream(stream.id, stream, null);
+        rtcManager?.removeScreenshareStream({ stream, requestedByClientId });
     },
 });
 
@@ -437,7 +438,7 @@ startAppListening({
         const { stream } = payload;
 
         if (stream) {
-            rtcManager.addNewStream(CAMERA_STREAM_ID, payload.stream, !isMicrophoneEnabled, !isCameraEnabled);
+            rtcManager.addCameraStream({ stream, audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
         }
     },
 });
