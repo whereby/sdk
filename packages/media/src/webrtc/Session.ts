@@ -103,11 +103,7 @@ export default class Session {
         this._incrementAnalyticMetric = incrementAnalyticMetric;
     }
 
-    addStream(stream?: MediaStream) {
-        if (!stream) {
-            logger.warn("Tried to add undefined stream");
-            return;
-        }
+    addStream(stream: MediaStream) {
         this.streamIds.push(stream.id);
         this.streams.push(stream);
         // @ts-ignore
