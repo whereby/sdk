@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 3.0.0
+
+### Major Changes
+
+- 4e41698: Remove screenshare audio function from RTC managers
+
 ## 2.9.2
 
 ### Patch Changes
