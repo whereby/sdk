@@ -12,7 +12,14 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { RtcManager, RtcManagerOptions, SDPRelayMessage, SignalMediaServerConfig, WebRTCProvider } from "./types";
+import {
+    RtcManager,
+    RtcManagerFeatures,
+    RtcManagerOptions,
+    SDPRelayMessage,
+    SignalMediaServerConfig,
+    WebRTCProvider,
+} from "./types";
 import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
@@ -89,12 +96,9 @@ export default class P2pRtcManager implements RtcManager {
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
-    _features: any;
+    _features: RtcManagerFeatures & { remoteMediaOptions: { receiveAudio: boolean; receiveVideo: boolean } };
     _isAudioOnlyMode: boolean;
-    offerOptions: {
-        offerToReceiveAudio: boolean;
-        offerToReceiveVideo: boolean;
-    };
+    offerOptions: RTCOfferOptions;
     _audioTrackOnEnded: () => void;
     _videoTrackOnEnded: () => void;
     _iceServers: any;
@@ -126,12 +130,18 @@ export default class P2pRtcManager implements RtcManager {
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
-        this._features = features || {};
+        this._features = {
+            ...(features || {}),
+            remoteMediaOptions: features.remoteMediaOptions ?? { receiveAudio: true, receiveVideo: true },
+        };
         this._isAudioOnlyMode = false;
         this._closed = false;
         this.skipEmittingServerMessageCount = 0;
 
-        this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
+        this.offerOptions = {
+            offerToReceiveAudio: this._features.remoteMediaOptions.receiveAudio,
+            offerToReceiveVideo: this._features.remoteMediaOptions.receiveVideo,
+        };
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -567,6 +577,7 @@ export default class P2pRtcManager implements RtcManager {
             bandwidth: initialBandwidth,
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
+            remoteMediaOptions: this._features.remoteMediaOptions,
         });
         this.peerConnections[peerConnectionId] = session;
 
@@ -953,7 +964,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _negotiatePeerConnection(clientId: string, session: Session, constraints?: any) {
+    _negotiatePeerConnection(clientId: string, session: Session, constraints?: RTCOfferOptions) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;
@@ -967,7 +978,7 @@ export default class P2pRtcManager implements RtcManager {
         }
         session.isOperationPending = true;
 
-        const { redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
+        const { redOn = false, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
         this._setCodecPreferences(pc).then(() =>
             pc

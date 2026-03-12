@@ -88,6 +88,7 @@ describe("actions", () => {
                             roomName: null,
                             roomUrl: null,
                             userAgent: `core:${coreVersion}`,
+                            remoteMediaOptions: { receiveAudio: true, receiveVideo: true },
                         },
                     },
                 });
@@ -101,6 +102,48 @@ describe("actions", () => {
                 expect(RtcManagerDispatcher).toHaveBeenCalledWith(
                     expect.objectContaining({
                         features: expect.objectContaining({ isNodeSdk: true }),
+                    }),
+                );
+                expect(diff(before, after)).toEqual({
+                    dispatcherCreated: true,
+                    rtcManagerDispatcher: expect.any(RtcManagerDispatcher),
+                });
+            });
+        });
+
+        describe("when remoteMediaOptions is set", () => {
+            it("initializes the RtcManagerDispatcher with that feature", () => {
+                const store = createStore({
+                    withSignalConnection: true,
+                    initialState: {
+                        app: {
+                            displayName: null,
+                            externalId: null,
+                            ignoreBreakoutGroups: false,
+                            isActive: false,
+                            isAssistant: false,
+                            isAudioRecorder: false,
+                            isDialIn: false,
+                            isNodeSdk: false,
+                            roomName: null,
+                            roomUrl: null,
+                            userAgent: `core:${coreVersion}`,
+                            remoteMediaOptions: { receiveAudio: true, receiveVideo: false },
+                        },
+                    },
+                });
+                const before = store.getState().rtcConnection;
+
+                store.dispatch(doConnectRtc());
+
+                const after = store.getState().rtcConnection;
+
+                expect(RtcManagerDispatcher).toHaveBeenCalledTimes(1);
+                expect(RtcManagerDispatcher).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        features: expect.objectContaining({
+                            remoteMediaOptions: { receiveAudio: true, receiveVideo: false },
+                        }),
                     }),
                 );
                 expect(diff(before, after)).toEqual({
@@ -164,7 +207,12 @@ describe("actions", () => {
         store.dispatch(doRtcManagerInitialize());
 
         expect(mockRtcManager.addNewStream).toHaveBeenCalledTimes(1);
-        expect(mockRtcManager.addNewStream).toHaveBeenCalledWith(CAMERA_STREAM_ID, store.getState().localMedia.stream, true, true);
+        expect(mockRtcManager.addNewStream).toHaveBeenCalledWith(
+            CAMERA_STREAM_ID,
+            store.getState().localMedia.stream,
+            true,
+            true,
+        );
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
     });
 });

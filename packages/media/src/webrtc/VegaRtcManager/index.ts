@@ -5,7 +5,13 @@ import { v4 as uuidv4 } from "uuid";
 import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
 import createMicAnalyser from "../VegaMicAnalyser";
-import { RtcManager, SignalMediaServerConfig, SignalSFUServer, VegaRtcManagerOptions } from "../types";
+import {
+    RtcManager,
+    RtcManagerFeatures,
+    SignalMediaServerConfig,
+    SignalSFUServer,
+    VegaRtcManagerOptions,
+} from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
 import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
 
@@ -32,6 +38,7 @@ import {
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
 import { CAMERA_STREAM_ID, STREAM_TYPES } from "../../model";
+import { ConsumerOptions } from "mediasoup-client/lib/Consumer";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -54,7 +61,7 @@ export default class VegaRtcManager implements RtcManager {
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: any;
-    _features: any;
+    _features: RtcManagerFeatures & { remoteMediaOptions: { receiveAudio: boolean; receiveVideo: boolean } };
     _eventClaim?: any;
     _vegaConnection: VegaConnection | null;
     _micAnalyser: any;
@@ -118,7 +125,10 @@ export default class VegaRtcManager implements RtcManager {
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
-        this._features = features || {};
+        this._features = {
+            ...(features || {}),
+            remoteMediaOptions: features.remoteMediaOptions ?? { receiveAudio: true, receiveVideo: true },
+        };
         this._eventClaim = eventClaim;
 
         this._vegaConnection = null;
@@ -244,13 +254,12 @@ export default class VegaRtcManager implements RtcManager {
 
         this._mediaserverConfigTtlSeconds = mediaserverConfigTtlSeconds;
 
+        const updateHostList = (this._features.sfuServersOverride ||
+            this._sfuServers ||
+            this._features.sfuServerOverrideHost ||
+            this._sfuServer?.url) as string | HostListEntryOptionalDC[];
         // update vega connection manager if exists
-        this._vegaConnectionManager?.updateHostList(
-            this._features.sfuServersOverride ||
-                this._sfuServers ||
-                this._features.sfuServerOverrideHost ||
-                this._sfuServer?.url,
-        );
+        this._vegaConnectionManager?.updateHostList(updateHostList);
 
         const iceServersList = {
             iceServers: this._features.turnServersOn ? this._turnServers : this._iceServers,
@@ -351,11 +360,10 @@ export default class VegaRtcManager implements RtcManager {
         if (this._reconnectTimeOut) clearTimeout(this._reconnectTimeOut);
 
         if (!this._vegaConnectionManager) {
-            const hostList =
-                this._features.sfuServersOverride ||
+            const hostList = (this._features.sfuServersOverride ||
                 this._sfuServers ||
                 this._features.sfuServerOverrideHost ||
-                this._sfuServer?.url;
+                this._sfuServer?.url) as string | HostListEntryOptionalDC[];
 
             this._vegaConnectionManager = createVegaConnectionManager({
                 initialHostList: hostList,
@@ -366,9 +374,15 @@ export default class VegaRtcManager implements RtcManager {
                         roomName: this._room.name,
                         eventClaim: this._room.isClaimed ? this._eventClaim : null,
                         lowBw: "true",
-                        ...Object.keys(this._features || {})
-                            .filter((featureKey) => this._features[featureKey] && /^sfu/.test(featureKey))
-                            .reduce((prev, current) => ({ ...prev, [current]: this._features[current] }), {}),
+                        ...Object.entries(this._features || {})
+                            .filter(([featureKey, value]) => value && /^sfu/.test(featureKey))
+                            .reduce(
+                                (prev, [featureKey, value]) => ({
+                                    ...prev,
+                                    [featureKey]: value,
+                                }),
+                                {},
+                            ),
                     });
                     const queryString = searchParams.toString();
                     const wsUrl = `wss://${host}?${queryString}`;
@@ -1666,7 +1680,7 @@ export default class VegaRtcManager implements RtcManager {
             {
                 numberOfActiveVideos,
                 numberOfTemporalLayers,
-                uncappedSingleRemoteVideoOn: this._features?.uncappedSingleRemoteVideoOn,
+                uncappedSingleRemoteVideoOn: this._features?.uncappedSingleRemoteVideoOn ?? false,
             },
         );
 
@@ -1798,8 +1812,16 @@ export default class VegaRtcManager implements RtcManager {
             });
     }
 
-    async _onConsumerReady(options: any) {
+    async _onConsumerReady(options: ConsumerOptions) {
         logger.info("_onConsumerReady()", { id: options.id, producerId: options.producerId });
+
+        if (
+            (options.kind === "video" && !this._features.remoteMediaOptions.receiveVideo) ||
+            (options.kind === "audio" && !this._features.remoteMediaOptions.receiveAudio)
+        ) {
+            this._vegaConnection?.message("closeConsumers", { consumerIds: [options.id] });
+            return;
+        }
 
         const consumer = await this._receiveTransport.consume(options);
 

@@ -14,7 +14,13 @@ import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnec
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { RemoteParticipant, StreamState } from "../../../RoomParticipant";
-import { selectAppIsNodeSdk, selectAppIsActive, doAppStop, selectAppIgnoreBreakoutGroups } from "../app";
+import {
+    selectAppIsNodeSdk,
+    selectAppIsActive,
+    doAppStop,
+    selectAppIgnoreBreakoutGroups,
+    selectAppRemoteMediaOptions,
+} from "../app";
 
 import {
     selectIsCameraEnabled,
@@ -208,6 +214,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const isCameraEnabled = selectIsCameraEnabled(state);
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
+    const remoteMediaOptions = selectAppRemoteMediaOptions(state);
 
     if (dispatcher || !socket) {
         return;
@@ -239,6 +246,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
             sfuVp9On: false,
             h264On: false,
             simulcastScreenshareOn: false,
+            remoteMediaOptions,
         },
     });
 
