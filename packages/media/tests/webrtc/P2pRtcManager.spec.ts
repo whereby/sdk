@@ -888,49 +888,4 @@ describe("P2pRtcManager", () => {
             });
         });
     });
-
-    describe("handling localStream `stopresumevideo` event", () => {
-        let localStream: any;
-        let rtcManager: any;
-
-        beforeEach(() => {
-            localStream = helpers.createMockedMediaStream();
-            rtcManager = createRtcManager();
-            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream);
-        });
-
-        describe("when enable", () => {
-            it("should add track to peer connections", () => {
-                jest.spyOn(rtcManager, "_addTrackToPeerConnections");
-                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-                localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
-
-                expect(rtcManager._addTrackToPeerConnections).toHaveBeenCalledWith(track);
-            });
-
-            it("should replace track in peer connection(s) when stopped track exists", () => {
-                const stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
-                rtcManager._stoppedVideoTrack = stoppedTrack;
-                jest.spyOn(rtcManager, "_replaceTrackToPeerConnections");
-                const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-                localStream.dispatchEvent(
-                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } }),
-                );
-
-                expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, newTrack);
-            });
-        });
-
-        describe("when disable", () => {
-            it("should store disabled track", () => {
-                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-                localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
-
-                expect(rtcManager._stoppedVideoTrack).toEqual(track);
-            });
-        });
-    });
 });

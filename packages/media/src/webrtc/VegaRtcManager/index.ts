@@ -5,7 +5,14 @@ import { v4 as uuidv4 } from "uuid";
 import rtcManagerEvents from "../rtcManagerEvents";
 import rtcStats from "../rtcStatsService";
 import createMicAnalyser from "../VegaMicAnalyser";
-import { RtcManager, SignalMediaServerConfig, SignalSFUServer, VegaRtcManagerOptions } from "../types";
+import {
+    AddCameraStreamOptions,
+    RemoveScreenShareStreamOptions,
+    RtcManager,
+    SignalMediaServerConfig,
+    SignalSFUServer,
+    VegaRtcManagerOptions,
+} from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
 import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
 
@@ -1345,18 +1352,7 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    /**
-     * Only used for webcam/mic stream.
-     *
-     * We can ignore the oldTrack and match based on kind instead.
-     *
-     * This is called when the PWA does a internal track replacement because of
-     * ex. effects added and so on.
-     *
-     * @param {MediaStreamTrack | null} _oldTrack
-     * @param {MediaStreamTrack} track
-     */
-    replaceTrack(oldTrack: MediaStreamTrack | null, track: MediaStreamTrack) {
+    replaceTrack(_: MediaStreamTrack | null, track: MediaStreamTrack) {
         if (track.kind === "audio") {
             if (!trackAnnotations(track).isEffectTrack) {
                 this._monitorAudioTrack(track);
@@ -1374,18 +1370,8 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    /**
-     * Only used for screen sharing.
-     *
-     * This is called when the user stops sharing their screen, and it can
-     * be requested from a remote client.
-     *
-     * @param {string} streamId
-     * @param {MediaStream} _stream
-     * @param {string} requestedByClientId
-     */
-    removeStream(streamId: string, _stream: MediaStream, requestedByClientId: string) {
-        logger.info("removeStream() [streamId:%s, requestedByClientId:%s]", streamId, requestedByClientId);
+    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenShareStreamOptions) {
+        logger.info("stopScreenShare() [streamId:%s, requestedByClientId:%s]", stream.id, requestedByClientId);
 
         this._emitToSignal(PROTOCOL_REQUESTS.STOP_SCREENSHARE, {
             streamId: OUTBOUND_SCREEN_OUTBOUND_STREAM_ID,
@@ -1405,85 +1391,44 @@ export default class VegaRtcManager implements RtcManager {
         this._sendMicScore(this._micPaused ? 0 : data.out);
     }
 
-    /**
-     * streamId is "0" if this is the webcam/mic stream, and a proper streamId
-     * if this is a screen share.
-     *
-     * For the webcam/mic stream, this is only called once, on RTC initialization.
-     * For screen shares, this is called every time a new screen share is started.
-     *
-     * This is called when the user wants to start sending a stream. This
-     * can be either a screen sharing stream or a camera stream with their
-     * respective audio tracks.
-     *
-     * @param {string | "0"} streamId
-     * @param {MediaStream} stream
-     */
-    addNewStream(
-        streamId: string,
-        stream: MediaStream,
-        audioPaused: boolean,
-        videoPaused: boolean,
-        beforeEffectTracks: MediaStreamTrack[] = [],
-    ) {
-        if (streamId === CAMERA_STREAM_ID) {
-            this._micPaused = audioPaused;
-            this._webcamPaused = videoPaused;
+    addCameraStream({ stream, audioPaused, videoPaused, beforeEffectTracks = [] }: AddCameraStreamOptions) {
+        this._micPaused = audioPaused;
+        this._webcamPaused = videoPaused;
 
-            const videoTrack = stream.getVideoTracks()[0];
-            const audioTrack = stream.getAudioTracks()[0];
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
 
-            if (videoTrack) {
-                this._sendWebcam(videoTrack);
-                if (!trackAnnotations(videoTrack).isEffectTrack) {
-                    this._monitorVideoTrack(videoTrack);
-                }
-                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
-                if (beforeEffectTrack) {
-                    this._monitorVideoTrack(beforeEffectTrack);
-                }
+        if (videoTrack) {
+            this._sendWebcam(videoTrack);
+            if (!trackAnnotations(videoTrack).isEffectTrack) {
+                this._monitorVideoTrack(videoTrack);
             }
-            if (audioTrack) {
-                this._sendMic(audioTrack);
-                this._syncMicAnalyser();
-                if (!trackAnnotations(audioTrack).isEffectTrack) {
-                    this._monitorAudioTrack(audioTrack);
-                }
-                const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
-                if (beforeEffectTrack) {
-                    this._monitorAudioTrack(beforeEffectTrack);
-                }
+            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
+            if (beforeEffectTrack) {
+                this._monitorVideoTrack(beforeEffectTrack);
             }
-
-            // This should not be needed, but checking nonetheless
-            if (this._localStreamDeregisterFunction) {
-                this._localStreamDeregisterFunction();
-                this._localStreamDeregisterFunction = null;
-            }
-
-            const localStreamHandler = (e: any) => {
-                const { enable, track } = e.detail;
-
-                // This is a hack
-                this._webcamPaused = !enable;
-                this._pauseResumeWebcam();
-
-                this._handleStopOrResumeVideo({ enable, track });
-            };
-
-            stream.addEventListener("stopresumevideo", localStreamHandler);
-            this._localStreamDeregisterFunction = () => {
-                stream.removeEventListener("stopresumevideo", localStreamHandler);
-            };
-        } else {
-            const videoTrack = stream.getVideoTracks()[0];
-            const audioTrack = stream.getAudioTracks()[0];
-
-            if (videoTrack) this._sendScreenVideo(videoTrack);
-            if (audioTrack) this._sendScreenAudio(audioTrack);
-
-            this._emitScreenshareStarted();
         }
+        if (audioTrack) {
+            this._sendMic(audioTrack);
+            this._syncMicAnalyser();
+            if (!trackAnnotations(audioTrack).isEffectTrack) {
+                this._monitorAudioTrack(audioTrack);
+            }
+            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
+            if (beforeEffectTrack) {
+                this._monitorAudioTrack(beforeEffectTrack);
+            }
+        }
+    }
+
+    addScreenshareStream(stream: MediaStream) {
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
+
+        if (videoTrack) this._sendScreenVideo(videoTrack);
+        if (audioTrack) this._sendScreenAudio(audioTrack);
+
+        this._emitScreenshareStarted();
     }
 
     _syncMicAnalyser() {

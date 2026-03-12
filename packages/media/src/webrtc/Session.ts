@@ -32,7 +32,6 @@ export default class Session {
     pc: RTCPeerConnection;
     wasEverConnected: boolean;
     connectionStatus: any;
-    stats: { totalSent: number; totalRecv: number };
     bandwidth: any;
     pending: any[];
     isOperationPending: boolean;
@@ -41,8 +40,7 @@ export default class Session {
     earlyIceCandidates: any[];
     afterConnected: Promise<unknown>;
     registerConnected?: (value: unknown) => void;
-    offerOptions: { offerToReceiveAudio: boolean; offerToReceiveVideo: boolean };
-    _deprioritizeH264Encoding: any;
+    _deprioritizeH264Encoding: boolean;
     clientId: any;
     peerConnectionConfig: RTCConfiguration;
     signalingState: any;
@@ -92,10 +90,6 @@ export default class Session {
 
         this.wasEverConnected = false;
         this.connectionStatus = null;
-        this.stats = {
-            totalSent: 0,
-            totalRecv: 0,
-        };
         this.bandwidth = bandwidth || 0; // maximum bandwidth in kbps.
         this.pending = [];
         this.isOperationPending = false;
@@ -105,12 +99,15 @@ export default class Session {
         this.afterConnected = new Promise((resolve) => {
             this.registerConnected = resolve;
         });
-        this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
         this._deprioritizeH264Encoding = deprioritizeH264Encoding;
         this._incrementAnalyticMetric = incrementAnalyticMetric;
     }
 
-    addStream(stream: MediaStream) {
+    addStream(stream?: MediaStream) {
+        if (!stream) {
+            logger.warn("Tried to add undefined stream");
+            return;
+        }
         this.streamIds.push(stream.id);
         this.streams.push(stream);
         // @ts-ignore
@@ -284,12 +281,6 @@ export default class Session {
     async replaceTrack(oldTrack: MediaStreamTrack | undefined, newTrack: MediaStreamTrack) {
         logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s]", oldTrack?.id, newTrack.id);
         if (newTrack.readyState === "ended") {
-            rtcStats.sendEvent("P2PReplaceTrackNewTrackEnded", {
-                newTrackId: newTrack.id,
-                newTrackKind: newTrack.kind,
-                newTrackIsEffect: trackAnnotations(newTrack).isEffectTrack,
-            });
-            this._incrementAnalyticMetric("P2PReplaceTrackNewTrackEnded");
             throw new Error(
                 `refusing to replace track trackId: ${newTrack.id} kind: ${newTrack.kind} with readyState: ${newTrack.readyState}`,
             );
@@ -312,20 +303,6 @@ export default class Session {
             return track?.kind === newTrack.kind && !trackAnnotations(track).fromGetDisplayMedia;
         });
         if (sender) {
-            this._incrementAnalyticMetric("P2PReplaceTrackOldTrackNotFound");
-            const track = sender.track;
-            rtcStats.sendEvent("P2PReplaceTrackOldTrackNotFound", {
-                targetTrackId: track?.id,
-                targetTrackKind: track?.kind,
-                targetTrackIsEffect: track && trackAnnotations(track).isEffectTrack,
-                targetTrackReadyState: track?.readyState,
-                newTrackId: newTrack.id,
-                newTrackKind: newTrack.kind,
-                newTrackIsEffect: trackAnnotations(newTrack).isEffectTrack,
-                oldTrackId: oldTrack?.id,
-                oldTrackKind: oldTrack?.kind,
-                oldTrackIsEffect: oldTrack && trackAnnotations(oldTrack).isEffectTrack,
-            });
             return await sender.replaceTrack(newTrack);
         }
 
@@ -353,15 +330,6 @@ export default class Session {
             throw new Error("replaceTrack: No stream?");
         }
 
-        rtcStats.sendEvent("P2PReplaceTrackSourceKindNotFound", {
-            oldTrackId: oldTrack?.id,
-            oldTrackKind: oldTrack?.kind,
-            oldTrackIsEffect: oldTrack && trackAnnotations(oldTrack).isEffectTrack,
-            newTrackId: newTrack.id,
-            newTrackKind: newTrack.kind,
-            newTrackIsEffect: trackAnnotations(newTrack).isEffectTrack,
-        });
-        this._incrementAnalyticMetric("P2PReplaceTrackSourceKindNotFound");
         pc.addTrack(newTrack, stream);
     }
 
