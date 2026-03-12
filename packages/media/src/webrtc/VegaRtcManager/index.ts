@@ -1600,10 +1600,6 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    supportsScreenShareAudio() {
-        return true;
-    }
-
     /**
      * If the streamId and clientId are the same, this is a webcam/mic stream.
      * Otherwise, this is a screen share stream.
