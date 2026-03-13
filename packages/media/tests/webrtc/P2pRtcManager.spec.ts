@@ -8,7 +8,7 @@ import rtcStats from "../../src/webrtc/rtcStatsService";
 
 import * as helpers from "./webRtcHelpers";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
-import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
+import P2pRtcManager, { ICE_RESTART_DELAY } from "../../src/webrtc/P2pRtcManager";
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
@@ -41,12 +41,16 @@ describe("P2pRtcManager", () => {
     let navigator: any;
     let serverSocketStub: any;
     let serverSocket: any;
-    let emitter: any;
+    let emitterStub: any;
+    let iceServers: any;
     let webrtcProvider: any;
     let clientId: any;
     let mediaContstraints: any;
+    let rtcManager: P2pRtcManager;
+    let mediaserverConfigTtlSeconds: number;
 
     beforeEach(() => {
+        jest.useFakeTimers();
         // @ts-ignore
         window.RTCPeerConnection = helpers.createRTCPeerConnectionStub();
         mediaContstraints = {
@@ -60,7 +64,8 @@ describe("P2pRtcManager", () => {
             webRtcDetectedBrowserVersion: "60",
             getMediaConstraints: () => mediaContstraints,
         };
-        emitter = helpers.createEmitterStub();
+        emitterStub = helpers.createEmitterStub();
+        iceServers = helpers.createIceServersConfig();
         clientId = helpers.randomString("client-");
 
         navigator = {
@@ -74,20 +79,25 @@ describe("P2pRtcManager", () => {
         Object.defineProperty(global, "navigator", {
             value: navigator,
         });
+        mediaserverConfigTtlSeconds = 60;
+        rtcManager = createRtcManager();
     });
 
     afterEach(() => {
+        jest.clearAllTimers();
+        jest.useRealTimers();
         Object.defineProperty(global, "navigator", {
             value: originalNavigator,
         });
+        // @ts-ignore
+        delete window.RTCPeerConnection;
     });
 
     function createRtcManager({
         selfId = helpers.randomString("client-"),
         roomName = helpers.randomString("/room-"),
-        emitter: _emitter = emitter,
+        emitter: _emitter = emitterStub,
         serverSocket: _serverSocket = serverSocket,
-        iceServers = [],
         features = {},
         roomData = {},
     } = {}) {
@@ -102,8 +112,8 @@ describe("P2pRtcManager", () => {
                 isClaimed: false,
                 isLocked: false,
                 knockers: [],
-                mediaserverConfigTtlSeconds: 3600,
-                mode: "group",
+                mediaserverConfigTtlSeconds,
+                mode: "normal",
                 organizationId: "",
                 spotlights: [],
                 session: null,
@@ -117,316 +127,258 @@ describe("P2pRtcManager", () => {
         });
     }
 
-    afterEach(() => {
-        // @ts-ignore
-        delete window.RTCPeerConnection;
+    describe("disconnectAll", () => {
+        it("should support being called without setupSocketListeners being called", () => {
+            expect(() => {
+                rtcManager.disconnectAll();
+            }).not.toThrow();
+        });
+
+        it("should deregister all listeners defined at setup", () => {
+            const deregisterFunctions: any = [];
+            serverSocketStub.on = () => {
+                const deregisterFunc = jest.fn();
+                deregisterFunctions.push(deregisterFunc);
+                return deregisterFunc;
+            };
+            rtcManager.setupSocketListeners();
+
+            rtcManager.disconnectAll();
+
+            deregisterFunctions.forEach((deregisterFunction: any) => {
+                expect(deregisterFunction).toHaveBeenCalled();
+            });
+        });
+
+        it("should disconnect rtcStats", () => {
+            jest.spyOn(rtcStats.server, "close");
+            rtcManager.disconnectAll();
+
+            expect(rtcStats.server.close).toHaveBeenCalled();
+        });
     });
 
-    /**
-     * These are tests from the old parent class BaseRtcManager.
-     * SFU and P2P used to inherit the same base manager.
-     */
-    describe("old parent class baseRtcManager test", () => {
-        const roomData = {
-            mediaserverConfigTtlSeconds: 60,
-        };
+    describe("setupSocketListeners", () => {
+        it("should attach all RTC listeners", () => {
+            rtcManager.setupSocketListeners();
 
-        let rtcManager: any;
-        let emitterStub: any;
-        let serverSocketStub: any;
-        let serverSocket: any;
-        let iceServers: any;
-        let clientId: any;
-
-        beforeEach(() => {
-            jest.useFakeTimers();
-            clientId = helpers.randomString("client-");
-            // @ts-ignore
-            window.RTCPeerConnection = helpers.createRTCPeerConnectionStub();
-
-            iceServers = helpers.createIceServersConfig();
-            emitterStub = helpers.createEmitterStub();
-            serverSocketStub = helpers.createServerSocketStub();
-            serverSocket = serverSocketStub.socket;
-            rtcManager = createRtcManager({ emitter: emitterStub, serverSocket, iceServers, roomData });
+            expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, expect.any(Function));
+            expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_OFFER, expect.any(Function));
+            expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_ANSWER, expect.any(Function));
+            expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.ICE_CANDIDATE, expect.any(Function));
         });
 
-        afterEach(() => {
-            jest.useRealTimers();
-            // @ts-ignore
-            delete window.RTCPeerConnection;
-        });
-
-        describe("disconnectAll", () => {
-            it("should support being called without setupSocketListeners being called", () => {
-                expect(() => {
-                    rtcManager.disconnectAll();
-                }).not.toThrow();
-            });
-
-            it("should deregister all listeners defined at setup", () => {
-                const deregisterFunctions: any = [];
-                serverSocketStub.on = () => {
-                    const deregisterFunc = jest.fn();
-                    deregisterFunctions.push(deregisterFunc);
-                    return deregisterFunc;
-                };
+        describe("callbacks", () => {
+            beforeEach(() => {
                 rtcManager.setupSocketListeners();
-
-                rtcManager.disconnectAll();
-
-                deregisterFunctions.forEach((deregisterFunction: any) => {
-                    expect(deregisterFunction).toHaveBeenCalled();
-                });
             });
 
-            it("should disconnect rtcStats", () => {
-                jest.spyOn(rtcStats.server, "close");
-                rtcManager.disconnectAll();
+            describe("READY_TO_RECEIVE_OFFER", () => {
+                it("calls rtcManager._connect", () => {
+                    jest.spyOn(rtcManager, "_connect");
 
-                expect(rtcStats.server.close).toHaveBeenCalled();
-            });
-        });
-
-        describe("setupSocketListeners", () => {
-            it("should attach all RTC listeners", () => {
-                rtcManager.setupSocketListeners();
-
-                expect(serverSocket.on).toHaveBeenCalledWith(
-                    RELAY_MESSAGES.READY_TO_RECEIVE_OFFER,
-                    expect.any(Function),
-                );
-                expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_OFFER, expect.any(Function));
-                expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.SDP_ANSWER, expect.any(Function));
-                expect(serverSocket.on).toHaveBeenCalledWith(RELAY_MESSAGES.ICE_CANDIDATE, expect.any(Function));
-            });
-
-            describe("callbacks", () => {
-                beforeEach(() => {
-                    rtcManager.setupSocketListeners();
-                });
-
-                describe("READY_TO_RECEIVE_OFFER", () => {
-                    it("calls rtcManager._connect", () => {
-                        jest.spyOn(rtcManager, "_connect");
-
-                        serverSocketStub.emitFromServer(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
-                            clientId,
-                            iceServers: {},
-                        });
-
-                        expect(rtcManager._connect).toHaveBeenCalledWith(clientId);
-                    });
-                });
-
-                describe("SDP_OFFER", () => {
-                    it("sets the remote description", async () => {
-                        const session = await rtcManager._connect(clientId);
-                        const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
-                        const offer = { type: "offer", sdpU: validSdp };
-
-                        session.isOperationPending = false; // HACK
-                        serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message: offer });
-
-                        expect(session.pc.setRemoteDescription).toHaveBeenCalled();
-                    });
-                });
-
-                describe("SDP_ANSWER", () => {
-                    it("sets the remote description", async () => {
-                        // Instantiate the mocked pc
-                        const { pc } = await rtcManager._connect(clientId);
-
-                        // Run
-                        const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
-                        const answer = { type: "offer", sdp: validSdp };
-                        serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_ANSWER, { clientId, message: answer });
-
-                        // Assert
-                        expect(pc.setRemoteDescription).toHaveBeenCalled();
-                    });
-                });
-
-                describe("MEDIASERVER_CONFIG", () => {
-                    const mediaserverConfigTtlSeconds = 3600;
-                    const iceServers = helpers.createIceServersConfig();
-
-                    function mockServerResponse() {
-                        serverSocket.emit.mockReset();
-                        serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, {
-                            mediaserverConfigTtlSeconds,
-                            iceServers,
-                        });
-                    }
-
-                    it("schedules refresh on join", () => {
-                        jest.advanceTimersByTime(roomData.mediaserverConfigTtlSeconds * 1000);
-
-                        expect(serverSocket.emit).toHaveBeenCalledWith(
-                            PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
-                            undefined,
-                        );
-                    });
-
-                    it("updates internal media server records", () => {
-                        mockServerResponse();
-
-                        expect(rtcManager._iceServers).toEqual(iceServers);
-                    });
-
-                    it("issues refresh request when TTL expires", () => {
-                        mockServerResponse();
-
-                        jest.advanceTimersByTime(mediaserverConfigTtlSeconds * 1000);
-
-                        expect(serverSocket.emit).toHaveBeenCalledWith(
-                            PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
-                            undefined,
-                        );
-                    });
-
-                    it("clears refresh timeout when disconnected", () => {
-                        mockServerResponse();
-
-                        rtcManager.disconnectAll();
-                        jest.advanceTimersByTime(mediaserverConfigTtlSeconds * 1000);
-
-                        expect(serverSocket.emit).toHaveBeenCalledTimes(0);
-                    });
-                });
-            });
-        });
-
-        describe("acceptNewStream", () => {
-            it("creates a new peer connection", () => {
-                rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
-
-                // The object should be constructed with the given ice servers.
-                expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers });
-            });
-
-            it("stores the new peer connection", async () => {
-                const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
-
-                // The pc should be added to list of peer connections.
-                expect(rtcManager.peerConnections[clientId].pc).toEqual(pc);
-            });
-
-            it("does not create an offer", async () => {
-                const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
-
-                // An offer should not have been created yet.
-                expect(pc.createOffer).toHaveBeenCalledTimes(0);
-            });
-
-            it("emits READY_TO_RECEIVE_OFFER on the server socket", () => {
-                rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
-
-                expect(serverSocketStub.socket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
-                    receiverId: clientId,
-                });
-            });
-        });
-
-        describe("peerConnection callback", () => {
-            describe("ontrack", () => {
-                const fakeStream = helpers.randomString("stream-");
-                const fakeTrack = helpers.randomString("track-");
-                it("broadcasts a STREAM_ADDED event on the root scope", async () => {
-                    const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
-
-                    pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
-
-                    expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
                         clientId,
-                        stream: fakeStream,
+                        iceServers: {},
                     });
-                });
 
-                it("does not call pc.addStream on camera/mic stream", async () => {
-                    const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
-                    rtcManager.localStreams = { 0: fakeStream };
-
-                    pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
-
-                    expect(pc.addStream).toHaveBeenCalledTimes(0);
-                });
-
-                it("does not call pc.addStream for remaining local streams if Firefox", async () => {
-                    const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
-                    rtcManager.localStreams = { 1: fakeStream };
-                    rtcManager.peerConnections[clientId].isFirefox = true;
-
-                    pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
-
-                    expect(pc.addStream).toHaveBeenCalledTimes(0);
+                    expect(rtcManager._connect).toHaveBeenCalledWith(clientId);
                 });
             });
 
-            describe("connectionstatechange", () => {
-                const iceStateToConnectionStatus = {
-                    checking: "CONNECTING",
-                    connected: "CONNECTION_SUCCESSFUL",
-                    completed: "CONNECTION_SUCCESSFUL",
-                    disconnected: "CONNECTION_DISCONNECTED",
-                };
+            describe("SDP_OFFER", () => {
+                it("sets the remote description", async () => {
+                    const session = rtcManager._connect(clientId);
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    const offer = { type: "offer", sdp: validSdp };
 
-                describe("broadcasts when ice connection state becomes", () => {
-                    Object.keys(iceStateToConnectionStatus).forEach((iceState: any) => {
-                        const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
+                    session.isOperationPending = false;
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message: offer });
 
-                        it("broadcasts when ice connection state becomes " + iceState, async () => {
-                            const { pc } = await rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                    expect(session.pc.setRemoteDescription).toHaveBeenCalled();
+                });
 
-                            pc.iceConnectionState = iceState;
-                            pc.localDescription = { type: "offer" };
+                it.each([
+                    ["rejects invalid", false, 0],
+                    ["accepts valid", true, 1],
+                ])("%s initial offer for new session", async (_, isInitialOffer, calledTimes) => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: "id" });
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    const message = {
+                        isInitialOffer,
+                        type: "offer",
+                        sdp: validSdp,
+                    };
+                    // @ts-ignore
+                    session.pc.connectionState = "new";
+                    // @ts-ignore
+                    session.pc.iceConnectionState = "new";
 
-                            pc.oniceconnectionstatechange();
+                    session.isOperationPending = false;
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message });
 
-                            jest.advanceTimersByTime(0);
+                    expect(session.pc.setRemoteDescription).toHaveBeenCalledTimes(calledTimes);
+                });
 
-                            expect(emitterStub.emit).toHaveBeenCalledWith(
-                                CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
-                                expect.objectContaining({
-                                    clientId,
-                                    streamIds: [],
-                                    status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
-                                }),
-                            );
-                        });
+                it("is backwards compatible for invalid initial offer for new session", async () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: "id" });
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    const message = {
+                        type: "offer",
+                        sdp: validSdp,
+                        // isInitialOffer undefined = validation unsupported by signal protocol
+                    };
+                    // @ts-ignore
+                    session.pc.connectionState = "new";
+                    // @ts-ignore
+                    session.pc.iceConnectionState = "new";
+                    session.isOperationPending = false;
+
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_OFFER, { clientId, message });
+
+                    expect(session.pc.setRemoteDescription).toHaveBeenCalled();
+                });
+            });
+
+            describe("SDP_ANSWER", () => {
+                it("sets the remote description", async () => {
+                    // Instantiate the mocked pc
+                    const { pc } = rtcManager._connect(clientId);
+
+                    // Run
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    const answer = { type: "offer", sdp: validSdp };
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_ANSWER, { clientId, message: answer });
+
+                    // Assert
+                    expect(pc.setRemoteDescription).toHaveBeenCalled();
+                });
+            });
+
+            describe("MEDIASERVER_CONFIG", () => {
+                const iceServers = helpers.createIceServersConfig();
+
+                function mockServerResponse() {
+                    serverSocket.emit.mockReset();
+                    serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, {
+                        mediaserverConfigTtlSeconds,
+                        iceServers,
                     });
+                }
+
+                it("schedules refresh on join", async () => {
+                    jest.advanceTimersByTimeAsync(mediaserverConfigTtlSeconds * 1000);
+                    await new Promise(process.nextTick);
+
+                    expect(serverSocket.emit).toHaveBeenCalledWith(
+                        PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
+                        undefined,
+                    );
                 });
 
-                it("should call rtcManager._maybeRestartIce with the client id if the client sent the offer on disconnect", async () => {
-                    jest.spyOn(rtcManager, "_maybeRestartIce");
-                    const { pc } = await rtcManager._connect(clientId);
+                it("updates internal media server records", () => {
+                    mockServerResponse();
 
-                    pc.iceConnectionState = "disconnected";
-                    pc.localDescription = { type: "offer" };
-                    pc.oniceconnectionstatechange();
-
-                    jest.advanceTimersByTime(5000);
-                    expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
+                    expect(rtcManager._iceServers).toEqual(iceServers);
                 });
 
-                it("should call rtcManager.maybeRestartIce with the client id if the client sent the offer on failed", async () => {
-                    jest.spyOn(rtcManager, "_maybeRestartIce");
-                    const { pc } = await rtcManager._connect(clientId);
-                    pc.iceConnectionState = "disconnected";
-                    pc.localDescription = { type: "offer" };
+                it("issues refresh request when TTL expires", () => {
+                    mockServerResponse();
 
-                    pc.oniceconnectionstatechange();
+                    jest.advanceTimersByTime(mediaserverConfigTtlSeconds * 1000);
 
-                    jest.advanceTimersByTime(5000);
-                    expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
+                    expect(serverSocket.emit).toHaveBeenCalledWith(
+                        PROTOCOL_REQUESTS.FETCH_MEDIASERVER_CONFIG,
+                        undefined,
+                    );
+                });
+
+                it("clears refresh timeout when disconnected", () => {
+                    mockServerResponse();
+
+                    rtcManager.disconnectAll();
+                    jest.advanceTimersByTime(mediaserverConfigTtlSeconds * 1000);
+
+                    expect(serverSocket.emit).toHaveBeenCalledTimes(0);
                 });
             });
         });
+    });
 
-        describe("numberOfPeerconnections", () => {
-            it("returns the number of peerconnection objects", () => {
-                expect(rtcManager.numberOfPeerconnections()).toEqual(0);
+    describe("acceptNewStream", () => {
+        it("creates a new peer connection", () => {
+            rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+
+            // The object should be constructed with the given ice servers.
+            expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers });
+        });
+
+        it("stores the new peer connection", async () => {
+            const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+
+            // The pc should be added to list of peer connections.
+            expect(rtcManager.peerConnections[clientId].pc).toEqual(pc);
+        });
+
+        it("does not create an offer", async () => {
+            const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+
+            // An offer should not have been created yet.
+            expect(pc.createOffer).toHaveBeenCalledTimes(0);
+        });
+
+        it("emits READY_TO_RECEIVE_OFFER on the server socket", () => {
+            rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+
+            expect(serverSocketStub.socket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
+                receiverId: clientId,
             });
+        });
+    });
+
+    describe("peerConnection callback", () => {
+        describe("connectionstatechange", () => {
+            const iceStateToConnectionStatus = {
+                checking: "CONNECTING",
+                connected: "CONNECTION_SUCCESSFUL",
+                completed: "CONNECTION_SUCCESSFUL",
+                disconnected: "CONNECTION_DISCONNECTED",
+            };
+
+            describe("broadcasts when ice connection state becomes", () => {
+                Object.keys(iceStateToConnectionStatus).forEach((iceState: any) => {
+                    const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
+
+                    it("broadcasts when ice connection state becomes " + iceState, async () => {
+                        const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+
+                        // @ts-ignore
+                        pc.iceConnectionState = iceState;
+                        // @ts-ignore
+                        pc.localDescription = { type: "offer" };
+
+                        // @ts-ignore
+                        pc.oniceconnectionstatechange();
+
+                        jest.advanceTimersByTime(0);
+
+                        expect(emitterStub.emit).toHaveBeenCalledWith(
+                            CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
+                            expect.objectContaining({
+                                clientId,
+                                streamIds: [],
+                                status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
+                            }),
+                        );
+                    });
+                });
+            });
+        });
+    });
+
+    describe("numberOfPeerconnections", () => {
+        it("returns the number of peerconnection objects", () => {
+            expect(rtcManager.numberOfPeerconnections()).toEqual(0);
         });
     });
 
@@ -481,10 +433,8 @@ describe("P2pRtcManager", () => {
     });
 
     describe("_connect", () => {
-        const iceServers = helpers.createIceServersConfig();
-
         it("creates a new peer connection", () => {
-            createRtcManager({ iceServers })._connect(clientId);
+            rtcManager._connect(clientId);
 
             // The object should be constructed with the given peer connection config.
             expect(window.RTCPeerConnection).toHaveBeenCalledWith({
@@ -494,7 +444,6 @@ describe("P2pRtcManager", () => {
 
         it("uses latest ICE server information", () => {
             const updatedIceServers = helpers.createIceServersConfig();
-            const rtcManager = createRtcManager({ iceServers });
             rtcManager.setupSocketListeners();
             serverSocketStub.emitFromServer(PROTOCOL_RESPONSES.MEDIASERVER_CONFIG, { iceServers: updatedIceServers });
 
@@ -505,15 +454,9 @@ describe("P2pRtcManager", () => {
             });
         });
 
-        it("defaults to creating a new peer connection with unified semantics", () => {
-            createRtcManager({ iceServers })._connect(clientId);
-
-            expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers });
-        });
-
         it("creates a new peer connection with iceTransports set to relay if useOnlyTurn feature is set", () => {
-            createRtcManager({ iceServers, features: { useOnlyTURN: true } })._connect(clientId);
-
+            rtcManager = createRtcManager({ features: { useOnlyTURN: true } });
+            rtcManager._connect(clientId);
             // The object should be constructed some TURN servers and iceTransportPolicy set to 'relay'.
             expect(window.RTCPeerConnection).toHaveBeenCalledWith({
                 iceTransportPolicy: "relay",
@@ -523,14 +466,14 @@ describe("P2pRtcManager", () => {
 
         it("stores the new peer connection", async () => {
             const rtcManager = createRtcManager();
-            const { pc } = await rtcManager._connect(clientId);
+            const { pc } = rtcManager._connect(clientId);
 
             // The pc should be added to list of peer connections.
             expect(rtcManager.peerConnections[clientId].pc).toEqual(pc);
         });
 
-        it("registers callbacks on the peer connection", async () => {
-            const { pc } = await createRtcManager()._connect(clientId);
+        it("registers callbacks on the peer connection", () => {
+            const { pc } = createRtcManager()._connect(clientId);
 
             // Callback functions should have been attached.
             expect(pc.onnegotiationneeded).toEqual(expect.any(Function));
@@ -540,7 +483,10 @@ describe("P2pRtcManager", () => {
         });
 
         it("creates an offer", async () => {
-            const { pc } = await createRtcManager()._connect(clientId);
+            const { pc } = createRtcManager()._connect(clientId);
+
+            jest.advanceTimersToNextTimerAsync();
+            await new Promise(process.nextTick);
 
             // An offer was created.
             expect(pc.createOffer).toHaveBeenCalled();
@@ -580,6 +526,21 @@ describe("P2pRtcManager", () => {
     });
 
     describe("peerConnection callback", () => {
+        describe("ontrack", () => {
+            const fakeStream = helpers.randomString("stream-");
+            const fakeTrack = helpers.randomString("track-");
+            it("emits STREAM_ADDED event to consuming apps", async () => {
+                const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+
+                // @ts-ignore
+                pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
+
+                expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+                    clientId,
+                    stream: fakeStream,
+                });
+            });
+        });
         describe("onnegotiationneeded", () => {
             it("negotiates the peer connection after it is connected", async () => {
                 const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
@@ -589,6 +550,7 @@ describe("P2pRtcManager", () => {
 
                 pc.onnegotiationneeded?.({} as Event);
 
+                jest.advanceTimersByTimeAsync(1);
                 // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
                 await new Promise(process.nextTick);
 
@@ -602,6 +564,7 @@ describe("P2pRtcManager", () => {
                 pc.iceConnectionState = "new";
                 pc.onnegotiationneeded?.({} as Event);
 
+                jest.advanceTimersByTimeAsync(1);
                 // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
                 await new Promise(process.nextTick);
 
@@ -617,6 +580,7 @@ describe("P2pRtcManager", () => {
                 pc.iceConnectionState = "checking";
                 pc.onnegotiationneeded?.({} as Event);
 
+                jest.advanceTimersByTimeAsync(1);
                 // wait for call stack as negotiatePeerConnection calls createOffer asynchronously
                 await new Promise(process.nextTick);
 
@@ -626,7 +590,7 @@ describe("P2pRtcManager", () => {
 
         describe("onicecandidate", () => {
             it("sends the ICE_CANDIDATE on the socket with the candidate object", async () => {
-                const { pc } = await createRtcManager()._connect(clientId);
+                const { pc } = createRtcManager()._connect(clientId);
 
                 const candidatePackage = helpers.getValidCandidatePackage();
                 pc.onicecandidate?.({ candidate: candidatePackage } as RTCPeerConnectionIceEvent);
@@ -676,8 +640,10 @@ describe("P2pRtcManager", () => {
                 const address = "192.168.1.1"; // ipv4 private rfc1918
                 pc.onicegatheringstatechange?.({ target: { iceGatheringState: "gathering" } } as unknown as Event);
                 pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
-                await new Promise((r) => setTimeout(r, 3001));
-                expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.NEW_PC, undefined);
+
+                jest.advanceTimersByTime(3001);
+
+                expect(emitterStub.emit).toHaveBeenCalledWith(rtcManagerEvents.NEW_PC, undefined);
                 expect(manager.analytics.numIceNoPublicIpGatheredIn3sec).toBe(1);
             });
         });
@@ -761,72 +727,47 @@ describe("P2pRtcManager", () => {
         });
 
         describe("oniceconnectionstatechange", () => {
-            let rtcManager: any;
+            it.each(["disconnected", "failed"])(
+                `should call rtcManager._maybeRestartIce with the client id if the client sent the offer on %s`,
+                async (iceConnectionState) => {
+                    jest.spyOn(rtcManager, "_maybeRestartIce");
+                    const { pc } = rtcManager._connect(clientId);
 
-            beforeEach(() => {
-                rtcManager = createRtcManager();
-                jest.useFakeTimers();
-            });
+                    // @ts-ignore
+                    pc.iceConnectionState = iceConnectionState;
+                    // @ts-ignore
+                    pc.localDescription = { type: "offer" };
+                    // @ts-ignore
+                    pc.oniceconnectionstatechange();
 
-            afterEach(() => {
-                jest.useRealTimers();
-            });
+                    jest.advanceTimersByTime(ICE_RESTART_DELAY);
+                    expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
+                },
+            );
 
-            const iceStateToConnectionStatus = {
-                checking: "CONNECTING",
-                connected: "CONNECTION_SUCCESSFUL",
-                completed: "CONNECTION_SUCCESSFUL",
-                disconnected: "CONNECTION_DISCONNECTED",
-            };
+            it.each([
+                ["checking", "CONNECTING"],
+                ["connected", "CONNECTION_SUCCESSFUL"],
+                ["completed", "CONNECTION_SUCCESSFUL"],
+                ["disconnected", "CONNECTION_DISCONNECTED"],
+            ])("broadcasts when ice connection state becomes %s", async (iceConnectionState, expectedStatus) => {
+                const { pc } = createRtcManager()._connect(clientId);
 
-            describe("broadcasts when ice connection state becomes", () => {
-                Object.keys(iceStateToConnectionStatus).forEach((iceState) => {
-                    const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
-
-                    it("broadcasts when ice connection state becomes " + iceState, async () => {
-                        const { pc } = await createRtcManager()._connect(clientId);
-
-                        // @ts-ignore
-                        pc.iceConnectionState = iceState;
-                        // @ts-ignore
-                        pc.localDescription = { type: "offer" };
-                        pc.oniceconnectionstatechange?.({} as Event);
-                        jest.advanceTimersByTime(0);
-
-                        expect(emitter.emit).toHaveBeenCalledWith(
-                            CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
-                            expect.objectContaining({
-                                clientId,
-                                streamIds: [],
-                                status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
-                            }),
-                        );
-                    });
-                });
-            });
-
-            it("should call rtcManager._maybeRestartIce with the client id if the client sent the offer on disconnect", async () => {
-                jest.spyOn(rtcManager, "_maybeRestartIce");
-                const { pc } = await rtcManager._connect(clientId);
-
-                pc.iceConnectionState = "disconnected";
+                // @ts-ignore
+                pc.iceConnectionState = iceConnectionState;
+                // @ts-ignore
                 pc.localDescription = { type: "offer" };
-                pc.oniceconnectionstatechange();
+                pc.oniceconnectionstatechange?.({} as Event);
+                jest.advanceTimersByTime(0);
 
-                jest.advanceTimersByTime(5000);
-                expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
-            });
-
-            it("should call rtcManager.maybeRestartIce with the client id if the client sent the offer on failed", async () => {
-                jest.spyOn(rtcManager, "_maybeRestartIce");
-                const { pc } = await rtcManager._connect(clientId);
-
-                pc.iceConnectionState = "disconnected";
-                pc.localDescription = { type: "offer" };
-                pc.oniceconnectionstatechange();
-
-                jest.advanceTimersByTime(5000);
-                expect(rtcManager._maybeRestartIce).toHaveBeenCalledWith(clientId, expect.anything());
+                expect(emitterStub.emit).toHaveBeenCalledWith(
+                    CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
+                    expect.objectContaining({
+                        clientId,
+                        streamIds: [],
+                        status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
+                    }),
+                );
             });
         });
     });
@@ -836,13 +777,8 @@ describe("P2pRtcManager", () => {
         let rtcManager: any;
 
         beforeEach(() => {
-            jest.useFakeTimers();
             localStream = helpers.createMockedMediaStream();
             rtcManager = createRtcManager();
-        });
-
-        afterEach(() => {
-            jest.useRealTimers();
         });
 
         describe("when disabling", () => {
@@ -885,7 +821,7 @@ describe("P2pRtcManager", () => {
                 rtcManager.stopOrResumeVideo(localStream, false);
                 jest.advanceTimersByTime(5000);
 
-                expect(emitter.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
+                expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
                     stream: localStream,
                     track: videoTrack,
                 });
@@ -924,7 +860,7 @@ describe("P2pRtcManager", () => {
 
                 await rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(emitter.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
+                expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
                     streamId: localStream.id,
                     tracks: [expectedTrack],
                     screenShare: false,

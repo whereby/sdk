@@ -12,7 +12,16 @@ import checkIp from "check-ip";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
-import { RtcManager, RtcManagerOptions, SDPRelayMessage, SignalMediaServerConfig, WebRTCProvider } from "./types";
+import {
+    RtcManager,
+    RtcManagerOptions,
+    SignalSDPMessage,
+    SignalMediaServerConfig,
+    WebRTCProvider,
+    SignalIceCandidateMessage,
+    SignalReadyToReceiveOfferMessage,
+    SignalIceEndOfCandidatesMessage,
+} from "./types";
 import { ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { CAMERA_STREAM_ID } from "../model";
@@ -24,11 +33,19 @@ interface CreateSessionOptions {
     isOfferer: boolean;
 }
 
+interface NegotiatePeerConnectionOptions {
+    clientId: string;
+    session: Session;
+    constraints?: RTCOfferOptions;
+    isInitialOffer?: boolean;
+}
+
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 const ICE_PUBLIC_IP_GATHERING_TIMEOUT = 3 * 1000;
+export const ICE_RESTART_DELAY = 2 * 1000;
 const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
@@ -40,6 +57,7 @@ if (browserName === "chrome") {
 }
 
 type P2PAnalytics = {
+    P2POffendingInitialOffer: number;
     P2PNonErrorRejectionValueGUMError: number;
     numNewPc: number;
     numIceConnected: number;
@@ -156,6 +174,7 @@ export default class P2pRtcManager implements RtcManager {
         });
 
         this.analytics = {
+            P2POffendingInitialOffer: 0,
             P2PNonErrorRejectionValueGUMError: 0,
             numNewPc: 0,
             numIceConnected: 0,
@@ -307,11 +326,12 @@ export default class P2pRtcManager implements RtcManager {
                 this._updateAndScheduleMediaServersRefresh(data);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data: SignalReadyToReceiveOfferMessage) => {
+                logger.info(`got ready_to_receive_offer from ${data.clientId}`);
                 this._connect(data.clientId);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data: SignalIceCandidateMessage) => {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
@@ -320,7 +340,8 @@ export default class P2pRtcManager implements RtcManager {
                 session.addIceCandidate(data.message);
             }),
 
-            this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, (data: any) => {
+            this._serverSocket.on(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, (data: SignalIceEndOfCandidatesMessage) => {
+                logger.info(`got end_of_ice_candidates from ${data.clientId}`);
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_END_OF_CANDIDATES", data);
@@ -330,7 +351,8 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // when a new SDP offer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SDPRelayMessage) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SignalSDPMessage) => {
+                logger.info(`got offer from ${data.clientId}, isInitialOffer: ${Boolean(data.message.isInitialOffer)}`);
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
@@ -340,6 +362,20 @@ export default class P2pRtcManager implements RtcManager {
                     sdp: data.message.sdp || data.message.sdpU,
                     type: data.message.type,
                 };
+
+                // If signaling protocol supports initial offer validation we attempt it.
+                if (
+                    "isInitialOffer" in data.message &&
+                    data.message.isInitialOffer === false &&
+                    session.pc.connectionState === "new" &&
+                    session.pc.iceConnectionState === "new" &&
+                    !session.connectionStatus
+                ) {
+                    logger.info("We have asked for an initial offer, ignoring all others");
+                    this.analytics.P2POffendingInitialOffer++;
+                    rtcStats.sendEvent("P2POffendingInitialOffer", { clientId: session.clientId });
+                    return;
+                }
                 session
                     .handleOffer(sdp)
                     .then((answer) => {
@@ -354,7 +390,8 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             // when a new SDP answer is received from another client
-            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: SDPRelayMessage) => {
+            this._serverSocket.on(RELAY_MESSAGES.SDP_ANSWER, (data: SignalSDPMessage) => {
+                logger.info(`got offer from ${data.clientId}`);
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_ANSWER", data);
@@ -595,6 +632,7 @@ export default class P2pRtcManager implements RtcManager {
         };
 
         pc.oniceconnectionstatechange = () => {
+            logger.info(`iceConnectionState changed to ${pc.iceConnectionState} for session ${session.clientId}`);
             let newStatus;
             const currentStatus = session.connectionStatus;
             switch (pc.iceConnectionState) {
@@ -630,7 +668,7 @@ export default class P2pRtcManager implements RtcManager {
                         if (pc.iceConnectionState === "disconnected") {
                             this._maybeRestartIce(clientId, session);
                         }
-                    }, 2000);
+                    }, ICE_RESTART_DELAY);
                     break;
                 case "failed":
                     newStatus = CONNECTION_STATUS.TYPES.CONNECTION_FAILED;
@@ -654,7 +692,9 @@ export default class P2pRtcManager implements RtcManager {
             }
             this._setConnectionStatus(session, newStatus, clientId);
         };
+
         pc.onconnectionstatechange = () => {
+            logger.info(`connectionState changed to ${pc.connectionState} for session ${session.clientId}`);
             switch (pc.connectionState) {
                 case "connected":
                     // try to detect audio problems.
@@ -854,6 +894,10 @@ export default class P2pRtcManager implements RtcManager {
         this._videoTrackBeingMonitored = track;
     }
 
+    /**
+     * This function should only be called as a response to READY_TO_RECEIVE_OFFER.
+     * It is the starting point of our P2P negotiation and creates the initial offer.
+     */
     _connect(clientId: string) {
         // bring rtcstats back up if disconnected
         try {
@@ -874,7 +918,7 @@ export default class P2pRtcManager implements RtcManager {
             initialBandwidth,
             isOfferer: true,
         });
-        this._negotiatePeerConnection(clientId, session);
+        this._negotiatePeerConnection({ clientId, session, isInitialOffer: true });
         return session;
     }
 
@@ -897,12 +941,8 @@ export default class P2pRtcManager implements RtcManager {
             session.mdnsHostCandidateSeen = false;
 
             this.analytics.numIceRestart++;
-
-            this._negotiatePeerConnection(
-                clientId,
-                session,
-                Object.assign({}, this.offerOptions, { iceRestart: true }),
-            );
+            const constraints = { ...this.offerOptions, iceRestart: true };
+            this._negotiatePeerConnection({ clientId, session, constraints });
         }
     }
 
@@ -953,7 +993,12 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    _negotiatePeerConnection(clientId: string, session: Session, constraints?: any) {
+    _negotiatePeerConnection({
+        clientId,
+        session,
+        constraints,
+        isInitialOffer = false,
+    }: NegotiatePeerConnectionOptions) {
         if (!session) {
             logger.warn("No RTCPeerConnection in negotiatePeerConnection()", clientId);
             return;
@@ -961,7 +1006,7 @@ export default class P2pRtcManager implements RtcManager {
         const pc = session.pc;
         if (!session.canModifyPeerConnection()) {
             session.pending.push(() => {
-                this._negotiatePeerConnection(clientId, session, constraints);
+                this._negotiatePeerConnection({ clientId, session, constraints, isInitialOffer });
             });
             return;
         }
@@ -1009,6 +1054,7 @@ export default class P2pRtcManager implements RtcManager {
                                 sdp: offer.sdp,
                                 sdpU: offer.sdp,
                                 type: offer.type,
+                                isInitialOffer,
                             };
                             this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                                 receiverId: clientId,
@@ -1027,7 +1073,7 @@ export default class P2pRtcManager implements RtcManager {
         const originalOnnegotationneeded = pc.onnegotiationneeded;
         pc.onnegotiationneeded = null;
         action();
-        this._negotiatePeerConnection(session.clientId, session);
+        this._negotiatePeerConnection({ clientId: session.clientId, session });
         setTimeout(() => (pc.onnegotiationneeded = originalOnnegotationneeded), 0);
     }
 
@@ -1211,7 +1257,7 @@ export default class P2pRtcManager implements RtcManager {
                 // initial negotiation is handled by our CLIENT_READY/READY_TO_RECEIVE_OFFER exchange
                 return;
             }
-            this._negotiatePeerConnection(clientId, session);
+            this._negotiatePeerConnection({ clientId, session });
         };
         return session;
     }
