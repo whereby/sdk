@@ -312,13 +312,36 @@ export const issueDetectors: IssueDetector[] = [
             (ssrc0.audioLevel || 0) >= 0.001 &&
             (ssrc0.audioAcceleration || 0) >= 0.1,
     },
+    {
+        id: "high-rtt-delay",
+        global: true,
+        enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
+        check: ({ stats }) =>
+            Object.values(stats?.candidatePairs || {}).some((cp) => cp.roundTripTime && cp.roundTripTime > 0.5),
+    },
+    {
+        id: "extreme-rtt-delay",
+        global: true,
+        enabled: ({ stats }) => !!Object.values(stats?.candidatePairs || {}).length,
+        check: ({ stats }) =>
+            Object.values(stats?.candidatePairs || {}).some((cp) => cp.roundTripTime && cp.roundTripTime > 1),
+    },
+    {
+        id: "high-rtt-delay",
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0,
+        check: ({ ssrc0 }) => (ssrc0?.roundTripTime || 0) > 0.5,
+    },
+    {
+        id: "extreme-rtt-delay",
+        enabled: ({ hasLiveTrack, ssrc0 }) => hasLiveTrack && !!ssrc0,
+        check: ({ ssrc0 }) => (ssrc0?.roundTripTime || 0) > 1,
+    },
     // todo:
     // jitter/congestion - increasing jitter for several "ticks"
     // encodeTime?
     // low audio (energy)?
     // keyframe rate?
     // canidate-pair switches
-    // RTT?
     // stun req/res
     // available bitrates
     // probes? low media bitrate?
