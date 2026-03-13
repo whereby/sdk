@@ -555,12 +555,18 @@ export const doStartLocalMedia = createAppAsyncThunk(
 );
 
 export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
-    const stream = selectLocalMediaStream(getState());
-    const onDeviceChange = selectLocalMediaRaw(getState()).onDeviceChange;
+    const state = getState();
+    const stream = selectLocalMediaStream(state);
+    const onDeviceChange = selectLocalMediaRaw(state).onDeviceChange;
+    const beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
 
     stream?.getTracks().forEach((track) => {
         track.stop();
     });
+
+    if (beforeEffectTracks) {
+        Object.values(beforeEffectTracks).forEach((t) => t?.stop());
+    }
 
     if (navigator.mediaDevices && onDeviceChange) {
         navigator.mediaDevices.removeEventListener("devicechange", onDeviceChange);
