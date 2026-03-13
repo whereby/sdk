@@ -6,12 +6,9 @@ import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelp
 import WS from "jest-websocket-mock";
 import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
-import { CAMERA_STREAM_ID } from "../../../model";
 
 jest.mock("../../../utils/getMediasoupDevice");
 const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
-
-const logger = new Logger();
 
 jest.mock("webrtc-adapter", () => {
     return {
@@ -139,17 +136,17 @@ describe("VegaRtcManager", () => {
         });
     });
 
-    describe("addNewStream", () => {
+    describe("addCameraStream", () => {
         it("should not produce ended webcam track", async () => {
-            const localStream = helpers.createMockedMediaStream() as unknown as MediaStream;
+            const stream = helpers.createMockedMediaStream() as unknown as MediaStream;
             jest.spyOn(mockSendTransport, "produce");
-            localStream.getTracks().forEach((t) => {
+            stream.getTracks().forEach((t) => {
                 // @ts-ignore
                 if (t.kind === "video") t.readyState = "ended";
-                else localStream.removeTrack(t);
+                else stream.removeTrack(t);
             });
             rtcManager.setupSocketListeners();
-            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
+            rtcManager.addCameraStream({ stream });
             await setTimeout(100);
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(0);
@@ -158,11 +155,11 @@ describe("VegaRtcManager", () => {
     });
 
     describe("replaceTrack", () => {
-        let localStream: MediaStream;
+        let stream: MediaStream;
         let newTrack: MediaStreamTrack;
 
         beforeEach(() => {
-            localStream = helpers.createMockedMediaStream() as unknown as MediaStream;
+            stream = helpers.createMockedMediaStream() as unknown as MediaStream;
             newTrack = helpers.createMockedMediaStreamTrack({
                 id: "id",
                 kind: "video",
@@ -170,7 +167,7 @@ describe("VegaRtcManager", () => {
         });
 
         it("should not create duplicate producers", async () => {
-            const oldTrack = localStream.getVideoTracks()[0];
+            const oldTrack = stream.getVideoTracks()[0];
             const mockVideoProducer = new MockProducer({ kind: "video" });
             jest.spyOn(mockVideoProducer, "replaceTrack");
             jest.spyOn(mockSendTransport, "produce").mockImplementation(({ track }: { track: MediaStreamTrack }) => {
@@ -179,7 +176,7 @@ describe("VegaRtcManager", () => {
             });
 
             rtcManager.setupSocketListeners();
-            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
+            rtcManager.addCameraStream({ stream });
             rtcManager.replaceTrack(oldTrack, newTrack);
             await setTimeout(250);
 
@@ -190,7 +187,7 @@ describe("VegaRtcManager", () => {
         });
 
         it("should handle transport not being connected yet", async () => {
-            const oldTrack = localStream.getVideoTracks()[0];
+            const oldTrack = stream.getVideoTracks()[0];
             const mockVideoProducer = new MockProducer({ kind: "video" });
             jest.spyOn(mockVideoProducer, "replaceTrack");
             jest.spyOn(mockSendTransport, "produce").mockImplementation(({ track }: { track: MediaStreamTrack }) => {
@@ -198,7 +195,7 @@ describe("VegaRtcManager", () => {
                 else return new MockProducer({ kind: "audio" });
             });
 
-            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
+            rtcManager.addCameraStream({ stream });
             rtcManager.replaceTrack(oldTrack, newTrack);
             await setTimeout(100);
             rtcManager.setupSocketListeners();
@@ -325,11 +322,11 @@ describe("VegaRtcManager", () => {
     });
 
     describe("handling localStream `stopresumevideo` event", () => {
-        let localStream: any;
+        let stream: any;
 
         beforeEach(() => {
-            localStream = helpers.createMockedMediaStream();
-            rtcManager.addNewStream(CAMERA_STREAM_ID, localStream, false, false);
+            stream = helpers.createMockedMediaStream();
+            rtcManager.addCameraStream({ stream, audioPaused: false, videoPaused: false });
         });
 
         describe("when enable", () => {
@@ -337,7 +334,7 @@ describe("VegaRtcManager", () => {
                 jest.spyOn(rtcManager, "_sendWebcam");
                 const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-                localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
+                stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
 
                 expect(rtcManager._sendWebcam).toHaveBeenCalledWith(track);
             });
@@ -367,13 +364,13 @@ describe("VegaRtcManager", () => {
                 });
 
                 it("should stop the webcam producer", () => {
-                    localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
+                    stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
 
                     expect(rtcManager._stopProducer).toHaveBeenCalledWith(webcamProducer);
                 });
 
                 it("should not keep track of the old producer", () => {
-                    localStream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
+                    stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
 
                     expect(rtcManager._webcamProducer).toEqual(null);
                 });

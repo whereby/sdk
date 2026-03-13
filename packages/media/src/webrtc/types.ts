@@ -1,8 +1,5 @@
 import { SignalRoom, ServerSocket } from "../utils";
 
-/*
-    RTC
-*/
 export enum RtcEventNames {
     rtc_manager_created = "rtc_manager_created",
     stream_added = "stream_added",
@@ -25,13 +22,14 @@ export interface VegaRtcManagerOptions extends RtcManagerOptions {
 
 export interface RtcManager {
     acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
-    addNewStream(streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean): void;
+    addCameraStream(options: AddCameraStreamOptions): void;
+    addScreenshareStream(stream: MediaStream): void;
+    removeScreenshareStream(options: RemoveScreenshareStreamOptions): void;
     disconnect(streamId: string, eventClaim?: string): void;
     disconnectAll(): void;
     rtcStatsDisconnect(): void;
     rtcStatsReconnect(): void;
     replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack): void;
-    removeStream(streamId: string, _stream: MediaStream, requestedByClientId: string | null): void;
     shouldAcceptStreamsFromBothSides: () => boolean;
     updateStreamResolution(streamId: string, ignored: null, resolution: { width: number; height: number }): void;
     sendStatsCustomEvent(eventName: string, data: unknown): void;
@@ -104,10 +102,6 @@ export type SignalReadyToReceiveOfferMessage = {
 export type SignalIceEndOfCandidatesMessage = {
     clientId: string;
 };
-
-/*
-    Media Devices
-*/
 
 export interface WebRTCProvider {
     getMediaConstraints: () => MediaStreamConstraints;
@@ -205,3 +199,15 @@ export type SignalSFUServer = {
     fallbackUrl?: string;
     fallbackServers?: any[];
 };
+
+export interface AddCameraStreamOptions {
+    stream: MediaStream;
+    audioPaused?: boolean;
+    videoPaused?: boolean;
+    beforeEffectTracks?: MediaStreamTrack[];
+}
+
+export interface RemoveScreenshareStreamOptions {
+    requestedByClientId?: string;
+    stream: MediaStream;
+}
