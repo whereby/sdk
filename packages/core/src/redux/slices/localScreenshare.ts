@@ -76,7 +76,17 @@ export const doStartScreenshare = createAsyncRoomConnectedThunk(
                 return { stream: screenshareStream };
             }
 
-            const stream = await getDisplayMedia();
+            const stream = await getDisplayMedia({
+                video: {
+                    width: { max: window.screen.width },
+                    height: { max: window.screen.height },
+                },
+                audio: {
+                    autoGainControl: false,
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                },
+            });
 
             const onEnded = () => {
                 dispatch(doStopScreenshare());

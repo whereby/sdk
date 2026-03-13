@@ -524,7 +524,12 @@ export default function VideoExperience({
                         {screenshares.map(
                             (s) =>
                                 s.stream && (
-                                    <VideoView style={{ width: 200, height: "auto" }} key={s.id} stream={s.stream} />
+                                    <VideoView
+                                        style={{ width: 200, height: "auto" }}
+                                        key={s.id}
+                                        stream={s.stream}
+                                        muted={s.isLocal}
+                                    />
                                 ),
                         )}
                     </div>
