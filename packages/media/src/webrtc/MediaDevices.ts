@@ -365,7 +365,7 @@ const defaultDisplayMediaConstraints = {
  * @returns {Promise<MediaStream>}
  */
 export function getDisplayMedia(
-    constraints = defaultDisplayMediaConstraints,
+    constraints: DisplayMediaStreamOptions = defaultDisplayMediaConstraints,
     contentHint = "detail", // "detail" | "motion" | "text"
 ) {
     return global.navigator.mediaDevices.getDisplayMedia(constraints).then((stream) => {
