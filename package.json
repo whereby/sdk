@@ -7,6 +7,12 @@
     "packageManager": "pnpm@10.12.4",
     "scripts": {
         "build": "turbo build",
+        "build:media": "turbo build --filter=@whereby.com/media",
+        "build:core": "turbo build --filter=@whereby.com/core",
+        "build:browser-sdk": "turbo build --filter=@whereby.com/browser-sdk",
+        "build:assistant-sdk": "turbo build --filter=@whereby.com/assistant-sdk",
+        "build:react-native-sdk": "turbo build --filter=@whereby.com/react-native-sdk",
+        "build:camera-effects": "turbo build --filter=@whereby.com/camera-effects",        
         "changeset": "changeset",
         "version": "changeset version && pnpm install --lockfile-only",
         "dev": "turbo dev --filter=@whereby.com/browser-sdk",
