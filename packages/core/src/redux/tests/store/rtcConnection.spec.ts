@@ -12,8 +12,7 @@ import MockMediaStream from "../../../__mocks__/MediaStream";
 import { RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
-import { coreVersion } from "../../../version";
-import { doAppStop } from "../../slices/app";
+import { doAppStop, initialState } from "../../slices/app";
 
 jest.mock("@whereby.com/media");
 
@@ -77,17 +76,7 @@ describe("actions", () => {
                     withSignalConnection: true,
                     initialState: {
                         app: {
-                            displayName: null,
-                            externalId: null,
-                            ignoreBreakoutGroups: false,
-                            isActive: false,
-                            isAssistant: false,
-                            isAudioRecorder: false,
-                            isDialIn: false,
-                            isNodeSdk: true,
-                            roomName: null,
-                            roomUrl: null,
-                            userAgent: `core:${coreVersion}`,
+                            ...initialState,
                         },
                     },
                 });
@@ -164,7 +153,10 @@ describe("actions", () => {
         store.dispatch(doRtcManagerInitialize());
 
         expect(mockRtcManager.addCameraStream).toHaveBeenCalledTimes(1);
-        expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith(store.getState().localMedia.stream, { audioPaused:true, videoPaused: true});
+        expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith(store.getState().localMedia.stream, {
+            audioPaused: true,
+            videoPaused: true,
+        });
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
     });
 });

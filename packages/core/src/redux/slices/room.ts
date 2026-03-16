@@ -126,11 +126,30 @@ export const doEndMeeting = createAppAuthorizedThunk(
 
 export const selectRoomIsLocked = (state: RootState) => state.room.isLocked;
 
+export const selectRemoteScreenshares = createSelector(selectRemoteParticipants, (remoteParticipants) => {
+    const screenshares: Screenshare[] = [];
+
+    for (const participant of remoteParticipants) {
+        if (participant.presentationStream) {
+            screenshares.push({
+                id: participant.presentationStream.id || `pres-${participant.id}`,
+                participantId: participant.id,
+                hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
+                breakoutGroup: participant.breakoutGroup,
+                stream: participant.presentationStream,
+                isLocal: false,
+            });
+        }
+    }
+
+    return screenshares;
+});
+
 export const selectScreenshares = createSelector(
     selectLocalScreenshareStream,
     selectLocalParticipantRaw,
-    selectRemoteParticipants,
-    (localScreenshareStream, localParticipant, remoteParticipants) => {
+    selectRemoteScreenshares,
+    (localScreenshareStream, localParticipant, remoteScreenshares) => {
         const screenshares: Screenshare[] = [];
 
         if (localScreenshareStream) {
@@ -144,20 +163,7 @@ export const selectScreenshares = createSelector(
             });
         }
 
-        for (const participant of remoteParticipants) {
-            if (participant.presentationStream) {
-                screenshares.push({
-                    id: participant.presentationStream.id || `pres-${participant.id}`,
-                    participantId: participant.id,
-                    hasAudioTrack: participant.presentationStream.getTracks().some((track) => track.kind === "audio"),
-                    breakoutGroup: participant.breakoutGroup,
-                    stream: participant.presentationStream,
-                    isLocal: false,
-                });
-            }
-        }
-
-        return screenshares;
+        return screenshares.concat(remoteScreenshares);
     },
 );
 

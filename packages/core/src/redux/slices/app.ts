@@ -2,6 +2,7 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import type { LocalMediaOptions } from "./localMedia";
 import { coreVersion } from "../../version";
+import { AudioOnlyMode } from "@whereby.com/media";
 
 /**
  * Reducer
@@ -19,9 +20,11 @@ export interface AppConfig {
     roomKey: string | null;
     roomUrl: string;
     userAgent?: string;
+    audioOnlyMode?: AudioOnlyMode;
 }
 
 export interface AppState {
+    audioOnlyMode: AudioOnlyMode;
     displayName: string | null;
     externalId: string | null;
     ignoreBreakoutGroups: boolean;
@@ -37,6 +40,7 @@ export interface AppState {
 }
 
 export const initialState: AppState = {
+    audioOnlyMode: "off",
     displayName: null,
     externalId: null,
     ignoreBreakoutGroups: false,
@@ -95,3 +99,4 @@ export const selectAppExternalId = (state: RootState) => state.app.externalId;
 export const selectAppIsNodeSdk = (state: RootState) => state.app.isNodeSdk;
 export const selectAppInitialConfig = (state: RootState) => state.app.initialConfig;
 export const selectAppIgnoreBreakoutGroups = (state: RootState) => state.app.ignoreBreakoutGroups;
+export const selectAppAudioOnlyMode = (state: RootState) => state.app.audioOnlyMode;
