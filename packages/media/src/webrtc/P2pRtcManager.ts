@@ -15,6 +15,7 @@ import Logger from "../utils/Logger";
 import {
     AddCameraStreamOptions,
     RemoveScreenshareStreamOptions,
+    AudioOnlyMode,
     RtcManager,
     RtcManagerFeatures,
     RtcManagerOptions,
@@ -106,11 +107,8 @@ export default class P2pRtcManager implements RtcManager {
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
     _features: RtcManagerFeatures;
-    _isAudioOnlyMode: boolean;
-    offerOptions: {
-        offerToReceiveAudio: boolean;
-        offerToReceiveVideo: boolean;
-    };
+    _audioOnlyMode: AudioOnlyMode;
+    offerOptions: RTCOfferOptions;
     _audioTrackOnEnded: () => void;
     _videoTrackOnEnded: () => void;
     _iceServers: any;
@@ -125,7 +123,7 @@ export default class P2pRtcManager implements RtcManager {
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
 
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
+    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, audioOnlyMode, features }: RtcManagerOptions) {
         const { name, session, iceServers, turnServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
@@ -138,11 +136,14 @@ export default class P2pRtcManager implements RtcManager {
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
-        this._features = features || {};
-        this._isAudioOnlyMode = false;
+        this._features = features;
+        this._audioOnlyMode = audioOnlyMode ?? "off";
         this._closed = false;
 
-        this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
+        this.offerOptions = {
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: audioOnlyMode !== "on",
+        };
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -209,7 +210,7 @@ export default class P2pRtcManager implements RtcManager {
         stream: MediaStream,
         { beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
     ) {
-        logger.info("addCameraStream: [stream.id: %s]", stream.id)
+        logger.info("addCameraStream: [stream.id: %s]", stream.id);
         if (stream === this._localCameraStream) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
@@ -270,7 +271,7 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     addScreenshareStream(stream: MediaStream) {
-        logger.info("addScreenshareStream() [stream.id: %s]", stream.id)
+        logger.info("addScreenshareStream() [stream.id: %s]", stream.id);
         if (stream === this._localScreenshareStream) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
@@ -287,7 +288,12 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     replaceTrack(oldTrack: MediaStreamTrack | null, newTrack: MediaStreamTrack) {
-        logger.info("replaceTrack() [kind: %s, oldTrackId: %s, newTrackId: %s]", newTrack.kind, oldTrack?.id, newTrack.id)
+        logger.info(
+            "replaceTrack() [kind: %s, oldTrackId: %s, newTrackId: %s]",
+            newTrack.kind,
+            oldTrack?.id,
+            newTrack.id,
+        );
         if (newTrack.kind === "audio" && !trackAnnotations(newTrack).isEffectTrack) {
             this._monitorAudioTrack(newTrack);
         }
@@ -303,7 +309,7 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     disconnectAll() {
-        logger.info("disconnectAll()")
+        logger.info("disconnectAll()");
         Object.keys(this.peerConnections).forEach((peerConnectionId) => {
             this.disconnect(peerConnectionId);
         });
@@ -339,7 +345,7 @@ export default class P2pRtcManager implements RtcManager {
             }),
 
             this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data: SignalIceCandidateMessage) => {
-                logger.info(`Got ice_candidate from client ${data.clientId}`)
+                logger.info(`Got ice_candidate from client ${data.clientId}`);
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on ICE_CANDIDATE", data);
@@ -360,7 +366,9 @@ export default class P2pRtcManager implements RtcManager {
 
             // when a new SDP offer is received from another client
             this._serverSocket.on(RELAY_MESSAGES.SDP_OFFER, (data: SignalSDPMessage) => {
-                logger.info(`Got offer from client ${data.clientId}, isInitialOffer: ${Boolean(data.message.isInitialOffer)}`);
+                logger.info(
+                    `Got offer from client ${data.clientId}, isInitialOffer: ${Boolean(data.message.isInitialOffer)}`,
+                );
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
@@ -387,7 +395,7 @@ export default class P2pRtcManager implements RtcManager {
                 session
                     .handleOffer(sdp)
                     .then((answer) => {
-                        logger.info(`Sending answer to client ${data.clientId}`)
+                        logger.info(`Sending answer to client ${data.clientId}`);
                         this._emitServerEvent(RELAY_MESSAGES.SDP_ANSWER, {
                             receiverId: data.clientId,
                             message: answer,
@@ -459,19 +467,21 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    setAudioOnly(audioOnly: any) {
-        this._isAudioOnlyMode = audioOnly;
+    setAudioOnly(audioOnly: AudioOnlyMode) {
+        this._audioOnlyMode = audioOnly;
+        this.offerOptions = {
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: this._audioOnlyMode !== "on",
+        };
 
-        this._forEachPeerConnection((session: any) => {
+        this._forEachPeerConnection((session: Session) => {
             if (session.hasConnectedPeerConnection()) {
-                this._withForcedRenegotiation(session, () =>
-                    session.setAudioOnly(this._isAudioOnlyMode, this._screenshareVideoTrackIds),
-                );
+                this._withForcedRenegotiation(session, () => session.setAudioOnly(this._audioOnlyMode));
             }
         });
     }
 
-    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds: string[] = []) {
         this._screenshareVideoTrackIds = [...remoteScreenshareVideoTrackIds];
 
         const localScreenShareTrack = this._localScreenshareStream?.getVideoTracks()?.[0];
@@ -584,6 +594,8 @@ export default class P2pRtcManager implements RtcManager {
             bandwidth: initialBandwidth,
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
+            audioOnlyMode: this._audioOnlyMode,
+            getScreenshareVideoTrackIds: () => this._screenshareVideoTrackIds,
         });
         this.peerConnections[peerConnectionId] = session;
 
@@ -636,8 +648,8 @@ export default class P2pRtcManager implements RtcManager {
                         session.wasEverConnected = true;
                     }
 
-                    if (this._isAudioOnlyMode) {
-                        session.setAudioOnly(true, this._screenshareVideoTrackIds);
+                    if (this._audioOnlyMode) {
+                        session.setAudioOnly(this._audioOnlyMode);
                     }
 
                     session.registerConnected?.({});
@@ -1024,7 +1036,7 @@ export default class P2pRtcManager implements RtcManager {
                                 type: offer.type,
                                 isInitialOffer,
                             };
-                            logger.info(`sending offer to client ${clientId}`)
+                            logger.info(`sending offer to client ${clientId}`);
                             this._emitServerEvent(RELAY_MESSAGES.SDP_OFFER, {
                                 receiverId: clientId,
                                 message,
@@ -1225,7 +1237,7 @@ export default class P2pRtcManager implements RtcManager {
                 // initial negotiation is handled by our CLIENT_READY/READY_TO_RECEIVE_OFFER exchange
                 return;
             }
-            logger.info(`onnegotiationneeded client ${clientId}`)
+            logger.info(`onnegotiationneeded client ${clientId}`);
             this._negotiatePeerConnection({ clientId, session });
         };
         return session;
@@ -1235,7 +1247,7 @@ export default class P2pRtcManager implements RtcManager {
      * Possibly start a new peer connection for the new stream if needed.
      */
     acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
-        logger.info("acceptNewStream() [streamId: %s}, clientId: %s]", streamId, clientId)
+        logger.info("acceptNewStream() [streamId: %s}, clientId: %s]", streamId, clientId);
         let session = this._getSession(clientId);
         if (session && streamId !== clientId) {
             // we are adding a screenshare stream to existing session/pc
@@ -1263,7 +1275,7 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     disconnect(clientId: string) {
-        logger.info("disconnect() [clientId: %s]", clientId)
+        logger.info("disconnect() [clientId: %s]", clientId);
         this._cleanup(clientId);
         this._changeBandwidthForAllClients(false);
         const numPeers = this.numberOfPeerconnections();
@@ -1298,7 +1310,7 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     stopOrResumeVideo(localStream: MediaStream, enable: boolean) {
-        logger.info("stopOrResumeVideo() [enable: %s]", enable)
+        logger.info("stopOrResumeVideo() [enable: %s]", enable);
         // actually turn off the camera. Chrome-only (Firefox has different plans)
         if (!["chrome", "safari"].includes(browserName)) {
             return;
@@ -1358,7 +1370,11 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     removeScreenshareStream(stream: MediaStream, { requestedByClientId }: RemoveScreenshareStreamOptions = {}) {
-        logger.info("removeScreenshareStream() [stream.id: %s, requestedByClientId: %s]", stream.id, requestedByClientId)
+        logger.info(
+            "removeScreenshareStream() [stream.id: %s, requestedByClientId: %s]",
+            stream.id,
+            requestedByClientId,
+        );
         this._removeStreamFromPeerConnections(stream);
         this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId: stream.id, requestedByClientId });
         delete this._localScreenshareStream;

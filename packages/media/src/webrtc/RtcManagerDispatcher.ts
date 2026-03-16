@@ -3,18 +3,29 @@ import { PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import VegaRtcManager from "./VegaRtcManager";
 import { RoomJoinedEvent, ServerSocket } from "../utils";
-import { RtcManager, RtcEvents, RtcEventEmitter, WebRTCProvider, RtcManagerFeatures } from "./types";
+import {
+    RtcManager,
+    RtcEvents,
+    RtcEventEmitter,
+    WebRTCProvider,
+    RtcManagerFeatures,
+    AudioOnlyMode,
+    RtcManagerOptions,
+    VegaRtcManagerOptions,
+} from "./types";
 
 export default class RtcManagerDispatcher {
     emitter: { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
     currentManager: RtcManager | null;
 
     constructor({
+        audioOnlyMode,
         emitter,
         serverSocket,
         webrtcProvider,
         features,
     }: {
+        audioOnlyMode: AudioOnlyMode;
         emitter: RtcEventEmitter;
         serverSocket: ServerSocket;
         webrtcProvider: WebRTCProvider;
@@ -26,7 +37,8 @@ export default class RtcManagerDispatcher {
             if ("error" in payload) return; // ignore error responses which lack room
 
             const { room, selfId, eventClaim } = payload;
-            const config = {
+            const config: RtcManagerOptions & VegaRtcManagerOptions = {
+                audioOnlyMode,
                 selfId,
                 room,
                 emitter,

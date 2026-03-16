@@ -8,6 +8,7 @@ import createMicAnalyser from "../VegaMicAnalyser";
 import {
     AddCameraStreamOptions,
     RemoveScreenshareStreamOptions,
+    AudioOnlyMode,
     RtcManager,
     RtcManagerFeatures,
     SignalMediaServerConfig,
@@ -40,6 +41,7 @@ import {
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
 import { CAMERA_STREAM_ID, STREAM_TYPES } from "../../model";
+import { ConsumerOptions } from "mediasoup-client/lib/Consumer";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -115,9 +117,19 @@ export default class VegaRtcManager implements RtcManager {
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
     _cpuOveruseDetected: boolean;
+    private _audioOnlyMode: AudioOnlyMode;
     analytics: VegaAnalytics;
 
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features, eventClaim }: VegaRtcManagerOptions) {
+    constructor({
+        selfId,
+        room,
+        emitter,
+        serverSocket,
+        webrtcProvider,
+        features,
+        eventClaim,
+        audioOnlyMode,
+    }: VegaRtcManagerOptions) {
         const { session, iceServers, turnServers, sfuServer, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
@@ -126,8 +138,9 @@ export default class VegaRtcManager implements RtcManager {
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
-        this._features = features || {};
+        this._features = features;
         this._eventClaim = eventClaim;
+        this._audioOnlyMode = audioOnlyMode ?? "off";
 
         this._vegaConnection = null;
 
@@ -372,6 +385,7 @@ export default class VegaRtcManager implements RtcManager {
                         roomName: this._room.name,
                         eventClaim: this._room.isClaimed ? this._eventClaim : null,
                         lowBw: "true",
+                        audioOnly: this._audioOnlyMode,
                         ...Object.entries(this._features || {})
                             .filter(([featureKey, value]) => value && /^sfu/.test(featureKey))
                             .reduce(
@@ -1318,8 +1332,12 @@ export default class VegaRtcManager implements RtcManager {
      *
      * @param {boolean} audioOnly
      */
-    setAudioOnly(audioOnly: boolean) {
-        this._vegaConnection?.message(audioOnly ? "enableAudioOnly" : "disableAudioOnly");
+    setAudioOnly(audioOnlyMode: AudioOnlyMode) {
+        if (audioOnlyMode === "off") {
+            this._vegaConnection?.message("disableAudioOnly");
+        } else {
+            this._vegaConnection?.message("enableAudioOnly", { audioOnlyMode });
+        }
     }
 
     // the track ids send by signal server for remote-initiated screenshares
@@ -1784,7 +1802,7 @@ export default class VegaRtcManager implements RtcManager {
             });
     }
 
-    async _onConsumerReady(options: any) {
+    async _onConsumerReady(options: ConsumerOptions) {
         logger.info("_onConsumerReady()", { id: options.id, producerId: options.producerId });
 
         const consumer = await this._receiveTransport.consume(options);
