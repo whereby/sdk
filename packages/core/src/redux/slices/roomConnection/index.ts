@@ -156,6 +156,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
     const connectionStatus = selectRoomConnectionStatus(state);
+    const clientClaim = selectLocalParticipantClientClaim(state);
 
     if (connectionStatus !== "room_locked") {
         console.warn("Room is not locked, knock aborted");
@@ -180,6 +181,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
         roomName,
         userAgent,
         externalId,
+        ...(clientClaim && { clientClaim }),
     });
 
     dispatch(connectionStatusChanged("knocking"));
