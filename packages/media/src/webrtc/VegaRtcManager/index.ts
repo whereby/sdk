@@ -8,10 +8,12 @@ import createMicAnalyser from "../VegaMicAnalyser";
 import {
     AddCameraStreamOptions,
     RemoveScreenshareStreamOptions,
+    GetConstraintsOptions,
     RtcManager,
     SignalMediaServerConfig,
     SignalSFUServer,
     VegaRtcManagerOptions,
+    WebRTCProvider,
 } from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
 import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
@@ -39,6 +41,7 @@ import {
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
 import { CAMERA_STREAM_ID, STREAM_TYPES } from "../../model";
+import getConstraints from "../mediaConstraints";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -60,7 +63,7 @@ export default class VegaRtcManager implements RtcManager {
     _roomSessionId: any;
     _emitter: any;
     _serverSocket: ServerSocket;
-    _webrtcProvider: any;
+    _webrtcProvider: WebRTCProvider;
     _features: any;
     _eventClaim?: any;
     _vegaConnection: VegaConnection | null;
@@ -1553,7 +1556,7 @@ export default class VegaRtcManager implements RtcManager {
             }, stopCameraDelay);
         } else if (localStream.getVideoTracks().length === 0) {
             // re-enable the stream
-            const constraints = this._webrtcProvider.getMediaConstraints().video;
+            const constraints = getConstraints(this._webrtcProvider.getMediaConstraints()).video;
             navigator.mediaDevices
                 .getUserMedia({ video: constraints })
                 .then((stream) => {
