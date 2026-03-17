@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.6.15
+
+### Patch Changes
+
+- 7f06c4f: Clean up camera effect stream when leaving room
+
 ## 1.6.14
 
 ### Patch Changes
