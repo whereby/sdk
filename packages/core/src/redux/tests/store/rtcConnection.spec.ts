@@ -164,7 +164,7 @@ describe("actions", () => {
         store.dispatch(doRtcManagerInitialize());
 
         expect(mockRtcManager.addCameraStream).toHaveBeenCalledTimes(1);
-        expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith({ stream: store.getState().localMedia.stream, audioPaused:true, videoPaused: true});
+        expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith(store.getState().localMedia.stream, { audioPaused:true, videoPaused: true});
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
     });
 });
