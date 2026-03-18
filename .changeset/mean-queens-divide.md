@@ -2,4 +2,4 @@
 "@whereby.com/media": major
 ---
 
-Refactor RTC managers
+Use new APIs for adding and removing streams
