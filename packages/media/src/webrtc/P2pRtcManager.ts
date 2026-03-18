@@ -268,6 +268,12 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     addScreenshareStream(stream: MediaStream) {
+        if (stream === this._localScreenshareStream) {
+            // this can happen after reconnect. We do not want to add the stream to the
+            // peerconnection again.
+            return;
+        }
+
         this._localScreenshareStream = stream;
         this._screenshareVideoTrackIds.push(stream.getVideoTracks()[0].id);
         this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
@@ -301,6 +307,11 @@ export default class P2pRtcManager implements RtcManager {
             func();
         });
         this._socketListenerDeregisterFunctions = [];
+
+        if (this._localStreamDeregisterFunction) {
+            this._localStreamDeregisterFunction();
+            this._localStreamDeregisterFunction = null;
+        }
 
         this.rtcStatsDisconnect();
     }
