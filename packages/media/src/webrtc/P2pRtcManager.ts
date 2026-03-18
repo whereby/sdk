@@ -1345,7 +1345,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    removeScreenshareStream(stream: MediaStream, { requestedByClientId }: RemoveScreenshareStreamOptions) {
+    removeScreenshareStream(stream: MediaStream, { requestedByClientId }: RemoveScreenshareStreamOptions = {}) {
         this._removeStreamFromPeerConnections(stream);
         this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId: stream.id, requestedByClientId });
         delete this._localScreenshareStream;
