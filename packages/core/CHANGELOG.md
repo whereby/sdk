@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.7.0
+
+### Minor Changes
+
+- 5b73eb9: Pass clientClaim when knocking on a room to assume existing client identity
+
 ## 1.6.15
 
 ### Patch Changes
