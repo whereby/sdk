@@ -322,13 +322,13 @@ export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPay
 });
 
 export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) => {
-    const stream = selectLocalMediaStream(getState());
+    const localMediaStream = selectLocalMediaStream(getState());
     const rtcManager = selectRtcConnectionRaw(getState()).rtcManager;
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
-    if (stream && rtcManager) {
-        rtcManager.addCameraStream(stream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
+    if (localMediaStream && rtcManager) {
+        rtcManager.addCameraStream(localMediaStream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
     }
 
     dispatch(rtcManagerInitialized());

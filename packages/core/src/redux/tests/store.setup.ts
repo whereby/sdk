@@ -17,7 +17,7 @@ export const mockRtcManager = {
     addScreenshareStream: jest.fn(),
     acceptNewStream: jest.fn(),
     replaceTrack: jest.fn(),
-    removeStream: jest.fn(),
+    removeScreenshareStream: jest.fn(),
     disconnect: jest.fn(),
     disconnectAll: jest.fn(),
     rtcStatsDisconnect: jest.fn(),
