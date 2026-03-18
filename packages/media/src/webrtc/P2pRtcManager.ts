@@ -204,7 +204,10 @@ export default class P2pRtcManager implements RtcManager {
         return this._selfId === selfId && this._roomName === roomName && !isSfu;
     }
 
-    addCameraStream({ stream, beforeEffectTracks = [] }: AddCameraStreamOptions) {
+    addCameraStream(
+        stream: MediaStream,
+        { beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
+    ) {
         if (stream === this._localCameraStream) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
@@ -214,7 +217,9 @@ export default class P2pRtcManager implements RtcManager {
         this._localCameraStream = stream;
         this._addStreamToPeerConnections(stream);
 
+        const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
+
         if (audioTrack) {
             if (!trackAnnotations(audioTrack).isEffectTrack) {
                 this._monitorAudioTrack(audioTrack);
@@ -225,7 +230,6 @@ export default class P2pRtcManager implements RtcManager {
             }
         }
 
-        const videoTrack = stream.getVideoTracks()[0];
         if (videoTrack) {
             if (!trackAnnotations(videoTrack).isEffectTrack) {
                 this._monitorVideoTrack(videoTrack);
@@ -1330,7 +1334,7 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenshareStreamOptions) {
+    removeScreenshareStream(stream: MediaStream, { requestedByClientId }: RemoveScreenshareStreamOptions) {
         this._removeStreamFromPeerConnections(stream);
         this._emitServerEvent(PROTOCOL_REQUESTS.STOP_SCREENSHARE, { streamId: stream.id, requestedByClientId });
         delete this._localScreenshareStream;

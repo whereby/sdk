@@ -146,7 +146,7 @@ describe("VegaRtcManager", () => {
                 else stream.removeTrack(t);
             });
             rtcManager.setupSocketListeners();
-            rtcManager.addCameraStream({ stream });
+            rtcManager.addCameraStream(stream);
             await setTimeout(100);
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(0);
@@ -176,7 +176,7 @@ describe("VegaRtcManager", () => {
             });
 
             rtcManager.setupSocketListeners();
-            rtcManager.addCameraStream({ stream });
+            rtcManager.addCameraStream(stream);
             rtcManager.replaceTrack(oldTrack, newTrack);
             await setTimeout(250);
 
@@ -195,7 +195,7 @@ describe("VegaRtcManager", () => {
                 else return new MockProducer({ kind: "audio" });
             });
 
-            rtcManager.addCameraStream({ stream });
+            rtcManager.addCameraStream(stream);
             rtcManager.replaceTrack(oldTrack, newTrack);
             await setTimeout(100);
             rtcManager.setupSocketListeners();
@@ -326,7 +326,7 @@ describe("VegaRtcManager", () => {
 
         beforeEach(() => {
             stream = helpers.createMockedMediaStream();
-            rtcManager.addCameraStream({ stream, audioPaused: false, videoPaused: false });
+            rtcManager.addCameraStream(stream, { audioPaused: false, videoPaused: false });
         });
 
         describe("when enable", () => {

@@ -1370,7 +1370,10 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    removeScreenshareStream({ stream, requestedByClientId }: RemoveScreenshareStreamOptions) {
+    removeScreenshareStream(
+        stream: MediaStream,
+        { requestedByClientId }: RemoveScreenshareStreamOptions = { requestedByClientId: undefined },
+    ) {
         logger.info("removeScreenshareStream() [streamId:%s, requestedByClientId:%s]", stream.id, requestedByClientId);
 
         this._emitToSignal(PROTOCOL_REQUESTS.STOP_SCREENSHARE, {
@@ -1391,7 +1394,10 @@ export default class VegaRtcManager implements RtcManager {
         this._sendMicScore(this._micPaused ? 0 : data.out);
     }
 
-    addCameraStream({ stream, audioPaused, videoPaused, beforeEffectTracks = [] }: AddCameraStreamOptions) {
+    addCameraStream(
+        stream: MediaStream,
+        { audioPaused, videoPaused, beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
+    ) {
         this._micPaused = audioPaused;
         this._webcamPaused = videoPaused;
 

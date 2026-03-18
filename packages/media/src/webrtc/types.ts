@@ -22,9 +22,9 @@ export interface VegaRtcManagerOptions extends RtcManagerOptions {
 
 export interface RtcManager {
     acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
-    addCameraStream(options: AddCameraStreamOptions): void;
+    addCameraStream(stream: MediaStream, options?: AddCameraStreamOptions): void;
     addScreenshareStream(stream: MediaStream): void;
-    removeScreenshareStream(options: RemoveScreenshareStreamOptions): void;
+    removeScreenshareStream(stream: MediaStream, options?: RemoveScreenshareStreamOptions): void;
     disconnect(streamId: string, eventClaim?: string): void;
     disconnectAll(): void;
     rtcStatsDisconnect(): void;
@@ -201,7 +201,6 @@ export type SignalSFUServer = {
 };
 
 export interface AddCameraStreamOptions {
-    stream: MediaStream;
     audioPaused?: boolean;
     videoPaused?: boolean;
     beforeEffectTracks?: MediaStreamTrack[];
@@ -209,5 +208,4 @@ export interface AddCameraStreamOptions {
 
 export interface RemoveScreenshareStreamOptions {
     requestedByClientId?: string;
-    stream: MediaStream;
 }

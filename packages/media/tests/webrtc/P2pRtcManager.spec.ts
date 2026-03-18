@@ -895,7 +895,7 @@ describe("P2pRtcManager", () => {
             beforeEach(() => {
                 stream = helpers.createMockedMediaStream();
                 rtcManager = createRtcManager();
-                rtcManager.addCameraStream({ stream });
+                rtcManager.addCameraStream(stream);
             });
 
             describe("when enable", () => {
