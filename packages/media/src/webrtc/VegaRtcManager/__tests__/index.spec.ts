@@ -4,7 +4,6 @@ import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
 import WS from "jest-websocket-mock";
-import Logger from "../../../utils/Logger";
 import { setTimeout } from "timers/promises";
 
 jest.mock("../../../utils/getMediasoupDevice");
@@ -138,7 +137,7 @@ describe("VegaRtcManager", () => {
 
     describe("addCameraStream", () => {
         it("should not produce ended webcam track", async () => {
-            const stream = helpers.createMockedMediaStream() as unknown as MediaStream;
+            const stream = helpers.createMockedMediaStream();
             jest.spyOn(mockSendTransport, "produce");
             stream.getTracks().forEach((t) => {
                 // @ts-ignore
@@ -159,7 +158,7 @@ describe("VegaRtcManager", () => {
         let newTrack: MediaStreamTrack;
 
         beforeEach(() => {
-            stream = helpers.createMockedMediaStream() as unknown as MediaStream;
+            stream = helpers.createMockedMediaStream();
             newTrack = helpers.createMockedMediaStreamTrack({
                 id: "id",
                 kind: "video",
