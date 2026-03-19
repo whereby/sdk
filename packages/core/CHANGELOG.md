@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 1.8.0
+
+### Minor Changes
+
+- 2331191: Add support for screenshare with audio
+
+### Patch Changes
+
+- Updated dependencies [2c10eb8]
+    - @whereby.com/media@3.1.1
+
 ## 1.7.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 3.1.1
+
+### Patch Changes
+
+- 2c10eb8: Fix type of getDisplayMedia constraints
+
 ## 3.1.0
 
 ### Minor Changes
