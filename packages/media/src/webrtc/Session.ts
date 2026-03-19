@@ -164,31 +164,10 @@ export default class Session {
 
         // wrapper around SRD which stores a promise
         this.srdComplete = this.pc.setRemoteDescription(desc);
-        return this.srdComplete
-            .then(() => {
-                this.earlyIceCandidates.forEach((candidate) => this.pc.addIceCandidate(candidate));
-                this.earlyIceCandidates = [];
-            })
-            .then(() => {
-                if (this.audioOnlyMode === "off") {
-                    return;
-                }
-                this.pc.getTransceivers().forEach((videoTransceiver) => {
-                    if (videoTransceiver.receiver.track.kind !== "video") return;
-
-                    const screenshareTrackIds = this.getScreenshareTrackIds();
-                    const senderTrackId = videoTransceiver?.sender?.track?.id;
-                    const receiverTrackId = videoTransceiver?.receiver?.track?.id;
-                    const isScreenshareTransceiver =
-                        (senderTrackId && screenshareTrackIds.includes(senderTrackId)) ||
-                        (receiverTrackId && screenshareTrackIds.includes(receiverTrackId));
-                    if (this.audioOnlyMode === "allowScreenshareVideo" && isScreenshareTransceiver) {
-                        return;
-                    }
-
-                    videoTransceiver.direction = "sendonly";
-                });
-            });
+        return this.srdComplete.then(() => {
+            this.earlyIceCandidates.forEach((candidate) => this.pc.addIceCandidate(candidate));
+            this.earlyIceCandidates = [];
+        });
     }
 
     handleOffer(offer: SignalRTCSessionDescription): Promise<SignalRTCSessionDescription> {
@@ -208,6 +187,26 @@ export default class Session {
         let answerToSignal: SignalRTCSessionDescription;
 
         return this._setRemoteDescription(desc)
+            .then(() => {
+                if (this.audioOnlyMode === "off") {
+                    return;
+                }
+                this.pc.getTransceivers().forEach((videoTransceiver) => {
+                    if (videoTransceiver.receiver.track.kind !== "video") return;
+
+                    const screenshareTrackIds = this.getScreenshareTrackIds();
+                    const senderTrackId = videoTransceiver?.sender?.track?.id;
+                    const receiverTrackId = videoTransceiver?.receiver?.track?.id;
+                    const isScreenshareTransceiver =
+                        (senderTrackId && screenshareTrackIds.includes(senderTrackId)) ||
+                        (receiverTrackId && screenshareTrackIds.includes(receiverTrackId));
+                    if (this.audioOnlyMode === "allowScreenshareVideo" && isScreenshareTransceiver) {
+                        return;
+                    }
+
+                    videoTransceiver.direction = "sendonly";
+                });
+            })
             .then(() => {
                 return this.pc.createAnswer();
             })
