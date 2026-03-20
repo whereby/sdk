@@ -45,14 +45,14 @@ describe("VegaRtcManager", () => {
                 widescreen: false,
             },
         };
-        webrtcProvider = {
-            getMediaConstraints: () => mediaConstraints,
-        };
         const server = helpers.createSfuWebsocketServer();
         sfuWebsocketServer = server.wss;
         sfuWebsocketServerUrl = server.url;
         serverSocketStub = helpers.createServerSocketStub();
         serverSocket = serverSocketStub.socket;
+        webrtcProvider = {
+            getMediaConstraints: () => mediaConstraints,
+        };
         mockSendTransport = new MockTransport();
 
         emitter = helpers.createEmitterStub();
@@ -279,21 +279,24 @@ describe("VegaRtcManager", () => {
 
         describe("when enabling", () => {
             let gumStream: any;
+            let deviceId: string;
 
             beforeEach(() => {
                 gumStream = helpers.createMockedMediaStream();
                 global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(gumStream));
-                const deviceId = helpers.randomString();
+                deviceId = helpers.randomString();
                 mediaConstraints.videoId = deviceId;
                 mediaConstraints.devices = [helpers.createMockedInputDevice("videoinput", deviceId)];
 
                 localStream.removeTrack(localStream.getVideoTracks()[0]);
             });
 
-            it("should obtain new video track", () => {
+            it("should obtain new video track using constraints from webrtcProvider", () => {
+                const gumSpy = jest.spyOn(global.navigator.mediaDevices, "getUserMedia")
                 rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+                // @ts-ignore
+                expect(gumSpy.mock.calls[0][0]?.video?.deviceId?.ideal).toBe(deviceId)
             });
 
             it("should add video track to local stream", async () => {
