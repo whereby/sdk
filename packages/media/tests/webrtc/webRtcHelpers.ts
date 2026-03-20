@@ -80,6 +80,7 @@ export function createRTCPeerConnectionStub(
             getReceivers: jest.fn(() => receivers),
             getSenders: jest.fn(() => senders),
             getStats: jest.fn(() => stats),
+            getTransceivers: () => [],
         } as unknown as RTCPeerConnection;
     });
 }

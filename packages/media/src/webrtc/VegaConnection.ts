@@ -4,6 +4,36 @@ import Logger from "../utils/Logger";
 
 const logger = new Logger();
 
+type VegaMethod =
+    | "ping"
+    | "getCapabilities"
+    | "createTransport"
+    | "restartIce"
+    | "produce"
+    | "produceData"
+    | "setCapabilities"
+    | "eventClaim"
+    | "setColocation"
+    | "connectTransport"
+    | "closeTransports"
+    | "updateProducerData"
+    | "closeProducers"
+    | "closeDataProducers"
+    | "pauseProducers"
+    | "resumeProducers"
+    | "closeConsumers"
+    | "pauseConsumers"
+    | "resumeConsumers"
+    | "setConsumersPreferredLayers"
+    | "resetPreferredLayersControl"
+    | "setConsumersPriority"
+    | "resetConsumersPriority"
+    | "requestConsumersKeyFrame"
+    | "enableAudioOnly"
+    | "disableAudioOnly"
+    | "enableDebugMode"
+    | "disableDebugMode";
+
 export default class VegaConnection extends EventEmitter {
     wsUrl: string;
     protocol: string;
@@ -94,7 +124,7 @@ export default class VegaConnection extends EventEmitter {
         } catch (error) {}
     }
 
-    message(method: any, data: any = {}) {
+    message(method: VegaMethod, data: any = {}) {
         const message = SfuV2Parser.createMessage(method, data);
         this.send(message);
     }

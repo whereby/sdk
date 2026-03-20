@@ -8,7 +8,7 @@ import { PROTOCOL_RESPONSES } from "../../src/model/protocol";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
-import { WebRTCProvider } from "../../src";
+import { AudioOnlyMode, WebRTCProvider } from "../../src";
 
 const originalMediasoupDevice = mediasoupClient.Device;
 
@@ -29,7 +29,7 @@ describe("RtcManagerDispatcher", () => {
 
         const serverSocket = serverSocketStub.socket;
 
-        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider, features });
+        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider, features, audioOnlyMode: "off" });
         Object.defineProperty(mediasoupClient, "Device", {
             value: jest.fn(),
         });

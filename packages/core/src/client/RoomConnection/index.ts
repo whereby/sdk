@@ -318,6 +318,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             assistantKey: this.options.assistantKey || null,
             isNodeSdk: this.options.isNodeSdk || false,
             isAudioRecorder: this.options.isAudioRecorder ?? false,
+            audioOnlyMode: this.options.audioOnlyMode,
         };
 
         this.store.dispatch(doAppStart(roomConfig));

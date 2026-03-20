@@ -1,4 +1,5 @@
 import { SignalRoom, ServerSocket } from "../utils";
+import { HostListEntryOptionalDC } from "./VegaConnectionManager";
 
 export enum RtcEventNames {
     rtc_manager_created = "rtc_manager_created",
@@ -7,13 +8,41 @@ export enum RtcEventNames {
 
 export type RtcEventEmitter = { emit: <K extends keyof RtcEvents>(eventName: K, args?: RtcEvents[K]) => void };
 
+export type AudioOnlyMode = "on" | "off" | "allowScreenshareVideo";
+
+export type RtcManagerFeatures = Partial<{
+    addCloudflareStunServers: string;
+    addGoogleStunServers: string;
+    awaitJoinRoomFinished: boolean;
+    bandwidth: string;
+    cleanSdpOn: boolean;
+    deprioritizeH264OnSafari: boolean;
+    h264On: boolean;
+    increaseIncomingMediaBufferOn: boolean;
+    isNodeSdk: boolean;
+    lowDataModeEnabled: boolean;
+    p2pAv1On: boolean;
+    producerCpuOveruseWatchOff: boolean;
+    redOn: boolean;
+    rtpAbsCaptureTimeOn: boolean;
+    safari17HandlerOn: boolean;
+    sfuServerOverrideHost: string;
+    sfuServersOverride: HostListEntryOptionalDC[];
+    sfuVp9On: boolean;
+    simulcastScreenshareOn: boolean;
+    turnServerOverrideHost: string;
+    turnServersOn: boolean;
+    uncappedSingleRemoteVideoOn: boolean;
+    useOnlyTURN: string;
+}>;
 export interface RtcManagerOptions {
+    audioOnlyMode?: AudioOnlyMode;
     selfId: string;
     room: SignalRoom;
     emitter: RtcEventEmitter;
     serverSocket: ServerSocket;
     webrtcProvider: WebRTCProvider;
-    features: any;
+    features: RtcManagerFeatures;
 }
 
 export interface VegaRtcManagerOptions extends RtcManagerOptions {
@@ -36,6 +65,8 @@ export interface RtcManager {
     isInitializedWith({ selfId, roomName, isSfu }: { selfId: string; roomName: string; isSfu: boolean }): boolean;
     setEventClaim?(eventClaim: string): void;
     hasClient(clientId: string): boolean;
+    setRemoteScreenshareVideoTrackIds(screenshareVideoTrackIds: string[]): void;
+    setAudioOnly(audioOnlyMode: AudioOnlyMode): void;
 }
 
 export interface RtcManagerCreatedPayload {
