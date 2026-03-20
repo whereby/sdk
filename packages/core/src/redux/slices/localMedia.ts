@@ -310,7 +310,7 @@ export const doToggleCamera = createAppAsyncThunk(
                         {
                             ...constraintsOptions,
                             audioId: false,
-                            videoId: cameraDeviceId,
+                            videoId: cameraDeviceId || true,
                             type: "exact",
                         },
                         { replaceStream: stream },
@@ -421,23 +421,16 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 return { devices: newDevices };
             }
 
-            const { changedDevices, addedDevices } = getUpdatedDevices({
+            const { changedDevices, removedDevices } = getUpdatedDevices({
                 oldDevices,
                 newDevices,
             });
+            
+            // Autoswitch changed or removed devices.
+            const autoSwitchAudioId = changedDevices.audioinput?.deviceId || removedDevices.audioinput?.deviceId;
+            const autoSwitchVideoId = changedDevices.videoinput?.deviceId || removedDevices.videoinput?.deviceId;
 
-            let autoSwitchAudioId = changedDevices.audioinput?.deviceId;
-            let autoSwitchVideoId = changedDevices.videoinput?.deviceId;
-
-            // Handle added devices
-            if (autoSwitchAudioId === undefined) {
-                autoSwitchAudioId = addedDevices.audioinput?.deviceId;
-            }
-            if (autoSwitchVideoId === undefined) {
-                autoSwitchVideoId = addedDevices.videoinput?.deviceId;
-            }
-
-            if (autoSwitchAudioId !== undefined || autoSwitchVideoId !== undefined) {
+            if (autoSwitchAudioId || autoSwitchVideoId) {
                 dispatch(doSwitchLocalStream({ audioId: autoSwitchAudioId, videoId: autoSwitchVideoId }));
             }
 
@@ -451,7 +444,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
     async (
-        { audioId, videoId }: { audioId?: string | null; videoId?: string | null },
+        { audioId, videoId }: { audioId?: string; videoId?: string },
         { dispatch, getState, rejectWithValue },
     ) => {
         const state = getState();
@@ -464,11 +457,11 @@ export const doSwitchLocalStream = createAppAsyncThunk(
         }
 
         const beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
-        if (audioId !== undefined && beforeEffectTracks?.audio) {
+        if (audioId && beforeEffectTracks?.audio) {
             beforeEffectTracks.audio.stop();
             beforeEffectTracks.audio = undefined;
         }
-        if (videoId !== undefined && beforeEffectTracks?.video) {
+        if (videoId && beforeEffectTracks?.video) {
             beforeEffectTracks.video.stop();
             beforeEffectTracks.video = undefined;
         }
@@ -477,8 +470,8 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             const { replacedTracks } = await getStream(
                 {
                     ...constraintsOptions,
-                    audioId: audioId === undefined ? false : audioId,
-                    videoId: videoId === undefined ? false : videoId,
+                    audioId: audioId || false,
+                    videoId: videoId || false,
                     type: "exact",
                 },
                 { replaceStream },

@@ -317,16 +317,16 @@ describe("actions", () => {
 
     describe("doUpdateDeviceList", () => {
         it("should switch to the next video device if current cam is unplugged", async () => {
-            const dev1 = {
+            const dev1: MediaDeviceInfo = {
                 deviceId: "dev1",
-                kind: "videoinput" as const,
+                kind: "videoinput",
                 label: randomString("label"),
                 groupId: randomString("groupId"),
                 toJSON: () => ({}),
-            };
-            const dev2 = {
+            } ;
+            const dev2: MediaDeviceInfo = {
                 deviceId: "dev2",
-                kind: "videoinput" as const,
+                kind: "videoinput",
                 label: randomString("label"),
                 groupId: randomString("groupId"),
                 toJSON: () => ({}),
