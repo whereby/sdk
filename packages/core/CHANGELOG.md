@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.8.1
+
+### Patch Changes
+
+- afd5f27: Use new RTC manager APIs for streams
+- Updated dependencies [afd5f27]
+    - @whereby.com/media@4.0.0
+
 ## 1.8.0
 
 ### Minor Changes
