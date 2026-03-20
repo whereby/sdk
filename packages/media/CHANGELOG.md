@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 4.0.0
+
+### Major Changes
+
+- afd5f27: Use new APIs for adding and removing streams
+
 ## 3.1.1
 
 ### Patch Changes
