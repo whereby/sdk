@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 5.0.0
+
+### Major Changes
+
+- b54ca9a: Stop using add/remove stream functions in P2P
+
 ## 4.0.0
 
 ### Major Changes
