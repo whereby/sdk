@@ -328,7 +328,7 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
     if (localMediaStream && rtcManager) {
-        rtcManager.addNewStream(CAMERA_STREAM_ID, localMediaStream, !isMicrophoneEnabled, !isCameraEnabled);
+        rtcManager.addCameraStream(localMediaStream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
     }
 
     dispatch(rtcManagerInitialized());
@@ -374,7 +374,7 @@ startAppListening({
         const { stream } = payload;
         const { rtcManager } = selectRtcConnectionRaw(getState());
 
-        rtcManager?.addNewStream(stream.id, stream, false, true);
+        rtcManager?.addScreenshareStream(stream);
     },
 });
 
@@ -393,7 +393,7 @@ startAppListening({
         const { stream } = payload;
         const { rtcManager } = selectRtcConnectionRaw(getState());
 
-        rtcManager?.removeStream(stream.id, stream, null);
+        rtcManager?.removeScreenshareStream(stream);
     },
 });
 
@@ -437,7 +437,7 @@ startAppListening({
         const { stream } = payload;
 
         if (stream) {
-            rtcManager.addNewStream(CAMERA_STREAM_ID, payload.stream, !isMicrophoneEnabled, !isCameraEnabled);
+            rtcManager.addCameraStream(stream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
         }
     },
 });
