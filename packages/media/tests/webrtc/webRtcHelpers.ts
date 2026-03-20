@@ -202,6 +202,14 @@ export function createMockedMediaStream(existingTracks?: any) {
     return Object.assign(new EventTarget(), result) as unknown as MediaStream;
 }
 
+export function createMockedInputDevice(kind: MediaDeviceKind, deviceId = randomString(), label = "label") {
+    return {
+        kind,
+        deviceId,
+        label,
+    } as MediaDeviceInfo;
+}
+
 export class MockTransport {
     on = jest.fn().mockReturnValue({ on: jest.fn() });
     observer = {
