@@ -106,20 +106,12 @@ export default class Session {
     addStream(stream: MediaStream) {
         this.streamIds.push(stream.id);
         this.streams.push(stream);
-        // @ts-ignore
-        if (RTCPeerConnection.prototype.addTrack) {
-            stream.getAudioTracks().forEach((track) => {
-                this.pc.addTrack(track, stream);
-            });
-            stream.getVideoTracks().forEach((track) => {
-                this.pc.addTrack(track, stream);
-            });
-        } else {
-            rtcStats.sendEvent("P2PNoAddTrackSupport", {});
-            // legacy addStream fallback.
-            // @ts-ignore
-            this.pc.addStream(stream);
-        }
+        stream.getAudioTracks().forEach((track) => {
+            this.pc.addTrack(track, stream);
+        });
+        stream.getVideoTracks().forEach((track) => {
+            this.pc.addTrack(track, stream);
+        });
     }
 
     addTrack(track: MediaStreamTrack, stream?: MediaStream) {
@@ -133,7 +125,7 @@ export default class Session {
     removeTrack(track: MediaStreamTrack) {
         const stream = this.streams[0];
         stream.removeTrack(track);
-        const sender = this.pc.getSenders().find((sender: any) => sender.track === track);
+        const sender = this.pc.getSenders().find((sender) => sender.track === track);
         if (sender) {
             this.pc.removeTrack(sender);
         }
@@ -149,18 +141,12 @@ export default class Session {
             this.streams.splice(streamIndex, 1);
         }
 
-        if (this.pc.removeTrack) {
-            stream.getTracks().forEach((track) => {
-                const sender = this.pc.getSenders().find((sender: any) => sender.track === track);
-                if (sender) {
-                    this.pc.removeTrack(sender);
-                }
-            });
-            // @ts-ignore
-        } else if (this.pc.removeStream) {
-            // @ts-ignore
-            this.pc.removeStream(stream);
-        }
+        stream.getTracks().forEach((track) => {
+            const sender = this.pc.getSenders().find((sender) => sender.track === track);
+            if (sender) {
+                this.pc.removeTrack(sender);
+            }
+        });
     }
 
     _setRemoteDescription(desc: SignalRTCSessionDescription): Promise<void> {
