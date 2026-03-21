@@ -74,6 +74,8 @@ function RoomControls({
     stopScreenshare,
     startCloudRecording,
     stopCloudRecording,
+    startLiveTranscription,
+    stopLiveTranscription,
     localParticipant,
     isCameraEnabled,
     isMicrophoneEnabled,
@@ -89,6 +91,8 @@ function RoomControls({
     stopScreenshare: () => void;
     startCloudRecording: () => void;
     stopCloudRecording: () => void;
+    startLiveTranscription: () => void;
+    stopLiveTranscription: () => void;
     localParticipant?: LocalParticipantState;
     isCameraEnabled: boolean;
     isMicrophoneEnabled: boolean;
@@ -137,6 +141,12 @@ function RoomControls({
             </button>
             <button data-testid="stopCloudRecordingBtn" onClick={() => stopCloudRecording()}>
                 Stop cloud recording
+            </button>
+            <button data-testid="startLiveTranscriptionBtn" onClick={() => startLiveTranscription()}>
+                Start live transcription
+            </button>
+            <button data-testid="stopLiveTranscriptionBtn" onClick={() => stopLiveTranscription()}>
+                Stop live transcription
             </button>
             {localParticipant && (
                 <>
@@ -198,6 +208,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         stopScreenshare,
         startCloudRecording,
         stopCloudRecording,
+        startLiveTranscription,
+        stopLiveTranscription,
         joinRoom,
         leaveRoom,
         toggleRaiseHand,
@@ -360,6 +372,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 stopScreenshare={stopScreenshare}
                 startCloudRecording={startCloudRecording}
                 stopCloudRecording={stopCloudRecording}
+                startLiveTranscription={startLiveTranscription}
+                stopLiveTranscription={stopLiveTranscription}
                 localParticipant={localParticipant}
                 isCameraEnabled={isCameraEnabled}
                 isMicrophoneEnabled={isMicrophoneEnabled}

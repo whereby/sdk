@@ -33,8 +33,10 @@ export interface RoomConnectionActions {
     sendChatMessage: (text: string) => void;
     setDisplayName: (displayName: string) => void;
     startCloudRecording: () => void;
+    startLiveTranscription: () => void;
     startScreenshare: () => void;
     stopCloudRecording: () => void;
+    stopLiveTranscription: () => void;
     stopScreenshare: () => void;
     toggleCamera: (enabled?: boolean) => void;
     toggleMicrophone: (enabled?: boolean) => void;

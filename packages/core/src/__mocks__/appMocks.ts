@@ -86,6 +86,7 @@ export const randomSignalClient = ({
     isVideoEnabled = true,
     role = { roleName: "visitor" },
     startedCloudRecordingAt = null,
+    startedLiveTranscriptionAt = null,
     streams = [],
 }: Partial<SignalClient> = {}): SignalClient => {
     return {
@@ -100,6 +101,7 @@ export const randomSignalClient = ({
         isVideoEnabled,
         role,
         startedCloudRecordingAt,
+        startedLiveTranscriptionAt,
         streams,
     };
 };

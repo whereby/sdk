@@ -10,6 +10,7 @@ export * from "./slices/breakout";
 export * from "./slices/cloudRecording";
 export * from "./slices/connectionMonitor";
 export * from "./slices/deviceCredentials";
+export * from "./slices/liveTranscription";
 export * from "./slices/localMedia";
 export * from "./slices/localParticipant";
 export * from "./slices/localParticipant/selectors";

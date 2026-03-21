@@ -9,6 +9,7 @@ import { chatSlice } from "./slices/chat";
 import { cloudRecordingSlice } from "./slices/cloudRecording";
 import { connectionMonitorSlice } from "./slices/connectionMonitor";
 import { deviceCredentialsSlice } from "./slices/deviceCredentials";
+import { liveTranscriptionSlice } from "./slices/liveTranscription";
 import { localMediaSlice } from "./slices/localMedia";
 import { localParticipantSlice } from "./slices/localParticipant";
 import { localScreenshareSlice } from "./slices/localScreenshare";
@@ -36,6 +37,7 @@ const appReducer = combineReducers({
     cloudRecording: cloudRecordingSlice.reducer,
     connectionMonitor: connectionMonitorSlice.reducer,
     deviceCredentials: deviceCredentialsSlice.reducer,
+    liveTranscription: liveTranscriptionSlice.reducer,
     localMedia: localMediaSlice.reducer,
     localParticipant: localParticipantSlice.reducer,
     localScreenshare: localScreenshareSlice.reducer,

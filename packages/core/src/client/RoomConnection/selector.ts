@@ -7,6 +7,7 @@ import {
     selectScreenshares,
     selectRoomConnectionStatus,
     selectWaitingParticipants,
+    selectLiveTranscriptionRaw,
     selectLocalMediaStream,
     selectStreamingRaw,
     selectNotificationsEmitter,
@@ -26,6 +27,7 @@ export const selectRoomConnectionState = createSelector(
     selectBreakoutActive,
     selectBreakoutGroupedParticipants,
     selectAllClientViewsInCurrentGroup,
+    selectLiveTranscriptionRaw,
     selectLocalParticipantRaw,
     selectLocalMediaStream,
     selectRemoteParticipants,
@@ -42,6 +44,7 @@ export const selectRoomConnectionState = createSelector(
         breakoutActive,
         breakoutGroupedParticipants,
         clientViewsInCurrentGroup,
+        liveTranscription,
         localParticipant,
         localMediaStream,
         remoteParticipants,
@@ -54,7 +57,13 @@ export const selectRoomConnectionState = createSelector(
     ) => {
         const state: RoomConnectionState = {
             chatMessages,
-            cloudRecording: cloudRecording.isRecording ? { status: "recording" } : undefined,
+            cloudRecording: cloudRecording.status
+                ? {
+                      error: cloudRecording.error,
+                      startedAt: cloudRecording.startedAt,
+                      status: cloudRecording.status,
+                  }
+                : undefined,
             breakout: {
                 isActive: breakoutActive,
                 currentGroup: breakoutCurrentGroup,
@@ -67,6 +76,13 @@ export const selectRoomConnectionState = createSelector(
                 ? {
                       status: "streaming",
                       startedAt: streaming.startedAt,
+                  }
+                : undefined,
+            liveTranscription: liveTranscription.status
+                ? {
+                      error: liveTranscription.error,
+                      startedAt: liveTranscription.startedAt,
+                      status: liveTranscription.status,
                   }
                 : undefined,
             localScreenshareStatus: localParticipant.isScreenSharing ? "active" : undefined,

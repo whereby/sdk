@@ -67,6 +67,7 @@ describe("authorizationSlice", () => {
                                             roleName: "host",
                                         },
                                         startedCloudRecordingAt: null,
+                                        startedLiveTranscriptionAt: null,
                                         externalId: null,
                                         isDialIn: false,
                                         isAudioRecorder: false,
