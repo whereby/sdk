@@ -10,7 +10,7 @@ import { selectSignalConnectionRaw } from "./signalConnection";
 export interface CloudRecordingState {
     isInitiator: boolean;
     isRecording: boolean;
-    error: unknown;
+    error?: string;
     status?: "recording" | "requested" | "error";
     startedAt?: number;
 }
@@ -18,7 +18,6 @@ export interface CloudRecordingState {
 export const initialCloudRecordingState: CloudRecordingState = {
     isInitiator: false,
     isRecording: false,
-    error: null,
     startedAt: undefined,
 };
 

@@ -45,6 +45,12 @@ export type CloudRecordingState = {
     startedAt?: number;
 };
 
+export type LiveTranscriptionState = {
+    error?: string;
+    status: "transcribing" | "requested" | "error";
+    startedAt?: number;
+};
+
 export type LiveStreamState = {
     status: "streaming";
     startedAt?: number;
@@ -73,6 +79,7 @@ export interface RoomConnectionState {
     breakout: BreakoutState;
     events?: NotificationsEventEmitter;
     liveStream?: LiveStreamState;
+    liveTranscription?: LiveTranscriptionState;
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
