@@ -292,11 +292,11 @@ describe("VegaRtcManager", () => {
             });
 
             it("should obtain new video track using constraints from webrtcProvider", () => {
-                const gumSpy = jest.spyOn(global.navigator.mediaDevices, "getUserMedia")
+                const gumSpy = jest.spyOn(global.navigator.mediaDevices, "getUserMedia");
                 rtcManager.stopOrResumeVideo(localStream, true);
 
                 // @ts-ignore
-                expect(gumSpy.mock.calls[0][0]?.video?.deviceId?.ideal).toBe(deviceId)
+                expect(gumSpy.mock.calls[0][0]?.video?.deviceId?.ideal).toBe(deviceId);
             });
 
             it("should add video track to local stream", async () => {

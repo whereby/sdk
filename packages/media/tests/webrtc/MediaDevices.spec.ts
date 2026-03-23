@@ -888,18 +888,19 @@ describe("getUpdatedDevices", () => {
         ${[]}                  | ${[]}                             | ${undefined} | ${undefined} | ${undefined} | ${{ addedDevices: {}, changedDevices: {}, removedDevices: {} }}
         ${[]}                  | ${[aDevice, vDevice]}             | ${undefined} | ${undefined} | ${undefined} | ${{ addedDevices: { audioinput: aDevice, videoinput: vDevice }, changedDevices: {}, removedDevices: {} }}
         ${[aDevice]}           | ${[aDevice, aDevice2]}            | ${aId}       | ${undefined} | ${undefined} | ${{ addedDevices: { audioinput: aDevice2 }, changedDevices: {}, removedDevices: {} }}
-        ${[aDevice]}           | ${[]}                             | ${aId}       | ${undefined} | ${undefined} | ${{ addedDevices: {}, changedDevices: { audioinput: {} }, removedDevices: { audioinput: aDevice } }}
-        ${[aDevice]}           | ${[{ ...aDevice, label: "new" }]} | ${aId}       | ${undefined} | ${undefined} | ${{ addedDevices: {}, changedDevices: { audioinput: { deviceId: aDevice.deviceId } }, removedDevices: {} }}
-        ${[aDevice, vDevice]}  | ${[aDevice2, vDevice2]}           | ${aId}       | ${vId}       | ${undefined} | ${{ addedDevices: { audioinput: aDevice2, videoinput: vDevice2 }, changedDevices: { audioinput: {}, videoinput: {} }, removedDevices: { audioinput: aDevice, videoinput: vDevice } }}
+        ${[aDevice]}           | ${[]}                             | ${aId}       | ${undefined} | ${undefined} | ${{ addedDevices: {}, changedDevices: {}, removedDevices: { audioinput: aDevice } }}
+        ${[aDevice]}           | ${[{ ...aDevice, label: "new" }]} | ${aId}       | ${undefined} | ${undefined} | ${{ addedDevices: {}, changedDevices: { audioinput: { ...aDevice, label: "new" } }, removedDevices: {} }}
+        ${[aDevice, vDevice]}  | ${[aDevice2, vDevice2]}           | ${aId}       | ${vId}       | ${undefined} | ${{ addedDevices: { audioinput: aDevice2, videoinput: vDevice2 }, changedDevices: {}, removedDevices: { audioinput: aDevice, videoinput: vDevice } }}
         ${[aDevice, vDevice]}  | ${[aDevice, vDevice, vDevice2]}   | ${aId}       | ${vId}       | ${undefined} | ${{ addedDevices: { videoinput: vDevice2 }, changedDevices: {}, removedDevices: {} }}
         ${[]}                  | ${[sDevice]}                      | ${undefined} | ${undefined} | ${undefined} | ${{ addedDevices: { audiooutput: sDevice }, changedDevices: {}, removedDevices: {} }}
-        ${[sDevice, sDevice2]} | ${[sDevice2]}                     | ${undefined} | ${undefined} | ${sId}       | ${{ addedDevices: {}, changedDevices: { audiooutput: { deviceId: sDevice2.deviceId } }, removedDevices: { audiooutput: sDevice } }}
+        ${[sDevice, sDevice2]} | ${[sDevice2]}                     | ${undefined} | ${undefined} | ${sId}       | ${{ addedDevices: {}, changedDevices: {}, removedDevices: { audiooutput: sDevice } }}
     `(
         `expect $expectedChanges when
             oldDevices:$oldDevices,
             newDevices:$newDevices,
             currentAudioId:$currentAId,
-            currentVideoId:$currentVId
+            currentVideoId:$currentVId,
+            currentSpeakerId:$currentSId,
     `,
         ({ expectedChanges, oldDevices, newDevices, currentAId, currentVId, currentSId }) => {
             const updatedUserMediaConstraints = MediaDevices.getUpdatedDevices({
