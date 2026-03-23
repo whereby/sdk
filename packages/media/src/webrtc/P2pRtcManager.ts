@@ -34,6 +34,7 @@ interface CreateSessionOptions {
     clientId: string;
     initialBandwidth: number;
     isOfferer: boolean;
+    audioOnlyMode: "on" | "off" | "allowScreenshareVideo";
 }
 
 interface NegotiatePeerConnectionOptions {
@@ -341,7 +342,7 @@ export default class P2pRtcManager implements RtcManager {
 
             this._serverSocket.on(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, (data: SignalReadyToReceiveOfferMessage) => {
                 logger.info(`Got ready_to_receive_offer from client ${data.clientId}`);
-                this._connect(data.clientId);
+                this._connect({ clientId: data.clientId, audioOnlyMode: data.audioOnlyMode });
             }),
 
             this._serverSocket.on(RELAY_MESSAGES.ICE_CANDIDATE, (data: SignalIceCandidateMessage) => {
@@ -476,7 +477,15 @@ export default class P2pRtcManager implements RtcManager {
 
         this._forEachPeerConnection((session: Session) => {
             if (session.hasConnectedPeerConnection()) {
-                this._withForcedRenegotiation(session, () => session.setAudioOnly(this._audioOnlyMode));
+                this._withForcedRenegotiation(session, () => session.setLocalAudioOnly(this._audioOnlyMode));
+            }
+        });
+    }
+
+    setRemoteClientAudioOnly(clientId: string, audioOnlyMode: AudioOnlyMode) {
+        this._forEachPeerConnection((session) => {
+            if (session.clientId === clientId) {
+                session.setClientAudioOnly(audioOnlyMode);
             }
         });
     }
@@ -559,7 +568,7 @@ export default class P2pRtcManager implements RtcManager {
         return this.peerConnections[peerConnectionId];
     }
 
-    _createSession({ clientId, initialBandwidth, isOfferer, peerConnectionId }: CreateSessionOptions) {
+    _createSession({ clientId, initialBandwidth, isOfferer, peerConnectionId, audioOnlyMode }: CreateSessionOptions) {
         if (!peerConnectionId) {
             throw new Error("peerConnectionId is missing");
         }
@@ -594,7 +603,8 @@ export default class P2pRtcManager implements RtcManager {
             bandwidth: initialBandwidth,
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
-            audioOnlyMode: this._audioOnlyMode,
+            clientAudioOnlyMode: audioOnlyMode,
+            localAudioOnlyMode: this._audioOnlyMode,
             getScreenshareVideoTrackIds: () => this._screenshareVideoTrackIds,
         });
         this.peerConnections[peerConnectionId] = session;
@@ -649,7 +659,7 @@ export default class P2pRtcManager implements RtcManager {
                     }
 
                     if (this._audioOnlyMode) {
-                        session.setAudioOnly(this._audioOnlyMode);
+                        session.setLocalAudioOnly(this._audioOnlyMode);
                     }
 
                     session.registerConnected?.({});
@@ -776,7 +786,7 @@ export default class P2pRtcManager implements RtcManager {
         delete this.peerConnections[peerConnectionId];
     }
 
-    _forEachPeerConnection(func: any) {
+    _forEachPeerConnection(func: (session: Session) => void) {
         Object.values(this.peerConnections).forEach((peerConnection) => {
             func(peerConnection);
         });
@@ -878,7 +888,7 @@ export default class P2pRtcManager implements RtcManager {
      * This function should only be called as a response to READY_TO_RECEIVE_OFFER.
      * It is the starting point of our P2P negotiation and creates the initial offer.
      */
-    _connect(clientId: string) {
+    _connect({ clientId, audioOnlyMode }: { clientId: string; audioOnlyMode: AudioOnlyMode }) {
         // bring rtcstats back up if disconnected
         try {
             this.rtcStatsReconnect();
@@ -897,6 +907,7 @@ export default class P2pRtcManager implements RtcManager {
             clientId,
             initialBandwidth,
             isOfferer: true,
+            audioOnlyMode,
         });
         this._negotiatePeerConnection({ clientId, session, isInitialOffer: true });
         return session;
@@ -993,7 +1004,6 @@ export default class P2pRtcManager implements RtcManager {
         session.isOperationPending = true;
 
         const { redOn = false, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
-
         this._setCodecPreferences(pc).then(() =>
             pc
                 .createOffer(constraints || this.offerOptions)
@@ -1103,16 +1113,19 @@ export default class P2pRtcManager implements RtcManager {
         clientId,
         initialBandwidth,
         isOfferer = false,
+        audioOnlyMode,
     }: {
         clientId: string;
         initialBandwidth: number;
         isOfferer: boolean;
+        audioOnlyMode: "on" | "off" | "allowScreenshareVideo";
     }) {
         const session = this._createSession({
             peerConnectionId: clientId,
             clientId,
             initialBandwidth,
             isOfferer,
+            audioOnlyMode,
         });
         const pc = session.pc;
 
@@ -1246,7 +1259,15 @@ export default class P2pRtcManager implements RtcManager {
     /**
      * Possibly start a new peer connection for the new stream if needed.
      */
-    acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
+    acceptNewStream({
+        streamId,
+        clientId,
+        audioOnlyMode,
+    }: {
+        streamId: string;
+        clientId: string;
+        audioOnlyMode: "on" | "off" | "allowScreenshareVideo";
+    }) {
         logger.info("acceptNewStream() [streamId: %s}, clientId: %s]", streamId, clientId);
         let session = this._getSession(clientId);
         if (session && streamId !== clientId) {
@@ -1267,14 +1288,17 @@ export default class P2pRtcManager implements RtcManager {
             clientId,
             initialBandwidth,
             isOfferer: false,
+            audioOnlyMode,
         });
         this._emitServerEvent(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
             receiverId: clientId,
+            audioOnlyMode: this._audioOnlyMode,
         });
         return session;
     }
 
     disconnect(clientId: string) {
+        console.log("TRACE disconnect", new Error().stack);
         logger.info("disconnect() [clientId: %s]", clientId);
         this._cleanup(clientId);
         this._changeBandwidthForAllClients(false);

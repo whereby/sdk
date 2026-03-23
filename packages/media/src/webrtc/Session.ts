@@ -13,7 +13,8 @@ const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 interface P2PSessionOptions {
-    audioOnlyMode: AudioOnlyMode;
+    localAudioOnlyMode: AudioOnlyMode;
+    clientAudioOnlyMode: AudioOnlyMode;
     peerConnectionId: string;
     clientId: string;
     bandwidth: number;
@@ -44,7 +45,8 @@ export default class Session {
     afterConnected: Promise<unknown>;
     registerConnected?: (value: unknown) => void;
     _deprioritizeH264Encoding: boolean;
-    private audioOnlyMode: AudioOnlyMode;
+    private localAudioOnlyMode: AudioOnlyMode;
+    private clientAudioOnlyMode: AudioOnlyMode;
     clientId: any;
     peerConnectionConfig: RTCConfiguration;
     signalingState: any;
@@ -54,7 +56,8 @@ export default class Session {
     getScreenshareTrackIds: () => string[];
 
     constructor({
-        audioOnlyMode,
+        localAudioOnlyMode,
+        clientAudioOnlyMode,
         peerConnectionId,
         clientId,
         bandwidth,
@@ -63,7 +66,8 @@ export default class Session {
         incrementAnalyticMetric,
         getScreenshareVideoTrackIds,
     }: P2PSessionOptions) {
-        this.audioOnlyMode = audioOnlyMode;
+        this.clientAudioOnlyMode = clientAudioOnlyMode;
+        this.localAudioOnlyMode = localAudioOnlyMode;
         this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
@@ -186,51 +190,53 @@ export default class Session {
         // Create an answer to send to the client that sent the offer
         let answerToSignal: SignalRTCSessionDescription;
 
-        return this._setRemoteDescription(desc)
-            .then(() => {
-                if (this.audioOnlyMode === "off") {
-                    return;
-                }
-                this.pc.getTransceivers().forEach((videoTransceiver) => {
-                    if (videoTransceiver.receiver.track.kind !== "video") return;
+        return (
+            this._setRemoteDescription(desc)
+                // .then(() => {
+                //     if (this.audioOnlyMode === "off") {
+                //         return;
+                //     }
+                //     this.pc.getTransceivers().forEach((videoTransceiver) => {
+                //         if (videoTransceiver.receiver.track.kind !== "video") return;
 
-                    const screenshareTrackIds = this.getScreenshareTrackIds();
-                    const senderTrackId = videoTransceiver?.sender?.track?.id;
-                    const receiverTrackId = videoTransceiver?.receiver?.track?.id;
-                    const isScreenshareTransceiver =
-                        (senderTrackId && screenshareTrackIds.includes(senderTrackId)) ||
-                        (receiverTrackId && screenshareTrackIds.includes(receiverTrackId));
-                    if (this.audioOnlyMode === "allowScreenshareVideo" && isScreenshareTransceiver) {
-                        return;
+                //         const screenshareTrackIds = this.getScreenshareTrackIds();
+                //         const senderTrackId = videoTransceiver?.sender?.track?.id;
+                //         const receiverTrackId = videoTransceiver?.receiver?.track?.id;
+                //         const isScreenshareTransceiver =
+                //             (senderTrackId && screenshareTrackIds.includes(senderTrackId)) ||
+                //             (receiverTrackId && screenshareTrackIds.includes(receiverTrackId));
+                //         if (this.audioOnlyMode === "allowScreenshareVideo" && isScreenshareTransceiver) {
+                //             return;
+                //         }
+
+                //         videoTransceiver.direction = "sendonly";
+                //     });
+                // })
+                .then(() => {
+                    return this.pc.createAnswer();
+                })
+                .then((answer) => {
+                    if (!answer.sdp) {
+                        this._incrementAnalyticMetric("P2PCreateAnswerNoSDP");
+                        rtcStats.sendEvent("P2PCreateAnswerNoSDP", {});
+                        throw new Error("SDP undefined while creating answer");
+                    } else {
+                        answerToSignal = {
+                            sdp: answer.sdp,
+                            sdpU: answer.sdp,
+                            type: answer.type,
+                        };
+
+                        return this.pc.setLocalDescription(answer);
                     }
-
-                    videoTransceiver.direction = "sendonly";
-                });
-            })
-            .then(() => {
-                return this.pc.createAnswer();
-            })
-            .then((answer) => {
-                if (!answer.sdp) {
-                    this._incrementAnalyticMetric("P2PCreateAnswerNoSDP");
-                    rtcStats.sendEvent("P2PCreateAnswerNoSDP", {});
-                    throw new Error("SDP undefined while creating answer");
-                } else {
-                    answerToSignal = {
-                        sdp: answer.sdp,
-                        sdpU: answer.sdp,
-                        type: answer.type,
-                    };
-
-                    return this.pc.setLocalDescription(answer);
-                }
-            })
-            .then(() => {
-                return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
-            })
-            .then(() => {
-                return answerToSignal;
-            });
+                })
+                .then(() => {
+                    return setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
+                })
+                .then(() => {
+                    return answerToSignal;
+                })
+        );
     }
 
     handleAnswer(message: SignalRTCSessionDescription) {
@@ -373,34 +379,69 @@ export default class Session {
         setVideoBandwidthUsingSetParameters(this.pc, this.bandwidth);
     }
 
-    setAudioOnly(audioOnlyMode: AudioOnlyMode) {
+    setLocalAudioOnly(audioOnlyMode: AudioOnlyMode) {
+        this.localAudioOnlyMode = audioOnlyMode;
+        // const screenshareVideoTrackIds = this.getScreenshareTrackIds();
+        // const previousAudioOnlyMode = this.localAudioOnlyMode;
+        // const { startScreenshare, startWebcam, stopScreenshare, stopWebcam } = resolveAudioOnlyModeChanges({
+        //     previousAudioOnlyMode,
+        //     nextAudioOnlyMode: audioOnlyMode,
+        // });
+        // this.localAudioOnlyMode = audioOnlyMode;
+        // this.pc
+        //     ?.getTransceivers()
+        //     .filter((videoTransceiver) => videoTransceiver?.receiver?.track?.kind === "video")
+        //     .forEach((videoTransceiver) => {
+        //         const senderTrackId = videoTransceiver?.sender?.track?.id;
+        //         const isScreenshareSender = senderTrackId && screenshareVideoTrackIds.includes(senderTrackId);
+        //         const isWebcamSender = !isScreenshareSender;
+        //         if ((stopScreenshare && isScreenshareSender) || (stopWebcam && isWebcamSender)) {
+        //             if (videoTransceiver.direction === "sendrecv") {
+        //                 videoTransceiver.direction = "recvonly";
+        //             } else if (videoTransceiver.direction === "sendonly") {
+        //                 videoTransceiver.direction = "inactive";
+        //             }
+        //         }
+
+        //         if ((startScreenshare && isScreenshareSender) || (startWebcam && isWebcamSender)) {
+        //             if (videoTransceiver.direction === "inactive") {
+        //                 videoTransceiver.direction = "sendonly";
+        //             } else if (videoTransceiver.direction === "recvonly") {
+        //                 videoTransceiver.direction = "sendrecv";
+        //             }
+        //         }
+        //     });
+    }
+
+    setClientAudioOnly(audioOnlyMode: AudioOnlyMode) {
         const screenshareVideoTrackIds = this.getScreenshareTrackIds();
-        const previousAudioOnlyMode = this.audioOnlyMode;
+        const previousAudioOnlyMode = this.clientAudioOnlyMode;
         const { startScreenshare, startWebcam, stopScreenshare, stopWebcam } = resolveAudioOnlyModeChanges({
             previousAudioOnlyMode,
             nextAudioOnlyMode: audioOnlyMode,
         });
-        this.audioOnlyMode = audioOnlyMode;
+        this.localAudioOnlyMode = audioOnlyMode;
         this.pc
             ?.getTransceivers()
-            .filter(
-                (videoTransceiver) =>
-                    videoTransceiver?.direction !== "recvonly" && videoTransceiver?.receiver?.track?.kind === "video",
-            )
+            .filter((videoTransceiver) => videoTransceiver?.receiver?.track?.kind === "video")
             .forEach((videoTransceiver) => {
                 const senderTrackId = videoTransceiver?.sender?.track?.id;
-                const receiverTrackId = videoTransceiver?.receiver?.track?.id;
-                const isScreenshareTransceiver =
-                    (senderTrackId && screenshareVideoTrackIds.includes(senderTrackId)) ||
-                    (receiverTrackId && screenshareVideoTrackIds.includes(receiverTrackId));
-                const isWebcamTransceiver = !isScreenshareTransceiver;
-
-                if ((stopScreenshare && isScreenshareTransceiver) || (stopWebcam && isWebcamTransceiver)) {
-                    videoTransceiver.direction = "sendonly";
+                const isScreenshareSender = senderTrackId && screenshareVideoTrackIds.includes(senderTrackId);
+                const isWebcamSender = !isScreenshareSender;
+                if ((stopScreenshare && isScreenshareSender) || (stopWebcam && isWebcamSender)) {
+                    if (videoTransceiver.direction === "sendrecv") {
+                        videoTransceiver.direction = "recvonly";
+                    } else if (videoTransceiver.direction === "sendonly") {
+                        videoTransceiver.direction = "inactive";
+                    }
                 }
 
-                if ((startScreenshare && isScreenshareTransceiver) || (startWebcam && isWebcamTransceiver)) {
-                    videoTransceiver.direction = "sendrecv";
+                if ((startScreenshare && isScreenshareSender) || (startWebcam && isWebcamSender)) {
+                    if (videoTransceiver.direction === "inactive") {
+                        videoTransceiver.direction = "sendonly";
+                    } else if (videoTransceiver.direction === "recvonly") {
+                        videoTransceiver.direction = "sendrecv";
+                    }
                 }
             });
     }

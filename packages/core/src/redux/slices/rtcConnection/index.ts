@@ -287,6 +287,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
             rtcManager.acceptNewStream({
                 streamId: streamId === CAMERA_STREAM_ID ? clientId : streamId,
                 clientId,
+                audioOnlyMode: "off",
             });
         } else if (state === "new_accept" || state === "old_accept") {
             // do nothing - let this be marked as done_accept as the rtcManager
@@ -337,7 +338,10 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
     if (localMediaStream && rtcManager) {
-        rtcManager.addCameraStream(localMediaStream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
+        rtcManager.addCameraStream(localMediaStream, {
+            audioPaused: !isMicrophoneEnabled,
+            videoPaused: !isCameraEnabled,
+        });
     }
 
     dispatch(rtcManagerInitialized());

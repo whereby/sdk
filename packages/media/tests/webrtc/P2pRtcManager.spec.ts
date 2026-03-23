@@ -202,7 +202,7 @@ describe("P2pRtcManager", () => {
                     ["rejects invalid", false, 0],
                     ["accepts valid", true, 1],
                 ])("%s initial offer for new session", async (_, isInitialOffer, calledTimes) => {
-                    const session = rtcManager.acceptNewStream({ clientId, streamId: "id" });
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: "id", audioOnlyMode: "off" });
                     const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
                     const message = {
                         isInitialOffer,
@@ -221,7 +221,7 @@ describe("P2pRtcManager", () => {
                 });
 
                 it("is backwards compatible for invalid initial offer for new session", async () => {
-                    const session = rtcManager.acceptNewStream({ clientId, streamId: "id" });
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: "id", audioOnlyMode: "off" });
                     const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
                     const message = {
                         type: "offer",
@@ -307,28 +307,28 @@ describe("P2pRtcManager", () => {
 
     describe("acceptNewStream", () => {
         it("creates a new peer connection", () => {
-            rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID, audioOnlyMode: "off" });
 
             // The object should be constructed with the given ice servers.
             expect(window.RTCPeerConnection).toHaveBeenCalledWith({ iceServers });
         });
 
         it("stores the new peer connection", async () => {
-            const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID, audioOnlyMode: "off" });
 
             // The pc should be added to list of peer connections.
             expect(rtcManager.peerConnections[clientId].pc).toEqual(pc);
         });
 
         it("does not create an offer", async () => {
-            const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID, audioOnlyMode: "off" });
 
             // An offer should not have been created yet.
             expect(pc.createOffer).toHaveBeenCalledTimes(0);
         });
 
         it("emits READY_TO_RECEIVE_OFFER on the server socket", () => {
-            rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID, audioOnlyMode: "off" });
 
             expect(serverSocketStub.socket.emit).toHaveBeenCalledWith(RELAY_MESSAGES.READY_TO_RECEIVE_OFFER, {
                 receiverId: clientId,
@@ -350,7 +350,11 @@ describe("P2pRtcManager", () => {
                     const expectedStatus = (iceStateToConnectionStatus as any)[iceState];
 
                     it("broadcasts when ice connection state becomes " + iceState, async () => {
-                        const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                        const { pc } = rtcManager.acceptNewStream({
+                            clientId,
+                            streamId: CAMERA_STREAM_ID,
+                            audioOnlyMode: "off",
+                        });
 
                         // @ts-ignore
                         pc.iceConnectionState = iceState;
@@ -501,25 +505,41 @@ describe("P2pRtcManager", () => {
 
     describe("acceptNewStream", () => {
         it("registers a callback for oniceconnectionstatechange on the peer connection", async () => {
-            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            const { pc } = createRtcManager().acceptNewStream({
+                clientId,
+                streamId: CAMERA_STREAM_ID,
+                audioOnlyMode: "off",
+            });
 
             expect(pc.oniceconnectionstatechange).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onnegotiationneeded on the peer connection", async () => {
-            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            const { pc } = createRtcManager().acceptNewStream({
+                clientId,
+                streamId: CAMERA_STREAM_ID,
+                audioOnlyMode: "off",
+            });
 
             expect(pc.onnegotiationneeded).toEqual(expect.any(Function));
         });
 
         it("registers a callback for onicecandidate on the peer connection", async () => {
-            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            const { pc } = createRtcManager().acceptNewStream({
+                clientId,
+                streamId: CAMERA_STREAM_ID,
+                audioOnlyMode: "off",
+            });
 
             expect(pc.onicecandidate).toEqual(expect.any(Function));
         });
 
         it("registers a callback for ontrack on the peer connection", async () => {
-            const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+            const { pc } = createRtcManager().acceptNewStream({
+                clientId,
+                streamId: CAMERA_STREAM_ID,
+                audioOnlyMode: "off",
+            });
 
             expect(pc.ontrack).toEqual(expect.any(Function));
         });
@@ -530,7 +550,11 @@ describe("P2pRtcManager", () => {
             const fakeStream = helpers.randomString("stream-");
             const fakeTrack = helpers.randomString("track-");
             it("emits STREAM_ADDED event to consuming apps", async () => {
-                const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                const { pc } = rtcManager.acceptNewStream({
+                    clientId,
+                    streamId: CAMERA_STREAM_ID,
+                    audioOnlyMode: "off",
+                });
 
                 // @ts-ignore
                 pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
@@ -543,7 +567,11 @@ describe("P2pRtcManager", () => {
         });
         describe("onnegotiationneeded", () => {
             it("negotiates the peer connection after it is connected", async () => {
-                const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                const { pc } = createRtcManager().acceptNewStream({
+                    clientId,
+                    streamId: CAMERA_STREAM_ID,
+                    audioOnlyMode: "off",
+                });
                 // @ts-ignore
                 pc.iceConnectionState = "connected";
                 pc.oniceconnectionstatechange?.({} as Event);
@@ -558,7 +586,11 @@ describe("P2pRtcManager", () => {
             });
 
             it('does not negotiate peer connection when iceConnectionState is "new"', async () => {
-                const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                const { pc } = createRtcManager().acceptNewStream({
+                    clientId,
+                    streamId: CAMERA_STREAM_ID,
+                    audioOnlyMode: "off",
+                });
 
                 // @ts-ignore
                 pc.iceConnectionState = "new";
@@ -572,7 +604,11 @@ describe("P2pRtcManager", () => {
             });
 
             it("does not re-negotiate peer connection during initial negotiation", async () => {
-                const { pc } = createRtcManager().acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                const { pc } = createRtcManager().acceptNewStream({
+                    clientId,
+                    streamId: CAMERA_STREAM_ID,
+                    audioOnlyMode: "off",
+                });
 
                 // during initial negotiation, iceConnectionState changes from "new" before the
                 // oniceconnectionstatechanged event is delivered

@@ -50,7 +50,15 @@ export interface VegaRtcManagerOptions extends RtcManagerOptions {
 }
 
 export interface RtcManager {
-    acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
+    acceptNewStream: ({
+        clientId,
+        streamId,
+        audioOnlyMode,
+    }: {
+        clientId: string;
+        streamId: string;
+        audioOnlyMode: "on" | "off" | "allowScreenshareVideo";
+    }) => void;
     addCameraStream(stream: MediaStream, options?: AddCameraStreamOptions): void;
     addScreenshareStream(stream: MediaStream): void;
     removeScreenshareStream(stream: MediaStream, options?: RemoveScreenshareStreamOptions): void;
@@ -128,6 +136,7 @@ export type SignalIceCandidateMessage = {
 
 export type SignalReadyToReceiveOfferMessage = {
     clientId: string;
+    audioOnlyMode: AudioOnlyMode;
 };
 
 export type SignalIceEndOfCandidatesMessage = {

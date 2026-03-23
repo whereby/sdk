@@ -35,7 +35,8 @@ describe("Session", () => {
             bandwidth,
             deprioritizeH264Encoding: false,
             incrementAnalyticMetric: jest.fn(),
-            audioOnlyMode: "off",
+            localAudioOnlyMode: "off",
+            clientAudioOnlyMode: "off",
             getScreenshareVideoTrackIds: jest.fn(),
         });
     });
