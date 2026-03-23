@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 5.0.1
+
+### Patch Changes
+
+- d87f352: Add live transcription typescript definitions
+
 ## 5.0.0
 
 ### Major Changes

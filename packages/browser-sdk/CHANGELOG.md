@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.19.0
+
+### Minor Changes
+
+- d87f352: Expose core live transcription start/stop API
+
+### Patch Changes
+
+- Updated dependencies [d87f352]
+- Updated dependencies [d87f352]
+    - @whereby.com/media@5.0.1
+    - @whereby.com/core@1.9.0
+
 ## 3.18.34
 
 ### Patch Changes
