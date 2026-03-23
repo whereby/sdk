@@ -426,9 +426,24 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 newDevices,
             });
             
-            // Autoswitch changed or removed devices.
-            const autoSwitchAudioId = changedDevices.audioinput?.deviceId || removedDevices.audioinput?.deviceId;
-            const autoSwitchVideoId = changedDevices.videoinput?.deviceId || removedDevices.videoinput?.deviceId;
+            let autoSwitchAudioId: undefined | string | boolean;
+            let autoSwitchVideoId: undefined | string | boolean;
+
+            // Autoswitch changed devices.
+            if (changedDevices.audioinput) {
+                autoSwitchAudioId = changedDevices.audioinput.deviceId;
+            }
+            if (changedDevices.videoinput) {
+                autoSwitchVideoId = changedDevices.videoinput.deviceId;
+            }
+
+            // Obtain new device if the one we were using was removed.
+            if (removedDevices.audioinput) {
+                autoSwitchAudioId = true;
+            }
+            if (removedDevices.videoinput) {
+                autoSwitchVideoId = true;
+            }
 
             if (autoSwitchAudioId || autoSwitchVideoId) {
                 dispatch(doSwitchLocalStream({ audioId: autoSwitchAudioId, videoId: autoSwitchVideoId }));
@@ -444,7 +459,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
     async (
-        { audioId, videoId }: { audioId?: string; videoId?: string },
+        { audioId, videoId }: { audioId?: string | boolean; videoId?: string | boolean},
         { dispatch, getState, rejectWithValue },
     ) => {
         const state = getState();
@@ -478,7 +493,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             );
 
             const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId) {
+            if (onlySwitchingOne && typeof deviceId === "string") {
                 dispatch(
                     deviceBusy({
                         deviceId,
@@ -489,7 +504,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
         } catch (error) {
             console.error(error);
             const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId) {
+            if (onlySwitchingOne && typeof deviceId === "string") {
                 dispatch(
                     deviceBusy({
                         deviceId,
