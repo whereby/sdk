@@ -21,8 +21,10 @@ import {
     doSetLocalStickyReaction,
     doSpotlightParticipant,
     doStartCloudRecording,
+    doStartLiveTranscription,
     doStartScreenshare,
     doStopCloudRecording,
+    doStopLiveTranscription,
     doStopScreenshare,
     selectNotificationsEmitter,
     setDisplayName,
@@ -37,6 +39,8 @@ import type { Store as AppStore } from "../../redux/store";
 import type {
     BreakoutState,
     ChatMessage,
+    CloudRecordingState,
+    LiveTranscriptionState,
     LocalParticipantState,
     LocalScreenshareStatus,
     RemoteParticipantState,
@@ -51,6 +55,7 @@ import {
     CHAT_NEW_MESSAGE,
     CLOUD_RECORDING_STATUS_CHANGED,
     CONNECTION_STATUS_CHANGED,
+    LIVE_TRANSCRIPTION_STATUS_CHANGED,
     LOCAL_PARTICIPANT_CHANGED,
     LOCAL_SCREENSHARE_STATUS_CHANGED,
     REMOTE_PARTICIPANTS_CHANGED,
@@ -76,7 +81,8 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private selfId: string | null = null;
 
     private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
-    private cloudRecordingSubscribers = new Set<(status: { status: "recording" } | undefined) => void>();
+    private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined) => void>();
+    private liveTranscriptionSubscribers = new Set<(status: LiveTranscriptionState | undefined) => void>();
     private breakoutSubscribers = new Set<(config: BreakoutState) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
@@ -99,10 +105,13 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         }
 
         if (state.cloudRecording !== previousState.cloudRecording) {
-            this.cloudRecordingSubscribers.forEach((cb) =>
-                cb(state.cloudRecording ? { status: "recording" } : undefined),
-            );
-            this.emit(CLOUD_RECORDING_STATUS_CHANGED, state.cloudRecording ? { status: "recording" } : undefined);
+            this.cloudRecordingSubscribers.forEach((cb) => cb(state.cloudRecording));
+            this.emit(CLOUD_RECORDING_STATUS_CHANGED, state.cloudRecording);
+        }
+
+        if (state.liveTranscription !== previousState.liveTranscription) {
+            this.liveTranscriptionSubscribers.forEach((cb) => cb(state.liveTranscription));
+            this.emit(LIVE_TRANSCRIPTION_STATUS_CHANGED, state.liveTranscription);
         }
 
         if (state.breakout !== previousState.breakout) {
@@ -222,9 +231,14 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         return () => this.chatMessageSubscribers.delete(callback);
     }
 
-    public subscribeToCloudRecording(callback: (status: { status: "recording" } | undefined) => void): () => void {
+    public subscribeToCloudRecording(callback: (status: CloudRecordingState | undefined) => void): () => void {
         this.cloudRecordingSubscribers.add(callback);
         return () => this.cloudRecordingSubscribers.delete(callback);
+    }
+
+    public subscribeToLiveTranscription(callback: (status: LiveTranscriptionState | undefined) => void): () => void {
+        this.liveTranscriptionSubscribers.add(callback);
+        return () => this.liveTranscriptionSubscribers.delete(callback);
     }
 
     public subscribeToBreakoutConfig(callback: (config: BreakoutState) => void): () => void {
@@ -467,6 +481,20 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public stopCloudRecording() {
         this.store.dispatch(doStopCloudRecording());
+    }
+
+    /**
+     * Start live transcription.
+     */
+    public startLiveTranscription() {
+        this.store.dispatch(doStartLiveTranscription());
+    }
+
+    /**
+     * Stop live transcription.
+     */
+    public stopLiveTranscription() {
+        this.store.dispatch(doStopLiveTranscription());
     }
 
     /**

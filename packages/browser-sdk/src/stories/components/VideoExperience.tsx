@@ -59,6 +59,8 @@ export default function VideoExperience({
         screenshares,
         spotlightedParticipants,
         breakout,
+        cloudRecording,
+        liveTranscription,
     } = state;
     const {
         knock,
@@ -78,7 +80,11 @@ export default function VideoExperience({
         askToSpeak,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
+        startCloudRecording,
+        startLiveTranscription,
         startScreenshare,
+        stopCloudRecording,
+        stopLiveTranscription,
         stopScreenshare,
         spotlightParticipant,
         removeSpotlight,
@@ -299,6 +305,53 @@ export default function VideoExperience({
                             })}
                         </div>
                     )}
+                    <div className="roomStatus" style={{ display: "flex", columnGap: "10px" }}>
+                        <span>Room status:</span>
+                        {showHostControls ? (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        if (cloudRecording) {
+                                            stopCloudRecording();
+                                        } else {
+                                            startCloudRecording();
+                                        }
+                                    }}
+                                >
+                                    {cloudRecording
+                                        ? `Cloud Recording: ${cloudRecording.status}`
+                                        : "Start Cloud Recording (if available)"}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (liveTranscription) {
+                                            stopLiveTranscription();
+                                        } else {
+                                            startLiveTranscription();
+                                        }
+                                    }}
+                                >
+                                    {liveTranscription
+                                        ? `Live Transcription: ${liveTranscription.status}`
+                                        : "Start Live Transcription (if available)"}
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <span>
+                                    {cloudRecording
+                                        ? `Cloud Recording: ${cloudRecording.status}`
+                                        : "No Cloud Recording"}
+                                </span>
+                                <span>
+                                    {liveTranscription
+                                        ? `Live Transcription: ${liveTranscription.status}`
+                                        : "No Live Transcription"}
+                                </span>
+                            </>
+                        )}
+                    </div>
+
                     {showHostControls && (
                         <div className="hostControls">
                             Host controls:

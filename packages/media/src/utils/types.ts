@@ -59,6 +59,7 @@ export interface SignalClient {
     isVideoEnabled: boolean;
     role: ClientRole;
     startedCloudRecordingAt: string | null;
+    startedLiveTranscriptionAt: string | null;
     breakoutGroup: string | null;
     externalId: string | null;
     isDialIn: boolean;
@@ -354,8 +355,9 @@ export interface SpotlightRemovedEvent {
 }
 
 export interface LiveTranscriptionStartedEvent {
-    transcriptionId: string;
-    startedAt: string;
+    transcriptionId?: string;
+    error?: string;
+    startedAt?: string;
 }
 
 export interface LiveTranscriptionStoppedEvent {
@@ -454,6 +456,7 @@ export interface SignalRequests {
     enable_video: { enabled: boolean };
     handle_knock: { action: "accept" | "reject"; clientId: string; response: unknown };
     identify_device: IdentifyDeviceRequest;
+    join_breakout_group: { group: string };
     join_room: JoinRoomRequest;
     knock_room: KnockRoomRequest;
     leave_room: void;
@@ -462,7 +465,9 @@ export interface SignalRequests {
     request_video_enable: VideoEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string; stickyReaction?: unknown } };
     set_lock: { locked: boolean };
+    start_live_transcription: void;
     start_recording: { recording: string };
+    stop_live_transcription: void;
     stop_recording: void;
 }
 
