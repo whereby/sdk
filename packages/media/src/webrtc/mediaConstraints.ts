@@ -43,22 +43,22 @@ export function getMediaConstraints({
     const { audioId, videoId } = preferredDeviceIds;
 
     const constraints: MediaStreamConstraints = {
-        audio: !audioWanted
-            ? false
-            : {
-                  ...(audioId ? { deviceId: audioId } : {}),
-                  ...(disableAGC ? { autoGainControl: false } : {}),
-                  ...(disableAEC ? { echoCancellation: false } : {}),
-              },
-        video: !videoWanted
-            ? false
-            : {
-                  height: lowDataMode ? LOW_HEIGHT : HIGH_HEIGHT,
-                  // Set a lower frame rate (15fps) for low data, but only for non-simulcast.
-                  // Otherwise use 24fps to increase quality/bandwidth.
-                  frameRate: lowDataMode && !simulcast ? 15 : 24,
-                  ...(videoId ? { deviceId: videoId } : { facingMode: "user" }),
-              },
+        ...(audioWanted && {
+            audio: {
+                ...(audioId ? { deviceId: audioId } : {}),
+                ...(disableAGC ? { autoGainControl: false } : {}),
+                ...(disableAEC ? { echoCancellation: false } : {}),
+            },
+        }),
+        ...(videoWanted && {
+            video: {
+                height: lowDataMode ? LOW_HEIGHT : HIGH_HEIGHT,
+                // Set a lower frame rate (15fps) for low data, but only for non-simulcast.
+                // Otherwise use 24fps to increase quality/bandwidth.
+                frameRate: lowDataMode && !simulcast ? 15 : 24,
+                ...(videoId ? { deviceId: videoId } : { facingMode: "user" }),
+            },
+        }),
     };
     if (lax) {
         if (audioWanted && !audioId) constraints.audio = true;
@@ -103,9 +103,6 @@ export default function getConstraints({ devices, videoId, audioId, options, typ
         videoWanted: Boolean(videoId) && videoDevices.length > 0,
         ...options,
     });
-
-    if (constraints.audio === false) delete constraints.audio;
-    if (constraints.video === false) delete constraints.video;
 
     return constraints;
 }
