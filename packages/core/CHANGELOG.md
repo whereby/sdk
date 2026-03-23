@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 1.9.0
+
+### Minor Changes
+
+- d87f352: Add live transcription start/stop APIs
+
+### Patch Changes
+
+- Updated dependencies [d87f352]
+    - @whereby.com/media@5.0.1
+
 ## 1.8.2
 
 ### Patch Changes
