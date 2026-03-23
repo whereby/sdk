@@ -84,7 +84,9 @@ function getSettingsFromTrack(
     };
 
     if (!track) {
-        // In SFU the track can be closed by the RtcManager, so check if the
+        // TODO: verify that the comment below is still relevant.
+
+        // In SFU V2 the track can be closed by the RtcManager, so check if the
         // last used deviceId still is available
         if (lastUsedId && devices) {
             settings.deviceId = devices.find((d) => d.deviceId === lastUsedId && d.kind === kind)?.deviceId;
@@ -426,9 +428,9 @@ export function getUpdatedDevices({
 }: {
     oldDevices: MediaDeviceInfo[];
     newDevices: MediaDeviceInfo[];
-    currentAudioId?: string | undefined;
-    currentVideoId?: string | undefined;
-    currentSpeakerId?: string | undefined;
+    currentAudioId?: string;
+    currentVideoId?: string;
+    currentSpeakerId?: string;
 }): GetUpdatedDevicesResult {
     const changesByKind = compareLocalDevices(oldDevices, newDevices);
     const removedDevices: UpdatedDevicesInfo = {};
@@ -445,30 +447,21 @@ export function getUpdatedDevices({
             return;
         }
         if (currentDeviceId) {
-            // fall back to default if removed
+            // Report if the device we were using was removed.
             if (changes.removed[currentDeviceId]) {
-                changedDevices[kind] = {}; // let browser decide
-                if (kind === "audiooutput") {
-                    const fallbackSpeakerDevice = newDevices.find((d: any) => d.kind === "audiooutput");
-                    changedDevices[kind] = { deviceId: fallbackSpeakerDevice?.deviceId };
-                }
+                removedDevices[kind] = changes.removed[currentDeviceId];
             }
-            // re-request if device has changed
+            // Report changed devices, e.g. label update.
             if (changes.changed[currentDeviceId]) {
-                changedDevices[kind] = { deviceId: currentDeviceId };
+                changedDevices[kind] = changes.changed[currentDeviceId];
             }
         }
-        // request new device if added
+        // Report added devices.
         if (Object.keys(changes.added).length > 0) {
             const [deviceAdded] = Object.keys(changes.added).slice(0, 1);
             const add = changes.added[deviceAdded];
-            // device props are not enumerable (used in notification)
+            // Device props are not enumerable (used in notification).
             addedDevices[kind] = { deviceId: add.deviceId, label: add.label, kind: add.kind };
-        }
-        // report removed device
-        if (Object.keys(changes.removed).length > 0) {
-            const [deviceRemoved] = Object.keys(changes.removed).slice(0, 1);
-            removedDevices[kind] = changes.removed[deviceRemoved];
         }
     });
 
