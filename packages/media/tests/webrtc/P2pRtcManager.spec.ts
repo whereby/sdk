@@ -843,7 +843,9 @@ describe("P2pRtcManager", () => {
                 localStream.removeTrack(localStream.getVideoTracks()[0]);
                 const deviceId = helpers.randomString();
                 mediaConstraints.videoId = deviceId;
-                mediaConstraints.devices = [helpers.createMockedInputDevice("videoinput", deviceId)];
+                mediaConstraints.devices = [
+                    helpers.createMockedInputDevice("videoinput", { deviceId, label: helpers.randomString() }),
+                ];
             });
 
             it("should obtain new video track", () => {

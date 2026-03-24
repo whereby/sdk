@@ -202,11 +202,16 @@ export function createMockedMediaStream(existingTracks?: any) {
     return Object.assign(new EventTarget(), result) as unknown as MediaStream;
 }
 
-export function createMockedInputDevice(kind: MediaDeviceKind, deviceId = randomString(), label = "label") {
+export function createMockedInputDevice(
+    kind: MediaDeviceKind,
+    options = {
+        deviceId: `deviceId-${randomString()}`,
+        label: `label-${randomString()}`,
+    },
+) {
     return {
         kind,
-        deviceId,
-        label,
+        ...options,
     } as MediaDeviceInfo;
 }
 

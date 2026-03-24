@@ -286,7 +286,9 @@ describe("VegaRtcManager", () => {
                 global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(gumStream));
                 deviceId = helpers.randomString();
                 mediaConstraints.videoId = deviceId;
-                mediaConstraints.devices = [helpers.createMockedInputDevice("videoinput", deviceId)];
+                mediaConstraints.devices = [
+                    helpers.createMockedInputDevice("videoinput", { deviceId, label: helpers.randomString() }),
+                ];
 
                 localStream.removeTrack(localStream.getVideoTracks()[0]);
             });

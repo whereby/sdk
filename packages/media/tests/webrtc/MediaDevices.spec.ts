@@ -25,8 +25,11 @@ afterEach(() => {
 });
 
 describe("buildDeviceList", () => {
-    const adev1 = helpers.createMockedInputDevice("audioinput", helpers.randomString(), "label");
-    const vdev1 = helpers.createMockedInputDevice("videoinput", helpers.randomString(), "");
+    const adev1 = helpers.createMockedInputDevice("audioinput");
+    const vdevWithoutLabel = helpers.createMockedInputDevice("videoinput", {
+        deviceId: helpers.randomString(),
+        label: "",
+    });
     it("should return default on no devices", () => {
         const kind = "audioinput";
         const devices: MediaDeviceInfo[] = [];
@@ -41,10 +44,12 @@ describe("buildDeviceList", () => {
         expect(result).toEqual([{ audioId: adev1.deviceId, label: `(busy) ${adev1.label}`, busy: true }]);
     });
     it("should trim and use deviceId on missing label", () => {
-        const devices = [vdev1];
+        const devices = [vdevWithoutLabel];
         const busyDeviceIds: string[] = [];
-        const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind: vdev1.kind });
-        expect(result).toEqual([{ videoId: vdev1.deviceId, label: vdev1.deviceId.slice(0, 5), busy: false }]);
+        const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind: vdevWithoutLabel.kind });
+        expect(result).toEqual([
+            { videoId: vdevWithoutLabel.deviceId, label: vdevWithoutLabel.deviceId.slice(0, 5), busy: false },
+        ]);
     });
 });
 
@@ -122,10 +127,10 @@ describe("getStream", () => {
     let options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds" | "audioWanted" | "videoWanted">;
 
     beforeEach(() => {
-        vdev1 = helpers.createMockedInputDevice("videoinput", "vdev1");
-        vdev2 = helpers.createMockedInputDevice("videoinput", "vdev2");
-        adev1 = helpers.createMockedInputDevice("audioinput", "adev1");
-        adev2 = helpers.createMockedInputDevice("audioinput", "adev2");
+        vdev1 = helpers.createMockedInputDevice("videoinput");
+        vdev2 = helpers.createMockedInputDevice("videoinput");
+        adev1 = helpers.createMockedInputDevice("audioinput");
+        adev2 = helpers.createMockedInputDevice("audioinput");
         videoTrack1 = helpers.createMockedMediaStreamTrack({ id: "v1", kind: "video" });
         videoTrack2 = helpers.createMockedMediaStreamTrack({ id: "v2", kind: "video" });
         audioTrack1 = helpers.createMockedMediaStreamTrack({ id: "a1", kind: "audio" });
@@ -821,8 +826,8 @@ describe("getDeviceData", () => {
         const videoId = helpers.randomString("videoId");
         const audioId = helpers.randomString("audioId");
         const devices = [
-            helpers.createMockedInputDevice("videoinput", videoId),
-            helpers.createMockedInputDevice("audioinput", audioId),
+            helpers.createMockedInputDevice("videoinput", { deviceId: videoId, label: helpers.randomString() }),
+            helpers.createMockedInputDevice("audioinput", { deviceId: audioId, label: helpers.randomString() }),
         ];
         const res = MediaDevices.getDeviceData({
             devices,
