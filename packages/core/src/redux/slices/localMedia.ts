@@ -376,6 +376,7 @@ export const doSetDevice = createAppAsyncThunk(
             const videoId = video ? selectCurrentCameraDeviceId(state) : false;
             const constraintsOptions = selectLocalMediaConstraintsOptions(state);
 
+            // TODO: use error property in getStream response to set busy devices.
             const { replacedTracks } = await getStream(
                 {
                     ...constraintsOptions,
@@ -394,6 +395,7 @@ export const doSetDevice = createAppAsyncThunk(
 
             return { replacedTracks };
         } catch (error) {
+            // TODO: maybe set busy devices here.
             return rejectWithValue(error);
         }
     },
@@ -421,9 +423,14 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 return { devices: newDevices };
             }
 
+            const { currentCameraDeviceId, currentMicrophoneDeviceId, currentSpeakerDeviceId } = state.localMedia;
+
             const { changedDevices, removedDevices } = getUpdatedDevices({
                 oldDevices,
                 newDevices,
+                currentVideoId: currentCameraDeviceId,
+                currentAudioId: currentMicrophoneDeviceId,
+                currentSpeakerId: currentSpeakerDeviceId,
             });
             
             let autoSwitchAudioId: undefined | string | boolean;
@@ -482,7 +489,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
         }
 
         try {
-            const { replacedTracks } = await getStream(
+            const { replacedTracks, error } = await getStream(
                 {
                     ...constraintsOptions,
                     audioId: audioId || false,
@@ -492,17 +499,18 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                 { replaceStream },
             );
 
-            const deviceId = audioId || videoId;
-            if (onlySwitchingOne && typeof deviceId === "string") {
-                dispatch(
-                    deviceBusy({
-                        deviceId,
-                    }),
-                );
+            if (error) {
+                const deviceId = audioId || videoId;
+                if (onlySwitchingOne && typeof deviceId === "string") {
+                    dispatch(
+                        deviceBusy({
+                            deviceId,
+                        }),
+                    );
+                }
             }
             return { replacedTracks, beforeEffectTracks };
         } catch (error) {
-            console.error(error);
             const deviceId = audioId || videoId;
             if (onlySwitchingOne && typeof deviceId === "string") {
                 dispatch(
@@ -549,6 +557,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
 
             const constraintsOptions = selectLocalMediaConstraintsOptions(state);
 
+            // TODO: use error property in getStream response to set busy devices.
             const { stream } = await getStream({
                 ...constraintsOptions,
                 audioId: payload.audio,
@@ -557,6 +566,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
 
             return { stream, onDeviceChange };
         } catch (error) {
+            // TODO: maybe set busy devices here.
             return rejectWithValue(error);
         }
     },
