@@ -435,15 +435,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
             
             let autoSwitchAudioId: undefined | string | boolean;
             let autoSwitchVideoId: undefined | string | boolean;
-
-            // Autoswitch changed devices.
-            if (changedDevices.audioinput) {
-                autoSwitchAudioId = changedDevices.audioinput.deviceId;
-            }
-            if (changedDevices.videoinput) {
-                autoSwitchVideoId = changedDevices.videoinput.deviceId;
-            }
-
+            
             // Obtain new device if the one we were using was removed.
             if (removedDevices.audioinput) {
                 autoSwitchAudioId = true;
@@ -452,6 +444,14 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 autoSwitchVideoId = true;
             }
 
+            // Re-request changed devices.
+            if (!autoSwitchAudioId && changedDevices.audioinput) {
+                autoSwitchAudioId = changedDevices.audioinput.deviceId;
+            }
+            if (!autoSwitchVideoId && changedDevices.videoinput) {
+                autoSwitchVideoId = changedDevices.videoinput.deviceId;
+            }
+            
             if (autoSwitchAudioId || autoSwitchVideoId) {
                 dispatch(doSwitchLocalStream({ audioId: autoSwitchAudioId, videoId: autoSwitchVideoId }));
             }
@@ -730,19 +730,18 @@ createReactor([selectLocalMediaShouldStartWithOptions], ({ dispatch }, options) 
 });
 
 // Stop localMedia when roomConnection is no longer wanted and media was started when joining
-export const selectLocalMediaShouldStop = createSelector(
-    selectAppIsActive,
-    selectLocalMediaStatus,
-    selectLocalMediaOptions,
-    (appIsActive, localMediaStatus, localMediaOptions) => {
-        return !appIsActive && localMediaStatus !== "inactive" && !!localMediaOptions;
-    },
-);
+startAppListening({
+    predicate: (_action, currentState, previousState) => {
+        const oldValue = selectAppIsActive(previousState);
+        const newValue = selectAppIsActive(currentState);
+        const localMediaOptions = selectLocalMediaOptions(currentState)
+        const localMediaStatus = selectLocalMediaStatus(currentState)
 
-createReactor([selectLocalMediaShouldStop], ({ dispatch }, localMediaShouldStop) => {
-    if (localMediaShouldStop) {
+        return (oldValue === true && newValue === false) && localMediaStatus !== "inactive" && !!localMediaOptions;
+    },
+    effect: (_, { dispatch }) => {
         dispatch(doStopLocalMedia());
-    }
+    },
 });
 
 startAppListening({
@@ -788,10 +787,31 @@ startAppListening({
 
 startAppListening({
     predicate: (_action, currentState, previousState) => {
-        const oldValue = selectCurrentCameraDeviceId(previousState);
-        const newValue = selectCurrentCameraDeviceId(currentState);
+        const oldDeviceId = selectCurrentCameraDeviceId(previousState);
+        const newDeviceId = selectCurrentCameraDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
-        return isReady && oldValue !== newValue;
+        const isSwitchingStream = selectLocalMediaIsSwitchingStream(currentState);
+       
+        // Don't try to obtain device if we're switching stream.
+        if (isSwitchingStream) {
+            return false;
+        }
+        
+        // We can't switch to an unknown device.
+        if (!newDeviceId) {
+            return false;
+        }
+
+        // Maybe we already have a live track of the same kind from this device.
+        const currentTrack = selectLocalMediaStream(currentState)?.getVideoTracks()?.[0]
+        if (currentTrack && currentTrack.readyState === "live") {
+            const currentDeviceId = currentTrack.getSettings().deviceId
+            if (currentDeviceId === newDeviceId) {
+                return false;
+            }
+        }
+        
+        return isReady && oldDeviceId !== newDeviceId;
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: false, video: true }));
@@ -800,10 +820,31 @@ startAppListening({
 
 startAppListening({
     predicate: (_action, currentState, previousState) => {
-        const oldValue = selectCurrentMicrophoneDeviceId(previousState);
-        const newValue = selectCurrentMicrophoneDeviceId(currentState);
+        const oldDeviceId = selectCurrentMicrophoneDeviceId(previousState);
+        const newDeviceId = selectCurrentMicrophoneDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
-        return isReady && oldValue !== newValue;
+        const isSwitchingStream = selectLocalMediaIsSwitchingStream(currentState);
+       
+        // Don't try to obtain device if we're switching stream.
+        if (isSwitchingStream) {
+            return false;
+        }
+
+        // We can't switch to an unknown device.
+        if (!newDeviceId) {
+            return false;
+        }
+        
+        // Maybe we already have a live track of the same kind from this device.
+        const currentTrack = selectLocalMediaStream(currentState)?.getVideoTracks()?.[0]
+        if (currentTrack && currentTrack.readyState === "live") {
+            const currentDeviceId = currentTrack.getSettings().deviceId
+            if (currentDeviceId === newDeviceId) {
+                return false;
+            }
+        }
+        
+        return isReady && oldDeviceId !== newDeviceId;
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: true, video: false }));
