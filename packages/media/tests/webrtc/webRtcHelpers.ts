@@ -71,6 +71,7 @@ export function createRTCPeerConnectionStub(
             createOffer: jest.fn(() => Promise.resolve({ type: "offer", sdp: "blob" })),
             createAnswer: jest.fn(() => Promise.resolve({ type: "answer", sdp: "blob" })),
             addStream: jest.fn(),
+            addTrack: jest.fn(),
             removeStream: jest.fn(),
             setRemoteDescription: jest.fn(() => Promise.resolve()),
             setLocalDescription: jest.fn(() => Promise.resolve()),
