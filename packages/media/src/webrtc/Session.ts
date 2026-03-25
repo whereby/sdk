@@ -274,6 +274,9 @@ export default class Session {
         if (newTrack.kind === "video" && this._mediaPrefs?.wantsVideo === false) {
             return;
         }
+        if (newTrack.kind === "video" && this._mediaPrefs?.wantsVideo === false) {
+            return;
+        }
 
         const pc = this.pc;
 

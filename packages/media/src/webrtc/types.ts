@@ -27,6 +27,8 @@ export interface VegaConnectionOptions {
 
 export type MediaPrefs = { wantsVideo: boolean };
 
+export type MediaPrefs = { wantsVideo: boolean };
+
 export interface RtcManager {
     acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
     addCameraStream(stream: MediaStream, options?: AddCameraStreamOptions): void;
