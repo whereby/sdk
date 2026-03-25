@@ -23,6 +23,7 @@ import {
     SignalIceCandidateMessage,
     SignalReadyToReceiveOfferMessage,
     SignalIceEndOfCandidatesMessage,
+    MediaPrefs,
 } from "./types";
 import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
@@ -94,6 +95,7 @@ export default class P2pRtcManager implements RtcManager {
     _localCameraStream?: MediaStream;
     _localScreenshareStream?: MediaStream;
     _screenshareVideoTrackIds: string[];
+    _remoteClientMediaPrefs: Record<string, MediaPrefs> = {};
     _socketListenerDeregisterFunctions: any[];
     _localStreamDeregisterFunction: any;
     _emitter: any;
@@ -474,13 +476,21 @@ export default class P2pRtcManager implements RtcManager {
         });
     }
 
-    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds = []) {
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds: string[] = []) {
         this._screenshareVideoTrackIds = [...remoteScreenshareVideoTrackIds];
 
         const localScreenShareTrack = this._localScreenshareStream?.getVideoTracks()?.[0];
         if (localScreenShareTrack) {
             this._screenshareVideoTrackIds.push(localScreenShareTrack.id);
         }
+    }
+
+    setRemoteClientMediaPrefs(clientId: string, mediaPrefs: MediaPrefs) {
+        this._remoteClientMediaPrefs[clientId] = mediaPrefs;
+    }
+
+    removeRemoteClientMediaPrefs(clientId: string) {
+        delete this._remoteClientMediaPrefs[clientId];
     }
 
     setRoomSessionId(roomSessionId: string) {
@@ -584,6 +594,7 @@ export default class P2pRtcManager implements RtcManager {
             bandwidth: initialBandwidth,
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
+            mediaPrefs: this._remoteClientMediaPrefs[clientId],
         });
         this.peerConnections[clientId] = session;
 
@@ -875,7 +886,7 @@ export default class P2pRtcManager implements RtcManager {
          * replace it when the video is re-enabled.
          */
         if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
-            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
+            session.addTrack(this._stoppedVideoTrack, this._localCameraStream);
         }
 
         return session;
@@ -887,6 +898,8 @@ export default class P2pRtcManager implements RtcManager {
             logger.warn("No RTCPeerConnection in RTCManager.disconnect()", clientId);
             return;
         }
+
+        this.removeRemoteClientMediaPrefs(session.clientId);
         session.close();
         delete this.peerConnections[clientId];
     }
