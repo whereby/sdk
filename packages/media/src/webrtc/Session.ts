@@ -12,7 +12,6 @@ const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 interface P2PSessionOptions {
-    peerConnectionId: string;
     clientId: string;
     bandwidth: number;
     peerConnectionConfig: RTCConfiguration;
@@ -21,7 +20,6 @@ interface P2PSessionOptions {
 }
 
 export default class Session {
-    peerConnectionId: any;
     relayCandidateSeen: boolean;
     serverReflexiveCandidateSeen: boolean;
     publicHostCandidateSeen: boolean;
@@ -49,14 +47,12 @@ export default class Session {
     pendingReplaceTrackActions: (() => Promise<void>)[];
 
     constructor({
-        peerConnectionId,
         clientId,
         bandwidth,
         peerConnectionConfig,
         deprioritizeH264Encoding,
         incrementAnalyticMetric,
     }: P2PSessionOptions) {
-        this.peerConnectionId = peerConnectionId;
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
         this.publicHostCandidateSeen = false;
