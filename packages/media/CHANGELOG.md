@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 5.0.2
+
+### Patch Changes
+
+- c2365e3: Add additional signal join room event error types
+
 ## 5.0.1
 
 ### Patch Changes
