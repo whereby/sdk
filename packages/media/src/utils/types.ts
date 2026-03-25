@@ -172,8 +172,23 @@ export interface RoomLockedError {
     knockPageBackgroundImageUrl?: string;
 }
 
+export interface RoomEmptyError {
+    error: "room_empty";
+    isClaimed: boolean;
+}
+
 export interface RoomFullError {
     error: "room_full";
+    isClaimed: boolean;
+}
+
+export interface RoomJoinPermissionDeniedError {
+    error: "room_join_permission_denied";
+    isClaimed: boolean;
+}
+
+export interface UniqueRoleAlreadyInRoomError {
+    error: "unique_role_already_in_room";
     isClaimed: boolean;
 }
 
@@ -231,7 +246,9 @@ export interface ForbiddenError {
 
 export type RoomJoinedErrors =
     | RoomLockedError
+    | RoomEmptyError
     | RoomFullError
+    | RoomJoinPermissionDeniedError
     | RoomConcurrencyControlsError
     | CannotJoinUnclaimedRoomError
     | OrganizationPlanExhaustedError
@@ -242,7 +259,8 @@ export type RoomJoinedErrors =
     | InternalServerError
     | InvalidAssistantKeyError
     | OrganizationAssistantNotFoundError
-    | OrganizationAssistantNotEnabledError;
+    | OrganizationAssistantNotEnabledError
+    | UniqueRoleAlreadyInRoomError;
 
 export type SignalRoom = {
     clients: SignalClient[];
