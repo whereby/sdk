@@ -1,4 +1,4 @@
-import { RtcEvents } from "@whereby.com/media";
+import { RtcEvents, RtcManager } from "@whereby.com/media";
 import { RootState, createStore as createRealStore } from "../store";
 
 export const mockSignalEmit = jest.fn();
@@ -12,18 +12,24 @@ export const mockServerSocket = {
     once: jest.fn(),
     emit: mockSignalEmit,
 };
-export const mockRtcManager = {
+export const mockRtcManager: RtcManager = {
+    acceptNewStream: jest.fn(),
     addCameraStream: jest.fn(),
     addScreenshareStream: jest.fn(),
-    acceptNewStream: jest.fn(),
-    replaceTrack: jest.fn(),
-    removeScreenshareStream: jest.fn(),
     disconnect: jest.fn(),
     disconnectAll: jest.fn(),
+    hasClient: jest.fn(),
+    isInitializedWith: jest.fn(),
+    removeRemoteClientMediaPrefs: jest.fn(),
+    removeScreenshareStream: jest.fn(),
+    replaceTrack: jest.fn(),
     rtcStatsDisconnect: jest.fn(),
-    updateStreamResolution: jest.fn(),
+    rtcStatsReconnect: jest.fn(),
     sendStatsCustomEvent: jest.fn(),
+    setRemoteClientMediaPrefs: jest.fn(),
+    setRemoteScreenshareVideoTrackIds: jest.fn(),
     shouldAcceptStreamsFromBothSides: jest.fn(),
+    updateStreamResolution: jest.fn(),
 };
 export const mockRtcEmitter = {
     emit: jest.fn(),
@@ -34,8 +40,7 @@ const createRtcDispatcher = ({
 }: {
     emitter: { emit: <K extends keyof RtcEvents>(eventName: K, args: RtcEvents[K]) => void };
 }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    emitter.emit("rtc_manager_created", { rtcManager: mockRtcManager as any });
+    emitter.emit("rtc_manager_created", { rtcManager: mockRtcManager });
 
     return {
         stopRtcManager: jest.fn(),
@@ -47,7 +52,10 @@ beforeEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    console.error = (msg) => {
+    console.error = (msg, err) => {
+        if (err instanceof Error) {
+            throw err;
+        }
         throw new Error(`Got console.error: ${msg}`);
     };
     console.warn = (msg) => {
@@ -101,8 +109,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rtcManagerDispatcher: createRtcDispatcher({ emitter: mockRtcEmitter }) as any,
             rtcManagerInitialized: true,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            rtcManager: mockRtcManager as any,
+            rtcManager: mockRtcManager,
             isAcceptingStreams: false,
             ...initialState.rtcConnection,
         };
