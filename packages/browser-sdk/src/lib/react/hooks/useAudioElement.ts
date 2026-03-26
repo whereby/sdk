@@ -32,7 +32,10 @@ export const useAudioElement = ({ stream, muted }: { stream?: MediaStream | null
         }
 
         if (audioEl.current.setSinkId) {
-            audioEl.current.setSinkId(currentSpeakerId);
+            audioEl.current.setSinkId(currentSpeakerId).catch((err) => {
+                console.warn(`Failed to set audio output device: ${err}`);
+                return;
+            });
         }
     }, [stream, audioEl, currentSpeakerId, muted]);
 
