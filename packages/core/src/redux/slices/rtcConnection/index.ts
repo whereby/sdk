@@ -198,14 +198,13 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const socket = selectSignalConnectionRaw(state).socket;
     const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
     const isNodeSdk = selectAppIsNodeSdk(state);
-    const constraintsOptions = selectLocalMediaConstraintsOptions(state);
 
     if (dispatcher || !socket) {
         return;
     }
 
     const webrtcProvider: WebRTCProvider = {
-        getMediaConstraints: () => (constraintsOptions),
+        getMediaConstraints: () => selectLocalMediaConstraintsOptions(state),
     };
 
     const rtcManagerDispatcher = new RtcManagerDispatcher({
