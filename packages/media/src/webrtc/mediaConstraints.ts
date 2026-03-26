@@ -12,8 +12,6 @@ const parseResolution = (res: any) => res.split(/[^\d]/g).map((n: any) => parseI
  * Low level constraints helper, creates the actual object used for GUM constraints
  */
 export function getMediaConstraints({
-    audioWanted,
-    videoWanted,
     disableAEC,
     disableAGC,
     hd,
@@ -23,7 +21,7 @@ export function getMediaConstraints({
     resolution,
     simulcast,
     widescreen,
-}: GetMediaConstraintsOptions): MediaStreamConstraints {
+}: GetMediaConstraintsOptions) {
     let HIGH_HEIGHT: any = 480;
     let LOW_HEIGHT: any = 240;
 
@@ -40,47 +38,35 @@ export function getMediaConstraints({
         }
     }
 
-    const { audioId, videoId } = preferredDeviceIds;
-
-    const constraints: MediaStreamConstraints = {
-        ...(audioWanted && {
-            audio: {
-                ...(audioId ? { deviceId: audioId } : {}),
-                ...(disableAGC ? { autoGainControl: false } : {}),
-                ...(disableAEC ? { echoCancellation: false } : {}),
-            },
-        }),
-        ...(videoWanted && {
-            video: {
-                height: lowDataMode ? LOW_HEIGHT : HIGH_HEIGHT,
-                // Set a lower frame rate (15fps) for low data, but only for non-simulcast.
-                // Otherwise use 24fps to increase quality/bandwidth.
-                frameRate: lowDataMode && !simulcast ? 15 : 24,
-                ...(videoId ? { deviceId: videoId } : { facingMode: "user" }),
-            },
-        }),
+    const constraints: any = {
+        audio: { ...(preferredDeviceIds.audioId && { deviceId: preferredDeviceIds.audioId }) },
+        video: {
+            ...(preferredDeviceIds.videoId ? { deviceId: preferredDeviceIds.videoId } : { facingMode: "user" }),
+            height: lowDataMode ? LOW_HEIGHT : HIGH_HEIGHT,
+            // Set a lower frame rate (15fps) for low data, but only for non-simulcast.
+            // Otherwise use 24fps to increase quality/bandwidth.
+            frameRate: lowDataMode && !simulcast ? 15 : 24,
+        },
     };
     if (lax) {
-        if (audioWanted && !audioId) constraints.audio = true;
-        if (videoWanted && !videoId && typeof constraints.video === "object") {
-            delete constraints.video.facingMode;
-        }
+        if (!constraints.audio?.deviceId) constraints.audio = true;
+        delete constraints.video?.facingMode;
         return constraints;
     }
 
-    if (videoWanted && typeof constraints.video === "object") {
-        if (resolution) {
-            const [w, h, fps] = parseResolution(resolution);
-            if (w) constraints.video.width = { exact: w };
-            if (h) constraints.video.height = { exact: h };
-            if (fps) constraints.video.frameRate = { exact: fps };
-            // In default camera case, let's just constrain on resolution since you set it
-            delete constraints.video.facingMode;
-        } else {
-            constraints.video.aspectRatio = widescreen ? 16 / 9 : 4 / 3;
-        }
+    if (resolution) {
+        const [w, h, fps] = parseResolution(resolution);
+        if (w) constraints.video.width = { exact: w };
+        if (h) constraints.video.height = { exact: h };
+        if (fps) constraints.video.frameRate = { exact: fps };
+        // In default camera case, let's just constrain on resolution since you set it
+        delete constraints.video.facingMode;
+    } else {
+        constraints.video.aspectRatio = widescreen ? 16 / 9 : 4 / 3;
     }
 
+    if (disableAGC) constraints.audio.autoGainControl = false;
+    if (disableAEC) constraints.audio.echoCancellation = false;
     return constraints;
 }
 
@@ -90,19 +76,22 @@ export function getMediaConstraints({
 export default function getConstraints({ devices, videoId, audioId, options, type = "ideal" }: GetConstraintsOptions) {
     const audioDevices = devices.filter((d) => d.kind === "audioinput");
     const videoDevices = devices.filter((d) => d.kind === "videoinput");
-    const preferredDeviceIds: { audioId?: any; videoId?: any } = {};
-    if (typeof audioId === "string" && audioDevices.some((d) => d.deviceId === audioId)) {
-        preferredDeviceIds.audioId = { [type]: audioId };
-    }
-    if (typeof videoId === "string" && videoDevices.some((d) => d.deviceId === videoId)) {
-        preferredDeviceIds.videoId = { [type]: videoId };
-    }
+    const useDefaultAudio = !audioId || !audioDevices.some((d) => d.deviceId === audioId);
+    const useDefaultVideo = !videoId || !videoDevices.some((d) => d.deviceId === videoId);
     const constraints = getMediaConstraints({
-        preferredDeviceIds,
-        audioWanted: Boolean(audioId) && audioDevices.length > 0,
-        videoWanted: Boolean(videoId) && videoDevices.length > 0,
+        preferredDeviceIds: {
+            audioId: useDefaultAudio ? null : { [type]: audioId },
+            videoId: useDefaultVideo ? null : { [type]: videoId },
+        },
         ...options,
     });
+
+    if (audioId === false || !audioDevices.length) {
+        delete constraints.audio;
+    }
+    if (videoId === false || !videoDevices.length) {
+        delete constraints.video;
+    }
 
     return constraints;
 }
