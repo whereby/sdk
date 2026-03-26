@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 7.0.0
+
+### Major Changes
+
+- 8407371: Revert: Update device and constraints handling
+
 ## 6.0.0
 
 ### Major Changes
