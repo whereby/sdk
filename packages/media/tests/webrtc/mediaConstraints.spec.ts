@@ -1,13 +1,25 @@
+import { GetMediaConstraintsOptions } from "../../src";
 import getConstraints, { getMediaConstraints } from "../../src/webrtc/mediaConstraints";
+import * as helpers from "./webRtcHelpers";
+
+const options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds" | "audioWanted" | "videoWanted"> = {
+    disableAEC: false,
+    disableAGC: false,
+    hd: false,
+    lax: false,
+    lowDataMode: false,
+    simulcast: false,
+    widescreen: false,
+};
 
 // the selectGetConstraintsOptions is testing most permutations of this
 describe("getConstraints", () => {
-    const vdev1 = { kind: "videoinput", deviceId: "vdev1" };
-    const adev1 = { kind: "audioinput", deviceId: "adev1" };
+    const vdev1 = helpers.createMockedInputDevice("videoinput");
+    const adev1 = helpers.createMockedInputDevice("audioinput");
 
     it("should not request audio if it is false", () => {
         const result = getConstraints({
-            devices: [vdev1, adev1] as any,
+            devices: [vdev1, adev1],
             videoId: "v",
             audioId: false,
             options: {} as any,
@@ -17,14 +29,15 @@ describe("getConstraints", () => {
     });
 
     it.each([
-        ["video", null, false, [vdev1]],
-        ["audio", false, null, [adev1]],
+        ["video", "id", false, [vdev1]],
+        ["audio", false, "id", [adev1]],
     ])("should request %s if we have a device of right type", (mediaKind, videoId, audioId, devices) => {
         const result = getConstraints({
             devices,
             audioId,
             videoId,
-        } as any);
+            options,
+        });
 
         const expected: any = {};
         expected[mediaKind] = expect.any(Object);
@@ -32,16 +45,17 @@ describe("getConstraints", () => {
     });
 
     it.each([
-        ["video", null, false, [adev1]],
+        ["video", "id", false, [adev1]],
         ["video", false, false, [adev1, vdev1]],
-        ["audio", false, null, [vdev1]],
+        ["audio", false, "id", [vdev1]],
         ["audio", false, false, [adev1, vdev1]],
     ])("should not request %s if device type is missing or if deviceId is false", (_, videoId, audioId, devices) => {
         const result = getConstraints({
             devices,
             audioId,
             videoId,
-        } as any);
+            options,
+        });
 
         expect(result).toEqual({});
     });
@@ -59,10 +73,16 @@ describe("getMediaConstraints", () => {
         `(
             "should set frameRate to $expected if lowDataMode is $lowDataMode and simulcast is $simulcast",
             ({ lowDataMode, simulcast, expected }) => {
-                const preferredDeviceIds = { audioId: "audioId", videoId: "videoId" };
+                const result = getMediaConstraints({
+                    ...options,
+                    lowDataMode,
+                    simulcast,
+                    videoWanted: true,
+                    audioWanted: false,
+                    preferredDeviceIds: {},
+                });
 
-                const result = getMediaConstraints({ lowDataMode, preferredDeviceIds, simulcast } as any);
-
+                // @ts-ignore
                 expect(result.video.frameRate).toBe(expected);
             },
         );
@@ -70,20 +90,39 @@ describe("getMediaConstraints", () => {
 
     describe("lax", () => {
         it("lax should delete facingmode on missing deviceId for video", () => {
-            const result = getMediaConstraints({ preferredDeviceIds: {}, lax: true } as any);
+            const result = getMediaConstraints({
+                ...options,
+                videoWanted: true,
+                audioWanted: false,
+                preferredDeviceIds: {},
+                lax: true,
+            });
 
             expect(result.video).toEqual(expect.any(Object));
+            // @ts-ignore
             expect(result.video.facingMode).toBeUndefined();
         });
 
-        it("should set audio to true when audioId is missing", () => {
-            const result = getMediaConstraints({ lax: true, preferredDeviceIds: {} } as any);
+        it("should set audio to true when preferred audioId is missing", () => {
+            const result = getMediaConstraints({
+                ...options,
+                lax: true,
+                preferredDeviceIds: {},
+                audioWanted: true,
+                videoWanted: false,
+            });
 
             expect(result.audio).toBe(true);
         });
 
-        it("should not set audio to true when audioId is present", () => {
-            const result = getMediaConstraints({ lax: true, preferredDeviceIds: { audioId: "id" } } as any);
+        it("should not set audio to true when preferred audioId is present", () => {
+            const result = getMediaConstraints({
+                ...options,
+                lax: true,
+                preferredDeviceIds: { audioId: { exact: "id" } },
+                audioWanted: true,
+                videoWanted: false,
+            });
 
             expect(result.audio).toEqual(expect.any(Object));
         });

@@ -8,23 +8,34 @@ import { PROTOCOL_RESPONSES } from "../../src/model/protocol";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
-import { WebRTCProvider } from "../../src";
+import { GetConstraintsOptions, WebRTCProvider } from "../../src";
 
 const originalMediasoupDevice = mediasoupClient.Device;
 
 describe("RtcManagerDispatcher", () => {
     let emitter: any;
     let serverSocketStub: any;
+    let mediaConstraints: GetConstraintsOptions;
     let webrtcProvider: WebRTCProvider;
     const features: any = {};
 
     beforeEach(() => {
         emitter = new EventEmitter();
         serverSocketStub = helpers.createServerSocketStub();
-        webrtcProvider = {
-            getMediaConstraints: function (): MediaStreamConstraints {
-                throw new Error("Function not implemented.");
+        mediaConstraints = {
+            devices: [],
+            options: {
+                disableAEC: false,
+                disableAGC: false,
+                hd: false,
+                lax: false,
+                lowDataMode: false,
+                simulcast: false,
+                widescreen: false,
             },
+        };
+        webrtcProvider = {
+            getMediaConstraints: () => mediaConstraints,
         };
 
         const serverSocket = serverSocketStub.socket;

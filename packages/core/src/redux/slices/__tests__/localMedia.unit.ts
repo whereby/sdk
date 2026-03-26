@@ -1,4 +1,4 @@
-import { selectLocalMediaShouldStartWithOptions, selectLocalMediaShouldStop } from "../localMedia";
+import { selectLocalMediaShouldStartWithOptions } from "../localMedia";
 
 describe("localMediaSlice", () => {
     describe("reactors", () => {
@@ -20,24 +20,6 @@ describe("localMediaSlice", () => {
                             localMediaStatus,
                             localMediaOptions,
                         ),
-                    ).toEqual(expected);
-                },
-            );
-        });
-
-        describe("reactLocalMediaStop", () => {
-            it.each`
-                appIsActive | localMediaStatus | localMediaOptions               | expected
-                ${true}     | ${"started"}     | ${undefined}                    | ${false}
-                ${true}     | ${"started"}     | ${{ audio: true, video: true }} | ${false}
-                ${false}    | ${"inactive"}    | ${{ audio: true, video: true }} | ${false}
-                ${false}    | ${"started"}     | ${undefined}                    | ${false}
-                ${false}    | ${"started"}     | ${{ audio: true, video: true }} | ${true}
-            `(
-                "expected $expected when appIsActive=$appIsActive, localMediaStatus=$localMediaStatus, localMediaOptions=$localMediaOptions",
-                ({ appIsActive, localMediaStatus, localMediaOptions, expected }) => {
-                    expect(
-                        selectLocalMediaShouldStop.resultFunc(appIsActive, localMediaStatus, localMediaOptions),
                     ).toEqual(expected);
                 },
             );

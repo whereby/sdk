@@ -310,7 +310,7 @@ export const doToggleCamera = createAppAsyncThunk(
                         {
                             ...constraintsOptions,
                             audioId: false,
-                            videoId: cameraDeviceId,
+                            videoId: cameraDeviceId || true,
                             type: "exact",
                         },
                         { replaceStream: stream },
@@ -376,6 +376,7 @@ export const doSetDevice = createAppAsyncThunk(
             const videoId = video ? selectCurrentCameraDeviceId(state) : false;
             const constraintsOptions = selectLocalMediaConstraintsOptions(state);
 
+            // TODO: use error property in getStream response to set busy devices.
             const { replacedTracks } = await getStream(
                 {
                     ...constraintsOptions,
@@ -394,6 +395,7 @@ export const doSetDevice = createAppAsyncThunk(
 
             return { replacedTracks };
         } catch (error) {
+            // TODO: maybe set busy devices here.
             return rejectWithValue(error);
         }
     },
@@ -421,23 +423,36 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 return { devices: newDevices };
             }
 
-            const { changedDevices, addedDevices } = getUpdatedDevices({
+            const { currentCameraDeviceId, currentMicrophoneDeviceId, currentSpeakerDeviceId } = state.localMedia;
+
+            const { changedDevices, removedDevices } = getUpdatedDevices({
                 oldDevices,
                 newDevices,
+                currentVideoId: currentCameraDeviceId,
+                currentAudioId: currentMicrophoneDeviceId,
+                currentSpeakerId: currentSpeakerDeviceId,
             });
-
-            let autoSwitchAudioId = changedDevices.audioinput?.deviceId;
-            let autoSwitchVideoId = changedDevices.videoinput?.deviceId;
-
-            // Handle added devices
-            if (autoSwitchAudioId === undefined) {
-                autoSwitchAudioId = addedDevices.audioinput?.deviceId;
+            
+            let autoSwitchAudioId: undefined | string | boolean;
+            let autoSwitchVideoId: undefined | string | boolean;
+            
+            // Obtain new device if the one we were using was removed.
+            if (removedDevices.audioinput) {
+                autoSwitchAudioId = true;
             }
-            if (autoSwitchVideoId === undefined) {
-                autoSwitchVideoId = addedDevices.videoinput?.deviceId;
+            if (removedDevices.videoinput) {
+                autoSwitchVideoId = true;
             }
 
-            if (autoSwitchAudioId !== undefined || autoSwitchVideoId !== undefined) {
+            // Re-request changed devices.
+            if (!autoSwitchAudioId && changedDevices.audioinput) {
+                autoSwitchAudioId = changedDevices.audioinput.deviceId;
+            }
+            if (!autoSwitchVideoId && changedDevices.videoinput) {
+                autoSwitchVideoId = changedDevices.videoinput.deviceId;
+            }
+            
+            if (autoSwitchAudioId || autoSwitchVideoId) {
                 dispatch(doSwitchLocalStream({ audioId: autoSwitchAudioId, videoId: autoSwitchVideoId }));
             }
 
@@ -451,7 +466,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
     async (
-        { audioId, videoId }: { audioId?: string | null; videoId?: string | null },
+        { audioId, videoId }: { audioId?: string | boolean; videoId?: string | boolean},
         { dispatch, getState, rejectWithValue },
     ) => {
         const state = getState();
@@ -464,39 +479,40 @@ export const doSwitchLocalStream = createAppAsyncThunk(
         }
 
         const beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
-        if (audioId !== undefined && beforeEffectTracks?.audio) {
+        if (audioId && beforeEffectTracks?.audio) {
             beforeEffectTracks.audio.stop();
             beforeEffectTracks.audio = undefined;
         }
-        if (videoId !== undefined && beforeEffectTracks?.video) {
+        if (videoId && beforeEffectTracks?.video) {
             beforeEffectTracks.video.stop();
             beforeEffectTracks.video = undefined;
         }
 
         try {
-            const { replacedTracks } = await getStream(
+            const { replacedTracks, error } = await getStream(
                 {
                     ...constraintsOptions,
-                    audioId: audioId === undefined ? false : audioId,
-                    videoId: videoId === undefined ? false : videoId,
+                    audioId: audioId || false,
+                    videoId: videoId || false,
                     type: "exact",
                 },
                 { replaceStream },
             );
 
-            const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId) {
-                dispatch(
-                    deviceBusy({
-                        deviceId,
-                    }),
-                );
+            if (error) {
+                const deviceId = audioId || videoId;
+                if (onlySwitchingOne && typeof deviceId === "string") {
+                    dispatch(
+                        deviceBusy({
+                            deviceId,
+                        }),
+                    );
+                }
             }
             return { replacedTracks, beforeEffectTracks };
         } catch (error) {
-            console.error(error);
             const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId) {
+            if (onlySwitchingOne && typeof deviceId === "string") {
                 dispatch(
                     deviceBusy({
                         deviceId,
@@ -541,6 +557,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
 
             const constraintsOptions = selectLocalMediaConstraintsOptions(state);
 
+            // TODO: use error property in getStream response to set busy devices.
             const { stream } = await getStream({
                 ...constraintsOptions,
                 audioId: payload.audio,
@@ -549,6 +566,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
 
             return { stream, onDeviceChange };
         } catch (error) {
+            // TODO: maybe set busy devices here.
             return rejectWithValue(error);
         }
     },
@@ -712,19 +730,18 @@ createReactor([selectLocalMediaShouldStartWithOptions], ({ dispatch }, options) 
 });
 
 // Stop localMedia when roomConnection is no longer wanted and media was started when joining
-export const selectLocalMediaShouldStop = createSelector(
-    selectAppIsActive,
-    selectLocalMediaStatus,
-    selectLocalMediaOptions,
-    (appIsActive, localMediaStatus, localMediaOptions) => {
-        return !appIsActive && localMediaStatus !== "inactive" && !!localMediaOptions;
-    },
-);
+startAppListening({
+    predicate: (_action, currentState, previousState) => {
+        const oldValue = selectAppIsActive(previousState);
+        const newValue = selectAppIsActive(currentState);
+        const localMediaOptions = selectLocalMediaOptions(currentState)
+        const localMediaStatus = selectLocalMediaStatus(currentState)
 
-createReactor([selectLocalMediaShouldStop], ({ dispatch }, localMediaShouldStop) => {
-    if (localMediaShouldStop) {
+        return (oldValue === true && newValue === false) && localMediaStatus !== "inactive" && !!localMediaOptions;
+    },
+    effect: (_, { dispatch }) => {
         dispatch(doStopLocalMedia());
-    }
+    },
 });
 
 startAppListening({
@@ -770,10 +787,31 @@ startAppListening({
 
 startAppListening({
     predicate: (_action, currentState, previousState) => {
-        const oldValue = selectCurrentCameraDeviceId(previousState);
-        const newValue = selectCurrentCameraDeviceId(currentState);
+        const oldDeviceId = selectCurrentCameraDeviceId(previousState);
+        const newDeviceId = selectCurrentCameraDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
-        return isReady && oldValue !== newValue;
+        const isSwitchingStream = selectLocalMediaIsSwitchingStream(currentState);
+       
+        // Don't try to obtain device if we're switching stream.
+        if (isSwitchingStream) {
+            return false;
+        }
+        
+        // We can't switch to an unknown device.
+        if (!newDeviceId) {
+            return false;
+        }
+
+        // Maybe we already have a live track of the same kind from this device.
+        const currentTrack = selectLocalMediaStream(currentState)?.getVideoTracks()?.[0]
+        if (currentTrack && currentTrack.readyState === "live") {
+            const currentDeviceId = currentTrack.getSettings().deviceId
+            if (currentDeviceId === newDeviceId) {
+                return false;
+            }
+        }
+        
+        return isReady && oldDeviceId !== newDeviceId;
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: false, video: true }));
@@ -782,10 +820,31 @@ startAppListening({
 
 startAppListening({
     predicate: (_action, currentState, previousState) => {
-        const oldValue = selectCurrentMicrophoneDeviceId(previousState);
-        const newValue = selectCurrentMicrophoneDeviceId(currentState);
+        const oldDeviceId = selectCurrentMicrophoneDeviceId(previousState);
+        const newDeviceId = selectCurrentMicrophoneDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
-        return isReady && oldValue !== newValue;
+        const isSwitchingStream = selectLocalMediaIsSwitchingStream(currentState);
+       
+        // Don't try to obtain device if we're switching stream.
+        if (isSwitchingStream) {
+            return false;
+        }
+
+        // We can't switch to an unknown device.
+        if (!newDeviceId) {
+            return false;
+        }
+        
+        // Maybe we already have a live track of the same kind from this device.
+        const currentTrack = selectLocalMediaStream(currentState)?.getVideoTracks()?.[0]
+        if (currentTrack && currentTrack.readyState === "live") {
+            const currentDeviceId = currentTrack.getSettings().deviceId
+            if (currentDeviceId === newDeviceId) {
+                return false;
+            }
+        }
+        
+        return isReady && oldDeviceId !== newDeviceId;
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: true, video: false }));

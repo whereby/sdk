@@ -4,6 +4,7 @@ const MockMediaStreamTrack = jest.fn(function (this: MediaStreamTrack, kind = "a
     Object.assign(this, {
         enabled: true,
         kind,
+        readyState: "live",
         stop: jest.fn(),
         getSettings: jest.fn(() => ({
             deviceId: "<device_id>",

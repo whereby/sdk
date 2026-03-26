@@ -5,9 +5,8 @@ import * as MediaDevices from "@whereby.com/media";
 
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import MockMediaStreamTrack from "../../../__mocks__/MediaStreamTrack";
-import mockMediaDevices from "../../../__mocks__/mediaDevices";
 import { RootState } from "../../store";
-import { randomString } from "../../../__mocks__/appMocks";
+import { createMockedMediaDevice, mockMediaDevices } from "../../../__mocks__/mediaDevices";
 
 Object.defineProperty(window, "MediaStream", {
     writable: true,
@@ -24,16 +23,15 @@ Object.defineProperty(navigator, "mediaDevices", {
     value: mockMediaDevices,
 });
 
-jest.mock("@whereby.com/media", () => ({
-    __esModule: true,
-    getStream: jest.fn(() => Promise.resolve()),
-    getUpdatedDevices: jest.fn(() => Promise.resolve({ addedDevices: {}, changedDevices: {} })),
-}));
-
-const mockedGetStream = jest.mocked(MediaDevices.getStream);
 const mockedEnumerateDevices = jest.mocked(navigator.mediaDevices.enumerateDevices);
 
 describe("actions", () => {
+    beforeEach(() => {
+        jest.spyOn(MediaDevices, "getStream")
+        jest.spyOn(MediaDevices, "getUpdatedDevices")
+        jest.spyOn(localMediaSlice, "doSetDevice")
+    })
+
     describe("doStartLocalMedia", () => {
         describe("when passed existing stream", () => {
             let existingStream: MediaStream;
@@ -47,10 +45,11 @@ describe("actions", () => {
 
                 await store.dispatch(localMediaSlice.doStartLocalMedia(existingStream));
 
-                expect(mockedGetStream).toHaveBeenCalledTimes(0);
+                expect(MediaDevices.getStream).toHaveBeenCalledTimes(0);
+                expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled();
             });
 
-            it("shuold resolve with existing stream", async () => {
+            it("should resolve with existing stream", async () => {
                 const store = createStore();
 
                 const before = store.getState().localMedia;
@@ -59,6 +58,7 @@ describe("actions", () => {
 
                 const after = store.getState().localMedia;
 
+                expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled();
                 expect(diff(before, after)).toEqual({
                     status: "started",
                     stream: existingStream,
@@ -73,7 +73,8 @@ describe("actions", () => {
 
                 await store.dispatch(localMediaSlice.doStartLocalMedia({ audio: true, video: true }));
 
-                expect(mockedGetStream).toHaveBeenCalledTimes(1);
+                expect(MediaDevices.getStream).toHaveBeenCalledTimes(1);
+                expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled();
             });
 
             describe("when getStream succeeeds", () => {
@@ -81,7 +82,7 @@ describe("actions", () => {
 
                 beforeEach(() => {
                     newStream = new MockMediaStream();
-                    mockedGetStream.mockResolvedValueOnce({ stream: newStream });
+                    jest.spyOn(navigator.mediaDevices, "getUserMedia").mockResolvedValue(newStream)
                 });
 
                 it("should update state", async () => {
@@ -93,6 +94,7 @@ describe("actions", () => {
 
                     const after = store.getState().localMedia;
 
+                    expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled();
                     expect(diff(before, after)).toEqual({
                         status: "started",
                         stream: newStream,
@@ -173,7 +175,7 @@ describe("actions", () => {
                     localMedia: {
                         busyDeviceIds: [],
                         cameraEnabled: true,
-                        devices: [],
+                        devices: [createMockedMediaDevice("videoinput")],
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
@@ -192,21 +194,19 @@ describe("actions", () => {
 
                 store.dispatch(localMediaSlice.doToggleCamera());
 
-                expect(mockedGetStream).toHaveBeenCalledTimes(1);
+                expect(MediaDevices.getStream).toHaveBeenCalledTimes(1);
+                expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled();
             });
 
             it("should dispatch `stopresumevideo` on stream with new video track", async () => {
                 const store = createStore({ initialState });
                 const videoTrack = new MockMediaStreamTrack("video");
-                mockedGetStream.mockImplementationOnce(async (_, opts) => {
-                    if (opts?.replaceStream) {
-                        opts.replaceStream.addTrack(videoTrack);
-                    }
-                    return { stream: opts?.replaceStream || new MockMediaStream([videoTrack]) };
-                });
+                jest.spyOn(navigator.mediaDevices, "getUserMedia").mockResolvedValue(new MockMediaStream([videoTrack]))
 
                 await store.dispatch(localMediaSlice.doToggleCamera());
 
+                expect(MediaDevices.getStream).toHaveBeenCalledTimes(1);
+                expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled();
                 expect(localStream.dispatchEvent).toHaveBeenCalledWith(
                     new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: true } }),
                 );
@@ -309,35 +309,109 @@ describe("actions", () => {
 
                 expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledTimes(1);
                 const after = store.getState().localMedia;
-
+                expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled();
                 expect(diff(before, after)).toMatchObject({ isSwitchingStream: true });
             });
         });
     });
 
-    describe("doUpdateDeviceList", () => {
-        it("should switch to the next video device if current cam is unplugged", async () => {
-            const dev1 = {
-                deviceId: "dev1",
-                kind: "videoinput" as const,
-                label: randomString("label"),
-                groupId: randomString("groupId"),
-                toJSON: () => ({}),
-            };
-            const dev2 = {
-                deviceId: "dev2",
-                kind: "videoinput" as const,
-                label: randomString("label"),
-                groupId: randomString("groupId"),
-                toJSON: () => ({}),
-            };
+    describe("doSwitchLocalStream", () => {
+        it("should switch to the next audio device if current mic is unplugged", async () => {
+            const aDev1 = createMockedMediaDevice("audioinput")
+            const aDev2 = createMockedMediaDevice("audioinput")
+            const vDev1 = createMockedMediaDevice("videoinput")
+            const vDev2 = createMockedMediaDevice("videoinput")
 
             const store = createStore({
                 initialState: {
                     localMedia: {
                         busyDeviceIds: [],
-                        currentCameraDeviceId: dev2.deviceId,
+                        currentMicrophoneDeviceId: aDev1.deviceId,
+                        currentCameraDeviceId: vDev1.deviceId,
+                        cameraEnabled: false,
+                        devices: [aDev2, vDev2],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: new MockMediaStream([new MockMediaStreamTrack("audio"), new MockMediaStreamTrack("video")]),
+                        isSwitchingStream: false,
+                    },
+                },
+            });
+            jest.spyOn(navigator.mediaDevices, "getUserMedia").mockResolvedValue(new MockMediaStream([new MockMediaStreamTrack("audio"), new MockMediaStreamTrack("video")]))
+
+            await store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: true, audioId: true}));
+
+            expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(1)
+            expect(localMediaSlice.doSetDevice).not.toHaveBeenCalled()
+            expect(MediaDevices.getStream).toHaveBeenCalledWith({
+                videoId: true,
+                audioId: true,
+                devices: [aDev2, vDev2],
+                options: expect.any(Object),
+                type: "exact",
+            }, expect.any(Object));
+        });
+    })
+
+    describe("doUpdateDeviceList", () => {
+        it("should switch to the next video device if current cam is unplugged", async () => {
+            const dev1 = createMockedMediaDevice("videoinput")
+            const dev2 = createMockedMediaDevice("videoinput")
+
+            const store = createStore({
+                initialState: {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        currentCameraDeviceId: dev1.deviceId,
                         cameraEnabled: true,
+                        devices: [dev1, dev2],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: false,
+                        status: "started",
+                        stream: new MockMediaStream(),
+                        isSwitchingStream: false,
+                    },
+                },
+            });
+            jest.spyOn(localMediaSlice, "doSwitchLocalStream");
+            mockedEnumerateDevices.mockImplementationOnce(() => Promise.resolve([dev2]));
+
+            const before = store.getState().localMedia;
+
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            const after = store.getState().localMedia;
+
+            expect(mockedEnumerateDevices).toHaveBeenCalled();
+            expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledWith({
+                videoId: true,
+            });
+            expect(diff(before, after)).toMatchObject({
+                devices: {
+                    1: undefined,
+                },
+            });
+        });
+        
+        it("should switch to the next audio device if current mic is unplugged", async () => {
+            const dev1 = createMockedMediaDevice("audioinput")
+            const dev2 = createMockedMediaDevice("audioinput")
+
+            const store = createStore({
+                initialState: {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        currentMicrophoneDeviceId: dev1.deviceId,
+                        cameraEnabled: false,
                         devices: [dev1, dev2],
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
@@ -352,13 +426,7 @@ describe("actions", () => {
                 },
             });
             jest.spyOn(localMediaSlice, "doSwitchLocalStream");
-            jest.spyOn(MediaDevices, "getUpdatedDevices").mockImplementationOnce(() => ({
-                addedDevices: {},
-                changedDevices: { videoinput: dev2 },
-                removedDevices: {},
-            }));
-
-            mockedEnumerateDevices.mockImplementationOnce(() => Promise.resolve([dev1]));
+            mockedEnumerateDevices.mockImplementationOnce(() => Promise.resolve([dev2]));
 
             const before = store.getState().localMedia;
 
@@ -366,95 +434,17 @@ describe("actions", () => {
 
             const after = store.getState().localMedia;
 
+            jest.advanceTimersToNextTimerAsync()
+
             expect(mockedEnumerateDevices).toHaveBeenCalled();
             expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledWith({
-                audioId: undefined,
-                videoId: dev2.deviceId,
+                audioId: true,
             });
             expect(diff(before, after)).toMatchObject({
                 devices: {
                     1: undefined,
                 },
             });
-        });
-
-        it("should skip busy devices", async () => {
-            const videoId = randomString("videoDeviceId");
-            const videoId2 = randomString("videoDeviceId2");
-            const videoId3 = randomString("videoDeviceId3");
-
-            const dev1 = {
-                deviceId: videoId,
-                kind: "videoinput" as const,
-                label: randomString("label"),
-                groupId: randomString("groupId"),
-                toJSON: () => ({}),
-            };
-            const dev2 = {
-                deviceId: videoId2,
-                kind: "videoinput" as const,
-                label: randomString("label"),
-                groupId: randomString("groupId"),
-                toJSON: () => ({}),
-            };
-            const dev3 = {
-                deviceId: videoId3,
-                kind: "videoinput" as const,
-                label: randomString("label"),
-                groupId: randomString("groupId"),
-                toJSON: () => ({}),
-            };
-
-            const stream = new MockMediaStream();
-            jest.spyOn(MediaDevices, "getStream").mockResolvedValueOnce({ stream });
-
-            const store = createStore({
-                initialState: {
-                    localMedia: {
-                        busyDeviceIds: [videoId2],
-                        currentCameraDeviceId: videoId,
-                        cameraEnabled: true,
-                        devices: [dev1, dev2, dev3],
-                        isSettingCameraDevice: false,
-                        isSettingMicrophoneDevice: false,
-                        isSettingSpeakerDevice: false,
-                        isTogglingCamera: false,
-                        lowDataMode: false,
-                        microphoneEnabled: true,
-                        status: "started",
-                        stream,
-                        isSwitchingStream: false,
-                    },
-                },
-            });
-            jest.spyOn(localMediaSlice, "doSwitchLocalStream");
-            jest.spyOn(MediaDevices, "getUpdatedDevices").mockImplementationOnce(() => ({
-                addedDevices: {},
-                changedDevices: { videoinput: dev3 },
-                removedDevices: {},
-            }));
-
-            mockedEnumerateDevices.mockImplementationOnce(() => Promise.resolve([dev1, dev2]));
-
-            const before = store.getState().localMedia;
-
-            await store.dispatch(localMediaSlice.doUpdateDeviceList());
-
-            const after = store.getState().localMedia;
-
-            expect(diff(before, after)).toMatchObject({
-                busyDeviceIds: {
-                    1: expect.any(String),
-                },
-                devices: {
-                    2: undefined,
-                },
-            });
-            expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledWith({
-                audioId: undefined,
-                videoId: videoId3,
-            });
-            expect(mockedEnumerateDevices).toHaveBeenCalled();
         });
     });
 

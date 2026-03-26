@@ -1,24 +1,15 @@
+import { randomString } from "./appMocks";
 import MockMediaStream from "./MediaStream";
 
-const devices = [
-    {
-        deviceId: "audioDeviceId",
-        kind: "audioinput",
-        groupId: "a",
-        label: "Microphone",
-    },
-    {
-        deviceId: "videoDeviceId",
-        kind: "videoinput",
-        groupId: "b",
-        label: "Camera",
-    },
-];
+export const createMockedMediaDevice = (kind: MediaDeviceKind, options = {
+    deviceId: randomString(),
+    label: randomString(),
+}) => {
+   return { kind, ...options } as MediaDeviceInfo
+}
 
-const mockMediaDevices = {
+export const mockMediaDevices = {
     addEventListener: jest.fn(),
-    enumerateDevices: jest.fn().mockResolvedValue(devices),
+    enumerateDevices: jest.fn().mockResolvedValue(Object.values([createMockedMediaDevice("videoinput"), createMockedMediaDevice("audioinput")])),
     getUserMedia: jest.fn().mockResolvedValue(new MockMediaStream()),
 };
-
-export default mockMediaDevices;
