@@ -1,5 +1,15 @@
 # @whereby.com/browser-sdk
 
+## 3.19.2
+
+### Patch Changes
+
+- a014585: Catch setSinkId error
+- Updated dependencies [92033fc]
+- Updated dependencies [92033fc]
+    - @whereby.com/core@1.9.2
+    - @whereby.com/media@6.0.0
+
 ## 3.19.1
 
 ### Patch Changes

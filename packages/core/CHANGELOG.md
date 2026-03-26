@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.9.2
+
+### Patch Changes
+
+- 92033fc: Update device and constraints handling
+- Updated dependencies [92033fc]
+    - @whereby.com/media@6.0.0
+
 ## 1.9.1
 
 ### Patch Changes
