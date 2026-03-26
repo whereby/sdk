@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.9.3
+
+### Patch Changes
+
+- 8407371: Revert: Update device and constraints handling
+- Updated dependencies [8407371]
+    - @whereby.com/media@7.0.0
+
 ## 1.9.2
 
 ### Patch Changes
