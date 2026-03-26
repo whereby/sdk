@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 6.0.0
+
+### Major Changes
+
+- 92033fc: Update device and constraints handling
+
 ## 5.0.2
 
 ### Patch Changes
