@@ -104,10 +104,7 @@ export type SignalIceEndOfCandidatesMessage = {
 };
 
 export interface WebRTCProvider {
-    getMediaConstraints: () => GetConstraintsOptions;
-    // TODO: Remove webrtc-adapter from this package.
-    browser?: string;
-    version?: number;
+    getMediaConstraints: () => MediaStreamConstraints;
 }
 
 export type GetMediaConstraintsOptions = {
@@ -116,28 +113,22 @@ export type GetMediaConstraintsOptions = {
     hd: boolean;
     lax: boolean;
     lowDataMode: boolean;
-    audioWanted: boolean;
-    videoWanted: boolean;
     preferredDeviceIds: {
-        audioId?: { ideal?: string; exact?: string };
-        videoId?: { ideal?: string; exact?: string };
+        audioId?: boolean | string | null | { ideal?: string | null; exact?: string | null };
+        videoId?: boolean | string | null | { ideal?: string | null; exact?: string | null };
     };
     resolution?: string;
     simulcast: boolean;
     widescreen: boolean;
+    usingAspectRatio16x9: boolean;
 };
-
-export interface GetSettingsFromTrackResult extends Omit<MediaTrackSettings, "deviceId"> {
-    deviceId?: string;
-    label?: string;
-}
 
 export type GetConstraintsOptions = {
     devices: MediaDeviceInfo[];
     audioId?: boolean | string;
     videoId?: boolean | string;
     type?: "ideal" | "exact";
-    options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds" | "audioWanted" | "videoWanted">;
+    options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds">;
 };
 
 export type GetStreamOptions = {
@@ -151,14 +142,8 @@ export type GetStreamResult = {
     stream: MediaStream;
 };
 
-export interface BuildDeviceListOptions {
-    devices: MediaDeviceInfo[];
-    busyDeviceIds: string[];
-    kind: MediaDeviceKind;
-}
-
 export type UpdatedDeviceInfo = {
-    deviceId?: string;
+    deviceId?: string | null;
     kind?: MediaDeviceKind;
     label?: string;
 };
@@ -176,8 +161,16 @@ export type GetUpdatedDevicesResult = {
 };
 
 export type GetDeviceDataResult = {
-    audio: GetSettingsFromTrackResult;
-    video: GetSettingsFromTrackResult;
+    audio: {
+        deviceId: string;
+        label: string;
+        kind: string;
+    };
+    video: {
+        deviceId: string;
+        label: string;
+        kind: string;
+    };
 };
 
 export type SignalIceServer = {

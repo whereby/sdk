@@ -9,12 +9,11 @@ import {
     RtcStreamAddedPayload,
     RtcClientConnectionStatusChangedPayload,
     CAMERA_STREAM_ID,
-    WebRTCProvider,
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
-import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
-import { StreamState } from "../../../RoomParticipant";
+import { selectRemoteClients, selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
+import { RemoteParticipant, StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive, doAppStop, selectAppIgnoreBreakoutGroups } from "../app";
 
 import {
@@ -26,7 +25,6 @@ import {
     doSwitchLocalStream,
     doStartLocalMedia,
     doLocalStreamEffect,
-    selectLocalMediaConstraintsOptions,
 } from "../localMedia";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
@@ -35,6 +33,16 @@ import { selectBreakoutCurrentId } from "../breakout";
 import { selectLocalParticipantRaw } from "../localParticipant/selectors";
 import { selectSpotlights } from "../spotlights";
 
+function isDeferrable({ client, breakoutCurrentId }: { client?: RemoteParticipant; breakoutCurrentId: string }) {
+    if (!client) return false;
+    // We defer every client inside a breakoutgroup when we ourselves
+    // are in the lobby. That is because it'll have the effect of us
+    // not subscribing to these people when we broadcast.
+    if (!breakoutCurrentId && client.breakoutGroup) return true;
+    // Defer connecting to silent clients.
+    if (!client.isAudioEnabled && !client.isVideoEnabled) return true;
+    return false;
+}
 import { rtcEvents } from "./actions";
 export { rtcEvents } from "./actions";
 
@@ -197,14 +205,25 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
+    const isCameraEnabled = selectIsCameraEnabled(state);
+    const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
 
     if (dispatcher || !socket) {
         return;
     }
 
-    const webrtcProvider: WebRTCProvider = {
-        getMediaConstraints: () => selectLocalMediaConstraintsOptions(state),
+    const webrtcProvider = {
+        getMediaConstraints: () => ({
+            audio: isMicrophoneEnabled,
+            video: isCameraEnabled,
+        }),
+
+        deferrable(clientId: string) {
+            const client = selectRemoteParticipants(getState()).find((p) => p.id === clientId);
+            const breakoutCurrentId = selectBreakoutCurrentId(getState()) || "";
+            return isDeferrable({ client, breakoutCurrentId });
+        },
     };
 
     const rtcManagerDispatcher = new RtcManagerDispatcher({

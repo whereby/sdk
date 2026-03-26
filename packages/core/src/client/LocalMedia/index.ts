@@ -203,10 +203,6 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
     /* Actions */
 
     public async startMedia(options: LocalMediaOptions | MediaStream = { audio: true, video: true }) {
-        const localMediaStatus = this.store.getState().localMedia.status
-        if (["started", "starting"].includes(localMediaStatus)) {
-            return;
-        }
         return await this.store.dispatch(doStartLocalMedia(options));
     }
 
