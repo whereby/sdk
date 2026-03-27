@@ -125,10 +125,9 @@ export class AudioMixer extends EventEmitter {
 
     public handleRemoteParticipants(participants: RemoteParticipantState[]): void {
         const liveIds = new Set(participants.map((p) => p.id).filter(Boolean) as string[]);
-        const typedSlots = this.slotsByType("participant");
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for (const [slot, pid] of typedSlots) {
+        for (const [slot, pid] of this.slotsByType("participant")) {
             if (pid && !liveIds.has(pid)) this.detachMixable(pid);
         }
 
@@ -150,7 +149,7 @@ export class AudioMixer extends EventEmitter {
         );
         const liveIds = new Set(screensharesWithAudio.map((p) => p.id).filter(Boolean) as string[]);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for (const [slot, sid] of this.slotsByType("screenshare")) {
+        for (const [, sid] of this.slotsByType("screenshare")) {
             if (sid && !liveIds.has(sid)) this.detachMixable(sid);
         }
 
@@ -177,9 +176,19 @@ export class AudioMixer extends EventEmitter {
             this.mixer.stopFFmpegProcess(this.ffmpegProcess);
             this.ffmpegProcess = null;
         }
+
+        Object.values(this.activeSlots).forEach((slot) => slot?.stop());
+        this.combinedAudioStream?.getTracks().forEach((track) => track.stop());
         this.mixableSlots = new Map(Array.from({ length: MIXER_SLOTS }, (_, i) => [i, ""]));
         this.activeSlots = {};
         // Recreate the media stream to avoid stale references
         this.setupMediaStream();
+    }
+
+    public destroy(): void {
+        this.stopAudioMixer();
+
+        this.combinedAudioStream = null;
+        this.rtcAudioSource = null;
     }
 }
