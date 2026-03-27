@@ -1345,7 +1345,7 @@ export default class P2pRtcManager implements RtcManager {
         } else {
             if (localStream.getVideoTracks().length === 0) {
                 // re-enable the stream
-                const constraints = getConstraints(this._webrtcProvider.getMediaConstraints()).video;
+                const constraints = getConstraints(this._webrtcProvider.getMediaOptions()).video;
                 if (!constraints) {
                     // user was screensharing with no-devices, the video
                     // device has been plugged out or similar

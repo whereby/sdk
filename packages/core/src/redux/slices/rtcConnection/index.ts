@@ -203,7 +203,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     }
 
     const webrtcProvider = {
-        getMediaConstraints: () => selectLocalMediaConstraintsOptions(state),
+        getMediaOptions: () => selectLocalMediaConstraintsOptions(state),
     };
 
     const rtcManagerDispatcher = new RtcManagerDispatcher({

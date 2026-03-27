@@ -104,7 +104,7 @@ export type SignalIceEndOfCandidatesMessage = {
 };
 
 export interface WebRTCProvider {
-    getMediaConstraints: () => GetConstraintsOptions;
+    getMediaOptions: () => GetConstraintsOptions;
 }
 
 export type GetMediaConstraintsOptions = {

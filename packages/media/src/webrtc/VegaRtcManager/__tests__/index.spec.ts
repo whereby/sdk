@@ -5,7 +5,7 @@ import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
 import WS from "jest-websocket-mock";
 import { setTimeout } from "timers/promises";
-import { GetConstraintsOptions, GetMediaConstraintsOptions, WebRTCProvider } from "../../types";
+import { GetConstraintsOptions, WebRTCProvider } from "../../types";
 
 jest.mock("../../../utils/getMediasoupDevice");
 const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
@@ -51,7 +51,7 @@ describe("VegaRtcManager", () => {
         serverSocketStub = helpers.createServerSocketStub();
         serverSocket = serverSocketStub.socket;
         webrtcProvider = {
-            getMediaConstraints: () => mediaConstraints,
+            getMediaOptions: () => mediaConstraints,
         };
         mockSendTransport = new MockTransport();
 

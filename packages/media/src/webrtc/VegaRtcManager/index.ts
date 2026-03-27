@@ -1556,7 +1556,7 @@ export default class VegaRtcManager implements RtcManager {
             }, stopCameraDelay);
         } else if (localStream.getVideoTracks().length === 0) {
             // re-enable the stream
-            const constraints = getConstraints(this._webrtcProvider.getMediaConstraints()).video;
+            const constraints = getConstraints(this._webrtcProvider.getMediaOptions()).video;
             navigator.mediaDevices
                 .getUserMedia({ video: constraints })
                 .then((stream) => {

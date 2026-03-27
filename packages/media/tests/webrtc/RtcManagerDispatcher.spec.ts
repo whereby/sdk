@@ -22,7 +22,7 @@ describe("RtcManagerDispatcher", () => {
         emitter = new EventEmitter();
         serverSocketStub = helpers.createServerSocketStub();
         webrtcProvider = {
-            getMediaConstraints: function (): GetConstraintsOptions {
+            getMediaOptions: function (): GetConstraintsOptions {
                 throw new Error("Function not implemented.");
             },
         };

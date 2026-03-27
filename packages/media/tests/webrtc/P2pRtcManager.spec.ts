@@ -68,7 +68,7 @@ describe("P2pRtcManager", () => {
         serverSocketStub = helpers.createServerSocketStub();
         serverSocket = serverSocketStub.socket;
         webrtcProvider = {
-            getMediaConstraints: () => mediaConstraints,
+            getMediaOptions: () => mediaConstraints,
         };
         emitterStub = helpers.createEmitterStub();
         iceServers = helpers.createIceServersConfig();
