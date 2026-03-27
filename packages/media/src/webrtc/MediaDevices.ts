@@ -122,7 +122,6 @@ function getSettingsFromTrack(
     // is even more, basically see what we sent before
     // It's really sad if we get down to this point.
     settings.deviceId = track.getConstraints()?.deviceId;
-    settings.broken = 1; // just a hint
     return settings;
 }
 

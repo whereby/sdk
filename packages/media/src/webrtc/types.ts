@@ -104,7 +104,7 @@ export type SignalIceEndOfCandidatesMessage = {
 };
 
 export interface WebRTCProvider {
-    getMediaConstraints: () => MediaStreamConstraints;
+    getMediaConstraints: () => GetConstraintsOptions;
 }
 
 export type GetMediaConstraintsOptions = {
@@ -120,7 +120,6 @@ export type GetMediaConstraintsOptions = {
     resolution?: string;
     simulcast: boolean;
     widescreen: boolean;
-    usingAspectRatio16x9: boolean;
 };
 
 export type GetConstraintsOptions = {
