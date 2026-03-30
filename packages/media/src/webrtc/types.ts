@@ -124,8 +124,8 @@ export type GetMediaConstraintsOptions = {
 
 export type GetConstraintsOptions = {
     devices: MediaDeviceInfo[];
-    audioId?: boolean | string;
-    videoId?: boolean | string;
+    audioId?: boolean | string | null;
+    videoId?: boolean | string | null;
     type?: "ideal" | "exact";
     options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds">;
 };
@@ -134,6 +134,12 @@ export type GetStreamOptions = {
     replaceStream?: MediaStream;
     fallback?: boolean;
 };
+
+export interface BuildDeviceListOptions {
+    devices: MediaDeviceInfo[];
+    busyDeviceIds: string[];
+    kind: MediaDeviceKind;
+}
 
 export type GetStreamResult = {
     error?: unknown;

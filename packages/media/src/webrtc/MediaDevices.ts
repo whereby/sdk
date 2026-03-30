@@ -1,6 +1,8 @@
 import getConstraints from "./mediaConstraints";
 import Logger from "../utils/Logger";
 import {
+    BuildDeviceListOptions,
+    GetConstraintsOptions,
     GetDeviceDataResult,
     GetStreamOptions,
     GetStreamResult,
@@ -20,10 +22,10 @@ export class NoDevicesError extends Error {
     }
 }
 
-function removeDuplicates(devices: any) {
+function removeDuplicates(devices: MediaDeviceInfo[]) {
     return devices.filter(
-        (device: any, i: number, self: any) =>
-            i === self.findIndex((d: any) => d.deviceId === device.deviceId && d.kind === device.kind),
+        (device, i, self) =>
+            i === self.findIndex((d) => d.deviceId === device.deviceId && d.kind === device.kind),
     );
 }
 
@@ -39,29 +41,20 @@ const idFieldsByKind = {
     audiooutput: "speakerId",
 };
 
-/**
- * Build filtered list of devices, for UI usage
- *
- * @param args
- * @param args.devices - list of available devices
- * @param args.busyDeviceIds - list of busy deviceIds
- * @param args.kind - filter by "audioinput" | "videoinput" | "audiooutput"
- * @returns Array<{[idField]: deviceId}>
- */
-export function buildDeviceList({ busyDeviceIds, devices, kind }: any) {
+export function buildDeviceList({ busyDeviceIds, devices, kind }: BuildDeviceListOptions) {
     const deviceList =
         devices &&
         devices.length &&
         devices
-            .filter((d: any) => d.kind === kind)
-            .map((d: any) => ({
-                [(idFieldsByKind as any)[kind]]: d.deviceId,
+            .filter((d) => d.kind === kind)
+            .map((d) => ({
+                [(idFieldsByKind)[kind]]: d.deviceId,
                 label: `${busyDeviceIds.includes(d.deviceId) ? "(busy) " : ""}${d.label || d.deviceId.slice(0, 5)}`,
                 busy: busyDeviceIds.includes(d.deviceId),
             }));
     return deviceList && deviceList.length !== 0
         ? deviceList
-        : [{ [(idFieldsByKind as any)[kind]]: "", label: "Default" }];
+        : [{ [(idFieldsByKind)[kind]]: "", label: "Default" }];
 }
 
 /**
@@ -80,7 +73,7 @@ export function getUserMedia(constraints: any) {
 }
 
 function getSettingsFromTrack(
-    kind: string,
+    kind: MediaDeviceKind,
     track?: MediaStreamTrack | null,
     devices?: MediaDeviceInfo[],
     lastUsedId?: string,
@@ -91,7 +84,7 @@ function getSettingsFromTrack(
         // In SFU V2 the track can be closed by the RtcManager, so check if the
         // last used deviceId still is available
         if (lastUsedId && devices) {
-            settings.deviceId = devices.find((d: any) => d.deviceId === lastUsedId && d.kind === kind)?.deviceId;
+            settings.deviceId = devices.find((d) => d.deviceId === lastUsedId && d.kind === kind)?.deviceId;
         }
         return settings;
     }
@@ -141,11 +134,11 @@ export function getDeviceData({
     audioTrack?: MediaStreamTrack | null;
     videoTrack?: MediaStreamTrack | null;
     devices: MediaDeviceInfo[];
-    stoppedVideoTrack?: boolean;
+    stoppedVideoTrack?: MediaStreamTrack;
     lastAudioId?: string | undefined;
     lastVideoId?: string | undefined;
 }): GetDeviceDataResult {
-    const usable = (d: any) => (d?.readyState === "live" ? d : null);
+    const usable = (d?: MediaStreamTrack | null) => (d?.readyState === "live" ? d : null);
     videoTrack = usable(videoTrack) || stoppedVideoTrack;
     audioTrack = usable(audioTrack);
     const video = getSettingsFromTrack("videoinput", videoTrack, devices, lastVideoId);
@@ -190,11 +183,11 @@ export function replaceTracksInStream(stream: MediaStream, newStream: MediaStrea
  * @returns {Promise<{stream, error=null}>}
  */
 export async function getStream(
-    constraintOpt: any,
+    constraintOpt: GetConstraintsOptions,
     { replaceStream, fallback = true }: GetStreamOptions = {},
 ): Promise<GetStreamResult> {
     let error: any;
-    let newConstraints: any;
+    let newConstraints: GetConstraintsOptions | undefined;
     let retryConstraintOpt: any;
     let stream: MediaStream | null = null;
 
@@ -385,18 +378,25 @@ export function getDisplayMedia(
 export function compareLocalDevices(before: MediaDeviceInfo[], after: MediaDeviceInfo[]) {
     const [beforeByKind, afterByKind] = [before, after].map((list) =>
         list
-            .filter((device: any) => device.kind && device.deviceId)
+            .filter((device) => device.kind && device.deviceId)
             .reduce(
-                (result: any, device: any) => ({
+                (result, device) => ({
                     ...result,
                     [device.kind]: { ...result[device.kind], [device.deviceId]: device },
                 }),
-                {},
+                {} as Record<MediaDeviceKind, Record<string, MediaDeviceInfo>>,
             ),
     );
-    const changesByKind: any = {};
+    const changesByKind = {} as Record<
+        MediaDeviceKind,
+        {
+            removed: Record<string, MediaDeviceInfo>;
+            added: Record<string, MediaDeviceInfo>;
+            changed: Record<string, MediaDeviceInfo>;
+        }
+    >;
     // find devices removed
-    before.forEach((device: any) => {
+    before.forEach((device) => {
         if (!device.kind || !device.deviceId) return;
         if (!changesByKind[device.kind]) changesByKind[device.kind] = { added: {}, removed: {}, changed: {} };
         if (!afterByKind[device.kind] || !afterByKind[device.kind][device.deviceId]) {
@@ -404,7 +404,7 @@ export function compareLocalDevices(before: MediaDeviceInfo[], after: MediaDevic
         }
     });
     // find devices either added or changed
-    after.forEach((device: any) => {
+    after.forEach((device) => {
         if (!device.kind || !device.deviceId) return;
         if (!changesByKind[device.kind]) changesByKind[device.kind] = { added: {}, removed: {}, changed: {} };
         if (!beforeByKind[device.kind] || !beforeByKind[device.kind][device.deviceId]) {
@@ -451,7 +451,7 @@ export function getUpdatedDevices({
             if (changes.removed[currentDeviceId]) {
                 changedDevices[kind] = { deviceId: null }; // let browser decide
                 if (kind === "audiooutput") {
-                    const fallbackSpeakerDevice = newDevices.find((d: any) => d.kind === "audiooutput");
+                    const fallbackSpeakerDevice = newDevices.find((d) => d.kind === "audiooutput");
                     changedDevices[kind] = { deviceId: fallbackSpeakerDevice?.deviceId };
                 }
             }
