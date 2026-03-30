@@ -4,6 +4,7 @@ import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import Logger from "../utils/Logger";
 import { getMediasoupDeviceAsync } from "../utils/getMediasoupDevice";
+import { ClearableTimeout } from "../utils";
 
 const logger = new Logger();
 
@@ -25,7 +26,7 @@ export default class BandwidthTester extends EventEmitter {
     _timeout: any;
     _canvas: any;
     _drawInterval: any;
-    _resultTimeout: NodeJS.Timeout | null;
+    _resultTimeout: ClearableTimeout | null;
 
     constructor({ features }: { features?: any } = {}) {
         super();

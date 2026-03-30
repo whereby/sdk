@@ -23,7 +23,7 @@ import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
 import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
-import { ServerSocket, trackAnnotations } from "../../utils";
+import { ClearableTimeout, ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import {
@@ -95,7 +95,7 @@ export default class VegaRtcManager implements RtcManager {
     _sndTransportIceRestartPromise: any;
     _rcvTransportIceRestartPromise: any;
     _colocation: any;
-    _stopCameraTimeout: any;
+    _stopCameraTimeout: ClearableTimeout | null;
     _audioTrackOnEnded: any;
     _videoTrackOnEnded: any;
     _socketListenerDeregisterFunctions: any;
@@ -1526,12 +1526,14 @@ export default class VegaRtcManager implements RtcManager {
         if (!["chrome", "safari"].includes(browserName)) {
             return;
         }
+        if (this._stopCameraTimeout) {
+            clearTimeout(this._stopCameraTimeout);
+            this._stopCameraTimeout = null;
+        }
 
         // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
 
         if (!enable) {
-            clearTimeout(this._stopCameraTimeout);
-
             const stopCameraDelay =
                 localStream.getVideoTracks().find((t) => !t.enabled)?.readyState === "ended" ? 0 : 5000;
 

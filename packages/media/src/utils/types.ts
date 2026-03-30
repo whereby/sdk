@@ -8,6 +8,8 @@ export interface Credentials {
     userId: string;
 }
 
+export type ClearableTimeout = ReturnType<typeof setTimeout>;
+
 /*
     Socket
 */
