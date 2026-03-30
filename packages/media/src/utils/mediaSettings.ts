@@ -238,7 +238,11 @@ async function sortCodecsByPowerEfficiency(codecs: Codec[]) {
 
 export async function sortCodecs(codecs: Codec[], features: { av1On?: boolean }) {
     let sortedCodecs = sortCodecsByMimeType(codecs, features);
-    sortedCodecs = await sortCodecsByPowerEfficiency(codecs);
+
+    if (adapter.browserDetails.browser !== "firefox") {
+        // Firefox does not support webrtc as MediaDecodingType
+        sortedCodecs = await sortCodecsByPowerEfficiency(codecs);
+    }
 
     return sortedCodecs;
 }
