@@ -16,7 +16,7 @@ import { type Codec } from "../mediaSettings";
 import mockRouterRtpCapabilities from "./mockRouterRtpCapabilities.json";
 import assert from "assert";
 
-jest.mock("webrtc-adapter", () => ({ browserDetails: { browser: "chrome" } }));
+jest.mock("webrtc-adapter", () => ({ browserDetails: { browser: "firefox" } }));
 
 describe("sortCodecs", () => {
     const codecs: Codec[] = [
