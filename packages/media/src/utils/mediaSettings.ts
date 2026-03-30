@@ -1,5 +1,8 @@
 import { RtpCapabilities, RtpCodecCapability } from "mediasoup-client/lib/RtpParameters";
 import adapter from "webrtc-adapter";
+import Logger from "./Logger";
+
+const logger = new Logger();
 
 export const AUDIO_SETTINGS = {
     codecOptions: {
@@ -220,11 +223,22 @@ async function getIsCodecDecodingPowerEfficient(codec: string) {
 }
 
 async function sortCodecsByPowerEfficiency(codecs: Codec[]) {
-    const codecPowerEfficiencyEntries: [string, boolean][] = await Promise.all(
-        codecs.map(({ mimeType }) =>
-            getIsCodecDecodingPowerEfficient(mimeType).then((val): [string, boolean] => [mimeType, val]),
-        ),
-    );
+    // At the time of writing, Firefox does not support webrtc as MediaDecodingType.
+    // https://searchfox.org/firefox-main/source/dom/webidl/MediaCapabilities.webidl#42
+
+    // Because of that, we catch any errors and await the result of the draft spec:
+    // https://w3c.github.io/media-capabilities/#valid-mediadecodingconfiguration
+    let codecPowerEfficiencyEntries;
+    try {
+        codecPowerEfficiencyEntries = await Promise.all(
+            codecs.map(({ mimeType }) =>
+                getIsCodecDecodingPowerEfficient(mimeType).then((val): [string, boolean] => [mimeType, val]),
+            ),
+        );
+    } catch (error) {
+        logger.error(error);
+        return codecs;
+    }
     const codecPowerEfficiencies = Object.fromEntries(codecPowerEfficiencyEntries);
 
     const sorted = codecs.sort((a, b) => {
@@ -238,11 +252,7 @@ async function sortCodecsByPowerEfficiency(codecs: Codec[]) {
 
 export async function sortCodecs(codecs: Codec[], features: { av1On?: boolean }) {
     let sortedCodecs = sortCodecsByMimeType(codecs, features);
-
-    if (adapter.browserDetails.browser !== "firefox") {
-        // Firefox does not support webrtc as MediaDecodingType
-        sortedCodecs = await sortCodecsByPowerEfficiency(codecs);
-    }
+    sortedCodecs = await sortCodecsByPowerEfficiency(codecs);
 
     return sortedCodecs;
 }
