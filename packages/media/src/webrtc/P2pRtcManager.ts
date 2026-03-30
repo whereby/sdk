@@ -1007,8 +1007,8 @@ export default class P2pRtcManager implements RtcManager {
                     }
                     // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
                     if (rtpAbsCaptureTimeOn) offer.sdp = addAbsCaptureTimeExtMap(offer.sdp);
-                    // SDP munging workaround for Firefox, because it doesn't support setCodecPreferences()
-                    if (browserName === "firefox") {
+                    // SDP munging workaround for Firefox version < 128 where support for setCodecPreferences() was added.
+                    if (browserName === "firefox" && browserVersion < 128) {
                         offer.sdp = setCodecPreferenceSDP({
                             sdp: offer.sdp as string,
                             redOn,
