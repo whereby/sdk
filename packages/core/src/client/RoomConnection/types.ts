@@ -79,6 +79,8 @@ export interface RoomConnectionState {
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
     events?: NotificationsEventEmitter;
+    isCameraEnabled: boolean;
+    isMicrophoneEnabled: boolean;
     liveStream?: LiveStreamState;
     liveTranscription?: LiveTranscriptionState;
     localScreenshareStatus?: LocalScreenshareStatus;

@@ -32,6 +32,9 @@ export const REMOTE_PARTICIPANTS_CHANGED = "remote-participants:changed";
 export const SCREENSHARE_STARTED = "screenshare:started";
 export const SCREENSHARE_STOPPED = "screenshare:stopped";
 
+export const CAMERA_STATE_CHANGED = "camera:state-changed";
+export const MICROPHONE_STATE_CHANGED = "microphone:state-changed";
+
 /* Streaming events */
 export const STREAMING_STARTED = "streaming:started";
 export const STREAMING_STOPPED = "streaming:stopped";
@@ -56,6 +59,7 @@ type RoomJoinedEvent = {
 /* Event types for RoomConnection client */
 export type RoomConnectionEvents = {
     [BREAKOUT_CONFIG_CHANGED]: [config: BreakoutState];
+    [CAMERA_STATE_CHANGED]: [isCameraEnabled: boolean];
     [CHAT_NEW_MESSAGE]: [message: ChatMessage];
     [CLOUD_RECORDING_STATUS_CHANGED]: [status: CloudRecordingState | undefined];
     [CONNECTION_STATUS_CHANGED]: [status: ConnectionStatus];
@@ -63,6 +67,7 @@ export type RoomConnectionEvents = {
     [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
     [LOCAL_SCREENSHARE_STATUS_CHANGED]: [status?: LocalScreenshareStatus];
+    [MICROPHONE_STATE_CHANGED]: [isMicrophoneEnabled: boolean];
     [REMOTE_PARTICIPANTS_CHANGED]: [participants: RemoteParticipantState[]];
     [SCREENSHARE_STARTED]: [screenshare: Screenshare];
     [SCREENSHARE_STOPPED]: [screenshareId: string];

@@ -17,6 +17,8 @@ import {
     selectBreakoutGroupedParticipants,
     selectAllClientViewsInCurrentGroup,
     selectRoomConnectionError,
+    selectIsCameraEnabled,
+    selectIsMicrophoneEnabled,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
@@ -39,6 +41,8 @@ export const selectRoomConnectionState = createSelector(
     selectWaitingParticipants,
     selectNotificationsEmitter,
     selectSpotlightedClientViews,
+    selectIsCameraEnabled,
+    selectIsMicrophoneEnabled,
     (
         chatMessages,
         cloudRecording,
@@ -57,6 +61,8 @@ export const selectRoomConnectionState = createSelector(
         waitingParticipants,
         notificationsEmitter,
         spotlightedClientViews,
+        isCameraEnabled,
+        isMicrophoneEnabled,
     ) => {
         const state: RoomConnectionState = {
             chatMessages,
@@ -76,6 +82,8 @@ export const selectRoomConnectionState = createSelector(
             connectionStatus,
             connectionError,
             events: notificationsEmitter,
+            isCameraEnabled,
+            isMicrophoneEnabled,
             liveStream: streaming.isStreaming
                 ? {
                       status: "streaming",
