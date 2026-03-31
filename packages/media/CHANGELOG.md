@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 7.0.1
+
+### Patch Changes
+
+- b453ab7: Handle firefox not supporting webrtc as MediaDecodingType
+- b79a47a: Align SFU and P2P stop camera timeout behaviour
+
 ## 7.0.0
 
 ### Major Changes
