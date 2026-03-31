@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.9.5
+
+### Patch Changes
+
+- 4b56a6a: Pass all constraints in webrtcProvider
+- Updated dependencies [4b56a6a]
+    - @whereby.com/media@8.0.0
+
 ## 1.9.4
 
 ### Patch Changes
