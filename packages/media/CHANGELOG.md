@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.0
+
+### Major Changes
+
+- 4b56a6a: Use getConstraints internally in stopOrResumeVideo
+
 ## 7.0.1
 
 ### Patch Changes
