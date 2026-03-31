@@ -38,7 +38,8 @@ import {
 } from "./types";
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
-import { CAMERA_STREAM_ID, STREAM_TYPES } from "../../model";
+import { STREAM_TYPES } from "../../model";
+import getConstraints from "../mediaConstraints";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -1555,7 +1556,7 @@ export default class VegaRtcManager implements RtcManager {
             }, stopCameraDelay);
         } else if (localStream.getVideoTracks().length === 0) {
             // re-enable the stream
-            const constraints = this._webrtcProvider.getMediaConstraints().video;
+            const constraints = getConstraints(this._webrtcProvider.getMediaOptions()).video;
             navigator.mediaDevices
                 .getUserMedia({ video: constraints })
                 .then((stream) => {

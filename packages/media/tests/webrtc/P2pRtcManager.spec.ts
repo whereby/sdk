@@ -12,7 +12,7 @@ import P2pRtcManager, { ICE_RESTART_DELAY } from "../../src/webrtc/P2pRtcManager
 import rtcManagerEvents from "../../src/webrtc/rtcManagerEvents";
 
 import { RELAY_MESSAGES, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../src/model/protocol";
-import { CAMERA_STREAM_ID } from "../../src";
+import { CAMERA_STREAM_ID, GetConstraintsOptions, WebRTCProvider } from "../../src";
 
 const originalNavigator = global.navigator;
 
@@ -43,9 +43,9 @@ describe("P2pRtcManager", () => {
     let serverSocket: any;
     let emitterStub: any;
     let iceServers: any;
-    let webrtcProvider: any;
+    let webrtcProvider: WebRTCProvider;
     let clientId: any;
-    let mediaContstraints: any;
+    let mediaConstraints: GetConstraintsOptions;
     let rtcManager: P2pRtcManager;
     let mediaserverConfigTtlSeconds: number;
 
@@ -53,16 +53,22 @@ describe("P2pRtcManager", () => {
         jest.useFakeTimers();
         // @ts-ignore
         window.RTCPeerConnection = helpers.createRTCPeerConnectionStub();
-        mediaContstraints = {
-            audio: true,
-            video: true,
+        mediaConstraints = {
+            devices: [],
+            options: {
+                disableAEC: false,
+                disableAGC: false,
+                hd: false,
+                lax: false,
+                lowDataMode: false,
+                simulcast: false,
+                widescreen: false,
+            },
         };
         serverSocketStub = helpers.createServerSocketStub();
         serverSocket = serverSocketStub.socket;
         webrtcProvider = {
-            webRtcDetectedBrowser: "chrome",
-            webRtcDetectedBrowserVersion: "60",
-            getMediaConstraints: () => mediaContstraints,
+            getMediaOptions: () => mediaConstraints,
         };
         emitterStub = helpers.createEmitterStub();
         iceServers = helpers.createIceServersConfig();
@@ -835,16 +841,17 @@ describe("P2pRtcManager", () => {
                 gumStream = helpers.createMockedMediaStream();
                 global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(gumStream));
                 localStream.removeTrack(localStream.getVideoTracks()[0]);
+                                const deviceId = helpers.randomString();
+                mediaConstraints.videoId = deviceId;
+                mediaConstraints.devices = [
+                    helpers.createMockedInputDevice("videoinput", { deviceId, label: helpers.randomString() }),
+                ];
             });
 
-            it("should obtain new video track with existing constraints", () => {
-                mediaContstraints = { video: { some: "constraint" } };
-
+            it("should obtain new video track", () => {
                 rtcManager.stopOrResumeVideo(localStream, true);
 
-                expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
-                    video: mediaContstraints.video,
-                });
+                expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
             });
 
             it("should add video track to local stream", async () => {

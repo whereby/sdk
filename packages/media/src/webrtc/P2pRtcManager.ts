@@ -26,6 +26,7 @@ import {
 } from "./types";
 import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
+import getConstraints from "./mediaConstraints";
 
 interface CreateSessionOptions {
     peerConnectionId: string;
@@ -1344,7 +1345,7 @@ export default class P2pRtcManager implements RtcManager {
         } else {
             if (localStream.getVideoTracks().length === 0) {
                 // re-enable the stream
-                const constraints = this._webrtcProvider.getMediaConstraints().video;
+                const constraints = getConstraints(this._webrtcProvider.getMediaOptions()).video;
                 if (!constraints) {
                     // user was screensharing with no-devices, the video
                     // device has been plugged out or similar
