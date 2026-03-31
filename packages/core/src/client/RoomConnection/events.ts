@@ -21,6 +21,8 @@ export const CLOUD_RECORDING_STATUS_CHANGED = "cloud-recording:status-changed";
 export const CONNECTION_STATUS_CHANGED = "connection:status-changed";
 /* Live Transcription Events */
 export const LIVE_TRANSCRIPTION_STATUS_CHANGED = "live-transcription:status-changed";
+/* Connection Error Events */
+export const CONNECTION_ERROR_CHANGED = "connection:error-changed";
 /* Local participant events */
 export const LOCAL_PARTICIPANT_CHANGED = "local-participant:changed";
 export const LOCAL_SCREENSHARE_STATUS_CHANGED = "local-screenshare:status-changed";
@@ -58,6 +60,7 @@ export type RoomConnectionEvents = {
     [CLOUD_RECORDING_STATUS_CHANGED]: [status: CloudRecordingState | undefined];
     [CONNECTION_STATUS_CHANGED]: [status: ConnectionStatus];
     [LIVE_TRANSCRIPTION_STATUS_CHANGED]: [status: LiveTranscriptionState | undefined];
+    [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
     [LOCAL_SCREENSHARE_STATUS_CHANGED]: [status?: LocalScreenshareStatus];
     [REMOTE_PARTICIPANTS_CHANGED]: [participants: RemoteParticipantState[]];
