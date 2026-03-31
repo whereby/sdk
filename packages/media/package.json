@@ -53,7 +53,7 @@
         "check-ip": "^1.1.1",
         "events": "^3.3.0",
         "ip-address": "^9.0.5",
-        "mediasoup-client": "3.15.7",
+        "mediasoup-client": "3.18.7",
         "rtcstats": "github:whereby/rtcstats#5.4.1",
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
