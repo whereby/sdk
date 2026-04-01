@@ -602,46 +602,7 @@ export default class P2pRtcManager implements RtcManager {
 
         const { pc } = session;
 
-        if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
-            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
-        }
-
-        if (this._features.increaseIncomingMediaBufferOn) {
-            this._setJitterBufferTarget(pc);
-        }
-
-        if (this._localCameraStream) {
-            session.addStream(this._localCameraStream);
-        }
-
-        if (this._localScreenshareStream) {
-            // if we are offering it's safe to add screensharing streams in initial offer
-            if (isOfferer) {
-                session.addStream(this._localScreenshareStream);
-            } else {
-                // if not we are here because of reconnecting, and will need to start screenshare
-                // after connection is ready
-                session.afterConnected.then(() => {
-                    if (!this._localScreenshareStream) return;
-
-                    this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
-                        receiverId: session.clientId,
-                        streamId: this._localScreenshareStream.id,
-                        hasAudioTrack: !!this._localScreenshareStream.getAudioTracks().length,
-                    });
-                    this._withForcedRenegotiation(session, () => {
-                        if (this._localScreenshareStream) {
-                            session.addStream(this._localScreenshareStream);
-                        } else {
-                            this.analytics.P2PStartScreenshareNoStream++;
-                            rtcStats.sendEvent("P2PStartScreenshareNoStream", {});
-                        }
-                    });
-                });
-            }
-        }
-
-        // Add PeerConnection event handlers.
+        // Start of RTCPeerConnection event handlers.
 
         pc.onicegatheringstatechange = (event: any) => {
             const connection = event.target;
@@ -884,6 +845,47 @@ export default class P2pRtcManager implements RtcManager {
                     break;
             }
         };
+
+        // End of RTCPeerConnection event handlers.
+
+        if (this._localCameraStream) {
+            session.addStream(this._localCameraStream);
+        }
+
+        if (this._localScreenshareStream) {
+            // if we are offering it's safe to add screensharing streams in initial offer
+            if (isOfferer) {
+                session.addStream(this._localScreenshareStream);
+            } else {
+                // if not we are here because of reconnecting, and will need to start screenshare
+                // after connection is ready
+                session.afterConnected.then(() => {
+                    if (!this._localScreenshareStream) return;
+
+                    this._emitServerEvent(PROTOCOL_REQUESTS.START_SCREENSHARE, {
+                        receiverId: session.clientId,
+                        streamId: this._localScreenshareStream.id,
+                        hasAudioTrack: !!this._localScreenshareStream.getAudioTracks().length,
+                    });
+                    this._withForcedRenegotiation(session, () => {
+                        if (this._localScreenshareStream) {
+                            session.addStream(this._localScreenshareStream);
+                        } else {
+                            this.analytics.P2PStartScreenshareNoStream++;
+                            rtcStats.sendEvent("P2PStartScreenshareNoStream", {});
+                        }
+                    });
+                });
+            }
+        }
+
+        if (this._features.increaseIncomingMediaBufferOn) {
+            this._setJitterBufferTarget(pc);
+        }
+
+        if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
+            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
+        }
 
         return session;
     }
