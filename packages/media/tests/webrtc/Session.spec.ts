@@ -17,7 +17,6 @@ describe("Session", () => {
 
     // @ts-ignore
     window.RTCRtpSender = mockRTCRtpSender;
-    const peerConnectionId = "id";
     const clientId = "id";
     let session: Session;
     let bandwidth: number;
@@ -29,7 +28,6 @@ describe("Session", () => {
         bandwidth = 1;
         peerConnectionConfig = {};
         session = new Session({
-            peerConnectionId,
             clientId,
             peerConnectionConfig,
             bandwidth,

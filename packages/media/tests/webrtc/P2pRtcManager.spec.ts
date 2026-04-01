@@ -841,7 +841,7 @@ describe("P2pRtcManager", () => {
                 gumStream = helpers.createMockedMediaStream();
                 global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(gumStream));
                 localStream.removeTrack(localStream.getVideoTracks()[0]);
-                                const deviceId = helpers.randomString();
+                const deviceId = helpers.randomString();
                 mediaConstraints.videoId = deviceId;
                 mediaConstraints.devices = [
                     helpers.createMockedInputDevice("videoinput", { deviceId, label: helpers.randomString() }),

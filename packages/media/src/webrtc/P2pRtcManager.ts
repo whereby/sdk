@@ -29,7 +29,6 @@ import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../uti
 import getConstraints from "./mediaConstraints";
 
 interface CreateSessionOptions {
-    peerConnectionId: string;
     clientId: string;
     initialBandwidth: number;
     isOfferer: boolean;
@@ -315,8 +314,8 @@ export default class P2pRtcManager implements RtcManager {
 
     disconnectAll() {
         logger.info("disconnectAll()");
-        Object.keys(this.peerConnections).forEach((peerConnectionId) => {
-            this.disconnect(peerConnectionId);
+        Object.keys(this.peerConnections).forEach((clientId) => {
+            this.disconnect(clientId);
         });
         this.peerConnections = {};
         this._socketListenerDeregisterFunctions.forEach((func) => {
@@ -557,17 +556,14 @@ export default class P2pRtcManager implements RtcManager {
         this._emitter.emit(eventName, data);
     }
 
-    _getSession(peerConnectionId: string) {
-        if (!(peerConnectionId in this.peerConnections)) {
+    _getSession(clientId: string) {
+        if (!(clientId in this.peerConnections)) {
             return null;
         }
-        return this.peerConnections[peerConnectionId];
+        return this.peerConnections[clientId];
     }
 
-    _createSession({ clientId, initialBandwidth, isOfferer, peerConnectionId }: CreateSessionOptions) {
-        if (!peerConnectionId) {
-            throw new Error("peerConnectionId is missing");
-        }
+    _createSession({ clientId, initialBandwidth, isOfferer }: CreateSessionOptions) {
         if (!clientId) {
             throw new Error("clientId is missing");
         }
@@ -593,19 +589,133 @@ export default class P2pRtcManager implements RtcManager {
             this._features.deprioritizeH264OnSafari;
 
         const session = new Session({
-            peerConnectionId,
             clientId,
             peerConnectionConfig,
             bandwidth: initialBandwidth,
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
         });
-        this.peerConnections[peerConnectionId] = session;
+        this.peerConnections[clientId] = session;
 
         setTimeout(() => this._emit(rtcManagerEvents.NEW_PC), 0);
         this.analytics.numNewPc++;
 
         const { pc } = session;
+
+        // Start of RTCPeerConnection event handlers.
+
+        pc.onicegatheringstatechange = (event: any) => {
+            const connection = event.target;
+
+            switch (connection.iceGatheringState) {
+                case "gathering":
+                    if (this._icePublicIPGatheringTimeoutID) clearTimeout(this._icePublicIPGatheringTimeoutID);
+                    this._icePublicIPGatheringTimeoutID = setTimeout(() => {
+                        if (
+                            !session.publicHostCandidateSeen &&
+                            !session.relayCandidateSeen &&
+                            !session.serverReflexiveCandidateSeen
+                        ) {
+                            if (pc.iceConnectionState !== "connected" && pc.iceConnectionState !== "completed")
+                                this.analytics.numIceNoPublicIpGatheredIn3sec++;
+                        }
+                    }, ICE_PUBLIC_IP_GATHERING_TIMEOUT);
+                    break;
+                case "complete":
+                    if (this._icePublicIPGatheringTimeoutID) clearTimeout(this._icePublicIPGatheringTimeoutID);
+                    this._icePublicIPGatheringTimeoutID = null;
+                    break;
+            }
+        };
+
+        pc.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+            if (event.candidate) {
+                // TODO: remove relayed candidate from ICE candidate analytics if it never happens.
+
+                // @ts-ignore
+                if (event.candidate.type === "relayed") {
+                    this.analytics.P2PRelayedIceCandidate++;
+                }
+
+                switch (event.candidate.type) {
+                    case "host":
+                        const address = event.candidate.address;
+                        if (!address) {
+                            break;
+                        }
+                        try {
+                            if (ipRegex.v4({ exact: true }).test(address)) {
+                                const ipv4 = checkIp(address);
+                                if (ipv4.isPublicIp) session.publicHostCandidateSeen = true;
+                            } else if (ipRegex.v6({ exact: true }).test(address.replace(/^\[(.*)\]/, "$1"))) {
+                                const ipv6 = new Address6(address.replace(/^\[(.*)\]/, "$1"));
+                                session.ipv6HostCandidateSeen = true;
+
+                                if (ipv6.getScope() === "Global") {
+                                    session.publicHostCandidateSeen = true;
+                                }
+                                if (ipv6.isTeredo()) {
+                                    session.ipv6HostCandidateTeredoSeen = true;
+                                }
+                                if (ipv6.is6to4()) {
+                                    session.ipv6HostCandidate6to4Seen = true;
+                                }
+                            } else {
+                                const uuidv4 = address.replace(/.local/, "");
+                                if (uuidv4 && validate(uuidv4, 4)) {
+                                    session.mdnsHostCandidateSeen = true;
+                                }
+                            }
+                        } catch (error) {
+                            logger.info("Error during parsing candidates! Error: ", { error });
+                        }
+                        break;
+                    case "srflx":
+                        session.serverReflexiveCandidateSeen = true;
+                        break;
+                    // TODO: remove relayed candidate from ICE candidate analytics if it never happens.
+                    // @ts-ignore
+                    case "relayed":
+                    case "relay":
+                        session.relayCandidateSeen = true;
+                        break;
+                    default:
+                        break;
+                }
+                this._emitServerEvent(RELAY_MESSAGES.ICE_CANDIDATE, {
+                    receiverId: clientId,
+                    message: event.candidate,
+                });
+            } else {
+                this._emitServerEvent(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, {
+                    receiverId: clientId,
+                });
+                if (
+                    !session.publicHostCandidateSeen &&
+                    !session.relayCandidateSeen &&
+                    !session.serverReflexiveCandidateSeen &&
+                    pc.iceConnectionState !== "connected" &&
+                    pc.iceConnectionState !== "completed"
+                ) {
+                    this.analytics.numIceNoPublicIpGathered++;
+                }
+                if (session.ipv6HostCandidateSeen) {
+                    this.analytics.numIceIpv6Seen++;
+                    if (session.ipv6HostCandidate6to4Seen) this.analytics.numIceIpv6SixToFour++;
+                    if (session.ipv6HostCandidateTeredoSeen) this.analytics.numIceIpv6TeredoSeen++;
+                }
+                if (session.mdnsHostCandidateSeen) this.analytics.numIceMdnsSeen++;
+            }
+        };
+
+        pc.onnegotiationneeded = () => {
+            if (pc.iceConnectionState === "new" || !session.connectionStatus) {
+                // initial negotiation is handled by our CLIENT_READY/READY_TO_RECEIVE_OFFER exchange
+                return;
+            }
+            logger.info(`onnegotiationneeded client ${clientId}`);
+            this._negotiatePeerConnection({ clientId, session });
+        };
 
         pc.ontrack = (event: RTCTrackEvent) => {
             const stream = event.streams[0];
@@ -736,6 +846,8 @@ export default class P2pRtcManager implements RtcManager {
             }
         };
 
+        // End of RTCPeerConnection event handlers.
+
         if (this._localCameraStream) {
             session.addStream(this._localCameraStream);
         }
@@ -766,17 +878,30 @@ export default class P2pRtcManager implements RtcManager {
                 });
             }
         }
+
+        if (this._features.increaseIncomingMediaBufferOn) {
+            this._setJitterBufferTarget(pc);
+        }
+
+        /*
+         * Explicitly add the video track so that stopOrResumeVideo() can
+         * replace it when the video is re-enabled.
+         */
+        if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
+            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
+        }
+
         return session;
     }
 
-    _cleanup(peerConnectionId: string) {
-        const session = this._getSession(peerConnectionId);
+    _cleanup(clientId: string) {
+        const session = this._getSession(clientId);
         if (!session) {
-            logger.warn("No RTCPeerConnection in RTCManager.disconnect()", peerConnectionId);
+            logger.warn("No RTCPeerConnection in RTCManager.disconnect()", clientId);
             return;
         }
         session.close();
-        delete this.peerConnections[peerConnectionId];
+        delete this.peerConnections[clientId];
     }
 
     _forEachPeerConnection(func: any) {
@@ -896,7 +1021,7 @@ export default class P2pRtcManager implements RtcManager {
             initialBandwidth = this._changeBandwidthForAllClients(true);
         }
 
-        session = this._createP2pSession({
+        session = this._createSession({
             clientId,
             initialBandwidth,
             isOfferer: true,
@@ -1102,150 +1227,6 @@ export default class P2pRtcManager implements RtcManager {
         return bandwidth;
     }
 
-    _createP2pSession({
-        clientId,
-        initialBandwidth,
-        isOfferer = false,
-    }: {
-        clientId: string;
-        initialBandwidth: number;
-        isOfferer: boolean;
-    }) {
-        const session = this._createSession({
-            peerConnectionId: clientId,
-            clientId,
-            initialBandwidth,
-            isOfferer,
-        });
-        const pc = session.pc;
-
-        if (this._features.increaseIncomingMediaBufferOn) {
-            this._setJitterBufferTarget(pc);
-        }
-
-        /*
-         * Explicitly add the video track so that stopOrResumeVideo() can
-         * replace it when the video is re-enabled.
-         */
-        if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
-            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
-        }
-
-        pc.onicegatheringstatechange = (event: any) => {
-            const connection = event.target;
-
-            switch (connection.iceGatheringState) {
-                case "gathering":
-                    if (this._icePublicIPGatheringTimeoutID) clearTimeout(this._icePublicIPGatheringTimeoutID);
-                    this._icePublicIPGatheringTimeoutID = setTimeout(() => {
-                        if (
-                            !session.publicHostCandidateSeen &&
-                            !session.relayCandidateSeen &&
-                            !session.serverReflexiveCandidateSeen
-                        ) {
-                            if (pc.iceConnectionState !== "connected" && pc.iceConnectionState !== "completed")
-                                this.analytics.numIceNoPublicIpGatheredIn3sec++;
-                        }
-                    }, ICE_PUBLIC_IP_GATHERING_TIMEOUT);
-                    break;
-                case "complete":
-                    if (this._icePublicIPGatheringTimeoutID) clearTimeout(this._icePublicIPGatheringTimeoutID);
-                    this._icePublicIPGatheringTimeoutID = null;
-                    break;
-            }
-        };
-
-        pc.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
-            if (event.candidate) {
-                // TODO: remove relayed candidate from ICE candidate analytics if it never happens.
-
-                // @ts-ignore
-                if (event.candidate.type === "relayed") {
-                    this.analytics.P2PRelayedIceCandidate++;
-                }
-
-                switch (event.candidate.type) {
-                    case "host":
-                        const address = event.candidate.address;
-                        if (!address) {
-                            break;
-                        }
-                        try {
-                            if (ipRegex.v4({ exact: true }).test(address)) {
-                                const ipv4 = checkIp(address);
-                                if (ipv4.isPublicIp) session.publicHostCandidateSeen = true;
-                            } else if (ipRegex.v6({ exact: true }).test(address.replace(/^\[(.*)\]/, "$1"))) {
-                                const ipv6 = new Address6(address.replace(/^\[(.*)\]/, "$1"));
-                                session.ipv6HostCandidateSeen = true;
-
-                                if (ipv6.getScope() === "Global") {
-                                    session.publicHostCandidateSeen = true;
-                                }
-                                if (ipv6.isTeredo()) {
-                                    session.ipv6HostCandidateTeredoSeen = true;
-                                }
-                                if (ipv6.is6to4()) {
-                                    session.ipv6HostCandidate6to4Seen = true;
-                                }
-                            } else {
-                                const uuidv4 = address.replace(/.local/, "");
-                                if (uuidv4 && validate(uuidv4, 4)) {
-                                    session.mdnsHostCandidateSeen = true;
-                                }
-                            }
-                        } catch (error) {
-                            logger.info("Error during parsing candidates! Error: ", { error });
-                        }
-                        break;
-                    case "srflx":
-                        session.serverReflexiveCandidateSeen = true;
-                        break;
-                    // TODO: remove relayed candidate from ICE candidate analytics if it never happens.
-                    // @ts-ignore
-                    case "relayed":
-                    case "relay":
-                        session.relayCandidateSeen = true;
-                        break;
-                    default:
-                        break;
-                }
-                this._emitServerEvent(RELAY_MESSAGES.ICE_CANDIDATE, {
-                    receiverId: clientId,
-                    message: event.candidate,
-                });
-            } else {
-                this._emitServerEvent(RELAY_MESSAGES.ICE_END_OF_CANDIDATES, {
-                    receiverId: clientId,
-                });
-                if (
-                    !session.publicHostCandidateSeen &&
-                    !session.relayCandidateSeen &&
-                    !session.serverReflexiveCandidateSeen &&
-                    pc.iceConnectionState !== "connected" &&
-                    pc.iceConnectionState !== "completed"
-                ) {
-                    this.analytics.numIceNoPublicIpGathered++;
-                }
-                if (session.ipv6HostCandidateSeen) {
-                    this.analytics.numIceIpv6Seen++;
-                    if (session.ipv6HostCandidate6to4Seen) this.analytics.numIceIpv6SixToFour++;
-                    if (session.ipv6HostCandidateTeredoSeen) this.analytics.numIceIpv6TeredoSeen++;
-                }
-                if (session.mdnsHostCandidateSeen) this.analytics.numIceMdnsSeen++;
-            }
-        };
-
-        pc.onnegotiationneeded = () => {
-            if (pc.iceConnectionState === "new" || !session.connectionStatus) {
-                // initial negotiation is handled by our CLIENT_READY/READY_TO_RECEIVE_OFFER exchange
-                return;
-            }
-            logger.info(`onnegotiationneeded client ${clientId}`);
-            this._negotiatePeerConnection({ clientId, session });
-        };
-        return session;
-    }
-
     /**
      * Possibly start a new peer connection for the new stream if needed.
      */
@@ -1266,7 +1247,7 @@ export default class P2pRtcManager implements RtcManager {
             // so only needed when streamId === clientId (camera) and we're not replacing beacuse of reconnect
             initialBandwidth = this._changeBandwidthForAllClients(true);
         }
-        session = this._createP2pSession({
+        session = this._createSession({
             clientId,
             initialBandwidth,
             isOfferer: false,
