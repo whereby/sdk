@@ -314,8 +314,8 @@ export default class P2pRtcManager implements RtcManager {
 
     disconnectAll() {
         logger.info("disconnectAll()");
-        Object.keys(this.peerConnections).forEach((peerConnectionId) => {
-            this.disconnect(peerConnectionId);
+        Object.keys(this.peerConnections).forEach((clientId) => {
+            this.disconnect(clientId);
         });
         this.peerConnections = {};
         this._socketListenerDeregisterFunctions.forEach((func) => {
@@ -556,11 +556,11 @@ export default class P2pRtcManager implements RtcManager {
         this._emitter.emit(eventName, data);
     }
 
-    _getSession(peerConnectionId: string) {
-        if (!(peerConnectionId in this.peerConnections)) {
+    _getSession(clientId: string) {
+        if (!(clientId in this.peerConnections)) {
             return null;
         }
-        return this.peerConnections[peerConnectionId];
+        return this.peerConnections[clientId];
     }
 
     _createSession({ clientId, initialBandwidth, isOfferer }: CreateSessionOptions) {
