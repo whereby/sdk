@@ -1354,6 +1354,12 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     replaceTrack(_: MediaStreamTrack | null, track: MediaStreamTrack) {
+        logger.info("replaceTrack() [kind: %s, id: %s, readyState: %s]", track.kind, track.id, track.readyState);
+        if (track.readyState === "ended") {
+            logger.error(`refusing to use ended track with id: ${track.id}, kind: ${track.kind}`);
+            return;
+        }
+
         if (track.kind === "audio") {
             if (!trackAnnotations(track).isEffectTrack) {
                 this._monitorAudioTrack(track);
