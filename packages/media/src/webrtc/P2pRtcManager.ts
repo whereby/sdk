@@ -883,6 +883,10 @@ export default class P2pRtcManager implements RtcManager {
             this._setJitterBufferTarget(pc);
         }
 
+        /*
+         * Explicitly add the video track so that stopOrResumeVideo() can
+         * replace it when the video is re-enabled.
+         */
         if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
             pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
         }
