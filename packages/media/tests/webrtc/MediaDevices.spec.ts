@@ -1,3 +1,4 @@
+import { GetMediaConstraintsOptions } from "../../src";
 import * as MediaDevices from "../../src/webrtc/MediaDevices";
 import * as helpers from "./webRtcHelpers";
 
@@ -24,8 +25,11 @@ afterEach(() => {
 });
 
 describe("buildDeviceList", () => {
-    const vdev1 = { deviceId: "deviceId", label: "label", kind: "audioinput" };
-    const vdev2 = { deviceId: "deviceId", label: "", kind: "videoinput" };
+    const aDev = helpers.createMockedInputDevice("audioinput")
+    const vdevWithoutLabel = helpers.createMockedInputDevice("videoinput", {
+        deviceId: helpers.randomString(),
+        label: "",
+    })
     it("should return default on no devices", () => {
         const kind = "audioinput";
         const devices: MediaDeviceInfo[] = [];
@@ -35,17 +39,17 @@ describe("buildDeviceList", () => {
     });
     it("should mark device as busy", () => {
         const kind = "audioinput";
-        const devices = [vdev1];
-        const busyDeviceIds = ["deviceId"];
+        const devices = [aDev];
+        const busyDeviceIds = [aDev.deviceId];
         const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind });
-        expect(result).toEqual([{ audioId: vdev1.deviceId, label: `(busy) ${vdev1.label}`, busy: true }]);
+        expect(result).toEqual([{ audioId: aDev.deviceId, label: `(busy) ${aDev.label}`, busy: true }]);
     });
     it("should trim and use deviceId on missing label", () => {
         const kind = "videoinput";
-        const devices = [vdev2];
+        const devices = [vdevWithoutLabel];
         const busyDeviceIds: string[] = [];
         const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind });
-        expect(result).toEqual([{ videoId: vdev1.deviceId, label: vdev1.deviceId.slice(0, 5), busy: false }]);
+        expect(result).toEqual([{ videoId: vdevWithoutLabel.deviceId, label: vdevWithoutLabel.deviceId.slice(0, 5), busy: false }]);
     });
 });
 
@@ -110,26 +114,36 @@ describe("stopStreamTracks", () => {
 });
 
 describe("getStream", () => {
-    let vdev1: any;
-    let vdev2: any;
-    let adev1: any;
-    let adev2: any;
-    let videoTrack1: any;
-    let videoTrack2: any;
-    let audioTrack1: any;
-    let audioTrack2: any;
-    let devices: any;
-    let stream: any;
+    let vdev1: MediaDeviceInfo;
+    let vdev2: MediaDeviceInfo;
+    let adev1: MediaDeviceInfo;
+    let adev2: MediaDeviceInfo;
+    let videoTrack1: MediaStreamTrack;
+    let videoTrack2: MediaStreamTrack;
+    let audioTrack1: MediaStreamTrack;
+    let audioTrack2: MediaStreamTrack;
+    let devices: MediaDeviceInfo[];
+    let stream: MediaStream;
+    let options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds">;
 
     beforeEach(() => {
-        vdev1 = { kind: "videoinput", deviceId: "vdev1" };
-        vdev2 = { kind: "videoinput", deviceId: "vdev2" };
-        adev1 = { kind: "audioinput", deviceId: "adev1" };
-        adev2 = { kind: "audioinput", deviceId: "adev2" };
-        videoTrack1 = { kind: "video", stop: jest.fn(), getCapabilities: () => vdev1 };
-        videoTrack2 = { kind: "video", stop: jest.fn(), getCapabilities: () => vdev2 };
-        audioTrack1 = { kind: "audio", stop: jest.fn(), getCapabilities: () => adev1 };
-        audioTrack2 = { kind: "audio", stop: jest.fn(), getCapabilities: () => adev2 };
+        vdev1 = helpers.createMockedInputDevice("videoinput");
+        vdev2 = helpers.createMockedInputDevice("videoinput");
+        adev1 = helpers.createMockedInputDevice("audioinput");
+        adev2 = helpers.createMockedInputDevice("audioinput");
+        videoTrack1 = helpers.createMockedMediaStreamTrack({ id: "v1", kind: "video" });
+        videoTrack2 = helpers.createMockedMediaStreamTrack({ id: "v2", kind: "video" });
+        audioTrack1 = helpers.createMockedMediaStreamTrack({ id: "a1", kind: "audio" });
+        audioTrack2 = helpers.createMockedMediaStreamTrack({ id: "a2", kind: "audio" });
+        options = {
+            disableAEC: false,
+            disableAGC: false,
+            hd: false,
+            lax: false,
+            lowDataMode: false,
+            simulcast: false,
+            widescreen: false,
+        };
         devices = [vdev1, vdev2, adev1, adev2];
         stream = helpers.createMockedMediaStream([videoTrack1, audioTrack1]);
         stream.removeTrack = jest.fn();
@@ -149,6 +163,7 @@ describe("getStream", () => {
                 devices,
                 videoId: vdev1.deviceId,
                 audioId: adev2.deviceId,
+                options,
             },
             { replaceStream: stream },
         );
@@ -171,6 +186,8 @@ describe("getStream", () => {
                 devices,
                 videoId: vdev1.deviceId,
                 audioId: false,
+                options,
+
             },
             { replaceStream: stream },
         );
@@ -189,6 +206,7 @@ describe("getStream", () => {
                 devices,
                 videoId: false,
                 audioId: adev1.deviceId,
+                options,
             },
             { replaceStream: stream },
         );
@@ -210,6 +228,7 @@ describe("getStream", () => {
                 videoId: vdev1.deviceId,
                 audioId: adev2.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -240,6 +259,7 @@ describe("getStream", () => {
                 videoId: vdev2.deviceId,
                 audioId: adev1.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -276,6 +296,7 @@ describe("getStream", () => {
                 videoId: false,
                 audioId: adev2.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -308,6 +329,7 @@ describe("getStream", () => {
                     videoId: true,
                     audioId: false,
                     type,
+                    options,
                 },
                 { replaceStream: stream },
             );
@@ -339,6 +361,7 @@ describe("getStream", () => {
                 videoId: vdev2.deviceId,
                 audioId: adev2.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -370,6 +393,7 @@ describe("getStream", () => {
                 videoId: vdev2.deviceId,
                 audioId: adev2.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -400,6 +424,7 @@ describe("getStream", () => {
                 videoId: vdev2.deviceId,
                 audioId: adev2.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -433,6 +458,7 @@ describe("getStream", () => {
                 videoId: vdev2.deviceId,
                 audioId: adev2.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -463,6 +489,7 @@ describe("getStream", () => {
                 videoId: vdev2.deviceId,
                 audioId: adev2.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -495,6 +522,7 @@ describe("getStream", () => {
                 videoId: vdev1.deviceId,
                 audioId: adev1.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -525,6 +553,7 @@ describe("getStream", () => {
                 videoId: vdev1.deviceId,
                 audioId: adev1.deviceId,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -553,6 +582,7 @@ describe("getStream", () => {
                     videoId: vdev1.deviceId,
                     audioId: adev1.deviceId,
                     type,
+                    options,
                 },
                 { replaceStream: stream },
             ),
@@ -577,6 +607,7 @@ describe("getStream", () => {
                 videoId: vdev2.deviceId,
                 audioId: false,
                 type,
+                options,
             },
             { replaceStream: stream },
         );
@@ -611,6 +642,8 @@ describe("getStream", () => {
                     videoId: vdev2.deviceId,
                     audioId: adev2.deviceId,
                     type,
+                    options,
+
                 },
                 { replaceStream: stream },
             );
@@ -646,6 +679,7 @@ describe("getStream", () => {
                     videoId: vdev2.deviceId,
                     audioId: adev2.deviceId,
                     type,
+                    options,
                 },
                 { replaceStream: stream },
             );
@@ -678,6 +712,8 @@ describe("getStream", () => {
                     videoId: vdev2.deviceId,
                     audioId: adev2.deviceId,
                     type,
+                    options,
+
                 },
                 { replaceStream: stream },
             ),
