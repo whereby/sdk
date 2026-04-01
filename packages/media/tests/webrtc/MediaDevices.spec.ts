@@ -25,11 +25,11 @@ afterEach(() => {
 });
 
 describe("buildDeviceList", () => {
-    const aDev = helpers.createMockedInputDevice("audioinput")
+    const aDev = helpers.createMockedInputDevice("audioinput");
     const vdevWithoutLabel = helpers.createMockedInputDevice("videoinput", {
         deviceId: helpers.randomString(),
         label: "",
-    })
+    });
     it("should return default on no devices", () => {
         const kind = "audioinput";
         const devices: MediaDeviceInfo[] = [];
@@ -49,7 +49,9 @@ describe("buildDeviceList", () => {
         const devices = [vdevWithoutLabel];
         const busyDeviceIds: string[] = [];
         const result = MediaDevices.buildDeviceList({ busyDeviceIds, devices, kind });
-        expect(result).toEqual([{ videoId: vdevWithoutLabel.deviceId, label: vdevWithoutLabel.deviceId.slice(0, 5), busy: false }]);
+        expect(result).toEqual([
+            { videoId: vdevWithoutLabel.deviceId, label: vdevWithoutLabel.deviceId.slice(0, 5), busy: false },
+        ]);
     });
 });
 
@@ -187,7 +189,6 @@ describe("getStream", () => {
                 videoId: vdev1.deviceId,
                 audioId: false,
                 options,
-
             },
             { replaceStream: stream },
         );
@@ -643,7 +644,6 @@ describe("getStream", () => {
                     audioId: adev2.deviceId,
                     type,
                     options,
-
                 },
                 { replaceStream: stream },
             );
@@ -713,7 +713,6 @@ describe("getStream", () => {
                     audioId: adev2.deviceId,
                     type,
                     options,
-
                 },
                 { replaceStream: stream },
             ),

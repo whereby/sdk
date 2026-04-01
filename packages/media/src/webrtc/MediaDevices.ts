@@ -24,8 +24,7 @@ export class NoDevicesError extends Error {
 
 function removeDuplicates(devices: MediaDeviceInfo[]) {
     return devices.filter(
-        (device, i, self) =>
-            i === self.findIndex((d) => d.deviceId === device.deviceId && d.kind === device.kind),
+        (device, i, self) => i === self.findIndex((d) => d.deviceId === device.deviceId && d.kind === device.kind),
     );
 }
 
@@ -48,13 +47,11 @@ export function buildDeviceList({ busyDeviceIds, devices, kind }: BuildDeviceLis
         devices
             .filter((d) => d.kind === kind)
             .map((d) => ({
-                [(idFieldsByKind)[kind]]: d.deviceId,
+                [idFieldsByKind[kind]]: d.deviceId,
                 label: `${busyDeviceIds.includes(d.deviceId) ? "(busy) " : ""}${d.label || d.deviceId.slice(0, 5)}`,
                 busy: busyDeviceIds.includes(d.deviceId),
             }));
-    return deviceList && deviceList.length !== 0
-        ? deviceList
-        : [{ [(idFieldsByKind)[kind]]: "", label: "Default" }];
+    return deviceList && deviceList.length !== 0 ? deviceList : [{ [idFieldsByKind[kind]]: "", label: "Default" }];
 }
 
 /**
