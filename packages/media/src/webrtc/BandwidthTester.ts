@@ -86,14 +86,14 @@ export default class BandwidthTester extends EventEmitter {
 
         this._vegaConnection = new VegaConnection(wsUrl, "whereby-sfu#bw-test-v1");
         this._vegaConnection.on("open", () => this._start());
-        this._vegaConnection.on("close", () => this.close());
+        this._vegaConnection.on("close", () => this.close(true));
         this._vegaConnection.on("message", (message: any) => this._onMessage(message));
 
         // If we don't get a response within 5 seconds, we close the test
         this._startTimeout();
     }
 
-    close() {
+    close(vegaConnectionClosed?: boolean) {
         logger.info("close()");
 
         this.closed = true;
@@ -103,7 +103,14 @@ export default class BandwidthTester extends EventEmitter {
             this.emit("result", {
                 error: true,
             });
+        } else if (vegaConnectionClosed && this._resultTimeout) {
+            // If the VegaConnection websocket broke while running the test we report an error.
+            this.emit("result", {
+                error: true,
+            });
+            clearTimeout(this._resultTimeout);
         }
+
         this._clearTimeouts();
 
         clearInterval(this._drawInterval);
