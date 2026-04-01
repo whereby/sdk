@@ -44,7 +44,7 @@ describe("P2pRtcManager", () => {
     let emitterStub: any;
     let iceServers: any;
     let webrtcProvider: WebRTCProvider;
-    let clientId: any;
+    let clientId: string;
     let mediaConstraints: GetConstraintsOptions;
     let rtcManager: P2pRtcManager;
     let mediaserverConfigTtlSeconds: number;
@@ -132,6 +132,325 @@ describe("P2pRtcManager", () => {
             features,
         });
     }
+
+    describe("remote client media prefs", () => {
+        describe("for new streams", () => {
+            let cameraStream: MediaStream;
+            let screenshareStream: MediaStream;
+            beforeEach(() => {
+                cameraStream = helpers.createMockedMediaStream();
+                screenshareStream = helpers.createMockedMediaStream();
+            });
+
+            describe("for clients with no media preference", () => {
+                it("adds all camera stream tracks to the peer connection", () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+
+                    rtcManager.addCameraStream(cameraStream);
+
+                    const cameraAudioTrack = cameraStream.getAudioTracks()[0];
+                    const cameraVideoTrack = cameraStream.getVideoTracks()[0];
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraAudioTrack, cameraStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraVideoTrack, cameraStream);
+                });
+
+                it("adds all screenshare stream tracks to the peer connection", () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+
+                    rtcManager.addScreenshareStream(screenshareStream);
+
+                    const screenshareAudioTrack = screenshareStream.getAudioTracks()[0];
+                    const screenshareVideoTrack = screenshareStream.getVideoTracks()[0];
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareAudioTrack, screenshareStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareVideoTrack, screenshareStream);
+                });
+            });
+
+            describe("for clients who prefer not to receive video", () => {
+                beforeEach(() => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+                });
+
+                it("only adds camera audio tracks to the peer connection", () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+
+                    rtcManager.addCameraStream(cameraStream);
+
+                    const cameraAudioTrack = cameraStream.getAudioTracks()[0];
+                    const cameraVideoTrack = cameraStream.getVideoTracks()[0];
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraAudioTrack, cameraStream);
+                    expect(session.pc.addTrack).not.toHaveBeenCalledWith(cameraVideoTrack, cameraStream);
+                });
+
+                it("only adds screenshare audio tracks to the peer connection", () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+
+                    rtcManager.addScreenshareStream(screenshareStream);
+
+                    const screenshareAudioTrack = screenshareStream.getAudioTracks()[0];
+                    const screenshareVideoTrack = screenshareStream.getVideoTracks()[0];
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareAudioTrack, screenshareStream);
+                    expect(session.pc.addTrack).not.toHaveBeenCalledWith(screenshareVideoTrack, screenshareStream);
+                });
+            });
+
+            describe("for clients who no longer have a media preference", () => {
+                beforeEach(() => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+                    rtcManager.removeRemoteClientMediaPrefs(clientId);
+                });
+
+                it("adds all camera stream tracks to the peer connection", () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+
+                    rtcManager.addCameraStream(cameraStream);
+
+                    const cameraAudioTrack = cameraStream.getAudioTracks()[0];
+                    const cameraVideoTrack = cameraStream.getVideoTracks()[0];
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraAudioTrack, cameraStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraVideoTrack, cameraStream);
+                });
+
+                it("adds all screenshare stream tracks to the peer connection", () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+
+                    rtcManager.addScreenshareStream(screenshareStream);
+
+                    const screenshareAudioTrack = screenshareStream.getAudioTracks()[0];
+                    const screenshareVideoTrack = screenshareStream.getVideoTracks()[0];
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareAudioTrack, screenshareStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareVideoTrack, screenshareStream);
+                });
+            });
+        });
+
+        describe("for existing streams", () => {
+            let cameraStream: MediaStream;
+            let screenshareStream: MediaStream;
+            let cameraAudioTrack: MediaStreamTrack;
+            let cameraVideoTrack: MediaStreamTrack;
+            let screenshareAudioTrack: MediaStreamTrack;
+            let screenshareVideoTrack: MediaStreamTrack;
+            beforeEach(() => {
+                cameraStream = helpers.createMockedMediaStream();
+                cameraAudioTrack = cameraStream.getAudioTracks()[0];
+                cameraVideoTrack = cameraStream.getVideoTracks()[0];
+                rtcManager.addCameraStream(cameraStream);
+
+                screenshareStream = helpers.createMockedMediaStream();
+                screenshareAudioTrack = screenshareStream.getAudioTracks()[0];
+                screenshareVideoTrack = screenshareStream.getVideoTracks()[0];
+                rtcManager.addScreenshareStream(screenshareStream);
+            });
+
+            describe("for clients with no media preference", () => {
+                it("adds all tracks to the peer connection", async () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    await session.registerConnected?.({});
+
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraAudioTrack, cameraStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraVideoTrack, cameraStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareAudioTrack, screenshareStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareVideoTrack, screenshareStream);
+                });
+            });
+
+            describe("for clients who prefer not to receive video", () => {
+                it("only adds audio tracks to the peer connection", async () => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    await session.registerConnected?.({});
+
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraAudioTrack, cameraStream);
+                    expect(session.pc.addTrack).not.toHaveBeenCalledWith(cameraVideoTrack, cameraStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareAudioTrack, screenshareStream);
+                    expect(session.pc.addTrack).not.toHaveBeenCalledWith(screenshareVideoTrack, screenshareStream);
+                });
+            });
+
+            describe("for clients who no longer hanve any media preference", () => {
+                it("adds all tracks to the peer connection", async () => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+                    rtcManager.removeRemoteClientMediaPrefs(clientId);
+
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    await session.registerConnected?.({});
+
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraAudioTrack, cameraStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(cameraVideoTrack, cameraStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareAudioTrack, screenshareStream);
+                    expect(session.pc.addTrack).toHaveBeenCalledWith(screenshareVideoTrack, screenshareStream);
+                });
+            });
+        });
+
+        describe("for replaced tracks", () => {
+            let oldVideoTrack: MediaStreamTrack;
+            let oldAudioTrack: MediaStreamTrack;
+            let newVideoTrack: MediaStreamTrack;
+            let newAudioTrack: MediaStreamTrack;
+            let videoSender: RTCRtpSender;
+            let audioSender: RTCRtpSender;
+            beforeEach(async () => {
+                oldVideoTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                oldAudioTrack = helpers.createMockedMediaStreamTrack({ kind: "audio" });
+                newVideoTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                newAudioTrack = helpers.createMockedMediaStreamTrack({ kind: "audio" });
+
+                videoSender = { track: oldVideoTrack, replaceTrack: jest.fn() } as unknown as RTCRtpSender;
+                audioSender = { track: oldAudioTrack, replaceTrack: jest.fn() } as unknown as RTCRtpSender;
+            });
+
+            describe("for clients with no media preference", () => {
+                it("replaces all tracks on the peer connection", async () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    // lets pretend the session is connected
+                    // @ts-expect-error readonly property
+                    session.pc.connectionState = "connected";
+                    (session.pc.getSenders as jest.Mock).mockImplementation(() => [audioSender, videoSender]);
+
+                    rtcManager.replaceTrack(oldVideoTrack, newVideoTrack);
+                    rtcManager.replaceTrack(oldAudioTrack, newAudioTrack);
+
+                    await jest.runAllTimersAsync();
+
+                    expect(audioSender.replaceTrack).toHaveBeenCalledWith(newAudioTrack);
+                    expect(videoSender.replaceTrack).toHaveBeenCalledWith(newVideoTrack);
+                });
+            });
+
+            describe("for clients who prefer not to receive video", () => {
+                it("only adds audio tracks to the peer connection", async () => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    // lets pretend the session is connected
+                    // @ts-expect-error readonly property
+                    session.pc.connectionState = "connected";
+                    (session.pc.getSenders as jest.Mock).mockImplementation(() => [audioSender, videoSender]);
+
+                    rtcManager.replaceTrack(oldVideoTrack, newVideoTrack);
+                    rtcManager.replaceTrack(oldAudioTrack, newAudioTrack);
+
+                    await jest.runAllTimersAsync();
+
+                    expect(audioSender.replaceTrack).toHaveBeenCalledWith(newAudioTrack);
+                    expect(videoSender.replaceTrack).not.toHaveBeenCalledWith(newVideoTrack);
+                });
+            });
+
+            describe("for clients who no longer hanve any media preference", () => {
+                it("adds all tracks to the peer connection", async () => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+                    rtcManager.removeRemoteClientMediaPrefs(clientId);
+
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    // lets pretend the session is connected
+                    // @ts-expect-error readonly property
+                    session.pc.connectionState = "connected";
+                    (session.pc.getSenders as jest.Mock).mockImplementation(() => [audioSender, videoSender]);
+
+                    rtcManager.replaceTrack(oldVideoTrack, newVideoTrack);
+                    rtcManager.replaceTrack(oldAudioTrack, newAudioTrack);
+
+                    await jest.runAllTimersAsync();
+
+                    expect(audioSender.replaceTrack).toHaveBeenCalledWith(newAudioTrack);
+                    expect(videoSender.replaceTrack).toHaveBeenCalledWith(newVideoTrack);
+                });
+            });
+        });
+
+        describe("for stopped and resumed streams", () => {
+            let oldCameraStream: MediaStream;
+            let newCameraStream: MediaStream;
+            let sender: RTCRtpSender;
+            beforeEach(async () => {
+                mediaConstraints.devices = [helpers.createMockedInputDevice("videoinput")];
+                newCameraStream = helpers.createMockedMediaStream();
+                global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(newCameraStream));
+
+                oldCameraStream = helpers.createMockedMediaStream();
+                rtcManager.addCameraStream(oldCameraStream);
+
+                const oldVideoTrack = oldCameraStream.getVideoTracks()[0];
+                oldVideoTrack.enabled = false;
+
+                rtcManager.stopOrResumeVideo(oldCameraStream, false);
+                await jest.runAllTimersAsync();
+                // the track will have been removed from the stream
+                oldCameraStream.getVideoTracks = () => [];
+
+                sender = { track: oldVideoTrack, replaceTrack: jest.fn() } as unknown as RTCRtpSender;
+            });
+
+            describe("for clients with no media preference", () => {
+                it("replaces camera video tracks on the peer connection sender", async () => {
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    // lets pretend the session is connected
+                    // @ts-expect-error readonly property
+                    session.pc.connectionState = "connected";
+                    (session.pc.getSenders as jest.Mock).mockImplementationOnce(() => [sender]);
+
+                    const newCameraTrack = newCameraStream.getVideoTracks()[0];
+
+                    rtcManager.stopOrResumeVideo(oldCameraStream, true);
+
+                    await jest.runAllTimersAsync();
+
+                    expect(sender.replaceTrack).toHaveBeenCalledWith(newCameraTrack);
+                });
+            });
+
+            describe("for clients who prefer not to receive video", () => {
+                it("does not replace the camera video track on the peer connection sender", async () => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    // lets pretend the session is connected
+                    // @ts-expect-error readonly property
+                    session.pc.connectionState = "connected";
+                    (session.pc.getSenders as jest.Mock).mockImplementationOnce(() => [sender]);
+
+                    const newCameraTrack = newCameraStream.getVideoTracks()[0];
+
+                    rtcManager.stopOrResumeVideo(oldCameraStream, true);
+
+                    await jest.runAllTimersAsync();
+
+                    expect(sender.replaceTrack).not.toHaveBeenCalledWith(newCameraTrack);
+                });
+            });
+
+            describe("for clients who no longer have a media preference", () => {
+                it("replaces camera video tracks on the peer connection sender", async () => {
+                    const prefs = { wantsVideo: false };
+                    rtcManager.setRemoteClientMediaPrefs(clientId, prefs);
+                    rtcManager.removeRemoteClientMediaPrefs(clientId);
+                    const session = rtcManager.acceptNewStream({ clientId, streamId: helpers.randomString() });
+                    // lets pretend the session is connected
+                    // @ts-expect-error readonly property
+                    session.pc.connectionState = "connected";
+                    (session.pc.getSenders as jest.Mock).mockImplementationOnce(() => [sender]);
+
+                    const newCameraTrack = newCameraStream.getVideoTracks()[0];
+
+                    rtcManager.stopOrResumeVideo(oldCameraStream, true);
+
+                    await jest.runAllTimersAsync();
+
+                    expect(sender.replaceTrack).toHaveBeenCalledWith(newCameraTrack);
+                });
+            });
+        });
+    });
 
     describe("disconnectAll", () => {
         it("should support being called without setupSocketListeners being called", () => {

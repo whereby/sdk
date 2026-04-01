@@ -6,14 +6,16 @@ import {
     doRtcReportStreamResolution,
     doRtcManagerInitialize,
     selectRtcManager,
+    rtcManagerCreated,
 } from "../../slices/rtcConnection";
-import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
+import { randomRemoteParticipant, randomSignalClient, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
-import { RtcManagerDispatcher } from "@whereby.com/media";
+import { RoleName, RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
-import { doAppStop } from "../../slices/app";
+import { doAppStop, initialState } from "../../slices/app";
+import { signalEvents } from "../../slices/signalConnection";
 
 jest.mock("@whereby.com/media");
 
@@ -45,7 +47,7 @@ describe("actions", () => {
             ]),
         );
 
-        expect(JSON.stringify(mockRtcManager.acceptNewStream.mock.calls)).toStrictEqual(
+        expect(JSON.stringify((mockRtcManager.acceptNewStream as jest.Mock).mock.calls)).toStrictEqual(
             JSON.stringify([
                 [{ streamId: id1, clientId: participant1.id }],
                 [{ streamId: id3, clientId: participant2.id }],
@@ -164,12 +166,179 @@ describe("actions", () => {
         store.dispatch(doRtcManagerInitialize());
 
         expect(mockRtcManager.addCameraStream).toHaveBeenCalledTimes(1);
-        expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith(store.getState().localMedia.stream, { audioPaused:true, videoPaused: true});
+        expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith(store.getState().localMedia.stream, {
+            audioPaused: true,
+            videoPaused: true,
+        });
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
     });
 });
 
 describe("middleware", () => {
+    describe("on NEW_CLIENT signal events", () => {
+        describe("headless audio processing clients", () => {
+            it.each([
+                "visitor",
+                "granted_visitor",
+                "viewer",
+                "granted_viewer",
+                "host",
+                "recorder",
+                "streamer",
+                "assistant",
+            ])("Does not update the rtcManager remote client prefs for a %s client", (roleName) => {
+                const store = createStore({
+                    withRtcManager: true,
+                    connectToRoom: true,
+                });
+                const rtcManager = selectRtcManager(store.getState());
+                if (!rtcManager) {
+                    throw new Error("No rtcManager");
+                }
+
+                store.dispatch(
+                    signalEvents.newClient({
+                        client: randomSignalClient({ role: { roleName: roleName as RoleName } }),
+                    }),
+                );
+
+                expect(rtcManager?.setRemoteClientMediaPrefs).not.toHaveBeenCalled();
+            });
+
+            it.each`
+                kind                       | client
+                ${"dial-in"}               | ${randomSignalClient({ isDialIn: true })}
+                ${"audio-recorder"}        | ${randomSignalClient({ isAudioRecorder: true })}
+                ${"captioner/transcriber"} | ${randomSignalClient({ role: { roleName: "captioner" } })}
+            `("tells the rtcManager about $kind client media prefs", ({ client }) => {
+                const store = createStore({
+                    withRtcManager: true,
+                    connectToRoom: true,
+                });
+                const rtcManager = selectRtcManager(store.getState());
+                if (!rtcManager) {
+                    throw new Error("No rtcManager");
+                }
+
+                store.dispatch(signalEvents.newClient({ client }));
+
+                expect(rtcManager.setRemoteClientMediaPrefs).toHaveBeenCalledWith(client.id, {
+                    wantsVideo: false,
+                });
+            });
+        });
+    });
+
+    describe("when the RtcManager is created", () => {
+        it("updates the rtcManager remote client media prefs for headless audio processing clients", async () => {
+            const dialInClient = randomRemoteParticipant({ isDialIn: true });
+            const audioRecorderClient = randomRemoteParticipant({
+                isAudioRecorder: true,
+                roleName: "recorder",
+            });
+            const captionerClient = randomRemoteParticipant({ roleName: "captioner" });
+            const viewerClient = randomRemoteParticipant({ roleName: "granted_viewer" });
+            const visitorClient = randomRemoteParticipant({ roleName: "granted_visitor" });
+            const hostClient = randomRemoteParticipant({ roleName: "host" });
+            const recorderClient = randomRemoteParticipant({ roleName: "recorder" });
+            const streamerClient = randomRemoteParticipant({ roleName: "streamer" });
+            const assistantClient = randomRemoteParticipant({ roleName: "streamer" });
+            const store = createStore({
+                initialState: {
+                    app: {
+                        ...initialState,
+                        isActive: true,
+                    },
+                    remoteParticipants: {
+                        remoteParticipants: [
+                            dialInClient,
+                            audioRecorderClient,
+                            captionerClient,
+                            visitorClient,
+                            viewerClient,
+                            hostClient,
+                            recorderClient,
+                            streamerClient,
+                            assistantClient,
+                        ],
+                    },
+                },
+            });
+
+            store.dispatch(rtcManagerCreated(mockRtcManager));
+            await jest.runAllTimersAsync();
+
+            expect(mockRtcManager.setRemoteClientMediaPrefs).toHaveBeenCalledWith(dialInClient.id, {
+                wantsVideo: false,
+            });
+            expect(mockRtcManager.setRemoteClientMediaPrefs).toHaveBeenCalledWith(captionerClient.id, {
+                wantsVideo: false,
+            });
+            expect(mockRtcManager.setRemoteClientMediaPrefs).toHaveBeenCalledWith(audioRecorderClient.id, {
+                wantsVideo: false,
+            });
+        });
+    });
+
+    describe("on CLIENT_LEFT signal events", () => {
+        describe("headless audio processing clients", () => {
+            it.each([
+                "visitor",
+                "granted_visitor",
+                "viewer",
+                "granted_viewer",
+                "host",
+                "recorder",
+                "streamer",
+                "assistant",
+            ])("does not remove the remote client media prefs for a %s client", (roleName) => {
+                const client = randomRemoteParticipant({ roleName: roleName as RoleName });
+                const store = createStore({
+                    withRtcManager: true,
+                    connectToRoom: true,
+                    initialState: { remoteParticipants: { remoteParticipants: [client] } },
+                });
+                const rtcManager = selectRtcManager(store.getState());
+                if (!rtcManager) {
+                    throw new Error("No rtcManager");
+                }
+
+                store.dispatch(
+                    signalEvents.clientLeft({
+                        clientId: client.id,
+                    }),
+                );
+
+                expect(rtcManager.removeRemoteClientMediaPrefs).not.toHaveBeenCalled();
+            });
+
+            it.each`
+                kind                       | client
+                ${"audio-recorder"}        | ${randomRemoteParticipant({ isAudioRecorder: true })}
+                ${"dial-in"}               | ${randomRemoteParticipant({ isDialIn: true })}
+                ${"captioner/transcriber"} | ${randomRemoteParticipant({ roleName: "captioner" })}
+            `("removes the remote client media pref from the rtcManager", ({ client }) => {
+                const store = createStore({
+                    withRtcManager: true,
+                    connectToRoom: true,
+                    initialState: { remoteParticipants: { remoteParticipants: [client] } },
+                });
+                const rtcManager = selectRtcManager(store.getState());
+                if (!rtcManager) {
+                    throw new Error("No rtcManager");
+                }
+
+                store.dispatch(
+                    signalEvents.clientLeft({
+                        clientId: client.id,
+                    }),
+                );
+
+                expect(rtcManager.removeRemoteClientMediaPrefs).toHaveBeenCalledWith(client.id);
+            });
+        });
+    });
+
     describe("doAppStop", () => {
         it("closes the rtcstats connection", () => {
             const store = createStore({

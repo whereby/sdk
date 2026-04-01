@@ -3,7 +3,7 @@ import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
 import rtcStats from "./rtcStatsService";
-import { SignalRTCSessionDescription } from "./types";
+import { MediaPrefs, SignalRTCSessionDescription } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 import { trackAnnotations } from "../utils/annotations";
 
@@ -17,6 +17,7 @@ interface P2PSessionOptions {
     peerConnectionConfig: RTCConfiguration;
     deprioritizeH264Encoding: boolean;
     incrementAnalyticMetric: P2PIncrementAnalyticMetric;
+    mediaPrefs?: MediaPrefs;
 }
 
 export default class Session {
@@ -39,6 +40,7 @@ export default class Session {
     afterConnected: Promise<unknown>;
     registerConnected?: (value: unknown) => void;
     _deprioritizeH264Encoding: boolean;
+    _mediaPrefs?: MediaPrefs;
     clientId: any;
     peerConnectionConfig: RTCConfiguration;
     signalingState: any;
@@ -52,6 +54,7 @@ export default class Session {
         peerConnectionConfig,
         deprioritizeH264Encoding,
         incrementAnalyticMetric,
+        mediaPrefs,
     }: P2PSessionOptions) {
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
@@ -61,6 +64,7 @@ export default class Session {
         this.ipv6HostCandidate6to4Seen = false;
         this.mdnsHostCandidateSeen = false;
         this.pendingReplaceTrackActions = [];
+        this._mediaPrefs = mediaPrefs;
 
         // Create PC.
         this.peerConnectionConfig = peerConnectionConfig;
@@ -105,15 +109,23 @@ export default class Session {
         stream.getAudioTracks().forEach((track) => {
             this.pc.addTrack(track, stream);
         });
+
+        if (this._mediaPrefs?.wantsVideo === false) {
+            return;
+        }
         stream.getVideoTracks().forEach((track) => {
             this.pc.addTrack(track, stream);
         });
     }
 
     addTrack(track: MediaStreamTrack, stream?: MediaStream) {
+        if (track.kind === "video" && this._mediaPrefs?.wantsVideo === false) {
+            return;
+        }
         if (!stream) {
             stream = this.streams[0];
         }
+
         stream?.addTrack(track);
         this.pc.addTrack(track, stream);
     }
@@ -262,6 +274,9 @@ export default class Session {
             throw new Error(
                 `refusing to replace track trackId: ${newTrack.id} kind: ${newTrack.kind} with readyState: ${newTrack.readyState}`,
             );
+        }
+        if (newTrack.kind === "video" && this._mediaPrefs?.wantsVideo === false) {
+            return;
         }
 
         const pc = this.pc;

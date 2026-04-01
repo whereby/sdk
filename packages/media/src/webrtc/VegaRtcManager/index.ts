@@ -1321,6 +1321,12 @@ export default class VegaRtcManager implements RtcManager {
     // the track ids send by signal server for remote-initiated screenshares
     setRemoteScreenshareVideoTrackIds(/*remoteScreenshareVideoTrackIds*/) {}
 
+    // unused in Vega connections, SFU manages selectively forwarding streams to these clients
+    setRemoteClientMediaPrefs() {}
+
+    // unused in Vega connections, SFU manages selectively forwarding streams to these clients
+    removeRemoteClientMediaPrefs() {}
+
     /**
      * The unique identifier for this room session.
      *

@@ -12,7 +12,11 @@ import {
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
-import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
+import {
+    selectHeadlessAudioProcessingClientIds,
+    selectRemoteClients,
+    streamStatusUpdated,
+} from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
 import { selectAppIsNodeSdk, selectAppIsActive, doAppStop, selectAppIgnoreBreakoutGroups } from "../app";
 
@@ -308,7 +312,10 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
     if (localMediaStream && rtcManager) {
-        rtcManager.addCameraStream(localMediaStream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
+        rtcManager.addCameraStream(localMediaStream, {
+            audioPaused: !isMicrophoneEnabled,
+            videoPaused: !isCameraEnabled,
+        });
     }
 
     dispatch(rtcManagerInitialized());
@@ -542,3 +549,41 @@ createReactor(
         }
     },
 );
+
+startAppListening({
+    predicate: (action, currentState, previousState) => {
+        const previousHeadlessAudioProcessingClientIds = selectHeadlessAudioProcessingClientIds(previousState);
+        const currentHeadlessAudioProcessingClientIds = selectHeadlessAudioProcessingClientIds(currentState);
+        const isSameHeadlessAudioProcessingClientIds =
+            currentHeadlessAudioProcessingClientIds.length === previousHeadlessAudioProcessingClientIds.length &&
+            currentHeadlessAudioProcessingClientIds.every((id) =>
+                previousHeadlessAudioProcessingClientIds.includes(id),
+            );
+        return !isSameHeadlessAudioProcessingClientIds || action.type === rtcManagerCreated.type;
+    },
+    effect: (action, { getState, getOriginalState }) => {
+        const previousState = getOriginalState();
+        const currentState = getState();
+        const rtcManager = selectRtcManager(currentState);
+        if (!rtcManager) {
+            return;
+        }
+
+        const previousHeadlessAudioProcessingClientIds = selectHeadlessAudioProcessingClientIds(previousState);
+        const currentHeadlessAudioProcessingClientIds = selectHeadlessAudioProcessingClientIds(currentState);
+
+        previousHeadlessAudioProcessingClientIds.forEach((previousId) => {
+            if (!currentHeadlessAudioProcessingClientIds.includes(previousId)) {
+                rtcManager.removeRemoteClientMediaPrefs(previousId);
+            }
+        });
+        currentHeadlessAudioProcessingClientIds.forEach((currentId) => {
+            if (
+                !previousHeadlessAudioProcessingClientIds.includes(currentId) ||
+                action.type === rtcManagerCreated.type
+            ) {
+                rtcManager.setRemoteClientMediaPrefs(currentId, { wantsVideo: false });
+            }
+        });
+    },
+});

@@ -20,6 +20,8 @@ export interface VegaRtcManagerOptions extends RtcManagerOptions {
     eventClaim: string;
 }
 
+export type MediaPrefs = { wantsVideo: boolean };
+
 export interface RtcManager {
     acceptNewStream: ({ clientId, streamId }: { clientId: string; streamId: string }) => void;
     addCameraStream(stream: MediaStream, options?: AddCameraStreamOptions): void;
@@ -35,6 +37,9 @@ export interface RtcManager {
     sendStatsCustomEvent(eventName: string, data: unknown): void;
     isInitializedWith({ selfId, roomName, isSfu }: { selfId: string; roomName: string; isSfu: boolean }): boolean;
     setEventClaim?(eventClaim: string): void;
+    setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds: string[]): void;
+    setRemoteClientMediaPrefs(clientId: string, mediaPrefs: MediaPrefs): void;
+    removeRemoteClientMediaPrefs(clientId: string): void;
     hasClient(clientId: string): boolean;
 }
 

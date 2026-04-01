@@ -342,6 +342,11 @@ export const selectRemoteClients = (state: RootState) => state.remoteParticipant
 export const selectRemoteParticipants = createSelector(selectRemoteClients, (clients) =>
     clients.filter((c) => !NON_PERSON_ROLES.includes(c.roleName)),
 );
+export const selectHeadlessAudioProcessingClientIds = createSelector(selectRemoteClients, (remoteClients) => {
+    return remoteClients
+        .filter((client) => client && (client.isDialIn || client.isAudioRecorder || client.roleName === "captioner"))
+        .map(({ id }) => id);
+});
 export const selectNumClients = createSelector(selectRemoteClients, (clients) => clients.length + 1);
 export const selectNumParticipants = createSelector(
     selectRemoteParticipants,
