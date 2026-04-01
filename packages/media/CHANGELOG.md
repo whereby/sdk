@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.1
+
+### Patch Changes
+
+- 41dd1dd: Refactor create P2P session
+
 ## 8.0.0
 
 ### Major Changes
