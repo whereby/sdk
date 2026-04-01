@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.2
+
+### Patch Changes
+
+- 7fbae0b: Add typing to MediaDevices code
+
 ## 8.0.1
 
 ### Patch Changes
