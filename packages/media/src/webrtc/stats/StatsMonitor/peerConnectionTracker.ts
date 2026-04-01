@@ -23,6 +23,9 @@ if (window.RTCPeerConnection) {
     }
     PatchedRTCPeerConnection.prototype = OriginalRTCPeerConnection.prototype;
     (window.RTCPeerConnection as any) = PatchedRTCPeerConnection;
+    if (typeof global !== "undefined") {
+        (global.RTCPeerConnection as any) = PatchedRTCPeerConnection;
+    }
 }
 
 export const getCurrentPeerConnections = () => peerConnections;
