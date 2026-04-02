@@ -9,10 +9,13 @@ export const initialState: RoomConnectionState = {
         groupedParticipants: [],
         participantsInCurrentGroup: [],
     },
+    isCameraEnabled: false,
+    isMicrophoneEnabled: false,
     localParticipant: undefined,
     remoteParticipants: [],
     screenshares: [],
     connectionStatus: "ready",
+    connectionError: null,
     waitingParticipants: [],
     spotlightedParticipants: [],
 };
