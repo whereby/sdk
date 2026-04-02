@@ -74,10 +74,13 @@ export type BreakoutState = {
 
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
+    connectionError: string | null;
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
     events?: NotificationsEventEmitter;
+    isCameraEnabled: boolean;
+    isMicrophoneEnabled: boolean;
     liveStream?: LiveStreamState;
     liveTranscription?: LiveTranscriptionState;
     localScreenshareStatus?: LocalScreenshareStatus;

@@ -52,12 +52,15 @@ import type {
 } from "./types";
 import {
     BREAKOUT_CONFIG_CHANGED,
+    CAMERA_STATE_CHANGED,
     CHAT_NEW_MESSAGE,
     CLOUD_RECORDING_STATUS_CHANGED,
+    CONNECTION_ERROR_CHANGED,
     CONNECTION_STATUS_CHANGED,
     LIVE_TRANSCRIPTION_STATUS_CHANGED,
     LOCAL_PARTICIPANT_CHANGED,
     LOCAL_SCREENSHARE_STATUS_CHANGED,
+    MICROPHONE_STATE_CHANGED,
     REMOTE_PARTICIPANTS_CHANGED,
     ROOM_JOINED,
     ROOM_JOINED_ERROR,
@@ -80,18 +83,21 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     protected options: Partial<AppConfig>;
     private selfId: string | null = null;
 
-    private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
-    private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined) => void>();
-    private liveTranscriptionSubscribers = new Set<(status: LiveTranscriptionState | undefined) => void>();
     private breakoutSubscribers = new Set<(config: BreakoutState) => void>();
+    private cameraStateSubscribers = new Set<(isCameraEnabled: boolean) => void>();
+    private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
+    private cloudRecordingSubscribers = new Set<(status: { status: "recording" } | undefined) => void>();
+    private connectionErrorSubscribers = new Set<(status: string | null) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
-    private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
+    private liveTranscriptionSubscribers = new Set<(status: LiveTranscriptionState | undefined) => void>();
     private localParticipantSubscribers = new Set<(participant?: LocalParticipantState) => void>();
+    private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
+    private microphoneStateSubscribers = new Set<(isMicrophoneEnabled: boolean) => void>();
     private remoteParticipantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
     private screenshareSubscribers = new Set<(screenshares: ScreenshareState[]) => void>();
-    private waitingParticipantsSubscribers = new Set<(participants: WaitingParticipantState[]) => void>();
     private spotlightedParticipantsSubscribers = new Set<(participants: ClientView[]) => void>();
+    private waitingParticipantsSubscribers = new Set<(participants: WaitingParticipantState[]) => void>();
 
     constructor(store: AppStore) {
         super(store);
@@ -122,6 +128,21 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.connectionStatus !== previousState.connectionStatus) {
             this.connectionStatusSubscribers.forEach((cb) => cb(state.connectionStatus));
             this.emit(CONNECTION_STATUS_CHANGED, state.connectionStatus);
+        }
+
+        if (state.connectionError !== previousState.connectionError) {
+            this.connectionErrorSubscribers.forEach((cb) => cb(state.connectionError));
+            this.emit(CONNECTION_ERROR_CHANGED, state.connectionError);
+        }
+
+        if (state.isCameraEnabled !== previousState.isCameraEnabled) {
+            this.cameraStateSubscribers.forEach((cb) => cb(state.isCameraEnabled));
+            this.emit(CAMERA_STATE_CHANGED, state.isCameraEnabled);
+        }
+
+        if (state.isMicrophoneEnabled !== previousState.isMicrophoneEnabled) {
+            this.microphoneStateSubscribers.forEach((cb) => cb(state.isMicrophoneEnabled));
+            this.emit(MICROPHONE_STATE_CHANGED, state.isMicrophoneEnabled);
         }
 
         if (state.liveStream !== previousState.liveStream) {
@@ -251,6 +272,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         return () => this.connectionStatusSubscribers.delete(callback);
     }
 
+    public subscribeToConnectionError(callback: (error: string | null) => void): () => void {
+        this.connectionErrorSubscribers.add(callback);
+        return () => this.connectionErrorSubscribers.delete(callback);
+    }
+
     public subscribeToLiveStream(callback: (status: { status: "streaming" } | undefined) => void): () => void {
         this.liveStreamSubscribers.add(callback);
         return () => this.liveStreamSubscribers.delete(callback);
@@ -284,6 +310,16 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToSpotlightedParticipants(callback: (participants: ClientView[]) => void): () => void {
         this.spotlightedParticipantsSubscribers.add(callback);
         return () => this.spotlightedParticipantsSubscribers.delete(callback);
+    }
+
+    public subscribeToMicrophoneState(callback: (isMicrophoneEnabled: boolean) => void): () => void {
+        this.microphoneStateSubscribers.add(callback);
+        return () => this.microphoneStateSubscribers.delete(callback);
+    }
+
+    public subscribeToCameraState(callback: (isCameraEnabled: boolean) => void): () => void {
+        this.cameraStateSubscribers.add(callback);
+        return () => this.cameraStateSubscribers.delete(callback);
     }
 
     /**
@@ -655,6 +691,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.cloudRecordingSubscribers.clear();
         this.breakoutSubscribers.clear();
         this.connectionStatusSubscribers.clear();
+        this.connectionErrorSubscribers.clear();
         this.liveStreamSubscribers.clear();
         this.localScreenshareStatusSubscribers.clear();
         this.localParticipantSubscribers.clear();
