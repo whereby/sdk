@@ -262,8 +262,11 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         } else if (state === "new_accept" || state === "old_accept") {
             // do nothing - let this be marked as done_accept as the rtcManager
             // will trigger accept from other end
+        } else if (state === "to_unaccept" && streamId === CAMERA_STREAM_ID) {
+            // This is only used in SFU breakout groups.
+            rtcManager?.disconnect(streamId);
         } else if (state === "to_unaccept") {
-            rtcManager?.disconnect(streamId === CAMERA_STREAM_ID ? clientId : streamId);
+            // noop but needed to mark screenshare streams as done_unaccept when moving between SFU breakout groups.
         } else if (state !== "done_accept") {
             continue;
             // console.warn(`Stream state not handled: ${state} for ${clientId}-${streamId}`);
