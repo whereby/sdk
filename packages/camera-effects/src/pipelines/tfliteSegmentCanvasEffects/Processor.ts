@@ -21,6 +21,7 @@ class Processor extends EventEmitter {
         this.params = params;
         this.videoWidth = videoWidth;
         this.videoHeight = videoHeight;
+        this.status = "new"
 
         // when run in a background thread we override emit
         if (emit) this.emit = emit;
@@ -57,6 +58,20 @@ class Processor extends EventEmitter {
         const oldBackgroundFrame = this.currentBackgroundFrame;
         this.currentBackgroundFrame = null;
         const oldEngine = this.engine;
+
+        if (this.status === "new") {
+            // We have not yet initialized. Update width/height and let init() create the engine.
+            console.warn("Video size updated before engine was initialized.")
+            this.videoWidth = videoWidth;
+            this.videoHeight = videoHeight; 
+            return
+        }
+
+        if (this.status === "init") {
+            // Initilization is in progress.
+            console.warn("Video size updated while engine was initializating.")
+        }
+
         await this.setupEngine(videoWidth, videoHeight, this.effectCanvas, oldBackgroundFrame);
         oldEngine.dispose();
     }
@@ -64,6 +79,7 @@ class Processor extends EventEmitter {
     // initialize the Processor, loading tensorflow and everything async needed before ready to
     // process images
     async init({ initialBackgroundFrame, useInsertableStreams, effectCanvas }) {
+        this.status = "init"
         await this.setupEngine(this.videoWidth, this.videoHeight, effectCanvas, initialBackgroundFrame);
 
         if (useInsertableStreams) {
@@ -72,7 +88,6 @@ class Processor extends EventEmitter {
             let frameStartTime = 0;
             let firstFrameRendered = false;
 
-            // eslint-disable-next-line no-undef
             this.transformer = new TransformStream({
                 transform: async (frame, controller) => {
                     // keep controller so we can terminate it
@@ -104,7 +119,6 @@ class Processor extends EventEmitter {
                         frameStartTime = frameTimestamp / 1000;
                     }
 
-                    // eslint-disable-next-line no-undef
                     controller.enqueue(new VideoFrame(this.effectCanvas, { timestamp: frameTimestamp }));
 
                     if (!firstFrameRendered) {
@@ -124,6 +138,7 @@ class Processor extends EventEmitter {
         }
 
         // notify initialization is done
+        this.status = "ready"
         this.emit("ready");
     }
 
@@ -210,7 +225,6 @@ class Processor extends EventEmitter {
         // if using insertable streams we will get an inputStream and outputStream, and
         // we need to pipe it though the transformer
 
-        // eslint-disable-next-line no-undef
         if (inputStream) inputStream.pipeThrough(this.transformer).pipeTo(outputStream);
         this.frameCounter = 0;
         this.frameCounterTime = performance.now();
