@@ -265,7 +265,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         } else if (state === "to_unaccept") {
             if (streamId === CAMERA_STREAM_ID) {
                 // This is only used in SFU breakout groups.
-                rtcManager?.disconnect(streamId);
+                rtcManager?.disconnect(clientId);
             }
             // noop but needed to mark screenshare streams as done_unaccept when moving between SFU breakout groups.
         } else if (state !== "done_accept") {
