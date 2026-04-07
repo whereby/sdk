@@ -85,7 +85,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private breakoutSubscribers = new Set<(config: BreakoutState) => void>();
     private cameraStateSubscribers = new Set<(isCameraEnabled: boolean) => void>();
     private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
-    private cloudRecordingSubscribers = new Set<(status: { status: "recording" } | undefined) => void>();
+    private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined | undefined) => void>();
     private connectionErrorSubscribers = new Set<(status: string | null) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
