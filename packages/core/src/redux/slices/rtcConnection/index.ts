@@ -252,14 +252,13 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         if (!participant) continue;
         if (
             state === "to_accept" ||
-            (state === "new_accept" && shouldAcceptNewClients) ||
-            (state === "old_accept" && !shouldAcceptNewClients) // these are done to enable broadcast in legacy/p2p
+            (state === "new_accept" && shouldAcceptNewClients)
         ) {
             rtcManager.acceptNewStream({
                 streamId: streamId === CAMERA_STREAM_ID ? clientId : streamId,
                 clientId,
             });
-        } else if (state === "new_accept" || state === "old_accept") {
+        } else if (state === "new_accept") {
             // do nothing - let this be marked as done_accept as the rtcManager
             // will trigger accept from other end
         } else if (state === "to_unaccept") {
@@ -274,7 +273,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         } else {
             // done_accept
         }
-        updates.push({ clientId, streamId, state: state.replace(/to_|new_|old_/, "done_") as StreamState });
+        updates.push({ clientId, streamId, state: state.replace(/to_|new_/, "done_") as StreamState });
     }
 
     dispatch(streamStatusUpdated(updates));
