@@ -60,11 +60,9 @@ export interface RemoteParticipantData {
 export type StreamState =
     | "new_accept"
     | "to_accept"
-    | "old_accept"
     | "done_accept"
     | "to_unaccept"
     | "done_unaccept"
-    | "auto";
 
 interface Stream {
     id: string;
