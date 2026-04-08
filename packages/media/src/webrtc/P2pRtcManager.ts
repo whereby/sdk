@@ -78,8 +78,6 @@ type P2PAnalytics = {
     P2PReplaceTrackNoStream: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2POnTrackNoStream: number;
-    P2PCreateOfferNoSDP: number;
-    P2PCreateAnswerNoSDP: number;
     P2PMicNotWorking: number;
     P2PLocalNetworkFailed: number;
     P2PRelayedIceCandidate: number;
@@ -190,8 +188,6 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackNoStream: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2POnTrackNoStream: 0,
-            P2PCreateOfferNoSDP: 0,
-            P2PCreateAnswerNoSDP: 0,
             P2PMicNotWorking: 0,
             P2PLocalNetworkFailed: 0,
             P2PRelayedIceCandidate: 0,
@@ -1120,8 +1116,6 @@ export default class P2pRtcManager implements RtcManager {
                 .createOffer(constraints || this.offerOptions)
                 .then((offer) => {
                     if (!offer.sdp) {
-                        this.analytics.P2PCreateOfferNoSDP++;
-                        rtcStats.sendEvent("P2PCreateOfferNoSDP", {});
                         throw new Error("SDP undefined while creating offer");
                     }
                     // Add https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/abs-capture-time
