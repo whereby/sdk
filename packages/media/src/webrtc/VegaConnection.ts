@@ -78,6 +78,12 @@ export default class VegaConnection extends EventEmitter {
     _handleResponse(socketMessage: any) {
         const sent = this.sents.get(socketMessage.id);
 
+        if (!sent) {
+            // If an SFU response arrive after timeout it's already deleted.
+            logger.warn(`Received unknown message with id ${socketMessage.id} from SFU.`);
+            return;
+        }
+
         if (socketMessage.ok) {
             sent.resolve(socketMessage.data);
         } else {
