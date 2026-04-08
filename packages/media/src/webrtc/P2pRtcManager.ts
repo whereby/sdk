@@ -78,7 +78,6 @@ type P2PAnalytics = {
     P2PReplaceTrackNoStream: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2POnTrackNoStream: number;
-    P2PSetCodecPreferenceError: number;
     P2PCreateOfferNoSDP: number;
     P2PCreateAnswerNoSDP: number;
     P2PMicNotWorking: number;
@@ -191,7 +190,6 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackNoStream: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2POnTrackNoStream: 0,
-            P2PSetCodecPreferenceError: 0,
             P2PCreateOfferNoSDP: 0,
             P2PCreateAnswerNoSDP: 0,
             P2PMicNotWorking: 0,
@@ -1133,7 +1131,6 @@ export default class P2pRtcManager implements RtcManager {
                         offer.sdp = setCodecPreferenceSDP({
                             sdp: offer.sdp as string,
                             redOn,
-                            incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
                         });
                     }
 
