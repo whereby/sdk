@@ -31,6 +31,8 @@ type VegaProduceDataResponse = {
 type VegaTransportDirection = "send" | "recv";
 
 type VegaAnalytics = {
+    vegaUnknownResponse: number;
+    vegaRequestTimeout: number;
     vegaJoinFailed: number;
     vegaJoinWithoutVegaConnection: number;
     vegaCreateTransportWithoutVegaConnection: number;
@@ -41,6 +43,10 @@ type VegaAnalytics = {
     micTrackEndedCount: number;
     camTrackEndedCount: number;
 };
+
+type VegaAnalyticMetric = keyof VegaAnalytics;
+
+export type VegaIncrementAnalyticMetric = (metric: VegaAnalyticMetric) => void;
 
 type MediaStreamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
 

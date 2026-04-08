@@ -1,4 +1,5 @@
 import VegaConnection from "./VegaConnection";
+import { VegaIncrementAnalyticMetric } from "./VegaRtcManager/types";
 
 // used for analytics, and for reconnecting to last successful host
 type ConnectionInfo = {
@@ -74,7 +75,7 @@ export function createVegaConnectionManager(config: {
     // connected to, until network has been up for 3s, earliest 3s after the sfu disconnect
     // this way it should recover to the same server if network loss, which might not be detected yet (it can
     // lag 2s behind because of the noop probing on signal)
-    const connect = () => {
+    const connect = (incrementAnalyticMetric?: VegaIncrementAnalyticMetric) => {
         // do not allow parallell runs of this. If one or more runs are attempted while running, run it ONCE more after done
         if (connectionAttemptInProgress) {
             hasPendingConnectionAttempt = true;
@@ -163,7 +164,10 @@ export function createVegaConnectionManager(config: {
                         return;
                     }
 
-                    const vegaConnection = new VegaConnection(config.getUrlForHost?.(host) || host);
+                    const vegaConnection = new VegaConnection(config.getUrlForHost?.(host) || host, {
+                        protocol: "whereby-sfu#v4",
+                        incrementAnalyticMetric,
+                    });
                     let wasClosed = false;
 
                     vegaConnection.on("open", () => {

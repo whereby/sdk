@@ -1,6 +1,9 @@
 import SfuV2Parser from "./SfuV2Parser";
 import { EventEmitter } from "events";
 import Logger from "../utils/Logger";
+import { VegaIncrementAnalyticMetric } from "./VegaRtcManager/types";
+import rtcStats from "./rtcStatsService";
+import { VegaConnectionOptions } from "./types";
 
 const logger = new Logger();
 
@@ -9,10 +12,12 @@ export default class VegaConnection extends EventEmitter {
     protocol: string;
     socket: WebSocket | null = null;
     sents: Map<any, any>;
+    incrementAnalyticMetric?: VegaIncrementAnalyticMetric;
 
-    constructor(wsUrl: string, protocol = "whereby-sfu#v4") {
+    constructor(wsUrl: string, { protocol = "whereby-sfu#v4", incrementAnalyticMetric }: VegaConnectionOptions) {
         super();
 
+        this.incrementAnalyticMetric = incrementAnalyticMetric;
         this.wsUrl = wsUrl;
         this.protocol = protocol;
 
@@ -81,6 +86,12 @@ export default class VegaConnection extends EventEmitter {
         if (!sent) {
             // If an SFU response arrive after timeout it's already deleted.
             logger.warn(`Received unknown message with id ${socketMessage.id} from SFU.`);
+            this.incrementAnalyticMetric?.("vegaUnknownResponse");
+            rtcStats.sendEvent("VegaUnknownResponse", {
+                id: socketMessage.id,
+                code: socketMessage.errorCode,
+                reason: socketMessage.errorReason,
+            });
             return;
         }
 
@@ -127,6 +138,11 @@ export default class VegaConnection extends EventEmitter {
                     pReject(error);
                 },
                 timer: setTimeout(() => {
+                    this.incrementAnalyticMetric?.("vegaRequestTimeout");
+                    rtcStats.sendEvent("VegaRequestTimeout", {
+                        id: request.id,
+                        method: request.method,
+                    });
                     if (!this.sents.delete(request.id)) return;
 
                     pReject(new Error("request timeout"));

@@ -102,13 +102,22 @@ describe("createVegaConnectionManager", () => {
         connect();
         jest.advanceTimersToNextTimer();
         expect(VegaConnection).toHaveBeenCalledTimes(1);
-        expect(VegaConnection).toHaveBeenNthCalledWith(1, "host1");
+        expect(VegaConnection).toHaveBeenNthCalledWith(1, "host1", {
+            protocol: "whereby-sfu#v4",
+            incrementAnalyticMetric: undefined,
+        });
         jest.advanceTimersToNextTimer();
         expect(VegaConnection).toHaveBeenCalledTimes(2);
-        expect(VegaConnection).toHaveBeenNthCalledWith(2, "host2");
+        expect(VegaConnection).toHaveBeenNthCalledWith(2, "host2", {
+            protocol: "whereby-sfu#v4",
+            incrementAnalyticMetric: undefined,
+        });
         jest.advanceTimersToNextTimer();
         expect(VegaConnection).toHaveBeenCalledTimes(3);
-        expect(VegaConnection).toHaveBeenNthCalledWith(3, "host3");
+        expect(VegaConnection).toHaveBeenNthCalledWith(3, "host3", {
+            protocol: "whereby-sfu#v4",
+            incrementAnalyticMetric: undefined,
+        });
     });
 
     it("emits successful connection and doesn't attempt to connect to other hosts after if fast enough", () => {
