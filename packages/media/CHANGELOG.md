@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.3
+
+### Patch Changes
+
+- 4c3daf0: Handle SFU websocket response arriving after timeout
+
 ## 8.0.2
 
 ### Patch Changes
