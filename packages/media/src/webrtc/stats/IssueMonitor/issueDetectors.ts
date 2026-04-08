@@ -1,4 +1,3 @@
-import { PacketLossAnalyser } from "./packetLossAnalyser";
 import { MediaStreamTrackWithDenoiserContext, SsrcStats, StatsClient, TrackStats, ViewStats } from "../types";
 import { getRoomMode } from "../../RtcManagerDispatcher";
 
@@ -22,26 +21,6 @@ export interface IssueCheckData {
     issues: any;
     metrics: any;
 }
-
-const packetLossAnalyser = new PacketLossAnalyser();
-
-export const periodicPacketLossDetector: IssueDetector = {
-    id: "periodic-packet-loss",
-    enabled: ({ client, hasLiveTrack, ssrc0 }) => {
-        return (
-            !!client.isLocalClient &&
-            hasLiveTrack &&
-            !!ssrc0?.ssrc &&
-            ssrc0?.direction === "out" &&
-            (ssrc0?.bitrate || 0) > 0
-        );
-    },
-    check: ({ ssrc0 }) => {
-        if (!ssrc0 || !ssrc0.ssrc) return false;
-        packetLossAnalyser.addPacketLossMeasurement(ssrc0.ssrc, ssrc0.fractionLost || 0, Date.now());
-        return packetLossAnalyser.hasPeriodicPacketLoss(ssrc0.ssrc, Date.now());
-    },
-};
 
 export const badNetworkIssueDetector: IssueDetector = {
     id: "bad-network",
@@ -272,7 +251,6 @@ export const issueDetectors: IssueDetector[] = [
         check: ({ ssrc0 }) => (ssrc0?.fps || 0) < 10,
     },
     badNetworkIssueDetector,
-    periodicPacketLossDetector,
     {
         id: "cpu-pressure-serious",
         global: true,
