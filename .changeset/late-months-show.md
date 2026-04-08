@@ -2,4 +2,4 @@
 "@whereby.com/media": patch
 ---
 
-Remove P2PStartScreenshareNoStream analytics
+Remove P2P investigation analytics
