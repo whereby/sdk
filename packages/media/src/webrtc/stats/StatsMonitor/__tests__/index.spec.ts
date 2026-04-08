@@ -39,11 +39,11 @@ describe("subscribeStats", () => {
             expect(state.subscriptions).toEqual([subscription]);
         });
 
-        it("should return stop function which removes subscription", () => {
+        it("should return stop function which removes subscription", async () => {
             const state = { ...baseState, currentMonitor };
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state).stop();
+            (await subscribeStats(subscription, options, state)).stop();
 
             expect(state.subscriptions).toEqual([]);
             expect(currentMonitor?.stop).toHaveBeenCalled();
@@ -71,11 +71,11 @@ describe("subscribeStats", () => {
             expect(collectStats).toHaveBeenCalled();
         });
 
-        it("should set monitor with getUpdatedStats and stop functions", () => {
+        it("should set monitor with getUpdatedStats and stop functions", async () => {
             const state = { ...baseState, currentMonitor: null };
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state);
+            await subscribeStats(subscription, options, state);
 
             expect(state.currentMonitor).toMatchObject({
                 getUpdatedStats: expect.any(Function),
@@ -83,13 +83,13 @@ describe("subscribeStats", () => {
             });
         });
 
-        it("should stop cpu monitor on stop", () => {
+        it("should stop cpu monitor on stop", async () => {
             const state = { ...baseState, currentMonitor: null };
             const stop = jest.fn();
             (startCpuObserver as jest.Mock).mockReturnValueOnce({ stop });
             const subscription = { onUpdatedStats: jest.fn() };
 
-            subscribeStats(subscription, options, state).stop();
+            (await subscribeStats(subscription, options, state)).stop();
 
             expect(stop).toHaveBeenCalled();
         });

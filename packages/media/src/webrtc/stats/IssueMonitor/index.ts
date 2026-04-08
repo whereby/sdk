@@ -502,11 +502,11 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
     );
 }
 
-export function subscribeIssues(subscription: IssueSubscription): { stop: () => void } {
+export async function subscribeIssues(subscription: IssueSubscription): Promise<{ stop: () => void }> {
     subscriptions.push(subscription);
 
     // start the stats on first subscription
-    if (!stopStats) stopStats = subscribeStats({ onUpdatedStats }).stop;
+    if (!stopStats) stopStats = (await subscribeStats({ onUpdatedStats })).stop;
 
     return {
         stop() {
