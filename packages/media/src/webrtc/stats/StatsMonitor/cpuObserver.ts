@@ -8,6 +8,7 @@ interface CpuObserverOptions {
 }
 
 export interface PressureObserver {
+    knownSources: string[];
     observe: (source: string, options: { sampleInterval: number }) => Promise<undefined>;
     unobserve: (source: string) => undefined;
 }
@@ -27,7 +28,7 @@ const CPU_OBSERVER_OPTIONS: CpuObserverOptions = {
     ],
 };
 
-export function startCpuObserver(
+export async function startCpuObserver(
     cb: (records: PressureRecord[]) => void,
     { sampleRate, originTrials }: CpuObserverOptions = CPU_OBSERVER_OPTIONS,
     window: Window = globalThis.window,
@@ -36,9 +37,12 @@ export function startCpuObserver(
 
     let pressureObserver: PressureObserver;
 
-    if ("PressureObserver" in window) {
+    if (
+        "PressureObserver" in window &&
+        ((window.PressureObserver as PressureObserver).knownSources || []).includes("cpu")
+    ) {
         pressureObserver = new (window.PressureObserver as any)(cb, { sampleRate }) as PressureObserver;
-        pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 });
+        await pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 });
 
         return {
             stop: () => {
