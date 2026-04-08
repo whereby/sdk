@@ -326,13 +326,6 @@ export default class Session {
 
         this.bandwidth = bandwidth;
 
-        // @ts-ignore
-        if (this.pc.localDescription?.type === "") {
-            // Let's see if this ever happens.
-            this._incrementAnalyticMetric("P2PChangeBandwidthEmptySDPType");
-            return;
-        }
-
         if (!this.pc.localDescription) {
             return;
         }
