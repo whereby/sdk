@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 8.0.2
+
+### Patch Changes
+
+- 7fbae0b: Add typing to MediaDevices code
+- 770f08e: Report an error if VegaConnection ws broke during bandwidthtest
+
 ## 8.0.1
 
 ### Patch Changes
