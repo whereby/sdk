@@ -13,6 +13,7 @@ export interface LiveTranscriptionState {
     error?: string;
     status?: "transcribing" | "requested" | "error";
     startedAt?: number;
+    transcriptionId?: string;
 }
 
 export const initialLiveTranscriptionState: LiveTranscriptionState = {
@@ -55,6 +56,7 @@ export const liveTranscriptionSlice = createSlice({
                 isTranscribing: false,
                 status: "error",
                 error: payload.error,
+                transcriptionId: payload.transcriptionId,
             };
         });
 

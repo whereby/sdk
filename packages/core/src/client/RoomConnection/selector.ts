@@ -19,6 +19,7 @@ import {
     selectRoomConnectionError,
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
+    selectRoomConnectionSessionId,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
@@ -43,6 +44,7 @@ export const selectRoomConnectionState = createSelector(
     selectSpotlightedClientViews,
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
+    selectRoomConnectionSessionId,
     (
         chatMessages,
         cloudRecording,
@@ -63,6 +65,7 @@ export const selectRoomConnectionState = createSelector(
         spotlightedClientViews,
         isCameraEnabled,
         isMicrophoneEnabled,
+        roomSessionId,
     ) => {
         const state: RoomConnectionState = {
             chatMessages,
@@ -95,6 +98,7 @@ export const selectRoomConnectionState = createSelector(
                       error: liveTranscription.error,
                       startedAt: liveTranscription.startedAt,
                       status: liveTranscription.status,
+                      transcriptionId: liveTranscription.transcriptionId,
                   }
                 : undefined,
             localScreenshareStatus: localParticipant.isScreenSharing ? "active" : undefined,
@@ -103,6 +107,7 @@ export const selectRoomConnectionState = createSelector(
             screenshares,
             waitingParticipants,
             spotlightedParticipants: spotlightedClientViews,
+            roomSessionId: roomSessionId ?? null,
         };
 
         return state;

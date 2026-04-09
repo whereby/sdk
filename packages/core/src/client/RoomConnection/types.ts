@@ -49,6 +49,7 @@ export type LiveTranscriptionState = {
     error?: string;
     status: "transcribing" | "requested" | "error";
     startedAt?: number;
+    transcriptionId?: string;
 };
 
 export type LiveStreamState = {
@@ -86,6 +87,7 @@ export interface RoomConnectionState {
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
+    roomSessionId: string | null;
     screenshares: Screenshare[];
     waitingParticipants: WaitingParticipantState[];
     spotlightedParticipants: ClientView[];

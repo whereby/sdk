@@ -64,6 +64,7 @@ import {
     REMOTE_PARTICIPANTS_CHANGED,
     ROOM_JOINED,
     ROOM_JOINED_ERROR,
+    ROOM_SESSION_ID_CHANGED,
     SCREENSHARE_STARTED,
     SCREENSHARE_STOPPED,
     SPOTLIGHT_PARTICIPANT_ADDED,
@@ -94,6 +95,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
     private microphoneStateSubscribers = new Set<(isMicrophoneEnabled: boolean) => void>();
     private remoteParticipantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
+    private roomSessionIdSubscribers = new Set<(roomSessionId: string | null) => void>();
     private screenshareSubscribers = new Set<(screenshares: ScreenshareState[]) => void>();
     private spotlightedParticipantsSubscribers = new Set<(participants: ClientView[]) => void>();
     private waitingParticipantsSubscribers = new Set<(participants: WaitingParticipantState[]) => void>();
@@ -166,6 +168,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.remoteParticipants !== previousState.remoteParticipants) {
             this.remoteParticipantsSubscribers.forEach((cb) => cb(state.remoteParticipants));
             this.emit(REMOTE_PARTICIPANTS_CHANGED, state.remoteParticipants);
+        }
+
+        if (state.roomSessionId !== previousState.roomSessionId) {
+            this.roomSessionIdSubscribers.forEach((cb) => cb(state.roomSessionId));
+            this.emit(ROOM_SESSION_ID_CHANGED, state.roomSessionId);
         }
 
         if (state.screenshares !== previousState.screenshares) {
@@ -321,6 +328,10 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         return () => this.cameraStateSubscribers.delete(callback);
     }
 
+    public subscribeToRoomSessionId(callback: (roomSessionId: string | null) => void): () => void {
+        this.roomSessionIdSubscribers.add(callback);
+        return () => this.roomSessionIdSubscribers.delete(callback);
+    }
     /**
      * Get the current state of the Whereby client.
      * @return {object} - The current state of the client.
@@ -697,6 +708,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.localScreenshareStatusSubscribers.clear();
         this.microphoneStateSubscribers.clear();
         this.remoteParticipantsSubscribers.clear();
+        this.roomSessionIdSubscribers.clear();
         this.screenshareSubscribers.clear();
         this.spotlightedParticipantsSubscribers.clear();
         this.waitingParticipantsSubscribers.clear();

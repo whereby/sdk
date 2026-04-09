@@ -385,4 +385,29 @@ describe("RoomConnectionClient", () => {
             expect(callback).toHaveBeenCalledTimes(1);
         });
     });
+
+    describe("subscribeToRoomSessionId", () => {
+        it("triggers the room session ID listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToRoomSessionId(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                roomConnection: { session: { id: "some ID" } },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith("some ID");
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                roomConnection: { session: { id: "some other ID" } },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
 });

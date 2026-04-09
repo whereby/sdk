@@ -18,4 +18,5 @@ export const initialState: RoomConnectionState = {
     connectionError: null,
     waitingParticipants: [],
     spotlightedParticipants: [],
+    roomSessionId: null,
 };
