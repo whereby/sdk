@@ -15,10 +15,9 @@ const browserVersion = adapter.browserDetails.version;
 interface SetCodecPreferenceSDPOptions {
     sdp: string;
     redOn: boolean;
-    incrementAnalyticMetric: P2PIncrementAnalyticMetric;
 }
 
-export function setCodecPreferenceSDP({ sdp, redOn, incrementAnalyticMetric }: SetCodecPreferenceSDPOptions) {
+export function setCodecPreferenceSDP({ sdp, redOn }: SetCodecPreferenceSDPOptions) {
     try {
         const sdpObject = sdpTransform.parse(sdp);
         if (Array.isArray(sdpObject?.media)) {
@@ -56,8 +55,6 @@ export function setCodecPreferenceSDP({ sdp, redOn, incrementAnalyticMetric }: S
         const newSdp = sdpTransform.write(sdpObject);
         return newSdp;
     } catch (error) {
-        incrementAnalyticMetric("P2PSetCodecPreferenceError");
-        rtcStats.sendEvent("P2PSetCodecPreferenceError", { error });
         logger.error("setCodecPreferenceSDP error:", error);
         return sdp;
     }

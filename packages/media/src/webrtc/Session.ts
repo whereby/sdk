@@ -179,8 +179,6 @@ export default class Session {
             })
             .then((answer) => {
                 if (!answer.sdp) {
-                    this._incrementAnalyticMetric("P2PCreateAnswerNoSDP");
-                    rtcStats.sendEvent("P2PCreateAnswerNoSDP", {});
                     throw new Error("SDP undefined while creating answer");
                 } else {
                     answerToSignal = {
