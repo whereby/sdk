@@ -224,6 +224,7 @@ export default class VegaRtcManager implements RtcManager {
             vegaIceRestartMissingTransport: 0,
             vegaIceRestartWrongTransportId: 0,
             vegaNonErrorRejectionValueGUMError: 0,
+            vegaReplaceTrackNoProducerNoEnabledTrack: 0,
             micTrackEndedCount: 0,
             camTrackEndedCount: 0,
         };
@@ -1030,6 +1031,13 @@ export default class VegaRtcManager implements RtcManager {
         if (!this._webcamProducer && this._webcamTrack.enabled) {
             await this._internalSendWebcam();
             return;
+        }
+
+        if (!this._webcamProducer && (!this._webcamTrack || !this._webcamTrack.enabled)) {
+            this.analytics.vegaReplaceTrackNoProducerNoEnabledTrack++;
+            rtcStats.sendEvent("VegaReplaceTrackNoProducerNoEnabledTrack", {
+                hasWebcamTrack: !!this._webcamTrack,
+            })
         }
 
         if (this._webcamProducer.track !== this._webcamTrack) {
