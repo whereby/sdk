@@ -259,9 +259,7 @@ export default class Session {
     async replaceTrack(oldTrack: MediaStreamTrack | undefined, newTrack: MediaStreamTrack) {
         logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s]", oldTrack?.id, newTrack.id);
         if (newTrack.readyState === "ended") {
-            throw new Error(
-                `refusing to replace track trackId: ${newTrack.id} kind: ${newTrack.kind} with readyState: ${newTrack.readyState}`,
-            );
+            throw new Error(`refusing to use ended track with id: ${newTrack.id}, kind: ${newTrack.kind}`);
         }
 
         const pc = this.pc;
