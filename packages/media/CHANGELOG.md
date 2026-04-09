@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.5
+
+### Patch Changes
+
+- ea491fa: Avoid replacing SFU track with a track that has ended
+
 ## 8.0.4
 
 ### Patch Changes
