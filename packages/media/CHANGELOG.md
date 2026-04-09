@@ -1,5 +1,13 @@
 # @whereby.com/media
 
+## 8.0.6
+
+### Patch Changes
+
+- 9628440: Remove periodic packetloss issue detector
+- ffa3d5e: Remove P2P investigation analytics
+- 30c9f23: Remove change bandwidth guard for empty SDP type
+
 ## 8.0.5
 
 ### Patch Changes
