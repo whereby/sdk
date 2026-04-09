@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.4
+
+### Patch Changes
+
+- c3a4011: Add analytics for replacing webcam track without producer and enabled track in SFU meetings
+
 ## 8.0.3
 
 ### Patch Changes
