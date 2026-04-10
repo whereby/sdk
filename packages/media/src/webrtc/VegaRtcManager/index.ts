@@ -35,6 +35,7 @@ import {
     VegaAnalytics,
     ClientState,
     VegaTransportDirection,
+    VegaAnalyticMetric,
 } from "./types";
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
@@ -217,6 +218,8 @@ export default class VegaRtcManager implements RtcManager {
         this._cpuOveruseDetected = false;
 
         this.analytics = {
+            vegaRequestTimeout: 0,
+            vegaUnknownResponse: 0,
             vegaJoinFailed: 0,
             vegaJoinWithoutVegaConnection: 0,
             vegaCreateTransportWithoutVegaConnection: 0,
@@ -401,7 +404,7 @@ export default class VegaRtcManager implements RtcManager {
                 },
             });
         }
-        this._vegaConnectionManager.connect();
+        this._vegaConnectionManager.connect((metric: VegaAnalyticMetric) => this.analytics[metric]++);
         this._isConnectingOrConnected = true;
     }
 

@@ -1,4 +1,5 @@
 import { SignalRoom, ServerSocket } from "../utils";
+import { VegaIncrementAnalyticMetric } from "./VegaRtcManager/types";
 
 export enum RtcEventNames {
     rtc_manager_created = "rtc_manager_created",
@@ -18,6 +19,10 @@ export interface RtcManagerOptions {
 
 export interface VegaRtcManagerOptions extends RtcManagerOptions {
     eventClaim: string;
+}
+export interface VegaConnectionOptions {
+    protocol?: string;
+    incrementAnalyticMetric?: VegaIncrementAnalyticMetric;
 }
 
 export interface RtcManager {
