@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.7
+
+### Patch Changes
+
+- 0dbcd5f: Add VegaConnection analytics
+
 ## 8.0.6
 
 ### Patch Changes
