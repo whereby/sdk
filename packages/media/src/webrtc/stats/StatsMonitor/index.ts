@@ -59,16 +59,10 @@ export const getUpdatedStats = () => STATE.currentMonitor?.getUpdatedStats();
 
 export const setClientProvider = (provider: () => StatsClient[]) => (STATE.getClients = provider);
 
-async function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
+function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
     const collectStatsBound = collectStats.bind(null, state, { interval, logger });
 
-    let cpuObserver: Awaited<ReturnType<typeof startCpuObserver>>;
-
-    try {
-        cpuObserver = await startCpuObserver((records) => (state.lastPressureObserverRecord = records.pop()));
-    } catch (ex) {
-        logger.warn("Failed to observe CPU pressure", ex);
-    }
+    const cpuObserver = startCpuObserver((records) => (state.lastPressureObserverRecord = records.pop()));
 
     // initial run
     setTimeout(collectStatsBound, interval);
@@ -84,7 +78,7 @@ async function startStatsMonitor(state: StatsMonitorState, { interval, logger }:
     };
 }
 
-export async function subscribeStats(
+export function subscribeStats(
     subscription: StatsSubscription,
     options: StatsMonitorOptions = OPTIONS,
     state: StatsMonitorState = STATE,
@@ -92,7 +86,7 @@ export async function subscribeStats(
     state.subscriptions.push(subscription);
 
     // start the monitor on first subscription
-    if (!state.currentMonitor) state.currentMonitor = await startStatsMonitor(state, options);
+    if (!state.currentMonitor) state.currentMonitor = startStatsMonitor(state, options);
 
     return {
         stop() {

@@ -6,7 +6,7 @@ jest.mock("@whereby.com/media", () => {
     return {
         __esModule: true,
         setClientProvider: jest.fn(),
-        subscribeIssues: jest.fn().mockImplementation(async () => {
+        subscribeIssues: jest.fn().mockImplementation(() => {
             return {
                 stop: jest.fn(),
             };
@@ -16,10 +16,10 @@ jest.mock("@whereby.com/media", () => {
 
 describe("connectionMonitorSlice", () => {
     describe("actions", () => {
-        it("doStartConnectionMonitor", async () => {
+        it("doStartConnectionMonitor", () => {
             const store = createStore();
 
-            await store.dispatch(doStartConnectionMonitor());
+            store.dispatch(doStartConnectionMonitor());
 
             const after = store.getState().connectionMonitor;
 

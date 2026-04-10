@@ -1,5 +1,8 @@
+import { Logger } from "../../../utils";
 import { OriginTrial, registerOriginTrials } from "../../../utils/originTrial";
 import { PressureRecord } from "../types";
+
+const logger = new Logger();
 
 interface CpuObserverOptions {
     /** Sample rate, in seconds */
@@ -28,7 +31,7 @@ const CPU_OBSERVER_OPTIONS: CpuObserverOptions = {
     ],
 };
 
-export async function startCpuObserver(
+export function startCpuObserver(
     cb: (records: PressureRecord[]) => void,
     { sampleRate, originTrials }: CpuObserverOptions = CPU_OBSERVER_OPTIONS,
     window: Window = globalThis.window,
@@ -42,7 +45,7 @@ export async function startCpuObserver(
         ((window.PressureObserver as PressureObserver).knownSources || []).includes("cpu")
     ) {
         pressureObserver = new (window.PressureObserver as any)(cb, { sampleRate }) as PressureObserver;
-        await pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 });
+        pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 })?.catch(logger.error);
 
         return {
             stop: () => {

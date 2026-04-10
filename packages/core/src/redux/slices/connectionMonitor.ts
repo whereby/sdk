@@ -1,7 +1,7 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { setClientProvider, subscribeIssues } from "@whereby.com/media";
 import { RootState } from "../store";
-import { createAppAsyncThunk, createAppThunk } from "../thunk";
+import { createAppThunk } from "../thunk";
 import { createReactor } from "../listenerMiddleware";
 import { selectRoomConnectionStatus } from "./roomConnection/selectors";
 import { selectRtcManager } from "./rtcConnection";
@@ -49,8 +49,7 @@ export const connectionMonitorSlice = createSlice({
 
 export const { connectionMonitorStarted, connectionMonitorStopped } = connectionMonitorSlice.actions;
 
-export const doStartConnectionMonitor = createAppAsyncThunk("connectionMonitor/doStartConnectionMonitor",
-    async (_, { dispatch, getState }) => {
+export const doStartConnectionMonitor = createAppThunk(() => (dispatch, getState) => {
     setClientProvider(() => {
         const state = getState();
 
@@ -73,7 +72,7 @@ export const doStartConnectionMonitor = createAppAsyncThunk("connectionMonitor/d
         return clientViews;
     });
 
-    const issueMonitorSubscription = await subscribeIssues({
+    const issueMonitorSubscription = subscribeIssues({
         onUpdatedIssues: (issuesAndMetricsByClients) => {
             const state = getState();
             const rtcManager = selectRtcManager(state);

@@ -1040,7 +1040,7 @@ export default class VegaRtcManager implements RtcManager {
             this.analytics.vegaReplaceTrackNoProducerNoEnabledTrack++;
             rtcStats.sendEvent("VegaReplaceTrackNoProducerNoEnabledTrack", {
                 hasWebcamTrack: !!this._webcamTrack,
-            })
+            });
         }
 
         if (this._webcamProducer.track !== this._webcamTrack) {

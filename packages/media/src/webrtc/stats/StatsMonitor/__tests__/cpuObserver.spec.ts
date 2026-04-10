@@ -23,8 +23,8 @@ describe("startCpuObserver", () => {
     });
 
     describe("when PressureObserver is not available", () => {
-        it("should return undefined", async () => {
-            const result = await startCpuObserver(cb, { originTrials, sampleRate }, window);
+        it("should return undefined", () => {
+            const result = startCpuObserver(cb, { originTrials, sampleRate }, window);
 
             expect(result).toBeUndefined();
         });
@@ -45,16 +45,16 @@ describe("startCpuObserver", () => {
             window.PressureObserver.knownSources = ["cpu"];
         });
 
-        it("should observe cpu pressure", async () => {
-            const observer = await startCpuObserver(cb, { originTrials, sampleRate }, window);
+        it("should observe cpu pressure", () => {
+            const observer = startCpuObserver(cb, { originTrials, sampleRate }, window);
 
             expect(observer).toBeDefined();
             expect(window.PressureObserver).toHaveBeenCalled();
             expect(observe).toHaveBeenCalledWith("cpu", { sampleInterval: sampleRate * 1000 });
         });
 
-        it("should return stop function", async () => {
-            const cpuObserver = await startCpuObserver(cb, { originTrials, sampleRate }, window);
+        it("should return stop function", () => {
+            const cpuObserver = startCpuObserver(cb, { originTrials, sampleRate }, window);
 
             cpuObserver?.stop();
 

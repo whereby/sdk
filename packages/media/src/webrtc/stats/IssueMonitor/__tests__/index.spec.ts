@@ -161,7 +161,7 @@ describe("IssueMonitor", () => {
         expect(arg).toMatchObject({ aggregated: { issues } });
     };
 
-    beforeEach(async () => {
+    beforeEach(() => {
         onUpdatedIssues = jest.fn();
 
         localCam = createMockClient("localcam", true);
@@ -175,7 +175,7 @@ describe("IssueMonitor", () => {
 
         setClientProvider(() => [localCam, remoteCam1, remoteCam2]);
 
-        stopSubscription = (await subscribeIssues({ onUpdatedIssues })).stop;
+        stopSubscription = subscribeIssues({ onUpdatedIssues }).stop;
     });
 
     afterEach(async () => {

@@ -1,5 +1,5 @@
 ---
-"@whereby.com/media": major
+"@whereby.com/media": patch
 ---
 
-Catch async exception when creating PressureObserver
+Fix errors when observing CPU pressure
