@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.9
+
+### Patch Changes
+
+- b7d9de3: Fix this binding in CPU pressure detector logger
+
 ## 8.0.8
 
 ### Patch Changes
