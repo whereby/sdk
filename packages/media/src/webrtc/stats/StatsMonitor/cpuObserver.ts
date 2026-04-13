@@ -30,7 +30,7 @@ export function startCpuObserver(
         ((window.PressureObserver as PressureObserver).knownSources || []).includes("cpu")
     ) {
         pressureObserver = new (window.PressureObserver as any)(cb, { sampleRate }) as PressureObserver;
-        pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 })?.catch(logger.error);
+        pressureObserver.observe("cpu", { sampleInterval: sampleRate * 1000 })?.catch((error) => logger.error(error));
 
         return {
             stop: () => {
