@@ -5,26 +5,18 @@ jest.mock("../../../../utils/originTrial");
 
 describe("startCpuObserver", () => {
     let cb: jest.Mock;
-    let originTrials: OriginTrial[];
     let sampleRate: number;
     let window: any;
 
     beforeEach(() => {
         cb = jest.fn();
-        originTrials = [{ hostnamePattern: /hostname\.com/, token: "token" }];
         sampleRate = 1;
         window = {};
     });
 
-    it("should register origin trials", () => {
-        startCpuObserver(cb, { originTrials, sampleRate }, window);
-
-        expect(registerOriginTrials).toHaveBeenCalledWith(originTrials);
-    });
-
     describe("when PressureObserver is not available", () => {
         it("should return undefined", () => {
-            const result = startCpuObserver(cb, { originTrials, sampleRate }, window);
+            const result = startCpuObserver(cb, { sampleRate }, window);
 
             expect(result).toBeUndefined();
         });
@@ -46,7 +38,7 @@ describe("startCpuObserver", () => {
         });
 
         it("should observe cpu pressure", () => {
-            const observer = startCpuObserver(cb, { originTrials, sampleRate }, window);
+            const observer = startCpuObserver(cb, { sampleRate }, window);
 
             expect(observer).toBeDefined();
             expect(window.PressureObserver).toHaveBeenCalled();
@@ -54,7 +46,7 @@ describe("startCpuObserver", () => {
         });
 
         it("should return stop function", () => {
-            const cpuObserver = startCpuObserver(cb, { originTrials, sampleRate }, window);
+            const cpuObserver = startCpuObserver(cb, { sampleRate }, window);
 
             cpuObserver?.stop();
 
