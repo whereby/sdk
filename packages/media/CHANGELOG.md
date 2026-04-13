@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.8
+
+### Patch Changes
+
+- db7e0df: Fix errors when observing CPU pressure
+
 ## 8.0.7
 
 ### Patch Changes
