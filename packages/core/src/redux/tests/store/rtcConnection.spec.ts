@@ -9,7 +9,7 @@ import {
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
-import { RtcManagerDispatcher } from "@whereby.com/media";
+import { CAMERA_STREAM_ID, RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
@@ -167,6 +167,99 @@ describe("actions", () => {
         expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith(store.getState().localMedia.stream, { audioPaused:true, videoPaused: true});
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
     });
+
+    describe("doAcceptStreams", () => {
+        it("should unaccept camera stream in SFU breakout groups", () => {
+            const remoteClientId = randomString()
+            const store = createStore({ withRtcManager: true, initialState: {
+            remoteParticipants: {
+                remoteParticipants: [{
+                    id: remoteClientId,
+                    streams: [{ id: CAMERA_STREAM_ID, state: "done_accept" }],
+                    breakoutGroup: "a",
+                    deviceId: "",
+                    displayName: "",
+                    externalId: null,
+                    isAudioEnabled: false,
+                    isAudioRecorder: false,
+                    isDialIn: false,
+                    isLocalParticipant: false,
+                    isVideoEnabled: false,
+                    newJoiner: false,
+                    presentationStream: null,
+                    roleName: "none",
+                    stream: null
+                }]
+            }
+        } });
+        const before = store.getState().remoteParticipants;
+
+        store.dispatch(doHandleAcceptStreams([{ clientId: remoteClientId, streamId: CAMERA_STREAM_ID, state: "to_unaccept" }]));
+
+        const after = store.getState().remoteParticipants;
+
+        expect(mockRtcManager.disconnect).toHaveBeenCalledTimes(1);
+        expect(mockRtcManager.disconnect).toHaveBeenCalledWith(remoteClientId);
+        expect(diff(before, after)).toEqual({
+            remoteParticipants: {
+                "0": {
+                    streams: {
+                        "0": {
+                            state: "done_unaccept"
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        it("should unaccept screenshare stream in SFU breakout groups", () => {
+            const remoteClientId = randomString();  
+            const screenshareStreamId = randomString();
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    remoteParticipants: {
+                        remoteParticipants: [{
+                            id: remoteClientId,
+                            streams: [{ id: screenshareStreamId, state: "done_accept" }],
+                            breakoutGroup: "a",
+                            deviceId: "",
+                            displayName: "",
+                            externalId: null,
+                            isAudioEnabled: false,
+                            isAudioRecorder: false,
+                            isDialIn: false,
+                            isLocalParticipant: false,
+                            isVideoEnabled: false,
+                            newJoiner: false,
+                            presentationStream: null,
+                            roleName: "none",
+                            stream: null
+                        }]
+                    }
+                }
+            });
+        const before = store.getState().remoteParticipants;
+
+        store.dispatch(doHandleAcceptStreams([{ clientId: remoteClientId, streamId: screenshareStreamId, state: "to_unaccept" }]));
+
+        const after = store.getState().remoteParticipants;
+
+        expect(mockRtcManager.disconnect).not.toHaveBeenCalled();
+        expect(diff(before, after)).toEqual({
+            remoteParticipants: {
+                "0": {
+                    streams: {
+                        "0": {
+                            state: "done_unaccept"
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    })
 });
 
 describe("middleware", () => {
