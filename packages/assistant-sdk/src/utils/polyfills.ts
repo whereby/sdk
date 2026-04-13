@@ -61,15 +61,6 @@ Object.defineProperty(global.navigator, "mediaDevices", {
     configurable: true,
 });
 
-if (typeof DOMException === "undefined") {
-    class DOMException {
-        constructor(...args) {
-            console.error("DOMException", args);
-        }
-    }
-    global.DOMException = DOMException;
-}
-
 class RTCPeerConnection extends wrtc.RTCPeerConnection {
     private wrappedGetStats = wrtc.RTCPeerConnection.prototype.getStats.bind(this);
     async getStats(arg: unknown) {
