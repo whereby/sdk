@@ -62,7 +62,13 @@ export const setClientProvider = (provider: () => StatsClient[]) => (STATE.getCl
 function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
     const collectStatsBound = collectStats.bind(null, state, { interval, logger });
 
-    const cpuObserver = startCpuObserver((records) => (state.lastPressureObserverRecord = records.pop()));
+    let cpuObserver: ReturnType<typeof startCpuObserver>;
+
+    try {
+        cpuObserver = startCpuObserver((records) => (state.lastPressureObserverRecord = records.pop()));
+    } catch (ex) {
+        logger.warn("Failed to observe CPU pressure", ex);
+    }
 
     // initial run
     setTimeout(collectStatsBound, interval);
