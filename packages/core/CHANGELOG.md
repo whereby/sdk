@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.9.15
+
+### Patch Changes
+
+- 84c0766: Clarify stream unaccept in SFU breakout groups
+
 ## 1.9.14
 
 ### Patch Changes
