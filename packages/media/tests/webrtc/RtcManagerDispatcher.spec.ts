@@ -2,7 +2,6 @@ import * as helpers from "./webRtcHelpers";
 import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import VegaRtcManager from "../../src/webrtc/VegaRtcManager";
 import RtcManagerDispatcher from "../../src/webrtc/RtcManagerDispatcher";
-import * as mediasoupClient from "@whereby.com/mediasoup-client";
 
 import { PROTOCOL_RESPONSES } from "../../src/model/protocol";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
@@ -10,7 +9,10 @@ import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
 import { GetConstraintsOptions, WebRTCProvider } from "../../src";
 
-const originalMediasoupDevice = mediasoupClient.Device;
+jest.mock("@whereby.com/mediasoup-client", () => ({
+    Device: jest.fn(),
+    detectDeviceAsync: jest.fn(),
+}));
 
 describe("RtcManagerDispatcher", () => {
     let emitter: any;
@@ -30,15 +32,6 @@ describe("RtcManagerDispatcher", () => {
         const serverSocket = serverSocketStub.socket;
 
         new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider, features });
-        Object.defineProperty(mediasoupClient, "Device", {
-            value: jest.fn(),
-        });
-    });
-
-    afterEach(() => {
-        Object.defineProperty(mediasoupClient, "Device", {
-            value: originalMediasoupDevice,
-        });
     });
 
     function mockEmitRoomJoined({
