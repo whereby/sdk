@@ -1,5 +1,5 @@
 import { detectDeviceAsync, Device } from "@whereby.com/mediasoup-client";
-import { BuiltinHandlerName } from "mediasoup-client/lib/types";
+import { BuiltinHandlerName } from "@whereby.com/mediasoup-client/lib/types";
 
 type SupportedDevice = BuiltinHandlerName | "NodeJS" | undefined;
 export const getMediasoupDeviceAsync = async (features: Record<string, boolean | undefined>): Promise<Device> => {
