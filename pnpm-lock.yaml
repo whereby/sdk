@@ -715,8 +715,8 @@ importers:
         specifier: ^9.0.5
         version: 9.0.5
       mediasoup-client:
-        specifier: whereby/mediasoup-client#firefox-reuse-m-lines-fix
-        version: https://codeload.github.com/whereby/mediasoup-client/tar.gz/73101754ba2c150e4794ff79cbb994035a1fd905
+        specifier: github:whereby/mediasoup-client#whereby
+        version: https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039
       rtcstats:
         specifier: github:whereby/rtcstats#5.4.1
         version: https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d
@@ -6967,8 +6967,8 @@ packages:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
 
-  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/73101754ba2c150e4794ff79cbb994035a1fd905:
-    resolution: {tarball: https://codeload.github.com/whereby/mediasoup-client/tar.gz/73101754ba2c150e4794ff79cbb994035a1fd905}
+  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039:
+    resolution: {tarball: https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039}
     version: 3.15.7
     engines: {node: '>=18'}
 
@@ -16883,7 +16883,7 @@ snapshots:
 
   media-typer@1.1.0: {}
 
-  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/73101754ba2c150e4794ff79cbb994035a1fd905:
+  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039:
     dependencies:
       '@types/debug': 4.1.12
       '@types/events-alias': '@types/events@3.0.3'
