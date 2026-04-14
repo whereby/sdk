@@ -705,6 +705,9 @@ importers:
 
   packages/media:
     dependencies:
+      '@whereby/mediasoup-client':
+        specifier: 3.15.8
+        version: 3.15.8
       check-ip:
         specifier: ^1.1.1
         version: 1.1.1
@@ -714,9 +717,6 @@ importers:
       ip-address:
         specifier: ^9.0.5
         version: 9.0.5
-      mediasoup-client:
-        specifier: github:whereby/mediasoup-client#whereby
-        version: https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039
       rtcstats:
         specifier: github:whereby/rtcstats#5.4.1
         version: https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d
@@ -4193,6 +4193,10 @@ packages:
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
 
+  '@whereby/mediasoup-client@3.15.8':
+    resolution: {integrity: sha512-KvVMLIf1MEb1PCEGuRM1wCCNPcvb+cbQd5hLAtSFKKN9dEI/vzzy/c9LSJzDz2RyUUy7cxxyNuN74N3C54Lruw==, tarball: https://npm.pkg.github.com/download/@whereby/mediasoup-client/3.15.8/11f3ceecabc59539a45f3bc43dfdcb4c681fc501}
+    engines: {node: '>=18'}
+
   '@xmldom/xmldom@0.8.10':
     resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
     engines: {node: '>=10.0.0'}
@@ -6966,11 +6970,6 @@ packages:
   media-typer@1.1.0:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
-
-  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039:
-    resolution: {tarball: https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039}
-    version: 3.15.7
-    engines: {node: '>=18'}
 
   memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
@@ -13503,6 +13502,19 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
 
+  '@whereby/mediasoup-client@3.15.8':
+    dependencies:
+      '@types/debug': 4.1.12
+      '@types/events-alias': '@types/events@3.0.3'
+      awaitqueue: 3.2.4(supports-color@10.2.2)
+      browser-dtector: 4.1.0
+      debug: 4.4.3(supports-color@10.2.2)
+      events-alias: events@3.3.0
+      fake-mediastreamtrack: 2.1.4
+      h264-profile-level-id: 2.2.3(supports-color@10.2.2)
+      sdp-transform: 2.15.0
+      supports-color: 10.2.2
+
   '@xmldom/xmldom@0.8.10': {}
 
   '@xtuc/ieee754@1.2.0': {}
@@ -16882,19 +16894,6 @@ snapshots:
   math-intrinsics@1.1.0: {}
 
   media-typer@1.1.0: {}
-
-  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/c1d88f332dd5bfdcad75ef32930fc4def5273039:
-    dependencies:
-      '@types/debug': 4.1.12
-      '@types/events-alias': '@types/events@3.0.3'
-      awaitqueue: 3.2.4(supports-color@10.2.2)
-      browser-dtector: 4.1.0
-      debug: 4.4.3(supports-color@10.2.2)
-      events-alias: events@3.3.0
-      fake-mediastreamtrack: 2.1.4
-      h264-profile-level-id: 2.2.3(supports-color@10.2.2)
-      sdp-transform: 2.15.0
-      supports-color: 10.2.2
 
   memoize-one@5.2.1: {}
 

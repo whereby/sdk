@@ -1,4 +1,4 @@
-import { Device } from "mediasoup-client";
+import { Device } from "@whereby/mediasoup-client";
 import adapterRaw from "webrtc-adapter";
 import { v4 as uuidv4 } from "uuid";
 
