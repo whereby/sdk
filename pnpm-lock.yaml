@@ -705,7 +705,7 @@ importers:
 
   packages/media:
     dependencies:
-      '@whereby/mediasoup-client':
+      '@whereby.com/mediasoup-client':
         specifier: 3.15.8
         version: 3.15.8
       check-ip:
@@ -4193,8 +4193,8 @@ packages:
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
 
-  '@whereby/mediasoup-client@3.15.8':
-    resolution: {integrity: sha512-KvVMLIf1MEb1PCEGuRM1wCCNPcvb+cbQd5hLAtSFKKN9dEI/vzzy/c9LSJzDz2RyUUy7cxxyNuN74N3C54Lruw==, tarball: https://npm.pkg.github.com/download/@whereby/mediasoup-client/3.15.8/11f3ceecabc59539a45f3bc43dfdcb4c681fc501}
+  '@whereby.com/mediasoup-client@3.15.8':
+    resolution: {integrity: sha512-qLJ79fnfV2i1mk1q0XE2cplOU60wGbjObrgRTExGhMNY/UyUYcVOSOOfT+UUSTd00jKTSIxfMA4YxsSv8aW35g==}
     engines: {node: '>=18'}
 
   '@xmldom/xmldom@0.8.10':
@@ -13502,7 +13502,7 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
 
-  '@whereby/mediasoup-client@3.15.8':
+  '@whereby.com/mediasoup-client@3.15.8':
     dependencies:
       '@types/debug': 4.1.12
       '@types/events-alias': '@types/events@3.0.3'

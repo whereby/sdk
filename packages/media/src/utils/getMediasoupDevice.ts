@@ -1,4 +1,4 @@
-import { detectDeviceAsync, Device } from "@whereby/mediasoup-client";
+import { detectDeviceAsync, Device } from "@whereby.com/mediasoup-client";
 import { BuiltinHandlerName } from "mediasoup-client/lib/types";
 
 type SupportedDevice = BuiltinHandlerName | "NodeJS" | undefined;

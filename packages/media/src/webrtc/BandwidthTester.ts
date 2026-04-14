@@ -1,4 +1,4 @@
-import { Device } from "@whereby/mediasoup-client";
+import { Device } from "@whereby.com/mediasoup-client";
 import EventEmitter from "events";
 import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";

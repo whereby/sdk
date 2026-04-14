@@ -2,7 +2,7 @@ import * as helpers from "./webRtcHelpers";
 import P2pRtcManager from "../../src/webrtc/P2pRtcManager";
 import VegaRtcManager from "../../src/webrtc/VegaRtcManager";
 import RtcManagerDispatcher from "../../src/webrtc/RtcManagerDispatcher";
-import * as mediasoupClient from "@whereby/mediasoup-client";
+import * as mediasoupClient from "@whereby.com/mediasoup-client";
 
 import { PROTOCOL_RESPONSES } from "../../src/model/protocol";
 import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
