@@ -49,6 +49,7 @@ export type LiveTranscriptionState = {
     error?: string;
     status: "transcribing" | "requested" | "error";
     startedAt?: number;
+    transcriptionId?: string;
 };
 
 export type LiveStreamState = {
@@ -74,15 +75,19 @@ export type BreakoutState = {
 
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
+    connectionError: string | null;
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
     events?: NotificationsEventEmitter;
+    isCameraEnabled: boolean;
+    isMicrophoneEnabled: boolean;
     liveStream?: LiveStreamState;
     liveTranscription?: LiveTranscriptionState;
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
+    roomSessionId: string | null;
     screenshares: Screenshare[];
     waitingParticipants: WaitingParticipantState[];
     spotlightedParticipants: ClientView[];

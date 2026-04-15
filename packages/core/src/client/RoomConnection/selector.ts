@@ -16,6 +16,10 @@ import {
     selectBreakoutActive,
     selectBreakoutGroupedParticipants,
     selectAllClientViewsInCurrentGroup,
+    selectRoomConnectionError,
+    selectIsCameraEnabled,
+    selectIsMicrophoneEnabled,
+    selectRoomConnectionSessionId,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
@@ -33,10 +37,14 @@ export const selectRoomConnectionState = createSelector(
     selectRemoteParticipants,
     selectScreenshares,
     selectRoomConnectionStatus,
+    selectRoomConnectionError,
     selectStreamingRaw,
     selectWaitingParticipants,
     selectNotificationsEmitter,
     selectSpotlightedClientViews,
+    selectIsCameraEnabled,
+    selectIsMicrophoneEnabled,
+    selectRoomConnectionSessionId,
     (
         chatMessages,
         cloudRecording,
@@ -50,10 +58,14 @@ export const selectRoomConnectionState = createSelector(
         remoteParticipants,
         screenshares,
         connectionStatus,
+        connectionError,
         streaming,
         waitingParticipants,
         notificationsEmitter,
         spotlightedClientViews,
+        isCameraEnabled,
+        isMicrophoneEnabled,
+        roomSessionId,
     ) => {
         const state: RoomConnectionState = {
             chatMessages,
@@ -71,7 +83,10 @@ export const selectRoomConnectionState = createSelector(
                 participantsInCurrentGroup: clientViewsInCurrentGroup,
             },
             connectionStatus,
+            connectionError,
             events: notificationsEmitter,
+            isCameraEnabled,
+            isMicrophoneEnabled,
             liveStream: streaming.isStreaming
                 ? {
                       status: "streaming",
@@ -83,6 +98,7 @@ export const selectRoomConnectionState = createSelector(
                       error: liveTranscription.error,
                       startedAt: liveTranscription.startedAt,
                       status: liveTranscription.status,
+                      transcriptionId: liveTranscription.transcriptionId,
                   }
                 : undefined,
             localScreenshareStatus: localParticipant.isScreenSharing ? "active" : undefined,
@@ -91,6 +107,7 @@ export const selectRoomConnectionState = createSelector(
             screenshares,
             waitingParticipants,
             spotlightedParticipants: spotlightedClientViews,
+            roomSessionId: roomSessionId ?? null,
         };
 
         return state;

@@ -21,14 +21,21 @@ export const CLOUD_RECORDING_STATUS_CHANGED = "cloud-recording:status-changed";
 export const CONNECTION_STATUS_CHANGED = "connection:status-changed";
 /* Live Transcription Events */
 export const LIVE_TRANSCRIPTION_STATUS_CHANGED = "live-transcription:status-changed";
+/* Connection Error Events */
+export const CONNECTION_ERROR_CHANGED = "connection:error-changed";
 /* Local participant events */
 export const LOCAL_PARTICIPANT_CHANGED = "local-participant:changed";
 export const LOCAL_SCREENSHARE_STATUS_CHANGED = "local-screenshare:status-changed";
 /* Remote participant events */
 export const REMOTE_PARTICIPANTS_CHANGED = "remote-participants:changed";
+/* Room Session ID events */
+export const ROOM_SESSION_ID_CHANGED = "room-session-id:changed";
 /* Screen share events */
 export const SCREENSHARE_STARTED = "screenshare:started";
 export const SCREENSHARE_STOPPED = "screenshare:stopped";
+
+export const CAMERA_STATE_CHANGED = "camera:state-changed";
+export const MICROPHONE_STATE_CHANGED = "microphone:state-changed";
 
 /* Streaming events */
 export const STREAMING_STARTED = "streaming:started";
@@ -54,17 +61,21 @@ type RoomJoinedEvent = {
 /* Event types for RoomConnection client */
 export type RoomConnectionEvents = {
     [BREAKOUT_CONFIG_CHANGED]: [config: BreakoutState];
+    [CAMERA_STATE_CHANGED]: [isCameraEnabled: boolean];
     [CHAT_NEW_MESSAGE]: [message: ChatMessage];
     [CLOUD_RECORDING_STATUS_CHANGED]: [status: CloudRecordingState | undefined];
     [CONNECTION_STATUS_CHANGED]: [status: ConnectionStatus];
     [LIVE_TRANSCRIPTION_STATUS_CHANGED]: [status: LiveTranscriptionState | undefined];
+    [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
     [LOCAL_SCREENSHARE_STATUS_CHANGED]: [status?: LocalScreenshareStatus];
+    [MICROPHONE_STATE_CHANGED]: [isMicrophoneEnabled: boolean];
     [REMOTE_PARTICIPANTS_CHANGED]: [participants: RemoteParticipantState[]];
     [SCREENSHARE_STARTED]: [screenshare: Screenshare];
     [SCREENSHARE_STOPPED]: [screenshareId: string];
     [ROOM_JOINED]: [room: RoomJoinedEvent];
     [ROOM_JOINED_ERROR]: [error: RoomJoinedErrors | string];
+    [ROOM_SESSION_ID_CHANGED]: [roomSessionId: string | null];
     [WAITING_PARTICIPANT_JOINED]: [participant: WaitingParticipant];
     [WAITING_PARTICIPANT_LEFT]: [participantId: string];
     [SPOTLIGHT_PARTICIPANT_ADDED]: [participant: ClientView];
