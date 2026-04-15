@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.10
+
+### Patch Changes
+
+- f7dacba: Use mediasoup-client fork to handle Firefox m-section recycle
+
 ## 8.0.9
 
 ### Patch Changes
