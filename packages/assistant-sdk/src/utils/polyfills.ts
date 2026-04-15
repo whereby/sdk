@@ -25,39 +25,42 @@ export function setWebsocketOrigin(roomUrl: string) {
     }
 }
 
+if (typeof global.navigator === "undefined") {
+    Object.defineProperty(global, "navigator", {
+        value: {
+            userAgent: "Node.js/20",
+        },
+        writable: false,
+        enumerable: true,
+        configurable: true,
+    });
+}
 const wrtcMediaDevices = wrtc.mediaDevices as {
     addEventListener: EventTarget["addEventListener"];
     removeEventListener: EventTarget["removeEventListener"];
 };
-Object.defineProperty(global, "navigator", {
+Object.defineProperty(global.navigator, "mediaDevices", {
     value: {
-        userAgent: "Node.js/20",
-        mediaDevices: {
-            getUserMedia: wrtc.getUserMedia as (args: { audio: boolean; video: boolean }) => Promise<MediaStream>,
-            addEventListener: wrtcMediaDevices.addEventListener,
-            removeEventListener: wrtcMediaDevices.removeEventListener,
-            enumerateDevices: async () =>
-                new Promise((resolve) =>
-                    resolve([
-                        {
-                            deviceId: "default",
-                            groupId: uuid(),
-                            kind: "audioinput",
-                            label: "Dummy audio device",
-                        },
-                    ]),
-                ),
-        },
+        getUserMedia: wrtc.getUserMedia as (args: { audio: boolean; video: boolean }) => Promise<MediaStream>,
+        addEventListener: wrtcMediaDevices.addEventListener,
+        removeEventListener: wrtcMediaDevices.removeEventListener,
+        enumerateDevices: async () =>
+            new Promise((resolve) =>
+                resolve([
+                    {
+                        deviceId: "default",
+                        groupId: uuid(),
+                        kind: "audioinput",
+                        label: "Dummy audio device",
+                    },
+                ]),
+            ),
     },
     writable: false,
     enumerable: true,
     configurable: true,
 });
-class DOMException {
-    constructor(...args) {
-        console.error("DOMException", args);
-    }
-}
+
 class RTCPeerConnection extends wrtc.RTCPeerConnection {
     private wrappedGetStats = wrtc.RTCPeerConnection.prototype.getStats.bind(this);
     async getStats(arg: unknown) {
@@ -71,8 +74,7 @@ class RTCPeerConnection extends wrtc.RTCPeerConnection {
     }
 }
 
-global.DOMException = DOMException;
-
+// even in NodeJS versions that include WebSocket, we need ws to be able to set the origin header
 global.WebSocket = ws;
 
 global.MediaStream = wrtc.MediaStream;
