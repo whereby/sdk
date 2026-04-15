@@ -1,4 +1,4 @@
-import { RtpCapabilities, RtpCodecCapability } from "mediasoup-client/lib/RtpParameters";
+import { RtpCapabilities, RtpCodecCapability } from "@whereby.com/mediasoup-client/lib/RtpParameters";
 import adapter from "webrtc-adapter";
 import Logger from "./Logger";
 

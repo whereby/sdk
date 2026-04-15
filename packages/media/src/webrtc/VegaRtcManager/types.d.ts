@@ -1,6 +1,6 @@
-import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
-import { SctpParameters } from "mediasoup-client/lib/SctpParameters";
-import { DtlsParameters, IceCandidate, IceParameters } from "mediasoup-client/lib/Transport";
+import { RtpCapabilities } from "@whereby.com/mediasoup-client/lib/RtpParameters";
+import { SctpParameters } from "@whereby.com/mediasoup-client/lib/SctpParameters";
+import { DtlsParameters, IceCandidate, IceParameters } from "@whereby.com/mediasoup-client/lib/Transport";
 
 type VegaGetCapabilitiesResponse = {
     routerRtpCapabilities: RtpCapabilities;

@@ -1,10 +1,10 @@
 import { getMediasoupDeviceAsync } from "../getMediasoupDevice";
 
-jest.mock("mediasoup-client", () => ({
+jest.mock("@whereby.com/mediasoup-client", () => ({
     Device: jest.fn(),
     detectDeviceAsync: jest.fn(),
 }));
-const mediasoupClient = jest.requireMock("mediasoup-client");
+const mediasoupClient = jest.requireMock("@whereby.com/mediasoup-client");
 
 const safari17UserAgent =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
