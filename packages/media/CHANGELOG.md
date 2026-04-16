@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.0.11
+
+### Patch Changes
+
+- 8c7a3c9: Add Vega analytics for produce and consume failures
+
 ## 8.0.10
 
 ### Patch Changes
