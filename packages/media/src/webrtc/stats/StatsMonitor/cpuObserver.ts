@@ -20,7 +20,7 @@ const CPU_OBSERVER_OPTIONS: CpuObserverOptions = {
 
 export function startCpuObserver(
     cb: (records: PressureRecord[]) => void,
-    { sampleRate, }: CpuObserverOptions = CPU_OBSERVER_OPTIONS,
+    { sampleRate }: CpuObserverOptions = CPU_OBSERVER_OPTIONS,
     window: Window = globalThis.window,
 ) {
     let pressureObserver: PressureObserver;

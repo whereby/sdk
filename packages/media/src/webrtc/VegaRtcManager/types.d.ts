@@ -41,6 +41,11 @@ type VegaAnalytics = {
     vegaIceRestartWrongTransportId: number;
     vegaNonErrorRejectionValueGUMError: number;
     vegaReplaceTrackNoProducerNoEnabledTrack: number;
+    vegaMicProducerFailed: number;
+    vegaWebcamProducerFailed: number;
+    vegaScreenVideoProducerFailed: number;
+    vegaScreenAudioProducerFailed: number;
+    vegaConsumerCreationFailed: number;
     micTrackEndedCount: number;
     camTrackEndedCount: number;
 };

@@ -228,6 +228,11 @@ export default class VegaRtcManager implements RtcManager {
             vegaIceRestartWrongTransportId: 0,
             vegaNonErrorRejectionValueGUMError: 0,
             vegaReplaceTrackNoProducerNoEnabledTrack: 0,
+            vegaMicProducerFailed: 0,
+            vegaWebcamProducerFailed: 0,
+            vegaConsumerCreationFailed: 0,
+            vegaScreenVideoProducerFailed: 0,
+            vegaScreenAudioProducerFailed: 0,
             micTrackEndedCount: 0,
             camTrackEndedCount: 0,
         };
@@ -769,6 +774,8 @@ export default class VegaRtcManager implements RtcManager {
                 if (this._micTrack !== this._micProducer.track) await this._replaceMicTrack();
                 if (this._micPaused !== this._micProducer.paused) this._pauseResumeMic();
             } catch (error) {
+                this.analytics.vegaMicProducerFailed++;
+                rtcStats.sendEvent("VegaMicProducerFailed", { error });
                 logger.error("micProducer failed:%o", error);
             } finally {
                 this._micProducerPromise = null;
@@ -1012,6 +1019,8 @@ export default class VegaRtcManager implements RtcManager {
                 }
                 if (this._webcamPaused !== this._webcamProducer.paused) this._pauseResumeWebcam();
             } catch (error) {
+                this.analytics.vegaWebcamProducerFailed++;
+                rtcStats.sendEvent("VegaWebcamProducerFailed", { error });
                 logger.error("webcamProducer failed:%o", error);
             } finally {
                 this._webcamProducerPromise = null;
@@ -1140,6 +1149,8 @@ export default class VegaRtcManager implements RtcManager {
                 // Has someone replaced the track?
                 if (this._screenVideoTrack !== this._screenVideoProducer.track) await this._replaceScreenVideoTrack();
             } catch (error) {
+                this.analytics.vegaScreenVideoProducerFailed++;
+                rtcStats.sendEvent("VegaScreenVideoProducerFailed", { error });
                 logger.error("screenVideoProducer failed:%o", error);
             } finally {
                 this._screenVideoProducerPromise = null;
@@ -1219,6 +1230,8 @@ export default class VegaRtcManager implements RtcManager {
                 // Has someone replaced the track?
                 if (this._screenAudioTrack !== this._screenAudioProducer.track) await this._replaceScreenAudioTrack();
             } catch (error) {
+                this.analytics.vegaScreenAudioProducerFailed++;
+                rtcStats.sendEvent("VegaScreenAudioProducerFailed", { error });
                 logger.error("screenAudioProducer failed:%o", error);
             } finally {
                 this._screenAudioProducerPromise = null;
@@ -1802,7 +1815,15 @@ export default class VegaRtcManager implements RtcManager {
     async _onConsumerReady(options: any) {
         logger.info("_onConsumerReady()", { id: options.id, producerId: options.producerId });
 
-        const consumer = await this._receiveTransport.consume(options);
+        let consumer;
+
+        try {
+            consumer = await this._receiveTransport.consume(options);
+        } catch (error) {
+            this.analytics.vegaConsumerCreationFailed++;
+            rtcStats.sendEvent("VegaConsumerCreationFailed", { producerId: options.producerId, error });
+            throw error;
+        }
 
         consumer.pause();
         consumer.appData.localPaused = true;
