@@ -1,5 +1,12 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.58
+
+### Patch Changes
+
+- 90a482d: Check for existing Navigator before polyfilling
+    - @whereby.com/core@1.9.17
+
 ## 1.2.57
 
 ### Patch Changes
