@@ -1,4 +1,4 @@
-import { Producer } from "@whereby.com/mediasoup-client/lib/Producer";
+import { Producer } from "mediasoup-client/lib/Producer";
 import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "../utils";
 
 describe("utils", () => {

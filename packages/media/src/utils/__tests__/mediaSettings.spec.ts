@@ -1,4 +1,4 @@
-import { RtpCapabilities } from "@whereby.com/mediasoup-client/lib/RtpParameters";
+import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import {
     ADDITIONAL_SCREEN_SHARE_SETTINGS,
     AUDIO_SETTINGS,
