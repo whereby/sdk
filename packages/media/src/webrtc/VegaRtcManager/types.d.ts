@@ -48,6 +48,10 @@ type VegaAnalytics = {
     vegaConsumerCreationFailed: number;
     micTrackEndedCount: number;
     camTrackEndedCount: number;
+    numNewPc: number;
+    numIceConnected: number;
+    numIceDisconnected: number;
+    numIceFailed: number;
 };
 
 type VegaAnalyticMetric = keyof VegaAnalytics;
