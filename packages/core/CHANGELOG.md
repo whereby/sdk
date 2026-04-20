@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 1.10.0
+
+### Minor Changes
+
+- 33d60b7: Add camera, mic, and connection error subscribers to RoomConnectionClient
+
+### Patch Changes
+
+- Updated dependencies [8a9e318]
+    - @whereby.com/media@8.1.0
+
 ## 1.9.17
 
 ### Patch Changes

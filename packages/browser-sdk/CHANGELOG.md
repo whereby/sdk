@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.20.0
+
+### Minor Changes
+
+- 33d60b7: Add camera, mic, and connection error subscribers to RoomConnectionClient
+
+### Patch Changes
+
+- Updated dependencies [8a9e318]
+- Updated dependencies [33d60b7]
+    - @whereby.com/media@8.1.0
+    - @whereby.com/core@1.10.0
+
 ## 3.19.17
 
 ### Patch Changes
