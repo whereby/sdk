@@ -706,8 +706,8 @@ importers:
   packages/media:
     dependencies:
       '@whereby.com/mediasoup-client':
-        specifier: github:whereby/mediasoup-client#pontus/cob-2653-rebase-mediasoup-fork-on-3187
-        version: mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/3322ae6cd3708d2c69050afbf78649c3453614d0
+        specifier: 3.18.7
+        version: 3.18.7
       check-ip:
         specifier: ^1.1.1
         version: 1.1.1
@@ -4201,6 +4201,10 @@ packages:
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
 
+  '@whereby.com/mediasoup-client@3.18.7':
+    resolution: {integrity: sha512-YZTj7xx29VjBZMNKjlKzJmnQCnFVQ1g9Ozgo+UaqzJYjFLuhIv1qkKKuC/WcSPBydlBo+274Htkz2moQzEb5Rg==}
+    engines: {node: '>=20'}
+
   '@xmldom/xmldom@0.8.10':
     resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
     engines: {node: '>=10.0.0'}
@@ -6970,11 +6974,6 @@ packages:
   media-typer@1.1.0:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
-
-  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/3322ae6cd3708d2c69050afbf78649c3453614d0:
-    resolution: {tarball: https://codeload.github.com/whereby/mediasoup-client/tar.gz/3322ae6cd3708d2c69050afbf78649c3453614d0}
-    version: 3.18.7
-    engines: {node: '>=20'}
 
   memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
@@ -13517,6 +13516,18 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
 
+  '@whereby.com/mediasoup-client@3.18.7':
+    dependencies:
+      '@types/debug': 4.1.12
+      '@types/events-alias': '@types/events@3.0.3'
+      awaitqueue: 3.3.0(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
+      events-alias: events@3.3.0
+      fake-mediastreamtrack: 2.2.1
+      h264-profile-level-id: 2.3.2(supports-color@10.2.2)
+      sdp-transform: 3.0.0
+      supports-color: 10.2.2
+
   '@xmldom/xmldom@0.8.10': {}
 
   '@xtuc/ieee754@1.2.0': {}
@@ -16894,18 +16905,6 @@ snapshots:
   math-intrinsics@1.1.0: {}
 
   media-typer@1.1.0: {}
-
-  mediasoup-client@https://codeload.github.com/whereby/mediasoup-client/tar.gz/3322ae6cd3708d2c69050afbf78649c3453614d0:
-    dependencies:
-      '@types/debug': 4.1.12
-      '@types/events-alias': '@types/events@3.0.3'
-      awaitqueue: 3.3.0(supports-color@10.2.2)
-      debug: 4.4.3(supports-color@10.2.2)
-      events-alias: events@3.3.0
-      fake-mediastreamtrack: 2.2.1
-      h264-profile-level-id: 2.3.2(supports-color@10.2.2)
-      sdp-transform: 3.0.0
-      supports-color: 10.2.2
 
   memoize-one@5.2.1: {}
 
