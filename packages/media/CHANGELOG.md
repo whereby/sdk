@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.0
+
+### Minor Changes
+
+- fe31b39: Allow for setting remote client media prefs on RtcManager to avoid sending video to clients that don't need to receive it
+
 ## 8.1.0
 
 ### Minor Changes
