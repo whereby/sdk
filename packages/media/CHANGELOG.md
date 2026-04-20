@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.1.0
+
+### Minor Changes
+
+- 8a9e318: Extend ICE connection metrics
+
 ## 8.0.11
 
 ### Patch Changes
