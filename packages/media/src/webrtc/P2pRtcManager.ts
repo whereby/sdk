@@ -62,6 +62,8 @@ type P2PAnalytics = {
     P2PNonErrorRejectionValueGUMError: number;
     numNewPc: number;
     numIceConnected: number;
+    numIceDisconnected: number;
+    numIceFailed: number;
     numIceRestart: number;
     numIceNoPublicIpGathered: number;
     numIceNoPublicIpGatheredIn3sec: number;
@@ -171,6 +173,8 @@ export default class P2pRtcManager implements RtcManager {
             P2PNonErrorRejectionValueGUMError: 0,
             numNewPc: 0,
             numIceConnected: 0,
+            numIceDisconnected: 0,
+            numIceFailed: 0,
             numIceRestart: 0,
             numIceNoPublicIpGathered: 0,
             numIceNoPublicIpGatheredIn3sec: 0,
@@ -759,6 +763,7 @@ export default class P2pRtcManager implements RtcManager {
                     break;
                 case "disconnected":
                     newStatus = CONNECTION_STATUS.TYPES.CONNECTION_DISCONNECTED;
+                    this.analytics.numIceDisconnected++;
                     setTimeout(() => {
                         if (pc.iceConnectionState === "disconnected") {
                             this._maybeRestartIce(clientId, session);
@@ -767,6 +772,7 @@ export default class P2pRtcManager implements RtcManager {
                     break;
                 case "failed":
                     newStatus = CONNECTION_STATUS.TYPES.CONNECTION_FAILED;
+                    this.analytics.numIceFailed++;
                     if (currentStatus !== newStatus) {
                         this._maybeRestartIce(clientId, session);
                     }

@@ -235,6 +235,10 @@ export default class VegaRtcManager implements RtcManager {
             vegaScreenAudioProducerFailed: 0,
             micTrackEndedCount: 0,
             camTrackEndedCount: 0,
+            numNewPc: 0,
+            numIceConnected: 0,
+            numIceDisconnected: 0,
+            numIceFailed: 0,
         };
     }
 
@@ -528,8 +532,26 @@ export default class VegaRtcManager implements RtcManager {
         maybeTurnOnly(transportOptions, this._features);
 
         const transport = (await this._mediasoupDeviceInitializedAsync)?.[creator](transportOptions);
+
+        this.analytics.numNewPc++;
+
         const onConnectionStateListener = async (connectionState: any) => {
             logger.info(`Transport ConnectionStateChanged ${connectionState}`);
+
+            switch (connectionState) {
+                case "connected":
+                    this.analytics.numIceConnected++;
+                    break;
+                case "disconnected":
+                    this.analytics.numIceDisconnected++;
+                    break;
+                case "failed":
+                    this.analytics.numIceFailed++;
+                    break;
+                default:
+                    break;
+            }
+
             if (connectionState !== "disconnected" && connectionState !== "failed") {
                 return;
             }
