@@ -66,6 +66,10 @@ export const rootReducer: AppReducer = (state, action) => {
                 ...localMediaSlice.getInitialState(),
                 ...state?.localMedia,
             },
+            cameraEffects: {
+                ...cameraEffectsSlice.getInitialState(),
+                ...state?.cameraEffects,
+            },
         };
 
         return appReducer(resetState, action);
