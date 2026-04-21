@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "3.20.3",
+    "version": "3.20.4",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -88,8 +88,8 @@
     },
     "dependencies": {
         "@radix-ui/react-popover": "^1.0.7",
-        "@whereby.com/media": "8.2.1",
-        "@whereby.com/core": "1.10.3",
+        "@whereby.com/media": "8.2.2",
+        "@whereby.com/core": "1.10.4",
         "clsx": "^2.1.1",
         "heresy": "^1.0.4",
         "runes": "^0.4.3"
