@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.2
+
+### Patch Changes
+
+- 629c999: Only add stopped video track if there are no video tracks in camera stream
+
 ## 8.2.1
 
 ### Patch Changes
