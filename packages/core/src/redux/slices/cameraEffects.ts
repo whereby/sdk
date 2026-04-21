@@ -1,8 +1,8 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { createAppAsyncThunk } from "../thunk";
 import { RootState } from "../store";
-import { createReactor } from "../listenerMiddleware";
-import { selectAppIsActive } from "./app";
+import { startAppListening } from "../listenerMiddleware";
+import { doAppStop } from "./app";
 import { doLocalStreamEffect, selectLocalMediaIsSwitchingStream, selectLocalMediaStream } from "./localMedia";
 import { Setup, Params } from "@whereby.com/camera-effects";
 
@@ -164,12 +164,11 @@ export const doCameraEffectsClear = createAppAsyncThunk("cameraEffects/clear", a
     await dispatch(doCameraEffectsSwitchPreset({ effectId: null }));
 });
 
-const selectCameraEffectsShouldStop = createSelector(selectAppIsActive, selectCameraEffectsRaw, (appIsActive, raw) => {
-    return !appIsActive && !!raw.stop;
-});
-
-createReactor([selectCameraEffectsShouldStop], ({ dispatch }, shouldStop) => {
-    if (shouldStop) {
-        dispatch(doCameraEffectsClear());
-    }
+startAppListening({
+    actionCreator: doAppStop,
+    effect: (_, { dispatch, getState }) => {
+        if (selectCameraEffectsRaw(getState()).stop) {
+            dispatch(doCameraEffectsClear());
+        }
+    },
 });

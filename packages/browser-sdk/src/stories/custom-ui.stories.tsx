@@ -36,6 +36,68 @@ export const StartStop = () => {
     return <div>Go to this story to eg verify all resources (camera, microphone, connections) are released.</div>;
 };
 
+function RoomConnectionWithLocalMediaInner({
+    roomUrl,
+    displayName,
+    externalId,
+}: {
+    roomUrl: string;
+    displayName?: string;
+    externalId?: string;
+}) {
+    const localMedia = useLocalMedia({ audio: true, video: true });
+    const [shouldJoin, setShouldJoin] = useState(false);
+    const {
+        actions: { switchCameraEffect, clearCameraEffect, joinRoom, leaveRoom },
+    } = useRoomConnection(roomUrl, { localMedia, displayName, externalId });
+    const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
+
+    useEffect(() => {
+        (async () => {
+            const { getUsablePresets } = await import("@whereby.com/camera-effects");
+            setEffectPresets(getUsablePresets());
+        })();
+    }, []);
+
+    const handleToggleJoin = () => {
+        if (shouldJoin) {
+            leaveRoom();
+        } else {
+            joinRoom();
+        }
+        setShouldJoin(!shouldJoin);
+    };
+
+    return (
+        <div>
+            <PrecallExperience {...localMedia} hideVideoPreview={shouldJoin} />
+            <div className="controls">
+                <button onClick={() => clearCameraEffect()}>Remove background effect</button>
+                <select value="" onChange={(e) => switchCameraEffect(e.target.value)}>
+                    <option value="" disabled>
+                        Select background effect
+                    </option>
+                    {effectPresets.map((preset) => (
+                        <option key={preset} value={preset}>
+                            {preset}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <button onClick={handleToggleJoin}>{shouldJoin ? "Leave room" : "Join room"}</button>
+
+            {shouldJoin && (
+                <VideoExperience
+                    displayName={displayName}
+                    roomName={roomUrl}
+                    localMedia={localMedia}
+                    externalId={externalId}
+                />
+            )}
+        </div>
+    );
+}
+
 export const RoomConnectionWithLocalMedia = ({
     roomUrl,
     displayName,
@@ -45,29 +107,11 @@ export const RoomConnectionWithLocalMedia = ({
     displayName?: string;
     externalId?: string;
 }) => {
-    const localMedia = useLocalMedia({ audio: true, video: true });
-    const [shouldJoin, setShouldJoin] = useState(false);
-
     if (!roomUrl || !roomUrl.match(roomRegEx)) {
         return <p>Set room url on the Controls panel</p>;
     }
 
-    return (
-        <div>
-            <PrecallExperience {...localMedia} hideVideoPreview={shouldJoin} />
-            <button onClick={() => setShouldJoin(!shouldJoin)}>{shouldJoin ? "Leave room" : "Join room"}</button>
-
-            {shouldJoin && (
-                <VideoExperience
-                    displayName={displayName}
-                    roomName={roomUrl}
-                    localMedia={localMedia}
-                    externalId={externalId}
-                    joinRoomOnLoad
-                />
-            )}
-        </div>
-    );
+    return <RoomConnectionWithLocalMediaInner roomUrl={roomUrl} displayName={displayName} externalId={externalId} />;
 };
 
 export const LocalMediaOnly = () => {
