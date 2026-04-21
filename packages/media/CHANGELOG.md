@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.1
+
+### Patch Changes
+
+- 2bfa3f0: Use mediasoup-client fork 3.18.7
+
 ## 8.2.0
 
 ### Minor Changes

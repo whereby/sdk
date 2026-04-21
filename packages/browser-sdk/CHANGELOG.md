@@ -1,5 +1,13 @@
 # @whereby.com/browser-sdk
 
+## 3.20.2
+
+### Patch Changes
+
+- Updated dependencies [2bfa3f0]
+    - @whereby.com/media@8.2.1
+    - @whereby.com/core@1.10.2
+
 ## 3.20.1
 
 ### Patch Changes
