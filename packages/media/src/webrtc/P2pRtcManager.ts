@@ -83,6 +83,7 @@ type P2PAnalytics = {
     P2PMicNotWorking: number;
     P2PLocalNetworkFailed: number;
     P2PRelayedIceCandidate: number;
+    P2PAddStoppedVideoTrack: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -195,6 +196,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PMicNotWorking: 0,
             P2PLocalNetworkFailed: 0,
             P2PRelayedIceCandidate: 0,
+            P2PAddStoppedVideoTrack: 0,
         };
     }
 
@@ -891,8 +893,10 @@ export default class P2pRtcManager implements RtcManager {
          * Explicitly add the video track so that stopOrResumeVideo() can
          * replace it when the video is re-enabled.
          */
-        if (this._localCameraStream?.getVideoTracks()?.length && this._stoppedVideoTrack) {
-            session.addTrack(this._stoppedVideoTrack, this._localCameraStream);
+        if (this._localCameraStream && !this._localCameraStream.getVideoTracks().length && this._stoppedVideoTrack) {
+            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
+            this.analytics.P2PAddStoppedVideoTrack++;
+            rtcStats.sendEvent("P2PAddStoppedVideoTrack", { trackId: this._stoppedVideoTrack.id });
         }
 
         return session;
