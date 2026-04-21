@@ -1153,6 +1153,10 @@ export default class P2pRtcManager implements RtcManager {
                     // , might be a better fix for firefox, but does not apply to chrome)
                     if (cleanSdpOn) offer.sdp = cleanSdp(offer.sdp as string);
 
+                    console.log("TRACE setLocalDescription", {
+                        pc: pc.signalingState,
+                        session: session.signalingState,
+                    });
                     pc.setLocalDescription(offer)
                         .catch((e: any) => {
                             logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);

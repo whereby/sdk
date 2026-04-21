@@ -73,6 +73,7 @@ export default class Session {
         this.signalingState = this.pc.signalingState;
 
         this.pc.addEventListener("signalingstatechange", () => {
+            console.log("TRACE signalingstatechange", { is: this.pc.signalingState, was: this.signalingState });
             if (this.signalingState === this.pc.signalingState) {
                 return;
             }
