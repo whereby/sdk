@@ -83,6 +83,8 @@ type P2PAnalytics = {
     P2PMicNotWorking: number;
     P2PLocalNetworkFailed: number;
     P2PRelayedIceCandidate: number;
+    P2PSessionAddTrackNoStream: number;
+    P2PAddTrackToPeerConnections: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -195,6 +197,8 @@ export default class P2pRtcManager implements RtcManager {
             P2PMicNotWorking: 0,
             P2PLocalNetworkFailed: 0,
             P2PRelayedIceCandidate: 0,
+            P2PSessionAddTrackNoStream: 0,
+            P2PAddTrackToPeerConnections: 0,
         };
     }
 
@@ -922,9 +926,15 @@ export default class P2pRtcManager implements RtcManager {
         });
     }
 
-    _addTrackToPeerConnections(track: MediaStreamTrack, stream?: MediaStream) {
+    _addTrackToPeerConnections(track: MediaStreamTrack) {
+        this.analytics.P2PAddTrackToPeerConnections++;
+        rtcStats.sendEvent("P2PAddTrackToPeerConnections", {
+            trackId: track.id,
+            kind: track.kind,
+            readyState: track.readyState,
+        });
         this._forEachPeerConnection((session: Session) => {
-            this._withForcedRenegotiation(session, () => session.addTrack(track, stream));
+            this._withForcedRenegotiation(session, () => session.addTrack(track));
         });
     }
 

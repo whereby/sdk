@@ -118,15 +118,22 @@ export default class Session {
         });
     }
 
-    addTrack(track: MediaStreamTrack, stream?: MediaStream) {
+    addTrack(track: MediaStreamTrack) {
         if (track.kind === "video" && this._mediaPrefs?.wantsVideo === false) {
             return;
         }
+
+        const stream = this.streams[0];
+
+        // Let's see if this ever happens.
         if (!stream) {
-            stream = this.streams[0];
+            this._incrementAnalyticMetric("P2PSessionAddTrackNoStream");
+            rtcStats.sendEvent("P2PSessionAddTrackNoStream", { trackId: track.id, kind: track.kind });
         }
 
+        // TODO: remove responsibility to add track from Session.
         stream?.addTrack(track);
+
         this.pc.addTrack(track, stream);
     }
 
