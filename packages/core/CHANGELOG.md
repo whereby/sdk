@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.10.3
+
+### Patch Changes
+
+- 8d70188: Stop camera effect stream on leave room
+
 ## 1.10.2
 
 ### Patch Changes
