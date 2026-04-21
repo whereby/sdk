@@ -137,15 +137,6 @@ export default class Session {
         this.pc.addTrack(track, stream);
     }
 
-    removeTrack(track: MediaStreamTrack) {
-        const stream = this.streams[0];
-        stream.removeTrack(track);
-        const sender = this.pc.getSenders().find((sender) => sender.track === track);
-        if (sender) {
-            this.pc.removeTrack(sender);
-        }
-    }
-
     removeStream(stream: MediaStream) {
         const streamIdIndex = this.streamIds.indexOf(stream.id);
         if (streamIdIndex !== -1) {
