@@ -83,7 +83,7 @@ type P2PAnalytics = {
     P2PMicNotWorking: number;
     P2PLocalNetworkFailed: number;
     P2PRelayedIceCandidate: number;
-    P2PSessionAddTrackNoStream: number;
+    P2PSessionAddTrack: number;
     P2PAddTrackToPeerConnections: number;
 };
 
@@ -197,7 +197,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PMicNotWorking: 0,
             P2PLocalNetworkFailed: 0,
             P2PRelayedIceCandidate: 0,
-            P2PSessionAddTrackNoStream: 0,
+            P2PSessionAddTrack: 0,
             P2PAddTrackToPeerConnections: 0,
         };
     }
