@@ -256,6 +256,7 @@ export default class Session {
         try {
             // do not handle state change events when we close the connection explicitly
             pc.close();
+            pc.onconnectionstatechange = null;
         } catch (e) {
             logger.warn("failures during close of session", e);
             // we're not interested in errors from RTCPeerConnection.close()
