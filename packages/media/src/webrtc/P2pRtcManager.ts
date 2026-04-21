@@ -971,12 +971,6 @@ export default class P2pRtcManager implements RtcManager {
         });
     }
 
-    _removeTrackFromPeerConnections(track: MediaStreamTrack) {
-        this._forEachPeerConnection((session: Session) => {
-            this._withForcedRenegotiation(session, () => session.removeTrack(track));
-        });
-    }
-
     _updateAndScheduleMediaServersRefresh({
         iceServers,
         turnServers,
