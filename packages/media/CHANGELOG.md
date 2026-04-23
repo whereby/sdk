@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.4
+
+### Patch Changes
+
+- 7ba83ae: Fix setLocalDescription error during P2P reconnect
+
 ## 8.2.3
 
 ### Patch Changes
