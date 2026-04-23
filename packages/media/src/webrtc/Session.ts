@@ -118,25 +118,26 @@ export default class Session {
         });
     }
 
-    addTrack(track: MediaStreamTrack, stream?: MediaStream) {
+    addTrack(track: MediaStreamTrack) {
         if (track.kind === "video" && this._mediaPrefs?.wantsVideo === false) {
             return;
         }
-        if (!stream) {
-            stream = this.streams[0];
-        }
 
-        stream?.addTrack(track);
-        this.pc.addTrack(track, stream);
-    }
-
-    removeTrack(track: MediaStreamTrack) {
         const stream = this.streams[0];
-        stream.removeTrack(track);
-        const sender = this.pc.getSenders().find((sender) => sender.track === track);
-        if (sender) {
-            this.pc.removeTrack(sender);
-        }
+
+        this._incrementAnalyticMetric("P2PSessionAddTrack");
+        rtcStats.sendEvent("P2PSessionAddTrack", {
+            trackId: track.id,
+            kind: track.kind,
+            hasSessionStream: !!stream,
+            trackOfSameKindInStream: !!stream?.getTracks().filter((t) => t.kind === track.kind && t.id !== track.id)
+                .length,
+        });
+
+        // TODO: remove responsibility to add track from Session.
+        stream?.addTrack(track);
+
+        this.pc.addTrack(track, stream);
     }
 
     removeStream(stream: MediaStream) {

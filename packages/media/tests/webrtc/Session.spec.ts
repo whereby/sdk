@@ -96,8 +96,7 @@ describe("Session", () => {
     describe("addTrack", () => {
         it("adds the track to the existing media stream", () => {
             const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-            const stream = { addTrack: jest.fn() };
-            // @ts-expect-error not a real MediaStream
+            const stream = helpers.createMockedMediaStream();
             session.streams.push(stream);
 
             session.addTrack(track);
@@ -105,27 +104,17 @@ describe("Session", () => {
             expect(stream.addTrack).toHaveBeenCalledWith(track);
         });
 
-        it("adds the track to the provided media stream", () => {
-            const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-            const stream = { addTrack: jest.fn() };
-
-            // @ts-expect-error not a real MediaStream
-            session.addTrack(track, stream);
-
-            expect(stream.addTrack).toHaveBeenCalledWith(track);
-        });
-
         it("adds the track to the peer connection", () => {
             const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-            const stream = { addTrack: jest.fn() };
+            const stream = helpers.createMockedMediaStream();
             const pc = {
                 addTrack: jest.fn(),
             };
             // @ts-expect-error not a real RTCPeerConnection
             session.pc = pc;
+            session.streams = [stream];
 
-            // @ts-expect-error not a real MediaStream
-            session.addTrack(track, stream);
+            session.addTrack(track);
 
             expect(pc.addTrack).toHaveBeenCalledWith(track, stream);
         });
@@ -144,8 +133,7 @@ describe("Session", () => {
 
             it("adds the track to the existing media stream", () => {
                 const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-                const stream = { addTrack: jest.fn() };
-                // @ts-expect-error not a real MediaStream
+                const stream = helpers.createMockedMediaStream();
                 session.streams.push(stream);
 
                 session.addTrack(track);
@@ -153,37 +141,26 @@ describe("Session", () => {
                 expect(stream.addTrack).toHaveBeenCalledWith(track);
             });
 
-            it("adds the track to the provided media stream", () => {
-                const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-                const stream = { addTrack: jest.fn() };
-
-                // @ts-expect-error not a real MediaStream
-                session.addTrack(track, stream);
-
-                expect(stream.addTrack).toHaveBeenCalledWith(track);
-            });
-
             it("adds the track to the peer connection", () => {
                 const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-                const stream = { addTrack: jest.fn() };
+                const stream = helpers.createMockedMediaStream();
                 const pc = {
                     addTrack: jest.fn(),
                 };
                 // @ts-expect-error not a real RTCPeerConnection
                 session.pc = pc;
+                session.streams = [stream];
 
-                // @ts-expect-error not a real MediaStream
-                session.addTrack(track, stream);
+                session.addTrack(track);
 
                 expect(pc.addTrack).toHaveBeenCalledWith(track, stream);
             });
 
             it("does not add video tracks to the existing media stream", () => {
                 const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-                const stream = { addTrack: jest.fn() };
-                // @ts-expect-error not a real MediaStream
+                const stream = helpers.createMockedMediaStream();
                 session.streams.push(stream);
-
+                
                 session.addTrack(track);
 
                 expect(stream.addTrack).not.toHaveBeenCalledWith(track);
