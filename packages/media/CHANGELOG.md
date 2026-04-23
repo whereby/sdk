@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.3
+
+### Patch Changes
+
+- c1d8afa: Update P2P addTrack analytics
+
 ## 8.2.2
 
 ### Patch Changes
