@@ -254,6 +254,7 @@ export default class Session {
         pc.oniceconnectionstatechange = null;
         pc.onicecandidate = null;
         pc.ontrack = null;
+        pc.onconnectionstatechange = null;
         try {
             // do not handle state change events when we close the connection explicitly
             pc.close();
