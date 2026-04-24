@@ -233,6 +233,7 @@ export default class VegaRtcManager implements RtcManager {
             vegaConsumerCreationFailed: 0,
             vegaScreenVideoProducerFailed: 0,
             vegaScreenAudioProducerFailed: 0,
+            vegaMicProducerClosed: 0,
             micTrackEndedCount: 0,
             camTrackEndedCount: 0,
             numNewPc: 0,
@@ -804,6 +805,8 @@ export default class VegaRtcManager implements RtcManager {
 
                 // Has the track disappeared while we were waiting to be executed?
                 if (!this._micTrack) {
+                    this.analytics.vegaMicProducerClosed++;
+                    rtcStats.sendEvent("VegaMicProducerClosed", {});
                     this._stopProducer(this._micProducer);
                     this._micProducer = null;
                 }
