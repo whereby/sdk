@@ -46,6 +46,7 @@ type VegaAnalytics = {
     vegaScreenVideoProducerFailed: number;
     vegaScreenAudioProducerFailed: number;
     vegaConsumerCreationFailed: number;
+    vegaMicProducerClosed: number;
     micTrackEndedCount: number;
     camTrackEndedCount: number;
     numNewPc: number;
