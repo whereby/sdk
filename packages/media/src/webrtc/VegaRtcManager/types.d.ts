@@ -30,6 +30,50 @@ type VegaProduceDataResponse = {
 
 type VegaTransportDirection = "send" | "recv";
 
+type TransportAppData = {
+    localClosed: boolean;
+    iceRestartStarted?: number;
+};
+
+type VegaMediaSourceType = "mic" | "webcam" | "screenvideo" | "screenaudio";
+
+type ProducerAppData = {
+    paused: boolean;
+    // localClosed is updated on locally, SFU and corresponding consumers does not know about.
+    localClosed?: boolean;
+    streamId: string;
+    screenShare: boolean;
+    source: VegaMediaSourceType;
+    sourceClientId: string;
+};
+
+type DataProducerAppData = {
+    producerId: string;
+    clientId: string;
+    localClosed?: boolean;
+};
+
+type ConsumerAppData = {
+    sourceClientId: string;
+    screenShare: boolean;
+    streamId: string;
+    paused: boolean;
+    localPaused: boolean;
+    localClosed: boolean;
+    spatialLayer: number;
+    temporalLayer?: number;
+    source: VegaMediaSourceType;
+    screenshare: boolean;
+    colocation?: string;
+};
+
+type DataConsumerAppData = {
+    clientId: string;
+    producerId: string;
+    colocation?: string;
+    localClosed: boolean;
+};
+
 type VegaAnalytics = {
     vegaUnknownResponse: number;
     vegaRequestTimeout: number;
