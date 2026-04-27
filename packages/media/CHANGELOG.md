@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.5
+
+### Patch Changes
+
+- b5be48d: Add SFU analytics for closing micProducer
+
 ## 8.2.4
 
 ### Patch Changes
