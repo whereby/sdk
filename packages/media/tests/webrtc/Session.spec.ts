@@ -160,7 +160,7 @@ describe("Session", () => {
                 const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
                 const stream = helpers.createMockedMediaStream();
                 session.streams.push(stream);
-                
+
                 session.addTrack(track);
 
                 expect(stream.addTrack).not.toHaveBeenCalledWith(track);

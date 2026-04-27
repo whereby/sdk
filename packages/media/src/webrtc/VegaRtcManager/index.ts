@@ -1,4 +1,4 @@
-import { Device } from "@whereby.com/mediasoup-client";
+import { Device } from "mediasoup-client";
 import adapterRaw from "webrtc-adapter";
 import { v4 as uuidv4 } from "uuid";
 
@@ -25,7 +25,7 @@ import Logger from "../../utils/Logger";
 import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
 import { ClearableTimeout, ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
-import { RtpCapabilities } from "@whereby.com/mediasoup-client/lib/RtpParameters";
+import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import {
     VegaCreateTransportResponse,
     VegaGetCapabilitiesResponse,
@@ -37,7 +37,7 @@ import {
     VegaTransportDirection,
     VegaAnalyticMetric,
 } from "./types";
-import { TransportOptions } from "@whereby.com/mediasoup-client/lib/Transport";
+import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
 import { STREAM_TYPES } from "../../model";
 import getConstraints from "../mediaConstraints";

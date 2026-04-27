@@ -1,4 +1,4 @@
-import { Producer } from "@whereby.com/mediasoup-client/lib/Producer";
+import { Producer } from "mediasoup-client/lib/Producer";
 
 export function getLayers(
     {
