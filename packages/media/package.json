@@ -54,7 +54,7 @@
         "events": "^3.3.0",
         "ip-address": "^9.0.5",
         "mediasoup-client": "3.19.0",
-        "rtcstats": "github:whereby/rtcstats#5.4.1",
+        "@whereby.com/rtcstats": "5.4.2",
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
         "socket.io-client": "4.7.2",
