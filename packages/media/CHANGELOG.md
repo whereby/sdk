@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.6
+
+### Patch Changes
+
+- 06c721c: Use mediasoup-client 3.19.0
+
 ## 8.2.5
 
 ### Patch Changes
