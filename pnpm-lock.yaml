@@ -705,9 +705,6 @@ importers:
 
   packages/media:
     dependencies:
-      '@whereby.com/mediasoup-client':
-        specifier: 3.18.7
-        version: 3.18.7
       check-ip:
         specifier: ^1.1.1
         version: 1.1.1
@@ -717,6 +714,9 @@ importers:
       ip-address:
         specifier: ^9.0.5
         version: 9.0.5
+      mediasoup-client:
+        specifier: 3.19.0
+        version: 3.19.0
       rtcstats:
         specifier: github:whereby/rtcstats#5.4.1
         version: https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d
@@ -3701,8 +3701,8 @@ packages:
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
 
-  '@types/debug@4.1.12':
-    resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
+  '@types/debug@4.1.13':
+    resolution: {integrity: sha512-KSVgmQmzMwPlmtljOomayoR89W4FynCAi3E8PPs7vmDVPe84hT+vGPKkJfThkmXs0x0jAaa9U8uW8bbfyS2fWw==}
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
@@ -4200,10 +4200,6 @@ packages:
 
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
-
-  '@whereby.com/mediasoup-client@3.18.7':
-    resolution: {integrity: sha512-YZTj7xx29VjBZMNKjlKzJmnQCnFVQ1g9Ozgo+UaqzJYjFLuhIv1qkKKuC/WcSPBydlBo+274Htkz2moQzEb5Rg==}
-    engines: {node: '>=20'}
 
   '@xmldom/xmldom@0.8.10':
     resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
@@ -5998,12 +5994,12 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@9.3.5:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
@@ -6974,6 +6970,10 @@ packages:
   media-typer@1.1.0:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
+
+  mediasoup-client@3.19.0:
+    resolution: {integrity: sha512-XU4Y7yOe0FqUXwu/Mf8Wgrp5AOde1l60FEFNvSSrR2nNzbw3+jAcHQV35Ii9bXb21PT5XaW4SkI4dhxhwFXR3Q==}
+    engines: {node: '>=22'}
 
   memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
@@ -12934,7 +12934,7 @@ snapshots:
     dependencies:
       '@types/node': 22.15.34
 
-  '@types/debug@4.1.12':
+  '@types/debug@4.1.13':
     dependencies:
       '@types/ms': 2.1.0
 
@@ -13515,18 +13515,6 @@ snapshots:
     dependencies:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
-
-  '@whereby.com/mediasoup-client@3.18.7':
-    dependencies:
-      '@types/debug': 4.1.12
-      '@types/events-alias': '@types/events@3.0.3'
-      awaitqueue: 3.3.0(supports-color@10.2.2)
-      debug: 4.4.3(supports-color@10.2.2)
-      events-alias: events@3.3.0
-      fake-mediastreamtrack: 2.2.1
-      h264-profile-level-id: 2.3.2(supports-color@10.2.2)
-      sdp-transform: 3.0.0
-      supports-color: 10.2.2
 
   '@xmldom/xmldom@0.8.10': {}
 
@@ -16905,6 +16893,18 @@ snapshots:
   math-intrinsics@1.1.0: {}
 
   media-typer@1.1.0: {}
+
+  mediasoup-client@3.19.0:
+    dependencies:
+      '@types/debug': 4.1.13
+      '@types/events-alias': '@types/events@3.0.3'
+      awaitqueue: 3.3.0(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
+      events-alias: events@3.3.0
+      fake-mediastreamtrack: 2.2.1
+      h264-profile-level-id: 2.3.2(supports-color@10.2.2)
+      sdp-transform: 3.0.0
+      supports-color: 10.2.2
 
   memoize-one@5.2.1: {}
 
