@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.7
+
+### Patch Changes
+
+- 44135ea: Replace rtcstats with published version
+
 ## 8.2.6
 
 ### Patch Changes
