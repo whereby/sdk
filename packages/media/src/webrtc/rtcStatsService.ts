@@ -1,6 +1,6 @@
 // ensure adapter is loaded first.
 import adapterRaw from "webrtc-adapter";
-import rtcstats from "rtcstats";
+import rtcstats from "@whereby.com/rtcstats";
 import { v4 as uuidv4 } from "uuid";
 
 // @ts-ignore

@@ -705,6 +705,9 @@ importers:
 
   packages/media:
     dependencies:
+      '@whereby.com/rtcstats':
+        specifier: 5.4.2
+        version: 5.4.2
       check-ip:
         specifier: ^1.1.1
         version: 1.1.1
@@ -717,9 +720,6 @@ importers:
       mediasoup-client:
         specifier: 3.19.0
         version: 3.19.0
-      rtcstats:
-        specifier: github:whereby/rtcstats#5.4.1
-        version: https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d
       sdp:
         specifier: ^3.2.0
         version: 3.2.1
@@ -4200,6 +4200,9 @@ packages:
 
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
+
+  '@whereby.com/rtcstats@5.4.2':
+    resolution: {integrity: sha512-NEhoaeNPtq0cSD/di7gh5w7mQXse20LYg2mhFFsb2b4obp+H7tJD6M/NsoejHGo71Vuzm03nIMW6hSW8v3fEpQ==}
 
   '@xmldom/xmldom@0.8.10':
     resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
@@ -8331,10 +8334,6 @@ packages:
   router@2.2.0:
     resolution: {integrity: sha512-nLTrUKm2UyiL7rlhapu/Zl45FwNgkZGaCpZbIHajDYgwlJCOzLSk+cIPAnsEqV955GjILJnKbdQC1nVPz+gAYQ==}
     engines: {node: '>= 18'}
-
-  rtcstats@https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d:
-    resolution: {tarball: https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d}
-    version: 5.4.1
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
@@ -13515,6 +13514,8 @@ snapshots:
     dependencies:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
+
+  '@whereby.com/rtcstats@5.4.2': {}
 
   '@xmldom/xmldom@0.8.10': {}
 
@@ -18860,8 +18861,6 @@ snapshots:
       path-to-regexp: 8.2.0
     transitivePeerDependencies:
       - supports-color
-
-  rtcstats@https://codeload.github.com/whereby/rtcstats/tar.gz/63bcb6420d76d34161b39e494524ae73aa6dd70d: {}
 
   run-parallel@1.2.0:
     dependencies:
