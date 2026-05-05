@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.2.8
+
+### Patch Changes
+
+- 4c78d73: Add SFU typing related to send/recv transports
+
 ## 8.2.7
 
 ### Patch Changes
