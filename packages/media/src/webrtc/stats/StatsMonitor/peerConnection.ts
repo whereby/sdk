@@ -8,7 +8,7 @@ export let numFailedTrackSsrcLookups = 0;
 
 export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =>
     Promise.all(
-        getCurrentPeerConnections().map(async (pc: any) => {
+        getCurrentPeerConnections().map(async (pc: RTCPeerConnection) => {
             let pcData = pcDataByPc.get(pc);
             if (!pcData) {
                 pcData = { ssrcToTrackId: {} };
@@ -62,7 +62,7 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
                     reports.forEach((tReport, index) => {
                         tReport.forEach((stats: any) => {
                             if (stats.type === "inbound-rtp" || stats.type === "outbound-rtp") {
-                                pcData.ssrcToTrackId[stats.ssrc] = sendersAndReceivers[index].track.id;
+                                pcData.ssrcToTrackId[stats.ssrc] = sendersAndReceivers[index].track!.id;
                             }
                         });
                     });
