@@ -25,7 +25,7 @@ if (window.RTCPeerConnection) {
     (window.RTCPeerConnection as any) = PatchedRTCPeerConnection;
 }
 
-export const getCurrentPeerConnections = () => peerConnections;
+export const getCurrentPeerConnections = () => peerConnections.filter((p) => p.connectionState !== "closed");
 
 export const getPeerConnectionIndex = (pc: RTCPeerConnection) => peerConnectionData.get(pc)?.index;
 

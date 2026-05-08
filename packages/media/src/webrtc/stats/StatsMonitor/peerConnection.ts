@@ -8,7 +8,7 @@ export let numFailedTrackSsrcLookups = 0;
 
 export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =>
     Promise.all(
-        getCurrentPeerConnections().map(async (pc: any) => {
+        getCurrentPeerConnections().map(async (pc: RTCPeerConnection) => {
             let pcData = pcDataByPc.get(pc);
             if (!pcData) {
                 pcData = { ssrcToTrackId: {} };
@@ -53,20 +53,24 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
 
                 if (missingSsrcs) {
                     // call getStats() on all senders and receivers to map missing ssrcs
-                    const sendersAndReceivers = [...pc.getSenders(), ...pc.getReceivers()];
+
+                    // on firefox there might be senders/receivers returned without a track.
+                    // doesn't seem to be cleaned up like with other browsers. we ignore these.
+                    const sendersAndReceivers = [...pc.getSenders(), ...pc.getReceivers()].filter((o) => o.track);
+
                     const reports = await Promise.all(sendersAndReceivers.map((o) => o.getStats()));
                     reports.forEach((tReport, index) => {
                         tReport.forEach((stats: any) => {
                             if (stats.type === "inbound-rtp" || stats.type === "outbound-rtp") {
-                                pcData.ssrcToTrackId[stats.ssrc] = sendersAndReceivers[index].track.id;
+                                pcData.ssrcToTrackId[stats.ssrc] = sendersAndReceivers[index].track!.id;
                             }
                         });
                     });
 
                     // create fake track ids for anything not found
                     missingSsrcs.forEach((ssrc: any) => {
-                        numMissingTrackSsrcLookups++;
                         if (!pcData.ssrcToTrackId[ssrc]) {
+                            numMissingTrackSsrcLookups++;
                             pcData.ssrcToTrackId[ssrc] = "?" + ssrc;
                         }
                     });
