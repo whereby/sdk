@@ -69,8 +69,8 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
 
                     // create fake track ids for anything not found
                     missingSsrcs.forEach((ssrc: any) => {
-                        numMissingTrackSsrcLookups++;
                         if (!pcData.ssrcToTrackId[ssrc]) {
+                            numMissingTrackSsrcLookups++;
                             pcData.ssrcToTrackId[ssrc] = "?" + ssrc;
                         }
                     });
