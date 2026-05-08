@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.3.0
+
+### Minor Changes
+
+- 065d97c: media: Fixes stats collection issues on firefox
+
 ## 8.2.8
 
 ### Patch Changes

@@ -487,10 +487,10 @@ importers:
         specifier: ^1.0.7
         version: 1.1.14(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@whereby.com/core':
-        specifier: 1.10.10
+        specifier: 1.10.11
         version: link:../core
       '@whereby.com/media':
-        specifier: 8.2.8
+        specifier: 8.3.0
         version: link:../media
       clsx:
         specifier: ^2.1.1
@@ -642,7 +642,7 @@ importers:
         specifier: '*'
         version: link:../camera-effects
       '@whereby.com/media':
-        specifier: 8.2.8
+        specifier: 8.3.0
         version: link:../media
       axios:
         specifier: ^1.11.0
@@ -788,7 +788,7 @@ importers:
   packages/react-native-sdk:
     dependencies:
       '@whereby.com/core':
-        specifier: 1.10.10
+        specifier: 1.10.11
         version: link:../core
       react-native-webview:
         specifier: 13.15.0
@@ -4025,6 +4025,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@ungap/trim@0.2.0':
     resolution: {integrity: sha512-CfsUxeZ2R/O3EGCOe+IkAU32yHOdO+mCRmtavSIQ4HZN3Jiq/ynGzq8/asyamd28U26UJmpSV/TC7+p7qELKrg==}
