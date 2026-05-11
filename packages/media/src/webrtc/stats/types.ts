@@ -30,7 +30,7 @@ export type PressureRecord = {
 export interface TrackStats {
     startTime: number;
     updated: number;
-    ssrcs: Record<number, SsrcStats>;
+    ssrcs: Record<string, SsrcStats>;
 }
 
 export interface ViewStats {
@@ -97,3 +97,10 @@ export interface SsrcStats {
     sourceWidth?: number;
     sourceFps?: number;
 }
+
+export type PCData = {
+    ssrcToTrackId: Record<string, string>;
+    currentSSRCs: Record<string, string>;
+    previousSSRCs?: Record<string, string>;
+    _oldReport?: RTCStatsReport;
+};

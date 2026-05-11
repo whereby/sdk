@@ -1,8 +1,9 @@
 import rtcStats from "../../rtcStatsService";
+import { PCData } from "../types";
 import { getCurrentPeerConnections } from "./peerConnectionTracker";
 
 // peer connection related data
-const PC_DATA_BY_PC = new WeakMap<RTCPeerConnection, any>();
+const PC_DATA_BY_PC = new WeakMap<RTCPeerConnection, PCData>();
 export let numMissingTrackSsrcLookups = 0;
 export let numFailedTrackSsrcLookups = 0;
 
@@ -11,7 +12,7 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
         getCurrentPeerConnections().map(async (pc: RTCPeerConnection) => {
             let pcData = pcDataByPc.get(pc);
             if (!pcData) {
-                pcData = { ssrcToTrackId: {} };
+                pcData = { ssrcToTrackId: {}, currentSSRCs: {} };
                 pcDataByPc.set(pc, pcData);
             }
 
@@ -20,7 +21,7 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
 
                 let missingSsrcs: any = null;
 
-                report.forEach((stats: any) => {
+                report.forEach((stats) => {
                     if (stats.type === "inbound-rtp" || stats.type === "outbound-rtp") {
                         if (!stats.trackIdentifier && !pcData.ssrcToTrackId[stats.ssrc]) {
                             // try to lookup by media-source
@@ -60,7 +61,7 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
 
                     const reports = await Promise.all(sendersAndReceivers.map((o) => o.getStats()));
                     reports.forEach((tReport, index) => {
-                        tReport.forEach((stats: any) => {
+                        tReport.forEach((stats) => {
                             if (stats.type === "inbound-rtp" || stats.type === "outbound-rtp") {
                                 pcData.ssrcToTrackId[stats.ssrc] = sendersAndReceivers[index].track!.id;
                             }
@@ -68,14 +69,14 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
                     });
 
                     // create fake track ids for anything not found
-                    missingSsrcs.forEach((ssrc: any) => {
+                    missingSsrcs.forEach((ssrc: number) => {
                         if (!pcData.ssrcToTrackId[ssrc]) {
                             numMissingTrackSsrcLookups++;
                             pcData.ssrcToTrackId[ssrc] = "?" + ssrc;
                         }
                     });
                 }
-                return [pc, report, pcData];
+                return { pc, report, pcData };
             } catch (e: any) {
                 rtcStats.sendEvent("trackSsrcLookupFailed", {
                     name: e?.name,
@@ -83,7 +84,7 @@ export const getPeerConnectionsWithStatsReports = (pcDataByPc = PC_DATA_BY_PC) =
                     message: e?.message,
                 });
                 numFailedTrackSsrcLookups++;
-                return [pc, [], pcData];
+                return { pc, report: new Map(), pcData };
             }
         }),
     );
