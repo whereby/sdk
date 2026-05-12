@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.3.1
+
+### Patch Changes
+
+- a1dc8b5: Return map-like object when getStats fails during stats collection
+
 ## 8.3.0
 
 ### Minor Changes
