@@ -3,6 +3,7 @@ import {
     createRTCPeerConnectionStub,
     createRTCTrancieverStub,
 } from "../../../../../tests/webrtc/webRtcHelpers";
+import { PCData } from "../../types";
 import { getPeerConnectionsWithStatsReports } from "../peerConnection";
 import { setPeerConnectionsForTests } from "../peerConnectionTracker";
 
@@ -19,7 +20,7 @@ describe("peerConnection", () => {
 
             const result = await getPeerConnectionsWithStatsReports();
 
-            result.forEach(([pc, report], index) => {
+            result.forEach(({ pc, report }, index) => {
                 expect(pc).toEqual(existingPeerConnections[index]);
                 expect(report).toEqual(pcStats[index]);
             });
@@ -34,7 +35,7 @@ describe("peerConnection", () => {
             const result = await getPeerConnectionsWithStatsReports();
 
             existingPeerConnections.forEach((_, index) => {
-                expect(result[index][1]).toEqual([]);
+                expect(result[index].report).toEqual(new Map());
             });
         });
         describe("ssrc to track mapping", () => {
@@ -43,13 +44,13 @@ describe("peerConnection", () => {
                     _scenario: "Creates empty mapping if stats are missing",
                     pcStats: [],
                     pcData: undefined,
-                    expectedPcData: { ssrcToTrackId: {} },
+                    expectedSsrcTrackMappings: {},
                 },
                 {
                     _scenario: "Creates fake track id if no track can be found",
                     pcStats: [{ id: "inbound", type: "inbound-rtp", ssrc: 12 }],
                     pcData: undefined,
-                    expectedPcData: { ssrcToTrackId: { "12": "?12" } },
+                    expectedSsrcTrackMappings: { "12": "?12" },
                 },
                 {
                     _scenario: "Uses media source track identifier for outbound stats",
@@ -58,7 +59,7 @@ describe("peerConnection", () => {
                         { id: "mediaSource", type: "media-source", trackIdentifier: "track" },
                     ],
                     pcData: undefined,
-                    expectedPcData: { ssrcToTrackId: { "12": "track" } },
+                    expectedSsrcTrackMappings: { "12": "track" },
                 },
                 {
                     _scenario: "Uses existing mapping",
@@ -66,8 +67,8 @@ describe("peerConnection", () => {
                         { id: "outbound", type: "outbound-rtp", ssrc: 12, mediaSourceId: "mediaSource" },
                         { id: "mediaSource", type: "media-source", trackIdentifier: "track" },
                     ],
-                    pcData: { ssrcToTrackId: { 12: "existingTrack" } },
-                    expectedPcData: { ssrcToTrackId: { "12": "existingTrack" } },
+                    pcData: { ssrcToTrackId: { "12": "existingTrack" }, currentSSRCs: {} } as PCData,
+                    expectedSsrcTrackMappings: { "12": "existingTrack" },
                 },
                 {
                     _scenario: "Uses deprecated trackId as fallback",
@@ -80,7 +81,7 @@ describe("peerConnection", () => {
                         },
                     ],
                     pcData: undefined,
-                    expectedPcData: { ssrcToTrackId: { "12": "trackIdentifier" } },
+                    expectedSsrcTrackMappings: { "12": "trackIdentifier" },
                 },
                 {
                     _scenario: "Uses tranceivers as fallback",
@@ -98,7 +99,7 @@ describe("peerConnection", () => {
                             stats: [{ id: "outbound", type: "outbound-rtp", ssrc: 13 }],
                         },
                     ],
-                    expectedPcData: { ssrcToTrackId: { "12": "receiverTrack", 13: "senderTrack" } },
+                    expectedSsrcTrackMappings: { "12": "receiverTrack", 13: "senderTrack" },
                 },
                 {
                     _scenario: "Dont map when trackIdentifier is present on inbound",
@@ -116,9 +117,9 @@ describe("peerConnection", () => {
                             stats: [{ id: "outbound", type: "outbound-rtp", ssrc: 13 }],
                         },
                     ],
-                    expectedPcData: { ssrcToTrackId: {} },
+                    expectedSsrcTrackMappings: {},
                 },
-            ])("$_scenario", async ({ pcStats, pcData, senders = [], receivers = [], expectedPcData }) => {
+            ])("$_scenario", async ({ pcStats, pcData, senders = [], receivers = [], expectedSsrcTrackMappings }) => {
                 const pc = createRTCPeerConnectionStub({
                     stats: new Map(pcStats.map((s) => [s.id, s])),
                     senders: senders.map(({ stats, track }) => {
@@ -138,9 +139,13 @@ describe("peerConnection", () => {
                 const pcDataByPc = new Map([[pc, pcData]]);
                 setPeerConnectionsForTests([pc]);
 
-                const [[_resultPc, _resultReport, resultPcData]] = await getPeerConnectionsWithStatsReports(pcDataByPc);
+                const [
+                    {
+                        pcData: { ssrcToTrackId },
+                    },
+                ] = await getPeerConnectionsWithStatsReports(pcDataByPc);
 
-                expect(resultPcData).toEqual(expectedPcData);
+                expect(ssrcToTrackId).toEqual(expectedSsrcTrackMappings);
             });
         });
     });

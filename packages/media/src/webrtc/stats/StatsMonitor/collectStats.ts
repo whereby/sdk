@@ -110,7 +110,7 @@ export async function collectStats(
         state.lastUpdateTime = Date.now();
 
         // loop through current peer connections
-        (await getPeerConnectionsWithStatsReports()).forEach(([pc, report, pcData]) => {
+        (await getPeerConnectionsWithStatsReports()).forEach(({ pc, report, pcData }) => {
             // each new peer connection will get +1, to be able to see/count/correlate data
             const pcIndex = getPeerConnectionIndex(pc);
 
@@ -125,11 +125,11 @@ export async function collectStats(
             }
 
             // keep track of visited ssrcs for cleanup later
-            pcData.previousSSRCs = pcData.currentSSRCs || {};
+            pcData.previousSSRCs = pcData.currentSSRCs;
             pcData.currentSSRCs = {};
 
             // loop though each stats dictionary in report
-            report.forEach((currentRtcStats: any) => {
+            report.forEach((currentRtcStats) => {
                 if (currentRtcStats.type === "candidate-pair" && /inprogress|succeeded/.test(currentRtcStats.state)) {
                     const prevRtcStats = pcData._oldReport?.get(currentRtcStats.id);
                     const timeDiff = prevRtcStats ? currentRtcStats.timestamp - prevRtcStats.timestamp : interval;
@@ -180,7 +180,7 @@ export async function collectStats(
                     pcData.currentSSRCs[ssrc] = client.id;
                     // we need to stats reset when selected candidate pair changes
                     // todo: metrics should += diff, not use count directly
-                    if (prevRtcStats) {
+                    if (prevRtcStats && pcData._oldReport) {
                         const newTransport = report.get(currentRtcStats.transportId);
                         const oldTransport = pcData._oldReport.get(prevRtcStats.transportId);
                         if (
@@ -226,14 +226,14 @@ export async function collectStats(
             Object.keys(pcData.previousSSRCs)
                 .filter((ssrc) => !pcData.currentSSRCs[ssrc])
                 .forEach((ssrc) => {
-                    const clientId = pcData.previousSSRCs[ssrc];
+                    const clientId = pcData.previousSSRCs![ssrc];
                     if (clientId) {
                         // remove
                         const clientView = state.statsByView[clientId];
                         if (clientView) {
                             Object.values(clientView.tracks).forEach((trackStats) => {
-                                if (trackStats.ssrcs[ssrc as unknown as number]) {
-                                    delete trackStats.ssrcs[ssrc as unknown as number];
+                                if (trackStats.ssrcs[ssrc]) {
+                                    delete trackStats.ssrcs[ssrc];
                                 }
                             });
                         }
