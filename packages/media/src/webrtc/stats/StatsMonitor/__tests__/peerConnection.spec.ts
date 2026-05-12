@@ -141,8 +141,6 @@ describe("peerConnection", () => {
 
                 const [
                     {
-                        pc: _resultPc,
-                        report: _resultReport,
                         pcData: { ssrcToTrackId },
                     },
                 ] = await getPeerConnectionsWithStatsReports(pcDataByPc);
