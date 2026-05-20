@@ -212,6 +212,24 @@ export default class Session {
     }
 
     handleAnswer(message: SignalRTCSessionDescription) {
+        // An answer is only valid when we have a pending local offer. If the PC was
+        // recreated (e.g. signal-server reconnect after an ICE restart), an in-flight
+        // answer from the previous PC can land here and would otherwise throw
+        // "Called in wrong state: stable".
+        if (this.pc.signalingState !== "have-local-offer") {
+            logger.warn(
+                "Ignoring stale SDP answer for client %s (signalingState: %s)",
+                this.clientId,
+                this.pc.signalingState,
+            );
+            this._incrementAnalyticMetric("P2PStaleAnswerIgnored");
+            rtcStats.sendEvent("P2PStaleAnswerIgnored", {
+                clientId: this.clientId,
+                signalingState: this.pc.signalingState,
+            });
+            return Promise.resolve();
+        }
+
         const sdp = sdpModifier.filterMsidSemantic(message.sdp);
 
         const desc = { type: message.type, sdp };
