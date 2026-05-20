@@ -80,7 +80,7 @@
         "typescript": "catalog:"
     },
     "engines": {
-        "node": ">=16.0.0"
+        "node": ">=24.0.0"
     },
     "prettier": "@whereby.com/prettier-config"
 }

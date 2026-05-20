@@ -7,10 +7,10 @@ configured to read `.nvmrc` like so:
 
 ```
 - name: Setup Node.js
-    uses: actions/setup-node@v4
+    uses: actions/setup-node@v6
     with:
         node-version-file: .nvmrc
-        cache: "yarn"
+        cache: "pnpm"
         cache-dependency-path: |
-            yarn.lock
+            pnpm-lock.yaml
 ```

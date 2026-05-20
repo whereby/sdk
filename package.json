@@ -38,7 +38,7 @@
         "typescript": "catalog:"
     },
     "engines": {
-        "node": "^20"
+        "node": ">=24.0.0"
     },
     "prettier": "@whereby.com/prettier-config"
 }
