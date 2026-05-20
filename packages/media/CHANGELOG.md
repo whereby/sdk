@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.3.2
+
+### Patch Changes
+
+- 4f97295: Fix ip-address CVE-2026-42338
+
 ## 8.3.1
 
 ### Patch Changes
