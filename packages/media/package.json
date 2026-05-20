@@ -52,7 +52,7 @@
     "dependencies": {
         "check-ip": "^1.1.1",
         "events": "^3.3.0",
-        "ip-address": "^9.0.5",
+        "ip-address": "^10.1.1",
         "mediasoup-client": "3.19.0",
         "@whereby.com/rtcstats": "5.4.2",
         "sdp": "^3.2.0",
