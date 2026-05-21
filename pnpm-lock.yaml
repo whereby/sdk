@@ -669,6 +669,9 @@ importers:
       '@reduxjs/toolkit':
         specifier: ^2.2.3
         version: 2.8.2(react-redux@9.2.0(@types/react@19.1.8)(react@19.1.0)(redux@5.0.1))(react@19.1.0)
+      '@whereby.com/audio-denoiser':
+        specifier: '*'
+        version: link:../audio-denoiser
       '@whereby.com/camera-effects':
         specifier: '*'
         version: link:../camera-effects
