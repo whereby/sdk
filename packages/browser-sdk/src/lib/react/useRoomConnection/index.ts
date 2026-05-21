@@ -135,6 +135,12 @@ export function useRoomConnection(
     const clearCameraEffect = React.useCallback(async () => {
         await client.clearCameraEffect();
     }, [client]);
+    const enableAudioDenoiser = React.useCallback(async () => {
+        await client.enableAudioDenoiser();
+    }, [client]);
+    const disableAudioDenoiser = React.useCallback(async () => {
+        await client.disableAudioDenoiser();
+    }, [client]);
 
     const { events, ...state } = roomConnectionState;
 
@@ -174,6 +180,8 @@ export function useRoomConnection(
             switchCameraEffect,
             switchCameraEffectCustom,
             clearCameraEffect,
+            enableAudioDenoiser,
+            disableAudioDenoiser,
         },
     };
 }

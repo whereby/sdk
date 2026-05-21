@@ -47,4 +47,6 @@ export interface RoomConnectionActions {
     switchCameraEffect: (effectId: string) => Promise<void>;
     switchCameraEffectCustom: (imageUrl: string) => Promise<void>;
     clearCameraEffect: () => Promise<void>;
+    enableAudioDenoiser: () => Promise<void>;
+    disableAudioDenoiser: () => Promise<void>;
 }
