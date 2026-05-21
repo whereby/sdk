@@ -16,6 +16,12 @@ export type CaptureExceptionFn = (err: Error, ctx?: CaptureExceptionContext) => 
 // URLs pass through unchanged — that covers the CDN production path.
 const resolveAssetUrl = (url: string): string => {
     if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) {
+    if (
+        url.startsWith("http://") ||
+        url.startsWith("https://") ||
+        url.startsWith("blob:") ||
+        url.startsWith("data:")
+    ) {
         return url;
     }
     return new URL(url, import.meta.url).href;
@@ -26,7 +32,7 @@ const getWasmUrl = async (): Promise<string> => {
         return assetUrls.denoiser.wasm!;
     }
     const mod = (await import("../assets/denoiser/model.ext.wasm")) as { default: string };
-    return mod.default;
+    return resolveAssetUrl(mod.default);
 };
 
 const getProcessorUrl = async (): Promise<string> => {
@@ -34,7 +40,7 @@ const getProcessorUrl = async (): Promise<string> => {
         return assetUrls.denoiser.processor!;
     }
     const mod = (await import("../assets/denoiser/processor.ext.js?url")) as { default: string };
-    return mod.default;
+    return resolveAssetUrl(mod.default);
 };
 
 let wasmBufferPromise: Promise<ArrayBuffer> | null = null;
