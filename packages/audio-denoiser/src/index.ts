@@ -10,6 +10,17 @@ export type CaptureExceptionContext = {
 
 export type CaptureExceptionFn = (err: Error, ctx?: CaptureExceptionContext) => void;
 
+// Dev-mode imports emit relative URLs like "./assets/denoiser/model.ext.wasm".
+// Resolve them against this module's URL so consumers don't need to mount the
+// dist/assets folder at a known origin path. Already-absolute (http/blob/data)
+// URLs pass through unchanged — that covers the CDN production path.
+const resolveAssetUrl = (url: string): string => {
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) {
+        return url;
+    }
+    return new URL(url, import.meta.url).href;
+};
+
 const getWasmUrl = async (): Promise<string> => {
     if (USE_CDN_ASSETS) {
         return assetUrls.denoiser.wasm!;
@@ -33,10 +44,10 @@ const loadWasmBuffer = async (doCaptureException?: CaptureExceptionFn): Promise<
             const url = await getWasmUrl();
             const response = await fetch(url);
             if (!response.ok) {
-                doCaptureException?.(
-                    new Error(`Failed to fetch denoiser model: ${response.status} ${response.statusText}`),
-                    { tags: { from: "audioDenoiser.loadWasmBuffer" } },
-                );
+                const error = new Error(`Failed to fetch denoiser model: ${response.status} ${response.statusText}`);
+                doCaptureException?.(error, { tags: { from: "audioDenoiser.loadWasmBuffer" } });
+                wasmBufferPromise = null;
+                throw error;
             }
             return response.arrayBuffer();
         })();

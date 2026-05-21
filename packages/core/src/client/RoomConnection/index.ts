@@ -80,6 +80,7 @@ import {
 import { selectRoomConnectionState } from "./selector";
 import { BaseClient } from "../BaseClient";
 import { doCameraEffectsSwitchPreset } from "../../redux/slices/cameraEffects";
+import { doAudioDenoiserDisable, doAudioDenoiserEnable } from "../../redux/slices/audioDenoiser";
 
 export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomConnectionEvents> {
     protected options: Partial<AppConfig>;
@@ -707,6 +708,33 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             return Promise.reject(error);
         }
 
+        return Promise.resolve();
+    }
+
+    /**
+     * Enable audio noise suppression on the local microphone stream. The
+     * denoiser is automatically reapplied if the microphone device is later
+     * switched. Requires `@whereby.com/audio-denoiser` to be installed as a
+     * peer dependency.
+     */
+    public async enableAudioDenoiser(): Promise<void> {
+        try {
+            await this.store.dispatch(doAudioDenoiserEnable());
+        } catch (error) {
+            return Promise.reject(error);
+        }
+        return Promise.resolve();
+    }
+
+    /**
+     * Disable audio noise suppression and revert to the raw microphone stream.
+     */
+    public async disableAudioDenoiser(): Promise<void> {
+        try {
+            await this.store.dispatch(doAudioDenoiserDisable());
+        } catch (error) {
+            return Promise.reject(error);
+        }
         return Promise.resolve();
     }
 
