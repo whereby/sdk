@@ -807,9 +807,10 @@ startAppListening({
 
         if (!stream) return;
 
+        const beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
         const deviceData = getDeviceData({
-            audioTrack: stream.getAudioTracks()[0],
-            videoTrack: stream.getVideoTracks()[0],
+            audioTrack: beforeEffectTracks?.audio || stream.getAudioTracks()[0],
+            videoTrack: beforeEffectTracks?.video || stream.getVideoTracks()[0],
             devices,
         });
 

@@ -81,9 +81,13 @@
         "events": "^3.3.0"
     },
     "peerDependencies": {
+        "@whereby.com/audio-denoiser": "*",
         "@whereby.com/camera-effects": "*"
     },
     "peerDependenciesMeta": {
+        "@whereby.com/audio-denoiser": {
+            "optional": true
+        },
         "@whereby.com/camera-effects": {
             "optional": true
         }
