@@ -481,6 +481,37 @@ importers:
         specifier: 'catalog:'
         version: 5.8.3
 
+  packages/audio-denoiser:
+    dependencies:
+      '@whereby.com/media':
+        specifier: workspace:*
+        version: link:../media
+    devDependencies:
+      '@rollup/plugin-url':
+        specifier: ^8.0.2
+        version: 8.0.2(rollup@4.44.1)
+      '@whereby.com/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@whereby.com/jest-config':
+        specifier: workspace:*
+        version: link:../../tooling/jest
+      '@whereby.com/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@whereby.com/rollup-config':
+        specifier: workspace:*
+        version: link:../../tooling/rollup
+      '@whereby.com/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      rollup:
+        specifier: ^4.22.4
+        version: 4.44.1
+
   packages/browser-sdk:
     dependencies:
       '@radix-ui/react-popover':
