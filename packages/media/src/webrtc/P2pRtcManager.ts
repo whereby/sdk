@@ -127,6 +127,7 @@ export default class P2pRtcManager implements RtcManager {
     _closed: boolean;
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
+    _webcamPaused?: boolean;
 
     constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
         const { name, session, iceServers, turnServers, mediaserverConfigTtlSeconds } = room;
@@ -216,9 +217,12 @@ export default class P2pRtcManager implements RtcManager {
 
     addCameraStream(
         stream: MediaStream,
-        { beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
+        { videoPaused, beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
     ) {
         logger.info("addCameraStream: [stream.id: %s]", stream.id);
+
+        this._webcamPaused = videoPaused;
+
         if (stream === this._localCameraStream) {
             // this can happen after reconnect. We do not want to add the stream to the
             // peerconnection again.
@@ -1309,6 +1313,9 @@ export default class P2pRtcManager implements RtcManager {
 
     stopOrResumeVideo(localStream: MediaStream, enable: boolean) {
         logger.info("stopOrResumeVideo() [enable: %s]", enable);
+
+        this._webcamPaused = !enable;
+
         // actually turn off the camera. Chrome-only (Firefox has different plans)
         if (!["chrome", "safari"].includes(browserName)) {
             return;
@@ -1350,6 +1357,13 @@ export default class P2pRtcManager implements RtcManager {
                     .getUserMedia({ video: constraints })
                     .then((stream) => {
                         const track = stream.getVideoTracks()[0];
+                        if (this._webcamPaused) {
+                            // if the user paused video inbetween the gUM call and the result,
+                            // we have to stop the track to avoid leaving the camera light on
+                            // and prevent sending video when we shouldn't be
+                            track.stop();
+                            return;
+                        }
                         localStream.addTrack(track);
                         this._monitorVideoTrack(track);
                         this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {
