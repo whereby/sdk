@@ -1310,6 +1310,52 @@ describe("P2pRtcManager", () => {
 
                 expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, expectedTrack);
             });
+
+            describe("when video is disabled shortly after enabling", () => {
+                it("should not add video track to local stream", async () => {
+                    const expectedTrack = gumStream.getVideoTracks()[0];
+
+                    const enablePromise = rtcManager.stopOrResumeVideo(localStream, true);
+                    const disablePromise = rtcManager.stopOrResumeVideo(localStream, false);
+                    await enablePromise;
+
+                    expect(localStream.addTrack).not.toHaveBeenCalledWith(expectedTrack);
+                    await disablePromise;
+                });
+
+                it("should not emit event", async () => {
+                    const enablePromise = rtcManager.stopOrResumeVideo(localStream, true);
+                    const disablePromise = rtcManager.stopOrResumeVideo(localStream, false);
+                    await enablePromise;
+
+                    expect(emitterStub.emit).not.toHaveBeenCalled();
+                    await disablePromise;
+                });
+
+                it("should not add track to peer connection(s)", async () => {
+                    jest.spyOn(rtcManager, "_addTrackToPeerConnections");
+
+                    const enablePromise = rtcManager.stopOrResumeVideo(localStream, true);
+                    const disablePromise = rtcManager.stopOrResumeVideo(localStream, false);
+                    await enablePromise;
+
+                    expect(rtcManager._addTrackToPeerConnections).not.toHaveBeenCalled();
+                    await disablePromise;
+                });
+
+                it("should not replace track in peer connection(s) when stopped track exists", async () => {
+                    jest.spyOn(rtcManager, "_replaceTrackToPeerConnections");
+                    const stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                    rtcManager._stoppedVideoTrack = stoppedTrack;
+
+                    const enablePromise = rtcManager.stopOrResumeVideo(localStream, true);
+                    const disablePromise = rtcManager.stopOrResumeVideo(localStream, false);
+                    await enablePromise;
+
+                    expect(rtcManager._replaceTrackToPeerConnections).not.toHaveBeenCalled();
+                    await disablePromise;
+                });
+            });
         });
 
         describe("handling localStream `stopresumevideo` event", () => {
