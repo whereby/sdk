@@ -1647,6 +1647,14 @@ export default class VegaRtcManager implements RtcManager {
                 .getUserMedia({ video: constraints })
                 .then((stream) => {
                     const track = stream.getVideoTracks()[0];
+                    if (this._webcamPaused) {
+                        // if the user paused video inbetween the gUM call and the result,
+                        // we have to stop the track to avoid leaving the camera light on
+                        // and prevent sending video when we shouldn't be
+                        track.stop();
+                        return;
+                    }
+
                     localStream.addTrack(track);
                     this._monitorVideoTrack(track);
 
