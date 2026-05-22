@@ -85,6 +85,7 @@ type P2PAnalytics = {
     P2PRelayedIceCandidate: number;
     P2PSessionAddTrack: number;
     P2PAddTrackToPeerConnections: number;
+    P2PAddIceCandidateFailure: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -199,6 +200,7 @@ export default class P2pRtcManager implements RtcManager {
             P2PRelayedIceCandidate: 0,
             P2PSessionAddTrack: 0,
             P2PAddTrackToPeerConnections: 0,
+            P2PAddIceCandidateFailure: 0,
         };
     }
 

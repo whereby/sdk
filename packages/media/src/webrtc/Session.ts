@@ -165,7 +165,7 @@ export default class Session {
         // wrapper around SRD which stores a promise
         this.srdComplete = this.pc.setRemoteDescription(desc);
         return this.srdComplete.then(() => {
-            this.earlyIceCandidates.forEach((candidate) => this.pc.addIceCandidate(candidate));
+            this.earlyIceCandidates.forEach((candidate) => this.addIceCandidate(candidate));
             this.earlyIceCandidates = [];
         });
     }
@@ -237,6 +237,14 @@ export default class Session {
             }
             this.pc.addIceCandidate(candidate).catch((e: any) => {
                 logger.warn("Failed to add ICE candidate ('%s'): %s", candidate ? candidate.candidate : null, e);
+                this._incrementAnalyticMetric("P2PAddIceCandidateFailure");
+                rtcStats.sendEvent("P2PAddIceCandidateFailure", {
+                    clientId: this.clientId,
+                    errorName: e?.name,
+                    errorMessage: e?.message,
+                    signalingState: this.pc.signalingState,
+                    iceConnectionState: this.pc.iceConnectionState,
+                });
             });
         });
     }
