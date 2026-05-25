@@ -18,6 +18,7 @@ import {
     doRequestVideoEnable,
     doRtcReportStreamResolution,
     doSendChatMessage,
+    doRemoveChatMessage,
     doSetLocalStickyReaction,
     doSpotlightParticipant,
     doStartCloudRecording,
@@ -240,7 +241,10 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         startAppListening({
             actionCreator: signalEvents.chatMessage,
             effect: ({ payload }) => {
-                this.emit(CHAT_NEW_MESSAGE, payload);
+                this.emit(CHAT_NEW_MESSAGE, {
+                    ...payload,
+                    removed: false,
+                });
             },
         });
     }
@@ -403,6 +407,15 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public sendChatMessage(text: string) {
         this.store.dispatch(doSendChatMessage({ text }));
+    }
+
+    /**
+     * Remove a chat message from the room.
+     * @param id - The message id to remove.
+     * @param sig - The message signature to use to authorize removal.
+     */
+    public removeChatMessage(id: string, sig?: string | null) {
+        this.store.dispatch(doRemoveChatMessage({ id, sig }));
     }
 
     /**

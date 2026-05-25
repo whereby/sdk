@@ -31,6 +31,7 @@ export interface RoomConnectionActions {
     endMeeting: (stayBehind?: boolean) => void;
     rejectWaitingParticipant: (participantId: string) => void;
     sendChatMessage: (text: string) => void;
+    removeChatMessage: (id: string, sig?: string | null) => void;
     setDisplayName: (displayName: string) => void;
     startCloudRecording: () => void;
     startLiveTranscription: () => void;

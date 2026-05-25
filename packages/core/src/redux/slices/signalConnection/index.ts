@@ -9,6 +9,7 @@ import {
     AudioEnabledEvent,
     BreakoutGroupJoinedEvent,
     ChatMessage,
+    ChatMessageRemoved,
     ClientKickedEvent,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
@@ -55,6 +56,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
         dispatch(signalEvents.clientMetadataReceived(payload)),
     );
     socket.on("chat_message", (payload: ChatMessage) => dispatch(signalEvents.chatMessage(payload)));
+    socket.on("chat_message_removed", (payload: ChatMessageRemoved) =>
+        dispatch(signalEvents.chatMessageRemoved(payload)),
+    );
     socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
     socket.on("room_knocked", (payload: RoomKnockedEvent) => dispatch(signalEvents.roomKnocked(payload)));
     socket.on("room_left", () => dispatch(signalEvents.roomLeft()));

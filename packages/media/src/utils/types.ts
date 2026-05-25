@@ -90,12 +90,17 @@ export interface ChatMessage {
     messageType: "text";
     roomName: string;
     senderId: string;
-    sig: string;
+    sig?: string | null;
     text: string;
     timestamp: string;
     userId: string;
     breakoutGroup?: string;
     broadcast?: boolean;
+}
+
+export interface ChatMessageRemoved {
+    id: string;
+    requestedByClientId: string;
 }
 
 export interface CloudRecordingStartedEvent {
@@ -397,6 +402,7 @@ export interface SignalEvents {
     cloud_recording_started: CloudRecordingStartedEvent;
     cloud_recording_stopped: void;
     chat_message: ChatMessage;
+    chat_message_removed: ChatMessageRemoved;
     connect: void;
     connect_error: void;
     device_identified: void;

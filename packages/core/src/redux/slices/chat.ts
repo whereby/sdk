@@ -6,7 +6,9 @@ import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectBreakoutCurrentId } from "./breakout";
 
-export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
+export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "timestamp" | "text" | "sig"> & {
+    removed: boolean;
+};
 
 /**
  * Reducer
@@ -26,14 +28,30 @@ export const chatSlice = createSlice({
     extraReducers(builder) {
         builder.addCase(signalEvents.chatMessage, (state, action) => {
             const message: ChatMessage = {
+                id: action.payload.id,
                 senderId: action.payload.senderId,
                 timestamp: action.payload.timestamp,
                 text: action.payload.text,
+                sig: action.payload.sig,
+                removed: false,
             };
 
             return {
                 ...state,
                 chatMessages: [...state.chatMessages, message],
+            };
+        });
+        builder.addCase(signalEvents.chatMessageRemoved, (state, action) => {
+            return {
+                ...state,
+                chatMessages: state.chatMessages.map((m) => {
+                    return {
+                        ...m,
+                        ...(m.id === action.payload.id && {
+                            removed: true,
+                        }),
+                    };
+                }),
             };
         });
     },
@@ -54,6 +72,19 @@ export const doSendChatMessage = createRoomConnectedThunk(
             ...(payload.isBroadcast && { broadcast: true }),
         });
     },
+);
+
+export const doRemoveChatMessage = createRoomConnectedThunk(
+    ({ id, sig }: Pick<SignalChatMessage, "id" | "sig">) =>
+        (_, getState) => {
+            const state = getState();
+            const socket = selectSignalConnectionRaw(state).socket;
+
+            socket?.emit("remove_chat_message", {
+                id,
+                sig,
+            });
+        },
 );
 
 /**

@@ -56,6 +56,7 @@ export default function VideoExperience({
         remoteParticipants,
         connectionStatus,
         waitingParticipants,
+        chatMessages,
         screenshares,
         spotlightedParticipants,
         breakout,
@@ -66,6 +67,7 @@ export default function VideoExperience({
         knock,
         cancelKnock,
         sendChatMessage,
+        removeChatMessage,
         setDisplayName,
         joinRoom,
         leaveRoom,
@@ -607,6 +609,20 @@ export default function VideoExperience({
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
                     </div>
                     <div className="chat">
+                        {chatMessages.length > 0 && <h3>Chat messages</h3>}
+                        {chatMessages.map((m) => {
+                            return (
+                                <div key={m.id}>
+                                    {m.removed ? <s>{m.text}</s> : m.text}{" "}
+                                    {!m.removed && (m.sig || showHostControls) && (
+                                        <button type="button" onClick={() => removeChatMessage(m.id, m.sig)}>
+                                            Remove
+                                        </button>
+                                    )}
+                                    <hr />
+                                </div>
+                            );
+                        })}
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
