@@ -509,7 +509,7 @@ export default class P2pRtcManager implements RtcManager {
         this._roomSessionId = roomSessionId;
     }
 
-    _setConnectionStatus(session: Session, newStatus: string, clientId: string) {
+    _setConnectionStatus(session: Session, newStatus: CONNECTION_STATUS.ConnectionStatus, clientId: string) {
         const previousStatus = session.connectionStatus;
         if (previousStatus === newStatus) {
             return;

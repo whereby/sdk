@@ -6,6 +6,7 @@ import rtcStats from "./rtcStatsService";
 import { MediaPrefs, SignalRTCSessionDescription } from "./types";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 import { trackAnnotations } from "../utils/annotations";
+import { type ConnectionStatus } from "../model";
 
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
@@ -30,7 +31,7 @@ export default class Session {
     mdnsHostCandidateSeen: boolean;
     pc: RTCPeerConnection;
     wasEverConnected: boolean;
-    connectionStatus: any;
+    connectionStatus: ConnectionStatus | null;
     bandwidth: any;
     pending: any[];
     isOperationPending: boolean;
@@ -41,10 +42,10 @@ export default class Session {
     registerConnected?: (value: unknown) => void;
     _deprioritizeH264Encoding: boolean;
     _mediaPrefs?: MediaPrefs;
-    clientId: any;
+    clientId: string;
     peerConnectionConfig: RTCConfiguration;
-    signalingState: any;
-    srdComplete: any;
+    signalingState: RTCPeerConnection["signalingState"];
+    srdComplete?: ReturnType<RTCPeerConnection["setRemoteDescription"]>;
     _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
     pendingReplaceTrackActions: (() => Promise<void>)[];
 
