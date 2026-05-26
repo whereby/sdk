@@ -569,6 +569,8 @@ describe("P2pRtcManager", () => {
                 it("sets the remote description", async () => {
                     // Instantiate the mocked pc
                     const { pc } = rtcManager._connect(clientId);
+                    // @ts-ignore
+                    pc.signalingState = "have-local-offer";
 
                     // Run
                     const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
@@ -577,6 +579,20 @@ describe("P2pRtcManager", () => {
 
                     // Assert
                     expect(pc.setRemoteDescription).toHaveBeenCalled();
+                });
+
+                it("ignores a stale answer when signalingState is stable", async () => {
+                    // Simulates an in-flight ICE-restart answer arriving after the PC
+                    // has been recreated (e.g. after a signal-server reconnect).
+                    const session = rtcManager._connect(clientId);
+                    // @ts-ignore — PC stub stays in "stable" by default
+                    session.pc.signalingState = "stable";
+
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    const answer = { type: "answer", sdp: validSdp };
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_ANSWER, { clientId, message: answer });
+
+                    expect(session.pc.setRemoteDescription).not.toHaveBeenCalled();
                 });
             });
 

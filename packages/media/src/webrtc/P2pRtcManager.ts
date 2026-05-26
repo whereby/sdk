@@ -77,6 +77,7 @@ type P2PAnalytics = {
     numPcOnAnswerFailure: number;
     numPcOnOfferFailure: number;
     numPcSldFailure: number;
+    P2PStaleAnswerIgnored: number;
     P2PReplaceTrackNoStream: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2POnTrackNoStream: number;
@@ -192,6 +193,7 @@ export default class P2pRtcManager implements RtcManager {
             numPcSldFailure: 0,
             numPcOnAnswerFailure: 0,
             numPcOnOfferFailure: 0,
+            P2PStaleAnswerIgnored: 0,
             P2PReplaceTrackNoStream: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2POnTrackNoStream: 0,
