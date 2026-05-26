@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.3.3
+
+### Patch Changes
+
+- 8b85220: Catch errors for early ice candidates in P2P
+
 ## 8.3.2
 
 ### Patch Changes
