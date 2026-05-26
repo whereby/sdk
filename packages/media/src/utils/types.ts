@@ -96,6 +96,7 @@ export interface ChatMessage {
     userId: string;
     breakoutGroup?: string;
     broadcast?: boolean;
+    parentId?: string;
 }
 
 export interface ChatMessageRemoved {
@@ -428,6 +429,13 @@ export interface SignalEvents {
     live_captions_stopped: void;
 }
 
+export interface ChatMessageRequest {
+    text: string;
+    parentId?: string;
+    breakoutGroup?: string;
+    broadcast?: boolean;
+}
+
 export interface IdentifyDeviceRequest {
     deviceCredentials: Credentials;
 }
@@ -477,7 +485,7 @@ export interface RemoveSpotlightRequest {
 
 export interface SignalRequests {
     add_spotlight: AddSpotlightRequest;
-    chat_message: { text: string };
+    chat_message: ChatMessageRequest;
     enable_audio: { enabled: boolean };
     enable_video: { enabled: boolean };
     handle_knock: { action: "accept" | "reject"; clientId: string; response: unknown };

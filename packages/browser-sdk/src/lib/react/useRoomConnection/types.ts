@@ -30,7 +30,7 @@ export interface RoomConnectionActions {
     kickParticipant: (clientId: string) => void;
     endMeeting: (stayBehind?: boolean) => void;
     rejectWaitingParticipant: (participantId: string) => void;
-    sendChatMessage: (text: string) => void;
+    sendChatMessage: (text: string, parentId?: string) => void;
     removeChatMessage: (id: string, sig?: string | null) => void;
     setDisplayName: (displayName: string) => void;
     startCloudRecording: () => void;

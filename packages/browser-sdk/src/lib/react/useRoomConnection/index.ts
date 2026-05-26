@@ -68,7 +68,10 @@ export function useRoomConnection(
         client.initialize(roomConfig);
         return client.joinRoom();
     }, [client]);
-    const sendChatMessage = React.useCallback((text: string) => client.sendChatMessage(text), [client]);
+    const sendChatMessage = React.useCallback(
+        (text: string, parentId?: string) => client.sendChatMessage(text, parentId),
+        [client],
+    );
     const removeChatMessage = React.useCallback(
         (id: string, sig?: string | null) => client.removeChatMessage(id, sig),
         [client],

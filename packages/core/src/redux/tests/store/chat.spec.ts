@@ -2,12 +2,22 @@ import { createStore, mockSignalEmit } from "../store.setup";
 import { doSendChatMessage, doRemoveChatMessage } from "../../slices/chat";
 
 describe("actions", () => {
-    it("doSendChatMessage", () => {
-        const store = createStore({ withSignalConnection: true, connectToRoom: true });
+    describe("doSendChatMessage", () => {
+        it("should send chat message", () => {
+            const store = createStore({ withSignalConnection: true, connectToRoom: true });
 
-        store.dispatch(doSendChatMessage({ text: "text" }));
+            store.dispatch(doSendChatMessage({ text: "text" }));
 
-        expect(mockSignalEmit).toHaveBeenCalledWith("chat_message", { text: "text" });
+            expect(mockSignalEmit).toHaveBeenCalledWith("chat_message", { text: "text" });
+        });
+
+        it("should send chat message with parent id if provided", () => {
+            const store = createStore({ withSignalConnection: true, connectToRoom: true });
+
+            store.dispatch(doSendChatMessage({ text: "text", parentId: "parent-id" }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("chat_message", { text: "text", parentId: "parent-id" });
+        });
     });
 
     describe("doRemoveChatMessage", () => {
