@@ -1043,13 +1043,12 @@ describe("P2pRtcManager", () => {
         describe("icerestart", () => {
             it("adds analytics for ICE restarts", async () => {
                 const manager = createRtcManager();
-                const { pc } = await manager._connect(clientId);
+                const session = manager._connect(clientId);
 
                 // @ts-ignore
-                pc.iceConnectionState = "disconnected";
+                session.pc.iceConnectionState = "disconnected";
                 // @ts-ignore
-                pc.localDescription = { type: "offer" };
-                const session: any = { pc, expectNewRemoteDescription: jest.fn() };
+                session.pc.localDescription = { type: "offer" };
                 session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
                 manager._maybeRestartIce(clientId, session);
                 expect(manager.analytics.numIceRestart).toBe(1);
