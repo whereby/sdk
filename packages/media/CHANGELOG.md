@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.3.4
+
+### Patch Changes
+
+- de1fef4: Ignore stale SDP answer after PC recreation
+
 ## 8.3.3
 
 ### Patch Changes
