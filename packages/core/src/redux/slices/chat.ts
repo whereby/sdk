@@ -61,13 +61,14 @@ export const chatSlice = createSlice({
  * Action creators
  */
 export const doSendChatMessage = createRoomConnectedThunk(
-    (payload: { text: string; isBroadcast?: boolean }) => (_, getState) => {
+    (payload: { text: string; isBroadcast?: boolean; parentId?: string }) => (_, getState) => {
         const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
         const breakoutCurrentId = selectBreakoutCurrentId(state);
 
         socket?.emit("chat_message", {
             text: payload.text,
+            ...(payload.parentId && { parentId: payload.parentId }),
             ...(breakoutCurrentId && { breakoutGroup: breakoutCurrentId }),
             ...(payload.isBroadcast && { broadcast: true }),
         });
