@@ -596,6 +596,89 @@ describe("P2pRtcManager", () => {
                 });
             });
 
+            describe("ICE_CANDIDATE before the answer", () => {
+                it("does not add a candidate to the PC before the initial answer arrives", async () => {
+                    const session = rtcManager._connect(clientId);
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    const candidate = helpers.getValidCandidatePackage();
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.ICE_CANDIDATE, {
+                        clientId,
+                        message: candidate,
+                    });
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    expect(session.pc.addIceCandidate).not.toHaveBeenCalled();
+                });
+
+                it("flushes the buffered candidate to the PC once the initial answer's SRD resolves", async () => {
+                    const session = rtcManager._connect(clientId);
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    const candidate = helpers.getValidCandidatePackage();
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.ICE_CANDIDATE, {
+                        clientId,
+                        message: candidate,
+                    });
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    // @ts-ignore
+                    session.pc.signalingState = "have-local-offer";
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_ANSWER, {
+                        clientId,
+                        message: { type: "answer", sdp: validSdp },
+                    });
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    expect(session.pc.addIceCandidate).toHaveBeenCalledWith(candidate);
+                });
+
+                it("does not add a candidate to the PC while a renegotiation offer is in flight", async () => {
+                    const session = rtcManager._connect(clientId);
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    // settle the initial answer so srdComplete becomes a resolved promise
+                    // @ts-ignore
+                    session.pc.signalingState = "have-local-offer";
+                    const validSdp = (getValidSdpString() + "\n").split("\n").join("\r\n");
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.SDP_ANSWER, {
+                        clientId,
+                        message: { type: "answer", sdp: validSdp },
+                    });
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+                    // @ts-ignore
+                    session.pc.signalingState = "stable";
+                    session.isOperationPending = false;
+                    (session.pc.addIceCandidate as jest.Mock).mockClear();
+
+                    // mark the session as connected, then trigger a renegotiation
+                    // @ts-ignore
+                    session.pc.iceConnectionState = "connected";
+                    session.pc.oniceconnectionstatechange?.({} as Event);
+                    session.pc.onnegotiationneeded?.({} as Event);
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    const candidate = helpers.getValidCandidatePackage();
+                    serverSocketStub.emitFromServer(RELAY_MESSAGES.ICE_CANDIDATE, {
+                        clientId,
+                        message: candidate,
+                    });
+                    jest.advanceTimersByTimeAsync(1);
+                    await new Promise(process.nextTick);
+
+                    expect(session.pc.addIceCandidate).not.toHaveBeenCalled();
+                });
+            });
+
             describe("MEDIASERVER_CONFIG", () => {
                 const iceServers = helpers.createIceServersConfig();
 
@@ -966,7 +1049,7 @@ describe("P2pRtcManager", () => {
                 pc.iceConnectionState = "disconnected";
                 // @ts-ignore
                 pc.localDescription = { type: "offer" };
-                const session: any = { pc };
+                const session: any = { pc, expectNewRemoteDescription: jest.fn() };
                 session.canModifyPeerConnection = jest.fn().mockReturnValue(true);
                 manager._maybeRestartIce(clientId, session);
                 expect(manager.analytics.numIceRestart).toBe(1);

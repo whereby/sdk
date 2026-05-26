@@ -158,6 +158,10 @@ export default class Session {
         });
     }
 
+    expectNewRemoteDescription() {
+        this.srdComplete = undefined;
+    }
+
     _setRemoteDescription(desc: SignalRTCSessionDescription): Promise<void> {
         // deprioritize H264 Encoding if set by option/flag
         if (this._deprioritizeH264Encoding) desc.sdp = sdpModifier.deprioritizeH264(desc.sdp);

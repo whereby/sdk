@@ -1169,6 +1169,9 @@ export default class P2pRtcManager implements RtcManager {
                             throw e;
                         })
                         .then(() => {
+                            // committed to a new ICE generation; buffer remote candidates until the matching answer
+                            session.expectNewRemoteDescription();
+
                             const message = {
                                 sdp: offer.sdp,
                                 sdpU: offer.sdp,
