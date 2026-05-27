@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 8.3.5
+
+### Patch Changes
+
+- e0a0059: Buffer remote ICE candidates during a new local offer in P2P
+
 ## 8.3.4
 
 ### Patch Changes
