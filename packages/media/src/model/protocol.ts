@@ -36,6 +36,7 @@ export const PROTOCOL_RESPONSES = {
     BLOCK_ADDED: "block_added",
     BLOCK_REMOVED: "block_removed",
     CHAT_HISTORY_CLEARED: "chat_history_cleared",
+    CHAT_MESSAGE_REMOVED: "chat_message_removed",
     CLIENT_BLOCKED: "client_blocked",
     CLIENT_INVITED_AS_MEMBER: "client_invited_as_member",
     CLIENT_KICKED: "client_kicked",
