@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 1.10.17
+
+### Patch Changes
+
+- Updated dependencies [f5029ed]
+    - @whereby.com/media@9.0.0
+
 ## 1.10.16
 
 ### Patch Changes
