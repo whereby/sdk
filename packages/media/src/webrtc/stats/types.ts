@@ -43,9 +43,18 @@ export interface ViewStats {
 
 export interface CandidatePairStats {
     active?: boolean;
+    availableIncomingBitrate?: number;
+    availableOutgoingBitrate?: number;
+    bitrateIn?: number;
+    bitrateOut?: number;
     id: string;
     inactiveFromTime?: number;
     lastRtcStatsTime?: number;
+    requestsSent?: number;
+    requestsReceived?: number;
+    responsesReceived?: number;
+    responsesSent?: number;
+    roundTripTime?: number;
     startTime: number;
     state?: string;
     turnProtocol?: string;
