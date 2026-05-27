@@ -328,16 +328,175 @@ describe("VegaRtcManager", () => {
                 });
             });
 
-            it("should sendWebcam(track)", async () => {
-                const expectedTrack = gumStream.getVideoTracks()[0];
-                jest.spyOn(rtcManager, "_sendWebcam");
+            describe("when there is a webcam producer", () => {
+                let stream: MediaStream;
+                let existingTrack: MediaStreamTrack;
 
-                rtcManager.stopOrResumeVideo(localStream, true);
+                beforeEach(async () => {
+                    existingTrack = helpers.createMockedMediaStreamTrack({
+                        id: "id",
+                        kind: "video",
+                    });
+                    stream = helpers.createMockedMediaStream([existingTrack]);
+                });
 
-                jest.advanceTimersToNextTimerAsync();
-                await new Promise(process.nextTick);
+                it("should replace the webcam producer track", async () => {
+                    const mockVideoProducer = new MockProducer({ kind: "video" });
+                    jest.spyOn(mockVideoProducer, "replaceTrack");
+                    jest.spyOn(mockSendTransport, "produce").mockImplementation(
+                        ({ track }: { track: MediaStreamTrack }) => {
+                            if (track.kind === "video") return mockVideoProducer;
+                            else return new MockProducer({ kind: "audio" });
+                        },
+                    );
 
-                expect(rtcManager._sendWebcam).toHaveBeenCalledWith(expectedTrack);
+                    rtcManager.setupSocketListeners();
+                    rtcManager.addCameraStream(stream);
+
+                    const expectedTrack = gumStream.getVideoTracks()[0];
+
+                    rtcManager.stopOrResumeVideo(localStream, true);
+                    await jest.runAllTimersAsync();
+
+                    expect(mockVideoProducer.replaceTrack).toHaveBeenCalledWith({ track: expectedTrack });
+                    sfuWebsocketServer.close();
+                });
+            });
+
+            describe("when there is no webcam producer", () => {
+                let stream: MediaStream;
+                beforeEach(async () => {
+                    stream = helpers.createMockedMediaStream([]);
+                });
+
+                it("should create the webcam producer", async () => {
+                    const mockVideoProducer = new MockProducer({ kind: "video" });
+                    jest.spyOn(mockVideoProducer, "replaceTrack");
+                    jest.spyOn(mockSendTransport, "produce").mockImplementation(
+                        ({ track }: { track: MediaStreamTrack }) => {
+                            if (track.kind === "video") return mockVideoProducer;
+                            else return new MockProducer({ kind: "audio" });
+                        },
+                    );
+
+                    rtcManager.setupSocketListeners();
+                    rtcManager.addCameraStream(stream);
+
+                    const expectedTrack = gumStream.getVideoTracks()[0];
+
+                    rtcManager.stopOrResumeVideo(localStream, true);
+                    await jest.runAllTimersAsync();
+
+                    expect(mockSendTransport.produce).toHaveBeenCalledTimes(1);
+                    expect(mockSendTransport.produce).toHaveBeenCalledWith(
+                        expect.objectContaining({ track: expectedTrack }),
+                    );
+                    sfuWebsocketServer.close();
+                });
+            });
+
+            describe("when webcam is paused shortly after enabling", () => {
+                describe("when there is a webcam producer", () => {
+                    let stream: MediaStream;
+                    let existingTrack: MediaStreamTrack;
+
+                    beforeEach(async () => {
+                        existingTrack = helpers.createMockedMediaStreamTrack({
+                            id: "id",
+                            kind: "video",
+                        });
+                        stream = helpers.createMockedMediaStream([existingTrack]);
+                    });
+
+                    it("should not replace the webcam producer track", async () => {
+                        const mockVideoProducer = new MockProducer({ kind: "video" });
+                        jest.spyOn(mockVideoProducer, "replaceTrack");
+                        jest.spyOn(mockSendTransport, "produce").mockImplementation(
+                            ({ track }: { track: MediaStreamTrack }) => {
+                                if (track.kind === "video") return mockVideoProducer;
+                                else return new MockProducer({ kind: "audio" });
+                            },
+                        );
+                        const expectedTrack = gumStream.getVideoTracks()[0];
+                        jest.spyOn(expectedTrack, "stop");
+
+                        rtcManager.setupSocketListeners();
+                        rtcManager.addCameraStream(stream);
+                        rtcManager.stopOrResumeVideo(localStream, true);
+                        rtcManager.stopOrResumeVideo(localStream, false);
+                        await Promise.resolve();
+
+                        expect(mockVideoProducer.replaceTrack).not.toHaveBeenCalled();
+                        sfuWebsocketServer.close();
+                    });
+                });
+
+                describe("when there is no webcam producer", () => {
+                    let stream: MediaStream;
+                    beforeEach(async () => {
+                        stream = helpers.createMockedMediaStream([]);
+                    });
+
+                    it("should not create the webcam producer", async () => {
+                        const mockVideoProducer = new MockProducer({ kind: "video" });
+                        jest.spyOn(mockVideoProducer, "replaceTrack");
+                        jest.spyOn(mockSendTransport, "produce").mockImplementation(
+                            ({ track }: { track: MediaStreamTrack }) => {
+                                if (track.kind === "video") return mockVideoProducer;
+                                else return new MockProducer({ kind: "audio" });
+                            },
+                        );
+
+                        const expectedTrack = gumStream.getVideoTracks()[0];
+
+                        rtcManager.setupSocketListeners();
+                        rtcManager.addCameraStream(stream);
+                        rtcManager.stopOrResumeVideo(localStream, true);
+                        rtcManager.stopOrResumeVideo(localStream, false);
+                        await Promise.resolve();
+
+                        expect(mockSendTransport.produce).not.toHaveBeenCalled();
+                        sfuWebsocketServer.close();
+                    });
+                });
+
+                it("doesn't emit any events", async () => {
+                    const expectedTrack = gumStream.getVideoTracks()[0];
+                    jest.spyOn(rtcManager, "_sendWebcam");
+
+                    rtcManager.stopOrResumeVideo(localStream, true);
+                    rtcManager.stopOrResumeVideo(localStream, false);
+
+                    jest.advanceTimersToNextTimerAsync();
+                    await new Promise(process.nextTick);
+
+                    expect(emitter.emit).not.toHaveBeenCalled();
+                });
+
+                it("should not add video track to local stream", async () => {
+                    const expectedTrack = gumStream.getVideoTracks()[0];
+
+                    rtcManager.stopOrResumeVideo(localStream, true);
+                    rtcManager.stopOrResumeVideo(localStream, false);
+
+                    jest.advanceTimersToNextTimerAsync();
+                    await new Promise(process.nextTick);
+
+                    expect(localStream.addTrack).not.toHaveBeenCalledWith();
+                });
+
+                it("stops the new video track", async () => {
+                    const expectedTrack = gumStream.getVideoTracks()[0];
+                    jest.spyOn(expectedTrack, "stop");
+
+                    rtcManager.stopOrResumeVideo(localStream, true);
+                    rtcManager.stopOrResumeVideo(localStream, false);
+
+                    jest.advanceTimersToNextTimerAsync();
+                    await new Promise(process.nextTick);
+
+                    expect(expectedTrack.stop).toHaveBeenCalled();
+                });
             });
         });
     });
