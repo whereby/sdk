@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.0.0
+
+### Major Changes
+
+- f5029ed: Drop support for Node < 24. The minimum supported Node.js version is now 24.
+
 ## 8.3.5
 
 ### Patch Changes
