@@ -16,4 +16,7 @@ export const TYPES = {
     CONNECTION_FAILED: "connection_failed",
     CONNECTION_SUCCESSFUL: "connection_successful",
     CONNECTION_DISCONNECTED: "connection_disconnected",
-};
+} as const;
+// Need `as const` here or the values are widened to strings and can't be used for typing.
+
+export type ConnectionStatus = (typeof TYPES)[keyof typeof TYPES];
