@@ -151,10 +151,43 @@ export interface BuildDeviceListOptions {
     kind: MediaDeviceKind;
 }
 
+export type GetStreamAttemptOutcome =
+    | { ok: true }
+    | { ok: false; errorName: string; errorMessage: string; constraint?: string };
+
+export type GetStreamAttempt = {
+    constraints: MediaStreamConstraints;
+    durationMs: number;
+    outcome: GetStreamAttemptOutcome;
+};
+
+export type GetStreamAnalytics = {
+    requestedAudioId: GetConstraintsOptions["audioId"];
+    requestedVideoId: GetConstraintsOptions["videoId"];
+    resultingAudioId: string | null;
+    resultingVideoId: string | null;
+    attempts: GetStreamAttempt[];
+    finalConstraints: MediaStreamConstraints | null;
+    outcome: "ok" | "failed";
+    succeededAt: number | null;
+    recovered: boolean;
+    attemptCount: number;
+    totalDurationMs: number;
+    initialErrorName: string | null;
+    initialErrorConstraint: string | null;
+    terminalErrorName: string | null;
+    terminalErrorConstraint: string | null;
+    droppedKinds: ("audio" | "video")[];
+    droppedAudio: boolean;
+    droppedVideo: boolean;
+    droppedDeviceId: boolean;
+};
+
 export type GetStreamResult = {
     error?: unknown;
     replacedTracks?: MediaStreamTrack[];
     stream: MediaStream;
+    analytics: GetStreamAnalytics | null;
 };
 
 export type UpdatedDeviceInfo = {

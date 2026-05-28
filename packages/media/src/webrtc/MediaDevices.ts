@@ -4,6 +4,8 @@ import {
     BuildDeviceListOptions,
     GetConstraintsOptions,
     GetDeviceDataResult,
+    GetStreamAnalytics,
+    GetStreamAttempt,
     GetStreamOptions,
     GetStreamResult,
     GetUpdatedDevicesResult,
@@ -171,22 +173,85 @@ export function replaceTracksInStream(stream: MediaStream, newStream: MediaStrea
     return replacedTracks;
 }
 
+function buildGetStreamAnalytics(
+    constraintOpt: GetConstraintsOptions,
+    attempts: GetStreamAttempt[],
+    succeededStream: MediaStream | null,
+): GetStreamAnalytics | null {
+    try {
+        const succeededIdx = attempts.findIndex((a) => a.outcome.ok);
+        const succeededAt = succeededIdx >= 0 ? succeededIdx : null;
+        const outcome: "ok" | "failed" = succeededAt !== null ? "ok" : "failed";
+
+        const audioTrack = succeededStream?.getAudioTracks()[0] ?? null;
+        const videoTrack = succeededStream?.getVideoTracks()[0] ?? null;
+        const finalConstraints = succeededAt !== null ? attempts[succeededAt].constraints : null;
+
+        const wantedAudio = constraintOpt.audioId !== false;
+        const wantedVideo = constraintOpt.videoId !== false;
+        const droppedKinds: ("audio" | "video")[] = [];
+        if (wantedAudio && !audioTrack) droppedKinds.push("audio");
+        if (wantedVideo && !videoTrack) droppedKinds.push("video");
+
+        const requestedAudioIdStr = typeof constraintOpt.audioId === "string" ? constraintOpt.audioId : null;
+        const requestedVideoIdStr = typeof constraintOpt.videoId === "string" ? constraintOpt.videoId : null;
+        const resultingAudioId = audioTrack?.getSettings?.().deviceId ?? null;
+        const resultingVideoId = videoTrack?.getSettings?.().deviceId ?? null;
+        const droppedDeviceId =
+            (!!requestedAudioIdStr && resultingAudioId !== requestedAudioIdStr) ||
+            (!!requestedVideoIdStr && resultingVideoId !== requestedVideoIdStr);
+
+        const firstAttempt = attempts[0];
+        const firstFailed = firstAttempt && !firstAttempt.outcome.ok ? firstAttempt.outcome : null;
+        const lastFailedAttempt = [...attempts].reverse().find((a) => !a.outcome.ok);
+        const lastFailed =
+            lastFailedAttempt && !lastFailedAttempt.outcome.ok ? lastFailedAttempt.outcome : null;
+        const terminalFailed = outcome === "failed" ? lastFailed : null;
+
+        return {
+            requestedAudioId: constraintOpt.audioId,
+            requestedVideoId: constraintOpt.videoId,
+            resultingAudioId,
+            resultingVideoId,
+            attempts,
+            finalConstraints,
+            outcome,
+            succeededAt,
+            recovered: succeededAt !== null && succeededAt > 0,
+            attemptCount: attempts.length,
+            totalDurationMs: attempts.reduce((sum, a) => sum + a.durationMs, 0),
+            initialErrorName: firstFailed ? firstFailed.errorName : null,
+            initialErrorConstraint: firstFailed?.constraint ?? null,
+            terminalErrorName: terminalFailed ? terminalFailed.errorName : null,
+            terminalErrorConstraint: terminalFailed?.constraint ?? null,
+            droppedKinds,
+            droppedAudio: droppedKinds.includes("audio"),
+            droppedVideo: droppedKinds.includes("video"),
+            droppedDeviceId,
+        };
+    } catch (e) {
+        logger.error(`getStream buildGetStreamAnalytics failed: ${e}`);
+        return null;
+    }
+}
+
 /**
  * Gets stream or replace tracks in with some fallbacks
  *
  * @param constraintOpt - for mediaConstraints.getConstraints (audioId/videoId etc)
  * @param options.replaceStream - stream to put new tracks into (instead of returning fresh)
  * @param options.fallback - try to give working stream
- * @returns {Promise<{stream, error=null}>}
+ * @returns {Promise<{stream, error=null, analytics}>}
  */
 export async function getStream(
     constraintOpt: GetConstraintsOptions,
     { replaceStream, fallback = true }: GetStreamOptions = {},
 ): Promise<GetStreamResult> {
     let error: any;
-    let newConstraints: GetConstraintsOptions | undefined;
+    let newConstraints: MediaStreamConstraints | undefined;
     let retryConstraintOpt: any;
     let stream: MediaStream | null = null;
+    const attempts: GetStreamAttempt[] = [];
 
     const only = (constraintOpt.audioId === false && "video") || (constraintOpt.videoId === false && "audio");
     // Mobile can't open two devices at once. Firefox also can't open two audio devices at once.
@@ -194,6 +259,28 @@ export async function getStream(
     // unless required.
     const stopTracks = isMobile || only !== "video";
     const constraints = getConstraints(constraintOpt);
+
+    const attempt = async (c: MediaStreamConstraints): Promise<MediaStream> => {
+        const start = performance.now();
+        try {
+            const s = await getUserMedia(c);
+            attempts.push({ constraints: c, durationMs: performance.now() - start, outcome: { ok: true } });
+            return s;
+        } catch (e: any) {
+            attempts.push({
+                constraints: c,
+                durationMs: performance.now() - start,
+                outcome: {
+                    ok: false,
+                    errorName: e?.name ?? "UnknownError",
+                    errorMessage: e?.message ?? String(e),
+                    ...(e?.constraint && { constraint: e.constraint }),
+                },
+            });
+            throw e;
+        }
+    };
+
     const addDetails = (err?: any, orgErr?: any) => {
         if (err) {
             err.details = {
@@ -210,6 +297,11 @@ export async function getStream(
         }
     };
 
+    const attachAnalytics = (err: any, succeededStream: MediaStream | null): any => {
+        if (err) err.analytics = buildGetStreamAnalytics(constraintOpt, attempts, succeededStream);
+        return err;
+    };
+
     const getSingleStream = async (e?: any) => {
         if (constraints.audio && constraints.video) {
             // Since we requested both audio and video, there's
@@ -217,14 +309,14 @@ export async function getStream(
             // let's try to only get one of them.
 
             try {
-                stream = await getUserMedia(getConstraints({ ...constraintOpt, audioId: false }));
+                stream = await attempt(getConstraints({ ...constraintOpt, audioId: false }));
             } catch (e2: any) {
                 if (e2?.name !== "NotFoundError") {
                     addDetails(e2, e);
                 }
             }
             try {
-                if (!stream) stream = await getUserMedia(getConstraints({ ...constraintOpt, videoId: false }));
+                if (!stream) stream = await attempt(getConstraints({ ...constraintOpt, videoId: false }));
             } catch (e2) {
                 addDetails(e2, e);
             }
@@ -233,11 +325,11 @@ export async function getStream(
 
     if (stopTracks && replaceStream) stopStreamTracks(replaceStream, only);
     try {
-        stream = await getUserMedia(constraints);
+        stream = await attempt(constraints);
     } catch (e: any) {
         error = e;
         if (!fallback) {
-            throw addDetails(e);
+            throw attachAnalytics(addDetails(e), null);
         }
         if (e?.name === "OverconstrainedError") {
             const laxConstraints = {
@@ -268,7 +360,7 @@ export async function getStream(
                 // First of all, it seems like NotReadableError is REALLY a
                 // OverconstrainedError in many cases, let's try with laxer constraints
                 try {
-                    stream = await getUserMedia(
+                    stream = await attempt(
                         getConstraints({ ...constraintOpt, options: { ...constraintOpt.options, lax: true } }),
                     );
                 } catch (e2) {
@@ -281,7 +373,7 @@ export async function getStream(
                 ];
                 if (!stream && problemWith) {
                     try {
-                        stream = await getUserMedia(getConstraints({ ...constraintOpt, [problemWith]: null }));
+                        stream = await attempt(getConstraints({ ...constraintOpt, [problemWith]: null }));
                     } catch (e2) {
                         logger.warn(`Re-tried ${problemWith} with no constraints, but failed: ${"" + e2}`);
                     }
@@ -292,7 +384,7 @@ export async function getStream(
                     const tryOnly = problemWith ? [problemWith] : ["videoId", "audioId"];
                     for (const kind of tryOnly) {
                         try {
-                            stream = await getUserMedia(getConstraints({ ...constraintOpt, [kind]: false }));
+                            stream = await attempt(getConstraints({ ...constraintOpt, [kind]: false }));
                         } catch (e2) {
                             logger.warn(`Re-tried without ${kind}, but failed: ${"" + e2}`);
                         }
@@ -308,21 +400,23 @@ export async function getStream(
     }
     if (retryConstraintOpt) {
         const onlyConstraints = only ? { audio: { videoId: false }, video: { audioId: false } }[only] : {};
-        newConstraints = getConstraints({
+        const retryConstraints = getConstraints({
             ...constraintOpt,
             ...retryConstraintOpt,
             options: { ...constraintOpt.options, lax: retryConstraintOpt.lax },
             ...onlyConstraints,
         });
+        newConstraints = retryConstraints;
         try {
-            stream = await getUserMedia(newConstraints);
+            stream = await attempt(retryConstraints);
         } catch (e) {
-            throw addDetails(e, error);
+            throw attachAnalytics(addDetails(e, error), null);
         }
     }
     if (!stream) {
-        throw addDetails(error);
+        throw attachAnalytics(addDetails(error), null);
     }
+    const acquiredStream = stream;
     let replacedTracks;
     if (replaceStream) {
         // In case we didn't do this earlier
@@ -330,7 +424,12 @@ export async function getStream(
         replacedTracks = replaceTracksInStream(replaceStream, stream, only);
         stream = replaceStream;
     }
-    return { error: error && addDetails(error), stream, replacedTracks };
+    return {
+        error: error && addDetails(error),
+        stream,
+        replacedTracks,
+        analytics: buildGetStreamAnalytics(constraintOpt, attempts, acquiredStream),
+    };
 }
 
 export function hasGetDisplayMedia() {
