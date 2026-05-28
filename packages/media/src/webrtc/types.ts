@@ -151,10 +151,20 @@ export interface BuildDeviceListOptions {
     kind: MediaDeviceKind;
 }
 
+export type GetUserMediaAttemptOutcome =
+    | { ok: true }
+    | { ok: false; errorName: string; errorMessage: string; constraint?: string };
+
+export type GetUserMediaAttempt = {
+    constraints: MediaStreamConstraints;
+    outcome: GetUserMediaAttemptOutcome;
+};
+
 export type GetStreamResult = {
     error?: unknown;
     replacedTracks?: MediaStreamTrack[];
     stream: MediaStream;
+    attempts: GetUserMediaAttempt[];
 };
 
 export type UpdatedDeviceInfo = {
