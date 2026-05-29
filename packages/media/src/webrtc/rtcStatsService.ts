@@ -1,4 +1,6 @@
-// ensure adapter is loaded first.
+// ensure webRtcApiHealthCheck is loaded before anything patching webrtc
+import { getWebRtcApiHealth } from "@whereby.com/webrtcapihealthcheck";
+// ensure adapter is loaded before rtcstats.
 import adapterRaw from "webrtc-adapter";
 import rtcstats from "@whereby.com/rtcstats";
 import { v4 as uuidv4 } from "uuid";
@@ -131,6 +133,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 // send client info after each connection, so analysis tools can handle reconnections
                 clientInfo.connectionNumber++;
                 ws.send(JSON.stringify(["clientInfo", null, clientInfo]));
+                ws.send(JSON.stringify(["webrtcapihealth", null, getWebRtcApiHealth()]));
 
                 if (organizationId) {
                     ws.send(JSON.stringify(organizationId));

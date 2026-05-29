@@ -1,3 +1,4 @@
+export { getWebRtcApiHealth } from "@whereby.com/webrtcapihealthcheck";
 export * from "./stats/IssueMonitor";
 export * from "./stats/PerformanceMonitor";
 export * from "./stats/StatsMonitor";
