@@ -16,12 +16,6 @@ export type CaptureExceptionFn = (err: Error, ctx?: CaptureExceptionContext) => 
 // URLs pass through unchanged — that covers the CDN production path.
 const resolveAssetUrl = (url: string): string => {
     if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) {
-    if (
-        url.startsWith("http://") ||
-        url.startsWith("https://") ||
-        url.startsWith("blob:") ||
-        url.startsWith("data:")
-    ) {
         return url;
     }
     return new URL(url, import.meta.url).href;
