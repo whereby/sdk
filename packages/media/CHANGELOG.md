@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.1.0
+
+### Minor Changes
+
+- 9672c3d: Expose getUserMedia attempts on getStream result and error
+
 ## 9.0.0
 
 ### Major Changes
