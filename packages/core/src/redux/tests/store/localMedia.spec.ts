@@ -81,7 +81,7 @@ describe("actions", () => {
 
                 beforeEach(() => {
                     newStream = new MockMediaStream();
-                    mockedGetStream.mockResolvedValueOnce({ stream: newStream });
+                    mockedGetStream.mockResolvedValueOnce({ stream: newStream, attempts: [] });
                 });
 
                 it("should update state", async () => {
@@ -202,7 +202,7 @@ describe("actions", () => {
                     if (opts?.replaceStream) {
                         opts.replaceStream.addTrack(videoTrack);
                     }
-                    return { stream: opts?.replaceStream || new MockMediaStream([videoTrack]) };
+                    return { stream: opts?.replaceStream || new MockMediaStream([videoTrack]), attempts: [] };
                 });
 
                 await store.dispatch(localMediaSlice.doToggleCamera());
@@ -406,7 +406,7 @@ describe("actions", () => {
             };
 
             const stream = new MockMediaStream();
-            jest.spyOn(MediaDevices, "getStream").mockResolvedValueOnce({ stream });
+            jest.spyOn(MediaDevices, "getStream").mockResolvedValueOnce({ stream, attempts: [] });
 
             const store = createStore({
                 initialState: {
