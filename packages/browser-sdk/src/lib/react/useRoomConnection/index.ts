@@ -68,7 +68,14 @@ export function useRoomConnection(
         client.initialize(roomConfig);
         return client.joinRoom();
     }, [client]);
-    const sendChatMessage = React.useCallback((text: string) => client.sendChatMessage(text), [client]);
+    const sendChatMessage = React.useCallback(
+        (text: string, parentId?: string) => client.sendChatMessage(text, parentId),
+        [client],
+    );
+    const removeChatMessage = React.useCallback(
+        (id: string, sig?: string | null) => client.removeChatMessage(id, sig),
+        [client],
+    );
     const knock = React.useCallback(() => client.knock(), [client]);
     const cancelKnock = React.useCallback(() => client.cancelKnock(), [client]);
     const setDisplayName = React.useCallback((displayName: string) => client.setDisplayName(displayName), [client]);
@@ -158,6 +165,7 @@ export function useRoomConnection(
             endMeeting,
             rejectWaitingParticipant,
             sendChatMessage,
+            removeChatMessage,
             setDisplayName,
             startCloudRecording,
             startLiveTranscription,

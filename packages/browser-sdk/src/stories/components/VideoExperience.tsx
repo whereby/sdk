@@ -37,6 +37,7 @@ export default function VideoExperience({
     showCameraEffects?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
+    const [chatMessageParent, setChatMessageParent] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
 
@@ -56,6 +57,7 @@ export default function VideoExperience({
         remoteParticipants,
         connectionStatus,
         waitingParticipants,
+        chatMessages,
         screenshares,
         spotlightedParticipants,
         breakout,
@@ -66,6 +68,7 @@ export default function VideoExperience({
         knock,
         cancelKnock,
         sendChatMessage,
+        removeChatMessage,
         setDisplayName,
         joinRoom,
         leaveRoom,
@@ -607,14 +610,41 @@ export default function VideoExperience({
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
                     </div>
                     <div className="chat">
+                        {chatMessages.length > 0 && <h3>Chat messages</h3>}
+                        {chatMessages.map((m) => {
+                            return (
+                                <div key={m.id}>
+                                    {m.removed ? <s>{m.text}</s> : m.text}{" "}
+                                    {!m.removed && (m.sig || showHostControls) && (
+                                        <button type="button" onClick={() => removeChatMessage(m.id, m.sig)}>
+                                            Remove
+                                        </button>
+                                    )}
+                                    <hr />
+                                </div>
+                            );
+                        })}
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                sendChatMessage(chatMessage);
+                                sendChatMessage(chatMessage, chatMessageParent);
                                 setChatMessage("");
+                                setChatMessageParent("");
                             }}
                         >
                             <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+                            <select value={chatMessageParent} onChange={(e) => setChatMessageParent(e.target.value)}>
+                                <option key="chat-select-room" value="">
+                                    Send to room
+                                </option>
+                                {chatMessages.map((m) => {
+                                    return (
+                                        <option key={`chat-select-${m.id}`} value={m.id}>
+                                            Reply to: {m.text}
+                                        </option>
+                                    );
+                                })}
+                            </select>
                             <button type="submit">Send message</button>
                         </form>
                     </div>

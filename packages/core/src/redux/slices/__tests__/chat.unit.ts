@@ -20,9 +20,12 @@ describe("chatSlice", () => {
 
             expect(result.chatMessages).toEqual([
                 {
+                    id: "messageId",
                     senderId: "senderId",
                     timestamp: "123",
                     text: "text",
+                    sig: "sig",
+                    removed: false,
                 },
             ]);
         });

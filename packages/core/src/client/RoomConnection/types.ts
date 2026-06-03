@@ -37,7 +37,9 @@ export type ScreenshareState = Screenshare;
 
 export type LocalScreenshareStatus = "starting" | "active";
 
-export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
+export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "timestamp" | "text" | "sig"> & {
+    removed: boolean;
+};
 
 export type CloudRecordingState = {
     error?: string;

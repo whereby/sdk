@@ -90,12 +90,18 @@ export interface ChatMessage {
     messageType: "text";
     roomName: string;
     senderId: string;
-    sig: string;
+    sig?: string | null;
     text: string;
     timestamp: string;
     userId: string;
     breakoutGroup?: string;
     broadcast?: boolean;
+    parentId?: string;
+}
+
+export interface ChatMessageRemoved {
+    id: string;
+    requestedByClientId: string;
 }
 
 export interface CloudRecordingStartedEvent {
@@ -397,6 +403,7 @@ export interface SignalEvents {
     cloud_recording_started: CloudRecordingStartedEvent;
     cloud_recording_stopped: void;
     chat_message: ChatMessage;
+    chat_message_removed: ChatMessageRemoved;
     connect: void;
     connect_error: void;
     device_identified: void;
@@ -420,6 +427,13 @@ export interface SignalEvents {
     live_transcription_stopped: LiveTranscriptionStoppedEvent;
     live_captions_started: void;
     live_captions_stopped: void;
+}
+
+export interface ChatMessageRequest {
+    text: string;
+    parentId?: string;
+    breakoutGroup?: string;
+    broadcast?: boolean;
 }
 
 export interface IdentifyDeviceRequest {
@@ -471,7 +485,7 @@ export interface RemoveSpotlightRequest {
 
 export interface SignalRequests {
     add_spotlight: AddSpotlightRequest;
-    chat_message: { text: string };
+    chat_message: ChatMessageRequest;
     enable_audio: { enabled: boolean };
     enable_video: { enabled: boolean };
     handle_knock: { action: "accept" | "reject"; clientId: string; response: unknown };
