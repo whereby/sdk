@@ -1,5 +1,19 @@
 # @whereby.com/core
 
+## 1.11.0
+
+### Minor Changes
+
+- c6ca91d: Add chat message removal API and chat message removal response handling to Core SDK
+
+### Patch Changes
+
+- 563b5c5: Expose parentId (if available) with chat messages to render reply interfaces
+- Updated dependencies [b86c66d]
+- Updated dependencies [c6ca91d]
+- Updated dependencies [b86c66d]
+    - @whereby.com/media@9.2.0
+
 ## 1.10.19
 
 ### Patch Changes
