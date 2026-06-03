@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.1.1
+
+### Patch Changes
+
+- 1893566: Fix stopOrResumeVideo race
+
 ## 9.1.0
 
 ### Minor Changes
