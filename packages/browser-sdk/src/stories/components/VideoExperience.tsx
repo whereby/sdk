@@ -614,6 +614,17 @@ export default function VideoExperience({
                         {chatMessages.map((m) => {
                             return (
                                 <div key={m.id}>
+                                    {m.parentId && (
+                                        <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "4px" }}>
+                                            Reply to{" "}
+                                            <i>
+                                                &quot;
+                                                {(chatMessages.find((cM) => cM.id === m.parentId) || {}).text}
+                                                &quot;
+                                            </i>
+                                            :{" "}
+                                        </div>
+                                    )}
                                     {m.removed ? <s>{m.text}</s> : m.text}{" "}
                                     {!m.removed && (m.sig || showHostControls) && (
                                         <button type="button" onClick={() => removeChatMessage(m.id, m.sig)}>
