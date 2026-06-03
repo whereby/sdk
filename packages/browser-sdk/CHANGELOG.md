@@ -1,5 +1,23 @@
 # @whereby.com/browser-sdk
 
+## 3.21.0
+
+### Minor Changes
+
+- b86c66d: Add replies capability when sending in-room chat messages
+
+### Patch Changes
+
+- 563b5c5: Expose parentId (if available) with chat messages to render reply interfaces
+- c6ca91d: Expose removeChatMessage API in Browser SDK
+- Updated dependencies [563b5c5]
+- Updated dependencies [b86c66d]
+- Updated dependencies [c6ca91d]
+- Updated dependencies [b86c66d]
+- Updated dependencies [c6ca91d]
+    - @whereby.com/core@1.11.0
+    - @whereby.com/media@9.2.0
+
 ## 3.20.19
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @whereby.com/media
 
+## 9.2.0
+
+### Minor Changes
+
+- b86c66d: Add replies capability when sending in-room chat messages
+
+### Patch Changes
+
+- b86c66d: Add parentId to ChatMessage type definition
+- c6ca91d: Add remove_chat_message and chat_message_removed signal event types
+
 ## 9.1.1
 
 ### Patch Changes
