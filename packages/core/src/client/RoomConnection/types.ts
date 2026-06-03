@@ -37,7 +37,7 @@ export type ScreenshareState = Screenshare;
 
 export type LocalScreenshareStatus = "starting" | "active";
 
-export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "timestamp" | "text" | "sig"> & {
+export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "parentId" | "timestamp" | "text" | "sig"> & {
     removed: boolean;
 };
 

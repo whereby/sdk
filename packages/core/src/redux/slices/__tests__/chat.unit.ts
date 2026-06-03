@@ -10,6 +10,7 @@ describe("chatSlice", () => {
                     id: "messageId",
                     userId: "userId",
                     senderId: "senderId",
+                    parentId: "parentId",
                     messageType: "text",
                     roomName: "roomName",
                     sig: "sig",
@@ -22,6 +23,7 @@ describe("chatSlice", () => {
                 {
                     id: "messageId",
                     senderId: "senderId",
+                    parentId: "parentId",
                     timestamp: "123",
                     text: "text",
                     sig: "sig",

@@ -6,7 +6,7 @@ import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectBreakoutCurrentId } from "./breakout";
 
-export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "timestamp" | "text" | "sig"> & {
+export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "parentId" | "timestamp" | "text" | "sig"> & {
     removed: boolean;
 };
 
@@ -30,6 +30,7 @@ export const chatSlice = createSlice({
             const message: ChatMessage = {
                 id: action.payload.id,
                 senderId: action.payload.senderId,
+                parentId: action.payload.parentId,
                 timestamp: action.payload.timestamp,
                 text: action.payload.text,
                 sig: action.payload.sig,

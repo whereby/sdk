@@ -126,6 +126,7 @@ startAppListening({
                         chatMessage: {
                             id: payload.id,
                             senderId: payload.senderId,
+                            parentId: payload.parentId,
                             timestamp: payload.timestamp,
                             text: payload.text,
                             sig: payload.sig,
