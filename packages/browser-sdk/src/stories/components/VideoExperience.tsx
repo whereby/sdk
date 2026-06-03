@@ -37,6 +37,7 @@ export default function VideoExperience({
     showCameraEffects?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
+    const [chatMessageParent, setChatMessageParent] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
 
@@ -626,11 +627,24 @@ export default function VideoExperience({
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                sendChatMessage(chatMessage);
+                                sendChatMessage(chatMessage, chatMessageParent);
                                 setChatMessage("");
+                                setChatMessageParent("");
                             }}
                         >
                             <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+                            <select value={chatMessageParent} onChange={(e) => setChatMessageParent(e.target.value)}>
+                                <option key="chat-select-room" value="">
+                                    Send to room
+                                </option>
+                                {chatMessages.map((m) => {
+                                    return (
+                                        <option key={`chat-select-${m.id}`} value={m.id}>
+                                            Reply to: {m.text}
+                                        </option>
+                                    );
+                                })}
+                            </select>
                             <button type="submit">Send message</button>
                         </form>
                     </div>

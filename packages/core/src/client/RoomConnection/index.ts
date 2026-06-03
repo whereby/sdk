@@ -405,8 +405,8 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      * Send a chat message to the room.
      * @param text - The message text to send.
      */
-    public sendChatMessage(text: string) {
-        this.store.dispatch(doSendChatMessage({ text }));
+    public sendChatMessage(text: string, parentId?: string) {
+        this.store.dispatch(doSendChatMessage({ text, parentId }));
     }
 
     /**
