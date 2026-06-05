@@ -1,4 +1,4 @@
-import { LocalMediaOptions, RoomJoinedSuccess } from "@whereby.com/core";
+import { ChatFileShare, LocalMediaOptions, RoomJoinedSuccess } from "@whereby.com/core";
 
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
@@ -32,6 +32,8 @@ export interface RoomConnectionActions {
     rejectWaitingParticipant: (participantId: string) => void;
     sendChatMessage: (text: string, parentId?: string) => void;
     removeChatMessage: (id: string, sig?: string | null) => void;
+    sendFiles: (files: File[]) => void;
+    downloadFile: (file: ChatFileShare) => Promise<Blob>;
     setDisplayName: (displayName: string) => void;
     startCloudRecording: () => void;
     startLiveTranscription: () => void;

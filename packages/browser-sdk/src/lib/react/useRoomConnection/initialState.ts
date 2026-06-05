@@ -2,6 +2,7 @@ import { RoomConnectionState } from "@whereby.com/core";
 
 export const initialState: RoomConnectionState = {
     chatMessages: [],
+    fileUploads: [],
     cloudRecording: undefined,
     breakout: {
         isActive: false,

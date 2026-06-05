@@ -16,6 +16,9 @@ export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConn
 
 export type {
     ChatMessageState as ChatMessage,
+    ChatFileShare,
+    FileUpload,
+    FileShareError,
     CloudRecordingState as CloudRecording,
     LiveStreamState as LiveStreaming,
     BreakoutState as Breakout,
