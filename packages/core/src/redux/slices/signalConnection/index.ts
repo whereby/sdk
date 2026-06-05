@@ -10,6 +10,7 @@ import {
     BreakoutGroupJoinedEvent,
     ChatMessage,
     ChatMessageRemoved,
+    ChatMessageError,
     ClientKickedEvent,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
@@ -55,7 +56,13 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("client_metadata_received", (payload: ClientMetadataReceivedEvent) =>
         dispatch(signalEvents.clientMetadataReceived(payload)),
     );
-    socket.on("chat_message", (payload: ChatMessage) => dispatch(signalEvents.chatMessage(payload)));
+    socket.on("chat_message", (payload: ChatMessage | ChatMessageError) => {
+        if (payload && "error" in payload) {
+            dispatch(signalEvents.fileSharingError(payload));
+        } else {
+            dispatch(signalEvents.chatMessage(payload));
+        }
+    });
     socket.on("chat_message_removed", (payload: ChatMessageRemoved) =>
         dispatch(signalEvents.chatMessageRemoved(payload)),
     );

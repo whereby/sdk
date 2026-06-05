@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { ChatMessage as SignalChatMessage } from "@whereby.com/media";
+import { ChatFileShare, ChatMessage as SignalChatMessage } from "@whereby.com/media";
 import { RootState } from "../store";
 import { createRoomConnectedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
@@ -8,6 +8,7 @@ import { selectBreakoutCurrentId } from "./breakout";
 
 export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "parentId" | "timestamp" | "text" | "sig"> & {
     removed: boolean;
+    file?: ChatFileShare;
 };
 
 /**
@@ -35,6 +36,7 @@ export const chatSlice = createSlice({
                 text: action.payload.text,
                 sig: action.payload.sig,
                 removed: false,
+                ...(action.payload.file && { file: action.payload.file }),
             };
 
             return {
