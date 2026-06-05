@@ -85,6 +85,15 @@ export interface BreakoutGroupJoinedEvent {
     group: string;
 }
 
+export interface ChatFileShare {
+    downloadUrl: string;
+    name: string;
+    size: number;
+    type: string;
+    key: string;
+    id?: string;
+}
+
 export interface ChatMessage {
     id: string;
     messageType: "text";
@@ -97,11 +106,23 @@ export interface ChatMessage {
     breakoutGroup?: string;
     broadcast?: boolean;
     parentId?: string;
+    file?: ChatFileShare;
 }
 
 export interface ChatMessageRemoved {
     id: string;
     requestedByClientId: string;
+}
+
+export type FileShareErrorCode = "file_sharing_not_available" | "file_sharing_not_enabled" | "not_in_a_room_session";
+
+export interface ChatMessageError {
+    error: FileShareErrorCode;
+}
+
+export interface FileUploadUrl {
+    downloadUrl: string;
+    uploadUrl: { url: string; fields: Record<string, string> };
 }
 
 export interface CloudRecordingStartedEvent {
@@ -402,7 +423,7 @@ export interface SignalEvents {
     client_unable_to_join: ClientUnableToJoinEvent;
     cloud_recording_started: CloudRecordingStartedEvent;
     cloud_recording_stopped: void;
-    chat_message: ChatMessage;
+    chat_message: ChatMessage | ChatMessageError;
     chat_message_removed: ChatMessageRemoved;
     connect: void;
     connect_error: void;
@@ -434,6 +455,7 @@ export interface ChatMessageRequest {
     parentId?: string;
     breakoutGroup?: string;
     broadcast?: boolean;
+    file?: ChatFileShare;
 }
 
 export interface IdentifyDeviceRequest {
@@ -495,6 +517,7 @@ export interface SignalRequests {
     knock_room: KnockRoomRequest;
     leave_room: void;
     remove_spotlight: RemoveSpotlightRequest;
+    request_file_upload_url: { files: { name: string; size: number; type: string }[] };
     request_audio_enable: AudioEnableRequest;
     request_video_enable: VideoEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string; stickyReaction?: unknown } };
