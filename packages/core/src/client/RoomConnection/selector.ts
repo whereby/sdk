@@ -2,6 +2,7 @@ import { createSelector } from "@reduxjs/toolkit";
 import {
     selectLocalParticipantRaw,
     selectChatMessages,
+    selectFileUploads,
     selectCloudRecordingRaw,
     selectRemoteParticipants,
     selectScreenshares,
@@ -25,6 +26,7 @@ import { RoomConnectionState } from "./types";
 
 export const selectRoomConnectionState = createSelector(
     selectChatMessages,
+    selectFileUploads,
     selectCloudRecordingRaw,
     selectBreakoutCurrentGroup,
     selectBreakoutActive,
@@ -45,6 +47,7 @@ export const selectRoomConnectionState = createSelector(
     selectIsMicrophoneEnabled,
     (
         chatMessages,
+        fileUploads,
         cloudRecording,
         breakoutCurrentGroup,
         breakoutActive,
@@ -66,6 +69,7 @@ export const selectRoomConnectionState = createSelector(
     ) => {
         const state: RoomConnectionState = {
             chatMessages,
+            fileUploads,
             cloudRecording: cloudRecording.status
                 ? {
                       error: cloudRecording.error,

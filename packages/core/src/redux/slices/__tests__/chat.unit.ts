@@ -31,5 +31,42 @@ describe("chatSlice", () => {
                 },
             ]);
         });
+
+        it("signalEvents.chatMessage with a file", () => {
+            const file = {
+                downloadUrl: "https://example.com/download",
+                name: "report.pdf",
+                size: 1234,
+                type: "application/pdf",
+                key: "uploads/report.pdf",
+            };
+
+            const result = chatSlice.reducer(
+                undefined,
+                signalEvents.chatMessage({
+                    id: "messageId",
+                    userId: "userId",
+                    senderId: "senderId",
+                    messageType: "text",
+                    roomName: "roomName",
+                    sig: "sig",
+                    timestamp: "123",
+                    text: "",
+                    file,
+                }),
+            );
+
+            expect(result.chatMessages).toEqual([
+                {
+                    id: "messageId",
+                    senderId: "senderId",
+                    timestamp: "123",
+                    text: "",
+                    sig: "sig",
+                    removed: false,
+                    file,
+                },
+            ]);
+        });
     });
 });
