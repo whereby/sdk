@@ -6,7 +6,9 @@ interface LocalMediaActions {
     setSpeakerDevice: (deviceId: string) => void;
     toggleCameraEnabled: (enabled?: boolean) => void;
     toggleMicrophoneEnabled: (enabled?: boolean) => void;
+    toggleHdModeEnabled: (enabled?: boolean) => void;
     toggleLowDataModeEnabled: (enabled?: boolean) => void;
+    toggleWidescreenModeEnabled: (enabled?: boolean) => void;
 }
 
 export type UseLocalMediaResult = { state: LocalMediaState; actions: LocalMediaActions };

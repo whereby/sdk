@@ -81,7 +81,12 @@ export function useRoomConnection(
     const setDisplayName = React.useCallback((displayName: string) => client.setDisplayName(displayName), [client]);
     const toggleCamera = React.useCallback((enabled?: boolean) => client.toggleCamera(enabled), [client]);
     const toggleMicrophone = React.useCallback((enabled?: boolean) => client.toggleMicrophone(enabled), [client]);
+    const toggleHdMode = React.useCallback((enabled?: boolean) => client.toggleHdMode(enabled), [client]);
     const toggleLowDataMode = React.useCallback((enabled?: boolean) => client.toggleLowDataMode(enabled), [client]);
+    const toggleWidescreenMode = React.useCallback(
+        (enabled?: boolean) => client.toggleWidescreenMode(enabled),
+        [client],
+    );
     const toggleRaiseHand = React.useCallback((enabled?: boolean) => client.toggleRaiseHand(enabled), [client]);
     const askToSpeak = React.useCallback((participantId: string) => client.askToSpeak(participantId), [client]);
     const askToTurnOnCamera = React.useCallback(
@@ -149,8 +154,6 @@ export function useRoomConnection(
         state,
         events,
         actions: {
-            toggleLowDataMode,
-            toggleRaiseHand,
             askToSpeak,
             askToTurnOnCamera,
             acceptWaitingParticipant,
@@ -175,6 +178,10 @@ export function useRoomConnection(
             stopScreenshare,
             toggleCamera,
             toggleMicrophone,
+            toggleRaiseHand,
+            toggleHdMode,
+            toggleLowDataMode,
+            toggleWidescreenMode,
             spotlightParticipant,
             removeSpotlight,
             joinBreakoutGroup,

@@ -15,8 +15,6 @@ export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "l
 }
 
 export interface RoomConnectionActions {
-    toggleLowDataMode: (enabled?: boolean) => void;
-    toggleRaiseHand: (enabled?: boolean) => void;
     askToSpeak: (participantId: string) => void;
     askToTurnOnCamera: (participantId: string) => void;
     acceptWaitingParticipant: (participantId: string) => void;
@@ -41,6 +39,10 @@ export interface RoomConnectionActions {
     stopScreenshare: () => void;
     toggleCamera: (enabled?: boolean) => void;
     toggleMicrophone: (enabled?: boolean) => void;
+    toggleRaiseHand: (enabled?: boolean) => void;
+    toggleHdMode: (enabled?: boolean) => void;
+    toggleLowDataMode: (enabled?: boolean) => void;
+    toggleWidescreenMode: (enabled?: boolean) => void;
     spotlightParticipant: (clientId: string) => void;
     removeSpotlight: (clientId: string) => void;
     joinBreakoutGroup: (group: string) => void;

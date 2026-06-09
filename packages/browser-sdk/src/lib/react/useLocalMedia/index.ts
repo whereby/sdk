@@ -35,7 +35,12 @@ export function useLocalMedia(
     const setSpeakerDevice = React.useCallback((deviceId: string) => client.setSpeakerDevice(deviceId), [client]);
     const toggleCamera = React.useCallback((enabled?: boolean) => client.toggleCamera(enabled), [client]);
     const toggleMicrophone = React.useCallback((enabled?: boolean) => client.toggleMicrophone(enabled), [client]);
+    const toggleHdMode = React.useCallback((enabled?: boolean) => client.toggleHdMode(enabled), [client]);
     const toggleLowDataMode = React.useCallback((enabled?: boolean) => client.toggleLowDataMode(enabled), [client]);
+    const toggleWidescreenMode = React.useCallback(
+        (enabled?: boolean) => client.toggleWidescreenMode(enabled),
+        [client],
+    );
 
     return {
         state: localMediaState,
@@ -45,7 +50,9 @@ export function useLocalMedia(
             setSpeakerDevice,
             toggleCameraEnabled: toggleCamera,
             toggleMicrophoneEnabled: toggleMicrophone,
+            toggleHdModeEnabled: toggleHdMode,
             toggleLowDataModeEnabled: toggleLowDataMode,
+            toggleWidescreenModeEnabled: toggleWidescreenMode,
         },
     };
 }
