@@ -24,9 +24,11 @@ import {
     doSetLocalStickyReaction,
     doSpotlightParticipant,
     doStartCloudRecording,
+    doStartLiveCaptions,
     doStartLiveTranscription,
     doStartScreenshare,
     doStopCloudRecording,
+    doStopLiveCaptions,
     doStopLiveTranscription,
     doStopScreenshare,
     selectNotificationsEmitter,
@@ -47,6 +49,7 @@ import type {
     ChatMessage,
     CloudRecordingState,
     FileUpload,
+    LiveCaptionsState,
     LiveTranscriptionState,
     LocalParticipantState,
     LocalScreenshareStatus,
@@ -64,6 +67,7 @@ import {
     CLOUD_RECORDING_STATUS_CHANGED,
     CONNECTION_ERROR_CHANGED,
     CONNECTION_STATUS_CHANGED,
+    LIVE_CAPTIONS_STATUS_CHANGED,
     LIVE_TRANSCRIPTION_STATUS_CHANGED,
     LOCAL_PARTICIPANT_CHANGED,
     LOCAL_SCREENSHARE_STATUS_CHANGED,
@@ -98,6 +102,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private connectionErrorSubscribers = new Set<(status: string | null) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
+    private liveCaptionsSubscribers = new Set<(status: LiveCaptionsState | undefined) => void>();
     private liveTranscriptionSubscribers = new Set<(status: LiveTranscriptionState | undefined) => void>();
     private localParticipantSubscribers = new Set<(participant?: LocalParticipantState) => void>();
     private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
@@ -125,6 +130,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.cloudRecording !== previousState.cloudRecording) {
             this.cloudRecordingSubscribers.forEach((cb) => cb(state.cloudRecording));
             this.emit(CLOUD_RECORDING_STATUS_CHANGED, state.cloudRecording);
+        }
+
+        if (state.liveCaptions !== previousState.liveCaptions) {
+            this.liveCaptionsSubscribers.forEach((cb) => cb(state.liveCaptions));
+            this.emit(LIVE_CAPTIONS_STATUS_CHANGED, state.liveCaptions);
         }
 
         if (state.liveTranscription !== previousState.liveTranscription) {
@@ -275,6 +285,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToCloudRecording(callback: (status: CloudRecordingState | undefined) => void): () => void {
         this.cloudRecordingSubscribers.add(callback);
         return () => this.cloudRecordingSubscribers.delete(callback);
+    }
+
+    public subscribeToLiveCaptions(callback: (status: LiveCaptionsState | undefined) => void): () => void {
+        this.liveCaptionsSubscribers.add(callback);
+        return () => this.liveCaptionsSubscribers.delete(callback);
     }
 
     public subscribeToLiveTranscription(callback: (status: LiveTranscriptionState | undefined) => void): () => void {
@@ -594,6 +609,20 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public stopLiveTranscription() {
         this.store.dispatch(doStopLiveTranscription());
+    }
+
+    /**
+     * Start live captions.
+     */
+    public startLiveCaptions() {
+        this.store.dispatch(doStartLiveCaptions());
+    }
+
+    /**
+     * Stop live captions.
+     */
+    public stopLiveCaptions() {
+        this.store.dispatch(doStopLiveCaptions());
     }
 
     /**

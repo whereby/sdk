@@ -5,4 +5,7 @@ export { default as OrganizationApiClient } from "./OrganizationApiClient";
 export { default as OrganizationService } from "./organizationService";
 export { default as OrganizationServiceCache } from "./organizationServiceCache";
 export { default as RoomService } from "./roomService";
+export { default as Organization } from "./models/Organization";
 export * from "./models/Organization";
+export { default as LiveCaption } from "./models/LiveCaption";
+export * from "./models/LiveCaption";
