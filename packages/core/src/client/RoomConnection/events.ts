@@ -5,6 +5,7 @@ import {
     BreakoutState,
     CloudRecordingState,
     LiveStreamState,
+    LiveCaptionsState,
     LiveTranscriptionState,
     LocalParticipantState,
     LocalScreenshareStatus,
@@ -19,6 +20,8 @@ export const CHAT_NEW_MESSAGE = "chat:new-message";
 export const CLOUD_RECORDING_STATUS_CHANGED = "cloud-recording:status-changed";
 /* Connection Status Events */
 export const CONNECTION_STATUS_CHANGED = "connection:status-changed";
+/* Live Captions Events */
+export const LIVE_CAPTIONS_STATUS_CHANGED = "live-captions:status-changed";
 /* Live Transcription Events */
 export const LIVE_TRANSCRIPTION_STATUS_CHANGED = "live-transcription:status-changed";
 /* Connection Error Events */
@@ -63,6 +66,7 @@ export type RoomConnectionEvents = {
     [CHAT_NEW_MESSAGE]: [message: ChatMessage];
     [CLOUD_RECORDING_STATUS_CHANGED]: [status: CloudRecordingState | undefined];
     [CONNECTION_STATUS_CHANGED]: [status: ConnectionStatus];
+    [LIVE_CAPTIONS_STATUS_CHANGED]: [status: LiveCaptionsState | undefined];
     [LIVE_TRANSCRIPTION_STATUS_CHANGED]: [status: LiveTranscriptionState | undefined];
     [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
