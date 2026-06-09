@@ -16,6 +16,10 @@ export type LocalMediaOptions = {
  * Reducer
  */
 export interface LocalMediaState {
+    beforeEffectTracks?: {
+        audio?: MediaStreamTrack;
+        video?: MediaStreamTrack;
+    };
     busyDeviceIds: string[];
     cameraDeviceError?: unknown;
     cameraEnabled: boolean;
@@ -23,24 +27,22 @@ export interface LocalMediaState {
     currentMicrophoneDeviceId?: string;
     currentSpeakerDeviceId?: string;
     devices: MediaDeviceInfo[];
+    hdMode: boolean;
     isSettingCameraDevice: boolean;
     isSettingMicrophoneDevice: boolean;
     isSettingSpeakerDevice: boolean;
+    isSwitchingStream: boolean;
     isTogglingCamera: boolean;
     lowDataMode: boolean;
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
-    speakerDeviceError?: unknown;
+    onDeviceChange?: () => void;
     options?: LocalMediaOptions;
+    speakerDeviceError?: unknown;
     status: "inactive" | "stopped" | "starting" | "started" | "error";
     startError?: unknown;
     stream?: MediaStream;
-    isSwitchingStream: boolean;
-    onDeviceChange?: () => void;
-    beforeEffectTracks?: {
-        audio?: MediaStreamTrack;
-        video?: MediaStreamTrack;
-    };
+    widescreenMode: boolean;
 }
 
 export const initialLocalMediaState: LocalMediaState = {
@@ -48,15 +50,17 @@ export const initialLocalMediaState: LocalMediaState = {
     cameraEnabled: false,
     currentSpeakerDeviceId: "default",
     devices: [],
+    hdMode: true,
     isSettingCameraDevice: false,
     isSettingMicrophoneDevice: false,
     isSettingSpeakerDevice: false,
+    isSwitchingStream: false,
     isTogglingCamera: false,
     lowDataMode: false,
     microphoneEnabled: false,
     status: "inactive",
     stream: undefined,
-    isSwitchingStream: false,
+    widescreenMode: true,
 };
 
 export const localMediaSlice = createSlice({
@@ -103,10 +107,22 @@ export const localMediaSlice = createSlice({
                 currentSpeakerDeviceId: action.payload.deviceId ?? "default",
             };
         },
+        toggleHdModeEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
+            return {
+                ...state,
+                hdMode: action.payload.enabled ?? !state.hdMode,
+            };
+        },
         toggleLowDataModeEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
             return {
                 ...state,
                 lowDataMode: action.payload.enabled ?? !state.lowDataMode,
+            };
+        },
+        toggleWidescreenModeEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
+            return {
+                ...state,
+                widescreenMode: action.payload.enabled ?? !state.widescreenMode,
             };
         },
         setDevices(state, action: PayloadAction<{ devices: MediaDeviceInfo[] }>) {
@@ -279,7 +295,9 @@ export const {
     setCurrentSpeakerDeviceId,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
+    toggleHdModeEnabled,
     toggleLowDataModeEnabled,
+    toggleWidescreenModeEnabled,
     setLocalMediaOptions,
     setLocalMediaStream,
     localMediaStopped,
@@ -350,7 +368,7 @@ const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", 
 
     audioTrack.enabled = enabled;
 });
-export const doToggleLowDataMode = createAppThunk(() => (dispatch, getState) => {
+export const doTriggerLocalStreamRefresh = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const stream = selectLocalMediaStream(state);
     if (!stream) {
@@ -638,7 +656,9 @@ export const selectCurrentMicrophoneDeviceId = (state: RootState) => state.local
 export const selectCurrentSpeakerDeviceId = (state: RootState) => state.localMedia.currentSpeakerDeviceId;
 export const selectIsCameraEnabled = (state: RootState) => state.localMedia.cameraEnabled;
 export const selectIsMicrophoneEnabled = (state: RootState) => state.localMedia.microphoneEnabled;
+export const selectIsHDModeEnabled = (state: RootState) => state.localMedia.hdMode;
 export const selectIsLowDataModeEnabled = (state: RootState) => state.localMedia.lowDataMode;
+export const selectIsWidescreenModeEnabled = (state: RootState) => state.localMedia.widescreenMode;
 export const selectIsSettingCameraDevice = (state: RootState) => state.localMedia.isSettingCameraDevice;
 export const selectIsSettingMicrophoneDevice = (state: RootState) => state.localMedia.isSettingMicrophoneDevice;
 export const selectIsToggleCamera = (state: RootState) => state.localMedia.isTogglingCamera;
@@ -656,19 +676,21 @@ export const selectLocalMediaConstraintsOptions = createSelector(
     selectLocalMediaDevices,
     selectCurrentCameraDeviceId,
     selectCurrentMicrophoneDeviceId,
+    selectIsHDModeEnabled,
     selectIsLowDataModeEnabled,
-    (devices, videoId, audioId, lowDataMode) => ({
+    selectIsWidescreenModeEnabled,
+    (devices, videoId, audioId, hd, lowDataMode, widescreen) => ({
         devices,
         videoId,
         audioId,
         options: {
             disableAEC: false,
             disableAGC: false,
-            hd: true,
+            hd,
             lax: false,
             lowDataMode,
             simulcast: true,
-            widescreen: true,
+            widescreen,
         },
     }),
 );
@@ -741,14 +763,29 @@ startAppListening({
 
 startAppListening({
     predicate: (_action, currentState, previousState) => {
-        const oldValue = selectIsLowDataModeEnabled(previousState);
-        const newValue = selectIsLowDataModeEnabled(currentState);
-
         const isReady = selectLocalMediaStatus(previousState) === "started";
-        return isReady && oldValue !== newValue;
+
+        if (!isReady) {
+            return false;
+        }
+
+        const oldLowDataModeValue = selectIsLowDataModeEnabled(previousState);
+        const newLowDataModeValue = selectIsLowDataModeEnabled(currentState);
+
+        const oldHDModeValue = selectIsHDModeEnabled(previousState);
+        const newHDModeValue = selectIsHDModeEnabled(currentState);
+
+        const oldWidescreenModeValue = selectIsWidescreenModeEnabled(previousState);
+        const newWidescreenModeValue = selectIsWidescreenModeEnabled(currentState);
+
+        const hasLowDataModeChanged = oldLowDataModeValue !== newLowDataModeValue;
+        const hasHDModeChanged = oldHDModeValue !== newHDModeValue;
+        const hasWidescreenModeChanged = oldWidescreenModeValue !== newWidescreenModeValue;
+
+        return hasLowDataModeChanged || hasHDModeChanged || hasWidescreenModeChanged;
     },
     effect: (_action, { dispatch }) => {
-        dispatch(doToggleLowDataMode());
+        dispatch(doTriggerLocalStreamRefresh());
     },
 });
 

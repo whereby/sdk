@@ -120,15 +120,17 @@ describe("actions", () => {
                         busyDeviceIds: [],
                         cameraEnabled: true,
                         devices: [],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream([audioTrack, videoTrack]),
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 };
             });
@@ -174,15 +176,17 @@ describe("actions", () => {
                         busyDeviceIds: [],
                         cameraEnabled: true,
                         devices: [],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: localStream,
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 };
             });
@@ -229,15 +233,17 @@ describe("actions", () => {
                         busyDeviceIds: [],
                         cameraEnabled: false,
                         devices: [],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: localStream,
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 };
             });
@@ -278,8 +284,8 @@ describe("actions", () => {
         });
     });
 
-    describe("doToggleLowDataMode", () => {
-        describe("when low data mode is enabled", () => {
+    describe("toggleHdModeEnabled", () => {
+        describe("when video hd mode is disabled", () => {
             let initialState: Partial<RootState>;
             beforeEach(() => {
                 initialState = {
@@ -287,15 +293,17 @@ describe("actions", () => {
                         busyDeviceIds: [],
                         cameraEnabled: true,
                         devices: [],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream(),
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 };
             });
@@ -305,7 +313,85 @@ describe("actions", () => {
                 const store = createStore({ initialState });
                 const before = store.getState().localMedia;
 
-                store.dispatch(localMediaSlice.doToggleLowDataMode());
+                store.dispatch(localMediaSlice.toggleHdModeEnabled({ enabled: false }));
+
+                expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledTimes(1);
+                const after = store.getState().localMedia;
+
+                expect(diff(before, after)).toMatchObject({ isSwitchingStream: true });
+            });
+        });
+    });
+
+    describe("toggleLowDataModeEnabled", () => {
+        describe("when low data mode is enabled", () => {
+            let initialState: Partial<RootState>;
+            beforeEach(() => {
+                initialState = {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: true,
+                        devices: [],
+                        hdMode: true,
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: new MockMediaStream(),
+                        widescreenMode: true,
+                    },
+                };
+            });
+
+            it("should call doSwitchLocalStream", () => {
+                jest.spyOn(localMediaSlice, "doSwitchLocalStream");
+                const store = createStore({ initialState });
+                const before = store.getState().localMedia;
+
+                store.dispatch(localMediaSlice.toggleLowDataModeEnabled({ enabled: true }));
+
+                expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledTimes(1);
+                const after = store.getState().localMedia;
+
+                expect(diff(before, after)).toMatchObject({ isSwitchingStream: true });
+            });
+        });
+    });
+
+    describe("toggleWidescreenModeEnabled", () => {
+        describe("when video widescreen mode is disabled", () => {
+            let initialState: Partial<RootState>;
+            beforeEach(() => {
+                initialState = {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        cameraEnabled: true,
+                        devices: [],
+                        hdMode: true,
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: new MockMediaStream(),
+                        widescreenMode: true,
+                    },
+                };
+            });
+
+            it("should call doSwitchLocalStream", () => {
+                jest.spyOn(localMediaSlice, "doSwitchLocalStream");
+                const store = createStore({ initialState });
+                const before = store.getState().localMedia;
+
+                store.dispatch(localMediaSlice.toggleWidescreenModeEnabled({ enabled: false }));
 
                 expect(localMediaSlice.doSwitchLocalStream).toHaveBeenCalledTimes(1);
                 const after = store.getState().localMedia;
@@ -339,15 +425,17 @@ describe("actions", () => {
                         currentCameraDeviceId: dev2.deviceId,
                         cameraEnabled: true,
                         devices: [dev1, dev2],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream(),
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 },
             });
@@ -415,15 +503,17 @@ describe("actions", () => {
                         currentCameraDeviceId: videoId,
                         cameraEnabled: true,
                         devices: [dev1, dev2, dev3],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream,
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 },
             });
@@ -470,15 +560,17 @@ describe("actions", () => {
                         busyDeviceIds: [],
                         cameraEnabled: true,
                         devices: [],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream,
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 },
             });
@@ -515,15 +607,17 @@ describe("actions", () => {
                         busyDeviceIds: [],
                         cameraEnabled: true,
                         devices: [],
+                        hdMode: true,
                         isSettingCameraDevice: false,
                         isSettingMicrophoneDevice: false,
                         isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
                         isTogglingCamera: false,
                         lowDataMode: false,
                         microphoneEnabled: true,
                         status: "started",
                         stream,
-                        isSwitchingStream: false,
+                        widescreenMode: true,
                     },
                 },
             });
