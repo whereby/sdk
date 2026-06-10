@@ -1,5 +1,5 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { doSendFiles, doDownloadFile } from "../../slices/fileShare";
+import { doSendFiles, doDownloadFile, MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE } from "../../slices/fileShare";
 import { signalEvents } from "../../slices/signalConnection/actions";
 
 describe("fileShare actions", () => {
@@ -68,6 +68,66 @@ describe("fileShare actions", () => {
             expect(uploads.every((u) => u.error === "file_sharing_not_available")).toBe(true);
             expect(global.fetch).not.toHaveBeenCalled();
             expect(mockSignalEmit).not.toHaveBeenCalledWith("chat_message", expect.anything());
+            expect(store.getState().fileShare.requestInFlight).toBe(false);
+        });
+
+        it(`fails the whole batch with too_many_files when more than ${MAX_FILES_PER_UPLOAD} files are shared`, async () => {
+            const store = createStore({ withSignalConnection: true, connectToRoom: true });
+            global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+            const files = Array.from(
+                { length: MAX_FILES_PER_UPLOAD + 1 },
+                (_, i) => new File(["x"], `file-${i}.txt`, { type: "text/plain" }),
+            );
+
+            await store.dispatch(doSendFiles({ files }));
+
+            const uploads = store.getState().fileShare.uploads;
+            expect(uploads).toHaveLength(MAX_FILES_PER_UPLOAD + 1);
+            expect(uploads.every((u) => u.status === "error" && u.error === "too_many_files")).toBe(true);
+            expect(mockSignalEmit).not.toHaveBeenCalled();
+            expect(global.fetch).not.toHaveBeenCalled();
+            expect(store.getState().fileShare.requestInFlight).toBe(false);
+        });
+
+        it("rejects unsupported types and oversized files but uploads the valid rest", async () => {
+            const store = createStore({ withSignalConnection: true, connectToRoom: true });
+            global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+            mockSignalEmit.mockImplementation((event: string, _payload: unknown, ack?: (urls: unknown) => void) => {
+                if (event === "request_file_upload_url" && ack) {
+                    ack([{ downloadUrl: "https://dl/ok", uploadUrl: { url: "https://s3", fields: { key: "k" } } }]);
+                }
+            });
+
+            const ok = new File(["abc"], "ok.png", { type: "image/png" });
+            const wrongType = new File(["abc"], "bad.exe", { type: "application/x-msdownload" });
+            const tooBig = new File([new Uint8Array(MAX_FILE_SIZE + 1)], "huge.png", { type: "image/png" });
+
+            await store.dispatch(doSendFiles({ files: [ok, wrongType, tooBig] }));
+
+            const uploads = store.getState().fileShare.uploads;
+            expect(uploads.find((u) => u.name === "ok.png")).toMatchObject({ status: "sent" });
+            expect(uploads.find((u) => u.name === "bad.exe")).toMatchObject({
+                status: "error",
+                error: "unsupported_file_type",
+            });
+            expect(uploads.find((u) => u.name === "huge.png")).toMatchObject({
+                status: "error",
+                error: "file_too_large",
+            });
+
+            expect(mockSignalEmit).toHaveBeenCalledWith(
+                "request_file_upload_url",
+                { files: [{ name: "ok.png", size: 3, type: "image/png" }] },
+                expect.any(Function),
+            );
+            expect(mockSignalEmit).toHaveBeenCalledWith(
+                "chat_message",
+                expect.objectContaining({
+                    file: expect.objectContaining({ name: "ok.png" }),
+                }),
+            );
             expect(store.getState().fileShare.requestInFlight).toBe(false);
         });
 

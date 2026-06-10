@@ -9,7 +9,60 @@ import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectBreakoutCurrentId } from "./breakout";
 
-export type FileShareError = FileShareErrorCode | "upload_failed";
+export type FileShareError =
+    | FileShareErrorCode
+    | "upload_failed"
+    | "too_many_files"
+    | "unsupported_file_type"
+    | "file_too_large";
+
+export const MAX_FILES_PER_UPLOAD = 10;
+
+export const MAX_FILE_SIZE = 15 * 1024 * 1024;
+
+export const ACCEPTED_FILE_TYPES: Record<string, string[]> = {
+    "application/doc": [".doc", ".docx"],
+    "application/msword": [".doc", ".docx"],
+    "application/pdf": [".pdf"],
+    "application/rtf": [".rtf"],
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+    "audio/mpeg": [".mp3"],
+    "audio/wav": [".wav"],
+    "image/gif": [".gif"],
+    "image/jpeg": [".jpeg", ".jpg"],
+    "image/png": [".png"],
+    "image/webp": [".webp"],
+    "text/csv": [".csv"],
+    "text/plain": [".txt"],
+    "video/mp4": [".mp4"],
+    "video/quicktime": [".mov"],
+    "video/webm": [".webm"],
+    "video/x-matroska": [".mkv"],
+};
+
+function isAcceptedFileType(file: File): boolean {
+    if (file.type && ACCEPTED_FILE_TYPES[file.type]) {
+        return true;
+    }
+
+    const dot = file.name.lastIndexOf(".");
+    if (dot < 0) {
+        return false;
+    }
+    const extension = file.name.slice(dot).toLowerCase();
+    return Object.values(ACCEPTED_FILE_TYPES).some((extensions) => extensions.includes(extension));
+}
+
+function validateFile(file: File): FileShareError | undefined {
+    if (!isAcceptedFileType(file)) {
+        return "unsupported_file_type";
+    }
+    if (file.size > MAX_FILE_SIZE) {
+        return "file_too_large";
+    }
+    return undefined;
+}
 
 export interface FileUpload {
     id: string;
@@ -102,15 +155,31 @@ export const doSendFiles = createAsyncRoomConnectedThunk(
             return;
         }
 
-        const uploads: FileUpload[] = files.map((file) => ({
-            id: uuidv4(),
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            status: "uploading",
-        }));
+        const tooManyFiles = files.length > MAX_FILES_PER_UPLOAD;
 
-        dispatch(fileUploadsStarted(uploads));
+        const entries = files.map((file) => {
+            const error = tooManyFiles ? "too_many_files" : validateFile(file);
+            const upload: FileUpload = {
+                id: uuidv4(),
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                status: error ? "error" : "uploading",
+                ...(error && { error }),
+            };
+            return { file, upload };
+        });
+
+        dispatch(fileUploadsStarted(entries.map((entry) => entry.upload)));
+
+        const accepted = entries.filter((entry) => entry.upload.status === "uploading");
+
+        if (!accepted.length) {
+            dispatch(fileShareRequestSettled());
+            return;
+        }
+
+        const acceptedFiles = accepted.map((entry) => entry.file);
 
         const outcome = await new Promise<RequestOutcome>((resolve) => {
             let settled = false;
@@ -129,7 +198,7 @@ export const doSendFiles = createAsyncRoomConnectedThunk(
 
             socket.emit(
                 "request_file_upload_url",
-                { files: files.map((f) => ({ name: f.name, size: f.size, type: f.type })) },
+                { files: acceptedFiles.map((f) => ({ name: f.name, size: f.size, type: f.type })) },
                 (urls: FileUploadUrl[]) => {
                     if (settled) return;
                     settled = true;
@@ -142,13 +211,12 @@ export const doSendFiles = createAsyncRoomConnectedThunk(
         dispatch(fileShareRequestSettled());
 
         if ("error" in outcome) {
-            uploads.forEach((upload) => dispatch(fileUploadFailed({ id: upload.id, error: outcome.error })));
+            accepted.forEach((entry) => dispatch(fileUploadFailed({ id: entry.upload.id, error: outcome.error })));
             return;
         }
 
         await Promise.all(
-            uploads.map(async (upload, index) => {
-                const file = files[index];
+            accepted.map(async ({ file, upload }, index) => {
                 const urls = outcome.urls[index];
 
                 if (!urls) {
