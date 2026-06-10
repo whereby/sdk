@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.2.1
+
+### Patch Changes
+
+- 2a6f2e5: Forward preferred deviceId to gUM even when the device list is sparse
+
 ## 9.2.0
 
 ### Minor Changes
