@@ -34,9 +34,11 @@ export interface RoomConnectionActions {
     downloadFile: (file: ChatFileShare) => Promise<Blob>;
     setDisplayName: (displayName: string) => void;
     startCloudRecording: () => void;
+    startLiveCaptions: () => void;
     startLiveTranscription: () => void;
     startScreenshare: () => void;
     stopCloudRecording: () => void;
+    stopLiveCaptions: () => void;
     stopLiveTranscription: () => void;
     stopScreenshare: () => void;
     toggleCamera: (enabled?: boolean) => void;
