@@ -45,32 +45,37 @@ export const liveTranscriptionSlice = createSlice({
         builder.addCase(signalEvents.liveTranscriptionStarted, (state, action) => {
             const { payload } = action;
 
-            if (!payload.error) {
-                return state;
+            if (payload.error) {
+                return {
+                    ...state,
+                    isInitiator: false,
+                    isTranscribing: false,
+                    status: "error",
+                    error: payload.error,
+                };
             }
 
             return {
                 ...state,
-                isInitiator: false,
-                isTranscribing: false,
-                status: "error",
-                error: payload.error,
+                isTranscribing: true,
+                status: "transcribing",
+                startedAt: new Date().getTime(),
             };
         });
 
-        builder.addCase(signalEvents.newClient, (state, { payload }) => {
-            const { client } = payload;
-            if (client.role?.roleName === "captioner") {
-                return {
-                    ...state,
-                    isTranscribing: true,
-                    status: "transcribing",
-                    startedAt: client.startedLiveTranscriptionAt
-                        ? new Date(client.startedLiveTranscriptionAt).getTime()
-                        : new Date().getTime(),
-                };
+        builder.addCase(signalEvents.roomJoined, (state, action) => {
+            if ("error" in action.payload) {
+                return state;
             }
-            return state;
+
+            const { room } = action.payload || {};
+
+            return {
+                ...state,
+                isTranscribing: Boolean(room?.liveTranscriptionId),
+                status: room?.liveTranscriptionId ? "transcribing" : state.status,
+                startedAt: room?.liveTranscriptionId ? new Date().getTime() : state.startedAt,
+            };
         });
     },
 });
