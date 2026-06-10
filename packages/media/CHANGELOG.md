@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.2.2
+
+### Patch Changes
+
+- b0007d0: Emit rtcstats events for SFU connection lifecycle
+
 ## 9.2.1
 
 ### Patch Changes
