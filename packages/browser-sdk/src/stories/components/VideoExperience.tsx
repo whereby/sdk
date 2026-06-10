@@ -13,6 +13,8 @@ import {
     StickyReactionEvent,
     NotificationEvents,
     RequestVideoEvent,
+    LiveCaptionsState,
+    LiveCaption,
 } from "@whereby.com/core";
 
 export default function VideoExperience({
@@ -70,6 +72,7 @@ export default function VideoExperience({
         spotlightedParticipants,
         breakout,
         cloudRecording,
+        liveCaptions,
         liveTranscription,
         fileUploads,
     } = state;
@@ -97,9 +100,11 @@ export default function VideoExperience({
         acceptWaitingParticipant,
         rejectWaitingParticipant,
         startCloudRecording,
+        startLiveCaptions,
         startLiveTranscription,
         startScreenshare,
         stopCloudRecording,
+        stopLiveCaptions,
         stopLiveTranscription,
         stopScreenshare,
         spotlightParticipant,
@@ -320,6 +325,40 @@ export default function VideoExperience({
         };
     }, [events]);
 
+    function showLiveCaption(caption: LiveCaptionsState) {
+        const lastIndex = caption?.captionLog.length - 1;
+        const latestCaption: LiveCaption | undefined = caption?.captionLog[lastIndex];
+
+        if (!latestCaption) {
+            return;
+        }
+
+        const { shouldShowSenderDetails, clientId, parts, timestamp } = latestCaption;
+
+        const participant = shouldShowSenderDetails
+            ? [localParticipant, ...remoteParticipants].find((participant) => participant?.id === clientId)
+            : undefined;
+
+        const captionPrefix = participant ? `${participant.displayName}: ` : undefined;
+        const captionContent = parts.reduce((_, { text }) => `${text} `, "");
+
+        const message = `${captionPrefix}${captionContent}`;
+
+        toast(message, {
+            id: `caption-${clientId || timestamp}`,
+            duration: 5000,
+            position: "bottom-center",
+        });
+    }
+
+    useEffect(() => {
+        if (!state.liveCaptions || state.liveCaptions.status !== "captioning") {
+            return;
+        }
+
+        showLiveCaption(state.liveCaptions);
+    }, [state]);
+
     return (
         <div>
             {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
@@ -398,6 +437,22 @@ export default function VideoExperience({
                                 </span>
                             </>
                         )}
+
+                        <>
+                            <button
+                                onClick={() => {
+                                    if (liveCaptions) {
+                                        stopLiveCaptions();
+                                    } else {
+                                        startLiveCaptions();
+                                    }
+                                }}
+                            >
+                                {liveCaptions
+                                    ? `Live Captions: ${liveCaptions.status}`
+                                    : "Start Live Captioning (if available)"}
+                            </button>
+                        </>
                     </div>
 
                     {showHostControls && (
