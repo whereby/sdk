@@ -4,23 +4,39 @@ import { signalEvents } from "../signalConnection/actions";
 
 describe("liveTranscriptionSlice", () => {
     describe("reducers", () => {
-        // We only handle error in this event. We start cloud recording when a new recorder client joins.
-        it("signalEvents.liveTranscriptionStarted", () => {
-            const result = liveTranscriptionSlice.reducer(
-                undefined,
-                signalEvents.liveTranscriptionStarted({ error: "some error" }),
-            );
+        describe("signalEvents.liveTranscriptionStarted", () => {
+            describe("if initiation succeeds", () => {
+                it("sets the status to 'transcribing'", () => {
+                    const result = liveTranscriptionSlice.reducer(undefined, signalEvents.liveTranscriptionStarted({}));
 
-            expect(result).toEqual({
-                error: "some error",
-                isInitiator: false,
-                isTranscribing: false,
-                status: "error",
+                    expect(result).toEqual({
+                        ...initialLiveTranscriptionState,
+                        isTranscribing: true,
+                        status: "transcribing",
+                        startedAt: expect.any(Number),
+                    });
+                });
+            });
+
+            describe("if an error occurs during initiation", () => {
+                it("sets the status to 'error'", () => {
+                    const result = liveTranscriptionSlice.reducer(
+                        undefined,
+                        signalEvents.liveTranscriptionStarted({ error: "some error" }),
+                    );
+
+                    expect(result).toEqual({
+                        error: "some error",
+                        isInitiator: false,
+                        isTranscribing: false,
+                        status: "error",
+                    });
+                });
             });
         });
 
         describe("signalEvents.liveTranscriptionStopped", () => {
-            it("resets the recording state", () => {
+            it("resets the status to undefined", () => {
                 const result = liveTranscriptionSlice.reducer(
                     undefined,
                     signalEvents.liveTranscriptionStopped({
@@ -55,35 +71,74 @@ describe("liveTranscriptionSlice", () => {
             });
         });
 
-        it("signalEvents.newClient", () => {
-            const result = liveTranscriptionSlice.reducer(
-                undefined,
-                signalEvents.newClient({
-                    client: {
-                        displayName: "captioner",
-                        deviceId: "deviceId",
-                        streams: [],
-                        isAudioEnabled: true,
-                        isVideoEnabled: false,
-                        breakoutGroup: null,
-                        id: "id",
-                        role: {
-                            roleName: "captioner",
-                        },
-                        startedCloudRecordingAt: null,
-                        startedLiveTranscriptionAt: "2021-01-01T00:00:00.000Z",
-                        externalId: null,
-                        isDialIn: false,
-                        isAudioRecorder: false,
-                    },
-                }),
-            );
+        describe("signalEvents.roomJoined", () => {
+            describe("when room.liveTranscriptionId is present", () => {
+                it("should set status to 'transcribing'", () => {
+                    const result = liveTranscriptionSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            selfId: "selfId",
+                            clientClaim: "clientClaim",
+                            eventClaim: "",
+                            room: {
+                                mode: "group",
+                                clients: [],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                                isClaimed: true,
+                                isLocked: false,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
+                                liveTranscriptionId: "liveTranscriptionId",
+                            },
+                        }),
+                    );
 
-            expect(result).toEqual({
-                isInitiator: false,
-                isTranscribing: true,
-                status: "transcribing",
-                startedAt: 1609459200000,
+                    expect(result).toEqual({
+                        isInitiator: false,
+                        isTranscribing: true,
+                        status: "transcribing",
+                        startedAt: expect.any(Number),
+                    });
+                });
+            });
+
+            describe("when room.liveTranscriptionId is missing", () => {
+                it("should not update status", () => {
+                    const result = liveTranscriptionSlice.reducer(
+                        undefined,
+                        signalEvents.roomJoined({
+                            selfId: "selfId",
+                            clientClaim: "clientClaim",
+                            eventClaim: "",
+                            room: {
+                                mode: "group",
+                                clients: [],
+                                knockers: [],
+                                spotlights: [],
+                                session: null,
+                                isClaimed: true,
+                                isLocked: false,
+                                iceServers: {
+                                    iceServers: [],
+                                },
+                                mediaserverConfigTtlSeconds: 0,
+                                name: "",
+                                organizationId: "",
+                                turnServers: [],
+                                liveTranscriptionId: undefined,
+                            },
+                        }),
+                    );
+
+                    expect(result).toEqual(initialLiveTranscriptionState);
+                });
             });
         });
     });

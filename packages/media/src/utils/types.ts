@@ -313,6 +313,7 @@ export type SignalRoom = {
     mode: RoomMode;
     name: string;
     organizationId: string;
+    liveTranscriptionId?: string;
     spotlights: Spotlight[];
     session: {
         createdAt: string;
