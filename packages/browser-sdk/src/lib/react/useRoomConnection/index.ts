@@ -102,9 +102,11 @@ export function useRoomConnection(
         [client],
     );
     const startCloudRecording = React.useCallback(() => client.startCloudRecording(), [client]);
+    const startLiveCaptions = React.useCallback(() => client.startLiveCaptions(), [client]);
     const startLiveTranscription = React.useCallback(() => client.startLiveTranscription(), [client]);
     const startScreenshare = React.useCallback(() => client.startScreenshare(), [client]);
     const stopCloudRecording = React.useCallback(() => client.stopCloudRecording(), [client]);
+    const stopLiveCaptions = React.useCallback(() => client.stopLiveCaptions(), [client]);
     const stopLiveTranscription = React.useCallback(() => client.stopLiveTranscription(), [client]);
     const stopScreenshare = React.useCallback(() => client.stopScreenshare(), [client]);
     const leaveRoom = React.useCallback(() => client.leaveRoom(), [client]);
@@ -171,9 +173,11 @@ export function useRoomConnection(
             removeChatMessage,
             setDisplayName,
             startCloudRecording,
+            startLiveCaptions,
             startLiveTranscription,
             startScreenshare,
             stopCloudRecording,
+            stopLiveCaptions,
             stopLiveTranscription,
             stopScreenshare,
             toggleCamera,
