@@ -370,7 +370,14 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _connect() {
-        if (this._isConnectingOrConnected) return;
+        if (this._isConnectingOrConnected) {
+            // TEMP investigation event for COB-2771 — remove once understood
+            rtcStats.sendEvent("SfuConnectEarlyBail", {
+                readyState: this._vegaConnection?.socket?.readyState,
+                bufferedAmount: this._vegaConnection?.socket?.bufferedAmount,
+            });
+            return;
+        }
 
         if (!this._serverSocket.isConnected()) {
             // Consider reconnecting to SFU within glitchfree reconnect threshold.
@@ -425,6 +432,9 @@ export default class VegaRtcManager implements RtcManager {
                     this._isConnectingOrConnected = false;
                     this._onClose();
                 },
+                onAttemptFailed: ({ host, dc }) => {
+                    rtcStats.sendEvent("SfuConnectAttemptFailed", { host, dc });
+                },
             });
         }
         this._vegaConnectionManager.connect((metric: VegaAnalyticMetric) => this.analytics[metric]++);
@@ -450,11 +460,13 @@ export default class VegaRtcManager implements RtcManager {
 
         this._qualityMonitor.close();
         this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_CLOSED);
+        rtcStats.sendEvent("SfuConnectionClosed", {});
     }
 
     async _join() {
         logger.info("_join()");
         this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_OPEN);
+        rtcStats.sendEvent("SfuConnectionOpened", {});
 
         try {
             if (!this._vegaConnection) {

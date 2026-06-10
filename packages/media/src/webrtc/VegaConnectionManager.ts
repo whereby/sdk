@@ -53,6 +53,7 @@ export function createVegaConnectionManager(config: {
     onConnected?: (vegaConnection: VegaConnection, info: ConnectionInfo) => void;
     onDisconnected?: () => void;
     onFailed?: () => void;
+    onAttemptFailed?: (info: { host: string; dc: string }) => void;
 }) {
     let connectionInfo: ConnectionInfo;
     let lastDisconnectTime: number | undefined;
@@ -257,6 +258,8 @@ export function createVegaConnectionManager(config: {
                             lastDisconnectTime = Date.now();
                             hasNotifiedDisconnect = true;
                             config.onDisconnected?.();
+                        } else {
+                            config.onAttemptFailed?.({ host, dc });
                         }
                         handleFailedOrAbortedConnection();
                     });
