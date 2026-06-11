@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 3.22.0
+
+### Minor Changes
+
+- 206faac: Add video hd and widescreen toggle API to Browser SDK
+
+### Patch Changes
+
+- Updated dependencies [e38a74f]
+    - @whereby.com/core@1.12.0
+
 ## 3.21.3
 
 ### Patch Changes
