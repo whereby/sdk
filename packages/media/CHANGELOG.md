@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.2.3
+
+### Patch Changes
+
+- 35d6da0: Restore filtering of preferred deviceIds against the devices list in getConstraints
+
 ## 9.2.2
 
 ### Patch Changes
