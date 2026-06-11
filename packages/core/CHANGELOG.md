@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.12.0
+
+### Minor Changes
+
+- e38a74f: Add video HD mode and Widescreen mode toggles to Core SDK
+
 ## 1.11.3
 
 ### Patch Changes
