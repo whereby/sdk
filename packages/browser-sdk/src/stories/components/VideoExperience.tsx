@@ -78,7 +78,9 @@ export default function VideoExperience({
         endMeeting,
         toggleCamera,
         toggleMicrophone,
+        toggleHdMode,
         toggleLowDataMode,
+        toggleWidescreenMode,
         toggleRaiseHand,
         askToSpeak,
         acceptWaitingParticipant,
@@ -594,6 +596,8 @@ export default function VideoExperience({
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                         <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>
+                        <button onClick={() => toggleHdMode()}>Toggle hd video mode</button>
+                        <button onClick={() => toggleWidescreenMode()}>Toggle widescreen video mode</button>
                         <button onClick={() => toggleRaiseHand()}>Toggle raise hand</button>
                         <button
                             onClick={() => {

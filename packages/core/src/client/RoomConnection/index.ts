@@ -32,7 +32,9 @@ import {
     signalEvents,
     startAppListening,
     toggleCameraEnabled,
+    toggleHdModeEnabled,
     toggleLowDataModeEnabled,
+    toggleWidescreenModeEnabled,
     toggleMicrophoneEnabled,
     AppConfig,
 } from "../../redux";
@@ -468,12 +470,30 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     }
 
     /**
+     * Toggle video hd mode on or off.
+     * @param enabled - If true, enables hd mode; if false, disables it.
+     * If undefined, toggles the current state.
+     */
+    public toggleHdMode(enabled?: boolean) {
+        this.store.dispatch(toggleHdModeEnabled({ enabled }));
+    }
+
+    /**
      * Toggle low data mode on or off.
      * @param enabled - If true, enables low data mode; if false, disables it.
      * If undefined, toggles the current state.
      */
     public toggleLowDataMode(enabled?: boolean) {
         this.store.dispatch(toggleLowDataModeEnabled({ enabled }));
+    }
+
+    /**
+     * Toggle video widescreen mode on or off.
+     * @param enabled - If true, enables widescreen mode; if false, disables it.
+     * If undefined, toggles the current state.
+     */
+    public toggleWidescreenMode(enabled?: boolean) {
+        this.store.dispatch(toggleWidescreenModeEnabled({ enabled }));
     }
 
     /**

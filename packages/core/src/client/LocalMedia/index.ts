@@ -2,7 +2,9 @@ import {
     doStartLocalMedia,
     toggleCameraEnabled,
     toggleMicrophoneEnabled,
+    toggleHdModeEnabled,
     toggleLowDataModeEnabled,
+    toggleWidescreenModeEnabled,
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
     setCurrentSpeakerDeviceId,
@@ -214,8 +216,16 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         this.store.dispatch(toggleMicrophoneEnabled({ enabled }));
     }
 
+    public toggleHdMode(enabled?: boolean) {
+        this.store.dispatch(toggleHdModeEnabled({ enabled }));
+    }
+
     public toggleLowDataMode(enabled?: boolean) {
         this.store.dispatch(toggleLowDataModeEnabled({ enabled }));
+    }
+
+    public toggleWidescreenMode(enabled?: boolean) {
+        this.store.dispatch(toggleWidescreenModeEnabled({ enabled }));
     }
 
     public setCameraDevice(deviceId: string) {
