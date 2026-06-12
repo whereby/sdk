@@ -55,6 +55,7 @@
         "ip-address": "^10.1.1",
         "mediasoup-client": "3.19.0",
         "@whereby.com/rtcstats": "5.4.2",
+        "@whereby.com/webrtcapihealthcheck": "1.0.1",
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
         "socket.io-client": "4.7.2",

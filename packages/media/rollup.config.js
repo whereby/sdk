@@ -31,7 +31,8 @@ const plugins = [
     typescript(tsOptions),
 ];
 
-const external = [...dependencies, ...peerDependencies];
+// force webrtcapihealthcheck to be imported, and first
+const external = ["@whereby.com/webrtcapihealthcheck", ...dependencies, ...peerDependencies];
 
 module.exports = [
     // Esm build of lib, to be used with bundlers
