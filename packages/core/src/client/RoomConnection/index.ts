@@ -19,6 +19,8 @@ import {
     doRtcReportStreamResolution,
     doSendChatMessage,
     doRemoveChatMessage,
+    doSendFiles,
+    doDownloadFile,
     doSetLocalStickyReaction,
     doSpotlightParticipant,
     doStartCloudRecording,
@@ -41,8 +43,10 @@ import {
 import type { Store as AppStore } from "../../redux/store";
 import type {
     BreakoutState,
+    ChatFileShare,
     ChatMessage,
     CloudRecordingState,
+    FileUpload,
     LiveTranscriptionState,
     LocalParticipantState,
     LocalScreenshareStatus,
@@ -88,6 +92,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private breakoutSubscribers = new Set<(config: BreakoutState) => void>();
     private cameraStateSubscribers = new Set<(isCameraEnabled: boolean) => void>();
     private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
+    private fileUploadsSubscribers = new Set<(uploads: FileUpload[]) => void>();
     private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined | undefined) => void>();
     private connectionErrorSubscribers = new Set<(status: string | null) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
@@ -110,6 +115,10 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     protected handleStateChanges(state: RoomConnectionState, previousState: RoomConnectionState): void {
         if (state.chatMessages !== previousState.chatMessages) {
             this.chatMessageSubscribers.forEach((cb) => cb(state.chatMessages));
+        }
+
+        if (state.fileUploads !== previousState.fileUploads) {
+            this.fileUploadsSubscribers.forEach((cb) => cb(state.fileUploads));
         }
 
         if (state.cloudRecording !== previousState.cloudRecording) {
@@ -255,6 +264,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToChatMessages(callback: (messages: ChatMessage[]) => void): () => void {
         this.chatMessageSubscribers.add(callback);
         return () => this.chatMessageSubscribers.delete(callback);
+    }
+
+    public subscribeToFileUploads(callback: (uploads: FileUpload[]) => void): () => void {
+        this.fileUploadsSubscribers.add(callback);
+        return () => this.fileUploadsSubscribers.delete(callback);
     }
 
     public subscribeToCloudRecording(callback: (status: CloudRecordingState | undefined) => void): () => void {
@@ -418,6 +432,22 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public removeChatMessage(id: string, sig?: string | null) {
         this.store.dispatch(doRemoveChatMessage({ id, sig }));
+    }
+
+    /**
+     * Upload files and share them with the room as chat messages.
+     * @param files - The files to share.
+     */
+    public sendFiles(files: File[]) {
+        this.store.dispatch(doSendFiles({ files }));
+    }
+
+    /**
+     * Download a shared file. Resolves with the file contents as a Blob
+     * @param file - The shared file to download.
+     */
+    public downloadFile(file: ChatFileShare): Promise<Blob> {
+        return this.store.dispatch(doDownloadFile({ file })).unwrap();
     }
 
     /**
@@ -722,6 +752,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.breakoutSubscribers.clear();
         this.cameraStateSubscribers.clear();
         this.chatMessageSubscribers.clear();
+        this.fileUploadsSubscribers.clear();
         this.cloudRecordingSubscribers.clear();
         this.connectionErrorSubscribers.clear();
         this.connectionStatusSubscribers.clear();

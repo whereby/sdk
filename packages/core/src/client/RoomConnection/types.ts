@@ -1,8 +1,9 @@
-import { RoleName, ChatMessage as SignalChatMessage } from "@whereby.com/media";
+import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
-import { ClientView, ConnectionStatus, NotificationsEventEmitter } from "../../redux";
+import { ClientView, ConnectionStatus, FileUpload, NotificationsEventEmitter } from "../../redux";
 
-export type { RoomJoinedSuccess } from "@whereby.com/media";
+export type { RoomJoinedSuccess, ChatFileShare } from "@whereby.com/media";
+export type { FileUpload, FileShareError } from "../../redux";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -32,6 +33,7 @@ export interface ChatMessageState {
     senderId: string;
     timestamp: string;
     text: string;
+    file?: ChatFileShare;
 }
 export type ScreenshareState = Screenshare;
 
@@ -39,6 +41,7 @@ export type LocalScreenshareStatus = "starting" | "active";
 
 export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "parentId" | "timestamp" | "text" | "sig"> & {
     removed: boolean;
+    file?: ChatFileShare;
 };
 
 export type CloudRecordingState = {
@@ -78,6 +81,7 @@ export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     connectionError: string | null;
     chatMessages: ChatMessage[];
+    fileUploads: FileUpload[];
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
     events?: NotificationsEventEmitter;

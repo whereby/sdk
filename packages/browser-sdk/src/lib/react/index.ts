@@ -3,6 +3,7 @@ export { VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { useLocalMedia } from "./useLocalMedia";
 export { Grid as VideoGrid, GridCell, GridVideoView } from "./Grid";
+export { MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "@whereby.com/core";
 export {
     ParticipantMenu,
     ParticipantMenuContent,
@@ -16,6 +17,9 @@ export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConn
 
 export type {
     ChatMessageState as ChatMessage,
+    ChatFileShare,
+    FileUpload,
+    FileShareError,
     CloudRecordingState as CloudRecording,
     LiveStreamState as LiveStreaming,
     BreakoutState as Breakout,

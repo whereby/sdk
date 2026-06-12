@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppConfig, NotificationsEventEmitter, RoomConnectionState } from "@whereby.com/core";
+import { AppConfig, ChatFileShare, NotificationsEventEmitter, RoomConnectionState } from "@whereby.com/core";
 
 import { RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
@@ -76,6 +76,8 @@ export function useRoomConnection(
         (id: string, sig?: string | null) => client.removeChatMessage(id, sig),
         [client],
     );
+    const sendFiles = React.useCallback((files: File[]) => client.sendFiles(files), [client]);
+    const downloadFile = React.useCallback((file: ChatFileShare) => client.downloadFile(file), [client]);
     const knock = React.useCallback(() => client.knock(), [client]);
     const cancelKnock = React.useCallback(() => client.cancelKnock(), [client]);
     const setDisplayName = React.useCallback((displayName: string) => client.setDisplayName(displayName), [client]);
@@ -169,6 +171,8 @@ export function useRoomConnection(
             rejectWaitingParticipant,
             sendChatMessage,
             removeChatMessage,
+            sendFiles,
+            downloadFile,
             setDisplayName,
             startCloudRecording,
             startLiveTranscription,
