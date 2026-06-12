@@ -18,6 +18,8 @@ import {
     KnockAcceptedEvent,
     KnockRejectedEvent,
     KnockerLeftEvent,
+    LiveCaptionsStartedEvent,
+    LiveCaptionEvent,
     LiveTranscriptionStartedEvent,
     LiveTranscriptionStoppedEvent,
     NewClientEvent,
@@ -33,6 +35,7 @@ import {
     VideoEnabledEvent,
     VideoEnableRequestedEvent,
     BreakoutSessionUpdatedEvent,
+    LiveCaptionsStoppedEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
 import { selectAppIsActive } from "../app";
@@ -91,8 +94,13 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("live_transcription_stopped", (payload: LiveTranscriptionStoppedEvent) =>
         dispatch(signalEvents.liveTranscriptionStopped(payload)),
     );
-    socket.on("live_captions_started", () => dispatch(signalEvents.liveCaptionsStarted()));
-    socket.on("live_captions_stopped", () => dispatch(signalEvents.liveCaptionsStopped()));
+    socket.on("live_captions_started", (payload: LiveCaptionsStartedEvent) =>
+        dispatch(signalEvents.liveCaptionsStarted(payload)),
+    );
+    socket.on("live_captions_stopped", (payload: LiveCaptionsStoppedEvent) =>
+        dispatch(signalEvents.liveCaptionsStopped(payload)),
+    );
+    socket.on("live_caption", (payload: LiveCaptionEvent) => dispatch(signalEvents.liveCaption(payload)));
     socket.on("video_enable_requested", (payload: VideoEnableRequestedEvent) =>
         dispatch(signalEvents.videoEnableRequested(payload)),
     );

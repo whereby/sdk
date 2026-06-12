@@ -1,6 +1,7 @@
 import { RoleName, ChatMessage as SignalChatMessage } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
 import { ClientView, ConnectionStatus, NotificationsEventEmitter } from "../../redux";
+import LiveCaption from "../../api/models/LiveCaption";
 
 export type { RoomJoinedSuccess } from "@whereby.com/media";
 
@@ -47,6 +48,13 @@ export type CloudRecordingState = {
     startedAt?: number;
 };
 
+export type LiveCaptionsState = {
+    error?: string;
+    status: "captioning" | "requested" | "error";
+    startedAt?: number;
+    captionLog: Array<LiveCaption>;
+};
+
 export type LiveTranscriptionState = {
     error?: string;
     status: "transcribing" | "requested" | "error";
@@ -84,6 +92,7 @@ export interface RoomConnectionState {
     isCameraEnabled: boolean;
     isMicrophoneEnabled: boolean;
     liveStream?: LiveStreamState;
+    liveCaptions?: LiveCaptionsState;
     liveTranscription?: LiveTranscriptionState;
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;

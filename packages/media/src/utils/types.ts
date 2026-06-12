@@ -282,6 +282,7 @@ export type SignalRoom = {
     mode: RoomMode;
     name: string;
     organizationId: string;
+    liveTranscriptionId?: string;
     spotlights: Spotlight[];
     session: {
         createdAt: string;
@@ -380,6 +381,20 @@ export interface SpotlightRemovedEvent {
     requestedByClientId: string;
 }
 
+export interface LiveCaptionsStartedEvent {
+    error?: string;
+}
+
+export interface LiveCaptionsStoppedEvent {
+    error?: string;
+}
+
+export interface LiveCaptionEvent {
+    senderId: string;
+    resultId: string;
+    text: string;
+}
+
 export interface LiveTranscriptionStartedEvent {
     transcriptionId?: string;
     error?: string;
@@ -425,8 +440,9 @@ export interface SignalEvents {
     video_enable_requested: VideoEnableRequestedEvent;
     live_transcription_started: LiveTranscriptionStartedEvent;
     live_transcription_stopped: LiveTranscriptionStoppedEvent;
-    live_captions_started: void;
-    live_captions_stopped: void;
+    live_captions_started: LiveCaptionsStartedEvent;
+    live_captions_stopped: LiveTranscriptionStoppedEvent;
+    live_caption: LiveCaptionEvent;
 }
 
 export interface ChatMessageRequest {
@@ -494,6 +510,8 @@ export interface SignalRequests {
     join_room: JoinRoomRequest;
     knock_room: KnockRoomRequest;
     leave_room: void;
+    live_captions_enabled: void;
+    live_captions_disabled: void;
     remove_spotlight: RemoveSpotlightRequest;
     request_audio_enable: AudioEnableRequest;
     request_video_enable: VideoEnableRequest;
