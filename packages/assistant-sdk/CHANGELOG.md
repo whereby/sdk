@@ -1,5 +1,11 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.84
+
+### Patch Changes
+
+- @whereby.com/core@1.12.1
+
 ## 1.2.83
 
 ### Patch Changes

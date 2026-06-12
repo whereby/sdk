@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.2.4
+
+### Patch Changes
+
+- f453a6b: media: Tracks webrtc api health
+
 ## 9.2.3
 
 ### Patch Changes
