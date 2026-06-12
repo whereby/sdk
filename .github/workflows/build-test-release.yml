@@ -71,6 +71,15 @@ jobs:
                   package: "camera-effects"
                   dest_dir: "camera-effects"
 
+            - name: Deploy CDN assets - audio-denoiser
+              if: steps.changesets.outputs.published == 'true' && contains(fromJSON(steps.changesets.outputs.publishedPackages).*.name, '@whereby.com/audio-denoiser')
+              uses: ./.github/actions/deploy-cdn
+              with:
+                  aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  package: "audio-denoiser"
+                  dest_dir: "audio-denoiser"
+
             - name: Send Slack message
               if: steps.changesets.outputs.published == 'true'
               uses: ./.github/actions/notify-slack
