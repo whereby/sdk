@@ -1,7 +1,6 @@
 import { LiveCaptionEvent } from "@whereby.com/media";
 import { liveCaptionsSlice, initialLiveCaptionsState } from "../liveCaptions";
 import { signalEvents } from "../signalConnection/actions";
-import LiveCaption from "../../../api/models/LiveCaption";
 
 describe("liveCaptionsSlice", () => {
     describe("reducers", () => {
@@ -54,130 +53,63 @@ describe("liveCaptionsSlice", () => {
         });
 
         describe("signalEvents.liveCaption", () => {
-            it("adds the latest caption to the captionLog", () => {
-                const liveCaptionEventData: LiveCaptionEvent = {
-                    senderId: "senderId",
-                    resultId: "resultId",
+            it("adds the first caption to an empty log", () => {
+                const event: LiveCaptionEvent = {
+                    senderId: "client1",
+                    resultId: "result1",
                     text: "hello world",
                 };
 
-                const liveCaption = new LiveCaption(liveCaptionEventData);
+                const result = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(event));
 
-                const result = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(liveCaptionEventData));
-
-                expect(result).toEqual({
-                    isCaptioning: false,
-                    startedAt: undefined,
-                    status: undefined,
-                    error: undefined,
-                    captionLog: [
-                        {
-                            ...liveCaption,
-                            timestamp: expect.any(Number),
-                        } as LiveCaption,
-                    ],
+                expect(result.captionLog).toHaveLength(1);
+                expect(result.captionLog[0]).toMatchObject({
+                    resultId: "result1",
+                    participantId: "client1",
+                    text: "hello world",
+                    timestamp: expect.any(Number),
                 });
             });
 
-            it("updates the text of an existing part when the resultId matches", () => {
-                const firstEvent: LiveCaptionEvent = {
-                    senderId: "client1",
-                    resultId: "result1",
-                    text: "hel",
-                };
+            it("appends a new entry when the resultId differs from the last caption", () => {
+                const firstEvent: LiveCaptionEvent = { senderId: "client1", resultId: "result1", text: "first" };
+                const secondEvent: LiveCaptionEvent = { senderId: "client1", resultId: "result2", text: "second" };
 
-                const updatedEvent: LiveCaptionEvent = {
-                    senderId: "client1",
-                    resultId: "result1",
-                    text: "hello world",
-                };
+                let state = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(firstEvent));
+                state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(secondEvent));
 
-                const stateAfterFirst = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(firstEvent));
-                const result = liveCaptionsSlice.reducer(stateAfterFirst, signalEvents.liveCaption(updatedEvent));
-
-                expect(result.captionLog).toHaveLength(1);
-                expect(result.captionLog[0].parts).toEqual([{ resultId: "result1", text: "hello world" }]);
+                expect(state.captionLog).toHaveLength(2);
+                expect(state.captionLog[0]).toMatchObject({ resultId: "result1", text: "first" });
+                expect(state.captionLog[1]).toMatchObject({ resultId: "result2", text: "second" });
             });
 
-            it("appends a new part when the resultId differs from the last part", () => {
-                const firstEvent: LiveCaptionEvent = {
-                    senderId: "client1",
-                    resultId: "result1",
-                    text: "first sentence",
-                };
+            it("replaces the last entry's text when the resultId matches", () => {
+                const firstEvent: LiveCaptionEvent = { senderId: "client1", resultId: "result1", text: "hel" };
+                const updateEvent: LiveCaptionEvent = { senderId: "client1", resultId: "result1", text: "hello world" };
 
-                const secondEvent: LiveCaptionEvent = {
-                    senderId: "client1",
-                    resultId: "result2",
-                    text: "second sentence",
-                };
+                let state = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(firstEvent));
+                state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(updateEvent));
 
-                const stateAfterFirst = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(firstEvent));
-                const result = liveCaptionsSlice.reducer(stateAfterFirst, signalEvents.liveCaption(secondEvent));
-
-                expect(result.captionLog).toHaveLength(1);
-                expect(result.captionLog[0].parts).toEqual([
-                    { resultId: "result1", text: "first sentence" },
-                    { resultId: "result2", text: "second sentence" },
-                ]);
+                expect(state.captionLog).toHaveLength(1);
+                expect(state.captionLog[0]).toMatchObject({ resultId: "result1", text: "hello world" });
             });
 
-            it("keeps at most two parts when a third distinct resultId arrives", () => {
-                const firstEvent: LiveCaptionEvent = { senderId: "client1", resultId: "result1", text: "one" };
-                const secondEvent: LiveCaptionEvent = { senderId: "client1", resultId: "result2", text: "two" };
-                const thirdEvent: LiveCaptionEvent = { senderId: "client1", resultId: "result3", text: "three" };
+            it("only compares against the last entry — same resultId as a non-last entry still appends", () => {
+                const firstEvent: LiveCaptionEvent = { senderId: "clientA", resultId: "result1", text: "from A" };
+                const secondEvent: LiveCaptionEvent = { senderId: "clientB", resultId: "result2", text: "from B" };
+                // result1 matches the first entry but not the last, so a new entry should be appended
+                const thirdEvent: LiveCaptionEvent = { senderId: "clientA", resultId: "result1", text: "from A again" };
 
                 let state = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(firstEvent));
                 state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(secondEvent));
                 state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(thirdEvent));
 
-                expect(state.captionLog).toHaveLength(1);
-                expect(state.captionLog[0].parts).toEqual([
-                    { resultId: "result2", text: "two" },
-                    { resultId: "result3", text: "three" },
-                ]);
-            });
-
-            it("moves a caption to the end of the log when a new resultId arrives for that client", () => {
-                const clientAEvent: LiveCaptionEvent = { senderId: "clientA", resultId: "rA1", text: "from A" };
-                const clientBEvent: LiveCaptionEvent = { senderId: "clientB", resultId: "rB1", text: "from B" };
-                const clientANewResultEvent: LiveCaptionEvent = {
-                    senderId: "clientA",
-                    resultId: "rA2",
-                    text: "A again",
-                };
-
-                let state = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(clientAEvent));
-                state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(clientBEvent));
-                state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(clientANewResultEvent));
-
-                expect(state.captionLog).toHaveLength(2);
-                expect(state.captionLog[0].clientId).toBe("clientB");
-                expect(state.captionLog[1].clientId).toBe("clientA");
-                expect(state.captionLog[1].parts).toEqual([
-                    { resultId: "rA1", text: "from A" },
-                    { resultId: "rA2", text: "A again" },
-                ]);
-            });
-
-            it("does not affect other clients' captions when updating one client", () => {
-                const clientAEvent: LiveCaptionEvent = { senderId: "clientA", resultId: "rA1", text: "from A" };
-                const clientBEvent: LiveCaptionEvent = { senderId: "clientB", resultId: "rB1", text: "from B" };
-                const clientBUpdateEvent: LiveCaptionEvent = {
-                    senderId: "clientB",
-                    resultId: "rB1",
-                    text: "from B updated",
-                };
-
-                let state = liveCaptionsSlice.reducer(undefined, signalEvents.liveCaption(clientAEvent));
-                state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(clientBEvent));
-                state = liveCaptionsSlice.reducer(state, signalEvents.liveCaption(clientBUpdateEvent));
-
-                expect(state.captionLog).toHaveLength(2);
-                expect(state.captionLog[0].clientId).toBe("clientA");
-                expect(state.captionLog[0].parts).toEqual([{ resultId: "rA1", text: "from A" }]);
-                expect(state.captionLog[1].clientId).toBe("clientB");
-                expect(state.captionLog[1].parts).toEqual([{ resultId: "rB1", text: "from B updated" }]);
+                expect(state.captionLog).toHaveLength(3);
+                expect(state.captionLog[2]).toMatchObject({
+                    resultId: "result1",
+                    participantId: "clientA",
+                    text: "from A again",
+                });
             });
         });
     });

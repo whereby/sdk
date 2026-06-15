@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createRoomConnectedThunk } from "../thunk";
-import LiveCaption, { type LiveCaptionPart } from "../../api/models/LiveCaption";
+import LiveCaption from "../../api/models/LiveCaption";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 
@@ -71,43 +71,23 @@ export const liveCaptionsSlice = createSlice({
 
             const captionLog = [...state.captionLog];
 
-            const nextCaption = new LiveCaption(payload);
+            const lastCaption = captionLog.length ? captionLog[captionLog.length - 1] : undefined;
 
-            const matchingCaptionIndex = captionLog.findIndex(({ clientId }) => clientId === nextCaption.clientId);
-
-            if (matchingCaptionIndex < 0) {
+            if (!lastCaption || lastCaption.resultId !== payload.resultId) {
                 return {
                     ...state,
-                    captionLog: [...captionLog, nextCaption],
+                    captionLog: [...state.captionLog, new LiveCaption(payload)],
                 };
             }
-
-            const matchingCaption = captionLog[matchingCaptionIndex];
-
-            const lastCaptionParts = [...matchingCaption.parts];
-            const lastCaptionPart = lastCaptionParts.pop();
-
-            const nextCaptionPart: LiveCaptionPart = {
-                resultId: payload.resultId,
-                text: payload.text,
-            };
-
-            const isMatchingLastCaptionPart = lastCaptionPart?.resultId === nextCaptionPart.resultId;
-
-            const parts = isMatchingLastCaptionPart
-                ? ([...lastCaptionParts, nextCaptionPart] as Array<LiveCaptionPart>) // replace lastCaptionPart with nextCaptionPart
-                : ([lastCaptionPart, nextCaptionPart] as Array<LiveCaptionPart>); // only keep max. two caption parts to avoid long monologues taking over the whole screen
 
             return {
                 ...state,
                 captionLog: [
-                    ...captionLog.slice(0, matchingCaptionIndex),
-                    ...(!isMatchingLastCaptionPart ? captionLog.slice(matchingCaptionIndex + 1) : []),
+                    ...state.captionLog.slice(0, state.captionLog.length - 1),
                     {
-                        ...nextCaption,
-                        parts: parts.filter((part) => Boolean(part)),
+                        ...lastCaption,
+                        text: payload.text,
                     },
-                    ...(isMatchingLastCaptionPart ? captionLog.slice(matchingCaptionIndex + 1) : []),
                 ],
             };
         });

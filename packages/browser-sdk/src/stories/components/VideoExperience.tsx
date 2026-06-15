@@ -333,19 +333,20 @@ export default function VideoExperience({
             return;
         }
 
-        const { shouldShowSenderDetails, clientId, parts, timestamp } = latestCaption;
+        const { resultId, participantId, text } = latestCaption;
+
+        const shouldShowSenderDetails = Boolean(participantId);
 
         const participant = shouldShowSenderDetails
-            ? [localParticipant, ...remoteParticipants].find((participant) => participant?.id === clientId)
+            ? [localParticipant, ...remoteParticipants].find((participant) => participant?.id === participantId)
             : undefined;
 
         const captionPrefix = participant ? `${participant.displayName}: ` : undefined;
-        const captionContent = parts.reduce((_, { text }) => `${text} `, "");
 
-        const message = `${captionPrefix}${captionContent}`;
+        const message = `${captionPrefix}${text}`;
 
         toast(message, {
-            id: `caption-${clientId || timestamp}`,
+            id: `caption-${resultId}`,
             duration: 5000,
             position: "bottom-center",
         });

@@ -1,25 +1,15 @@
 import { LiveCaptionEvent } from "@whereby.com/media";
 
-export interface LiveCaptionPart {
-    resultId: string;
-    text: string;
-}
-
 export default class LiveCaption {
-    shouldShowSenderDetails: boolean;
-    clientId: string;
-    parts: Array<LiveCaptionPart>;
+    resultId: string;
+    participantId: string;
+    text: string;
     timestamp: number;
 
-    constructor({ senderId, resultId, text }: LiveCaptionEvent) {
-        this.shouldShowSenderDetails = Boolean(senderId);
-        this.clientId = senderId ?? resultId;
-        this.parts = [
-            {
-                resultId,
-                text,
-            },
-        ];
+    constructor({ resultId, senderId, text }: LiveCaptionEvent) {
+        this.resultId = resultId;
+        this.participantId = senderId;
+        this.text = text;
         this.timestamp = Date.now();
     }
 }
