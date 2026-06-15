@@ -365,7 +365,7 @@ define("WherebyEmbed", {
       <iframe
         title=${title || "Video calling component"}
         ref=${this.iframe}
-        src=${this.roomUrl}
+        src=${this.roomUrl.href}
         allow="autoplay; camera; microphone; fullscreen; speaker; display-capture; media-capture; compute-pressure; screen-wake-lock" />
       `;
     },
