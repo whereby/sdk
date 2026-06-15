@@ -714,8 +714,8 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     /**
      * Enable audio noise suppression on the local microphone stream. The
      * denoiser is automatically reapplied if the microphone device is later
-     * switched. Requires `@whereby.com/audio-denoiser` to be installed as a
-     * peer dependency.
+     * switched. The denoiser code is loaded on demand the first time it is
+     * enabled.
      */
     public async enableAudioDenoiser(): Promise<void> {
         try {

@@ -11,6 +11,8 @@ import {
     StickyReactionEvent,
     NotificationEvents,
     RequestVideoEvent,
+    getUsableCameraEffectPresets,
+    isAudioDenoiserSupported,
 } from "@whereby.com/core";
 
 export default function VideoExperience({
@@ -111,15 +113,13 @@ export default function VideoExperience({
     async function loadBackgroundEffects() {
         if (!showCameraEffects) return;
 
-        const { getUsablePresets } = await import("@whereby.com/camera-effects");
-        const usablePresets = getUsablePresets();
+        const usablePresets = await getUsableCameraEffectPresets();
         setEffectPresets(usablePresets);
     }
 
     async function loadAudioDenoiserSupport() {
         if (!showAudioDenoiser) return;
-        const { canUse } = await import("@whereby.com/audio-denoiser");
-        setAudioDenoiserSupported(canUse());
+        setAudioDenoiserSupported(await isAudioDenoiserSupported());
     }
 
     async function handleEnableAudioDenoiser() {

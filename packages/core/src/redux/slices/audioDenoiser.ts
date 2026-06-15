@@ -109,7 +109,7 @@ const doAudioDenoiserApply = createAppAsyncThunk(
                 mod = await import("@whereby.com/audio-denoiser");
             } catch {
                 throw new Error(
-                    "@whereby.com/audio-denoiser is not installed. Add it as a dependency to enable audio denoising.",
+                    "Failed to load @whereby.com/audio-denoiser. Check your network connection and that the package is resolvable.",
                 );
             }
 
