@@ -4,6 +4,7 @@ import DisplayNameForm from "./DisplayNameForm";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
 import { VideoView } from "../../lib/react/VideoView";
+import { getUsableCameraEffectPresets, isAudioDenoiserSupported } from "../../lib/react";
 import {
     ChatMessageEvent,
     RequestAudioEvent,
@@ -11,8 +12,6 @@ import {
     StickyReactionEvent,
     NotificationEvents,
     RequestVideoEvent,
-    getUsableCameraEffectPresets,
-    isAudioDenoiserSupported,
 } from "@whereby.com/core";
 
 export default function VideoExperience({

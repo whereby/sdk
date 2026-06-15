@@ -1,8 +1,14 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
+import {
+    useLocalMedia,
+    UseLocalMediaResult,
+    useRoomConnection,
+    VideoView,
+    getUsableCameraEffectPresets,
+} from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import { getFakeMediaStream, getUsableCameraEffectPresets } from "@whereby.com/core";
+import { getFakeMediaStream } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
