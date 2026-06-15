@@ -1,4 +1,5 @@
 export * from "./api";
+export * from "./effects";
 export * from "./RoomParticipant";
 export { createServices } from "./services";
 export * from "./utils";

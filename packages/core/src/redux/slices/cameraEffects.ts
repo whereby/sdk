@@ -133,7 +133,7 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
                 mod = await import("@whereby.com/camera-effects");
             } catch {
                 throw new Error(
-                    "@whereby.com/camera-effects is not installed. Add it as a dependency to enable camera effects.",
+                    "Failed to load @whereby.com/camera-effects. Check your network connection and that the package is resolvable.",
                 );
             }
 

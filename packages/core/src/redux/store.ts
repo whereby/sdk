@@ -25,11 +25,13 @@ import { spotlightsSlice } from "./slices/spotlights";
 import { streamingSlice } from "./slices/streaming";
 import { waitingParticipantsSlice } from "./slices/waitingParticipants";
 import { cameraEffectsSlice } from "./slices/cameraEffects";
+import { audioDenoiserSlice } from "./slices/audioDenoiser";
 
 const IS_DEV = process.env.REACT_APP_IS_DEV === "true";
 
 const appReducer = combineReducers({
     app: appSlice.reducer,
+    audioDenoiser: audioDenoiserSlice.reducer,
     authorization: authorizationSlice.reducer,
     breakout: breakoutSlice.reducer,
     cameraEffects: cameraEffectsSlice.reducer,
@@ -69,6 +71,10 @@ export const rootReducer: AppReducer = (state, action) => {
             cameraEffects: {
                 ...cameraEffectsSlice.getInitialState(),
                 ...state?.cameraEffects,
+            },
+            audioDenoiser: {
+                ...audioDenoiserSlice.getInitialState(),
+                ...state?.audioDenoiser,
             },
         };
 

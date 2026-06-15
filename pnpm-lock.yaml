@@ -481,6 +481,37 @@ importers:
         specifier: 'catalog:'
         version: 5.8.3
 
+  packages/audio-denoiser:
+    dependencies:
+      '@whereby.com/media':
+        specifier: workspace:*
+        version: link:../media
+    devDependencies:
+      '@rollup/plugin-url':
+        specifier: ^8.0.2
+        version: 8.0.2(rollup@4.44.1)
+      '@whereby.com/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@whereby.com/jest-config':
+        specifier: workspace:*
+        version: link:../../tooling/jest
+      '@whereby.com/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@whereby.com/rollup-config':
+        specifier: workspace:*
+        version: link:../../tooling/rollup
+      '@whereby.com/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      rollup:
+        specifier: ^4.22.4
+        version: 4.44.1
+
   packages/browser-sdk:
     dependencies:
       '@radix-ui/react-popover':
@@ -523,9 +554,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.2.1
         version: 4.6.0(vite@5.4.19(@types/node@22.15.34)(lightningcss@1.30.2)(terser@5.43.1))
-      '@whereby.com/camera-effects':
-        specifier: workspace:*
-        version: link:../camera-effects
       '@whereby.com/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
@@ -638,8 +666,11 @@ importers:
       '@reduxjs/toolkit':
         specifier: ^2.2.3
         version: 2.8.2(react-redux@9.2.0(@types/react@19.1.8)(react@19.1.0)(redux@5.0.1))(react@19.1.0)
+      '@whereby.com/audio-denoiser':
+        specifier: 0.1.0
+        version: link:../audio-denoiser
       '@whereby.com/camera-effects':
-        specifier: '*'
+        specifier: 1.1.1
         version: link:../camera-effects
       '@whereby.com/media':
         specifier: 9.2.4

@@ -11,6 +11,8 @@ import {
     StickyReactionEvent,
     NotificationEvents,
     RequestVideoEvent,
+    getUsableCameraEffectPresets,
+    isAudioDenoiserSupported,
 } from "@whereby.com/core";
 
 export default function VideoExperience({
@@ -24,6 +26,7 @@ export default function VideoExperience({
     joinRoomOnLoad,
     showBreakoutGroups,
     showCameraEffects,
+    showAudioDenoiser,
 }: {
     displayName?: string;
     roomName: string;
@@ -35,11 +38,14 @@ export default function VideoExperience({
     joinRoomOnLoad?: boolean;
     showBreakoutGroups?: boolean;
     showCameraEffects?: boolean;
+    showAudioDenoiser?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [chatMessageParent, setChatMessageParent] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
+    const [audioDenoiserSupported, setAudioDenoiserSupported] = useState<boolean | null>(null);
+    const [audioDenoiserOn, setAudioDenoiserOn] = useState(false);
 
     const { state, actions, events } = useRoomConnection(roomName, {
         localMediaOptions: {
@@ -100,14 +106,30 @@ export default function VideoExperience({
         switchCameraEffect,
         switchCameraEffectCustom,
         clearCameraEffect,
+        enableAudioDenoiser,
+        disableAudioDenoiser,
     } = actions;
 
     async function loadBackgroundEffects() {
         if (!showCameraEffects) return;
 
-        const { getUsablePresets } = await import("@whereby.com/camera-effects");
-        const usablePresets = getUsablePresets();
+        const usablePresets = await getUsableCameraEffectPresets();
         setEffectPresets(usablePresets);
+    }
+
+    async function loadAudioDenoiserSupport() {
+        if (!showAudioDenoiser) return;
+        setAudioDenoiserSupported(await isAudioDenoiserSupported());
+    }
+
+    async function handleEnableAudioDenoiser() {
+        await enableAudioDenoiser();
+        setAudioDenoiserOn(true);
+    }
+
+    async function handleDisableAudioDenoiser() {
+        await disableAudioDenoiser();
+        setAudioDenoiserOn(false);
     }
 
     useEffect(() => {
@@ -121,6 +143,7 @@ export default function VideoExperience({
         if (!localParticipant?.stream) return;
 
         loadBackgroundEffects();
+        loadAudioDenoiserSupport();
     }, [localParticipant?.stream]);
 
     function showIncomingChatMessageNotification({ message }: ChatMessageEvent) {
@@ -457,6 +480,30 @@ export default function VideoExperience({
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                    ) : null}
+
+                    {showAudioDenoiser ? (
+                        <div>
+                            <strong>Audio denoiser:</strong>{" "}
+                            {audioDenoiserSupported === null
+                                ? "Checking support…"
+                                : audioDenoiserSupported
+                                  ? audioDenoiserOn
+                                      ? "On"
+                                      : "Off"
+                                  : "Not supported in this browser"}
+                            {audioDenoiserSupported ? (
+                                <>
+                                    {" "}
+                                    <button onClick={handleEnableAudioDenoiser} disabled={audioDenoiserOn}>
+                                        Enable
+                                    </button>
+                                    <button onClick={handleDisableAudioDenoiser} disabled={!audioDenoiserOn}>
+                                        Disable
+                                    </button>
+                                </>
+                            ) : null}
                         </div>
                     ) : null}
 

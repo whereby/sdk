@@ -109,6 +109,14 @@ jobs:
                   package: "camera-effects"
                   dest_dir: "camera-effects"
 
+            - name: Deploy CDN assets - audio-denoiser
+              uses: ./.github/actions/deploy-cdn
+              with:
+                  aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  package: "audio-denoiser"
+                  dest_dir: "audio-denoiser"
+
             - name: Add final reaction
               uses: peter-evans/create-or-update-comment@v4
               with:

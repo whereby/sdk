@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect } from "react";
 import { useLocalMedia, UseLocalMediaResult, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import { getFakeMediaStream } from "@whereby.com/core";
+import { getFakeMediaStream, getUsableCameraEffectPresets } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
@@ -54,8 +54,7 @@ function RoomConnectionWithLocalMediaInner({
 
     useEffect(() => {
         (async () => {
-            const { getUsablePresets } = await import("@whereby.com/camera-effects");
-            setEffectPresets(getUsablePresets());
+            setEffectPresets(await getUsableCameraEffectPresets());
         })();
     }, []);
 
@@ -341,4 +340,18 @@ export const RoomConnectionWithCameraEffects = ({
     }
 
     return <VideoExperience displayName={displayName} roomName={roomUrl} showCameraEffects />;
+};
+
+export const RoomConnectionWithAudioDenoiser = ({
+    roomUrl,
+    displayName,
+}: {
+    roomUrl: string;
+    displayName?: string;
+}) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    return <VideoExperience displayName={displayName} roomName={roomUrl} showAudioDenoiser />;
 };
