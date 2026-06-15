@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.23.0
+
+### Minor Changes
+
+- d044200: Pass this.roomUrl.href to iframe
+
 ## 3.22.1
 
 ### Patch Changes
