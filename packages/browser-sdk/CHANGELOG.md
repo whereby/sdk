@@ -1,5 +1,17 @@
 # @whereby.com/browser-sdk
 
+## 3.24.0
+
+### Minor Changes
+
+- b71d08d: Re-export `getUsableCameraEffectPresets()` and `isAudioDenoiserSupported()` from the `@whereby.com/browser-sdk/react` entry, so consumers can query camera effect and audio denoiser capabilities without depending on `@whereby.com/core` directly. Like in core, these load the underlying package on demand via dynamic import.
+
+### Patch Changes
+
+- Updated dependencies [6afb2ae]
+- Updated dependencies [add4500]
+    - @whereby.com/core@1.13.0
+
 ## 3.23.0
 
 ### Minor Changes
