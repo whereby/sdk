@@ -10,6 +10,8 @@ export {
     ParticipantMenuTrigger,
 } from "./Grid/ParticipantMenu";
 
+export { getUsableCameraEffectPresets, isAudioDenoiserSupported } from "@whereby.com/core";
+
 export type { UseLocalMediaResult } from "./useLocalMedia/types";
 
 export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConnection/types";
