@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.25.0
+
+### Minor Changes
+
+- 2da8deb: Add file sharing support
+
+### Patch Changes
+
+- Updated dependencies [2da8deb]
+- Updated dependencies [2da8deb]
+    - @whereby.com/core@1.14.0
+    - @whereby.com/media@9.2.5
+
 ## 3.24.0
 
 ### Minor Changes

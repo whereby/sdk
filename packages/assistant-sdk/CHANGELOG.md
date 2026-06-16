@@ -1,5 +1,12 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.86
+
+### Patch Changes
+
+- Updated dependencies [2da8deb]
+    - @whereby.com/core@1.14.0
+
 ## 1.2.85
 
 ### Patch Changes

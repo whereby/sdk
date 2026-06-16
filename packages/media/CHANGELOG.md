@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.2.5
+
+### Patch Changes
+
+- 2da8deb: Add file sharing types
+
 ## 9.2.4
 
 ### Patch Changes
