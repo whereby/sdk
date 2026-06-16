@@ -6,6 +6,7 @@ import { useRoomConnection } from "../../lib/react/useRoomConnection";
 import { VideoView } from "../../lib/react/VideoView";
 import { getUsableCameraEffectPresets, isAudioDenoiserSupported } from "../../lib/react";
 import {
+    ChatFileShare,
     ChatMessageEvent,
     RequestAudioEvent,
     SignalStatusEvent,
@@ -26,6 +27,7 @@ export default function VideoExperience({
     showBreakoutGroups,
     showCameraEffects,
     showAudioDenoiser,
+    showFileSharing,
 }: {
     displayName?: string;
     roomName: string;
@@ -38,6 +40,7 @@ export default function VideoExperience({
     showBreakoutGroups?: boolean;
     showCameraEffects?: boolean;
     showAudioDenoiser?: boolean;
+    showFileSharing?: boolean;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [chatMessageParent, setChatMessageParent] = useState("");
@@ -68,12 +71,15 @@ export default function VideoExperience({
         breakout,
         cloudRecording,
         liveTranscription,
+        fileUploads,
     } = state;
     const {
         knock,
         cancelKnock,
         sendChatMessage,
         removeChatMessage,
+        sendFiles,
+        downloadFile,
         setDisplayName,
         joinRoom,
         leaveRoom,
@@ -108,6 +114,21 @@ export default function VideoExperience({
         enableAudioDenoiser,
         disableAudioDenoiser,
     } = actions;
+
+    async function handleDownloadFile(file: ChatFileShare) {
+        try {
+            const blob = await downloadFile(file);
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = file.name;
+            anchor.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            toast.error(`Failed to download ${file.name}`);
+            console.error(error);
+        }
+    }
 
     async function loadBackgroundEffects() {
         if (!showCameraEffects) return;
@@ -681,6 +702,11 @@ export default function VideoExperience({
                                             Remove
                                         </button>
                                     )}
+                                    {showFileSharing && m.file && (
+                                        <button onClick={() => handleDownloadFile(m.file as ChatFileShare)}>
+                                            ⬇ {m.file.name} ({Math.round(m.file.size / 1024)} KB)
+                                        </button>
+                                    )}
                                     <hr />
                                 </div>
                             );
@@ -708,6 +734,34 @@ export default function VideoExperience({
                             </select>
                             <button type="submit">Send message</button>
                         </form>
+                        {showFileSharing && (
+                            <div className="fileSharing">
+                                <label>
+                                    Share files:{" "}
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files ?? []);
+                                            if (files.length) {
+                                                sendFiles(files);
+                                            }
+                                            e.target.value = "";
+                                        }}
+                                    />
+                                </label>
+                                {fileUploads.length > 0 && (
+                                    <ul className="fileUploads">
+                                        {fileUploads.map((upload) => (
+                                            <li key={upload.id}>
+                                                {upload.name} —{" "}
+                                                {upload.status === "error" ? `error: ${upload.error}` : upload.status}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </>
             )}

@@ -125,3 +125,35 @@
     }
 }
 
+
+.chat {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chatMessages {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.chatMessage {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fileSharing {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fileUploads {
+    margin: 0;
+    padding-left: 18px;
+}
