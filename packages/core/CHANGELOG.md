@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 1.14.0
+
+### Minor Changes
+
+- 2da8deb: Add file sharing support
+
+### Patch Changes
+
+- Updated dependencies [2da8deb]
+    - @whereby.com/media@9.2.5
+    - @whereby.com/audio-denoiser@1.0.1
+
 ## 1.13.0
 
 ### Minor Changes
