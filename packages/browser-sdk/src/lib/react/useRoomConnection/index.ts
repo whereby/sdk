@@ -1,5 +1,12 @@
 import * as React from "react";
-import { AppConfig, ChatFileShare, NotificationsEventEmitter, RoomConnectionState } from "@whereby.com/core";
+import {
+    AppConfig,
+    ChatFileShare,
+    NotificationsEventEmitter,
+    RoomConnectionState,
+    StartBreakoutSessionOptions,
+    UpdateBreakoutSessionOptions,
+} from "@whereby.com/core";
 
 import { RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { browserSdkVersion } from "../version";
@@ -134,6 +141,19 @@ export function useRoomConnection(
     const endMeeting = React.useCallback((stayBehind?: boolean) => client.endMeeting(stayBehind), [client]);
     const joinBreakoutGroup = React.useCallback((group: string) => client.joinBreakoutGroup(group), [client]);
     const joinBreakoutMainRoom = React.useCallback(() => client.joinBreakoutMainRoom(), [client]);
+    const startBreakoutSession = React.useCallback(
+        (options: StartBreakoutSessionOptions) => client.startBreakoutSession(options),
+        [client],
+    );
+    const updateBreakoutSession = React.useCallback(
+        (options: UpdateBreakoutSessionOptions) => client.updateBreakoutSession(options),
+        [client],
+    );
+    const stopBreakoutSession = React.useCallback(() => client.stopBreakoutSession(), [client]);
+    const assignBreakoutParticipants = React.useCallback(
+        (assignments: { [clientId: string]: string }) => client.assignBreakoutParticipants(assignments),
+        [client],
+    );
     const switchCameraEffect = React.useCallback(
         async (effectId: string) => {
             await client.switchCameraEffect(effectId);
@@ -196,6 +216,10 @@ export function useRoomConnection(
             removeSpotlight,
             joinBreakoutGroup,
             joinBreakoutMainRoom,
+            startBreakoutSession,
+            updateBreakoutSession,
+            stopBreakoutSession,
+            assignBreakoutParticipants,
             switchCameraEffect,
             switchCameraEffectCustom,
             clearCameraEffect,

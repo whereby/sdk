@@ -42,6 +42,11 @@ export default function VideoExperience({
     showAudioDenoiser?: boolean;
     showFileSharing?: boolean;
 }) {
+    const [breakoutGroups, setBreakoutGroups] = useState<{ [groupId: string]: string }>({
+        a: "Group A",
+        b: "Group B",
+    });
+
     const [chatMessage, setChatMessage] = useState("");
     const [chatMessageParent, setChatMessageParent] = useState("");
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
@@ -108,12 +113,47 @@ export default function VideoExperience({
         askToTurnOnCamera,
         joinBreakoutGroup,
         joinBreakoutMainRoom,
+        startBreakoutSession,
+        updateBreakoutSession,
+        stopBreakoutSession,
+        assignBreakoutParticipants,
         switchCameraEffect,
         switchCameraEffectCustom,
         clearCameraEffect,
         enableAudioDenoiser,
         disableAudioDenoiser,
     } = actions;
+
+    useEffect(() => {
+        if (breakout.groups && JSON.stringify(breakout.groups) !== JSON.stringify(breakoutGroups)) {
+            setBreakoutGroups(breakout.groups);
+        }
+    }, [breakout.groups]);
+
+    function applyGroups(newGroups: { [groupId: string]: string }) {
+        setBreakoutGroups(newGroups);
+        if (breakout.isActive) {
+            updateBreakoutSession({ groups: newGroups });
+        }
+    }
+
+    function addBreakoutGroup() {
+        const alphabet = "abcdefghijklmnopqrstuvwxyz";
+        const usedIds = Object.keys(breakoutGroups);
+        const nextId = alphabet.split("").find((c) => !usedIds.includes(c));
+        if (!nextId) return;
+        applyGroups({ ...breakoutGroups, [nextId]: `Group ${nextId.toUpperCase()}` });
+    }
+
+    function removeBreakoutGroup(id: string) {
+        const rest = { ...breakoutGroups };
+        delete rest[id];
+        applyGroups(rest);
+    }
+
+    function renameBreakoutGroup(id: string, name: string) {
+        applyGroups({ ...breakoutGroups, [id]: name });
+    }
 
     async function handleDownloadFile(file: ChatFileShare) {
         try {
@@ -426,6 +466,110 @@ export default function VideoExperience({
                     {showBreakoutGroups ? (
                         <div>
                             <h3>Breakout is {breakout.isActive ? "active" : "inactive"}</h3>
+                            {showHostControls ? (
+                                <div className="breakoutHostControls">
+                                    <div className="breakoutGroupsEditor">
+                                        <h4>Groups</h4>
+                                        {Object.entries(breakoutGroups).map(([id, name]) => (
+                                            <div key={id}>
+                                                <input
+                                                    value={name}
+                                                    onChange={(e) => renameBreakoutGroup(id, e.target.value)}
+                                                />
+                                                <button
+                                                    onClick={() => removeBreakoutGroup(id)}
+                                                    disabled={Object.keys(breakoutGroups).length <= 1}
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button onClick={addBreakoutGroup}>Add group</button>
+                                    </div>
+
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={breakout.enforceAssignment}
+                                            onChange={(e) =>
+                                                updateBreakoutSession({ enforceAssignment: e.target.checked })
+                                            }
+                                        />
+                                        Enforce assignment (lock participants to their assigned group)
+                                    </label>
+
+                                    <div>
+                                        <h4>Assign participants</h4>
+                                        <button
+                                            onClick={() => {
+                                                const groupIds = Object.keys(breakoutGroups);
+                                                const assignments = remoteParticipants.reduce<{
+                                                    [clientId: string]: string;
+                                                }>((acc, p, i) => {
+                                                    acc[p.id] = groupIds[i % groupIds.length];
+                                                    return acc;
+                                                }, {});
+                                                assignBreakoutParticipants(assignments);
+                                            }}
+                                        >
+                                            Auto-assign participants
+                                        </button>
+                                        {localParticipant ? (
+                                            <div key={localParticipant.id}>
+                                                {localParticipant.displayName || "Guest"} (you){" "}
+                                                <select
+                                                    value={localParticipant.breakoutGroupAssigned || ""}
+                                                    onChange={(e) =>
+                                                        assignBreakoutParticipants({
+                                                            [localParticipant.id]: e.target.value,
+                                                        })
+                                                    }
+                                                >
+                                                    <option value="">Unassigned</option>
+                                                    {Object.entries(breakoutGroups).map(([id, name]) => (
+                                                        <option key={id} value={id}>
+                                                            {name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ) : null}
+                                        {remoteParticipants.map((p) => (
+                                            <div key={p.id}>
+                                                {p.displayName || "Guest"}{" "}
+                                                <select
+                                                    value={p.breakoutGroupAssigned || ""}
+                                                    onChange={(e) =>
+                                                        assignBreakoutParticipants({ [p.id]: e.target.value })
+                                                    }
+                                                >
+                                                    <option value="">Unassigned</option>
+                                                    {Object.entries(breakoutGroups).map(([id, name]) => (
+                                                        <option key={id} value={id}>
+                                                            {name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {!breakout.isActive ? (
+                                        <button
+                                            onClick={() => startBreakoutSession({ groups: breakoutGroups })}
+                                            className={
+                                                localParticipant?.roleName !== "host"
+                                                    ? "hostControlActionDisallowed"
+                                                    : ""
+                                            }
+                                        >
+                                            Start breakout session
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => stopBreakoutSession()}>Stop breakout session</button>
+                                    )}
+                                </div>
+                            ) : null}
                             {breakout.isActive ? <h2>Breakout groups</h2> : null}
                             {breakout.isActive ? <h3>Current group: {breakout.currentGroup?.name}</h3> : null}
                             {breakout.groupedParticipants.map((group) => {

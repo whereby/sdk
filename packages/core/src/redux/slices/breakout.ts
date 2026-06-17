@@ -1,10 +1,13 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
-import { BreakoutConfig } from "@whereby.com/media";
+import { BreakoutConfig, BreakoutSessionUpdateRequest } from "@whereby.com/media";
 import { RootState } from "../store";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 import { selectLocalParticipantBreakoutGroup, selectLocalParticipantRaw } from "./localParticipant/selectors";
+import { selectIsAuthorizedToManageBreakout } from "./authorization";
+import { selectRemoteParticipants } from "./remoteParticipants";
+import { selectDeviceId } from "./deviceCredentials";
 import { startAppListening } from "../listenerMiddleware";
-import { createAppThunk } from "../thunk";
+import { createAppThunk, createAppAuthorizedThunk } from "../thunk";
 
 function createBreakout({
     assignments,
@@ -99,6 +102,97 @@ export const doBreakoutJoin = createAppThunk((payload: { group: string }) => (_,
     socket?.emit("join_breakout_group", { group: payload.group });
 });
 
+export interface BreakoutSessionSettings {
+    enforceAssignment?: boolean;
+    autoMoveToGroup?: boolean;
+    autoMoveToMain?: boolean;
+    moveToGroupGracePeriod?: number | null;
+    moveToMainGracePeriod?: number | null;
+    breakoutTimerSetting?: boolean;
+    breakoutTimerDuration?: number;
+}
+
+export interface StartBreakoutSessionOptions extends BreakoutSessionSettings {
+    groups: { [groupId: string]: string };
+    assignments?: { [clientId: string]: string };
+}
+
+export interface UpdateBreakoutSessionOptions extends BreakoutSessionSettings {
+    groups?: { [groupId: string]: string };
+    assignments?: { [clientId: string]: string };
+}
+
+function emitBreakoutSessionUpdate(state: RootState, payload: BreakoutSessionUpdateRequest) {
+    const { socket } = selectSignalConnectionRaw(state);
+    socket?.emit("update_breakout_session", payload);
+}
+
+function resolveClientAssignmentsToDeviceAssignments(
+    state: RootState,
+    clientAssignments: { [clientId: string]: string },
+) {
+    const deviceIdByClientId: { [clientId: string]: string } = {};
+    for (const participant of selectRemoteParticipants(state)) {
+        deviceIdByClientId[participant.id] = participant.deviceId;
+    }
+    const localParticipant = selectLocalParticipantRaw(state);
+    const localDeviceId = selectDeviceId(state);
+    if (localParticipant.id && localDeviceId) {
+        deviceIdByClientId[localParticipant.id] = localDeviceId;
+    }
+
+    const deviceAssignments: { [deviceId: string]: string } = {};
+    for (const [clientId, group] of Object.entries(clientAssignments)) {
+        const deviceId = deviceIdByClientId[clientId];
+        if (deviceId) {
+            deviceAssignments[deviceId] = group;
+        }
+    }
+    return deviceAssignments;
+}
+
+export const doStartBreakoutSession = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToManageBreakout(state),
+    (payload: StartBreakoutSessionOptions) => (_, getState) => {
+        const state = getState();
+        const { assignments, ...rest } = payload;
+        emitBreakoutSessionUpdate(state, {
+            ...rest,
+            ...(assignments ? { assignments: resolveClientAssignmentsToDeviceAssignments(state, assignments) } : {}),
+            active: true,
+        });
+    },
+);
+
+export const doUpdateBreakoutSession = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToManageBreakout(state),
+    (payload: UpdateBreakoutSessionOptions) => (_, getState) => {
+        const state = getState();
+        const { assignments, ...rest } = payload;
+        emitBreakoutSessionUpdate(state, {
+            ...rest,
+            ...(assignments ? { assignments: resolveClientAssignmentsToDeviceAssignments(state, assignments) } : {}),
+        });
+    },
+);
+
+export const doStopBreakoutSession = createAppAuthorizedThunk<void>(
+    (state) => selectIsAuthorizedToManageBreakout(state),
+    () => (_, getState) => {
+        emitBreakoutSessionUpdate(getState(), { active: false });
+    },
+);
+
+export const doAssignBreakoutParticipants = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToManageBreakout(state),
+    (payload: { assignments: { [clientId: string]: string } }) => (_, getState) => {
+        const state = getState();
+        const deviceAssignments = resolveClientAssignmentsToDeviceAssignments(state, payload.assignments);
+        const mergedAssignments = { ...(selectBreakoutAssignments(state) || {}), ...deviceAssignments };
+        emitBreakoutSessionUpdate(state, { assignments: mergedAssignments });
+    },
+);
+
 /**
  * Selectors
  */
@@ -107,6 +201,7 @@ export const selectBreakoutInitiatedBy = (state: RootState) => state.breakout.in
 export const selectBreakoutActive = (state: RootState) => !!state.breakout.startedAt;
 export const selectBreakoutAssignments = (state: RootState) => state.breakout.assignments;
 export const selectBreakoutGroups = (state: RootState) => state.breakout.groups;
+export const selectBreakoutEnforceAssignment = (state: RootState) => state.breakout.enforceAssignment;
 
 export const selectBreakoutCurrentId = createSelector(
     selectBreakoutRaw,

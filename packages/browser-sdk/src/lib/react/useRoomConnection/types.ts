@@ -1,4 +1,10 @@
-import { ChatFileShare, LocalMediaOptions, RoomJoinedSuccess } from "@whereby.com/core";
+import {
+    ChatFileShare,
+    LocalMediaOptions,
+    RoomJoinedSuccess,
+    StartBreakoutSessionOptions,
+    UpdateBreakoutSessionOptions,
+} from "@whereby.com/core";
 
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
@@ -49,6 +55,10 @@ export interface RoomConnectionActions {
     removeSpotlight: (clientId: string) => void;
     joinBreakoutGroup: (group: string) => void;
     joinBreakoutMainRoom: () => void;
+    startBreakoutSession: (options: StartBreakoutSessionOptions) => void;
+    updateBreakoutSession: (options: UpdateBreakoutSessionOptions) => void;
+    stopBreakoutSession: () => void;
+    assignBreakoutParticipants: (assignments: { [clientId: string]: string }) => void;
     switchCameraEffect: (effectId: string) => Promise<void>;
     switchCameraEffectCustom: (imageUrl: string) => Promise<void>;
     clearCameraEffect: () => Promise<void>;
