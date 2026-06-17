@@ -7,6 +7,8 @@ export const initialState: RoomConnectionState = {
     breakout: {
         isActive: false,
         currentGroup: null,
+        groups: null,
+        enforceAssignment: false,
         groupedParticipants: [],
         participantsInCurrentGroup: [],
     },

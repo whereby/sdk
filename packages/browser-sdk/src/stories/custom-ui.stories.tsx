@@ -331,7 +331,7 @@ export const RoomConnectionWithBreakoutGroups = ({
         return <p>Set room url on the Controls panel</p>;
     }
 
-    return <VideoExperience displayName={displayName} roomName={roomUrl} showBreakoutGroups />;
+    return <VideoExperience displayName={displayName} roomName={roomUrl} showBreakoutGroups showHostControls />;
 };
 
 export const RoomConnectionWithCameraEffects = ({

@@ -12,6 +12,7 @@ const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName
     canEndMeeting: ["host"],
     canAskToSpeak: ["host"],
     canSpotlight: ["host"],
+    canManageBreakout: ["host"],
 };
 
 /**
@@ -108,4 +109,7 @@ export const selectIsAuthorizedToAskToSpeak = createSelector(selectAuthorization
 );
 export const selectIsAuthorizedToSpotlight = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
     ROOM_ACTION_PERMISSIONS_BY_ROLE.canSpotlight.includes(localParticipantRole),
+);
+export const selectIsAuthorizedToManageBreakout = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
+    ROOM_ACTION_PERMISSIONS_BY_ROLE.canManageBreakout.includes(localParticipantRole),
 );

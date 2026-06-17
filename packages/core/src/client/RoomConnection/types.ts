@@ -20,11 +20,14 @@ export interface WherebyClientOptions {
     externalId?: string | null;
     isNodeSdk?: boolean;
 }
-export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
+export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams"> & {
+    breakoutGroupAssigned: string;
+};
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
     roleName: RoleName;
     clientClaim?: string;
+    breakoutGroupAssigned: string;
 }
 export interface WaitingParticipantState {
     id: string;
@@ -75,6 +78,8 @@ export type BreakoutState = {
         id: string | null;
         name: string;
     } | null;
+    groups: { [groupId: string]: string } | null;
+    enforceAssignment: boolean;
     groupedParticipants: {
         clients: ClientView[];
         group: {
