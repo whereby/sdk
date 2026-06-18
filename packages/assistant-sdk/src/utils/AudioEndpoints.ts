@@ -7,13 +7,6 @@ const {
 export class AudioSource extends RTCAudioSource {}
 
 export class AudioSink extends RTCAudioSink {
-    private _sink: wrtc.nonstandard.RTCAudioSink;
-
-    constructor(track: MediaStreamTrack) {
-        super(track);
-        this._sink = new RTCAudioSink(track);
-    }
-
     subscribe(
         cb: (d: {
             samples: Int16Array;
@@ -23,9 +16,9 @@ export class AudioSink extends RTCAudioSink {
             numberOfFrames?: number;
         }) => void,
     ) {
-        this._sink.ondata = cb;
+        this.ondata = cb;
         return () => {
-            this._sink.ondata = undefined;
+            this.ondata = undefined;
         };
     }
 }
