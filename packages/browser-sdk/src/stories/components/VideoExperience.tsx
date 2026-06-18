@@ -14,7 +14,6 @@ import {
     NotificationEvents,
     RequestVideoEvent,
     LiveCaptionsState,
-    LiveCaption,
 } from "@whereby.com/core";
 
 export default function VideoExperience({
@@ -325,30 +324,22 @@ export default function VideoExperience({
         };
     }, [events]);
 
-    function showLiveCaption(caption: LiveCaptionsState) {
-        const lastIndex = caption?.captionLog.length - 1;
-        const latestCaption: LiveCaption | undefined = caption?.captionLog[lastIndex];
+    function renderLiveCaptions(captions: LiveCaptionsState) {
+        captions?.captionLog.forEach(({ resultId, participantId, text }) => {
+            const shouldShowSenderDetails = Boolean(participantId);
 
-        if (!latestCaption) {
-            return;
-        }
+            const participant = shouldShowSenderDetails
+                ? [localParticipant, ...remoteParticipants].find((participant) => participant?.id === participantId)
+                : undefined;
 
-        const { resultId, participantId, text } = latestCaption;
+            const captionPrefix = participant ? `${participant.displayName}: ` : undefined;
 
-        const shouldShowSenderDetails = Boolean(participantId);
+            const message = `${captionPrefix}${text}`;
 
-        const participant = shouldShowSenderDetails
-            ? [localParticipant, ...remoteParticipants].find((participant) => participant?.id === participantId)
-            : undefined;
-
-        const captionPrefix = participant ? `${participant.displayName}: ` : undefined;
-
-        const message = `${captionPrefix}${text}`;
-
-        toast(message, {
-            id: `caption-${resultId}`,
-            duration: 5000,
-            position: "bottom-center",
+            toast(message, {
+                id: `caption-${resultId}`,
+                position: "bottom-center",
+            });
         });
     }
 
@@ -357,7 +348,7 @@ export default function VideoExperience({
             return;
         }
 
-        showLiveCaption(state.liveCaptions);
+        renderLiveCaptions(state.liveCaptions);
     }, [state]);
 
     return (

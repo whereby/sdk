@@ -1,6 +1,7 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createRoomConnectedThunk } from "../thunk";
+import { startAppListening } from "../listenerMiddleware";
 import LiveCaption from "../../api/models/LiveCaption";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
@@ -21,6 +22,10 @@ export const initialLiveCaptionsState: LiveCaptionsState = {
     captionLog: [],
 };
 
+const captionTimerIds: Record<string, ReturnType<typeof setTimeout>> = {};
+
+const LIVE_CAPTIONS_STALE_CAPTION_TIMEOUT = 5000;
+
 export const liveCaptionsSlice = createSlice({
     name: "liveCaptions",
     initialState: initialLiveCaptionsState,
@@ -29,6 +34,12 @@ export const liveCaptionsSlice = createSlice({
             return {
                 ...state,
                 status: "requested",
+            };
+        },
+        clearCaption: (state, action: PayloadAction<{ resultId: string }>) => {
+            return {
+                ...state,
+                captionLog: state.captionLog.filter(({ resultId }) => resultId !== action.payload.resultId),
             };
         },
     },
@@ -97,7 +108,7 @@ export const liveCaptionsSlice = createSlice({
 /**
  * Action creators
  */
-export const { captioningRequestStarted } = liveCaptionsSlice.actions;
+export const { captioningRequestStarted, clearCaption } = liveCaptionsSlice.actions;
 
 export const doStartLiveCaptions = createRoomConnectedThunk(() => (dispatch, getState) => {
     const state = getState();
@@ -113,7 +124,7 @@ export const doStartLiveCaptions = createRoomConnectedThunk(() => (dispatch, get
     dispatch(captioningRequestStarted());
 });
 
-export const doStopLiveCaptions = createRoomConnectedThunk(() => (dispatch, getState) => {
+export const doStopLiveCaptions = createRoomConnectedThunk(() => (_, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
 
@@ -129,3 +140,15 @@ export const selectLiveCaptionsStartedAt = (state: RootState) => state.liveCapti
 export const selectLiveCaptionsError = (state: RootState) => state.liveCaptions.error;
 export const selectLiveCaptionsLog = (state: RootState) => state.liveCaptions.captionLog;
 export const selectIsLiveCaptions = (state: RootState) => state.liveCaptions.isCaptioning;
+
+startAppListening({
+    actionCreator: signalEvents.liveCaption,
+    effect: (action, { dispatch }) => {
+        const resultId = action.payload.resultId;
+        clearTimeout(captionTimerIds[resultId]);
+        captionTimerIds[resultId] = setTimeout(() => {
+            delete captionTimerIds[resultId];
+            dispatch(clearCaption({ resultId }));
+        }, LIVE_CAPTIONS_STALE_CAPTION_TIMEOUT);
+    },
+});
