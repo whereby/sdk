@@ -103,40 +103,60 @@ const loadTFLite = () => {
     return _tflitePromise;
 };
 
-let _currentModelAndInfo;
+let _modelPromise = null;
+let _modelPromiseUrl = null;
+
 export const loadSegmentationModel = async (segmentationModelId) => {
     const model = models[segmentationModelId];
     const modelUrl = resolveAssetUrl(await getModelUrl(model.id));
-    const tflite = await loadTFLite();
-    if (_currentModelAndInfo?.url === modelUrl) return _currentModelAndInfo; // only load model once
 
-    // fetch model
-    const modelResponse = await fetch(modelUrl);
-    const modelBuffer = await modelResponse.arrayBuffer();
-    // copy model to tflite and initialize
-    const modelBufferOffset = tflite._getModelBufferMemoryOffset();
-    tflite.HEAPU8.set(new Uint8Array(modelBuffer), modelBufferOffset);
-    tflite._loadModel(modelBuffer.byteLength);
-    // info
-    const inputHeight = tflite._getInputHeight();
-    const inputWidth = tflite._getInputWidth();
-    // TFLite memory will be accessed as float32
-    const inputMemoryOffset = tflite._getInputMemoryOffset() / 4;
-    const outputMemoryOffset = tflite._getOutputMemoryOffset() / 4;
-    const segmentationPixelCount = inputWidth * inputHeight;
+    // Cache the in-flight promise (keyed by model URL), not just the resolved value, so concurrent
+    // callers share a single load. Otherwise overlapping calls each fetch the model and write it into
+    // the shared tflite heap.
+    if (_modelPromiseUrl === modelUrl && _modelPromise) return _modelPromise;
 
-    // we run the model once to allow js engine optimizations?
-    tflite._runInference();
+    _modelPromiseUrl = modelUrl;
+    _modelPromise = (async () => {
+        try {
+            const tflite = await loadTFLite();
 
-    _currentModelAndInfo = {
-        tflite,
-        model,
-        url: modelUrl,
-        inputHeight,
-        inputWidth,
-        inputMemoryOffset,
-        outputMemoryOffset,
-        segmentationPixelCount,
-    };
-    return _currentModelAndInfo;
+            // fetch model
+            const modelResponse = await fetch(modelUrl);
+            const modelBuffer = await modelResponse.arrayBuffer();
+            // copy model to tflite and initialize
+            const modelBufferOffset = tflite._getModelBufferMemoryOffset();
+            tflite.HEAPU8.set(new Uint8Array(modelBuffer), modelBufferOffset);
+            tflite._loadModel(modelBuffer.byteLength);
+            // info
+            const inputHeight = tflite._getInputHeight();
+            const inputWidth = tflite._getInputWidth();
+            // TFLite memory will be accessed as float32
+            const inputMemoryOffset = tflite._getInputMemoryOffset() / 4;
+            const outputMemoryOffset = tflite._getOutputMemoryOffset() / 4;
+            const segmentationPixelCount = inputWidth * inputHeight;
+
+            // we run the model once to allow js engine optimizations?
+            tflite._runInference();
+
+            return {
+                tflite,
+                model,
+                url: modelUrl,
+                inputHeight,
+                inputWidth,
+                inputMemoryOffset,
+                outputMemoryOffset,
+                segmentationPixelCount,
+            };
+        } catch (err) {
+            // Don't cache a failed load, so a later call can retry (unless a newer model already replaced it).
+            if (_modelPromiseUrl === modelUrl) {
+                _modelPromise = null;
+                _modelPromiseUrl = null;
+            }
+            throw err;
+        }
+    })();
+
+    return _modelPromise;
 };
