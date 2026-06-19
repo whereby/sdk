@@ -70,25 +70,37 @@ const models = {
     },
 };
 
-let _tflite = null;
+let _tflitePromise = null;
 
-const loadTFLite = async () => {
-    if (_tflite) return _tflite;
-    const simdIsSupported = await simd();
+const loadTFLite = () => {
+    // Cache the in-flight promise, not just the resolved value, so concurrent callers share a single
+    // load. Otherwise overlapping calls (e.g. switching effects rapidly on a slow connection) each
+    // start their own wasm fetch before the first one resolves.
+    if (_tflitePromise) return _tflitePromise;
 
-    const createTfliteModule = await loadTfliteModule(simdIsSupported);
-    const wasmUrl = await getWasmUrl(simdIsSupported);
+    _tflitePromise = (async () => {
+        try {
+            const simdIsSupported = await simd();
 
-    _tflite = await createTfliteModule({
-        locateFile(path) {
-            if (path.endsWith(".wasm")) {
-                return resolveAssetUrl(wasmUrl);
-            }
-            return path;
-        },
-    });
+            const createTfliteModule = await loadTfliteModule(simdIsSupported);
+            const wasmUrl = await getWasmUrl(simdIsSupported);
 
-    return _tflite;
+            return await createTfliteModule({
+                locateFile(path) {
+                    if (path.endsWith(".wasm")) {
+                        return resolveAssetUrl(wasmUrl);
+                    }
+                    return path;
+                },
+            });
+        } catch (err) {
+            // Don't cache a failed load, so a later call can retry.
+            _tflitePromise = null;
+            throw err;
+        }
+    })();
+
+    return _tflitePromise;
 };
 
 let _currentModelAndInfo;
