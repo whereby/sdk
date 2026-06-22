@@ -1,5 +1,11 @@
 # @whereby.com/camera-effects
 
+## 1.1.2
+
+### Patch Changes
+
+- 36bf846: Dedupe the in-flight tflite wasm and segmentation model loads so concurrent `createEffectStream` calls share a single fetch instead of each starting their own.
+
 ## 1.1.1
 
 ### Patch Changes
