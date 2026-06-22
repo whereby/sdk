@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 1.14.1
+
+### Patch Changes
+
+- Updated dependencies [36bf846]
+    - @whereby.com/camera-effects@1.1.2
+
 ## 1.14.0
 
 ### Minor Changes
