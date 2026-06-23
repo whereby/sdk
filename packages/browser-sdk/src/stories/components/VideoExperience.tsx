@@ -13,6 +13,7 @@ import {
     StickyReactionEvent,
     NotificationEvents,
     RequestVideoEvent,
+    LiveCaptionsState,
 } from "@whereby.com/core";
 
 export default function VideoExperience({
@@ -70,6 +71,7 @@ export default function VideoExperience({
         spotlightedParticipants,
         breakout,
         cloudRecording,
+        liveCaptions,
         liveTranscription,
         fileUploads,
     } = state;
@@ -97,9 +99,11 @@ export default function VideoExperience({
         acceptWaitingParticipant,
         rejectWaitingParticipant,
         startCloudRecording,
+        startLiveCaptions,
         startLiveTranscription,
         startScreenshare,
         stopCloudRecording,
+        stopLiveCaptions,
         stopLiveTranscription,
         stopScreenshare,
         spotlightParticipant,
@@ -320,6 +324,33 @@ export default function VideoExperience({
         };
     }, [events]);
 
+    function renderLiveCaptions(captions: LiveCaptionsState) {
+        captions?.captionLog.forEach(({ resultId, participantId, text }) => {
+            const shouldShowSenderDetails = Boolean(participantId);
+
+            const participant = shouldShowSenderDetails
+                ? [localParticipant, ...remoteParticipants].find((participant) => participant?.id === participantId)
+                : undefined;
+
+            const captionPrefix = participant ? `${participant.displayName}: ` : undefined;
+
+            const message = `${captionPrefix}${text}`;
+
+            toast(message, {
+                id: `caption-${resultId}`,
+                position: "bottom-center",
+            });
+        });
+    }
+
+    useEffect(() => {
+        if (!state.liveCaptions || state.liveCaptions.status !== "captioning") {
+            return;
+        }
+
+        renderLiveCaptions(state.liveCaptions);
+    }, [state]);
+
     return (
         <div>
             {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
@@ -398,6 +429,22 @@ export default function VideoExperience({
                                 </span>
                             </>
                         )}
+
+                        <>
+                            <button
+                                onClick={() => {
+                                    if (liveCaptions) {
+                                        stopLiveCaptions();
+                                    } else {
+                                        startLiveCaptions();
+                                    }
+                                }}
+                            >
+                                {liveCaptions
+                                    ? `Live Captions: ${liveCaptions.status}`
+                                    : "Start Live Captioning (if available)"}
+                            </button>
+                        </>
                     </div>
 
                     {showHostControls && (

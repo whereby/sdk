@@ -11,6 +11,7 @@ export * from "./slices/cloudRecording";
 export * from "./slices/connectionMonitor";
 export * from "./slices/deviceCredentials";
 export * from "./slices/fileShare";
+export * from "./slices/liveCaptions";
 export * from "./slices/liveTranscription";
 export * from "./slices/localMedia";
 export * from "./slices/localParticipant";
