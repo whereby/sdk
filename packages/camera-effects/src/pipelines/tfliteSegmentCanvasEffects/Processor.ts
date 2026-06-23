@@ -144,6 +144,12 @@ class Processor extends EventEmitter {
 
     // updates params for adjusting or achieving a different effect
     updateParams({ params, initialBackgroundFrame }) {
+        // The engine is disposed on terminate(). updateParams can still arrive
+        // afterwards (e.g. an async update that was in flight when the effect
+        // was stopped, or a stale reference held by the caller) so bail
+        // instead of dereferencing a null engine.
+        if (this._terminated || !this.engine) return;
+
         this.params = params;
 
         // reset background in case it has changed
