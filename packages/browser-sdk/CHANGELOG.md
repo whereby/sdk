@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.26.0
+
+### Minor Changes
+
+- aca47aa: Add live captions start/stop to Browser SDK
+
+### Patch Changes
+
+- Updated dependencies [41b7d6e]
+- Updated dependencies [41b7d6e]
+    - @whereby.com/media@9.2.6
+    - @whereby.com/core@1.15.0
+
 ## 3.25.2
 
 ### Patch Changes
