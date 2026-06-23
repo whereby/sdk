@@ -1,5 +1,11 @@
 # @whereby.com/react-native-sdk
 
+## 0.8.112
+
+### Patch Changes
+
+- @whereby.com/core@1.14.2
+
 ## 0.8.111
 
 ### Patch Changes

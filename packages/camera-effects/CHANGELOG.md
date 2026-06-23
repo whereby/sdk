@@ -1,5 +1,11 @@
 # @whereby.com/camera-effects
 
+## 1.1.3
+
+### Patch Changes
+
+- ddaa203: Guard `Processor.updateParams` against running after the processor was terminated, so a stale or in-flight update no longer dereferences a null engine.
+
 ## 1.1.2
 
 ### Patch Changes
