@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.2.6
+
+### Patch Changes
+
+- 41b7d6e: Fix live_captions\* event type definitions
+
 ## 9.2.5
 
 ### Patch Changes

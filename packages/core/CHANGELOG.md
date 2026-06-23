@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 1.15.0
+
+### Minor Changes
+
+- 41b7d6e: Add live captions support to Core SDK
+
+### Patch Changes
+
+- Updated dependencies [41b7d6e]
+    - @whereby.com/media@9.2.6
+    - @whereby.com/audio-denoiser@1.0.2
+
 ## 1.14.2
 
 ### Patch Changes
