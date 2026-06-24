@@ -28,6 +28,7 @@ import {
 import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import getConstraints from "./mediaConstraints";
+import { updateRenderedDimensions } from "./stats/StatsMonitor";
 
 interface CreateSessionOptions {
     clientId: string;
@@ -128,6 +129,7 @@ export default class P2pRtcManager implements RtcManager {
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
     _webcamPaused?: boolean;
+    _videoTrackIdByStreamId: Record<string, string>;
 
     constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
         const { name, session, iceServers, turnServers, mediaserverConfigTtlSeconds } = room;
@@ -145,6 +147,7 @@ export default class P2pRtcManager implements RtcManager {
         this._features = features || {};
         this._isAudioOnlyMode = false;
         this._closed = false;
+        this._videoTrackIdByStreamId = {};
 
         // Timeouts
         this._fetchMediaServersTimer = null;
@@ -744,6 +747,7 @@ export default class P2pRtcManager implements RtcManager {
                 });
                 return;
             }
+            if (event.track.kind === "video") this._videoTrackIdByStreamId[stream.id] = event.track.id;
             if (session.streamIds.indexOf(stream.id) === -1) {
                 session.streamIds.push(stream.id);
                 this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
@@ -1292,7 +1296,20 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     // this does not (currently) make sense for peer-to-peer connections
-    updateStreamResolution(/* streamId, clientId, resolution */) {}
+    updateStreamResolution(
+        streamId: string,
+        _ignored: any,
+        {
+            width,
+            height,
+        }: {
+            width: number;
+            height: number;
+        },
+    ) {
+        const trackId = this._videoTrackIdByStreamId[streamId];
+        if (trackId) updateRenderedDimensions(trackId, { width, height, time: Date.now() });
+    }
 
     stopOrResumeAudio(/*localStream, enable*/) {
         // detaches the audio from the peerconnection. No-op in P2P mode.

@@ -2,7 +2,7 @@ import { collectStats } from "./collectStats";
 import { PressureObserver, startCpuObserver } from "./cpuObserver";
 import { numFailedTrackSsrcLookups, numMissingTrackSsrcLookups } from "./peerConnection";
 
-import { PressureRecord, StatsClient, ViewStats } from "../types";
+import { PressureRecord, StatsClient, ViewStats, RenderedDimensionsReport } from "../types";
 import Logger from "../../../utils/Logger";
 
 interface StatsMonitor {
@@ -11,7 +11,11 @@ interface StatsMonitor {
 }
 
 export interface StatsSubscription {
-    onUpdatedStats: (statsByView: Record<string, ViewStats>, clients: StatsClient[]) => void;
+    onUpdatedStats: (
+        statsByView: Record<string, ViewStats>,
+        clients: StatsClient[],
+        renderedDimensionsByTrack: Record<string, RenderedDimensionsReport>,
+    ) => void;
 }
 
 export interface StatsMonitorState {
@@ -21,6 +25,7 @@ export interface StatsMonitorState {
     lastUpdateTime: number;
     nextTimeout?: number;
     pressureObserver?: PressureObserver;
+    renderedDimensionsByTrack: Record<string, RenderedDimensionsReport>;
     statsByView: Record<string, ViewStats>;
     subscriptions: StatsSubscription[];
     numFailedStatsReports: number;
@@ -35,6 +40,7 @@ const STATE: StatsMonitorState = {
     currentMonitor: null,
     getClients: () => [],
     lastUpdateTime: 0,
+    renderedDimensionsByTrack: {},
     statsByView: {},
     subscriptions: [],
     numFailedStatsReports: 0,
@@ -58,6 +64,10 @@ export const getNumFailedTrackSsrcLookups = () => numFailedTrackSsrcLookups;
 export const getUpdatedStats = () => STATE.currentMonitor?.getUpdatedStats();
 
 export const setClientProvider = (provider: () => StatsClient[]) => (STATE.getClients = provider);
+
+export const updateRenderedDimensions = (trackId: string, data: RenderedDimensionsReport) => {
+    STATE.renderedDimensionsByTrack[trackId] = data;
+};
 
 function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
     const collectStatsBound = collectStats.bind(null, state, { interval, logger });

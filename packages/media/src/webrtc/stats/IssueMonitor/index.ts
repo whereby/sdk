@@ -1,6 +1,6 @@
 import { IssueCheckData, IssueDetector, issueDetectors } from "./issueDetectors";
 import { subscribeStats } from "../StatsMonitor";
-import { StatsClient, ViewStats } from "../types";
+import { RenderedDimensionsReport, StatsClient, ViewStats } from "../types";
 
 type IssueSubscription = {
     onUpdatedIssues: (
@@ -275,7 +275,11 @@ export function issueDetectorOrMetricEnabled(issueDetectorOrMetric: IssueDetecto
     return enabled && (issueDetectorOrMetric.enabled ? issueDetectorOrMetric.enabled(checkData) : true);
 }
 
-function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsClient[]) {
+function onUpdatedStats(
+    statsByView: Record<string, ViewStats>,
+    clients: StatsClient[],
+    renderedDimensionsByTrack: Record<string, RenderedDimensionsReport>,
+) {
     // reset aggregated current metrics
     Object.values(aggregatedMetrics).forEach((metricData: MetricDataAggregated) => {
         metricData.curTicks = 0;
@@ -325,6 +329,7 @@ function onUpdatedStats(statsByView: Record<string, ViewStats>, clients: StatsCl
                 kind,
                 track,
                 trackStats,
+                renderedDimensions: track?.id ? renderedDimensionsByTrack[track.id] : undefined,
                 stats,
                 hasLiveTrack,
                 ssrc0,
