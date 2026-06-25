@@ -12,6 +12,11 @@ import {
     doUpdateBreakoutSession,
     doStopBreakoutSession,
     doAssignBreakoutParticipants,
+    doAssignAllBreakoutParticipants,
+    doUnassignAllBreakoutParticipants,
+    doShuffleBreakoutParticipants,
+    doExtendBreakoutTimer,
+    doStopBreakoutTimer,
     doEndMeeting,
     doKickParticipant,
     doKnockRoom,
@@ -427,9 +432,12 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     /**
      * Send a chat message to the room.
      * @param text - The message text to send.
+     * @param parentId - Optional id of the message this is a reply to.
+     * @param isBroadcast - When true and a breakout session is active, the message is broadcast to all
+     * breakout groups instead of only the sender's group.
      */
-    public sendChatMessage(text: string, parentId?: string) {
-        this.store.dispatch(doSendChatMessage({ text, parentId }));
+    public sendChatMessage(text: string, parentId?: string, isBroadcast?: boolean) {
+        this.store.dispatch(doSendChatMessage({ text, parentId, isBroadcast }));
     }
 
     /**
@@ -720,6 +728,61 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public assignBreakoutParticipants(assignments: { [clientId: string]: string }) {
         this.store.dispatch(doAssignBreakoutParticipants({ assignments }));
+    }
+
+    /**
+     * Randomly distribute all remote participants across the breakout groups. Requires host privileges.
+     */
+    public assignAllBreakoutParticipants() {
+        this.store.dispatch(doAssignAllBreakoutParticipants());
+    }
+
+    /**
+     * Clear all breakout group assignments. Requires host privileges.
+     */
+    public unassignAllBreakoutParticipants() {
+        this.store.dispatch(doUnassignAllBreakoutParticipants());
+    }
+
+    /**
+     * Re-shuffle the currently-assigned participants across the breakout groups. Requires host privileges.
+     */
+    public shuffleBreakoutParticipants() {
+        this.store.dispatch(doShuffleBreakoutParticipants());
+    }
+
+    /**
+     * Extend the running breakout timer. Requires host privileges.
+     * @param seconds - Number of seconds to add (default 60).
+     */
+    public extendBreakoutTimer(seconds?: number) {
+        this.store.dispatch(doExtendBreakoutTimer({ seconds }));
+    }
+
+    /**
+     * Stop the running breakout timer (the session itself stays active). Requires host privileges.
+     */
+    public stopBreakoutTimer() {
+        this.store.dispatch(doStopBreakoutTimer());
+    }
+
+    /**
+     * Broadcast a main-room participant's audio/video into all breakout groups. This spotlights the
+     * participant; during an active breakout the SFU routes their stream into every group. Requires
+     * host privileges.
+     * @param participantId - The clientId of the participant to broadcast.
+     */
+    public broadcastToGroups(participantId: string) {
+        this.store.dispatch(doSpotlightParticipant({ id: participantId }));
+    }
+
+    /**
+     * Stop broadcasting a participant into the breakout groups (removes their spotlight). Requires
+     * host privileges.
+     * @param participantId - The clientId of the participant to stop broadcasting.
+     */
+    public stopBroadcastToGroups(participantId: string) {
+        this.store.dispatch(doRemoveSpotlight({ id: participantId }));
     }
 
     /**
