@@ -1,6 +1,15 @@
-import { breakoutSlice, breakoutSliceInitialState } from "../breakout";
+import {
+    breakoutSlice,
+    breakoutSliceInitialState,
+    selectBreakoutMoveToGroupAt,
+    selectBreakoutMoveToMainAt,
+} from "../breakout";
 import { signalEvents } from "../signalConnection";
+import { RootState } from "../../store";
 import { randomLocalParticipant, randomSignalClient } from "../../../__mocks__/appMocks";
+
+const stateWithBreakout = (overrides: Partial<typeof breakoutSliceInitialState>) =>
+    ({ breakout: { ...breakoutSliceInitialState, ...overrides } }) as unknown as RootState;
 
 const breakoutConfig = {
     assignments: null,
@@ -88,6 +97,53 @@ describe("breakoutSlice", () => {
                     }),
                 );
                 expect(result).toEqual(breakoutConfig);
+            });
+        });
+    });
+
+    describe("selectors", () => {
+        const startedAt = "2020-01-01T00:00:00.000Z";
+        const endedAt = "2020-01-01T01:00:00.000Z";
+
+        describe("selectBreakoutMoveToGroupAt", () => {
+            it("returns null when auto-move-to-group is off", () => {
+                const state = stateWithBreakout({ autoMoveToGroup: false, breakoutStartedAt: startedAt });
+                expect(selectBreakoutMoveToGroupAt(state)).toBeNull();
+            });
+
+            it("returns null when the session has not started", () => {
+                const state = stateWithBreakout({ autoMoveToGroup: true, breakoutStartedAt: null });
+                expect(selectBreakoutMoveToGroupAt(state)).toBeNull();
+            });
+
+            it("returns startedAt + grace period when enabled", () => {
+                const state = stateWithBreakout({
+                    autoMoveToGroup: true,
+                    moveToGroupGracePeriod: 10,
+                    breakoutStartedAt: startedAt,
+                });
+                expect(selectBreakoutMoveToGroupAt(state)).toBe(new Date(startedAt).getTime() + 10_000);
+            });
+        });
+
+        describe("selectBreakoutMoveToMainAt", () => {
+            it("returns null when auto-move-to-main is off", () => {
+                const state = stateWithBreakout({ autoMoveToMain: false, breakoutEndedAt: endedAt });
+                expect(selectBreakoutMoveToMainAt(state)).toBeNull();
+            });
+
+            it("returns null when the session has not ended", () => {
+                const state = stateWithBreakout({ autoMoveToMain: true, breakoutEndedAt: null });
+                expect(selectBreakoutMoveToMainAt(state)).toBeNull();
+            });
+
+            it("returns endedAt + grace period when enabled", () => {
+                const state = stateWithBreakout({
+                    autoMoveToMain: true,
+                    moveToMainGracePeriod: 30,
+                    breakoutEndedAt: endedAt,
+                });
+                expect(selectBreakoutMoveToMainAt(state)).toBe(new Date(endedAt).getTime() + 30_000);
             });
         });
     });

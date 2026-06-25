@@ -8,8 +8,10 @@ import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../localMedia";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
 import { selectRoomConnectionStatus } from "../roomConnection/selectors";
-import { selectBreakoutAssignments } from "../breakout";
+import { selectBreakoutAssignments, selectBreakoutGroups } from "../breakout";
 import { selectDeviceId } from "../deviceCredentials";
+import { doSetNotification, createNotificationEvent } from "../notifications";
+import { BreakoutGroupAssignedEventProps } from "../notifications/events";
 import {
     selectLocalParticipantDisplayName,
     selectLocalParticipantRaw,
@@ -250,8 +252,8 @@ createReactor(
 );
 
 createReactor(
-    [selectBreakoutAssignments, selectDeviceId, selectLocalParticipantRaw],
-    ({ dispatch }, breakoutAssignments, deviceId, localParticipant) => {
+    [selectBreakoutAssignments, selectDeviceId, selectLocalParticipantRaw, selectBreakoutGroups],
+    ({ dispatch }, breakoutAssignments, deviceId, localParticipant, breakoutGroups) => {
         const breakoutGroupAssigned = breakoutAssignments?.[deviceId || ""] || "";
 
         if (localParticipant.breakoutGroupAssigned === breakoutGroupAssigned) {
@@ -259,5 +261,20 @@ createReactor(
         }
 
         dispatch(setBreakoutGroupAssigned({ breakoutGroupAssigned }));
+
+        // Notify the local participant when they've been assigned to a group. Unassignment
+        // (empty group) is intentionally not surfaced as a notification.
+        if (breakoutGroupAssigned) {
+            const groupName = breakoutGroups?.[breakoutGroupAssigned] || "";
+            dispatch(
+                doSetNotification(
+                    createNotificationEvent<"breakoutGroupAssigned", BreakoutGroupAssignedEventProps>({
+                        type: "breakoutGroupAssigned",
+                        message: groupName ? `You've been assigned to ${groupName}` : "You've been assigned to a group",
+                        props: { group: breakoutGroupAssigned, groupName },
+                    }),
+                ),
+            );
+        }
     },
 );

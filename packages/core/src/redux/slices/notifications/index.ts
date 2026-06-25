@@ -27,7 +27,7 @@ export type NotificationsEventEmitter = EventEmitter<NotificationEventMap>;
 
 const emitter: NotificationsEventEmitter = new EventEmitter();
 
-function createNotificationEvent<Type, PropsType>(
+export function createNotificationEvent<Type, PropsType>(
     payload: Notification<Type, PropsType>,
 ): NotificationEvent<Type, PropsType> {
     const notificationEvent = {

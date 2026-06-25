@@ -80,6 +80,16 @@ export type BreakoutState = {
     } | null;
     groups: { [groupId: string]: string } | null;
     enforceAssignment: boolean;
+    autoMoveToGroup: boolean;
+    moveToGroupGracePeriod: number | null;
+    autoMoveToMain: boolean;
+    moveToMainGracePeriod: number | null;
+    breakoutTimerSetting: boolean;
+    breakoutTimerDuration: number;
+    startedAt: Date | null;
+    endTime: number | null;
+    moveToGroupAt: number | null;
+    moveToMainAt: number | null;
     groupedParticipants: {
         clients: ClientView[];
         group: {
@@ -88,6 +98,7 @@ export type BreakoutState = {
         } | null;
     }[];
     participantsInCurrentGroup: ClientView[];
+    broadcastingParticipants: ClientView[];
 };
 
 export interface RoomConnectionState {
