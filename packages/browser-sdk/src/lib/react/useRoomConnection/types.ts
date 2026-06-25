@@ -34,7 +34,7 @@ export interface RoomConnectionActions {
     kickParticipant: (clientId: string) => void;
     endMeeting: (stayBehind?: boolean) => void;
     rejectWaitingParticipant: (participantId: string) => void;
-    sendChatMessage: (text: string, parentId?: string) => void;
+    sendChatMessage: (text: string, parentId?: string, isBroadcast?: boolean) => void;
     removeChatMessage: (id: string, sig?: string | null) => void;
     sendFiles: (files: File[]) => void;
     downloadFile: (file: ChatFileShare) => Promise<Blob>;
@@ -59,6 +59,13 @@ export interface RoomConnectionActions {
     updateBreakoutSession: (options: UpdateBreakoutSessionOptions) => void;
     stopBreakoutSession: () => void;
     assignBreakoutParticipants: (assignments: { [clientId: string]: string }) => void;
+    assignAllBreakoutParticipants: () => void;
+    unassignAllBreakoutParticipants: () => void;
+    shuffleBreakoutParticipants: () => void;
+    extendBreakoutTimer: (seconds?: number) => void;
+    stopBreakoutTimer: () => void;
+    broadcastToGroups: (participantId: string) => void;
+    stopBroadcastToGroups: (participantId: string) => void;
     switchCameraEffect: (effectId: string) => Promise<void>;
     switchCameraEffectCustom: (imageUrl: string) => Promise<void>;
     clearCameraEffect: () => Promise<void>;
