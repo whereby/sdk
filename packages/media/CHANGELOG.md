@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.2.7
+
+### Patch Changes
+
+- 32e6693: Remove P2P addTrack investigation metrics
+
 ## 9.2.6
 
 ### Patch Changes
