@@ -126,15 +126,6 @@ export default class Session {
 
         const stream = this.streams[0];
 
-        this._incrementAnalyticMetric("P2PSessionAddTrack");
-        rtcStats.sendEvent("P2PSessionAddTrack", {
-            trackId: track.id,
-            kind: track.kind,
-            hasSessionStream: !!stream,
-            trackOfSameKindInStream: !!stream?.getTracks().filter((t) => t.kind === track.kind && t.id !== track.id)
-                .length,
-        });
-
         // TODO: remove responsibility to add track from Session.
         stream?.addTrack(track);
 
