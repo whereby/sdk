@@ -3,7 +3,13 @@ import { createAppAsyncThunk } from "../thunk";
 import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { doAppStop } from "./app";
-import { doLocalStreamEffect, selectLocalMediaIsSwitchingStream, selectLocalMediaStream } from "./localMedia";
+import {
+    doLocalStreamEffect,
+    doToggleCamera,
+    selectIsCameraEnabled,
+    selectLocalMediaIsSwitchingStream,
+    selectLocalMediaStream,
+} from "./localMedia";
 import { Setup, Params } from "@whereby.com/camera-effects";
 
 type TryUpdateFn = (presetId: string, setup: Setup, params: Params) => Promise<boolean>;
@@ -13,6 +19,9 @@ export interface CameraEffectsState {
     currentEffectId?: string | null;
     setup?: Setup;
     params?: Params;
+    backgroundUrl?: string;
+    allowSafari?: boolean;
+    isPaused: boolean;
     isSwitching: boolean;
     error?: unknown;
     raw: {
@@ -23,6 +32,7 @@ export interface CameraEffectsState {
 }
 
 const initialState: CameraEffectsState = {
+    isPaused: false,
     isSwitching: false,
     raw: {},
 };
@@ -38,6 +48,9 @@ export const cameraEffectsSlice = createSlice({
             state.currentEffectId = null;
             state.setup = undefined;
             state.params = undefined;
+            state.backgroundUrl = undefined;
+            state.allowSafari = undefined;
+            state.isPaused = false;
             state.raw = {};
             state.error = undefined;
             state.isSwitching = false;
@@ -48,14 +61,39 @@ export const cameraEffectsSlice = createSlice({
                 effectId: string;
                 setup?: Setup;
                 params?: Params;
+                backgroundUrl?: string;
+                allowSafari?: boolean;
                 raw?: { stop?: StopFn; tryUpdate?: TryUpdateFn; effectStream?: MediaStream };
             }>,
         ) {
-            const { effectId, setup, params, raw } = action.payload;
+            const { effectId, setup, params, backgroundUrl, allowSafari, raw } = action.payload;
             state.currentEffectId = effectId;
             state.setup = setup;
             state.params = params;
+            state.backgroundUrl = backgroundUrl;
+            state.allowSafari = allowSafari;
+            state.isPaused = false;
             if (raw) state.raw = raw;
+            state.error = undefined;
+            state.isSwitching = false;
+        },
+        cameraEffectsPaused(
+            state,
+            action: PayloadAction<
+                | { effectId?: string; setup?: Setup; params?: Params; backgroundUrl?: string; allowSafari?: boolean }
+                | undefined
+            >,
+        ) {
+            const payload = action.payload;
+            if (payload?.effectId !== undefined) {
+                state.currentEffectId = payload.effectId;
+                state.setup = payload.setup;
+                state.params = payload.params;
+                state.backgroundUrl = payload.backgroundUrl;
+                state.allowSafari = payload.allowSafari;
+            }
+            state.isPaused = true;
+            state.raw = {};
             state.error = undefined;
             state.isSwitching = false;
         },
@@ -66,12 +104,18 @@ export const cameraEffectsSlice = createSlice({
     },
 });
 
-export const { cameraEffectsSwitching, cameraEffectsCleared, cameraEffectsUpdated, cameraEffectsError } =
-    cameraEffectsSlice.actions;
+export const {
+    cameraEffectsSwitching,
+    cameraEffectsCleared,
+    cameraEffectsUpdated,
+    cameraEffectsPaused,
+    cameraEffectsError,
+} = cameraEffectsSlice.actions;
 
 export const selectCameraEffectsRaw = (state: RootState) => state.cameraEffects.raw;
 export const selectCameraEffectId = (state: RootState) => state.cameraEffects.currentEffectId;
 export const selectIsCameraEffectSwitching = (state: RootState) => state.cameraEffects.isSwitching;
+export const selectIsCameraEffectPaused = (state: RootState) => state.cameraEffects.isPaused;
 
 export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
     "cameraEffects/switchPreset",
@@ -100,8 +144,14 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
             const localStream = selectLocalMediaStream(state);
 
             if (!localStream?.getVideoTracks()?.[0]) {
-                // No local video, nothing to do
-                dispatch(cameraEffectsCleared());
+                if (!effectId) {
+                    // No local video and no effect wanted, nothing to do
+                    dispatch(cameraEffectsCleared());
+                } else {
+                    // The camera is off, so there is nothing to apply the effect to yet.
+                    // Remember it as paused and apply it automatically once the camera is on.
+                    dispatch(cameraEffectsPaused({ effectId, setup, params, backgroundUrl, allowSafari }));
+                }
                 return;
             }
 
@@ -118,7 +168,7 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
             if (raw.tryUpdate) {
                 const ok = await raw.tryUpdate(effectId, { ...(setup || {}) }, mergedParams);
                 if (ok) {
-                    dispatch(cameraEffectsUpdated({ effectId, setup, params }));
+                    dispatch(cameraEffectsUpdated({ effectId, setup, params, backgroundUrl, allowSafari }));
                     return;
                 }
             }
@@ -152,7 +202,16 @@ export const doCameraEffectsSwitchPreset = createAppAsyncThunk(
             // Replace local media video track
             await dispatch(doLocalStreamEffect({ effectStream, only: "video" }));
 
-            dispatch(cameraEffectsUpdated({ effectId, setup, params, raw: { stop, tryUpdate, effectStream } }));
+            dispatch(
+                cameraEffectsUpdated({
+                    effectId,
+                    setup,
+                    params,
+                    backgroundUrl,
+                    allowSafari,
+                    raw: { stop, tryUpdate, effectStream },
+                }),
+            );
         } catch (error) {
             dispatch(cameraEffectsError({ error }));
             return rejectWithValue(error);
@@ -164,11 +223,53 @@ export const doCameraEffectsClear = createAppAsyncThunk("cameraEffects/clear", a
     await dispatch(doCameraEffectsSwitchPreset({ effectId: null }));
 });
 
+export const doCameraEffectsPause = createAppAsyncThunk("cameraEffects/pause", async (_, { dispatch, getState }) => {
+    const raw = selectCameraEffectsRaw(getState());
+
+    raw.stop?.();
+    await dispatch(doLocalStreamEffect({ effectStream: undefined, only: "video", stopBeforeTrack: true }));
+
+    dispatch(cameraEffectsPaused());
+});
+
+export const doCameraEffectsResume = createAppAsyncThunk("cameraEffects/resume", async (_, { dispatch, getState }) => {
+    const state = getState();
+    const effectId = selectCameraEffectId(state);
+    if (!effectId) {
+        return;
+    }
+
+    const { setup, params, backgroundUrl, allowSafari } = state.cameraEffects;
+    await dispatch(doCameraEffectsSwitchPreset({ effectId, setup, params, backgroundUrl, allowSafari }));
+});
+
 startAppListening({
     actionCreator: doAppStop,
     effect: (_, { dispatch, getState }) => {
         if (selectCameraEffectsRaw(getState()).stop) {
             dispatch(doCameraEffectsClear());
+        }
+    },
+});
+
+startAppListening({
+    actionCreator: doToggleCamera.fulfilled,
+    effect: (_, { dispatch, getState }) => {
+        const state = getState();
+        const cameraEnabled = selectIsCameraEnabled(state);
+        const effectId = selectCameraEffectId(state);
+        const isPaused = selectIsCameraEffectPaused(state);
+
+        if (!cameraEnabled) {
+            const raw = selectCameraEffectsRaw(state);
+            if (effectId && raw.stop && !isPaused) {
+                dispatch(doCameraEffectsPause());
+            }
+        } else if (effectId && isPaused) {
+            const stream = selectLocalMediaStream(state);
+            if (stream?.getVideoTracks()?.[0]) {
+                dispatch(doCameraEffectsResume());
+            }
         }
     },
 });

@@ -810,7 +810,7 @@ startAppListening({
         const oldValue = selectCurrentCameraDeviceId(previousState);
         const newValue = selectCurrentCameraDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
-        return isReady && oldValue !== newValue;
+        return isReady && !!oldValue && !!newValue && oldValue !== newValue;
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: false, video: true }));
