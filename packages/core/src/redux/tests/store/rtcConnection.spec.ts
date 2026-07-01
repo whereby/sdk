@@ -15,8 +15,6 @@ import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
 import { doAppStop } from "../../slices/app";
 
-jest.mock("@whereby.com/media");
-
 describe("actions", () => {
     it("doHandleAcceptStreams", () => {
         const id1 = randomString("stream1");

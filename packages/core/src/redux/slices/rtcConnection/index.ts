@@ -6,6 +6,7 @@ import {
     RtcManagerDispatcher,
     RtcEvents,
     RtcManagerCreatedPayload,
+    RtcStatsConnection,
     RtcStreamAddedPayload,
     RtcClientConnectionStatusChangedPayload,
     CAMERA_STREAM_ID,
@@ -36,6 +37,8 @@ import { selectSpotlights } from "../spotlights";
 
 import { rtcEvents } from "./actions";
 export { rtcEvents } from "./actions";
+
+const RTCSTATS_URL = "wss://rtcstats.srv.whereby.com";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -74,6 +77,7 @@ export interface RtcConnectionState {
     };
     rtcManager: RtcManager | null;
     rtcManagerDispatcher: RtcManagerDispatcher | null;
+    rtcStatsConnection: RtcStatsConnection;
     rtcManagerInitialized: boolean;
     status: "inactive" | "ready" | "reconnecting";
     isAcceptingStreams: boolean;
@@ -85,6 +89,7 @@ export const rtcConnectionSliceInitialState: RtcConnectionState = {
     isCreatingDispatcher: false,
     reportedStreamResolutions: {},
     rtcManager: null,
+    rtcStatsConnection: new RtcStatsConnection({ url: RTCSTATS_URL }),
     rtcManagerDispatcher: null,
     rtcManagerInitialized: false,
     status: "inactive",
@@ -196,6 +201,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
+    const rtcStatsConnection = selectRtcStatsConnection(state);
     const isNodeSdk = selectAppIsNodeSdk(state);
 
     if (dispatcher || !socket) {
@@ -209,6 +215,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const rtcManagerDispatcher = new RtcManagerDispatcher({
         emitter: createWebRtcEmitter(dispatch),
         serverSocket: socket,
+        rtcStats: rtcStatsConnection,
         webrtcProvider,
         features: {
             isNodeSdk,
@@ -250,10 +257,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
     for (const { clientId, streamId, state } of payload) {
         const participant = remoteClients.find((p) => p.id === clientId);
         if (!participant) continue;
-        if (
-            state === "to_accept" ||
-            (state === "new_accept" && shouldAcceptNewClients)
-        ) {
+        if (state === "to_accept" || (state === "new_accept" && shouldAcceptNewClients)) {
             rtcManager.acceptNewStream({
                 streamId: streamId === CAMERA_STREAM_ID ? clientId : streamId,
                 clientId,
@@ -311,7 +315,10 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
     if (localMediaStream && rtcManager) {
-        rtcManager.addCameraStream(localMediaStream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
+        rtcManager.addCameraStream(localMediaStream, {
+            audioPaused: !isMicrophoneEnabled,
+            videoPaused: !isCameraEnabled,
+        });
     }
 
     dispatch(rtcManagerInitialized());
@@ -328,6 +335,7 @@ export const selectRtcDispatcherCreated = (state: RootState) => state.rtcConnect
 export const selectRtcIsCreatingDispatcher = (state: RootState) => state.rtcConnection.isCreatingDispatcher;
 export const selectRtcStatus = (state: RootState) => state.rtcConnection.status;
 export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnection.isAcceptingStreams;
+export const selectRtcStatsConnection = (state: RootState) => state.rtcConnection.rtcStatsConnection;
 
 /**
  * Reactors

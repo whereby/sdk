@@ -30,6 +30,9 @@ jest.mock("@whereby.com/media", () => ({
         replaced.forEach((t) => stream.removeTrack(t));
         return replaced;
     }),
+    RtcStatsConnection: jest.fn().mockImplementation(() => {
+        return {};
+    }),
 }));
 
 const mockEffectStop = jest.fn();
@@ -282,9 +285,7 @@ describe("cameraEffectsSlice", () => {
             store.dispatch(localMediaSlice.toggleCameraEnabled({ enabled: true }));
             await flushMicrotasks();
 
-            const createEffectStream = jest.mocked(
-                jest.requireMock("@whereby.com/camera-effects").createEffectStream,
-            );
+            const createEffectStream = jest.mocked(jest.requireMock("@whereby.com/camera-effects").createEffectStream);
             const state = store.getState().cameraEffects;
             expect(createEffectStream).toHaveBeenCalled();
             expect(state.isPaused).toBe(false);

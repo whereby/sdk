@@ -2,18 +2,6 @@ import { createStore } from "../store.setup";
 import { doStartConnectionMonitor, doStopConnectionMonitor } from "../../slices/connectionMonitor";
 import { setClientProvider, subscribeIssues } from "@whereby.com/media";
 
-jest.mock("@whereby.com/media", () => {
-    return {
-        __esModule: true,
-        setClientProvider: jest.fn(),
-        subscribeIssues: jest.fn().mockImplementation(() => {
-            return {
-                stop: jest.fn(),
-            };
-        }),
-    };
-});
-
 describe("connectionMonitorSlice", () => {
     describe("actions", () => {
         it("doStartConnectionMonitor", () => {
