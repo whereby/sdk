@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.3.0
+
+### Minor Changes
+
+- aab898a: media: Adds media quality tracking
+
 ## 9.2.7
 
 ### Patch Changes
