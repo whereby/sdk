@@ -8,6 +8,7 @@ import * as CONNECTION_STATUS from "../../src/model/connectionStatusConstants";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
 import { GetConstraintsOptions, WebRTCProvider } from "../../src";
+import { RtcStatsConnection } from "../../src";
 
 jest.mock("mediasoup-client", () => ({
     Device: jest.fn(),
@@ -18,6 +19,7 @@ describe("RtcManagerDispatcher", () => {
     let emitter: any;
     let serverSocketStub: any;
     let webrtcProvider: WebRTCProvider;
+    let rtcStatsConnectionStub: RtcStatsConnection;
     const features: any = {};
 
     beforeEach(() => {
@@ -30,8 +32,9 @@ describe("RtcManagerDispatcher", () => {
         };
 
         const serverSocket = serverSocketStub.socket;
+        rtcStatsConnectionStub = helpers.createRtcStatsConnectionStub();
 
-        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider, features });
+        new RtcManagerDispatcher({ emitter, serverSocket, webrtcProvider, features, rtcStats: rtcStatsConnectionStub });
     });
 
     function mockEmitRoomJoined({

@@ -1,4 +1,4 @@
-import rtcStats from "./rtcStatsService";
+import { RtcStatsConnection } from "./rtcStatsService";
 import Session from "./Session";
 import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
 import * as webrtcBugDetector from "./bugDetector";
@@ -128,8 +128,9 @@ export default class P2pRtcManager implements RtcManager {
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
     _webcamPaused?: boolean;
     _videoTrackIdByStreamId: Record<string, string>;
+    _rtcStats: RtcStatsConnection;
 
-    constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
+    constructor({ selfId, room, rtcStats, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
         const { name, session, iceServers, turnServers, mediaserverConfigTtlSeconds } = room;
 
         this._selfId = selfId;
@@ -146,6 +147,7 @@ export default class P2pRtcManager implements RtcManager {
         this._isAudioOnlyMode = false;
         this._closed = false;
         this._videoTrackIdByStreamId = {};
+        this._rtcStats = rtcStats;
 
         // Timeouts
         this._fetchMediaServersTimer = null;
@@ -159,13 +161,13 @@ export default class P2pRtcManager implements RtcManager {
             // One of them is getting unplugged. The other is the Chrome audio
             // process crashing. The third is the tab being closed.
             // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
-            rtcStats.sendEvent("audio_ended", { unloading });
+            this._rtcStats.sendEvent("audio_ended", { unloading });
             this._emit(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
             this.analytics.micTrackEndedCount++;
         };
 
         this._videoTrackOnEnded = () => {
-            rtcStats.sendEvent("video_ended", { unloading });
+            this._rtcStats.sendEvent("video_ended", { unloading });
             this._emit(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
             this.analytics.camTrackEndedCount++;
         };
@@ -400,7 +402,7 @@ export default class P2pRtcManager implements RtcManager {
                 ) {
                     logger.info("We have asked for an initial offer, ignoring all others");
                     this.analytics.P2POffendingInitialOffer++;
-                    rtcStats.sendEvent("P2POffendingInitialOffer", { clientId: session.clientId });
+                    this._rtcStats.sendEvent("P2POffendingInitialOffer", { clientId: session.clientId });
                     return;
                 }
                 session
@@ -450,32 +452,31 @@ export default class P2pRtcManager implements RtcManager {
     }
 
     sendAudioMutedStats(muted: boolean) {
-        rtcStats.sendEvent("audio_muted", { muted });
+        this._rtcStats.sendEvent("audio_muted", { muted });
     }
 
     sendVideoMutedStats(muted: boolean) {
-        rtcStats.sendEvent("video_muted", { muted });
+        this._rtcStats.sendEvent("video_muted", { muted });
     }
 
     sendStatsCustomEvent(eventName: string, data: any) {
-        rtcStats.sendEvent(eventName, data);
+        this._rtcStats.sendEvent(eventName, data);
     }
 
     rtcStatsConnect() {
-        if (!rtcStats.server.connected) {
-            rtcStats.server.connect();
+        if (!this._rtcStats.server.connected) {
+            this._rtcStats.server.connect();
         }
     }
 
     rtcStatsDisconnect() {
         clearTimeout(this._rtcStatsDisconnectTimeout);
-
-        rtcStats.server.close();
+        this._rtcStats.server.close();
     }
 
     rtcStatsReconnect() {
-        if (!rtcStats.server.connected && rtcStats.server.attemptedConnectedAtLeastOnce) {
-            rtcStats.server.connect();
+        if (!this._rtcStats.server.connected && this._rtcStats.server.attemptedConnectedAtLeastOnce) {
+            this._rtcStats.server.connect();
         }
     }
 
@@ -561,7 +562,7 @@ export default class P2pRtcManager implements RtcManager {
             return;
         }
         if (this._features.awaitJoinRoomFinished && !this._serverSocket.joinRoomFinished) {
-            rtcStats.sendEvent("skip_emitting_server_message", { eventName });
+            this._rtcStats.sendEvent("skip_emitting_server_message", { eventName });
         } else {
             this._serverSocket.emit(eventName, data);
         }
@@ -610,6 +611,7 @@ export default class P2pRtcManager implements RtcManager {
             deprioritizeH264Encoding,
             incrementAnalyticMetric: (metric: P2PAnalyticMetric) => this.analytics[metric]++,
             mediaPrefs: this._remoteClientMediaPrefs[clientId],
+            rtcStats: this._rtcStats,
         });
         this.peerConnections[clientId] = session;
 
@@ -737,7 +739,7 @@ export default class P2pRtcManager implements RtcManager {
             const stream = event.streams[0];
             if (!stream) {
                 this.analytics.P2POnTrackNoStream++;
-                rtcStats.sendEvent("P2POnTrackNoStream", {
+                this._rtcStats.sendEvent("P2POnTrackNoStream", {
                     trackKind: event.track.kind,
                     trackId: event.track.id,
                 });
@@ -803,7 +805,7 @@ export default class P2pRtcManager implements RtcManager {
                         // We did not gather any relay candidates and we were never connected.
                         // At that point we consider it a local network problem.
                         this.analytics.P2PLocalNetworkFailed++;
-                        rtcStats.sendEvent("P2PLocalNetworkFailed", {
+                        this._rtcStats.sendEvent("P2PLocalNetworkFailed", {
                             from: "iceConnectionStateChange",
                             clientId,
                         });
@@ -828,7 +830,7 @@ export default class P2pRtcManager implements RtcManager {
                         webrtcBugDetector.detectMicrophoneNotWorking(session.pc).then((failureDirection) => {
                             if (failureDirection) {
                                 this.analytics.P2PMicNotWorking++;
-                                rtcStats.sendEvent("P2PMicNotWorking", { clientId, failureDirection });
+                                this._rtcStats.sendEvent("P2PMicNotWorking", { clientId, failureDirection });
                                 // TODO: Decide if we want to act on this or not.
 
                                 // this._emit(rtcManagerEvents.MICROPHONE_NOT_WORKING, {
@@ -851,7 +853,7 @@ export default class P2pRtcManager implements RtcManager {
                         // We did not gather any relay candidates and we were never connected.
                         // At that point we consider it a local network problem.
                         this.analytics.P2PLocalNetworkFailed++;
-                        rtcStats.sendEvent("P2PLocalNetworkFailed", {
+                        this._rtcStats.sendEvent("P2PLocalNetworkFailed", {
                             from: "connectionStateChange",
                             clientId,
                         });

@@ -1,6 +1,8 @@
 import { convertToProperHostList, createVegaConnectionManager } from "../../src/webrtc/VegaConnectionManager";
 import VegaConnection from "../../src/webrtc/VegaConnection";
 import { EventEmitter } from "events";
+import { RtcStatsConnection } from "../../src";
+import * as helpers from "./webRtcHelpers";
 
 describe("convertToProperHostList", () => {
     it("converts a serialized string of hosts to an array of hosts", () => {
@@ -47,8 +49,11 @@ jest.mock("../../src/webrtc/VegaConnection.ts", () => {
 });
 
 describe("createVegaConnectionManager", () => {
+    let rtcStatsConnectionStub: RtcStatsConnection;
+
     beforeEach(() => {
         jest.useFakeTimers();
+        rtcStatsConnectionStub = helpers.createRtcStatsConnectionStub();
     });
     afterEach(() => {
         jest.useRealTimers();
@@ -57,7 +62,7 @@ describe("createVegaConnectionManager", () => {
 
     it("works sending a single host as a string", () => {
         const onConnected = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: "host1 open:100",
             onConnected,
         });
@@ -75,7 +80,7 @@ describe("createVegaConnectionManager", () => {
 
     it("works sending a multiple hosts as a string", () => {
         const onConnected = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: "host1 close:100,host2 open:100",
             onConnected,
         });
@@ -92,7 +97,7 @@ describe("createVegaConnectionManager", () => {
     });
 
     it("tries connecting to hosts in order provided with delays between them", () => {
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1", dc: "a" },
                 { host: "host2", dc: "b" },
@@ -102,19 +107,19 @@ describe("createVegaConnectionManager", () => {
         connect();
         jest.advanceTimersToNextTimer();
         expect(VegaConnection).toHaveBeenCalledTimes(1);
-        expect(VegaConnection).toHaveBeenNthCalledWith(1, "host1", {
+        expect(VegaConnection).toHaveBeenNthCalledWith(1, "host1", rtcStatsConnectionStub, {
             protocol: "whereby-sfu#v4",
             incrementAnalyticMetric: undefined,
         });
         jest.advanceTimersToNextTimer();
         expect(VegaConnection).toHaveBeenCalledTimes(2);
-        expect(VegaConnection).toHaveBeenNthCalledWith(2, "host2", {
+        expect(VegaConnection).toHaveBeenNthCalledWith(2, "host2", rtcStatsConnectionStub, {
             protocol: "whereby-sfu#v4",
             incrementAnalyticMetric: undefined,
         });
         jest.advanceTimersToNextTimer();
         expect(VegaConnection).toHaveBeenCalledTimes(3);
-        expect(VegaConnection).toHaveBeenNthCalledWith(3, "host3", {
+        expect(VegaConnection).toHaveBeenNthCalledWith(3, "host3", rtcStatsConnectionStub, {
             protocol: "whereby-sfu#v4",
             incrementAnalyticMetric: undefined,
         });
@@ -122,7 +127,7 @@ describe("createVegaConnectionManager", () => {
 
     it("emits successful connection and doesn't attempt to connect to other hosts after if fast enough", () => {
         const onConnected = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1", dc: "a" },
                 { host: "host2 open:100", dc: "b" },
@@ -145,7 +150,7 @@ describe("createVegaConnectionManager", () => {
 
     it("tries multiple hosts in parallel if slow, but only emits the one that opens first (even if all opens)", () => {
         const onConnected = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1 open:7000", dc: "a" },
                 { host: "host2 open:5000", dc: "b" },
@@ -169,7 +174,7 @@ describe("createVegaConnectionManager", () => {
     it("emits failed if all hosts fail", () => {
         const onConnected = jest.fn();
         const onFailed = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1 close:100", dc: "a" },
                 { host: "host2 close:100", dc: "b" },
@@ -189,7 +194,7 @@ describe("createVegaConnectionManager", () => {
     it("doesn't run multiple times if called while in progress, if one of the hosts connect", () => {
         const onConnected = jest.fn();
         const onFailed = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1 close:100", dc: "a" },
                 { host: "host2 close:100", dc: "b" },
@@ -214,7 +219,7 @@ describe("createVegaConnectionManager", () => {
     it("will run (only) once more, if connect() is called again while first round is in progress, if all fails, so hostlist or network can change followed by a new connect()", () => {
         const onConnected = jest.fn();
         const onFailed = jest.fn();
-        const { connect, updateHostList } = createVegaConnectionManager({
+        const { connect, updateHostList } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1 close:100", dc: "a" },
                 { host: "host2 close:100", dc: "b" },
@@ -251,7 +256,7 @@ describe("createVegaConnectionManager", () => {
 
     it("will treat a close shortly after open as a failed connection", () => {
         const onConnected = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1", dc: "a" },
                 { host: "host2 open:100 close:150", dc: "b" }, // failed connection
@@ -276,7 +281,7 @@ describe("createVegaConnectionManager", () => {
         const onConnected = jest.fn();
         const onDisconnected = jest.fn();
         const onFailed = jest.fn();
-        const { connect } = createVegaConnectionManager({
+        const { connect } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1", dc: "a" },
                 { host: "host2 open:100 close:5000", dc: "b" }, // successful connection, closes later
@@ -304,7 +309,7 @@ describe("createVegaConnectionManager", () => {
     it("will retry the last connected host shortly after network problems, the old or updated hostlist after a while", () => {
         const onConnected = jest.fn();
         const onDisconnected = jest.fn();
-        const { connect, updateHostList } = createVegaConnectionManager({
+        const { connect, updateHostList } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "badhost1 close:100", dc: "a" },
                 { host: "goodhost1 open:100 close:5000", dc: "b" },
@@ -370,23 +375,26 @@ describe("createVegaConnectionManager", () => {
         const onDisconnected = jest.fn();
         const onFailed = jest.fn();
 
-        const { connect, updateHostList, networkIsPossiblyDown, networkIsUp } = createVegaConnectionManager({
-            initialHostList: [
-                { host: "badhost1 close:1000", dc: "a" }, // this is "simulating" the network problem
-                { host: "goodhost1 open:2000", dc: "b" },
-                { host: "goodhost2 open:3000", dc: "c" },
-                { host: "goodhost3 open:3000", dc: "c" },
-                { host: "goodhost4 open:3000", dc: "c" },
-                { host: "goodhost5 open:3000", dc: "c" },
-                { host: "goodhost6 open:3000", dc: "c" },
-                { host: "goodhost7 open:3000", dc: "c" },
-                { host: "goodhost8 open:3000", dc: "c" },
-                { host: "goodhost9 open:3000", dc: "c" },
-            ],
-            onConnected,
-            onDisconnected,
-            onFailed,
-        });
+        const { connect, updateHostList, networkIsPossiblyDown, networkIsUp } = createVegaConnectionManager(
+            rtcStatsConnectionStub,
+            {
+                initialHostList: [
+                    { host: "badhost1 close:1000", dc: "a" }, // this is "simulating" the network problem
+                    { host: "goodhost1 open:2000", dc: "b" },
+                    { host: "goodhost2 open:3000", dc: "c" },
+                    { host: "goodhost3 open:3000", dc: "c" },
+                    { host: "goodhost4 open:3000", dc: "c" },
+                    { host: "goodhost5 open:3000", dc: "c" },
+                    { host: "goodhost6 open:3000", dc: "c" },
+                    { host: "goodhost7 open:3000", dc: "c" },
+                    { host: "goodhost8 open:3000", dc: "c" },
+                    { host: "goodhost9 open:3000", dc: "c" },
+                ],
+                onConnected,
+                onDisconnected,
+                onFailed,
+            },
+        );
         connect();
         jest.advanceTimersByTime(300);
         networkIsPossiblyDown(); // network goes down before goodhost1 is scheduled
@@ -409,7 +417,7 @@ describe("createVegaConnectionManager", () => {
 
     it("will provide analytics, updated and aggregated across multiple calls to connect()", () => {
         const onConnected = jest.fn();
-        const { connect, updateHostList } = createVegaConnectionManager({
+        const { connect, updateHostList } = createVegaConnectionManager(rtcStatsConnectionStub, {
             initialHostList: [
                 { host: "host1 close:100", dc: "a" },
                 { host: "host2 open:100 close:5000", dc: "b" },

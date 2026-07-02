@@ -2,8 +2,8 @@ import * as sdpModifier from "./sdpModifier";
 import { setVideoBandwidthUsingSetParameters } from "./rtcrtpsenderHelper";
 import adapterRaw from "webrtc-adapter";
 import Logger from "../utils/Logger";
-import rtcStats from "./rtcStatsService";
 import { MediaPrefs, SignalRTCSessionDescription } from "./types";
+import { RtcStatsConnection } from "./rtcStatsService";
 import { P2PIncrementAnalyticMetric } from "./P2pRtcManager";
 import { trackAnnotations } from "../utils/annotations";
 import { type ConnectionStatus } from "../model";
@@ -19,6 +19,7 @@ interface P2PSessionOptions {
     deprioritizeH264Encoding: boolean;
     incrementAnalyticMetric: P2PIncrementAnalyticMetric;
     mediaPrefs?: MediaPrefs;
+    rtcStats: RtcStatsConnection;
 }
 
 export default class Session {
@@ -48,6 +49,7 @@ export default class Session {
     srdComplete?: ReturnType<RTCPeerConnection["setRemoteDescription"]>;
     _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
     pendingReplaceTrackActions: (() => Promise<void>)[];
+    _rtcStats: RtcStatsConnection;
 
     constructor({
         clientId,
@@ -56,6 +58,7 @@ export default class Session {
         deprioritizeH264Encoding,
         incrementAnalyticMetric,
         mediaPrefs,
+        rtcStats,
     }: P2PSessionOptions) {
         this.relayCandidateSeen = false;
         this.serverReflexiveCandidateSeen = false;
@@ -66,6 +69,7 @@ export default class Session {
         this.mdnsHostCandidateSeen = false;
         this.pendingReplaceTrackActions = [];
         this._mediaPrefs = mediaPrefs;
+        this._rtcStats = rtcStats;
 
         // Create PC.
         this.peerConnectionConfig = peerConnectionConfig;
@@ -219,7 +223,7 @@ export default class Session {
                 this.pc.signalingState,
             );
             this._incrementAnalyticMetric("P2PStaleAnswerIgnored");
-            rtcStats.sendEvent("P2PStaleAnswerIgnored", {
+            this._rtcStats.sendEvent("P2PStaleAnswerIgnored", {
                 clientId: this.clientId,
                 signalingState: this.pc.signalingState,
             });
@@ -252,7 +256,7 @@ export default class Session {
             this.pc.addIceCandidate(candidate).catch((e: any) => {
                 logger.warn("Failed to add ICE candidate ('%s'): %s", candidate ? candidate.candidate : null, e);
                 this._incrementAnalyticMetric("P2PAddIceCandidateFailure");
-                rtcStats.sendEvent("P2PAddIceCandidateFailure", {
+                this._rtcStats.sendEvent("P2PAddIceCandidateFailure", {
                     clientId: this.clientId,
                     errorName: e?.name,
                     errorMessage: e?.message,
@@ -325,7 +329,7 @@ export default class Session {
         let stream = this.streams.find((s) => s.getTracks().find((t) => t.id === newTrack.id));
         if (!stream) {
             // This check was here from before, let's see if it ever happens.
-            rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {
+            this._rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {
                 oldTrackId: oldTrack?.id,
                 oldTrackKind: oldTrack?.kind,
                 oldTrackIsEffect: oldTrack && trackAnnotations(oldTrack).isEffectTrack,
@@ -338,7 +342,7 @@ export default class Session {
         // TODO: Don't depend on array index for the stream.
         stream = this.streams[0];
         if (!stream) {
-            rtcStats.sendEvent("P2PReplaceTrackNoStream", {});
+            this._rtcStats.sendEvent("P2PReplaceTrackNoStream", {});
             this._incrementAnalyticMetric("P2PReplaceTrackNoStream");
             throw new Error("replaceTrack: No stream?");
         }

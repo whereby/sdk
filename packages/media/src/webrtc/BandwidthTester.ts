@@ -5,6 +5,7 @@ import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSetting
 import Logger from "../utils/Logger";
 import { getMediasoupDeviceAsync } from "../utils/getMediasoupDevice";
 import { ClearableTimeout } from "../utils";
+import { RtcStatsConnection } from "./rtcStatsService";
 
 const logger = new Logger();
 
@@ -27,8 +28,9 @@ export default class BandwidthTester extends EventEmitter {
     _canvas: any;
     _drawInterval: any;
     _resultTimeout: ClearableTimeout | null;
+    _rtcStats: RtcStatsConnection;
 
-    constructor({ features }: { features?: any } = {}) {
+    constructor(rtcStats: RtcStatsConnection, { features }: { features?: any } = {}) {
         super();
 
         this.closed = false;
@@ -59,6 +61,7 @@ export default class BandwidthTester extends EventEmitter {
         this._drawInterval = null;
 
         this._resultTimeout = null;
+        this._rtcStats = rtcStats;
     }
 
     // This is the public API for this class
@@ -84,7 +87,7 @@ export default class BandwidthTester extends EventEmitter {
         const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
         const wsUrl = `wss://${host}`;
 
-        this._vegaConnection = new VegaConnection(wsUrl, { protocol: "whereby-sfu#bw-test-v1" });
+        this._vegaConnection = new VegaConnection(wsUrl, this._rtcStats, { protocol: "whereby-sfu#bw-test-v1" });
         this._vegaConnection.on("open", () => this._start());
         this._vegaConnection.on("close", () => this.close(true));
         this._vegaConnection.on("message", (message: any) => this._onMessage(message));

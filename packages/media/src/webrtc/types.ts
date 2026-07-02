@@ -1,4 +1,5 @@
 import { SignalRoom, ServerSocket } from "../utils";
+import { RtcStatsConnection } from "./rtcStatsService";
 import { VegaIncrementAnalyticMetric } from "./VegaRtcManager/types";
 
 export enum RtcEventNames {
@@ -11,6 +12,7 @@ export type RtcEventEmitter = { emit: <K extends keyof RtcEvents>(eventName: K, 
 export interface RtcManagerOptions {
     selfId: string;
     room: SignalRoom;
+    rtcStats: RtcStatsConnection;
     emitter: RtcEventEmitter;
     serverSocket: ServerSocket;
     webrtcProvider: WebRTCProvider;

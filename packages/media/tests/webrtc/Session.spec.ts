@@ -1,4 +1,4 @@
-import { Session } from "../../src";
+import { RtcStatsConnection, Session } from "../../src";
 import { trackAnnotations } from "../../src/utils/annotations";
 import * as helpers from "./webRtcHelpers";
 
@@ -21,18 +21,22 @@ describe("Session", () => {
     let session: Session;
     let bandwidth: number;
     let peerConnectionConfig: RTCConfiguration;
+    let rtcStatsConnectionStub: RtcStatsConnection;
 
     beforeEach(() => {
         // @ts-ignore
         window.globalThis.RTCPeerConnection = RtcPeerConnection;
         bandwidth = 1;
         peerConnectionConfig = {};
+        rtcStatsConnectionStub = helpers.createRtcStatsConnectionStub();
+
         session = new Session({
             clientId,
             peerConnectionConfig,
             bandwidth,
             deprioritizeH264Encoding: false,
             incrementAnalyticMetric: jest.fn(),
+            rtcStats: rtcStatsConnectionStub,
         });
     });
 
@@ -76,6 +80,7 @@ describe("Session", () => {
                 deprioritizeH264Encoding: false,
                 incrementAnalyticMetric: jest.fn(),
                 mediaPrefs: { wantsVideo: false },
+                rtcStats: rtcStatsConnectionStub,
             });
             const stream = helpers.createMockedMediaStream();
             const audioTrack = stream.getAudioTracks()[0];
@@ -128,6 +133,7 @@ describe("Session", () => {
                     deprioritizeH264Encoding: false,
                     incrementAnalyticMetric: jest.fn(),
                     mediaPrefs: { wantsVideo: false },
+                    rtcStats: rtcStatsConnectionStub,
                 });
             });
 
@@ -304,6 +310,7 @@ describe("Session", () => {
                     deprioritizeH264Encoding: false,
                     incrementAnalyticMetric: jest.fn(),
                     mediaPrefs: { wantsVideo: false },
+                    rtcStats: rtcStatsConnectionStub,
                 });
 
                 const tracksAddedToPC: MediaStreamTrack[] = [];

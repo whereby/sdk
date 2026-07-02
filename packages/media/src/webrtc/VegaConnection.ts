@@ -2,8 +2,8 @@ import SfuV2Parser from "./SfuV2Parser";
 import { EventEmitter } from "events";
 import Logger from "../utils/Logger";
 import { VegaIncrementAnalyticMetric } from "./VegaRtcManager/types";
-import rtcStats from "./rtcStatsService";
 import { VegaConnectionOptions } from "./types";
+import { RtcStatsConnection } from "./rtcStatsService";
 
 const logger = new Logger();
 
@@ -13,13 +13,19 @@ export default class VegaConnection extends EventEmitter {
     socket: WebSocket | null = null;
     sents: Map<any, any>;
     incrementAnalyticMetric?: VegaIncrementAnalyticMetric;
+    rtcStats: RtcStatsConnection;
 
-    constructor(wsUrl: string, { protocol = "whereby-sfu#v4", incrementAnalyticMetric }: VegaConnectionOptions) {
+    constructor(
+        wsUrl: string,
+        rtcStatsConnection: RtcStatsConnection,
+        { protocol = "whereby-sfu#v4", incrementAnalyticMetric }: VegaConnectionOptions,
+    ) {
         super();
 
         this.incrementAnalyticMetric = incrementAnalyticMetric;
         this.wsUrl = wsUrl;
         this.protocol = protocol;
+        this.rtcStats = rtcStatsConnection;
 
         // This is the map of sent requests that are waiting for a response
         this.sents = new Map();
@@ -87,7 +93,7 @@ export default class VegaConnection extends EventEmitter {
             // If an SFU response arrive after timeout it's already deleted.
             logger.warn(`Received unknown message with id ${socketMessage.id} from SFU.`);
             this.incrementAnalyticMetric?.("vegaUnknownResponse");
-            rtcStats.sendEvent("VegaUnknownResponse", {
+            this.rtcStats.sendEvent("VegaUnknownResponse", {
                 id: socketMessage.id,
                 code: socketMessage.errorCode,
                 reason: socketMessage.errorReason,
@@ -139,7 +145,7 @@ export default class VegaConnection extends EventEmitter {
                 },
                 timer: setTimeout(() => {
                     this.incrementAnalyticMetric?.("vegaRequestTimeout");
-                    rtcStats.sendEvent("VegaRequestTimeout", {
+                    this.rtcStats.sendEvent("VegaRequestTimeout", {
                         id: request.id,
                         method: request.method,
                     });
