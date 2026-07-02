@@ -19,6 +19,11 @@ export type {
     StartBreakoutSessionOptions,
     UpdateBreakoutSessionOptions,
 } from "./redux/slices/breakout";
+export {
+    BREAKOUT_GROUPS_MIN_MAX,
+    createBreakoutGroups,
+    defaultBreakoutGroupName,
+} from "./redux/slices/breakout";
 export { MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "./redux/slices/fileShare";
 export type { ClientView } from "./redux/types";
 export type { ConnectionStatus } from "./redux/slices/roomConnection";
@@ -30,5 +35,6 @@ export type {
     SignalStatusEvent,
     SignalClientEvent,
     StickyReactionEvent,
+    BreakoutTimerEvent,
     NotificationsEventEmitter,
 } from "./redux/slices/notifications";

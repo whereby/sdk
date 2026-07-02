@@ -76,7 +76,8 @@ export function useRoomConnection(
         return client.joinRoom();
     }, [client]);
     const sendChatMessage = React.useCallback(
-        (text: string, parentId?: string) => client.sendChatMessage(text, parentId),
+        (text: string, parentId?: string, isBroadcast?: boolean) =>
+            client.sendChatMessage(text, parentId, isBroadcast),
         [client],
     );
     const removeChatMessage = React.useCallback(
@@ -154,6 +155,25 @@ export function useRoomConnection(
         (assignments: { [clientId: string]: string }) => client.assignBreakoutParticipants(assignments),
         [client],
     );
+    const assignAllBreakoutParticipants = React.useCallback(
+        () => client.assignAllBreakoutParticipants(),
+        [client],
+    );
+    const unassignAllBreakoutParticipants = React.useCallback(
+        () => client.unassignAllBreakoutParticipants(),
+        [client],
+    );
+    const shuffleBreakoutParticipants = React.useCallback(() => client.shuffleBreakoutParticipants(), [client]);
+    const extendBreakoutTimer = React.useCallback((seconds?: number) => client.extendBreakoutTimer(seconds), [client]);
+    const stopBreakoutTimer = React.useCallback(() => client.stopBreakoutTimer(), [client]);
+    const broadcastToGroups = React.useCallback(
+        (participantId: string) => client.broadcastToGroups(participantId),
+        [client],
+    );
+    const stopBroadcastToGroups = React.useCallback(
+        (participantId: string) => client.stopBroadcastToGroups(participantId),
+        [client],
+    );
     const switchCameraEffect = React.useCallback(
         async (effectId: string) => {
             await client.switchCameraEffect(effectId);
@@ -220,6 +240,13 @@ export function useRoomConnection(
             updateBreakoutSession,
             stopBreakoutSession,
             assignBreakoutParticipants,
+            assignAllBreakoutParticipants,
+            unassignAllBreakoutParticipants,
+            shuffleBreakoutParticipants,
+            extendBreakoutTimer,
+            stopBreakoutTimer,
+            broadcastToGroups,
+            stopBroadcastToGroups,
             switchCameraEffect,
             switchCameraEffectCustom,
             clearCameraEffect,

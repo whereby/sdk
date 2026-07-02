@@ -112,6 +112,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     );
     socket.on("breakout_move_to_group", () => dispatch(signalEvents.breakoutMoveToGroup()));
     socket.on("breakout_move_to_main", () => dispatch(signalEvents.breakoutMoveToMain()));
+    socket.on("breakout_ending", () => dispatch(signalEvents.breakoutEnding()));
+    socket.on("breakout_timer_ended", () => dispatch(signalEvents.breakoutTimerEnded()));
+    socket.on("breakout_timer_extended", () => dispatch(signalEvents.breakoutTimerExtended()));
 }
 
 const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL;
