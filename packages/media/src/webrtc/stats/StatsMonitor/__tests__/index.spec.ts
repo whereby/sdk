@@ -19,6 +19,7 @@ describe("subscribeStats", () => {
             statsByView: {},
             subscriptions: [],
             numFailedStatsReports: 0,
+            renderedDimensionsByTrack: {},
         };
         options = { interval: 2000, logger: { debug: jest.fn(), error: jest.fn(), info: jest.fn(), warn: jest.fn() } };
     });

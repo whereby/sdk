@@ -215,6 +215,9 @@ export function captureVideoSsrcMetrics(
         const qpsumDiff = currentSsrcStats.qpSum - (prevSsrcStats?.qpSum || 0);
         ssrcMetrics.qpf = qpsumDiff / frameCountDiff;
         ssrcMetrics.fps = (frameCountDiff * 1000) / timeDiff;
+
+        const freezeCountDiff = (currentSsrcStats.freezeCount || 0) - (prevSsrcStats?.freezeCount || 0);
+        ssrcMetrics.freezeRate = (freezeCountDiff * 1000) / timeDiff;
     } else {
         const kfCountDiff = currentSsrcStats.keyFramesEncoded - (prevSsrcStats?.keyFramesEncoded || 0);
 

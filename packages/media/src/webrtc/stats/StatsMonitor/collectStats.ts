@@ -8,7 +8,7 @@ import {
 } from "./metrics";
 import { getPeerConnectionsWithStatsReports } from "./peerConnection";
 import { getPeerConnectionIndex, removePeerConnection } from "./peerConnectionTracker";
-import { StatsClient, ViewStats } from "../types";
+import { RenderedDimensionsReport, StatsClient, ViewStats } from "../types";
 import rtcStats from "../../rtcStatsService";
 
 const getOrCreateSsrcMetricsContainer = (
@@ -44,14 +44,20 @@ const getOrCreateSsrcMetricsContainer = (
     return ssrcStats;
 };
 
-const removeNonUpdatedStats = (statsByView: Record<string, ViewStats>, time: number) => {
+const removeNonUpdatedStats = (
+    statsByView: Record<string, ViewStats>,
+    time: number,
+    renderedDimensionsByTrack: Record<string, RenderedDimensionsReport>,
+) => {
     Object.entries(statsByView).forEach(([viewId, viewStats]) => {
         if (viewStats.updated !== undefined && viewStats.updated < time) {
+            Object.keys(viewStats.tracks).forEach((trackId) => delete renderedDimensionsByTrack[trackId]);
             delete statsByView[viewId];
         } else {
             Object.entries(viewStats.tracks).forEach(([trackId, trackStats]) => {
                 if (trackStats.updated < time) {
                     delete viewStats.tracks[trackId];
+                    delete renderedDimensionsByTrack[trackId];
                 } else {
                     Object.entries(trackStats.ssrcs).forEach(([ssrc, ssrcStats]) => {
                         if (ssrcStats.updated < time) {
@@ -101,7 +107,9 @@ export async function collectStats(
         const timeSinceLastUpdate = Date.now() - state.lastUpdateTime;
         if (timeSinceLastUpdate < 400) {
             if (immediate) return state.statsByView;
-            state.subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(state.statsByView, clients));
+            state.subscriptions.forEach((subscription) =>
+                subscription.onUpdatedStats?.(state.statsByView, clients, state.renderedDimensionsByTrack),
+            );
             state.nextTimeout = setTimeout(collectStatsBound, interval);
             return;
         }
@@ -241,7 +249,7 @@ export async function collectStats(
                 });
         });
 
-        removeNonUpdatedStats(state.statsByView, state.lastUpdateTime);
+        removeNonUpdatedStats(state.statsByView, state.lastUpdateTime, state.renderedDimensionsByTrack);
 
         // mark candidatepairs as active/inactive
         Object.entries(defaultViewStats?.candidatePairs || {}).forEach(([cpKey, cp]) => {
@@ -262,7 +270,9 @@ export async function collectStats(
         if (immediate) {
             return state.statsByView;
         } else {
-            state.subscriptions.forEach((subscription) => subscription.onUpdatedStats?.(state.statsByView, clients));
+            state.subscriptions.forEach((subscription) =>
+                subscription.onUpdatedStats?.(state.statsByView, clients, state.renderedDimensionsByTrack),
+            );
         }
     } catch (e: any) {
         logger.warn(e);

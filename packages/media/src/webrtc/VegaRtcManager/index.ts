@@ -26,6 +26,7 @@ import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumb
 import { ClearableTimeout, ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
+import { updateRenderedDimensions } from "../stats/StatsMonitor";
 import {
     VegaCreateTransportResponse,
     VegaGetCapabilitiesResponse,
@@ -1747,6 +1748,7 @@ export default class VegaRtcManager implements RtcManager {
             this._streamIdToVideoResolution.set(streamId, { width, height });
             return;
         }
+        updateRenderedDimensions(consumer.track?.id, { width, height, time: Date.now() });
 
         const numberOfActiveVideos = getNumberOfActiveVideos(this._consumers);
         const numberOfTemporalLayers = getNumberOfTemporalLayers(consumer);

@@ -1,5 +1,13 @@
-import { MediaStreamTrackWithDenoiserContext, SsrcStats, StatsClient, TrackStats, ViewStats } from "../types";
+import {
+    MediaStreamTrackWithDenoiserContext,
+    RenderedDimensionsReport,
+    SsrcStats,
+    StatsClient,
+    TrackStats,
+    ViewStats,
+} from "../types";
 import { getRoomMode } from "../../RtcManagerDispatcher";
+import { qualityCriticalDetector, qualityWarningDetector } from "./qualityDetectors";
 
 export interface IssueDetector {
     id: string;
@@ -13,6 +21,7 @@ export interface IssueCheckData {
     clients: StatsClient[];
     kind: string;
     track: MediaStreamTrack | MediaStreamTrackWithDenoiserContext | undefined;
+    renderedDimensions?: RenderedDimensionsReport;
     trackStats?: TrackStats;
     stats?: ViewStats;
     hasLiveTrack: boolean;
@@ -290,6 +299,8 @@ export const issueDetectors: IssueDetector[] = [
             (ssrc0.audioLevel || 0) >= 0.001 &&
             (ssrc0.audioAcceleration || 0) >= 0.1,
     },
+    qualityWarningDetector,
+    qualityCriticalDetector,
     // todo:
     // jitter/congestion - increasing jitter for several "ticks"
     // encodeTime?
