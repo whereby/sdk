@@ -2,6 +2,7 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import type { LocalMediaOptions } from "./localMedia";
 import { coreVersion } from "../../version";
+import decodeRoomName from "../../utils/decodeRoomName";
 
 /**
  * Reducer
@@ -60,7 +61,7 @@ export const appSlice = createSlice({
             return {
                 ...state,
                 ...action.payload,
-                roomName: url.pathname,
+                roomName: decodeRoomName(url.pathname),
                 initialConfig: { ...action.payload },
                 isActive: true,
                 isAssistant: Boolean(action.payload.assistantKey),
