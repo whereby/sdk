@@ -14,6 +14,11 @@ export * from "./client/Grid";
 export * from "./client/Grid/types";
 export * from "./client/Grid/events";
 export type { AppConfig } from "./redux/slices/app";
+export type {
+    BreakoutSessionSettings,
+    StartBreakoutSessionOptions,
+    UpdateBreakoutSessionOptions,
+} from "./redux/slices/breakout";
 export { MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "./redux/slices/fileShare";
 export type { ClientView } from "./redux/types";
 export type { ConnectionStatus } from "./redux/slices/roomConnection";

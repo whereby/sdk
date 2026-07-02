@@ -67,6 +67,7 @@ const createMockParticipant = ({
     isVideoEnabled: true,
     isLocalParticipant: false,
     breakoutGroup: null,
+    breakoutGroupAssigned: "",
     stream: hasStream
         ? ({
               getTracks: () => [
