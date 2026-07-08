@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.16.0
+
+### Minor Changes
+
+- 6be9bc2: Decode roomUrl on doAppStart
+
 ## 1.15.3
 
 ### Patch Changes
