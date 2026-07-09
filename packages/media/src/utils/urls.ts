@@ -41,4 +41,4 @@ export function fromLocation({ host = "whereby.com", protocol = "https:" } = {})
     };
 }
 
-export default fromLocation(window && window.location);
+export default fromLocation(typeof window !== "undefined" ? window.location : undefined);
