@@ -1,4 +1,6 @@
-const debugOn = process.env.NODE_ENV === "development" || new URLSearchParams(window.location.search).has("debug");
+const debugOn =
+    process.env.NODE_ENV === "development" ||
+    (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("debug"));
 
 export interface Debugger {
     print: (...args: any[]) => void;

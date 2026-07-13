@@ -14,7 +14,7 @@ import { trackAnnotations } from "../utils/annotations";
 
 const logger = new Logger();
 
-export const isMobile = /mobi/i.test(navigator.userAgent);
+export const isMobile = typeof navigator !== "undefined" && /mobi/i.test(navigator.userAgent);
 
 export class NoDevicesError extends Error {
     constructor(...args: any) {
@@ -371,8 +371,8 @@ export function hasGetDisplayMedia() {
 
 const defaultDisplayMediaConstraints = {
     video: {
-        width: { max: window.screen.width },
-        height: { max: window.screen.height },
+        width: { max: typeof window !== "undefined" ? window.screen.width : 0 },
+        height: { max: typeof window !== "undefined" ? window.screen.height : 0 },
     },
 };
 /**
