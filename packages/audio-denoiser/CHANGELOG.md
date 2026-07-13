@@ -1,5 +1,12 @@
 # @whereby.com/audio-denoiser
 
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies [d0c633b]
+    - @whereby.com/media@9.4.0
+
 ## 1.0.5
 
 ### Patch Changes
