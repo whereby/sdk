@@ -104,6 +104,7 @@ export interface SsrcStats {
     sourceWidth?: number;
     sourceFps?: number;
     freezeRate?: number;
+    freezeFraction?: number;
 }
 
 export type PCData = {

@@ -35,7 +35,7 @@ const createQualityDetector = (type: "warning" | "critical") => {
                     // we don't need to do anything special to detect 1 continous long freeze
                     // spanning multiple samples, as then it should show on framerate
                     const hadFreeze = !!ssrc0.freezeRate;
-
+                    const freezeFraction = ssrc0.freezeFraction || 0;
                     // even with good resolution+framerate, and no freezes, there can still be heavy compression
                     // we choose to verify the bitrate is at least above a low threshold for this.
                     // the qpSum in webrtc varies by codec, and possibly by content (lots of details changing),
@@ -66,7 +66,10 @@ const createQualityDetector = (type: "warning" | "critical") => {
                         if (type === "warning" && fpsReceived < 14) return true;
                         if (type === "critical" && fpsReceived < 9) return true;
 
-                        if (hadFreeze) return true;
+                        if (hadFreeze) {
+                            if (type === "warning" && freezeFraction > 0.3) return true;
+                            if (type === "critical" && freezeFraction > 0.6) return true;
+                        }
 
                         if (type === "warning" && bitrate < 50000) return true;
                         if (type === "critical" && bitrate < 20000) return true;
@@ -82,7 +85,11 @@ const createQualityDetector = (type: "warning" | "critical") => {
                         if (type === "warning" && bitrate < 200000) return true;
                         if (type === "critical" && bitrate < 50000) return true;
 
-                        if (hadFreeze) return true;
+                        if (hadFreeze) {
+                            // slightly lower thresholds when viewing a large tile
+                            if (type === "warning" && freezeFraction > 0.2) return true;
+                            if (type === "critical" && freezeFraction > 0.4) return true;
+                        }
                     }
                 }
             } else if (kind === "audio") {
@@ -100,12 +107,13 @@ const createQualityDetector = (type: "warning" | "critical") => {
                 // some say it varies, samples in a row is worse than samples inbetween
                 // modern versions using ML may handle it better then old etc.
                 // testing at 5% it feels a bit trigger happy on packetloss that isn't affecting video
-                // we try 10% for warning, 20% for critical
+                // further testing shows that some doesnt notice even 10%
+                // we try 15% for warning, 30% for critical
 
                 // we only care if there is audio level
                 if (audioLevel >= 0.01) {
-                    if (type === "warning" && audioDistortion > 0.1) return true;
-                    if (type === "critical" && audioDistortion > 0.2) return true;
+                    if (type === "warning" && audioDistortion > 0.15) return true;
+                    if (type === "critical" && audioDistortion > 0.3) return true;
                 }
             }
 
