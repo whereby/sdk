@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.4.0
+
+### Minor Changes
+
+- d0c633b: media: tweaked quality metric
+
 ## 9.3.1
 
 ### Patch Changes
