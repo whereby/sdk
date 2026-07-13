@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 1.16.1
+
+### Patch Changes
+
+- 89cfd0c: Fix crash in non-browser environments
+- Updated dependencies [89cfd0c]
+    - @whereby.com/media@9.3.1
+    - @whereby.com/audio-denoiser@1.0.5
+
 ## 1.16.0
 
 ### Minor Changes
