@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/audio-denoiser",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Audio denoiser (noise suppression) for microphone streams",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
