@@ -218,6 +218,10 @@ export function captureVideoSsrcMetrics(
 
         const freezeCountDiff = (currentSsrcStats.freezeCount || 0) - (prevSsrcStats?.freezeCount || 0);
         ssrcMetrics.freezeRate = (freezeCountDiff * 1000) / timeDiff;
+
+        const freezeDurationDiff =
+            (currentSsrcStats.totalFreezesDuration || 0) - (prevSsrcStats?.totalFreezesDuration || 0);
+        ssrcMetrics.freezeFraction = (freezeDurationDiff * 1000) / timeDiff;
     } else {
         const kfCountDiff = currentSsrcStats.keyFramesEncoded - (prevSsrcStats?.keyFramesEncoded || 0);
 
