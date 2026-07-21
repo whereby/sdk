@@ -97,6 +97,8 @@ type VegaAnalytics = {
     numIceConnected: number;
     numIceDisconnected: number;
     numIceFailed: number;
+    sfuMsFromOfflineToClose: number;
+    sfuOfflineWhileConnectedCount: number;
 };
 
 type VegaAnalyticMetric = keyof VegaAnalytics;
