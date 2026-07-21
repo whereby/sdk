@@ -22,6 +22,7 @@ describe("actions", () => {
                 organizationId: "orgId",
                 organizationName: "orgName",
             },
+            fetchedAt: expect.any(Number),
         });
     });
 });
