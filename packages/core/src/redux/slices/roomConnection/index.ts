@@ -305,6 +305,13 @@ startAppListening({
 });
 
 startAppListening({
+    actionCreator: signalEvents.clientKicked,
+    effect: (_, { dispatch }) => {
+        dispatch(doAppStop());
+    },
+});
+
+startAppListening({
     actionCreator: doAppStop,
     effect: (_, { dispatch, getState }) => {
         const state = getState();
