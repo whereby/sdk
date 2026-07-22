@@ -1,4 +1,6 @@
 import * as localMediaSlice from "../../slices/localMedia";
+import { initialState as appInitialState } from "../../slices/app";
+import { signalEvents } from "../../slices/signalConnection/actions";
 import { createStore } from "../store.setup";
 import { diff } from "deep-object-diff";
 import * as MediaDevices from "@whereby.com/media";
@@ -157,6 +159,27 @@ describe("actions", () => {
                     status: "stopped",
                     stream: undefined,
                 });
+            });
+
+            it("should stop all tracks when the local client is kicked", () => {
+                const store = createStore({
+                    withSignalConnection: true,
+                    connectToRoom: true,
+                    initialState: {
+                        ...initialState,
+                        localMedia: {
+                            ...initialState.localMedia!,
+                            options: { audio: true, video: true },
+                        },
+                        app: { ...appInitialState, isActive: true },
+                    },
+                });
+
+                store.dispatch(signalEvents.clientKicked({ clientId: "self-client-id" }));
+
+                expect(audioTrack.stop).toHaveBeenCalled();
+                expect(videoTrack.stop).toHaveBeenCalled();
+                expect(store.getState().localMedia.status).toEqual("stopped");
             });
         });
     });

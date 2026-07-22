@@ -1,5 +1,7 @@
 import { createStore, mockSignalEmit } from "../store.setup";
 import { doKnockRoom, doConnectRoom } from "../../slices/roomConnection";
+import { initialState as appInitialState } from "../../slices/app";
+import { signalEvents } from "../../slices/signalConnection/actions";
 import { diff } from "deep-object-diff";
 
 describe("actions", () => {
@@ -27,6 +29,23 @@ describe("actions", () => {
 
             expect(() => store.dispatch(doKnockRoom())).toThrow("Room is not locked, knock aborted");
             expect(mockSignalEmit).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("signalEvents.clientKicked", () => {
+        it("should stop the app so local media and connections are cleaned up", () => {
+            const store = createStore({
+                withSignalConnection: true,
+                connectToRoom: true,
+                initialState: {
+                    app: { ...appInitialState, isActive: true },
+                },
+            });
+
+            store.dispatch(signalEvents.clientKicked({ clientId: "self-client-id" }));
+
+            expect(store.getState().roomConnection.status).toEqual("kicked");
+            expect(store.getState().app.isActive).toEqual(false);
         });
     });
 
