@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.16.3
+
+### Patch Changes
+
+- e54cab7: core: release camera and microphone when the local client is kicked, eg when the meeting is ended by the host
+
 ## 1.16.2
 
 ### Patch Changes

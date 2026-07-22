@@ -1,5 +1,12 @@
 # @whereby.com/browser-sdk
 
+## 3.26.7
+
+### Patch Changes
+
+- Updated dependencies [e54cab7]
+    - @whereby.com/core@1.16.3
+
 ## 3.26.6
 
 ### Patch Changes
