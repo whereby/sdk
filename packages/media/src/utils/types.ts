@@ -526,6 +526,24 @@ export interface AddSpotlightRequest {
     streamId: string;
 }
 
+export interface BreakoutSessionUpdateRequest {
+    active?: boolean;
+    assignments?: {
+        [deviceId: string]: string;
+    } | null;
+    groups?: {
+        [groupId: string]: string;
+    } | null;
+    enforceAssignment?: boolean;
+    autoMoveToGroup?: boolean;
+    autoMoveToMain?: boolean;
+    moveToGroupGracePeriod?: number | null;
+    moveToMainGracePeriod?: number | null;
+    breakoutTimerSetting?: boolean;
+    breakoutTimerDuration?: number;
+    breakoutNotification?: string | null;
+}
+
 export interface RemoveSpotlightRequest {
     clientId: string;
     streamId: string;
@@ -539,6 +557,7 @@ export interface SignalRequests {
     handle_knock: { action: "accept" | "reject"; clientId: string; response: unknown };
     identify_device: IdentifyDeviceRequest;
     join_breakout_group: { group: string };
+    update_breakout_session: BreakoutSessionUpdateRequest;
     join_room: JoinRoomRequest;
     knock_room: KnockRoomRequest;
     leave_room: void;

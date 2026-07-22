@@ -8,6 +8,10 @@ import {
     doAppStop,
     doCancelKnock,
     doBreakoutJoin,
+    doStartBreakoutSession,
+    doUpdateBreakoutSession,
+    doStopBreakoutSession,
+    doAssignBreakoutParticipants,
     doEndMeeting,
     doKickParticipant,
     doKnockRoom,
@@ -34,6 +38,8 @@ import {
     selectNotificationsEmitter,
     setDisplayName,
     signalEvents,
+    StartBreakoutSessionOptions,
+    UpdateBreakoutSessionOptions,
     startAppListening,
     toggleCameraEnabled,
     toggleHdModeEnabled,
@@ -711,6 +717,38 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public joinBreakoutMainRoom() {
         this.store.dispatch(doBreakoutJoin({ group: "" }));
+    }
+
+    /**
+     * Start a breakout session. Requires host privileges.
+     * @param options - The groups, optional participant assignments and session settings.
+     */
+    public startBreakoutSession(options: StartBreakoutSessionOptions) {
+        this.store.dispatch(doStartBreakoutSession(options));
+    }
+
+    /**
+     * Update an ongoing breakout session's groups and/or settings. Requires host privileges.
+     * @param options - The groups, participant assignments and session settings to update.
+     */
+    public updateBreakoutSession(options: UpdateBreakoutSessionOptions) {
+        this.store.dispatch(doUpdateBreakoutSession(options));
+    }
+
+    /**
+     * Stop the ongoing breakout session. Requires host privileges.
+     */
+    public stopBreakoutSession() {
+        this.store.dispatch(doStopBreakoutSession());
+    }
+
+    /**
+     * Assign participants to breakout groups. Requires host privileges.
+     * @param assignments - A map of participant `clientId -> groupId`. Merged with the current
+     * assignments (participants not included keep theirs); an empty `groupId` unassigns the participant.
+     */
+    public assignBreakoutParticipants(assignments: { [clientId: string]: string }) {
+        this.store.dispatch(doAssignBreakoutParticipants({ assignments }));
     }
 
     /**

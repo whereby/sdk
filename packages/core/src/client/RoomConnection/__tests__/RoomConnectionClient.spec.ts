@@ -252,7 +252,7 @@ describe("RoomConnectionClient", () => {
                 remoteParticipants: { remoteParticipants: [{ id: "1" }] },
             });
             storeSubscriber();
-            expect(callback).toHaveBeenCalledWith([{ id: "1" }]);
+            expect(callback).toHaveBeenCalledWith([{ id: "1", breakoutGroupAssigned: "" }]);
 
             unsubscribe();
             (mockStore.getState as jest.Mock).mockReturnValue({
