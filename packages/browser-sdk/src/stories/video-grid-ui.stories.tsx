@@ -57,18 +57,24 @@ export const VideoGridStory = {
             return <p>Set room url on the Controls panel</p>;
         }
         const [isLocalScreenshareActive, setIsLocalScreenshareActive] = React.useState(false);
+        const [shouldJoin, setShouldJoin] = React.useState(false);
 
         const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: true, video: true } });
         const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
 
-        React.useEffect(() => {
-            joinRoom();
-            return () => leaveRoom();
-        }, []);
+        const handleToggleJoin = () => {
+            if (shouldJoin) {
+                leaveRoom();
+            } else {
+                joinRoom();
+            }
+            setShouldJoin(!shouldJoin);
+        };
 
         return (
             <>
                 <div className="controls">
+                    <button onClick={handleToggleJoin}>{shouldJoin ? "Leave room" : "Join room"}</button>
                     <button onClick={() => toggleCamera()}>Toggle camera</button>
                     <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                     <button
@@ -132,18 +138,24 @@ export const VideoGridStoryCustom = {
             return <p>Set room url on the Controls panel</p>;
         }
         const [isLocalScreenshareActive, setIsLocalScreenshareActive] = React.useState(false);
+        const [shouldJoin, setShouldJoin] = React.useState(false);
 
         const { actions } = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
         const { toggleCamera, toggleMicrophone, startScreenshare, stopScreenshare, joinRoom, leaveRoom } = actions;
 
-        React.useEffect(() => {
-            joinRoom();
-            return () => leaveRoom();
-        }, []);
+        const handleToggleJoin = () => {
+            if (shouldJoin) {
+                leaveRoom();
+            } else {
+                joinRoom();
+            }
+            setShouldJoin(!shouldJoin);
+        };
 
         return (
             <>
                 <div className="controls">
+                    <button onClick={handleToggleJoin}>{shouldJoin ? "Leave room" : "Join room"}</button>
                     <button onClick={() => toggleCamera()}>Toggle camera</button>
                     <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                     <button
@@ -187,6 +199,14 @@ export const VideoGridStoryCustom = {
                                             </ParticipantMenuItem>
                                         </ParticipantMenuContent>
                                     </ParticipantMenu>
+                                    {participant.displayName}
+                                </GridCell>
+                            );
+                        }}
+                        renderSubgridParticipant={({ participant }) => {
+                            return (
+                                <GridCell className={"gridCell"} participant={participant}>
+                                    <GridVideoView className={"videoView"} />
                                     {participant.displayName}
                                 </GridCell>
                             );
