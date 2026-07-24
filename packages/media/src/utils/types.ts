@@ -161,8 +161,19 @@ export interface KnockerLeftEvent {
     clientId: string;
 }
 
+export interface KnockResponseSender {
+    displayName?: string | null;
+    avatarUrl?: string | null;
+}
+
+export interface KnockResponse {
+    message?: string;
+    sender?: KnockResponseSender;
+}
+
 export interface KnockAcceptedEvent {
     clientId: string;
+    knockResponse?: KnockResponse;
     metadata: {
         roomKey: string;
         roomName: string;
@@ -170,8 +181,15 @@ export interface KnockAcceptedEvent {
     resolution: "accepted";
 }
 
+export interface KnockOnHoldEvent {
+    clientId: string;
+    knockResponse?: KnockResponse;
+    resolution: "on_hold";
+}
+
 export interface KnockRejectedEvent {
     clientId: string;
+    knockResponse?: KnockResponse;
     resolution: "rejected";
 }
 
@@ -454,7 +472,7 @@ export interface SignalEvents {
     connect_error: void;
     device_identified: void;
     disconnect: void;
-    knock_handled: KnockAcceptedEvent | KnockRejectedEvent;
+    knock_handled: KnockAcceptedEvent | KnockOnHoldEvent | KnockRejectedEvent;
     knocker_left: KnockerLeftEvent;
     new_client: NewClientEvent;
     room_joined: RoomJoinedEvent;
@@ -536,7 +554,7 @@ export interface SignalRequests {
     chat_message: ChatMessageRequest;
     enable_audio: { enabled: boolean };
     enable_video: { enabled: boolean };
-    handle_knock: { action: "accept" | "reject"; clientId: string; response: unknown };
+    handle_knock: { action: "accept" | "hold" | "reject"; clientId: string; knockResponse: KnockResponse };
     identify_device: IdentifyDeviceRequest;
     join_breakout_group: { group: string };
     join_room: JoinRoomRequest;

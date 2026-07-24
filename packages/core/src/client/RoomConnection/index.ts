@@ -9,6 +9,7 @@ import {
     doCancelKnock,
     doBreakoutJoin,
     doEndMeeting,
+    doHoldWaitingParticipant,
     doKickParticipant,
     doKnockRoom,
     doLockRoom,
@@ -576,11 +577,22 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     }
 
     /**
-     * Reject a waiting participant.
-     * @param participantId - The ID of the participant to reject.
+     * Put a waiting participant on hold, optionally sending them a message.
+     * The participant remains in the waiting room.
+     * @param participantId - The ID of the participant to put on hold.
+     * @param response - An optional message to show the waiting participant.
      */
-    public rejectWaitingParticipant(participantId: string) {
-        this.store.dispatch(doRejectWaitingParticipant({ participantId }));
+    public holdWaitingParticipant(participantId: string, response?: string) {
+        this.store.dispatch(doHoldWaitingParticipant({ participantId, response }));
+    }
+
+    /**
+     * Reject a waiting participant, optionally sending them a message.
+     * @param participantId - The ID of the participant to reject.
+     * @param response - An optional message to show the rejected participant.
+     */
+    public rejectWaitingParticipant(participantId: string, response?: string) {
+        this.store.dispatch(doRejectWaitingParticipant({ participantId, response }));
     }
 
     /**

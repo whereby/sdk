@@ -18,6 +18,7 @@ export interface RoomConnectionActions {
     askToSpeak: (participantId: string) => void;
     askToTurnOnCamera: (participantId: string) => void;
     acceptWaitingParticipant: (participantId: string) => void;
+    holdWaitingParticipant: (participantId: string, response?: string) => void;
     knock: () => void;
     cancelKnock: () => void;
     joinRoom: () => Promise<RoomJoinedSuccess>;
@@ -27,7 +28,7 @@ export interface RoomConnectionActions {
     turnOffParticipantCameras: (clientIds: string[]) => void;
     kickParticipant: (clientId: string) => void;
     endMeeting: (stayBehind?: boolean) => void;
-    rejectWaitingParticipant: (participantId: string) => void;
+    rejectWaitingParticipant: (participantId: string, response?: string) => void;
     sendChatMessage: (text: string, parentId?: string) => void;
     removeChatMessage: (id: string, sig?: string | null) => void;
     sendFiles: (files: File[]) => void;

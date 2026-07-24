@@ -113,6 +113,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             session: null,
             error: null,
             status: "connected",
+            knockResponse: null,
             ...initialState.roomConnection,
         };
     }

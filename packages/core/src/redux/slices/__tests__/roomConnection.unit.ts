@@ -21,6 +21,7 @@ describe("roomConnectionSlice", () => {
                         status: "room_locked",
                         session: null,
                         error: null,
+                        knockResponse: null,
                     });
                 });
 
@@ -37,6 +38,7 @@ describe("roomConnectionSlice", () => {
                         status: "disconnected",
                         session: null,
                         error: "room_full",
+                        knockResponse: null,
                     });
                 });
             });
@@ -73,6 +75,7 @@ describe("roomConnectionSlice", () => {
                         status: "connected",
                         session: null,
                         error: null,
+                        knockResponse: null,
                     });
                 });
             });
@@ -91,6 +94,7 @@ describe("roomConnectionSlice", () => {
                     status: "kicked",
                     session: null,
                     error: null,
+                    knockResponse: null,
                 });
             });
         });
@@ -103,6 +107,7 @@ describe("roomConnectionSlice", () => {
                     status: "disconnected",
                     session: null,
                     error: null,
+                    knockResponse: null,
                 });
             });
         });

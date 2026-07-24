@@ -99,8 +99,12 @@ export function useRoomConnection(
         (participantId: string) => client.acceptWaitingParticipant(participantId),
         [client],
     );
+    const holdWaitingParticipant = React.useCallback(
+        (participantId: string, response?: string) => client.holdWaitingParticipant(participantId, response),
+        [client],
+    );
     const rejectWaitingParticipant = React.useCallback(
-        (participantId: string) => client.rejectWaitingParticipant(participantId),
+        (participantId: string, response?: string) => client.rejectWaitingParticipant(participantId, response),
         [client],
     );
     const startCloudRecording = React.useCallback(() => client.startCloudRecording(), [client]);
@@ -167,6 +171,7 @@ export function useRoomConnection(
             askToSpeak,
             askToTurnOnCamera,
             acceptWaitingParticipant,
+            holdWaitingParticipant,
             knock,
             cancelKnock,
             joinRoom,

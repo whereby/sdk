@@ -18,6 +18,7 @@ import {
     ClientUnableToJoinEvent,
     CloudRecordingStartedEvent,
     KnockAcceptedEvent,
+    KnockOnHoldEvent,
     KnockRejectedEvent,
     KnockerLeftEvent,
     LiveCaptionsStartedEvent,
@@ -78,7 +79,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
         dispatch(signalEvents.roomSessionEnded(payload)),
     );
     socket.on("knocker_left", (payload: KnockerLeftEvent) => dispatch(signalEvents.knockerLeft(payload)));
-    socket.on("knock_handled", (payload: KnockAcceptedEvent | KnockRejectedEvent) =>
+    socket.on("knock_handled", (payload: KnockAcceptedEvent | KnockOnHoldEvent | KnockRejectedEvent) =>
         dispatch(signalEvents.knockHandled(payload)),
     );
     socket.on("screenshare_started", (payload: ScreenshareStartedEvent) =>
