@@ -1,9 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { KnockResponse } from "@whereby.com/media";
 import { RootState } from "../store";
 import { WaitingParticipant } from "../../RoomParticipant";
 import { createRoomConnectedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionSocket } from "./signalConnection";
+import { selectLocalParticipantDisplayName } from "./localParticipant/selectors";
 
 /**
  * Reducer
@@ -71,21 +73,43 @@ export const doAcceptWaitingParticipant = createRoomConnectedThunk(
         socket?.emit("handle_knock", {
             action: "accept",
             clientId: participantId,
-            response: {},
+            knockResponse: {},
+        });
+    },
+);
+
+export const doHoldWaitingParticipant = createRoomConnectedThunk(
+    (payload: { participantId: string; response?: string }) => (dispatch, getState) => {
+        const { participantId, response } = payload;
+        const state = getState();
+        const socket = selectSignalConnectionSocket(state);
+
+        const message = response?.trim();
+        const knockResponse: KnockResponse = message
+            ? { message, sender: { displayName: selectLocalParticipantDisplayName(state) } }
+            : {};
+
+        socket?.emit("handle_knock", {
+            action: "hold",
+            clientId: participantId,
+            knockResponse,
         });
     },
 );
 
 export const doRejectWaitingParticipant = createRoomConnectedThunk(
-    (payload: { participantId: string }) => (dispatch, getState) => {
-        const { participantId } = payload;
+    (payload: { participantId: string; response?: string }) => (dispatch, getState) => {
+        const { participantId, response } = payload;
         const state = getState();
         const socket = selectSignalConnectionSocket(state);
+
+        const message = response?.trim();
+        const knockResponse: KnockResponse = message ? { message, sender: {} } : {};
 
         socket?.emit("handle_knock", {
             action: "reject",
             clientId: participantId,
-            response: {},
+            knockResponse,
         });
     },
 );

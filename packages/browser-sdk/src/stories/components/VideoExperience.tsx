@@ -49,6 +49,7 @@ export default function VideoExperience({
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
     const [audioDenoiserSupported, setAudioDenoiserSupported] = useState<boolean | null>(null);
     const [audioDenoiserOn, setAudioDenoiserOn] = useState(false);
+    const [knockMessages, setKnockMessages] = useState<Record<string, string>>({});
 
     const { state, actions, events } = useRoomConnection(roomName, {
         localMediaOptions: {
@@ -97,6 +98,7 @@ export default function VideoExperience({
         toggleRaiseHand,
         askToSpeak,
         acceptWaitingParticipant,
+        holdWaitingParticipant,
         rejectWaitingParticipant,
         startCloudRecording,
         startLiveCaptions,
@@ -374,11 +376,21 @@ export default function VideoExperience({
                         <div className="waiting_room">
                             <h2>Waiting room</h2>
                             {waitingParticipants.map((p) => {
+                                const message = knockMessages[p.id] || "";
                                 return (
                                     <div key={p.id}>
                                         Waiting: {p.displayName || "unknown"} {p.id}
+                                        <input
+                                            type="text"
+                                            placeholder="Message (optional)"
+                                            value={message}
+                                            onChange={(e) =>
+                                                setKnockMessages((prev) => ({ ...prev, [p.id]: e.target.value }))
+                                            }
+                                        />
                                         <button onClick={() => acceptWaitingParticipant(p.id)}>Accept</button>
-                                        <button onClick={() => rejectWaitingParticipant(p.id)}>Reject</button>
+                                        <button onClick={() => holdWaitingParticipant(p.id, message)}>Hold</button>
+                                        <button onClick={() => rejectWaitingParticipant(p.id, message)}>Reject</button>
                                     </div>
                                 );
                             })}
