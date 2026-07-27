@@ -1,5 +1,11 @@
 # @whereby.com/browser-sdk
 
+## 3.27.0
+
+### Minor Changes
+
+- f4bf017: browser-sdk: add optional renderSubgridParticipant prop to the VideoGrid component, allowing developers to override the participant UI in the video subgrid
+
 ## 3.26.7
 
 ### Patch Changes
