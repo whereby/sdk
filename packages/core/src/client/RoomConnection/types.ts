@@ -65,6 +65,10 @@ export type LiveStreamState = {
 };
 
 export type BreakoutState = {
+    /** Breakout groups require a group (SFU) room; false in peer-to-peer rooms. */
+    isAvailable: boolean;
+    /** Set when a breakout action was refused, e.g. starting a session in a peer-to-peer room. */
+    error: string | null;
     isActive: boolean;
     currentGroup: {
         id: string | null;

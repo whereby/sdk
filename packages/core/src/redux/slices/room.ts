@@ -1,4 +1,5 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
+import { RoomMode } from "@whereby.com/media";
 import { RootState } from "../store";
 import { createAppAuthorizedThunk } from "../thunk";
 import { signalEvents } from "./signalConnection/actions";
@@ -35,10 +36,12 @@ function isRecorderClient(client: RemoteParticipant) {
 
 export interface RoomState {
     isLocked: boolean;
+    mode: RoomMode | null;
 }
 
 export const roomSliceInitialState: RoomState = {
     isLocked: false,
+    mode: null,
 };
 
 export const roomSlice = createSlice({
@@ -63,6 +66,9 @@ export const roomSlice = createSlice({
             return {
                 ...state,
                 isLocked: Boolean(room.isLocked),
+                // Signal re-sends room_joined when the room switches between modes, so this stays
+                // current. Fall back to the presence of an SFU, which is what decides P2P vs SFU.
+                mode: room.mode ?? (room.sfuServer ? "group" : "normal"),
             };
         });
 
@@ -125,6 +131,7 @@ export const doEndMeeting = createAppAuthorizedThunk(
  */
 
 export const selectRoomIsLocked = (state: RootState) => state.room.isLocked;
+export const selectRoomMode = (state: RootState) => state.room.mode;
 
 export const selectScreenshares = createSelector(
     selectLocalScreenshareStream,

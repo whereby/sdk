@@ -18,6 +18,7 @@ const breakoutConfig = {
         b: "Group B",
     },
     groupId: null,
+    error: null,
     startedAt: null,
     initiatedBy: null,
     breakoutStartedAt: null,

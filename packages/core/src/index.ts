@@ -21,6 +21,7 @@ export type {
 } from "./redux/slices/breakout";
 export {
     BREAKOUT_GROUPS_MIN_MAX,
+    BREAKOUT_UNAVAILABLE_ERROR,
     createBreakoutGroups,
     defaultBreakoutGroupName,
 } from "./redux/slices/breakout";
