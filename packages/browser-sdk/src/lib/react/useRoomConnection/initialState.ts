@@ -5,6 +5,8 @@ export const initialState: RoomConnectionState = {
     fileUploads: [],
     cloudRecording: undefined,
     breakout: {
+        isAvailable: false,
+        error: null,
         isActive: false,
         currentGroup: null,
         groups: null,

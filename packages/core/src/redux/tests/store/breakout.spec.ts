@@ -14,6 +14,7 @@ import {
     createBreakoutGroups,
     defaultBreakoutGroupName,
     breakoutSliceInitialState,
+    BREAKOUT_UNAVAILABLE_ERROR,
 } from "../../slices/breakout";
 
 describe("actions", () => {
@@ -29,7 +30,10 @@ describe("actions", () => {
         describe("when authorized", () => {
             it("should emit update_breakout_session with active: true", () => {
                 const store = createStore({
-                    initialState: { authorization: { roomKey: null, roleName: "host" } },
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        room: { isLocked: false, mode: "group" },
+                    },
                     withSignalConnection: true,
                 });
 
@@ -41,6 +45,27 @@ describe("actions", () => {
                     groups,
                     active: true,
                 });
+                expect(store.getState().breakout.error).toBeNull();
+            });
+        });
+
+        describe("when the room is peer-to-peer", () => {
+            it("should not emit, and expose the error on breakout state", () => {
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        room: { isLocked: false, mode: "normal" },
+                    },
+                    withSignalConnection: true,
+                });
+
+                // console.warn throws in these tests, see store.setup
+                expect(() => store.dispatch(doStartBreakoutSession({ groups: { a: "Group A" } }))).toThrow(
+                    BREAKOUT_UNAVAILABLE_ERROR,
+                );
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+                expect(store.getState().breakout.error).toEqual(BREAKOUT_UNAVAILABLE_ERROR);
             });
         });
 

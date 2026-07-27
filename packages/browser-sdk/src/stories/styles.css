@@ -49,6 +49,10 @@
     color: red;
 }
 
+.breakoutError {
+    color: red;
+}
+
 .toaster {
     border: 1px solid #713200;
     padding: 16px;

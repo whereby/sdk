@@ -1,4 +1,4 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { BreakoutConfig, BreakoutSessionUpdateRequest } from "@whereby.com/media";
 import { RootState } from "../store";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
@@ -50,17 +50,32 @@ function createBreakout({
  */
 export interface BreakoutState extends BreakoutConfig {
     groupId: string | null;
+    error: string | null;
 }
 
 export const breakoutSliceInitialState: BreakoutState = {
     ...createBreakout(),
     groupId: null,
+    error: null,
 };
+
+/**
+ * Breakout groups require an SFU ("group") room. In a peer-to-peer room, moving clients in and out
+ * of groups would tear down peer connections that never get re-established, so we refuse to start.
+ */
+export const BREAKOUT_UNAVAILABLE_ERROR = "Breakout groups are not available in peer-to-peer rooms";
 
 export const breakoutSlice = createSlice({
     name: "breakout",
     initialState: breakoutSliceInitialState,
-    reducers: {},
+    reducers: {
+        setBreakoutError: (state, action: PayloadAction<{ error: string | null }>) => {
+            return {
+                ...state,
+                error: action.payload.error,
+            };
+        },
+    },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
             if ("error" in action.payload) {
@@ -68,6 +83,9 @@ export const breakoutSlice = createSlice({
             }
 
             const { breakout } = action.payload || {};
+
+            // The room (and with it, its mode) may have changed, so any previous error no longer applies.
+            state = { ...state, error: null };
 
             if (breakout) {
                 return {
@@ -96,6 +114,12 @@ export const breakoutSlice = createSlice({
         });
     },
 });
+
+/**
+ * Action creators
+ */
+
+export const { setBreakoutError } = breakoutSlice.actions;
 
 export const doBreakoutJoin = createAppThunk((payload: { group: string }) => (_, getState) => {
     const state = getState();
@@ -169,8 +193,17 @@ function resolveClientAssignmentsToDeviceAssignments(
 
 export const doStartBreakoutSession = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToManageBreakout(state),
-    (payload: StartBreakoutSessionOptions) => (_, getState) => {
+    (payload: StartBreakoutSessionOptions) => (dispatch, getState) => {
         const state = getState();
+
+        if (!selectBreakoutIsAvailable(state)) {
+            dispatch(setBreakoutError({ error: BREAKOUT_UNAVAILABLE_ERROR }));
+            console.warn(BREAKOUT_UNAVAILABLE_ERROR);
+            return;
+        }
+
+        dispatch(setBreakoutError({ error: null }));
+
         const { assignments, ...rest } = payload;
         emitBreakoutSessionUpdate(state, {
             ...rest,
@@ -318,6 +351,10 @@ export const doStopBreakoutTimer = createAppAuthorizedThunk<void>(
  * Selectors
  */
 export const selectBreakoutRaw = (state: RootState) => state.breakout;
+export const selectBreakoutError = (state: RootState) => state.breakout.error;
+// Reads state.room directly rather than importing selectRoomMode: room.ts already imports from this
+// module, and the resulting import cycle would leave the selector undefined at module-eval time.
+export const selectBreakoutIsAvailable = (state: RootState) => state.room.mode === "group";
 export const selectBreakoutInitiatedBy = (state: RootState) => state.breakout.initiatedBy;
 export const selectBreakoutActive = (state: RootState) => !!state.breakout.startedAt;
 export const selectBreakoutAssignments = (state: RootState) => state.breakout.assignments;

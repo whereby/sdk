@@ -51,7 +51,9 @@ export default function BreakoutHostControls({
             <div>
                 Your role: <strong>{localParticipant?.roleName ?? "unknown"}</strong>
                 {!isHost ? " — breakout host actions require the host role (join with a host room key)" : ""}
+                {!breakout.isAvailable ? " — breakout requires a group room, this one is peer-to-peer" : ""}
             </div>
+            {breakout.error ? <div className="breakoutError">{breakout.error}</div> : null}
             {!breakout.isActive ? (
                 <>
                     <div className="breakoutGroupsEditor">
