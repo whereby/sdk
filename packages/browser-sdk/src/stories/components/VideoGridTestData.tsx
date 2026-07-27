@@ -8,7 +8,7 @@ export const WIDE = 16 / 9;
 export const PORTRAIT = 3 / 4;
 export const SQUARE = 1;
 
-const NAMES = [
+export const NAMES = [
     "Shannon Winegar",
     "Renaldo Bettcher",
     "Rufus Swarey",
@@ -29,7 +29,7 @@ const NAMES = [
     "Nakita Rudloff",
 ];
 
-const sampleNameForIndex = (index: number) => NAMES[((index % NAMES.length) + NAMES.length) % NAMES.length];
+export const sampleNameForIndex = (index: number) => NAMES[((index % NAMES.length) + NAMES.length) % NAMES.length];
 
 function WebRtcVideo({ children }: { children: React.ReactNode }) {
     return (

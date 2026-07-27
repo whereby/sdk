@@ -34,14 +34,15 @@
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-.controls, .hostControls {
+.controls,
+.hostControls {
     display: flex;
     gap: 10px;
     padding: 12px 4px;
 }
 
 .hostControls {
-    background-color: #EEE;
+    background-color: #eee;
 }
 
 .hostControlActionDisallowed {
@@ -91,13 +92,53 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .videoView {
     width: 100%;
-    height: 100%;
+    flex: 1 1 0;
+    min-height: 0;
     border-radius: 20px;
     border: 2px solid red;
+    object-fit: cover;
+}
+
+.gridCellName {
+    flex: none;
+    max-width: 100%;
+    padding: 2px 6px;
+    font-size: 14px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+/* Subgrid cells are small — contain the avatar/video and overlay the name at the bottom */
+.subgridCell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.subgridCellName {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 1px 4px;
+    font-size: 11px;
+    line-height: 1.3;
+    color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
 }
 
 .participantMenuTrigger {
@@ -108,23 +149,22 @@
     border-radius: 6px;
     padding: 4px;
     color: #ffffff;
-    left: 50%!important;
-    top: 50%!important;
+    left: 50% !important;
+    top: 50% !important;
     max-width: max-content;
 }
 
 .participantMenuContent {
-    background-color: rgba(0, 0, 0, 0.5)!important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
 }
 
 .participantMenuItem {
     color: #ffffff;
 
     &:hover {
-        background-color: rgba(0, 0, 0, 0.3)!important;
+        background-color: rgba(0, 0, 0, 0.3) !important;
     }
 }
-
 
 .chat {
     margin-top: 10px;

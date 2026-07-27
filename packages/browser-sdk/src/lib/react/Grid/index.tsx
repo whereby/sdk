@@ -131,6 +131,7 @@ function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellV
 
 interface GridProps {
     renderParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
+    renderSubgridParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
     renderFloatingParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
     gridGap?: number;
     videoGridGap?: number;
@@ -142,6 +143,7 @@ interface GridProps {
 
 function Grid({
     renderParticipant,
+    renderSubgridParticipant,
     renderFloatingParticipant,
     stageParticipantLimit,
     gridGap,
@@ -226,6 +228,9 @@ function Grid({
                 renderCellView({
                     cellView,
                     enableParticipantMenu,
+                    ...(renderSubgridParticipant
+                        ? { render: ({ participant }) => renderSubgridParticipant({ participant }) }
+                        : {}),
                 }),
             ),
         [cellViewsInSubgrid],
