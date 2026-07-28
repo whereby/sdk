@@ -1,9 +1,9 @@
-import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage } from "@whereby.com/media";
+import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage, KnockResponse } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
 import { ClientView, ConnectionStatus, FileUpload, NotificationsEventEmitter } from "../../redux";
 import LiveCaption from "../../api/models/LiveCaption";
 
-export type { RoomJoinedSuccess, ChatFileShare } from "@whereby.com/media";
+export type { RoomJoinedSuccess, ChatFileShare, KnockResponse, KnockResponseSender } from "@whereby.com/media";
 export type { FileUpload, FileShareError } from "../../redux";
 
 export type LocalMediaOptions = {
@@ -88,6 +88,7 @@ export type BreakoutState = {
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     connectionError: string | null;
+    knockResponse: KnockResponse | null;
     chatMessages: ChatMessage[];
     fileUploads: FileUpload[];
     cloudRecording?: CloudRecordingState;

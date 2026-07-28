@@ -8,3 +8,4 @@ export const selectRoomConnectionSession = (state: RootState) => state.roomConne
 export const selectRoomConnectionSessionId = (state: RootState) => state.roomConnection.session?.id;
 export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
 export const selectRoomConnectionError = (state: RootState) => state.roomConnection.error;
+export const selectRoomConnectionKnockResponse = (state: RootState) => state.roomConnection.knockResponse;

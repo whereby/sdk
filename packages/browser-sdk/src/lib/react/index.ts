@@ -25,6 +25,7 @@ export type {
     CloudRecordingState as CloudRecording,
     LiveStreamState as LiveStreaming,
     BreakoutState as Breakout,
+    KnockResponse,
     LocalParticipantState as LocalParticipant,
     RemoteParticipantState as RemoteParticipant,
     RoomConnectionState as RoomConnection,

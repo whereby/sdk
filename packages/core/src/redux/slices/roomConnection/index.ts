@@ -1,4 +1,5 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
+import { KnockResponse } from "@whereby.com/media";
 
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRoomConnectionError, selectRoomConnectionStatus } from "./selectors";
@@ -32,6 +33,7 @@ export type ConnectionStatus =
     | "connected"
     | "room_locked"
     | "knocking"
+    | "knock_on_hold"
     | "knock_rejected"
     | "kicked"
     | "leaving"
@@ -47,12 +49,14 @@ export interface RoomConnectionState {
     session: { createdAt: string; id: string } | null;
     status: ConnectionStatus;
     error: string | null;
+    knockResponse: KnockResponse | null;
 }
 
 export const roomConnectionSliceInitialState: RoomConnectionState = {
     session: null,
     status: "ready",
     error: null,
+    knockResponse: null,
 };
 
 export const roomConnectionSlice = createSlice({
@@ -63,6 +67,12 @@ export const roomConnectionSlice = createSlice({
             return {
                 ...state,
                 status: action.payload,
+            };
+        },
+        knockResponseReceived: (state, action: PayloadAction<KnockResponse | null>) => {
+            return {
+                ...state,
+                knockResponse: action.payload,
             };
         },
     },
@@ -142,7 +152,7 @@ export const roomConnectionSlice = createSlice({
  * Action creators
  */
 
-const { connectionStatusChanged } = roomConnectionSlice.actions;
+const { connectionStatusChanged, knockResponseReceived } = roomConnectionSlice.actions;
 
 export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
@@ -298,7 +308,11 @@ startAppListening({
         if (resolution === "accepted") {
             dispatch(setRoomKey(payload.metadata.roomKey));
             dispatch(doConnectRoom());
+        } else if (resolution === "on_hold") {
+            dispatch(knockResponseReceived(payload.knockResponse ?? null));
+            dispatch(connectionStatusChanged("knock_on_hold"));
         } else if (resolution === "rejected") {
+            dispatch(knockResponseReceived(payload.knockResponse ?? null));
             dispatch(connectionStatusChanged("knock_rejected"));
         }
     },
