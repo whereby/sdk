@@ -1,5 +1,16 @@
 # @whereby.com/media
 
+## 9.5.0
+
+### Minor Changes
+
+- c1191e0: Add waiting room message support for on-hold and reject knocks. Hosts can now
+  put a waiting participant on hold or reject them with an optional message via
+  `holdWaitingParticipant(participantId, message?)` and
+  `rejectWaitingParticipant(participantId, message?)`. Knockers receive the
+  message and, when put on hold, a new `knock_on_hold` connection status, both
+  exposed through the `knockResponse` field on the room connection state.
+
 ## 9.4.0
 
 ### Minor Changes
