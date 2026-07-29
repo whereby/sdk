@@ -2,6 +2,7 @@ export { Provider as WherebyProvider } from "./Provider";
 export { VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { useLocalMedia } from "./useLocalMedia";
+export { usePreCallTest } from "./usePreCallTest";
 export { Grid as VideoGrid, GridCell, GridVideoView } from "./Grid";
 export { MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "@whereby.com/core";
 export {
@@ -15,7 +16,19 @@ export { getUsableCameraEffectPresets, isAudioDenoiserSupported } from "@whereby
 
 export type { UseLocalMediaResult } from "./useLocalMedia/types";
 
+export type { UsePreCallTestOptions, UsePreCallTestResult } from "./usePreCallTest/types";
+
 export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConnection/types";
+
+export type {
+    PreCallTestDetails,
+    PreCallTestError,
+    PreCallTestErrorReason,
+    PreCallTestOptions,
+    PreCallTestResult,
+    PreCallTestState,
+    PreCallTestStatus,
+} from "@whereby.com/core";
 
 export type {
     ChatMessageState as ChatMessage,

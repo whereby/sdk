@@ -19,6 +19,7 @@ export * from "./slices/localParticipant/selectors";
 export * from "./slices/localScreenshare";
 export * from "./slices/notifications";
 export * from "./slices/organization";
+export * from "./slices/preCallTest";
 export * from "./slices/remoteParticipants";
 export * from "./slices/room";
 export * from "./slices/roomConnection";

@@ -66,6 +66,74 @@ function MyPreCallUX() {
 }
 ```
 
+#### usePreCallTest
+
+The `usePreCallTest` hook measures the connection between the end user and the
+Whereby media servers, so you can warn people about a poor network before they
+join a room. It needs no room and no local media, and runs on its own
+connection.
+
+Because the test saturates the connection to measure it, run it *before*
+joining — running it during a call takes bandwidth away from the call.
+
+```js
+import { usePreCallTest } from "@whereby.com/browser-sdk/react";
+
+function MyNetworkCheck() {
+    const { state, actions } = usePreCallTest();
+    const { status, result, error } = state;
+
+    return (
+        <div className="networkCheck">
+            <button onClick={() => actions.startTest()} disabled={status === "running"}>
+                {status === "running" ? "Testing…" : "Test my connection"}
+            </button>
+
+            {status === "completed" && result.success && <p>Your connection looks good.</p>}
+            {status === "completed" && result.warning && (
+                <p>
+                    Your connection may struggle: {result.details.recvAvailableBitrate.toFixed(1)} Mbps down,{" "}
+                    {(result.details.recvLoss * 100).toFixed(1)}% packet loss.
+                </p>
+            )}
+            {status === "failed" && <p>Could not test your connection: {error.message}</p>}
+        </div>
+    );
+}
+```
+
+The test takes 15 seconds by default; pass `{ durationSeconds }` to
+`startTest()` to change that (minimum 10 — below that there is not enough media
+to report on). `startTest()` also resolves with the same result object, if you
+prefer to await it rather than read `state`. Call `actions.stopTest()` to abort
+a run.
+
+`result.success` means no problems were found. `result.warning` means the test
+completed but the connection is degraded — the flags in `result.details` say
+which check tripped: `lowRecvAvailableBitrate` (below 1.5 Mbps), `highSendLoss`
+or `highRecvLoss` (above 3% packet loss). A test that could not produce a
+verdict at all sets `status` to `"failed"` and fills in `error`.
+
+##### Checking camera, microphone and speakers
+
+Unlike the network test, whether a camera or microphone *works* is a judgement
+only the end user can make — they have to see themselves and hear themselves.
+The SDK gives you the pieces to build that; the verdict comes from your UI:
+
+- **Camera** — render `localMedia.state.localStream` in a `<VideoView>` and let
+  the user switch between `cameraDevices`, then ask "can you see yourself?".
+- **Speakers** — play a sound and route it to the chosen device with
+  [`HTMLMediaElement.setSinkId()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/setSinkId)
+  using `localMedia.state.currentSpeakerDeviceId`, then ask "can you hear it?".
+- **Microphone** — feed the local stream's audio track into a Web Audio
+  [`AnalyserNode`](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode)
+  to draw a level meter, or record a few seconds with `MediaRecorder` and play
+  it back, then ask "can you hear yourself?".
+
+Device errors that *are* machine-detectable — blocked permissions, a device
+that fails to open — surface on `useLocalMedia` as `cameraDeviceError`,
+`microphoneDeviceError` and `startError`.
+
 #### useRoomConnection
 
 The `useRoomConnection` hook provides a way to connect participants in a given

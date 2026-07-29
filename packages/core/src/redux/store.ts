@@ -17,6 +17,7 @@ import { localParticipantSlice } from "./slices/localParticipant";
 import { localScreenshareSlice } from "./slices/localScreenshare";
 import { notificationsSlice } from "./slices/notifications";
 import { organizationSlice } from "./slices/organization";
+import { preCallTestSlice } from "./slices/preCallTest";
 import { remoteParticipantsSlice } from "./slices/remoteParticipants";
 import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
@@ -49,6 +50,7 @@ const appReducer = combineReducers({
     localScreenshare: localScreenshareSlice.reducer,
     notifications: notificationsSlice.reducer,
     organization: organizationSlice.reducer,
+    preCallTest: preCallTestSlice.reducer,
     remoteParticipants: remoteParticipantsSlice.reducer,
     room: roomSlice.reducer,
     roomConnection: roomConnectionSlice.reducer,
