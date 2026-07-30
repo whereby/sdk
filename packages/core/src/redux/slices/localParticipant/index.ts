@@ -8,7 +8,7 @@ import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../localMedia";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
 import { selectRoomConnectionStatus } from "../roomConnection/selectors";
-import { selectBreakoutAssignments, selectBreakoutGroups } from "../breakout";
+import { selectBreakoutActive, selectBreakoutAssignments, selectBreakoutGroups } from "../breakout";
 import { selectDeviceId } from "../deviceCredentials";
 import { doSetNotification, createNotificationEvent } from "../notifications";
 import { BreakoutGroupAssignedEventProps } from "../notifications/events";
@@ -252,8 +252,8 @@ createReactor(
 );
 
 createReactor(
-    [selectBreakoutAssignments, selectDeviceId, selectLocalParticipantRaw, selectBreakoutGroups],
-    ({ dispatch }, breakoutAssignments, deviceId, localParticipant, breakoutGroups) => {
+    [selectBreakoutAssignments, selectDeviceId, selectLocalParticipantRaw, selectBreakoutGroups, selectBreakoutActive],
+    ({ dispatch }, breakoutAssignments, deviceId, localParticipant, breakoutGroups, breakoutActive) => {
         const breakoutGroupAssigned = breakoutAssignments?.[deviceId || ""] || "";
 
         if (localParticipant.breakoutGroupAssigned === breakoutGroupAssigned) {
@@ -264,7 +264,7 @@ createReactor(
 
         // Notify the local participant when they've been assigned to a group. Unassignment
         // (empty group) is intentionally not surfaced as a notification.
-        if (breakoutGroupAssigned) {
+        if (breakoutGroupAssigned && breakoutActive) {
             const groupName = breakoutGroups?.[breakoutGroupAssigned] || "";
             dispatch(
                 doSetNotification(

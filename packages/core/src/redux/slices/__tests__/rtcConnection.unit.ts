@@ -75,7 +75,7 @@ describe("rtcConnectionSlice", () => {
 
         describe("selectStreamsToAccept", () => {
             const x = () => oneOf<{ id: number } | "x" | null | undefined>({ id: 1 }, "x", null, undefined);
-            const c = (id: string, streamStates: StreamState[], breakoutGroup = "") =>
+            const c = (id: string, streamStates: StreamState[], breakoutGroup: string | null = "") =>
                 randomRemoteParticipant({
                     id,
                     streams: streamStates.map((s, i) => ({ id: `${i}`, state: s })),
@@ -110,6 +110,25 @@ describe("rtcConnectionSlice", () => {
                     ).toEqual(expected);
                 },
             );
+
+            describe("when in a breakout group", () => {
+                // createRemoteParticipant normalizes a main room client's group to null
+                const mainRoomClient = c("id12", ["to_unaccept"], null);
+
+                it("should accept a spotlighted main room client, so their audio reaches the group", () => {
+                    const spotlights = [{ clientId: "id12", streamId: CAMERA_STREAM_ID }];
+
+                    expect(selectStreamsToAccept.resultFunc("ready", [mainRoomClient], "b", spotlights, false)).toEqual([
+                        { clientId: "id12", streamId: CAMERA_STREAM_ID, state: "to_accept" },
+                    ]);
+                });
+
+                it("should not accept a main room client who is not spotlighted", () => {
+                    expect(
+                        selectStreamsToAccept.resultFunc("ready", [c("id13", ["to_accept"], null)], "b", [], false),
+                    ).toEqual([{ clientId: "id13", streamId: CAMERA_STREAM_ID, state: "to_unaccept" }]);
+                });
+            });
         });
     });
 });
