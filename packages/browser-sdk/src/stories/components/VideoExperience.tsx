@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import DisplayNameForm from "./DisplayNameForm";
+import BreakoutPanel from "./breakout/BreakoutPanel";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
 import { VideoView } from "../../lib/react/VideoView";
@@ -45,6 +46,7 @@ export default function VideoExperience({
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const [chatMessageParent, setChatMessageParent] = useState("");
+    const [chatBroadcast, setChatBroadcast] = useState(false);
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
     const [audioDenoiserSupported, setAudioDenoiserSupported] = useState<boolean | null>(null);
@@ -112,8 +114,6 @@ export default function VideoExperience({
         removeSpotlight,
         turnOffParticipantCameras,
         askToTurnOnCamera,
-        joinBreakoutGroup,
-        joinBreakoutMainRoom,
         switchCameraEffect,
         switchCameraEffectCustom,
         clearCameraEffect,
@@ -315,6 +315,18 @@ export default function VideoExperience({
                 case "requestVideoDisable":
                     showRequestVideoDisableNotification(event);
                     break;
+                case "breakoutTimerEnding":
+                    toast(event.message, { id: "breakoutTimerEnding", icon: "⏳" });
+                    break;
+                case "breakoutTimerExtended":
+                    toast(event.message, { id: "breakoutTimerExtended", icon: "⏱️" });
+                    break;
+                case "breakoutTimerEnded":
+                    toast(event.message, { id: "breakoutTimerEnded", icon: "⏰" });
+                    break;
+                case "breakoutGroupAssigned":
+                    toast(event.message, { id: "breakoutGroupAssigned", icon: "👥" });
+                    break;
             }
         };
 
@@ -483,36 +495,15 @@ export default function VideoExperience({
                         </div>
                     )}
                     {showBreakoutGroups ? (
-                        <div>
-                            <h3>Breakout is {breakout.isActive ? "active" : "inactive"}</h3>
-                            {breakout.isActive ? <h2>Breakout groups</h2> : null}
-                            {breakout.isActive ? <h3>Current group: {breakout.currentGroup?.name}</h3> : null}
-                            {breakout.groupedParticipants.map((group) => {
-                                // main room
-                                if (group.group?.id === "") {
-                                    return null;
-                                }
-                                return (
-                                    <div key={group.group?.id}>
-                                        <h3>{group.group?.name}</h3>
-                                        {group.clients.map((p) => (
-                                            <div key={p.id}>{p.displayName || "Guest"}</div>
-                                        ))}
-                                        <button onClick={() => joinBreakoutGroup(group.group?.id || "")}>Join</button>
-                                    </div>
-                                );
-                            })}
-                            {breakout.isActive ? <h2>Main room</h2> : null}
-                            {breakout.groupedParticipants.map((p) => {
-                                if (p.group?.id === "") {
-                                    return p.clients.map((p) => <div key={p.id}>{p.displayName || "Guest"}</div>);
-                                }
-                                return null;
-                            })}
-                            {breakout.isActive ? (
-                                <button onClick={() => joinBreakoutMainRoom()}>Join main room</button>
-                            ) : null}
-                        </div>
+                        <BreakoutPanel
+                            breakout={breakout}
+                            connectionStatus={connectionStatus}
+                            localParticipant={localParticipant}
+                            remoteParticipants={remoteParticipants}
+                            spotlightedParticipants={spotlightedParticipants}
+                            actions={actions}
+                            showHostControls={showHostControls}
+                        />
                     ) : null}
 
                     {showCameraEffects ? (
@@ -773,12 +764,22 @@ export default function VideoExperience({
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                sendChatMessage(chatMessage, chatMessageParent);
+                                sendChatMessage(chatMessage, chatMessageParent, chatBroadcast);
                                 setChatMessage("");
                                 setChatMessageParent("");
                             }}
                         >
                             <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+                            {breakout.isActive ? (
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={chatBroadcast}
+                                        onChange={(e) => setChatBroadcast(e.target.checked)}
+                                    />
+                                    Broadcast to all groups
+                                </label>
+                            ) : null}
                             <select value={chatMessageParent} onChange={(e) => setChatMessageParent(e.target.value)}>
                                 <option key="chat-select-room" value="">
                                     Send to room

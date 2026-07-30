@@ -1,3 +1,4 @@
+import { SignalRoom } from "@whereby.com/media";
 import { roomSlice, roomSliceInitialState, selectScreenshares } from "../room";
 import { signalEvents } from "../signalConnection/actions";
 import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
@@ -45,6 +46,49 @@ describe("roomSlice", () => {
                         }),
                     );
                     expect(result.isLocked).toEqual(true);
+                });
+
+                describe("room mode", () => {
+                    const roomJoined = (room: Partial<SignalRoom>) =>
+                        roomSlice.reducer(
+                            undefined,
+                            signalEvents.roomJoined({
+                                selfId: "selfId",
+                                breakoutGroup: "",
+                                clientClaim: "clientClaim",
+                                eventClaim: "",
+                                room: {
+                                    mode: "normal",
+                                    clients: [],
+                                    knockers: [],
+                                    spotlights: [],
+                                    session: null,
+                                    isClaimed: true,
+                                    isLocked: false,
+                                    iceServers: { iceServers: [] },
+                                    mediaserverConfigTtlSeconds: 0,
+                                    name: "",
+                                    organizationId: "",
+                                    turnServers: [],
+                                    ...room,
+                                },
+                            }),
+                        );
+
+                    it("should use the room mode", () => {
+                        expect(roomJoined({ mode: "group" }).mode).toEqual("group");
+                        expect(roomJoined({ mode: "normal" }).mode).toEqual("normal");
+                    });
+
+                    it("should fall back to the presence of an sfu server", () => {
+                        expect(
+                            roomJoined({
+                                mode: undefined as unknown as SignalRoom["mode"],
+                                sfuServer: { url: "" } as SignalRoom["sfuServer"],
+                            }).mode,
+                        ).toEqual("group");
+                        expect(roomJoined({ mode: undefined as unknown as SignalRoom["mode"] }).mode).toEqual("normal");
+                    });
                 });
             });
         });

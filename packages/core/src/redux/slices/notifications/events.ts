@@ -43,6 +43,19 @@ export interface StickyReactionEventProps {
 }
 export type StickyReactionEvent = NotificationEvent<"remoteHandRaised" | "remoteHandLowered", StickyReactionEventProps>;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface BreakoutTimerEventProps {}
+export type BreakoutTimerEvent = NotificationEvent<
+    "breakoutTimerEnding" | "breakoutTimerEnded" | "breakoutTimerExtended",
+    BreakoutTimerEventProps
+>;
+
+export interface BreakoutGroupAssignedEventProps {
+    group: string;
+    groupName: string;
+}
+export type BreakoutGroupAssignedEvent = NotificationEvent<"breakoutGroupAssigned", BreakoutGroupAssignedEventProps>;
+
 type NotificationEventTypes = {
     ["requestAudioEnable"]: RequestAudioEvent;
     ["requestAudioDisable"]: RequestAudioEvent;
@@ -54,6 +67,10 @@ type NotificationEventTypes = {
     ["clientUnableToJoinFullRoom"]: SignalClientEvent;
     ["requestVideoEnable"]: RequestVideoEvent;
     ["requestVideoDisable"]: RequestVideoEvent;
+    ["breakoutTimerEnding"]: BreakoutTimerEvent;
+    ["breakoutTimerEnded"]: BreakoutTimerEvent;
+    ["breakoutTimerExtended"]: BreakoutTimerEvent;
+    ["breakoutGroupAssigned"]: BreakoutGroupAssignedEvent;
 };
 
 export type NotificationEvents = NotificationEventTypes[keyof NotificationEventTypes];

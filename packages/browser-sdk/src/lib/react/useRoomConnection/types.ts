@@ -1,4 +1,10 @@
-import { ChatFileShare, LocalMediaOptions, RoomJoinedSuccess } from "@whereby.com/core";
+import {
+    ChatFileShare,
+    LocalMediaOptions,
+    RoomJoinedSuccess,
+    StartBreakoutSessionOptions,
+    UpdateBreakoutSessionOptions,
+} from "@whereby.com/core";
 
 import { UseLocalMediaResult } from "../useLocalMedia/types";
 
@@ -29,7 +35,7 @@ export interface RoomConnectionActions {
     kickParticipant: (clientId: string) => void;
     endMeeting: (stayBehind?: boolean) => void;
     rejectWaitingParticipant: (participantId: string, response?: string) => void;
-    sendChatMessage: (text: string, parentId?: string) => void;
+    sendChatMessage: (text: string, parentId?: string, isBroadcast?: boolean) => void;
     removeChatMessage: (id: string, sig?: string | null) => void;
     sendFiles: (files: File[]) => void;
     downloadFile: (file: ChatFileShare) => Promise<Blob>;
@@ -52,6 +58,17 @@ export interface RoomConnectionActions {
     removeSpotlight: (clientId: string) => void;
     joinBreakoutGroup: (group: string) => void;
     joinBreakoutMainRoom: () => void;
+    startBreakoutSession: (options: StartBreakoutSessionOptions) => void;
+    updateBreakoutSession: (options: UpdateBreakoutSessionOptions) => void;
+    stopBreakoutSession: () => void;
+    assignBreakoutParticipants: (assignments: { [clientId: string]: string }) => void;
+    assignAllBreakoutParticipants: () => void;
+    unassignAllBreakoutParticipants: () => void;
+    shuffleBreakoutParticipants: () => void;
+    extendBreakoutTimer: (seconds?: number) => void;
+    stopBreakoutTimer: () => void;
+    broadcastToGroups: (participantId: string) => void;
+    stopBroadcastToGroups: (participantId: string) => void;
     switchCameraEffect: (effectId: string) => Promise<void>;
     switchCameraEffectCustom: (imageUrl: string) => Promise<void>;
     clearCameraEffect: () => Promise<void>;
