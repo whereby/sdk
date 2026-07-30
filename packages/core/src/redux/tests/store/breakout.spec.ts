@@ -1,5 +1,6 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { signalEvents } from "../../slices/signalConnection/actions";
 import {
     doBreakoutJoin,
     doStartBreakoutSession,
@@ -15,6 +16,7 @@ import {
     defaultBreakoutGroupName,
     breakoutSliceInitialState,
     BREAKOUT_UNAVAILABLE_ERROR,
+    selectBreakoutCurrentId,
 } from "../../slices/breakout";
 
 describe("actions", () => {
@@ -327,6 +329,39 @@ describe("actions", () => {
 
             expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", { breakoutTimerSetting: false });
         });
+    });
+});
+
+describe("signalEvents.breakoutGroupJoined", () => {
+    // Signal sends this to everyone in the room, including the client that joined the group.
+    it("should track the local participant's own group without touching remote participants", () => {
+        const remoteParticipant = randomRemoteParticipant({ id: "remote" });
+        const store = createStore({
+            initialState: {
+                localParticipant: randomLocalParticipant({ id: "self" }),
+                remoteParticipants: { remoteParticipants: [remoteParticipant] },
+            },
+        });
+
+        // console.error throws in these tests, see store.setup
+        expect(() => store.dispatch(signalEvents.breakoutGroupJoined({ clientId: "self", group: "a" }))).not.toThrow();
+
+        expect(selectBreakoutCurrentId(store.getState())).toEqual("a");
+        expect(store.getState().remoteParticipants.remoteParticipants).toEqual([remoteParticipant]);
+    });
+
+    it("should track a remote participant's group", () => {
+        const store = createStore({
+            initialState: {
+                localParticipant: randomLocalParticipant({ id: "self" }),
+                remoteParticipants: { remoteParticipants: [randomRemoteParticipant({ id: "remote" })] },
+            },
+        });
+
+        store.dispatch(signalEvents.breakoutGroupJoined({ clientId: "remote", group: "a" }));
+
+        expect(store.getState().remoteParticipants.remoteParticipants[0].breakoutGroup).toEqual("a");
+        expect(selectBreakoutCurrentId(store.getState())).toEqual("");
     });
 });
 

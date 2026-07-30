@@ -49,13 +49,11 @@ function createBreakout({
  * Reducer
  */
 export interface BreakoutState extends BreakoutConfig {
-    groupId: string | null;
     error: string | null;
 }
 
 export const breakoutSliceInitialState: BreakoutState = {
     ...createBreakout(),
-    groupId: null,
     error: null,
 };
 
@@ -100,16 +98,6 @@ export const breakoutSlice = createSlice({
             return {
                 ...state,
                 ...createBreakout(action.payload),
-            };
-        });
-        builder.addCase(signalEvents.breakoutGroupJoined, (state, action) => {
-            // @ts-ignore
-            if (action.meta?.localParticipantId !== action.payload.clientId) {
-                return state;
-            }
-            return {
-                ...state,
-                groupId: action.payload.group,
             };
         });
     },
@@ -385,12 +373,11 @@ export const selectBreakoutMoveToMainAt = createSelector(selectBreakoutRaw, (raw
     return new Date(raw.breakoutEndedAt).getTime() + (raw.moveToMainGracePeriod || 0) * 1000;
 });
 
+// The group the local participant is currently in, "" when in the main room. Maintained by the
+// localParticipant slice, which tracks breakout_group_joined events addressed to our own clientId.
 export const selectBreakoutCurrentId = createSelector(
-    selectBreakoutRaw,
     selectLocalParticipantBreakoutGroup,
-    (raw, localParticipantBreakoutGroup) => {
-        return raw.groupId || localParticipantBreakoutGroup || "";
-    },
+    (localParticipantBreakoutGroup) => localParticipantBreakoutGroup || "",
 );
 
 export const selectBreakoutCurrentGroup = createSelector(
