@@ -22,6 +22,7 @@ export type {
 export {
     BREAKOUT_GROUPS_MIN_MAX,
     BREAKOUT_UNAVAILABLE_ERROR,
+    DEFAULT_BREAKOUT_TIMER_DURATION,
     createBreakoutGroups,
     defaultBreakoutGroupName,
 } from "./redux/slices/breakout";
