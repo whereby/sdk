@@ -11,6 +11,9 @@ import { BreakoutTimerEventProps } from "./notifications/events";
 import { startAppListening } from "../listenerMiddleware";
 import { createAppThunk, createAppAuthorizedThunk } from "../thunk";
 
+/** Seconds a breakout timer runs for when one is enabled without an explicit duration. */
+export const DEFAULT_BREAKOUT_TIMER_DURATION = 1800;
+
 function createBreakout({
     assignments,
     groups,
@@ -35,7 +38,7 @@ function createBreakout({
         breakoutStartedAt: breakoutStartedAt || null,
         breakoutEndedAt: breakoutEndedAt || null,
         breakoutNotification: breakoutNotification || null,
-        breakoutTimerDuration: breakoutTimerDuration || 1800,
+        breakoutTimerDuration: breakoutTimerDuration || DEFAULT_BREAKOUT_TIMER_DURATION,
         autoMoveToGroup: autoMoveToGroup || false,
         moveToGroupGracePeriod: moveToGroupGracePeriod || 10,
         autoMoveToMain: autoMoveToMain || false,
@@ -136,8 +139,8 @@ export interface UpdateBreakoutSessionOptions extends BreakoutSessionSettings {
     assignments?: { [clientId: string]: string };
 }
 
-function ensureGracePeriods(state: RootState, payload: BreakoutSessionUpdateRequest): BreakoutSessionUpdateRequest {
-    const { moveToGroupGracePeriod, moveToMainGracePeriod } = state.breakout;
+function ensureDefaults(state: RootState, payload: BreakoutSessionUpdateRequest): BreakoutSessionUpdateRequest {
+    const { moveToGroupGracePeriod, moveToMainGracePeriod, breakoutTimerDuration } = state.breakout;
     const next = { ...payload };
 
     if (next.autoMoveToGroup === true && next.moveToGroupGracePeriod == null) {
@@ -146,13 +149,16 @@ function ensureGracePeriods(state: RootState, payload: BreakoutSessionUpdateRequ
     if (next.autoMoveToMain === true && next.moveToMainGracePeriod == null) {
         next.moveToMainGracePeriod = moveToMainGracePeriod ?? 30;
     }
+    if (next.breakoutTimerSetting === true && !next.breakoutTimerDuration) {
+        next.breakoutTimerDuration = breakoutTimerDuration || DEFAULT_BREAKOUT_TIMER_DURATION;
+    }
 
     return next;
 }
 
 function emitBreakoutSessionUpdate(state: RootState, payload: BreakoutSessionUpdateRequest) {
     const { socket } = selectSignalConnectionRaw(state);
-    socket?.emit("update_breakout_session", ensureGracePeriods(state, payload));
+    socket?.emit("update_breakout_session", ensureDefaults(state, payload));
 }
 
 function resolveClientAssignmentsToDeviceAssignments(

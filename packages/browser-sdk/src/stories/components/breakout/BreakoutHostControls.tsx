@@ -129,8 +129,20 @@ export default function BreakoutHostControls({
                                 checked={breakout.breakoutTimerSetting}
                                 onChange={(e) => updateBreakoutSession({ breakoutTimerSetting: e.target.checked })}
                             />
-                            Set a timer to end the session (duration is configurable once started)
-                        </label>
+                            Set a timer to end the session
+                        </label>{" "}
+                        {breakout.breakoutTimerSetting ? (
+                            <label>
+                                duration (s):{" "}
+                                <input
+                                    type="number"
+                                    value={breakout.breakoutTimerDuration}
+                                    onChange={(e) =>
+                                        updateBreakoutSession({ breakoutTimerDuration: Number(e.target.value) })
+                                    }
+                                />
+                            </label>
+                        ) : null}
                     </div>
 
                     <div>
@@ -184,19 +196,9 @@ export default function BreakoutHostControls({
                 <div className="breakoutTimerControls">
                     {breakout.breakoutTimerSetting ? (
                         <div>
-                            <label>
-                                Timer duration (s):{" "}
-                                <input
-                                    type="number"
-                                    value={breakout.breakoutTimerDuration}
-                                    onChange={(e) =>
-                                        updateBreakoutSession({ breakoutTimerDuration: Number(e.target.value) })
-                                    }
-                                />
-                            </label>{" "}
                             {breakout.endTime ? (
                                 <span>Ends at {new Date(breakout.endTime).toLocaleTimeString()}</span>
-                            ) : null}
+                            ) : null}{" "}
                             <button onClick={() => extendBreakoutTimer(60)}>Extend +1 min</button>
                             <button onClick={() => stopBreakoutTimer()}>Stop timer</button>
                         </div>

@@ -16,6 +16,7 @@ import {
     defaultBreakoutGroupName,
     breakoutSliceInitialState,
     BREAKOUT_UNAVAILABLE_ERROR,
+    DEFAULT_BREAKOUT_TIMER_DURATION,
     selectBreakoutCurrentId,
 } from "../../slices/breakout";
 
@@ -48,6 +49,29 @@ describe("actions", () => {
                     active: true,
                 });
                 expect(store.getState().breakout.error).toBeNull();
+            });
+        });
+
+        describe("when starting with the timer enabled", () => {
+            it("should send a duration, so the session does not end immediately", () => {
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        room: { isLocked: false, mode: "group" },
+                    },
+                    withSignalConnection: true,
+                });
+
+                const groups = { a: "Group A", b: "Group B" };
+
+                store.dispatch(doStartBreakoutSession({ groups, breakoutTimerSetting: true }));
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                    groups,
+                    active: true,
+                    breakoutTimerSetting: true,
+                    breakoutTimerDuration: DEFAULT_BREAKOUT_TIMER_DURATION,
+                });
             });
         });
 
@@ -142,6 +166,61 @@ describe("actions", () => {
             expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
                 autoMoveToMain: true,
                 moveToMainGracePeriod: 30,
+            });
+        });
+
+        it("should send a duration when enabling the breakout timer without one", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: true }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: true,
+                breakoutTimerDuration: DEFAULT_BREAKOUT_TIMER_DURATION,
+            });
+        });
+
+        it("should send a duration when enabling the breakout timer with a zero duration", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: true, breakoutTimerDuration: 0 }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: true,
+                breakoutTimerDuration: DEFAULT_BREAKOUT_TIMER_DURATION,
+            });
+        });
+
+        it("should not override an explicitly provided timer duration", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: true, breakoutTimerDuration: 60 }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: true,
+                breakoutTimerDuration: 60,
+            });
+        });
+
+        it("should not send a duration when disabling the breakout timer", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: false }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: false,
             });
         });
 
