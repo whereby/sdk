@@ -1,5 +1,18 @@
 # @whereby.com/core
 
+## 1.18.0
+
+### Minor Changes
+
+- 6aa45eb: Add advanced breakout controls
+- 489953e: Add support for breakout configuration
+
+### Patch Changes
+
+- Updated dependencies [489953e]
+    - @whereby.com/media@9.6.0
+    - @whereby.com/audio-denoiser@1.0.8
+
 ## 1.17.0
 
 ### Minor Changes

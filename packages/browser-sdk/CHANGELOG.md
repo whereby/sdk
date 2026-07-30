@@ -1,5 +1,19 @@
 # @whereby.com/browser-sdk
 
+## 3.29.0
+
+### Minor Changes
+
+- 6aa45eb: Add advanced breakout controls
+- 489953e: Add support for breakout configuration
+
+### Patch Changes
+
+- Updated dependencies [6aa45eb]
+- Updated dependencies [489953e]
+    - @whereby.com/core@1.18.0
+    - @whereby.com/media@9.6.0
+
 ## 3.28.0
 
 ### Minor Changes
