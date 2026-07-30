@@ -1,12 +1,23 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
+import { signalEvents } from "../../slices/signalConnection/actions";
 import {
     doBreakoutJoin,
     doStartBreakoutSession,
     doUpdateBreakoutSession,
     doStopBreakoutSession,
     doAssignBreakoutParticipants,
+    doAssignAllBreakoutParticipants,
+    doUnassignAllBreakoutParticipants,
+    doShuffleBreakoutParticipants,
+    doExtendBreakoutTimer,
+    doStopBreakoutTimer,
+    createBreakoutGroups,
+    defaultBreakoutGroupName,
     breakoutSliceInitialState,
+    BREAKOUT_UNAVAILABLE_ERROR,
+    DEFAULT_BREAKOUT_TIMER_DURATION,
+    selectBreakoutCurrentId,
 } from "../../slices/breakout";
 
 describe("actions", () => {
@@ -22,7 +33,10 @@ describe("actions", () => {
         describe("when authorized", () => {
             it("should emit update_breakout_session with active: true", () => {
                 const store = createStore({
-                    initialState: { authorization: { roomKey: null, roleName: "host" } },
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        room: { isLocked: false, mode: "group" },
+                    },
                     withSignalConnection: true,
                 });
 
@@ -34,6 +48,50 @@ describe("actions", () => {
                     groups,
                     active: true,
                 });
+                expect(store.getState().breakout.error).toBeNull();
+            });
+        });
+
+        describe("when starting with the timer enabled", () => {
+            it("should send a duration, so the session does not end immediately", () => {
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        room: { isLocked: false, mode: "group" },
+                    },
+                    withSignalConnection: true,
+                });
+
+                const groups = { a: "Group A", b: "Group B" };
+
+                store.dispatch(doStartBreakoutSession({ groups, breakoutTimerSetting: true }));
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                    groups,
+                    active: true,
+                    breakoutTimerSetting: true,
+                    breakoutTimerDuration: DEFAULT_BREAKOUT_TIMER_DURATION,
+                });
+            });
+        });
+
+        describe("when the room is peer-to-peer", () => {
+            it("should not emit, and expose the error on breakout state", () => {
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        room: { isLocked: false, mode: "normal" },
+                    },
+                    withSignalConnection: true,
+                });
+
+                // console.warn throws in these tests, see store.setup
+                expect(() => store.dispatch(doStartBreakoutSession({ groups: { a: "Group A" } }))).toThrow(
+                    BREAKOUT_UNAVAILABLE_ERROR,
+                );
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+                expect(store.getState().breakout.error).toEqual(BREAKOUT_UNAVAILABLE_ERROR);
             });
         });
 
@@ -81,6 +139,114 @@ describe("actions", () => {
             );
 
             expect(mockSignalEmit).not.toHaveBeenCalled();
+        });
+
+        it("should send a grace period when enabling autoMoveToGroup without one", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ autoMoveToGroup: true }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                autoMoveToGroup: true,
+                moveToGroupGracePeriod: 10,
+            });
+        });
+
+        it("should send a grace period when enabling autoMoveToMain without one", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ autoMoveToMain: true }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                autoMoveToMain: true,
+                moveToMainGracePeriod: 30,
+            });
+        });
+
+        it("should send a duration when enabling the breakout timer without one", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: true }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: true,
+                breakoutTimerDuration: DEFAULT_BREAKOUT_TIMER_DURATION,
+            });
+        });
+
+        it("should send a duration when enabling the breakout timer with a zero duration", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: true, breakoutTimerDuration: 0 }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: true,
+                breakoutTimerDuration: DEFAULT_BREAKOUT_TIMER_DURATION,
+            });
+        });
+
+        it("should not override an explicitly provided timer duration", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: true, breakoutTimerDuration: 60 }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: true,
+                breakoutTimerDuration: 60,
+            });
+        });
+
+        it("should not send a duration when disabling the breakout timer", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ breakoutTimerSetting: false }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                breakoutTimerSetting: false,
+            });
+        });
+
+        it("should not override an explicitly provided grace period", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ autoMoveToGroup: true, moveToGroupGracePeriod: 25 }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                autoMoveToGroup: true,
+                moveToGroupGracePeriod: 25,
+            });
+        });
+
+        it("should not inject a grace period when disabling autoMoveToGroup", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUpdateBreakoutSession({ autoMoveToGroup: false }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", { autoMoveToGroup: false });
         });
     });
 
@@ -145,5 +311,147 @@ describe("actions", () => {
 
             expect(mockSignalEmit).not.toHaveBeenCalled();
         });
+    });
+
+    describe("doAssignAllBreakoutParticipants", () => {
+        it("should distribute all remote participants across the groups", () => {
+            const store = createStore({
+                initialState: {
+                    authorization: { roomKey: null, roleName: "host" },
+                    remoteParticipants: {
+                        remoteParticipants: [
+                            randomRemoteParticipant({ id: "client-1", deviceId: "device-1" }),
+                            randomRemoteParticipant({ id: "client-2", deviceId: "device-2" }),
+                        ],
+                    },
+                    breakout: { ...breakoutSliceInitialState, groups: { a: "Group A", b: "Group B" } },
+                },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doAssignAllBreakoutParticipants());
+
+            expect(mockSignalEmit).toHaveBeenCalledTimes(1);
+            const [, payload] = mockSignalEmit.mock.calls[0];
+            const assignments = payload.assignments as { [deviceId: string]: string };
+            expect(Object.keys(assignments).sort()).toEqual(["device-1", "device-2"]);
+            Object.values(assignments).forEach((groupId) => expect(["a", "b"]).toContain(groupId));
+        });
+    });
+
+    describe("doUnassignAllBreakoutParticipants", () => {
+        it("should clear all assignments", () => {
+            const store = createStore({
+                initialState: {
+                    authorization: { roomKey: null, roleName: "host" },
+                    breakout: { ...breakoutSliceInitialState, assignments: { "device-1": "a", "device-2": "b" } },
+                },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doUnassignAllBreakoutParticipants());
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", {
+                assignments: { "device-1": "", "device-2": "" },
+            });
+        });
+    });
+
+    describe("doShuffleBreakoutParticipants", () => {
+        it("should redistribute the currently-assigned participants", () => {
+            const store = createStore({
+                initialState: {
+                    authorization: { roomKey: null, roleName: "host" },
+                    breakout: {
+                        ...breakoutSliceInitialState,
+                        groups: { a: "Group A", b: "Group B" },
+                        assignments: { "device-1": "a", "device-2": "a", "device-3": "" },
+                    },
+                },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doShuffleBreakoutParticipants());
+
+            const [, payload] = mockSignalEmit.mock.calls[0];
+            const assignments = payload.assignments as { [deviceId: string]: string };
+            // Only previously-assigned (non-empty) devices are shuffled.
+            expect(Object.keys(assignments).sort()).toEqual(["device-1", "device-2"]);
+            Object.values(assignments).forEach((groupId) => expect(["a", "b"]).toContain(groupId));
+        });
+    });
+
+    describe("doExtendBreakoutTimer", () => {
+        it("should emit the increased duration", () => {
+            const store = createStore({
+                initialState: {
+                    authorization: { roomKey: null, roleName: "host" },
+                    breakout: { ...breakoutSliceInitialState, breakoutTimerDuration: 300 },
+                },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doExtendBreakoutTimer({ seconds: 120 }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", { breakoutTimerDuration: 420 });
+        });
+    });
+
+    describe("doStopBreakoutTimer", () => {
+        it("should disable the timer setting", () => {
+            const store = createStore({
+                initialState: { authorization: { roomKey: null, roleName: "host" } },
+                withSignalConnection: true,
+            });
+
+            store.dispatch(doStopBreakoutTimer());
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("update_breakout_session", { breakoutTimerSetting: false });
+        });
+    });
+});
+
+describe("signalEvents.breakoutGroupJoined", () => {
+    // Signal sends this to everyone in the room, including the client that joined the group.
+    it("should track the local participant's own group without touching remote participants", () => {
+        const remoteParticipant = randomRemoteParticipant({ id: "remote" });
+        const store = createStore({
+            initialState: {
+                localParticipant: randomLocalParticipant({ id: "self" }),
+                remoteParticipants: { remoteParticipants: [remoteParticipant] },
+            },
+        });
+
+        // console.error throws in these tests, see store.setup
+        expect(() => store.dispatch(signalEvents.breakoutGroupJoined({ clientId: "self", group: "a" }))).not.toThrow();
+
+        expect(selectBreakoutCurrentId(store.getState())).toEqual("a");
+        expect(store.getState().remoteParticipants.remoteParticipants).toEqual([remoteParticipant]);
+    });
+
+    it("should track a remote participant's group", () => {
+        const store = createStore({
+            initialState: {
+                localParticipant: randomLocalParticipant({ id: "self" }),
+                remoteParticipants: { remoteParticipants: [randomRemoteParticipant({ id: "remote" })] },
+            },
+        });
+
+        store.dispatch(signalEvents.breakoutGroupJoined({ clientId: "remote", group: "a" }));
+
+        expect(store.getState().remoteParticipants.remoteParticipants[0].breakoutGroup).toEqual("a");
+        expect(selectBreakoutCurrentId(store.getState())).toEqual("");
+    });
+});
+
+describe("breakout group helpers", () => {
+    it("defaultBreakoutGroupName", () => {
+        expect(defaultBreakoutGroupName("a")).toBe("Group A");
+    });
+
+    it("createBreakoutGroups clamps to the 2-20 range and uses default names", () => {
+        expect(createBreakoutGroups(3)).toEqual({ a: "Group A", b: "Group B", c: "Group C" });
+        expect(Object.keys(createBreakoutGroups(1))).toHaveLength(2);
+        expect(Object.keys(createBreakoutGroups(50))).toHaveLength(20);
     });
 });

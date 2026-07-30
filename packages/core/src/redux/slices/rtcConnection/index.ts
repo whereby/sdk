@@ -250,10 +250,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
     for (const { clientId, streamId, state } of payload) {
         const participant = remoteClients.find((p) => p.id === clientId);
         if (!participant) continue;
-        if (
-            state === "to_accept" ||
-            (state === "new_accept" && shouldAcceptNewClients)
-        ) {
+        if (state === "to_accept" || (state === "new_accept" && shouldAcceptNewClients)) {
             rtcManager.acceptNewStream({
                 streamId: streamId === CAMERA_STREAM_ID ? clientId : streamId,
                 clientId,
@@ -311,7 +308,10 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
     if (localMediaStream && rtcManager) {
-        rtcManager.addCameraStream(localMediaStream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
+        rtcManager.addCameraStream(localMediaStream, {
+            audioPaused: !isMicrophoneEnabled,
+            videoPaused: !isCameraEnabled,
+        });
     }
 
     dispatch(rtcManagerInitialized());
@@ -516,7 +516,7 @@ export const selectStreamsToAccept = createSelector(
                 if (
                     (!client.breakoutGroup && !breakoutCurrentId) || // Accept when both in falsy group
                     client.breakoutGroup === breakoutCurrentId || // Accept all in same breakout group
-                    ("" === client.breakoutGroup && clientSpotlight) || // Accept remote spotlights outside groups
+                    (!client.breakoutGroup && clientSpotlight) ||
                     ignoreBreakoutGroups // Accept all when ignoring breakout groups
                 ) {
                     // Already connected

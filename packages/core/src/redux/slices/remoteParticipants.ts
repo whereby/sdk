@@ -276,6 +276,12 @@ export const remoteParticipantsSlice = createSlice({
         builder.addCase(signalEvents.breakoutGroupJoined, (state, action) => {
             const { clientId, group } = action.payload;
 
+            // Signal also sends this to the client that joined the group, who is by definition not
+            // one of our remote participants. The localParticipant slice handles that case.
+            if (!findParticipant(state, clientId).participant) {
+                return state;
+            }
+
             return updateParticipant(state, clientId, {
                 breakoutGroup: group || null,
             });

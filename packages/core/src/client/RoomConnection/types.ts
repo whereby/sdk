@@ -73,6 +73,10 @@ export type LiveStreamState = {
 };
 
 export type BreakoutState = {
+    /** Breakout groups require a group (SFU) room; false in peer-to-peer rooms. */
+    isAvailable: boolean;
+    /** Set when a breakout action was refused, e.g. starting a session in a peer-to-peer room. */
+    error: string | null;
     isActive: boolean;
     currentGroup: {
         id: string | null;
@@ -80,6 +84,16 @@ export type BreakoutState = {
     } | null;
     groups: { [groupId: string]: string } | null;
     enforceAssignment: boolean;
+    autoMoveToGroup: boolean;
+    moveToGroupGracePeriod: number | null;
+    autoMoveToMain: boolean;
+    moveToMainGracePeriod: number | null;
+    breakoutTimerSetting: boolean;
+    breakoutTimerDuration: number;
+    startedAt: Date | null;
+    endTime: number | null;
+    moveToGroupAt: number | null;
+    moveToMainAt: number | null;
     groupedParticipants: {
         clients: ClientView[];
         group: {
@@ -88,6 +102,7 @@ export type BreakoutState = {
         } | null;
     }[];
     participantsInCurrentGroup: ClientView[];
+    broadcastingParticipants: ClientView[];
 };
 
 export interface RoomConnectionState {
