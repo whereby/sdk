@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.6.0
+
+### Minor Changes
+
+- 489953e: Add support for breakout configuration
+
 ## 9.5.0
 
 ### Minor Changes
