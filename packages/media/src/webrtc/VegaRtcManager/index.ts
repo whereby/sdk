@@ -134,8 +134,6 @@ export default class VegaRtcManager implements RtcManager {
     // OS, dead in reality) after the browser reports offline, until it actually closes.
     _sfuZombie: {
         offlineDetectedAt: number | null;
-        offlineToCloseMsCompleted: number;
-        offlineToCloseFlushInterval: any;
         onBrowserOffline: any;
     };
     analytics: VegaAnalytics;
@@ -245,8 +243,6 @@ export default class VegaRtcManager implements RtcManager {
         // onto the analytics object.
         this._sfuZombie = {
             offlineDetectedAt: null,
-            offlineToCloseMsCompleted: 0,
-            offlineToCloseFlushInterval: null,
             onBrowserOffline: () => this._sfuZombieOnOffline(),
         };
         if (typeof window !== "undefined") {
@@ -278,6 +274,7 @@ export default class VegaRtcManager implements RtcManager {
             numIceFailed: 0,
             sfuMsFromOfflineToClose: 0,
             sfuOfflineWhileConnectedCount: 0,
+            sfuOfflineToCloseCount: 0,
         };
     }
 
@@ -371,36 +368,23 @@ export default class VegaRtcManager implements RtcManager {
             sendTransportState: this._sendTransport?.connectionState,
             recvTransportState: this._receiveTransport?.connectionState,
         });
-
-        // A hard reload or tab close won't run disconnectAll, so keep sfuMsFromOfflineToClose fresh
-        // while the gap is open — that way Room: exited still carries the in-progress time even if
-        // the WS never closes and we never tear down cleanly.
-        this._sfuZombie.offlineToCloseFlushInterval = setInterval(() => {
-            if (this._sfuZombie.offlineDetectedAt !== null) {
-                this.analytics.sfuMsFromOfflineToClose =
-                    this._sfuZombie.offlineToCloseMsCompleted + (Date.now() - this._sfuZombie.offlineDetectedAt);
-            }
-        }, 1000);
     }
 
     _sfuZombieReset() {
         this._sfuZombie.offlineDetectedAt = null;
-        if (this._sfuZombie.offlineToCloseFlushInterval) {
-            clearInterval(this._sfuZombie.offlineToCloseFlushInterval);
-            this._sfuZombie.offlineToCloseFlushInterval = null;
-        }
     }
 
     _sfuZombieOnClose(): number | undefined {
         // The SFU WS closed. If we believed it dead (offline) and this is an unexpected close, bank
-        // how long after that it actually closed — the zombie time riding offline would cut. A clean
-        // leave runs disconnectAll first, which clears _reconnect. Returns the gap for the rtcstats
-        // event.
+        // how long after that it actually closed — the zombie time riding offline would cut. Only a
+        // real close counts: a WS that survives the offline (self-heals) never closes, so it adds
+        // nothing, keeping sfuMsFromOfflineToClose free of survived-offline inflation. A clean leave
+        // runs disconnectAll first, which clears _reconnect. Returns the gap for the rtcstats event.
         let msFromOfflineToClose: number | undefined;
         if (this._reconnect && this._sfuZombie.offlineDetectedAt !== null) {
             msFromOfflineToClose = Date.now() - this._sfuZombie.offlineDetectedAt;
-            this._sfuZombie.offlineToCloseMsCompleted += msFromOfflineToClose;
-            this.analytics.sfuMsFromOfflineToClose = this._sfuZombie.offlineToCloseMsCompleted;
+            this.analytics.sfuMsFromOfflineToClose += msFromOfflineToClose;
+            this.analytics.sfuOfflineToCloseCount++;
         }
         this._sfuZombieReset();
         return msFromOfflineToClose;
@@ -1861,12 +1845,9 @@ export default class VegaRtcManager implements RtcManager {
             this._reconnectTimeOut = null;
         }
 
-        // Temporary SFU-zombie telemetry: on a clean leave with the WS still a zombie, bank the
-        // in-progress offline→close gap, then release the listener and timer.
-        if (this._sfuZombie.offlineDetectedAt !== null) {
-            this._sfuZombie.offlineToCloseMsCompleted += Date.now() - this._sfuZombie.offlineDetectedAt;
-            this.analytics.sfuMsFromOfflineToClose = this._sfuZombie.offlineToCloseMsCompleted;
-        }
+        // Temporary SFU-zombie telemetry: a leave with an offline still open never saw a real close,
+        // so it's indistinguishable from a self-heal — don't bank it. Just reset and release the
+        // listener.
         this._sfuZombieReset();
         if (typeof window !== "undefined") {
             window.removeEventListener("offline", this._sfuZombie.onBrowserOffline);
