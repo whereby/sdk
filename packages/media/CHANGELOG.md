@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.6.1
+
+### Patch Changes
+
+- 34f86b3: Add internal telemetry for SFU media recovery after network changes
+
 ## 9.6.0
 
 ### Minor Changes
