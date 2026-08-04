@@ -29,6 +29,7 @@ describe("deviceCredentialsSlice", () => {
                         data: organizationData,
                         isFetching: isFetchingOrganization,
                         error: organizationError,
+                        fetchedAt: 0,
                     };
                     const deviceCredentialsRaw = {
                         isFetching: isFetchingDeviceCredentials,
