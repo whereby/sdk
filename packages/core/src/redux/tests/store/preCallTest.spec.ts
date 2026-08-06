@@ -2,6 +2,7 @@ import { BandwidthTester } from "@whereby.com/media";
 import {
     doStartPreCallTest,
     doStopPreCallTest,
+    isPreCallTestSupported,
     selectPreCallTestError,
     selectPreCallTestResult,
     selectPreCallTestStatus,
@@ -26,6 +27,27 @@ jest.mock("@whereby.com/media", () => {
 });
 
 const mockedBandwidthTester = BandwidthTester as unknown as jest.Mock;
+
+const stubBrowserCapabilities = () => {
+    HTMLCanvasElement.prototype.captureStream = jest.fn();
+    Object.defineProperty(window, "RTCPeerConnection", { writable: true, configurable: true, value: jest.fn() });
+};
+
+const removeBrowserCapability = (capability: "captureStream" | "RTCPeerConnection") => {
+    if (capability === "captureStream") {
+        delete (HTMLCanvasElement.prototype as Partial<HTMLCanvasElement>).captureStream;
+    } else {
+        Object.defineProperty(window, "RTCPeerConnection", {
+            writable: true,
+            configurable: true,
+            value: undefined,
+        });
+    }
+};
+
+beforeEach(() => {
+    stubBrowserCapabilities();
+});
 
 // Flush queued microtasks so the thunk reaches its event listeners.
 const flushMicrotasks = async () => {
@@ -164,6 +186,31 @@ describe("preCallTest", () => {
             expect(mockedBandwidthTester).toHaveBeenCalledTimes(1);
             expect(tester.close).not.toHaveBeenCalled();
             expect(selectPreCallTestStatus(store.getState())).toEqual("running");
+        });
+    });
+
+    describe("unsupported environments", () => {
+        it.each(["captureStream", "RTCPeerConnection"] as const)("refuses to run without %s", async (capability) => {
+            removeBrowserCapability(capability);
+            const store = createStore();
+
+            const { dispatched } = await startTest(store);
+
+            expect(await dispatched.unwrap()).toEqual(null);
+            expect(mockedBandwidthTester).not.toHaveBeenCalled();
+            expect(selectPreCallTestStatus(store.getState())).toEqual("failed");
+
+            const error = selectPreCallTestError(store.getState());
+            expect(error?.reason).toEqual("unsupported");
+            expect(error?.message).toContain(capability);
+        });
+
+        it("reports support up front so consumers can hide the UI", () => {
+            expect(isPreCallTestSupported()).toEqual(true);
+
+            removeBrowserCapability("captureStream");
+
+            expect(isPreCallTestSupported()).toEqual(false);
         });
     });
 

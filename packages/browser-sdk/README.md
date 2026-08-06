@@ -102,6 +102,23 @@ function MyNetworkCheck() {
 }
 ```
 
+##### Browser only
+
+The test captures a canvas as its video track, so it only runs in a browser. Check before you offer it:
+
+```js
+import { isPreCallTestSupported } from "@whereby.com/browser-sdk/react";
+
+if (isPreCallTestSupported()) {
+    // safe to render your network check UI
+}
+```
+
+If you call `startTest()` anyway, it fails with `error.reason === "unsupported"`
+and a message naming the missing capability.
+
+##### Reading the result
+
 The test takes 15 seconds by default; pass `{ durationSeconds }` to
 `startTest()` to change that (minimum 10 — below that there is not enough media
 to report on). `startTest()` also resolves with the same result object, if you

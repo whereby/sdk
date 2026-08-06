@@ -88,11 +88,19 @@ roomConnection.subscribeToConnectionStatus((state) => {
 
 #### Pre-call Test
 
-The `PreCallTestClient` measures the connection between this client and the Whereby media servers, so you can warn people about a poor network before they join. It needs no room and no local media, but it does need a browser environment, and it competes for bandwidth with any call already in progress — run it before joining.
+The `PreCallTestClient` measures the connection between this client and the Whereby media servers, so you can warn people about a poor network before they join. It needs no room and no local media, and it competes for bandwidth with any call already in progress — run it before joining.
+
+The test captures a canvas as its video track, so it **only runs in a browser** — not in Node (including the Assistant SDK) and not in React Native. Check with `isPreCallTestSupported()` before offering it; calling `startTest()` in an unsupported environment fails with `error.reason === "unsupported"`.
 
 Typical usage:
 
 ```js
+import { isPreCallTestSupported } from "@whereby.com/core";
+
+if (!isPreCallTestSupported()) {
+    return; 
+}
+
 // runs for 15 seconds by default; pass { durationSeconds } to change it (minimum 10)
 const result = await preCallTest.startTest();
 

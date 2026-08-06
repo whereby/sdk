@@ -102,6 +102,34 @@ export const selectPreCallTestError = (state: RootState) => state.preCallTest.er
 export const selectIsPreCallTestRunning = (state: RootState) => state.preCallTest.status === "running";
 
 /**
+ * Environment support
+ */
+
+function findMissingPreCallTestCapability(): string | null {
+    if (typeof document === "undefined" || typeof HTMLCanvasElement === "undefined") {
+        return "document";
+    }
+
+    if (typeof HTMLCanvasElement.prototype.captureStream !== "function") {
+        return "HTMLCanvasElement.captureStream";
+    }
+
+    if (typeof RTCPeerConnection === "undefined") {
+        return "RTCPeerConnection";
+    }
+
+    if (typeof WebSocket === "undefined") {
+        return "WebSocket";
+    }
+
+    return null;
+}
+
+export function isPreCallTestSupported(): boolean {
+    return findMissingPreCallTestCapability() === null;
+}
+
+/**
  * Thunks
  */
 
@@ -128,12 +156,16 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
             return null;
         }
 
-        if (typeof document === "undefined") {
+        const missingCapability = findMissingPreCallTestCapability();
+
+        if (missingCapability) {
             dispatch(
                 preCallTestFailed({
                     error: {
                         reason: "unsupported",
-                        message: "The pre-call test needs a browser environment and is not available here",
+                        message:
+                            `The pre-call test needs a browser environment and is not available here (missing ${missingCapability}). ` +
+                            "Call isPreCallTestSupported() to check availability.",
                     },
                 }),
             );
