@@ -1,6 +1,7 @@
 import {
     ChatFileShare,
     LocalMediaOptions,
+    RoomIntegrationProps,
     RoomJoinedSuccess,
     StartBreakoutSessionOptions,
     UpdateBreakoutSessionOptions,
@@ -58,6 +59,18 @@ export interface RoomConnectionActions {
     removeSpotlight: (clientId: string) => void;
     joinBreakoutGroup: (group: string) => void;
     joinBreakoutMainRoom: () => void;
+    startRoomIntegrationWithPicker: (options: {
+        roomIntegrationId: string;
+        featureSource?: string;
+    }) => Promise<boolean>;
+    startRoomIntegration: (options: {
+        roomIntegrationId: string;
+        tagName: string;
+        shareUrl: string;
+        props?: RoomIntegrationProps;
+    }) => void;
+    stopRoomIntegration: (options: { roomIntegrationSessionId: string; intent?: "stop" | "end" }) => void;
+    updateRoomIntegrationProps: (options: { roomIntegrationSessionId: string; props: RoomIntegrationProps }) => void;
     startBreakoutSession: (options: StartBreakoutSessionOptions) => void;
     updateBreakoutSession: (options: UpdateBreakoutSessionOptions) => void;
     stopBreakoutSession: () => void;
