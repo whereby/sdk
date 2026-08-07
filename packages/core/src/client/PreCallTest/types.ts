@@ -13,7 +13,6 @@ export type {
     PreCallTestDetails,
     PreCallTestError,
     PreCallTestErrorReason,
-    PreCallTestOptions,
     PreCallTestResult,
     PreCallTestStatus,
 } from "../../redux/slices/preCallTest";

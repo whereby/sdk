@@ -6,12 +6,11 @@ import { startAppListening } from "../listenerMiddleware";
 import { doAppStop } from "./app";
 import { selectIsHDModeEnabled, selectIsLowDataModeEnabled } from "./localMedia";
 
-export const MIN_PRE_CALL_TEST_DURATION_S = 10;
-export const DEFAULT_PRE_CALL_TEST_DURATION_S = 15;
+export const PRE_CALL_TEST_DURATION_S = 15;
 
 export type PreCallTestStatus = "idle" | "running" | "completed" | "failed";
 
-export type PreCallTestErrorReason = "timeout" | "unsupported" | "invalid-duration" | "unknown";
+export type PreCallTestErrorReason = "timeout" | "unsupported" | "unknown";
 
 export interface PreCallTestError {
     reason: PreCallTestErrorReason;
@@ -32,11 +31,6 @@ export interface PreCallTestResult {
     success: boolean;
     warning: boolean;
     details: PreCallTestDetails;
-}
-
-export interface PreCallTestOptions {
-    durationSeconds?: number;
-    sfuServerOverrideHost?: string;
 }
 
 export interface PreCallTestState {
@@ -133,26 +127,12 @@ export function isPreCallTestSupported(): boolean {
  * Thunks
  */
 
-export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, PreCallTestOptions | undefined>(
+export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, void>(
     "preCallTest/start",
-    async (options, { dispatch, getState }) => {
+    async (_, { dispatch, getState }) => {
         const state = getState();
 
         if (selectIsPreCallTestRunning(state)) {
-            return null;
-        }
-
-        const durationSeconds = options?.durationSeconds ?? DEFAULT_PRE_CALL_TEST_DURATION_S;
-
-        if (!Number.isFinite(durationSeconds) || durationSeconds < MIN_PRE_CALL_TEST_DURATION_S) {
-            dispatch(
-                preCallTestFailed({
-                    error: {
-                        reason: "invalid-duration",
-                        message: `durationSeconds must be at least ${MIN_PRE_CALL_TEST_DURATION_S}, got ${durationSeconds}`,
-                    },
-                }),
-            );
             return null;
         }
 
@@ -177,7 +157,6 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
         try {
             tester = new BandwidthTester({
                 features: {
-                    sfuServerOverrideHost: options?.sfuServerOverrideHost,
                     sfuVp9On: false,
                     h264On: false,
                     simulcastScreenshareOn: false,
@@ -278,7 +257,7 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
             tester.on("close", onClose);
 
             try {
-                tester.start(durationSeconds);
+                tester.start(PRE_CALL_TEST_DURATION_S);
             } catch (error) {
                 dispatch(
                     preCallTestFailed({

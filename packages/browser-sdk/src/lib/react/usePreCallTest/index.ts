@@ -1,8 +1,7 @@
 import * as React from "react";
-import { PreCallTestOptions, PreCallTestState } from "@whereby.com/core";
+import { PreCallTestState } from "@whereby.com/core";
 import { UsePreCallTestResult } from "./types";
 import { WherebyContext } from "../Provider";
-import { initialState } from "./initialState";
 
 /**
  * Measures the connection between this client and the Whereby media servers, so
@@ -14,19 +13,14 @@ import { initialState } from "./initialState";
  */
 export function usePreCallTest(): UsePreCallTestResult {
     const client = React.useContext(WherebyContext)?.getPreCallTest();
-    const [preCallTestState, setPreCallTestState] = React.useState<PreCallTestState>(() => initialState);
 
     if (!client) {
         throw new Error("WherebyClient is not initialized. Please wrap your component with WherebyProvider.");
     }
 
-    const isRunning = preCallTestState.status === "running";
-    const isRunningRef = React.useRef(isRunning);
-    isRunningRef.current = isRunning;
+    const [preCallTestState, setPreCallTestState] = React.useState<PreCallTestState>(() => client.getState());
 
     React.useEffect(() => {
-        // A test may already be running - started elsewhere, or before this
-        // component mounted.
         setPreCallTestState(client.getState());
 
         const unsubscribe = client.subscribe(setPreCallTestState);
@@ -34,15 +28,13 @@ export function usePreCallTest(): UsePreCallTestResult {
         return () => {
             unsubscribe();
 
-            // Leave a finished test's result in place for anyone else reading it;
-            // only tear down a test that is still consuming bandwidth.
-            if (isRunningRef.current) {
+            if (client.getState().status === "running") {
                 client.stopTest();
             }
         };
     }, [client]);
 
-    const startTest = React.useCallback((options?: PreCallTestOptions) => client.startTest(options), [client]);
+    const startTest = React.useCallback(() => client.startTest(), [client]);
     const stopTest = React.useCallback(() => client.stopTest(), [client]);
 
     return {

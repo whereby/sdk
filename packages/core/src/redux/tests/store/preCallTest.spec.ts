@@ -1,5 +1,6 @@
 import { BandwidthTester } from "@whereby.com/media";
 import {
+    PRE_CALL_TEST_DURATION_S,
     doStartPreCallTest,
     doStopPreCallTest,
     isPreCallTestSupported,
@@ -56,8 +57,8 @@ const flushMicrotasks = async () => {
     }
 };
 
-const startTest = async (store: ReturnType<typeof createStore>, options?: { durationSeconds?: number }) => {
-    const dispatched = store.dispatch(doStartPreCallTest(options));
+const startTest = async (store: ReturnType<typeof createStore>) => {
+    const dispatched = store.dispatch(doStartPreCallTest());
     await flushMicrotasks();
 
     return {
@@ -82,27 +83,13 @@ const successResult = {
 
 describe("preCallTest", () => {
     describe("doStartPreCallTest", () => {
-        it("runs for 15 seconds by default", async () => {
+        it("runs for the fixed test duration", async () => {
             const store = createStore();
 
             const { tester } = await startTest(store);
 
-            expect(tester.start).toHaveBeenCalledWith(15);
+            expect(tester.start).toHaveBeenCalledWith(PRE_CALL_TEST_DURATION_S);
             expect(selectPreCallTestStatus(store.getState())).toEqual("running");
-        });
-
-        it("rejects a duration shorter than the tester can report on", async () => {
-            const store = createStore();
-
-            const { dispatched } = await startTest(store, { durationSeconds: 5 });
-
-            expect(await dispatched.unwrap()).toEqual(null);
-            expect(mockedBandwidthTester).not.toHaveBeenCalled();
-            expect(selectPreCallTestStatus(store.getState())).toEqual("failed");
-            expect(selectPreCallTestError(store.getState())).toEqual({
-                reason: "invalid-duration",
-                message: "durationSeconds must be at least 10, got 5",
-            });
         });
 
         it("reports the result of a completed test", async () => {

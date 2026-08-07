@@ -1,5 +1,5 @@
 import * as React from "react";
-import { usePreCallTest } from "../../lib/react";
+import { PRE_CALL_TEST_DURATION_S, usePreCallTest } from "../../lib/react";
 import type { PreCallTestDetails, PreCallTestResult } from "../../lib/react";
 
 function Verdict({ result }: { result: PreCallTestResult }) {
@@ -40,13 +40,7 @@ function Details({ details }: { details: PreCallTestDetails }) {
     );
 }
 
-export default function PreCallTestExperience({
-    durationSeconds,
-    sfuServerOverrideHost,
-}: {
-    durationSeconds?: number;
-    sfuServerOverrideHost?: string;
-}) {
+export default function PreCallTestExperience() {
     const {
         state: { status, result, error },
         actions: { startTest, stopTest },
@@ -62,7 +56,7 @@ export default function PreCallTestExperience({
                 media, but it competes for bandwidth with any call in progress - run it before joining.
             </p>
             <div className="controls">
-                <button onClick={() => startTest({ durationSeconds, sfuServerOverrideHost })} disabled={isRunning}>
+                <button onClick={() => startTest()} disabled={isRunning}>
                     Start test
                 </button>
                 <button onClick={() => stopTest()} disabled={!isRunning}>
@@ -71,7 +65,7 @@ export default function PreCallTestExperience({
             </div>
             <p>
                 Status: <code>{status}</code>
-                {isRunning && ` (running for up to ${durationSeconds ?? 15} s)`}
+                {isRunning && ` (running for up to ${PRE_CALL_TEST_DURATION_S} s)`}
             </p>
             {error && (
                 <p className="preCallTestVerdictFailure">

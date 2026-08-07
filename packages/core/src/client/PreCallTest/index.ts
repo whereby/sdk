@@ -1,4 +1,4 @@
-import { doStartPreCallTest, doStopPreCallTest, type PreCallTestOptions, type PreCallTestResult } from "../../redux";
+import { doStartPreCallTest, doStopPreCallTest, type PreCallTestResult } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import { BaseClient } from "../BaseClient";
 import {
@@ -75,8 +75,8 @@ export class PreCallTestClient extends BaseClient<PreCallTestState, PreCallTestE
      * not complete - read `getState().error` for why. Calling this while a test
      * is already running resolves with `null` and leaves that test alone.
      */
-    public async startTest(options?: PreCallTestOptions): Promise<PreCallTestResult | null> {
-        return await this.store.dispatch(doStartPreCallTest(options)).unwrap();
+    public async startTest(): Promise<PreCallTestResult | null> {
+        return await this.store.dispatch(doStartPreCallTest()).unwrap();
     }
 
     /** Aborts a running test and returns to the idle state. */

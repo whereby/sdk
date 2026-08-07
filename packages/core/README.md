@@ -101,7 +101,7 @@ if (!isPreCallTestSupported()) {
     return; 
 }
 
-// runs for 15 seconds by default; pass { durationSeconds } to change it (minimum 10)
+// runs for a fixed duration, exported as PRE_CALL_TEST_DURATION_S
 const result = await preCallTest.startTest();
 
 if (result?.warning) {

@@ -119,11 +119,13 @@ and a message naming the missing capability.
 
 ##### Reading the result
 
-The test takes 15 seconds by default; pass `{ durationSeconds }` to
-`startTest()` to change that (minimum 10 — below that there is not enough media
-to report on). `startTest()` also resolves with the same result object, if you
-prefer to await it rather than read `state`. Call `actions.stopTest()` to abort
-a run.
+The test runs for a fixed duration, exported as `PRE_CALL_TEST_DURATION_S` if
+you want to show a countdown. It is not configurable on purpose: the pass and
+warn thresholds below are calibrated for a run of that length, so varying it
+would quietly change what a verdict means.
+
+`startTest()` also resolves with the same result object, if you prefer to await
+it rather than read `state`. Call `actions.stopTest()` to abort a run.
 
 `result.success` means no problems were found. `result.warning` means the test
 completed but the connection is degraded — the flags in `result.details` say

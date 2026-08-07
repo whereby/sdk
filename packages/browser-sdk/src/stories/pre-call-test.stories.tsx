@@ -10,14 +10,10 @@ import VideoExperience from "./components/VideoExperience";
 const defaultArgs: Meta = {
     title: "Examples/Pre-call test",
     argTypes: {
-        durationSeconds: { control: { type: "number", min: 10 } },
-        sfuServerOverrideHost: { control: "text" },
         roomUrl: { control: "text" },
         displayName: { control: "text" },
     },
     args: {
-        durationSeconds: 15,
-        sfuServerOverrideHost: "",
         roomUrl: process.env.STORYBOOK_ROOM,
         displayName: "SDK",
     },
@@ -34,19 +30,8 @@ export default defaultArgs;
 
 const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
-export const BandwidthTest = ({
-    durationSeconds,
-    sfuServerOverrideHost,
-}: {
-    durationSeconds?: number;
-    sfuServerOverrideHost?: string;
-}) => {
-    return (
-        <PreCallTestExperience
-            durationSeconds={durationSeconds}
-            sfuServerOverrideHost={sfuServerOverrideHost || undefined}
-        />
-    );
+export const BandwidthTest = () => {
+    return <PreCallTestExperience />;
 };
 
 /**
@@ -54,13 +39,7 @@ export const BandwidthTest = ({
  * keeps its result around for the next reader, while unmounting a running test
  * stops it so it no longer eats bandwidth.
  */
-export const BandwidthTestUnmount = ({
-    durationSeconds,
-    sfuServerOverrideHost,
-}: {
-    durationSeconds?: number;
-    sfuServerOverrideHost?: string;
-}) => {
+export const BandwidthTestUnmount = () => {
     const [isMounted, setIsMounted] = React.useState(true);
 
     return (
@@ -71,10 +50,7 @@ export const BandwidthTestUnmount = ({
                 </button>
             </div>
             {isMounted ? (
-                <PreCallTestExperience
-                    durationSeconds={durationSeconds}
-                    sfuServerOverrideHost={sfuServerOverrideHost || undefined}
-                />
+                <PreCallTestExperience />
             ) : (
                 <p>Unmounted. Mount again to see the state the test was left in.</p>
             )}
@@ -86,15 +62,7 @@ export const BandwidthTestUnmount = ({
  * Warn people about a bad connection before they join. Run the test first, then
  * let them join anyway if they want to.
  */
-export const BandwidthTestBeforeJoiningRoom = ({
-    durationSeconds,
-    roomUrl,
-    displayName,
-}: {
-    durationSeconds?: number;
-    roomUrl: string;
-    displayName?: string;
-}) => {
+export const BandwidthTestBeforeJoiningRoom = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
     const {
         state: { status, result },
         actions: { startTest },
@@ -113,7 +81,7 @@ export const BandwidthTestBeforeJoiningRoom = ({
         <div>
             <h3>Check your connection before joining</h3>
             <div className="controls">
-                <button onClick={() => startTest({ durationSeconds })} disabled={status === "running"}>
+                <button onClick={() => startTest()} disabled={status === "running"}>
                     {status === "running" ? "Testing connection..." : "Test connection"}
                 </button>
                 <button onClick={() => setHasJoined(true)}>Join room</button>

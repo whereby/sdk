@@ -12,11 +12,16 @@ export {
     ParticipantMenuTrigger,
 } from "./Grid/ParticipantMenu";
 
-export { getUsableCameraEffectPresets, isAudioDenoiserSupported, isPreCallTestSupported } from "@whereby.com/core";
+export {
+    getUsableCameraEffectPresets,
+    isAudioDenoiserSupported,
+    isPreCallTestSupported,
+    PRE_CALL_TEST_DURATION_S,
+} from "@whereby.com/core";
 
 export type { UseLocalMediaResult } from "./useLocalMedia/types";
 
-export type { UsePreCallTestOptions, UsePreCallTestResult } from "./usePreCallTest/types";
+export type { UsePreCallTestResult } from "./usePreCallTest/types";
 
 export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConnection/types";
 
@@ -24,7 +29,6 @@ export type {
     PreCallTestDetails,
     PreCallTestError,
     PreCallTestErrorReason,
-    PreCallTestOptions,
     PreCallTestResult,
     PreCallTestState,
     PreCallTestStatus,

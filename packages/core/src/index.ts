@@ -30,7 +30,7 @@ export {
     defaultBreakoutGroupName,
 } from "./redux/slices/breakout";
 export { MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "./redux/slices/fileShare";
-export { isPreCallTestSupported } from "./redux/slices/preCallTest";
+export { isPreCallTestSupported, PRE_CALL_TEST_DURATION_S } from "./redux/slices/preCallTest";
 export type { ClientView } from "./redux/types";
 export type { ConnectionStatus } from "./redux/slices/roomConnection";
 export type {
