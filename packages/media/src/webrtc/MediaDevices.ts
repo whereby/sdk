@@ -4,6 +4,7 @@ import {
     BuildDeviceListOptions,
     GetConstraintsOptions,
     GetDeviceDataResult,
+    GetInitialStreamOptions,
     GetStreamOptions,
     GetStreamResult,
     GetUpdatedDevicesResult,
@@ -172,30 +173,8 @@ export function replaceTracksInStream(stream: MediaStream, newStream: MediaStrea
     return replacedTracks;
 }
 
-/**
- * Gets stream or replace tracks in with some fallbacks
- *
- * @param constraintOpt - for mediaConstraints.getConstraints (audioId/videoId etc)
- * @param options.replaceStream - stream to put new tracks into (instead of returning fresh)
- * @param options.fallback - try to give working stream
- * @returns {Promise<{stream, error=null, attempts}>}
- */
-export async function getStream(
-    constraintOpt: GetConstraintsOptions,
-    { replaceStream, fallback = true }: GetStreamOptions = {},
-): Promise<GetStreamResult> {
-    let error: any;
-    let newConstraints: MediaStreamConstraints | undefined;
-    let retryConstraintOpt: any;
-    let stream: MediaStream | null = null;
+function createGetUserMediaAttempts() {
     const attempts: GetUserMediaAttempt[] = [];
-
-    const only = (constraintOpt.audioId === false && "video") || (constraintOpt.videoId === false && "audio");
-    // Mobile can't open two devices at once. Firefox also can't open two audio devices at once.
-    // It looks nicer when we don't stop tracks while getting new streams, so we try to not do it
-    // unless required.
-    const stopTracks = isMobile || only !== "video";
-    const constraints = getConstraints(constraintOpt);
 
     const attempt = async (c: MediaStreamConstraints): Promise<MediaStream> => {
         try {
@@ -215,6 +194,129 @@ export async function getStream(
             throw e;
         }
     };
+    const attachAttempts = (err?: any) => {
+        if (err) err.attempts = attempts;
+        return err;
+    };
+    return { attempts, attempt, attachAttempts };
+}
+
+export async function getInitialStream(constraintOpt: GetInitialStreamOptions): Promise<GetStreamResult> {
+    const { attempts, attempt, attachAttempts } = createGetUserMediaAttempts();
+    let error;
+    let stream;
+
+    const opts: GetConstraintsOptions = { ...constraintOpt, type: "exact" };
+
+    try {
+        stream = await attempt(getConstraints(opts));
+        return {
+            stream,
+            attempts,
+        };
+    } catch (e: any) {
+        logger.error(e);
+        error = e;
+    }
+
+    const acquireOneKind = async (targetConstraint: "videoId" | "audioId") => {
+        const retryOpts = {
+            ...opts,
+            options: {
+                ...opts.options,
+            },
+        };
+
+        let stream;
+        let lastError = error;
+
+        const ignoredConstraint = targetConstraint === "videoId" ? "audioId" : "videoId";
+
+        // Try with original constraints if the first combined attempt requested both kinds.
+        if (retryOpts[ignoredConstraint] !== false) {
+            retryOpts[ignoredConstraint] = false;
+
+            try {
+                stream = await attempt(getConstraints(retryOpts));
+                return stream;
+            } catch (e: any) {
+                logger.error(e);
+                lastError = e;
+            }
+        }
+
+        // Looser constraints cannot recover from a denied permission.
+        if (lastError?.name === "NotAllowedError") {
+            return;
+        }
+
+        // Drop deviceId from constraints if it was used.
+        if (retryOpts[targetConstraint]) {
+            retryOpts[targetConstraint] = null;
+            try {
+                stream = await attempt(getConstraints(retryOpts));
+                return stream;
+            } catch (e) {
+                logger.error(e);
+            }
+        }
+
+        // Try with lax constraints.
+        try {
+            retryOpts.options.lax = true;
+            stream = await attempt(getConstraints(retryOpts));
+            return stream;
+        } catch (e) {
+            logger.error(e);
+        }
+    };
+
+    if (opts.videoId !== false) {
+        stream = await acquireOneKind("videoId");
+    }
+
+    if (opts.audioId !== false) {
+        if (!stream) {
+            stream = await acquireOneKind("audioId");
+        } else {
+            const audioOnlyStream = await acquireOneKind("audioId");
+            if (audioOnlyStream) {
+                const audioTrack = audioOnlyStream.getAudioTracks()[0];
+                stream.addTrack(audioTrack);
+            }
+        }
+    }
+
+    if (!stream) {
+        throw attachAttempts(error ?? new Error("Unknown error"));
+    }
+    return { error, stream, attempts };
+}
+
+/**
+ * Gets stream or replace tracks in with some fallbacks
+ *
+ * @param constraintOpt - for mediaConstraints.getConstraints (audioId/videoId etc)
+ * @param options.replaceStream - stream to put new tracks into (instead of returning fresh)
+ * @param options.fallback - try to give working stream
+ * @returns {Promise<{stream, error=null, attempts}>}
+ */
+export async function getStream(
+    constraintOpt: GetConstraintsOptions,
+    { replaceStream, fallback = true }: GetStreamOptions = {},
+): Promise<GetStreamResult> {
+    let error: any;
+    let newConstraints: MediaStreamConstraints | undefined;
+    let retryConstraintOpt: any;
+    let stream: MediaStream | null = null;
+    const { attempts, attempt, attachAttempts } = createGetUserMediaAttempts();
+
+    const only = (constraintOpt.audioId === false && "video") || (constraintOpt.videoId === false && "audio");
+    // Mobile can't open two devices at once. Firefox also can't open two audio devices at once.
+    // It looks nicer when we don't stop tracks while getting new streams, so we try to not do it
+    // unless required.
+    const stopTracks = isMobile || only !== "video";
+    const constraints = getConstraints(constraintOpt);
 
     const addDetails = (err?: any, orgErr?: any) => {
         if (err) {
@@ -230,11 +332,6 @@ export async function getStream(
         } else {
             return new Error("Unknown error");
         }
-    };
-
-    const attachAttempts = (err: any): any => {
-        if (err) err.attempts = attempts;
-        return err;
     };
 
     const getSingleStream = async (e?: any) => {
