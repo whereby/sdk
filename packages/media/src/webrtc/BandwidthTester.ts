@@ -4,7 +4,8 @@ import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import Logger from "../utils/Logger";
 import { getMediasoupDeviceAsync } from "../utils/getMediasoupDevice";
-import { ClearableTimeout } from "../utils";
+import { BandwidthTestTokenRequestedEvent, ClearableTimeout, ServerSocket } from "../utils";
+import { PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model";
 
 const logger = new Logger();
 
@@ -75,22 +76,45 @@ export default class BandwidthTester extends EventEmitter {
                 },
             });
 
-            return this.close();
+            this.close();
+            return;
         }
 
-        this._runTime = runTime;
-        this._startTime = Date.now();
+        this._requestBandwidthTestToken()
+            .then((bandwidthTestToken) => {
+                this._runTime = runTime;
+                this._startTime = Date.now();
 
-        const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
-        const wsUrl = `wss://${host}`;
+                const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
+                const wsUrl = `wss://${host}?bandwidthTestClaim=${bandwidthTestToken}`;
 
-        this._vegaConnection = new VegaConnection(wsUrl, { protocol: "whereby-sfu#bw-test-v1" });
-        this._vegaConnection.on("open", () => this._start());
-        this._vegaConnection.on("close", () => this.close(true));
-        this._vegaConnection.on("message", (message: any) => this._onMessage(message));
+                this._vegaConnection = new VegaConnection(wsUrl, {
+                    protocol: "whereby-sfu#bw-test-v1",
+                });
+                this._vegaConnection.on("open", () => this._start());
+                this._vegaConnection.on("close", () => this.close(true));
+                this._vegaConnection.on("message", (message: any) => this._onMessage(message));
 
-        // If we don't get a response within 5 seconds, we close the test
-        this._startTimeout();
+                // If we don't get a response within 5 seconds, we close the test
+                this._startTimeout();
+            })
+            .catch((error) => {
+                if (!Object.values(PROTOCOL_RESPONSES).includes(error)) {
+                    throw error;
+                }
+
+                this.emit("result", {
+                    error: true,
+                    details: {
+                        ...(error === PROTOCOL_RESPONSES.BANDWIDTH_TEST_TOKEN_REQUESTED && {
+                            invalidClaim: true,
+                        }),
+                        ...(error === PROTOCOL_RESPONSES.RATE_LIMITED && { rateLimited: true }),
+                    },
+                });
+
+                this.close();
+            });
     }
 
     close(vegaConnectionClosed?: boolean) {
@@ -139,6 +163,44 @@ export default class BandwidthTester extends EventEmitter {
         this._vegaConnection = null;
 
         this.emit("close");
+    }
+
+    async _requestBandwidthTestToken() {
+        return new Promise<string>((resolve, reject) => {
+            logger.info("_requestBandwidthTestToken()");
+
+            const parsedUrl = new URL(process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net");
+            const socketHost = parsedUrl.origin;
+
+            const socketOverrides = {
+                autoConnect: true,
+            };
+
+            const signalSocket = new ServerSocket(socketHost, socketOverrides);
+
+            signalSocket.on("connect", () => {
+                signalSocket.emit(PROTOCOL_REQUESTS.REQUEST_BANDWIDTH_TEST_TOKEN);
+            });
+            signalSocket.on(
+                PROTOCOL_RESPONSES.BANDWIDTH_TEST_TOKEN_REQUESTED,
+                ({ error, bandwidthTestToken }: BandwidthTestTokenRequestedEvent, ack?: () => void) => {
+                    if (error) {
+                        logger.error("_requestBandwidthTestToken() [error:%o]", error);
+                        reject(PROTOCOL_RESPONSES.BANDWIDTH_TEST_TOKEN_REQUESTED);
+                        return;
+                    }
+
+                    resolve(bandwidthTestToken!);
+
+                    if (ack) {
+                        ack();
+                    }
+                },
+            );
+            signalSocket.on(PROTOCOL_RESPONSES.RATE_LIMITED, () => {
+                reject(PROTOCOL_RESPONSES.RATE_LIMITED);
+            });
+        });
     }
 
     async _start() {

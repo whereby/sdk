@@ -10,11 +10,35 @@ export const PRE_CALL_TEST_DURATION_S = 15;
 
 export type PreCallTestStatus = "idle" | "running" | "completed" | "failed";
 
-export type PreCallTestErrorReason = "timeout" | "unsupported" | "unknown";
+export type PreCallTestErrorReason = "invalidClaim" | "rateLimited" | "timeout" | "unsupported" | "unknown";
 
 export interface PreCallTestError {
     reason: PreCallTestErrorReason;
     message: string;
+}
+
+/**
+ * Flags the bandwidth tester can set on its error results. Each one maps to the
+ * error reason of the same name.
+ */
+interface PreCallTestErrorDetails {
+    invalidClaim?: boolean;
+    rateLimited?: boolean;
+    timeout?: boolean;
+}
+
+const PRE_CALL_TEST_ERROR_FLAGS = ["invalidClaim", "rateLimited", "timeout"] as const;
+
+const PRE_CALL_TEST_ERROR_MESSAGES: Record<PreCallTestErrorReason, string> = {
+    invalidClaim: "The pre-call test was rejected with an invalid bandwidth test claim",
+    rateLimited: "The pre-call test was rate limited by the Whereby media servers",
+    timeout: "Timed out connecting to the Whereby media servers",
+    unsupported: "The pre-call test is not supported in this environment",
+    unknown: "The connection to the Whereby media servers failed",
+};
+
+function getPreCallTestErrorReason(details?: PreCallTestErrorDetails): PreCallTestErrorReason {
+    return PRE_CALL_TEST_ERROR_FLAGS.find((flag) => details?.[flag]) ?? "unknown";
 }
 
 export interface PreCallTestResult {
@@ -185,7 +209,7 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
                 error?: boolean;
                 success?: boolean;
                 warning?: boolean;
-                details?: { timeout?: boolean };
+                details?: PreCallTestErrorDetails;
             }) => {
                 if (wasStopped()) {
                     settle(null);
@@ -193,13 +217,13 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
                 }
 
                 if (result?.error) {
+                    const reason = getPreCallTestErrorReason(result.details);
+
                     dispatch(
                         preCallTestFailed({
                             error: {
-                                reason: result.details?.timeout ? "timeout" : "unknown",
-                                message: result.details?.timeout
-                                    ? "Timed out connecting to the Whereby media servers"
-                                    : "The connection to the Whereby media servers failed",
+                                reason,
+                                message: PRE_CALL_TEST_ERROR_MESSAGES[reason],
                             },
                         }),
                     );
