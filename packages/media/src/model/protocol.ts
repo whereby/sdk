@@ -17,6 +17,7 @@ export const PROTOCOL_REQUESTS = {
     KICK_CLIENT: "kick_client",
     KNOCK_ROOM: "knock_room",
     LEAVE_ROOM: "leave_room",
+    REQUEST_BANDWIDTH_TEST_TOKEN: "request_bandwidth_test_token",
     SEND_CLIENT_METADATA: "send_client_metadata",
     SET_LOCK: "set_lock",
     SHARE_MEDIA: "share_media",
@@ -33,6 +34,7 @@ export const PROTOCOL_REQUESTS = {
 export const PROTOCOL_RESPONSES = {
     AUDIO_ENABLED: "audio_enabled",
     BACKGROUND_IMAGE_CHANGED: "background_image_changed",
+    BANDWIDTH_TEST_TOKEN_REQUESTED: "bandwidth_test_token_requested",
     BLOCK_ADDED: "block_added",
     BLOCK_REMOVED: "block_removed",
     CHAT_HISTORY_CLEARED: "chat_history_cleared",
@@ -61,6 +63,7 @@ export const PROTOCOL_RESPONSES = {
     OWNER_NOTIFIED: "owner_notified",
     OWNERS_CHANGED: "owners_changed",
     PLAY_CLIENT_STICKER: "play_client_sticker",
+    RATE_LIMITED: "rate_limited",
     ROOM_INTEGRATION_ENABLED: "room_integration_enabled",
     ROOM_INTEGRATION_DISABLED: "room_integration_disabled",
     ROOM_JOINED: "room_joined",
