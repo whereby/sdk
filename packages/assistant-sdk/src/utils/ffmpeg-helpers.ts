@@ -444,27 +444,54 @@ export function createFfmpegMixer() {
      */
     function stopFFmpegProcess(ffmpegProcess: ChildProcessWithoutNullStreams) {
         stopPacer();
-        if (ffmpegProcess && !ffmpegProcess.killed) {
+        if (!ffmpegProcess || ffmpegProcess.exitCode !== null) {
+            return;
+        }
+
+        try {
+            ffmpegProcess.stdout.unpipe();
+        } catch {
+            console.error("Failed to unpipe ffmpeg stdout");
+        }
+        for (let i = 0; i < MIXER_SLOTS; i++) {
+            const w = ffmpegProcess.stdio[3 + i] as Stream.Writable;
             try {
-                ffmpegProcess.stdout.unpipe();
+                w.end();
+                w.destroy();
             } catch {
-                console.error("Failed to unpipe ffmpeg stdout");
-            }
-            for (let i = 0; i < MIXER_SLOTS; i++) {
-                const w = ffmpegProcess.stdio[3 + i] as Stream.Writable;
-                try {
-                    w.end();
-                } catch {
-                    console.error("Failed to end ffmpeg writable stream");
-                }
-            }
-            try {
-                ffmpegProcess.stdin?.write("q\n");
-                ffmpegProcess.stdin?.end();
-            } catch {
-                console.error("Failed to end ffmpeg stdin");
+                console.error("Failed to end ffmpeg writable stream");
             }
         }
+        try {
+            ffmpegProcess.stdout?.destroy?.();
+        } catch {
+            // noop as we are tearing down
+        }
+
+        try {
+            ffmpegProcess.stderr?.destroy?.();
+        } catch {
+            // noop as we are tearing down
+        }
+
+        try {
+            ffmpegProcess.stdin?.end();
+        } catch {
+            console.error("Failed to end ffmpeg stdin");
+        }
+        ffmpegProcess.kill("SIGTERM");
+
+        const t = setTimeout(() => {
+            if (ffmpegProcess.exitCode == null) {
+                try {
+                    ffmpegProcess.kill("SIGKILL");
+                } catch {
+                    // noop since we are tearing down
+                }
+            }
+        }, 2000);
+
+        ffmpegProcess.once("exit", () => clearTimeout(t));
     }
     return {
         spawnFFmpegProcess,
