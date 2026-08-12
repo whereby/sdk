@@ -1,5 +1,12 @@
 # @whereby.com/audio-denoiser
 
+## 1.0.10
+
+### Patch Changes
+
+- Updated dependencies [ac8571e]
+    - @whereby.com/media@9.7.0
+
 ## 1.0.9
 
 ### Patch Changes

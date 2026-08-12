@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.18.2
+
+### Patch Changes
+
+- Updated dependencies [ac8571e]
+    - @whereby.com/media@9.7.0
+    - @whereby.com/audio-denoiser@1.0.10
+
 ## 1.18.1
 
 ### Patch Changes
