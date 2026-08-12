@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.7.0
+
+### Minor Changes
+
+- ac8571e: Add getInitialStream for initial media acquisition
+
 ## 9.6.1
 
 ### Patch Changes
