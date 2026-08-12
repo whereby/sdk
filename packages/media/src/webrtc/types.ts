@@ -132,8 +132,14 @@ export type GetMediaConstraintsOptions = {
     widescreen: boolean;
 };
 
+export type GetInitialStreamOptions = {
+    videoId: false | string | null;
+    audioId: false | string | null;
+    options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds">;
+};
+
 export type GetConstraintsOptions = {
-    devices: MediaDeviceInfo[];
+    devices?: MediaDeviceInfo[];
     audioId?: boolean | string | null;
     videoId?: boolean | string | null;
     type?: "ideal" | "exact";

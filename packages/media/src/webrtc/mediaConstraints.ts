@@ -74,10 +74,12 @@ export function getMediaConstraints({
  * High level mediaConstraints helper
  */
 export default function getConstraints({ devices, videoId, audioId, options, type = "ideal" }: GetConstraintsOptions) {
-    const audioDevices = devices.filter((d) => d.kind === "audioinput");
-    const videoDevices = devices.filter((d) => d.kind === "videoinput");
-    const useDefaultAudio = !audioId || !audioDevices.some((d) => d.deviceId === audioId);
-    const useDefaultVideo = !videoId || !videoDevices.some((d) => d.deviceId === videoId);
+    const strict = !!devices;
+
+    const audioDevices = devices?.filter((d) => d.kind === "audioinput");
+    const videoDevices = devices?.filter((d) => d.kind === "videoinput");
+    const useDefaultAudio = !audioId || (strict && !audioDevices?.some((d) => d.deviceId === audioId));
+    const useDefaultVideo = !videoId || (strict && !videoDevices?.some((d) => d.deviceId === videoId));
     const constraints = getMediaConstraints({
         preferredDeviceIds: {
             audioId: useDefaultAudio ? null : { [type]: audioId },
@@ -86,10 +88,10 @@ export default function getConstraints({ devices, videoId, audioId, options, typ
         ...options,
     });
 
-    if (audioId === false || !audioDevices.length) {
+    if (audioId === false || (strict && !audioDevices?.length)) {
         delete constraints.audio;
     }
-    if (videoId === false || !videoDevices.length) {
+    if (videoId === false || (strict && !videoDevices?.length)) {
         delete constraints.video;
     }
 
