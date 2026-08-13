@@ -9,6 +9,8 @@ import { PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model";
 
 const logger = new Logger();
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 export default class BandwidthTester extends EventEmitter {
     closed: boolean;
     _features: any;
@@ -80,7 +82,7 @@ export default class BandwidthTester extends EventEmitter {
             return;
         }
 
-        this._requestBandwidthTestToken()
+        this._getBandwidthTestToken()
             .then((bandwidthTestToken) => {
                 this._runTime = runTime;
                 this._startTime = Date.now();
@@ -165,42 +167,17 @@ export default class BandwidthTester extends EventEmitter {
         this.emit("close");
     }
 
-    async _requestBandwidthTestToken() {
-        return new Promise<string>((resolve, reject) => {
-            logger.info("_requestBandwidthTestToken()");
+    async _getBandwidthTestToken() {
+        const apiHost = API_BASE_URL || "https://api.whereby.dev";
 
-            const parsedUrl = new URL(process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net");
-            const socketHost = parsedUrl.origin;
-
-            const socketOverrides = {
-                autoConnect: true,
-            };
-
-            const signalSocket = new ServerSocket(socketHost, socketOverrides);
-
-            signalSocket.on("connect", () => {
-                signalSocket.emit(PROTOCOL_REQUESTS.REQUEST_BANDWIDTH_TEST_TOKEN);
-            });
-            signalSocket.on(
-                PROTOCOL_RESPONSES.BANDWIDTH_TEST_TOKEN_REQUESTED,
-                ({ error, bandwidthTestToken }: BandwidthTestTokenRequestedEvent, ack?: () => void) => {
-                    if (error) {
-                        logger.error("_requestBandwidthTestToken() [error:%o]", error);
-                        reject(PROTOCOL_RESPONSES.BANDWIDTH_TEST_TOKEN_REQUESTED);
-                        return;
-                    }
-
-                    resolve(bandwidthTestToken!);
-
-                    if (ack) {
-                        ack();
-                    }
-                },
-            );
-            signalSocket.on(PROTOCOL_RESPONSES.RATE_LIMITED, () => {
-                reject(PROTOCOL_RESPONSES.RATE_LIMITED);
-            });
-        });
+        return fetch(`${apiHost}/bandwidth-test-token`, { method: "GET" })
+            .then((response) => {
+                if (!response?.ok) {
+                    throw "failed to get a new bandwidth test token";
+                }
+                return response.json();
+            })
+            .then(({ bandwidthTestToken }) => bandwidthTestToken);
     }
 
     async _start() {
