@@ -430,7 +430,7 @@ export async function getStream(
             await getSingleStream(e);
         }
     }
-    if (retryConstraintOpt) {
+    if (!stream && retryConstraintOpt) {
         const onlyConstraints = only ? { audio: { videoId: false }, video: { audioId: false } }[only] : {};
         const retryConstraints = getConstraints({
             ...constraintOpt,
