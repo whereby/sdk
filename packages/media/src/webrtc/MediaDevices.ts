@@ -415,8 +415,11 @@ export async function getStream(
                     // to at least get SOMETHING working
                     const tryOnly = problemWith ? [problemWith] : ["videoId", "audioId"];
                     for (const kind of tryOnly) {
+                        const withoutKind = getConstraints({ ...constraintOpt, [kind]: false });
+                        // Dropping this kind leaves nothing to ask for
+                        if (!withoutKind.audio && !withoutKind.video) continue;
                         try {
-                            stream = await attempt(getConstraints({ ...constraintOpt, [kind]: false }));
+                            stream = await attempt(withoutKind);
                         } catch (e2) {
                             logger.warn(`Re-tried without ${kind}, but failed: ${"" + e2}`);
                         }
