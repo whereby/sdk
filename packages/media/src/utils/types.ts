@@ -455,15 +455,9 @@ export interface LiveTranscriptionStoppedEvent {
     endedAt: string;
 }
 
-export interface BandwidthTestTokenRequestedEvent {
-    error?: string;
-    bandwidthTestToken?: string;
-}
-
 export interface SignalEvents {
     audio_enabled: AudioEnabledEvent;
     audio_enable_requested: AudioEnableRequestedEvent;
-    bandwidth_test_token_requested: BandwidthTestTokenRequestedEvent;
     breakout_group_joined: BreakoutGroupJoinedEvent;
     breakout_session_updated: BreakoutSessionUpdatedEvent;
     client_left: ClientLeftEvent;
@@ -588,7 +582,6 @@ export interface SignalRequests {
     live_captions_enabled: void;
     live_captions_disabled: void;
     remove_spotlight: RemoveSpotlightRequest;
-    request_bandwidth_test_token: void;
     request_file_upload_url: { files: { name: string; size: number; type: string }[] };
     request_audio_enable: AudioEnableRequest;
     request_video_enable: VideoEnableRequest;

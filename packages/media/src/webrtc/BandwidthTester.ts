@@ -4,12 +4,18 @@ import VegaConnection from "./VegaConnection";
 import { getMediaSettings, modifyMediaCapabilities } from "../utils/mediaSettings";
 import Logger from "../utils/Logger";
 import { getMediasoupDeviceAsync } from "../utils/getMediasoupDevice";
-import { BandwidthTestTokenRequestedEvent, ClearableTimeout, ServerSocket } from "../utils";
-import { PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../model";
+import { ClearableTimeout } from "../utils";
 
 const logger = new Logger();
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+export class RateLimitError extends Error {
+    constructor(...args: any) {
+        super(...args);
+        this.name = "rateLimit";
+    }
+}
 
 export default class BandwidthTester extends EventEmitter {
     closed: boolean;
@@ -101,17 +107,10 @@ export default class BandwidthTester extends EventEmitter {
                 this._startTimeout();
             })
             .catch((error) => {
-                if (!Object.values(PROTOCOL_RESPONSES).includes(error)) {
-                    throw error;
-                }
-
                 this.emit("result", {
                     error: true,
                     details: {
-                        ...(error === PROTOCOL_RESPONSES.BANDWIDTH_TEST_TOKEN_REQUESTED && {
-                            invalidClaim: true,
-                        }),
-                        ...(error === PROTOCOL_RESPONSES.RATE_LIMITED && { rateLimited: true }),
+                        ...(error instanceof RateLimitError ? { rateLimited: true } : { unknown: true }),
                     },
                 });
 
@@ -172,9 +171,14 @@ export default class BandwidthTester extends EventEmitter {
 
         return fetch(`${apiHost}/bandwidth-test-token`, { method: "GET" })
             .then((response) => {
-                if (!response?.ok) {
-                    throw "failed to get a new bandwidth test token";
+                if (response.status === 429) {
+                    throw new RateLimitError("bandwidth test token request is rate limited");
                 }
+
+                if (!response?.ok) {
+                    throw new Error("could not generate a new bandwidth test token");
+                }
+
                 return response.json();
             })
             .then(({ bandwidthTestToken }) => bandwidthTestToken);
@@ -424,6 +428,8 @@ export default class BandwidthTester extends EventEmitter {
                         return this._onConsumerReady(data);
                     case "consumerClosed":
                         return this._onConsumerClosed(data);
+                    case "bandwidthTestError":
+                        return this._onBandwidthTestError(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -456,6 +462,20 @@ export default class BandwidthTester extends EventEmitter {
         if (consumer) {
             consumer.close();
         }
+    }
+
+    _onBandwidthTestError({ reason }: { reason: "invalidClaim" | "connectionTimeout" }) {
+        this._clearTimeouts();
+
+        this.emit("result", {
+            error: true,
+            details: {
+                ...(reason === "invalidClaim" && { invalidClaim: true }),
+                ...(reason === "connectionTimeout" && { timeout: true }),
+            },
+        });
+
+        this.close();
     }
 
     async _reportResults() {
