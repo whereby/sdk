@@ -306,7 +306,6 @@ export async function getStream(
     { replaceStream, fallback = true }: GetStreamOptions = {},
 ): Promise<GetStreamResult> {
     let error: any;
-    let newConstraints: MediaStreamConstraints | undefined;
     let retryConstraintOpt: any;
     let stream: MediaStream | null = null;
     const { attempts, attempt, attachAttempts } = createGetUserMediaAttempts();
@@ -318,23 +317,7 @@ export async function getStream(
     const stopTracks = isMobile || only !== "video";
     const constraints = getConstraints(constraintOpt);
 
-    const addDetails = (err?: any, orgErr?: any) => {
-        if (err) {
-            err.details = {
-                constraints,
-                constraint: err.constraint || orgErr?.constraint,
-                newConstraints,
-                fallback,
-                stopTracks,
-                ...(err !== error && { error: String(error) }),
-            };
-            return err;
-        } else {
-            return new Error("Unknown error");
-        }
-    };
-
-    const getSingleStream = async (e?: any) => {
+    const getSingleStream = async () => {
         if (constraints.audio && constraints.video) {
             // Since we requested both audio and video, there's
             // a chance only one of the devices are NotFound or NotAllowed,
@@ -342,15 +325,13 @@ export async function getStream(
 
             try {
                 stream = await attempt(getConstraints({ ...constraintOpt, audioId: false }));
-            } catch (e2: any) {
-                if (e2?.name !== "NotFoundError") {
-                    addDetails(e2, e);
-                }
+            } catch {
+                // failure is recorded in attempts, try audio-only below
             }
             try {
                 if (!stream) stream = await attempt(getConstraints({ ...constraintOpt, videoId: false }));
-            } catch (e2) {
-                addDetails(e2, e);
+            } catch {
+                // failure is recorded in attempts
             }
         }
     };
@@ -361,7 +342,7 @@ export async function getStream(
     } catch (e: any) {
         error = e;
         if (!fallback) {
-            throw attachAttempts(addDetails(e));
+            throw attachAttempts(e || new Error("Unknown error"));
         }
         if (e?.name === "OverconstrainedError") {
             const laxConstraints = {
@@ -372,7 +353,7 @@ export async function getStream(
             } as any;
             retryConstraintOpt = laxConstraints[e.constraint || ""];
         } else if (e?.name === "NotFoundError") {
-            await getSingleStream(e);
+            await getSingleStream();
         } else if (e?.name === "NotAllowedError" || e?.name === "NotReadableError" || e?.name === "AbortError") {
             // NotAllowedError - User didn't allow us
             // NotReadableError - OS can't read
@@ -384,7 +365,7 @@ export async function getStream(
                 retryConstraintOpt = constraintOpt;
             }
             if (e?.name === "NotAllowedError") {
-                await getSingleStream(e);
+                await getSingleStream();
             }
             // No existing stream, try to get a new stream
             // if we weren't explicitly disallowed.
@@ -427,7 +408,7 @@ export async function getStream(
         } else if (!e) {
             // Probably a null error was thrown.
             // If both video and audio was requested, retry both separately.
-            await getSingleStream(e);
+            await getSingleStream();
         }
     }
     if (retryConstraintOpt) {
@@ -438,15 +419,14 @@ export async function getStream(
             options: { ...constraintOpt.options, lax: retryConstraintOpt.lax },
             ...onlyConstraints,
         });
-        newConstraints = retryConstraints;
         try {
             stream = await attempt(retryConstraints);
         } catch (e) {
-            throw attachAttempts(addDetails(e, error));
+            throw attachAttempts(e || new Error("Unknown error"));
         }
     }
     if (!stream) {
-        throw attachAttempts(addDetails(error));
+        throw attachAttempts(error || new Error("Unknown error"));
     }
     let replacedTracks;
     if (replaceStream) {
@@ -455,7 +435,7 @@ export async function getStream(
         replacedTracks = replaceTracksInStream(replaceStream, stream, only);
         stream = replaceStream;
     }
-    return { error: error && addDetails(error), stream, replacedTracks, attempts };
+    return { error, stream, replacedTracks, attempts };
 }
 
 export function hasGetDisplayMedia() {
