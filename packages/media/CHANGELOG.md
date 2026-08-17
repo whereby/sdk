@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.7.1
+
+### Patch Changes
+
+- 01072bf: Stop attaching details to errors from getStream
+
 ## 9.7.0
 
 ### Minor Changes
