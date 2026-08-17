@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.7.2
+
+### Patch Changes
+
+- 0cb6e55: Keep an already acquired stream instead of running a final retry in getStream
+
 ## 9.7.1
 
 ### Patch Changes
