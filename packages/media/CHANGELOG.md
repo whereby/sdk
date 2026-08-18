@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.7.3
+
+### Patch Changes
+
+- 6800831: Skip the getStream fallback attempt that would leave no kinds to request
+
 ## 9.7.2
 
 ### Patch Changes
