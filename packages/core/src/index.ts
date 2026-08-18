@@ -10,6 +10,9 @@ export * from "./client/LocalMedia/events";
 export * from "./client/RoomConnection";
 export * from "./client/RoomConnection/types";
 export * from "./client/RoomConnection/events";
+export * from "./client/PreCallTest";
+export * from "./client/PreCallTest/types";
+export * from "./client/PreCallTest/events";
 export * from "./client/Grid";
 export * from "./client/Grid/types";
 export * from "./client/Grid/events";
@@ -27,6 +30,7 @@ export {
     defaultBreakoutGroupName,
 } from "./redux/slices/breakout";
 export { MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "./redux/slices/fileShare";
+export { isPreCallTestSupported, PRE_CALL_TEST_DURATION_S } from "./redux/slices/preCallTest";
 export type { ClientView } from "./redux/types";
 export type { ConnectionStatus } from "./redux/slices/roomConnection";
 export type {

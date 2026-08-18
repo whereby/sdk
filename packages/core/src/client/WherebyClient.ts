@@ -2,6 +2,7 @@ import { createStore, type Store as AppStore } from "../redux/store";
 import { createServices } from "../services";
 import { GridClient } from "./Grid";
 import { LocalMediaClient } from "./LocalMedia";
+import { PreCallTestClient } from "./PreCallTest";
 import { RoomConnectionClient } from "./RoomConnection";
 
 export class WherebyClient {
@@ -10,6 +11,7 @@ export class WherebyClient {
     private localMediaClient: LocalMediaClient;
     protected roomConnectionClient: RoomConnectionClient;
     private gridClient: GridClient;
+    private preCallTestClient: PreCallTestClient;
 
     constructor() {
         this.services = createServices();
@@ -18,6 +20,7 @@ export class WherebyClient {
         this.localMediaClient = new LocalMediaClient(this.store);
         this.roomConnectionClient = new RoomConnectionClient(this.store);
         this.gridClient = new GridClient(this.store);
+        this.preCallTestClient = new PreCallTestClient(this.store);
     }
 
     public getLocalMedia(): LocalMediaClient {
@@ -32,6 +35,10 @@ export class WherebyClient {
         return this.gridClient;
     }
 
+    public getPreCallTest(): PreCallTestClient {
+        return this.preCallTestClient;
+    }
+
     public getStore(): AppStore {
         return this.store;
     }
@@ -40,5 +47,6 @@ export class WherebyClient {
         this.localMediaClient.destroy();
         this.roomConnectionClient.destroy();
         this.gridClient.destroy();
+        this.preCallTestClient.destroy();
     }
 }

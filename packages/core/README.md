@@ -41,6 +41,9 @@ const localMedia = client.getLocalMedia();
 
 // manage room connection
 const roomConnection = client.getRoomConnection();
+
+// check the network before joining
+const preCallTest = client.getPreCallTest();
 ```
 
 ### Core Concepts
@@ -82,6 +85,36 @@ roomConnection.subscribeToConnectionStatus((state) => {
     console.log("Connection state changed:", state);
 });
 ```
+
+#### Pre-call Test
+
+The `PreCallTestClient` measures the connection between this client and the Whereby media servers, so you can warn people about a poor network before they join. It needs no room and no local media, and it competes for bandwidth with any call already in progress — run it before joining.
+
+The test captures a canvas as its video track, so it **only runs in a browser** — not in Node (including the Assistant SDK) and not in React Native. Check with `isPreCallTestSupported()` before offering it; calling `startTest()` in an unsupported environment fails with `error.reason === "unsupported"`.
+
+Typical usage:
+
+```js
+import { isPreCallTestSupported } from "@whereby.com/core";
+
+if (!isPreCallTestSupported()) {
+    return; 
+}
+
+// runs for a fixed duration, exported as PRE_CALL_TEST_DURATION_S
+const result = await preCallTest.startTest();
+
+if (result?.warning) {
+    console.log("Degraded connection", result.details);
+}
+
+// or drive your UI from state instead of awaiting
+preCallTest.subscribeStatus((status) => {
+    console.log("Pre-call test:", status); // idle | running | completed | failed
+});
+```
+
+Whether a camera or microphone *works* is a judgement only the end user can make, so there is no equivalent client for those — build that on `LocalMediaClient` and let the user confirm what they see and hear. Errors that are machine-detectable, like blocked permissions, surface on `LocalMediaClient` as `cameraDeviceError`, `microphoneDeviceError` and `startError`.
 
 ### Learn More
 
