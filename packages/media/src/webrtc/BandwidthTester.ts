@@ -97,20 +97,28 @@ export default class BandwidthTester extends EventEmitter {
             protocol: "whereby-sfu#bw-test-v1",
         });
         this._vegaConnection.on("open", () => this._start());
-        this._vegaConnection.on("close", () => this.close(true));
+        this._vegaConnection.on("close", (event: any) => this.close(true, event));
         this._vegaConnection.on("message", (message: any) => this._onMessage(message));
 
         // If we don't get a response within 5 seconds, we close the test
         this._startTimeout();
     }
 
-    close(vegaConnectionClosed?: boolean) {
+    close(vegaConnectionClosed?: boolean, event?: any) {
         logger.info("close()");
 
         this.closed = true;
 
-        // If this happens, the websocket connection to SFU probably failed right away.
-        if (!!this._timeout || Date.now() - this._startTime < 750) {
+        if (event?.code === 1008) {
+            this.emit("result", {
+                error: true,
+                details: {
+                    ...(event?.reason === "invalidClaim" && { invalidClaim: true }),
+                    ...(event?.reason === "connectionTimeout" && { timeout: true }),
+                },
+            });
+        } else if (!!this._timeout || Date.now() - this._startTime < 750) {
+            // If this happens, the websocket connection to SFU probably failed right away.
             this.emit("result", {
                 error: true,
             });
@@ -396,8 +404,6 @@ export default class BandwidthTester extends EventEmitter {
                         return this._onConsumerReady(data);
                     case "consumerClosed":
                         return this._onConsumerClosed(data);
-                    case "bandwidthTestError":
-                        return this._onBandwidthTestError(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -430,20 +436,6 @@ export default class BandwidthTester extends EventEmitter {
         if (consumer) {
             consumer.close();
         }
-    }
-
-    _onBandwidthTestError({ reason }: { reason: "invalidClaim" | "connectionTimeout" }) {
-        this._clearTimeouts();
-
-        this.emit("result", {
-            error: true,
-            details: {
-                ...(reason === "invalidClaim" && { invalidClaim: true }),
-                ...(reason === "connectionTimeout" && { timeout: true }),
-            },
-        });
-
-        this.close();
     }
 
     async _reportResults() {

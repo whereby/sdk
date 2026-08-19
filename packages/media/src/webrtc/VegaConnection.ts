@@ -34,7 +34,7 @@ export default class VegaConnection extends EventEmitter {
         this.socket.onerror = this._onError.bind(this);
     }
 
-    _tearDown() {
+    _tearDown(event?: CloseEvent) {
         if (this.socket === null) return;
 
         this.socket.onopen = null;
@@ -45,7 +45,7 @@ export default class VegaConnection extends EventEmitter {
 
         this.sents.forEach((sent) => sent.close());
 
-        this.emit("close");
+        this.emit("close", event);
     }
 
     close() {
@@ -70,10 +70,10 @@ export default class VegaConnection extends EventEmitter {
         }
     }
 
-    _onClose() {
+    _onClose(event?: CloseEvent) {
         logger.info("Disconnected");
 
-        this._tearDown();
+        this._tearDown(event);
     }
 
     _onError(error: any) {
