@@ -8,17 +8,9 @@ import { ClearableTimeout } from "../utils";
 
 const logger = new Logger();
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-export class RateLimitError extends Error {
-    constructor(...args: any) {
-        super(...args);
-        this.name = "rateLimit";
-    }
-}
-
 export default class BandwidthTester extends EventEmitter {
     closed: boolean;
+    _token: string;
     _features: any;
     _vegaConnection: any;
     _mediasoupDeviceInitializedAsync: Promise<Device | null>;
@@ -37,10 +29,12 @@ export default class BandwidthTester extends EventEmitter {
     _drawInterval: any;
     _resultTimeout: ClearableTimeout | null;
 
-    constructor({ features }: { features?: any } = {}) {
+    constructor({ token, features }: { token: string; features?: any }) {
         super();
 
         this.closed = false;
+
+        this._token = token;
 
         this._features = features || {};
 
@@ -88,34 +82,21 @@ export default class BandwidthTester extends EventEmitter {
             return;
         }
 
-        this._getBandwidthTestToken()
-            .then((bandwidthTestToken) => {
-                this._runTime = runTime;
-                this._startTime = Date.now();
+        this._runTime = runTime;
+        this._startTime = Date.now();
 
-                const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
-                const wsUrl = `wss://${host}?bandwidthTestClaim=${bandwidthTestToken}`;
+        const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
+        const wsUrl = `wss://${host}?bandwidthTestClaim=${this._token}`;
 
-                this._vegaConnection = new VegaConnection(wsUrl, {
-                    protocol: "whereby-sfu#bw-test-v1",
-                });
-                this._vegaConnection.on("open", () => this._start());
-                this._vegaConnection.on("close", () => this.close(true));
-                this._vegaConnection.on("message", (message: any) => this._onMessage(message));
+        this._vegaConnection = new VegaConnection(wsUrl, {
+            protocol: "whereby-sfu#bw-test-v1",
+        });
+        this._vegaConnection.on("open", () => this._start());
+        this._vegaConnection.on("close", () => this.close(true));
+        this._vegaConnection.on("message", (message: any) => this._onMessage(message));
 
-                // If we don't get a response within 5 seconds, we close the test
-                this._startTimeout();
-            })
-            .catch((error) => {
-                this.emit("result", {
-                    error: true,
-                    details: {
-                        ...(error instanceof RateLimitError ? { rateLimited: true } : { unknown: true }),
-                    },
-                });
-
-                this.close();
-            });
+        // If we don't get a response within 5 seconds, we close the test
+        this._startTimeout();
     }
 
     close(vegaConnectionClosed?: boolean) {
@@ -164,24 +145,6 @@ export default class BandwidthTester extends EventEmitter {
         this._vegaConnection = null;
 
         this.emit("close");
-    }
-
-    async _getBandwidthTestToken() {
-        const apiHost = API_BASE_URL || "https://api.whereby.dev";
-
-        return fetch(`${apiHost}/bandwidth-test-token`, { method: "GET" })
-            .then((response) => {
-                if (response.status === 429) {
-                    throw new RateLimitError("bandwidth test token request is rate limited");
-                }
-
-                if (!response?.ok) {
-                    throw new Error("could not generate a new bandwidth test token");
-                }
-
-                return response.json();
-            })
-            .then(({ bandwidthTestToken }) => bandwidthTestToken);
     }
 
     async _start() {

@@ -75,6 +75,9 @@ export const mockServices = {
         fetchOrganization: jest.fn(),
     },
     fetchOrganizationFromRoomUrl: jest.fn(),
+    bandwidthTestTokenService: {
+        getToken: jest.fn(),
+    },
 };
 
 export function createStore({ initialState, withSignalConnection, withRtcManager, connectToRoom }: StoreOptions = {}) {

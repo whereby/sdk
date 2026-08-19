@@ -1,4 +1,5 @@
 export { default as ApiClient } from "./ApiClient";
+export { default as BandwidthTestTokenService } from "./bandwidthTestTokenService";
 export { default as CredentialsService } from "./credentialsService";
 export { default as Credentials } from "./Credentials";
 export { default as OrganizationApiClient } from "./OrganizationApiClient";
