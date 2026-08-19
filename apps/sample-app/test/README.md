@@ -37,6 +37,8 @@ WHEREBY_API_KEY=<local-api-key> \
 yarn test:e2e
 ```
 
+An SFU server endpoint can also be opionally configured with the `REACT_APP_SFU_BASE_URL` environment variable if required.
+
 ## Debugging CI test failures
 
 Test reports are attached to each test in GitHub Actions. These reports contain

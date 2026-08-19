@@ -8,8 +8,11 @@ import { ClearableTimeout } from "../utils";
 
 const logger = new Logger();
 
+const SFU_BASE_URL = process.env.REACT_APP_SFU_BASE_URL;
+
 export default class BandwidthTester extends EventEmitter {
     closed: boolean;
+    _token: string;
     _features: any;
     _vegaConnection: any;
     _mediasoupDeviceInitializedAsync: Promise<Device | null>;
@@ -28,10 +31,12 @@ export default class BandwidthTester extends EventEmitter {
     _drawInterval: any;
     _resultTimeout: ClearableTimeout | null;
 
-    constructor({ features }: { features?: any } = {}) {
+    constructor({ token, features }: { token: string; features?: any }) {
         super();
 
         this.closed = false;
+
+        this._token = token;
 
         this._features = features || {};
 
@@ -75,31 +80,45 @@ export default class BandwidthTester extends EventEmitter {
                 },
             });
 
-            return this.close();
+            this.close();
+            return;
         }
 
         this._runTime = runTime;
         this._startTime = Date.now();
 
-        const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
-        const wsUrl = `wss://${host}`;
+        const host =
+            this._features.sfuServerOverrideHost && !this._features.sfuServerOverrideHost.startsWith("wss://")
+                ? `wss://${this._features.sfuServerOverrideHost}`
+                : this._features.sfuServerOverrideHost || SFU_BASE_URL || "wss://any.sfu.svc.whereby.com";
+        const wsUrl = `${host}?bandwidthTestClaim=${this._token}`;
 
-        this._vegaConnection = new VegaConnection(wsUrl, { protocol: "whereby-sfu#bw-test-v1" });
+        this._vegaConnection = new VegaConnection(wsUrl, {
+            protocol: "whereby-sfu#bw-test-v1",
+        });
         this._vegaConnection.on("open", () => this._start());
-        this._vegaConnection.on("close", () => this.close(true));
+        this._vegaConnection.on("close", (event: any) => this.close(true, event));
         this._vegaConnection.on("message", (message: any) => this._onMessage(message));
 
         // If we don't get a response within 5 seconds, we close the test
         this._startTimeout();
     }
 
-    close(vegaConnectionClosed?: boolean) {
+    close(vegaConnectionClosed?: boolean, event?: any) {
         logger.info("close()");
 
         this.closed = true;
 
-        // If this happens, the websocket connection to SFU probably failed right away.
-        if (!!this._timeout || Date.now() - this._startTime < 750) {
+        if (event?.code === 1008) {
+            this.emit("result", {
+                error: true,
+                details: {
+                    ...(event?.reason === "invalidClaim" && { invalidClaim: true }),
+                    ...(event?.reason === "connectionTimeout" && { timeout: true }),
+                },
+            });
+        } else if (!!this._timeout || Date.now() - this._startTime < 750) {
+            // If this happens, the websocket connection to SFU probably failed right away.
             this.emit("result", {
                 error: true,
             });

@@ -1,5 +1,11 @@
 import { fromLocation } from "@whereby.com/media";
-import { ApiClient, CredentialsService, OrganizationService, OrganizationServiceCache } from "./api";
+import {
+    ApiClient,
+    BandwidthTestTokenService,
+    CredentialsService,
+    OrganizationService,
+    OrganizationServiceCache,
+} from "./api";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -25,10 +31,15 @@ export function createServices() {
         return organizationServiceCache.fetchOrganization();
     };
 
+    const bandwidthTestTokenService = BandwidthTestTokenService.create({
+        baseUrl: API_BASE_URL || "https://api.whereby.dev",
+    });
+
     return {
         credentialsService,
         apiClient,
         organizationService,
         fetchOrganizationFromRoomUrl,
+        bandwidthTestTokenService,
     };
 }

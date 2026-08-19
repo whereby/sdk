@@ -8,7 +8,7 @@ import {
     selectPreCallTestResult,
     selectPreCallTestStatus,
 } from "../../slices/preCallTest";
-import { createStore } from "../store.setup";
+import { createStore, mockServices } from "../store.setup";
 
 jest.mock("@whereby.com/media", () => {
     const { EventEmitter } = jest.requireActual("events");
@@ -82,6 +82,12 @@ const successResult = {
 };
 
 describe("preCallTest", () => {
+    beforeEach(() => {
+        mockServices.bandwidthTestTokenService.getToken.mockResolvedValueOnce({
+            token: "12345",
+        });
+    });
+
     describe("doStartPreCallTest", () => {
         it("runs for the fixed test duration", async () => {
             const store = createStore();
