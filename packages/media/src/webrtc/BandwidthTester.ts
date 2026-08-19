@@ -8,6 +8,8 @@ import { ClearableTimeout } from "../utils";
 
 const logger = new Logger();
 
+const SFU_BASE_URL = process.env.REACT_APP_SFU_BASE_URL;
+
 export default class BandwidthTester extends EventEmitter {
     closed: boolean;
     _token: string;
@@ -85,8 +87,11 @@ export default class BandwidthTester extends EventEmitter {
         this._runTime = runTime;
         this._startTime = Date.now();
 
-        const host = this._features.sfuServerOverrideHost || "any.sfu.svc.whereby.com";
-        const wsUrl = `wss://${host}?bandwidthTestClaim=${this._token}`;
+        const host =
+            this._features.sfuServerOverrideHost && !this._features.sfuServerOverrideHost.startsWith("wss://")
+                ? `wss://${this._features.sfuServerOverrideHost}`
+                : this._features.sfuServerOverrideHost || SFU_BASE_URL || "wss://any.sfu.svc.whereby.com";
+        const wsUrl = `${host}?bandwidthTestClaim=${this._token}`;
 
         this._vegaConnection = new VegaConnection(wsUrl, {
             protocol: "whereby-sfu#bw-test-v1",

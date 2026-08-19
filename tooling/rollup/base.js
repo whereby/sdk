@@ -21,6 +21,9 @@ module.exports = function buildConfig(packageDirectory, pkgConfig) {
                 "process.env.REACT_APP_SIGNAL_BASE_URL": JSON.stringify(
                     process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net",
                 ),
+                "process.env.REACT_APP_SFU_BASE_URL": JSON.stringify(
+                    process.env.REACT_APP_SFU_BASE_URL || "wss://any.sfu.svc.whereby.com",
+                ),
                 "process.env.REACT_APP_IS_DEV": JSON.stringify(process.env.REACT_APP_IS_DEV),
             },
         },
