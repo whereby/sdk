@@ -5,6 +5,7 @@ import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { doAppStop } from "./app";
 import { selectIsHDModeEnabled, selectIsLowDataModeEnabled } from "./localMedia";
+import { RateLimitError } from "../../api/errors";
 
 export const PRE_CALL_TEST_DURATION_S = 15;
 
@@ -153,7 +154,7 @@ export function isPreCallTestSupported(): boolean {
 
 export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, void>(
     "preCallTest/start",
-    async (_, { dispatch, getState }) => {
+    async (_, { dispatch, getState, extra }) => {
         const state = getState();
 
         if (selectIsPreCallTestRunning(state)) {
@@ -179,7 +180,10 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
         let tester: BandwidthTester;
 
         try {
+            const { token } = await extra.services.bandwidthTestTokenService.getToken();
+
             tester = new BandwidthTester({
+                token,
                 features: {
                     sfuVp9On: false,
                     h264On: false,
@@ -191,8 +195,13 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
             dispatch(
                 preCallTestFailed({
                     error: {
-                        reason: "unknown",
-                        message: error instanceof Error ? error.message : "Failed to set up the pre-call test",
+                        reason: error instanceof RateLimitError ? "rateLimited" : "unknown",
+                        message:
+                            error instanceof RateLimitError
+                                ? PRE_CALL_TEST_ERROR_MESSAGES["rateLimited"]
+                                : error instanceof Error
+                                  ? error.message
+                                  : "Failed to set up the pre-call test",
                     },
                 }),
             );
