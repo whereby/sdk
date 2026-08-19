@@ -374,9 +374,7 @@ describe("P2pRtcManager", () => {
             let newCameraStream: MediaStream;
             let sender: RTCRtpSender;
             beforeEach(async () => {
-                mediaConstraints.devices = [helpers.createMockedInputDevice("videoinput")];
                 newCameraStream = helpers.createMockedMediaStream();
-                global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(newCameraStream));
 
                 oldCameraStream = helpers.createMockedMediaStream();
                 rtcManager.addCameraStream(oldCameraStream);
@@ -384,7 +382,7 @@ describe("P2pRtcManager", () => {
                 const oldVideoTrack = oldCameraStream.getVideoTracks()[0];
                 oldVideoTrack.enabled = false;
 
-                rtcManager.stopOrResumeVideo(oldCameraStream, false);
+                rtcManager.stopOrResumeVideo({ enable: false, track: oldVideoTrack });
                 await jest.runAllTimersAsync();
                 // the track will have been removed from the stream
                 oldCameraStream.getVideoTracks = () => [];
@@ -402,7 +400,7 @@ describe("P2pRtcManager", () => {
 
                     const newCameraTrack = newCameraStream.getVideoTracks()[0];
 
-                    rtcManager.stopOrResumeVideo(oldCameraStream, true);
+                    rtcManager.stopOrResumeVideo({ enable: true, track: newCameraTrack });
 
                     await jest.runAllTimersAsync();
 
@@ -422,7 +420,7 @@ describe("P2pRtcManager", () => {
 
                     const newCameraTrack = newCameraStream.getVideoTracks()[0];
 
-                    rtcManager.stopOrResumeVideo(oldCameraStream, true);
+                    rtcManager.stopOrResumeVideo({ enable: true, track: newCameraTrack });
 
                     await jest.runAllTimersAsync();
 
@@ -443,7 +441,7 @@ describe("P2pRtcManager", () => {
 
                     const newCameraTrack = newCameraStream.getVideoTracks()[0];
 
-                    rtcManager.stopOrResumeVideo(oldCameraStream, true);
+                    rtcManager.stopOrResumeVideo({ enable: true, track: newCameraTrack });
 
                     await jest.runAllTimersAsync();
 
@@ -1196,321 +1194,47 @@ describe("P2pRtcManager", () => {
         });
     });
 
-    describe("stopOrResumeVideo", () => {
-        let localStream: MediaStream;
-        let rtcManager: P2pRtcManager;
+    describe("handling localStream `stopresumevideo` event", () => {
+        let stream: any;
+        let rtcManager: any;
 
         beforeEach(() => {
-            localStream = helpers.createMockedMediaStream();
+            stream = helpers.createMockedMediaStream();
             rtcManager = createRtcManager();
+            rtcManager.addCameraStream(stream);
         });
 
-        describe("when disabling", () => {
-            it("should stop the video track after 5 seconds", () => {
-                const videoTrack = localStream.getVideoTracks()[0];
-                videoTrack.enabled = false;
+        describe("when enable", () => {
+            it("should add track to peer connections", () => {
+                jest.spyOn(rtcManager, "_addTrackToPeerConnections");
+                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-                rtcManager.stopOrResumeVideo(localStream, false);
+                stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
 
-                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
-                jest.advanceTimersByTime(5000);
-                expect(videoTrack.stop).toHaveBeenCalledTimes(1);
+                expect(rtcManager._addTrackToPeerConnections).toHaveBeenCalledWith(track);
             });
 
-            it("should NOT stop track if it is still enabled", () => {
-                const videoTrack = localStream.getVideoTracks()[0];
-                videoTrack.enabled = true;
+            it("should replace track in peer connection(s) when stopped track exists", () => {
+                const stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                rtcManager._stoppedVideoTrack = stoppedTrack;
+                jest.spyOn(rtcManager, "_replaceTrackToPeerConnections");
+                const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-                rtcManager.stopOrResumeVideo(localStream, false);
+                stream.dispatchEvent(
+                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } }),
+                );
 
-                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
-                jest.advanceTimersByTime(5000);
-                expect(videoTrack.stop).toHaveBeenCalledTimes(0);
-            });
-
-            it("should remove the track from local stream", () => {
-                const videoTrack = localStream.getVideoTracks()[0];
-                videoTrack.enabled = false;
-
-                rtcManager.stopOrResumeVideo(localStream, false);
-                jest.advanceTimersByTime(5000);
-
-                expect(localStream.removeTrack).toHaveBeenCalledWith(videoTrack);
-            });
-
-            it("should emit event", () => {
-                const videoTrack = localStream.getVideoTracks()[0];
-                videoTrack.enabled = false;
-
-                rtcManager.stopOrResumeVideo(localStream, false);
-                jest.advanceTimersByTime(5000);
-
-                expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
-                    stream: localStream,
-                    track: videoTrack,
-                });
+                expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, newTrack);
             });
         });
 
-        describe("when enabling", () => {
-            let gumStream: any;
+        describe("when disable", () => {
+            it("should store disabled track", () => {
+                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-            beforeEach(() => {
-                gumStream = helpers.createMockedMediaStream();
-                global.navigator.mediaDevices.getUserMedia = jest.fn(() => Promise.resolve(gumStream));
-                localStream.removeTrack(localStream.getVideoTracks()[0]);
-                const deviceId = helpers.randomString();
-                mediaConstraints.videoId = deviceId;
-                mediaConstraints.devices = [
-                    helpers.createMockedInputDevice("videoinput", { deviceId, label: helpers.randomString() }),
-                ];
-            });
+                stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
 
-            it("should obtain new video track", () => {
-                rtcManager.stopOrResumeVideo(localStream, true);
-
-                expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
-            });
-
-            it("should add video track to local stream", async () => {
-                const expectedTrack = gumStream.getVideoTracks()[0];
-
-                rtcManager.stopOrResumeVideo(localStream, true);
-                await Promise.resolve();
-
-                expect(localStream.addTrack).toHaveBeenCalledWith(expectedTrack);
-            });
-
-            it("should emit event", async () => {
-                const expectedTrack = gumStream.getVideoTracks()[0];
-
-                rtcManager.stopOrResumeVideo(localStream, true);
-                await Promise.resolve();
-
-                expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
-                    streamId: localStream.id,
-                    tracks: [expectedTrack],
-                    screenShare: false,
-                });
-            });
-
-            it("should add track to peer connection(s)", async () => {
-                const session = rtcManager.acceptNewStream({
-                    streamId: helpers.randomString(),
-                    clientId: helpers.randomString(),
-                });
-                const expectedTrack = gumStream.getVideoTracks()[0];
-                jest.spyOn(session, "addTrack");
-
-                rtcManager.stopOrResumeVideo(localStream, true);
-                await Promise.resolve();
-
-                expect(session.addTrack).toHaveBeenCalledWith(expectedTrack);
-            });
-
-            describe("when a stopped track exists", () => {
-                let stoppedTrack: MediaStreamTrack;
-                beforeEach(async () => {
-                    stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
-                    stoppedTrack.enabled = false;
-                    localStream.addTrack(stoppedTrack);
-                    rtcManager.stopOrResumeVideo(localStream, false);
-                    await jest.advanceTimersByTimeAsync(5000); // stopCameraTimeout
-                });
-
-                describe("for connected peers", () => {
-                    it("should replace track in peer connection(s) when stopped track exists", async () => {
-                        const session = rtcManager.acceptNewStream({
-                            streamId: helpers.randomString(),
-                            clientId: helpers.randomString(),
-                        });
-                        jest.spyOn(session, "replaceTrack");
-                        jest.spyOn(session, "hasConnectedPeerConnection");
-                        (session.hasConnectedPeerConnection as jest.Mock).mockReturnValue(true);
-
-                        const expectedTrack = gumStream.getVideoTracks()[0];
-
-                        rtcManager.stopOrResumeVideo(localStream, true);
-                        await Promise.resolve();
-
-                        expect(session.replaceTrack).toHaveBeenCalledWith(stoppedTrack, expectedTrack);
-                    });
-                });
-
-                describe("for disconnected peers", () => {
-                    it("should add a pending action replacing the track", async () => {
-                        const session = rtcManager.acceptNewStream({
-                            streamId: helpers.randomString(),
-                            clientId: helpers.randomString(),
-                        });
-                        jest.spyOn(session, "replaceTrack");
-                        jest.spyOn(session, "hasConnectedPeerConnection");
-                        (session.hasConnectedPeerConnection as jest.Mock).mockReturnValue(false);
-
-                        const expectedTrack = gumStream.getVideoTracks()[0];
-
-                        rtcManager.stopOrResumeVideo(localStream, true);
-                        await Promise.resolve();
-
-                        expect(session.replaceTrack).not.toHaveBeenCalled();
-
-                        const pendingAction = session.pendingReplaceTrackActions.pop();
-                        expect(session.replaceTrack).not.toHaveBeenCalled();
-                        assert(pendingAction, "No pending action found");
-
-                        await pendingAction();
-                        expect(session.replaceTrack).toHaveBeenCalledWith(stoppedTrack, expectedTrack);
-                    });
-
-                    describe("when the connection is closed", () => {
-                        it("should take no action", async () => {
-                            const session = rtcManager.acceptNewStream({
-                                streamId: helpers.randomString(),
-                                clientId: helpers.randomString(),
-                            });
-                            jest.spyOn(session, "replaceTrack");
-                            jest.spyOn(session, "hasConnectedPeerConnection");
-                            (session.hasConnectedPeerConnection as jest.Mock).mockReturnValue(false);
-                            session.pc = {
-                                connectionState: "closed",
-                                addTrack: jest.fn(),
-                            } as unknown as RTCPeerConnection;
-
-                            rtcManager.stopOrResumeVideo(localStream, true);
-                            await Promise.resolve();
-
-                            expect(session.replaceTrack).not.toHaveBeenCalled();
-                            expect(session.pendingReplaceTrackActions.length).toEqual(0);
-                        });
-                    });
-                });
-            });
-
-            describe("when video is disabled shortly after enabling", () => {
-                it("should not add video track to local stream", async () => {
-                    const expectedTrack = gumStream.getVideoTracks()[0];
-
-                    rtcManager.stopOrResumeVideo(localStream, true);
-                    rtcManager.stopOrResumeVideo(localStream, false);
-                    await Promise.resolve();
-
-                    expect(localStream.addTrack).not.toHaveBeenCalledWith(expectedTrack);
-                });
-
-                it("should not emit event", async () => {
-                    rtcManager.stopOrResumeVideo(localStream, true);
-                    rtcManager.stopOrResumeVideo(localStream, false);
-                    await Promise.resolve();
-
-                    expect(emitterStub.emit).not.toHaveBeenCalled();
-                });
-
-                it("should not add track to peer connection(s)", async () => {
-                    const session = rtcManager.acceptNewStream({
-                        streamId: helpers.randomString(),
-                        clientId: helpers.randomString(),
-                    });
-                    jest.spyOn(session, "addTrack");
-
-                    rtcManager.stopOrResumeVideo(localStream, true);
-                    rtcManager.stopOrResumeVideo(localStream, false);
-                    await Promise.resolve();
-
-                    expect(session.addTrack).not.toHaveBeenCalled();
-                });
-
-                describe("when a stopped track exists", () => {
-                    let stoppedTrack: MediaStreamTrack;
-                    beforeEach(async () => {
-                        stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
-                        stoppedTrack.enabled = false;
-                        localStream.addTrack(stoppedTrack);
-                        rtcManager.stopOrResumeVideo(localStream, false);
-                        await jest.advanceTimersByTimeAsync(5000); // stopCameraTimeout
-                    });
-
-                    describe("for connected peers", () => {
-                        it("should not replace track in peer connection(s)", async () => {
-                            const session = rtcManager.acceptNewStream({
-                                streamId: helpers.randomString(),
-                                clientId: helpers.randomString(),
-                            });
-                            jest.spyOn(session, "replaceTrack");
-                            jest.spyOn(session, "hasConnectedPeerConnection");
-                            (session.hasConnectedPeerConnection as jest.Mock).mockReturnValue(true);
-
-                            rtcManager.stopOrResumeVideo(localStream, true);
-                            rtcManager.stopOrResumeVideo(localStream, false);
-                            await Promise.resolve();
-
-                            expect(session.replaceTrack).not.toHaveBeenCalled();
-                        });
-                    });
-
-                    describe("for disconnected peers", () => {
-                        it("should not add a pending action replacing the track", async () => {
-                            const session = rtcManager.acceptNewStream({
-                                streamId: helpers.randomString(),
-                                clientId: helpers.randomString(),
-                            });
-                            jest.spyOn(session, "replaceTrack");
-                            jest.spyOn(session, "hasConnectedPeerConnection");
-                            (session.hasConnectedPeerConnection as jest.Mock).mockReturnValue(false);
-
-                            rtcManager.stopOrResumeVideo(localStream, true);
-                            rtcManager.stopOrResumeVideo(localStream, false);
-                            await Promise.resolve();
-
-                            expect(session.replaceTrack).not.toHaveBeenCalled();
-                            expect(session.pendingReplaceTrackActions.length).toEqual(0);
-                        });
-                    });
-                });
-            });
-        });
-
-        describe("handling localStream `stopresumevideo` event", () => {
-            let stream: any;
-            let rtcManager: any;
-
-            beforeEach(() => {
-                stream = helpers.createMockedMediaStream();
-                rtcManager = createRtcManager();
-                rtcManager.addCameraStream(stream);
-            });
-
-            describe("when enable", () => {
-                it("should add track to peer connections", () => {
-                    jest.spyOn(rtcManager, "_addTrackToPeerConnections");
-                    const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-                    stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track } }));
-
-                    expect(rtcManager._addTrackToPeerConnections).toHaveBeenCalledWith(track);
-                });
-
-                it("should replace track in peer connection(s) when stopped track exists", () => {
-                    const stoppedTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
-                    rtcManager._stoppedVideoTrack = stoppedTrack;
-                    jest.spyOn(rtcManager, "_replaceTrackToPeerConnections");
-                    const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-                    stream.dispatchEvent(
-                        new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } }),
-                    );
-
-                    expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, newTrack);
-                });
-            });
-
-            describe("when disable", () => {
-                it("should store disabled track", () => {
-                    const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-                    stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: false, track } }));
-
-                    expect(rtcManager._stoppedVideoTrack).toEqual(track);
-                });
+                expect(rtcManager._stoppedVideoTrack).toEqual(track);
             });
         });
     });
