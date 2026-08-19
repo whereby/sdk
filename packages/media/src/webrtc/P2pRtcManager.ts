@@ -27,7 +27,6 @@ import {
 } from "./types";
 import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
-import getConstraints from "./mediaConstraints";
 import { updateRenderedDimensions } from "./stats/StatsMonitor";
 
 interface CreateSessionOptions {
@@ -61,7 +60,6 @@ if (browserName === "chrome") {
 
 type P2PAnalytics = {
     P2POffendingInitialOffer: number;
-    P2PNonErrorRejectionValueGUMError: number;
     numNewPc: number;
     numIceConnected: number;
     numIceDisconnected: number;
@@ -118,7 +116,6 @@ export default class P2pRtcManager implements RtcManager {
     _turnServers: any;
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: ClearableTimeout | null;
-    _stopCameraTimeout: ClearableTimeout | null;
     _icePublicIPGatheringTimeoutID: ClearableTimeout | null;
     _stoppedVideoTrack?: MediaStreamTrack;
     _videoTrackBeingMonitored?: MediaStreamTrack;
@@ -126,7 +123,6 @@ export default class P2pRtcManager implements RtcManager {
     _closed: boolean;
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
-    _webcamPaused?: boolean;
     _videoTrackIdByStreamId: Record<string, string>;
 
     constructor({ selfId, room, emitter, serverSocket, webrtcProvider, features }: RtcManagerOptions) {
@@ -149,7 +145,6 @@ export default class P2pRtcManager implements RtcManager {
 
         // Timeouts
         this._fetchMediaServersTimer = null;
-        this._stopCameraTimeout = null;
         this._icePublicIPGatheringTimeoutID = null;
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
@@ -178,7 +173,6 @@ export default class P2pRtcManager implements RtcManager {
 
         this.analytics = {
             P2POffendingInitialOffer: 0,
-            P2PNonErrorRejectionValueGUMError: 0,
             numNewPc: 0,
             numIceConnected: 0,
             numIceDisconnected: 0,
@@ -216,11 +210,9 @@ export default class P2pRtcManager implements RtcManager {
 
     addCameraStream(
         stream: MediaStream,
-        { videoPaused, beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
+        { beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
     ) {
         logger.info("addCameraStream: [stream.id: %s]", stream.id);
-
-        this._webcamPaused = videoPaused;
 
         if (stream === this._localCameraStream) {
             // this can happen after reconnect. We do not want to add the stream to the
@@ -1318,80 +1310,22 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    stopOrResumeVideo(localStream: MediaStream, enable: boolean) {
+    /**
+     * This is called when the consuming app toggles the webcam on or off. Pass the
+     * camera track it stopped, or the one it just acquired. Leave it out when no
+     * track changed: there is nothing for the peer connections to do, since muting
+     * itself is the app disabling the track.
+     */
+    stopOrResumeVideo({ enable, track }: { enable: boolean; track?: MediaStreamTrack }) {
         logger.info("stopOrResumeVideo() [enable: %s]", enable);
 
-        this._webcamPaused = !enable;
-
-        // actually turn off the camera. Chrome-only (Firefox has different plans)
-        if (!["chrome", "safari"].includes(browserName)) {
+        if (!track) {
             return;
         }
-
-        if (this._stopCameraTimeout) {
-            clearTimeout(this._stopCameraTimeout);
-            this._stopCameraTimeout = null;
+        if (enable && !trackAnnotations(track).isEffectTrack) {
+            this._monitorVideoTrack(track);
         }
-
-        if (enable === false) {
-            const stopCameraDelay =
-                localStream.getVideoTracks().find((t) => !t.enabled)?.readyState === "ended" ? 0 : 5000;
-            // try to stop the local camera so the camera light goes off.
-            this._stopCameraTimeout = setTimeout(() => {
-                localStream.getVideoTracks().forEach((track) => {
-                    if (track.enabled === false) {
-                        track.stop();
-                        localStream.removeTrack(track);
-                        this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED as string, {
-                            stream: localStream,
-                            track,
-                        });
-
-                        this._handleStopOrResumeVideo({ enable, track });
-                    }
-                });
-            }, stopCameraDelay);
-        } else {
-            if (localStream.getVideoTracks().length === 0) {
-                // re-enable the stream
-                const constraints = getConstraints(this._webrtcProvider.getMediaOptions()).video;
-                if (!constraints) {
-                    // user was screensharing with no-devices, the video
-                    // device has been plugged out or similar
-                    return;
-                }
-                navigator.mediaDevices
-                    .getUserMedia({ video: constraints })
-                    .then((stream) => {
-                        const track = stream.getVideoTracks()[0];
-                        if (this._webcamPaused) {
-                            // if the user paused video inbetween the gUM call and the result,
-                            // we have to stop the track to avoid leaving the camera light on
-                            // and prevent sending video when we shouldn't be
-                            track.stop();
-                            return;
-                        }
-                        localStream.addTrack(track);
-                        this._monitorVideoTrack(track);
-                        this._emit(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED as string, {
-                            streamId: localStream.id,
-                            tracks: [track],
-                            screenShare: false,
-                        });
-
-                        this._handleStopOrResumeVideo({ enable, track });
-                    })
-                    .catch((e) => {
-                        // we are seeing getUserMedia errors in sentry with no information, so if the value
-                        // here isn't an error we create one so we can get a stack trace at least
-                        if (!(e instanceof Error)) {
-                            this.analytics.P2PNonErrorRejectionValueGUMError++;
-                            e = new Error(`non-error gUM rejection value: ${JSON.stringify(e)}`);
-                        }
-                        throw e;
-                    });
-            }
-        }
+        this._handleStopOrResumeVideo({ enable, track });
     }
 
     removeScreenshareStream(stream: MediaStream, { requestedByClientId }: RemoveScreenshareStreamOptions = {}) {

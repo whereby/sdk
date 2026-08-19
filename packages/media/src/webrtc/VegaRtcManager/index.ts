@@ -23,7 +23,7 @@ import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
 import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
-import { ClearableTimeout, ServerSocket, trackAnnotations } from "../../utils";
+import { ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import { updateRenderedDimensions } from "../stats/StatsMonitor";
@@ -46,7 +46,6 @@ import {
 import { TransportOptions } from "mediasoup-client/lib/Transport";
 import VegaConnection from "../VegaConnection";
 import { STREAM_TYPES } from "../../model";
-import getConstraints from "../mediaConstraints";
 import {
     ConsumerOptions,
     Producer,
@@ -111,7 +110,6 @@ export default class VegaRtcManager implements RtcManager {
     _sndTransportIceRestartPromise: any;
     _rcvTransportIceRestartPromise: any;
     _colocation: any;
-    _stopCameraTimeout: ClearableTimeout | null;
     _audioTrackOnEnded: any;
     _videoTrackOnEnded: any;
     _socketListenerDeregisterFunctions: any;
@@ -199,7 +197,6 @@ export default class VegaRtcManager implements RtcManager {
 
         this._colocation = null;
 
-        this._stopCameraTimeout = null;
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
             // One of them is getting unplugged. The other is the Chrome audio
@@ -258,7 +255,6 @@ export default class VegaRtcManager implements RtcManager {
             vegaIceRestarts: 0,
             vegaIceRestartMissingTransport: 0,
             vegaIceRestartWrongTransportId: 0,
-            vegaNonErrorRejectionValueGUMError: 0,
             vegaReplaceTrackNoProducerNoEnabledTrack: 0,
             vegaMicProducerFailed: 0,
             vegaWebcamProducerFailed: 0,
@@ -1672,83 +1668,25 @@ export default class VegaRtcManager implements RtcManager {
     /**
      * Only for webcam.
      *
-     * This is called when the PWA toggles the webcam on or off.
-     * @param {MediaStream} stream
-     * @param {boolean} enabled
+     * This is called when the consuming app toggles the webcam on or off. Pass the
+     * camera track it stopped, or the one it just acquired. Leave it out when no
+     * track changed: the producer is still paused or resumed, there is just nothing
+     * to hand to the WebRTC layer.
      */
-    stopOrResumeVideo(localStream: MediaStream, enable: boolean) {
+    stopOrResumeVideo({ enable, track }: { enable: boolean; track?: MediaStreamTrack }) {
         logger.info("stopOrResumeVideo() [enable:%s]", enable);
 
         this._webcamPaused = !enable;
 
         this._pauseResumeWebcam();
 
-        if (!["chrome", "safari"].includes(browserName)) {
+        if (!track) {
             return;
         }
-        if (this._stopCameraTimeout) {
-            clearTimeout(this._stopCameraTimeout);
-            this._stopCameraTimeout = null;
+        if (enable && !trackAnnotations(track).isEffectTrack) {
+            this._monitorVideoTrack(track);
         }
-
-        // actually turn off the camera. Chrome-only (Firefox etc. has different plans)
-
-        if (!enable) {
-            const stopCameraDelay =
-                localStream.getVideoTracks().find((t) => !t.enabled)?.readyState === "ended" ? 0 : 5000;
-
-            // try to stop the local camera so the camera light goes off.
-            this._stopCameraTimeout = setTimeout(() => {
-                localStream.getVideoTracks().forEach((track: MediaStreamTrack) => {
-                    if (track.enabled === false) {
-                        track.stop();
-                        localStream.removeTrack(track);
-
-                        this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_REMOVED, {
-                            stream: localStream,
-                            track,
-                        });
-
-                        this._handleStopOrResumeVideo({ enable, track });
-                    }
-                });
-            }, stopCameraDelay);
-        } else if (localStream.getVideoTracks().length === 0) {
-            // re-enable the stream
-            const constraints = getConstraints(this._webrtcProvider.getMediaOptions()).video;
-            navigator.mediaDevices
-                .getUserMedia({ video: constraints })
-                .then((stream) => {
-                    const track = stream.getVideoTracks()[0];
-                    if (this._webcamPaused) {
-                        // if the user paused video inbetween the gUM call and the result,
-                        // we have to stop the track to avoid leaving the camera light on
-                        // and prevent sending video when we shouldn't be
-                        track.stop();
-                        return;
-                    }
-
-                    localStream.addTrack(track);
-                    this._monitorVideoTrack(track);
-
-                    this._emitToPWA(CONNECTION_STATUS.EVENTS.LOCAL_STREAM_TRACK_ADDED, {
-                        streamId: localStream.id,
-                        tracks: [track],
-                        screenShare: false,
-                    });
-
-                    this._handleStopOrResumeVideo({ enable, track });
-                })
-                .catch((e) => {
-                    // we are seeing getUserMedia errors in sentry with no information, so if the value
-                    // here isn't an error we create one so we can get a stack trace at least
-                    if (!(e instanceof Error)) {
-                        this.analytics.vegaNonErrorRejectionValueGUMError++;
-                        e = new Error(`non-error gUM rejection value: ${JSON.stringify(e)}`);
-                    }
-                    throw e;
-                });
-        }
+        this._handleStopOrResumeVideo({ enable, track });
     }
 
     /**
