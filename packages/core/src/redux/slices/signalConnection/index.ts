@@ -26,6 +26,11 @@ import {
     LiveTranscriptionStartedEvent,
     LiveTranscriptionStoppedEvent,
     NewClientEvent,
+    RoomIntegrationStartedEvent,
+    RoomIntegrationStoppedEvent,
+    RoomIntegrationPropsUpdatedEvent,
+    RoomIntegrationEnabledEvent,
+    RoomIntegrationDisabledEvent,
     RoomJoinedEvent,
     RoomKnockedEvent,
     RoomLockedEvent,
@@ -118,6 +123,21 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     );
     socket.on("breakout_session_updated", (payload: BreakoutSessionUpdatedEvent) =>
         dispatch(signalEvents.breakoutSessionUpdated(payload)),
+    );
+    socket.on("room_integration_started", (payload: RoomIntegrationStartedEvent) =>
+        dispatch(signalEvents.roomIntegrationStarted(payload)),
+    );
+    socket.on("room_integration_stopped", (payload: RoomIntegrationStoppedEvent) =>
+        dispatch(signalEvents.roomIntegrationStopped(payload)),
+    );
+    socket.on("room_integration_props_updated", (payload: RoomIntegrationPropsUpdatedEvent) =>
+        dispatch(signalEvents.roomIntegrationPropsUpdated(payload)),
+    );
+    socket.on("room_integration_enabled", (payload: RoomIntegrationEnabledEvent) =>
+        dispatch(signalEvents.roomIntegrationEnabled(payload)),
+    );
+    socket.on("room_integration_disabled", (payload: RoomIntegrationDisabledEvent) =>
+        dispatch(signalEvents.roomIntegrationDisabled(payload)),
     );
     socket.on("breakout_move_to_group", () => dispatch(signalEvents.breakoutMoveToGroup()));
     socket.on("breakout_move_to_main", () => dispatch(signalEvents.breakoutMoveToMain()));

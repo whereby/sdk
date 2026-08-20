@@ -348,11 +348,70 @@ export interface RoomJoinedSuccess {
     clientClaim: string;
     breakout?: BreakoutConfig;
     eventClaim: string;
+    roomIntegrationSession?: RoomIntegrationSessionEvent[];
 }
 
 export type RoomJoinedEvent = RoomJoinedErrors | RoomJoinedSuccess;
 
 export interface BreakoutSessionUpdatedEvent extends BreakoutConfig {}
+
+export type RoomIntegrationProps = { [key: string]: string | number | boolean | null };
+
+export interface RoomIntegrationSessionState {
+    tagName: string;
+    shareUrl: string;
+    props: RoomIntegrationProps;
+    userId?: string;
+    clientId: string;
+}
+
+export interface RoomIntegrationSessionEvent extends RoomIntegrationSessionState {
+    roomIntegrationId: number | string;
+    roomIntegrationSessionId: string;
+    breakoutGroupId?: string | null;
+}
+
+export interface RoomIntegrationStartedEvent {
+    roomIntegrationId: number | string;
+    roomIntegrationSessionId: string;
+    breakoutGroupId?: string | null;
+    state: RoomIntegrationSessionState;
+}
+
+export interface RoomIntegrationStoppedEvent {
+    roomIntegrationSessionId: string;
+    intent?: "stop" | "end";
+    clientId?: string;
+}
+
+export interface RoomIntegrationPropsUpdatedEvent {
+    roomIntegrationSessionId: string;
+    props: RoomIntegrationProps;
+}
+
+export interface RoomIntegrationEnabledEvent {
+    roomIntegrationId: number | string;
+}
+
+export interface RoomIntegrationDisabledEvent {
+    roomIntegrationId: number | string;
+}
+
+export interface StartRoomIntegrationRequest {
+    roomIntegrationId: number;
+    breakoutGroupId: string | null;
+    state: RoomIntegrationSessionState;
+}
+
+export interface StopRoomIntegrationRequest {
+    roomIntegrationSessionId: string;
+    intent: "stop" | "end";
+}
+
+export interface UpdateRoomIntegrationPropsRequest {
+    roomIntegrationSessionId: string;
+    props: RoomIntegrationProps;
+}
 
 export interface RoomKnockedEvent {
     clientId: string;
@@ -475,6 +534,11 @@ export interface SignalEvents {
     knock_handled: KnockAcceptedEvent | KnockOnHoldEvent | KnockRejectedEvent;
     knocker_left: KnockerLeftEvent;
     new_client: NewClientEvent;
+    room_integration_started: RoomIntegrationStartedEvent;
+    room_integration_stopped: RoomIntegrationStoppedEvent;
+    room_integration_props_updated: RoomIntegrationPropsUpdatedEvent;
+    room_integration_enabled: RoomIntegrationEnabledEvent;
+    room_integration_disabled: RoomIntegrationDisabledEvent;
     room_joined: RoomJoinedEvent;
     room_knocked: RoomKnockedEvent;
     room_left: void;
@@ -587,6 +651,9 @@ export interface SignalRequests {
     request_video_enable: VideoEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string; stickyReaction?: unknown } };
     set_lock: { locked: boolean };
+    start_room_integration: StartRoomIntegrationRequest;
+    stop_room_integration: StopRoomIntegrationRequest;
+    update_room_integration_props: UpdateRoomIntegrationPropsRequest;
     start_live_transcription: void;
     start_recording: { recording: string };
     stop_live_transcription: void;

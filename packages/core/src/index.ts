@@ -1,5 +1,6 @@
 export * from "./api";
 export * from "./effects";
+export * from "./roomIntegrationContent";
 export * from "./RoomParticipant";
 export { createServices } from "./services";
 export * from "./utils";

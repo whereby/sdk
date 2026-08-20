@@ -41,6 +41,10 @@ import {
     doStopLiveCaptions,
     doStopLiveTranscription,
     doStopScreenshare,
+    doStartRoomIntegration,
+    doStartRoomIntegrationWithPicker,
+    doStopRoomIntegration,
+    doUpdateRoomIntegrationProps,
     selectNotificationsEmitter,
     setDisplayName,
     signalEvents,
@@ -67,6 +71,7 @@ import type {
     LocalScreenshareStatus,
     RemoteParticipantState,
     RoomConnectionState,
+    RoomIntegrationProps,
     RoomJoinedSuccess,
     ScreenshareState,
     WaitingParticipantState,
@@ -722,6 +727,65 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public endMeeting(stayBehind: boolean = false) {
         this.store.dispatch(doEndMeeting({ stayBehind }));
+    }
+
+    /**
+     * Share a room integration with everyone in the room, or in the current breakout group.
+     *
+     * The integration must be enabled for the room. `tagName` and `props` come from the integration's
+     * own bootstrap: they describe which content element to render and with which attributes.
+     *
+     * @param options.roomIntegrationId - The integration to start.
+     * @param options.tagName - Custom element name for the content frame.
+     * @param options.shareUrl - The https url of the shared content.
+     * @param options.props - Flat bag of primitives applied as attributes on the content element.
+     */
+    /**
+     * Starts a room integration by letting the integration pick its own content: opens its hosted
+     * picker in a popup (Miro's board picker, YouTube's form and watch history) and starts the
+     * session with whatever it returns.
+     *
+     * Must be called directly from a user gesture or the browser blocks the popup. Resolves to
+     * false if the user cancelled or closed the picker.
+     *
+     * @param options.roomIntegrationId - The integration to pick content for.
+     * @param options.featureSource - Optional analytics tag for where the share was initiated.
+     */
+    public startRoomIntegrationWithPicker(options: {
+        roomIntegrationId: string;
+        featureSource?: string;
+    }): Promise<boolean> {
+        return this.store.dispatch(doStartRoomIntegrationWithPicker(options)).unwrap();
+    }
+
+    public startRoomIntegration(options: {
+        roomIntegrationId: string;
+        tagName: string;
+        shareUrl: string;
+        props?: RoomIntegrationProps;
+    }) {
+        this.store.dispatch(doStartRoomIntegration(options));
+    }
+
+    /**
+     * Stop a running room integration.
+     *
+     * @param options.roomIntegrationSessionId - The running session to stop.
+     * @param options.intent - "end" when the user deliberately ended it, otherwise "stop".
+     */
+    public stopRoomIntegration(options: { roomIntegrationSessionId: string; intent?: "stop" | "end" }) {
+        this.store.dispatch(doStopRoomIntegration(options));
+    }
+
+    /**
+     * Update the props of a running room integration, propagating them to everyone in the room.
+     * This is how integration state such as playback position is kept in sync.
+     *
+     * @param options.roomIntegrationSessionId - The running session to update.
+     * @param options.props - Partial patch, merged into the session's existing props.
+     */
+    public updateRoomIntegrationProps(options: { roomIntegrationSessionId: string; props: RoomIntegrationProps }) {
+        this.store.dispatch(doUpdateRoomIntegrationProps(options));
     }
 
     /**

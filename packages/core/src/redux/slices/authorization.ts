@@ -13,6 +13,7 @@ const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName
     canAskToSpeak: ["host"],
     canSpotlight: ["host"],
     canManageBreakout: ["host"],
+    canManageRoomIntegration: ["host"],
 };
 
 /**
@@ -112,4 +113,12 @@ export const selectIsAuthorizedToSpotlight = createSelector(selectAuthorizationR
 );
 export const selectIsAuthorizedToManageBreakout = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
     ROOM_ACTION_PERMISSIONS_BY_ROLE.canManageBreakout.includes(localParticipantRole),
+);
+/**
+ * Whether the local participant may stop a room integration they did not start. The signal server
+ * enforces this too — anyone may stop their own, but stopping someone else's needs the role.
+ */
+export const selectIsAuthorizedToManageRoomIntegration = createSelector(
+    selectAuthorizationRoleName,
+    (localParticipantRole) => ROOM_ACTION_PERMISSIONS_BY_ROLE.canManageRoomIntegration.includes(localParticipantRole),
 );

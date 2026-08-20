@@ -1,10 +1,28 @@
 import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage, KnockResponse } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
-import { ClientView, ConnectionStatus, FileUpload, NotificationsEventEmitter } from "../../redux";
+import {
+    ClientView,
+    ConnectionStatus,
+    FileUpload,
+    NotificationsEventEmitter,
+    RoomIntegration,
+    RoomIntegrationSessionView,
+} from "../../redux";
 import LiveCaption from "../../api/models/LiveCaption";
 
-export type { RoomJoinedSuccess, ChatFileShare, KnockResponse, KnockResponseSender } from "@whereby.com/media";
+export type {
+    RoomJoinedSuccess,
+    ChatFileShare,
+    KnockResponse,
+    KnockResponseSender,
+    RoomIntegrationProps,
+} from "@whereby.com/media";
 export type { FileUpload, FileShareError } from "../../redux";
+export type {
+    RoomIntegration,
+    RoomIntegrationSession,
+    RoomIntegrationSessionView,
+} from "../../redux/slices/roomIntegrations";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -105,6 +123,15 @@ export type BreakoutState = {
     broadcastingParticipants: ClientView[];
 };
 
+export type RoomIntegrationsState = {
+    hasFetched: boolean;
+    isFetching: boolean;
+    error: string | null;
+    embeddable: RoomIntegration[];
+    enabled: RoomIntegration[];
+    running: RoomIntegrationSessionView[];
+};
+
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     connectionError: string | null;
@@ -122,6 +149,7 @@ export interface RoomConnectionState {
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
+    roomIntegrations: RoomIntegrationsState;
     screenshares: Screenshare[];
     waitingParticipants: WaitingParticipantState[];
     spotlightedParticipants: ClientView[];

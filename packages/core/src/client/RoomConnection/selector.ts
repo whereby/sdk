@@ -38,6 +38,10 @@ import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
     selectLiveCaptionsRaw,
+    selectRoomIntegrationsRaw,
+    selectEnabledRoomIntegrations,
+    selectEmbeddableRoomIntegrations,
+    selectRunningRoomIntegrations,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
@@ -81,6 +85,10 @@ export const selectRoomConnectionState = createSelector(
     selectSpotlightedClientViews,
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
+    selectRoomIntegrationsRaw,
+    selectEnabledRoomIntegrations,
+    selectEmbeddableRoomIntegrations,
+    selectRunningRoomIntegrations,
     (
         chatMessages,
         fileUploads,
@@ -120,6 +128,10 @@ export const selectRoomConnectionState = createSelector(
         spotlightedClientViews,
         isCameraEnabled,
         isMicrophoneEnabled,
+        roomIntegrationsRaw,
+        enabledRoomIntegrations,
+        embeddableRoomIntegrations,
+        runningRoomIntegrations,
     ) => {
         // Main-room participants that are spotlighted broadcast their audio/video into every group.
         // Only relevant for participants who are currently inside a group.
@@ -192,6 +204,14 @@ export const selectRoomConnectionState = createSelector(
                 ...participant,
                 breakoutGroupAssigned: breakoutAssignments?.[participant.deviceId] || "",
             })),
+            roomIntegrations: {
+                hasFetched: roomIntegrationsRaw.hasFetched,
+                isFetching: roomIntegrationsRaw.isFetching,
+                error: roomIntegrationsRaw.error,
+                embeddable: embeddableRoomIntegrations,
+                enabled: enabledRoomIntegrations,
+                running: runningRoomIntegrations,
+            },
             screenshares,
             waitingParticipants,
             spotlightedParticipants: spotlightedClientViews,
