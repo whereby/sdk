@@ -98,8 +98,13 @@ Typical usage:
 import { isPreCallTestSupported } from "@whereby.com/core";
 
 if (!isPreCallTestSupported()) {
-    return; 
+    return;
 }
+
+// initialize with your room URL
+preCallTest.initialize({
+    roomUrl: "https://your-subdomain.whereby.com/your-room",
+});
 
 // runs for a fixed duration, exported as PRE_CALL_TEST_DURATION_S
 const result = await preCallTest.startTest();

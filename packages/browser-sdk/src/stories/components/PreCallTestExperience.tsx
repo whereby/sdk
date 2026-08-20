@@ -14,11 +14,11 @@ function Verdict({ result }: { result: PreCallTestResult }) {
     return <strong className="preCallTestVerdictFailure">Connection is too poor for a call</strong>;
 }
 
-export default function PreCallTestExperience() {
+export default function PreCallTestExperience({ roomUrl }: { roomUrl: string }) {
     const {
         state: { status, result, error },
         actions: { startTest, stopTest },
-    } = usePreCallTest();
+    } = usePreCallTest(roomUrl);
 
     const isRunning = status === "running";
 
