@@ -40,11 +40,11 @@ function Details({ details }: { details: PreCallTestDetails }) {
     );
 }
 
-export default function PreCallTestExperience() {
+export default function PreCallTestExperience({ roomUrl }: { roomUrl: string }) {
     const {
         state: { status, result, error },
         actions: { startTest, stopTest },
-    } = usePreCallTest();
+    } = usePreCallTest(roomUrl);
 
     const isRunning = status === "running";
 

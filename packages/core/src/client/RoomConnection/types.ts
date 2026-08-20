@@ -20,6 +20,11 @@ export interface WherebyClientOptions {
     externalId?: string | null;
     isNodeSdk?: boolean;
 }
+
+export interface PrecallTestOptions {
+    roomUrl?: string;
+}
+
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams"> & {
     breakoutGroupAssigned: string;
 };

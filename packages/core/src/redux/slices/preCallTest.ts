@@ -6,6 +6,7 @@ import { startAppListening } from "../listenerMiddleware";
 import { doAppStop } from "./app";
 import { selectIsHDModeEnabled, selectIsLowDataModeEnabled } from "./localMedia";
 import { RateLimitError } from "../../api/errors";
+import { PrecallTestOptions } from "../../client/RoomConnection/types";
 
 export const PRE_CALL_TEST_DURATION_S = 15;
 
@@ -152,9 +153,21 @@ export function isPreCallTestSupported(): boolean {
  * Thunks
  */
 
-export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, void>(
+export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, PrecallTestOptions>(
     "preCallTest/start",
-    async (_, { dispatch, getState, extra }) => {
+    async ({ roomUrl }, { dispatch, getState, extra }) => {
+        if (!roomUrl) {
+            dispatch(
+                preCallTestFailed({
+                    error: {
+                        reason: "unsupported",
+                        message: "The pre-call test requires a roomUrl to be provided and none was present.",
+                    },
+                }),
+            );
+            return null;
+        }
+
         const state = getState();
 
         if (selectIsPreCallTestRunning(state)) {

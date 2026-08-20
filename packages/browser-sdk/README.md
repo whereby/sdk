@@ -80,7 +80,7 @@ joining — running it during a call takes bandwidth away from the call.
 import { usePreCallTest } from "@whereby.com/browser-sdk/react";
 
 function MyNetworkCheck() {
-    const { state, actions } = usePreCallTest();
+    const { state, actions } = usePreCallTest("<room_url>");
     const { status, result, error } = state;
 
     return (
@@ -159,7 +159,7 @@ The `useRoomConnection` hook provides a way to connect participants in a given
 room, subscribe to state updates, and perform actions on the connection, like
 toggling camera or microphone.
 
-Note: from V3 this requires the `WherebyProvder` as a parent of this component. See [the docs](https://docs.whereby.com/reference/react-hooks-reference/guides-and-concepts/migrate-from-version-2.x-to-3) for details 
+Note: from V3 this requires the `WherebyProvder` as a parent of this component. See [the docs](https://docs.whereby.com/reference/react-hooks-reference/guides-and-concepts/migrate-from-version-2.x-to-3) for details
 
 ```js
 import { useEffect } from "react"
@@ -180,7 +180,7 @@ function MyCallUX( { roomUrl, localStream }) {
     const { connectionState, remoteParticipants } = state;
     const { toggleCamera, toggleMicrophone, joinRoom, leaveRoom } = actions;
     const { VideoView } = components;
-    
+
     useEffect(() => {
         /* join the room when this component renders */
         joinRoom()

@@ -1,16 +1,16 @@
 import * as React from "react";
 
-import { Meta } from "@storybook/react-vite";
+import { StoryObj } from "@storybook/react-vite";
 import "./styles.css";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
 import { usePreCallTest } from "../lib/react";
 import PreCallTestExperience from "./components/PreCallTestExperience";
 import VideoExperience from "./components/VideoExperience";
 
-const defaultArgs: Meta = {
-    title: "Examples/Pre-call test",
+const defaultArgs: StoryObj = {
+    name: "Examples/Pre-call test",
     argTypes: {
-        roomUrl: { control: "text" },
+        roomUrl: { control: "text", type: { required: true } },
         displayName: { control: "text" },
     },
     args: {
@@ -30,8 +30,12 @@ export default defaultArgs;
 
 const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
-export const BandwidthTest = () => {
-    return <PreCallTestExperience />;
+export const BandwidthTest = ({ roomUrl }: { roomUrl: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    return <PreCallTestExperience roomUrl={roomUrl} />;
 };
 
 /**
@@ -39,7 +43,11 @@ export const BandwidthTest = () => {
  * keeps its result around for the next reader, while unmounting a running test
  * stops it so it no longer eats bandwidth.
  */
-export const BandwidthTestUnmount = () => {
+export const BandwidthTestUnmount = ({ roomUrl }: { roomUrl: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
     const [isMounted, setIsMounted] = React.useState(true);
 
     return (
@@ -50,7 +58,7 @@ export const BandwidthTestUnmount = () => {
                 </button>
             </div>
             {isMounted ? (
-                <PreCallTestExperience />
+                <PreCallTestExperience roomUrl={roomUrl} />
             ) : (
                 <p>Unmounted. Mount again to see the state the test was left in.</p>
             )}
@@ -66,7 +74,7 @@ export const BandwidthTestBeforeJoiningRoom = ({ roomUrl, displayName }: { roomU
     const {
         state: { status, result },
         actions: { startTest },
-    } = usePreCallTest();
+    } = usePreCallTest(roomUrl);
     const [hasJoined, setHasJoined] = React.useState(false);
 
     if (!roomUrl || !roomUrl.match(roomRegEx)) {
