@@ -4,6 +4,7 @@ import {
     ChatFileShare,
     NotificationsEventEmitter,
     RoomConnectionState,
+    SendFilesOptions,
     StartBreakoutSessionOptions,
     UpdateBreakoutSessionOptions,
 } from "@whereby.com/core";
@@ -84,7 +85,10 @@ export function useRoomConnection(
         (id: string, sig?: string | null) => client.removeChatMessage(id, sig),
         [client],
     );
-    const sendFiles = React.useCallback((files: File[]) => client.sendFiles(files), [client]);
+    const sendFiles = React.useCallback(
+        (files: File[], options?: SendFilesOptions) => client.sendFiles(files, options),
+        [client],
+    );
     const downloadFile = React.useCallback((file: ChatFileShare) => client.downloadFile(file), [client]);
     const knock = React.useCallback(() => client.knock(), [client]);
     const cancelKnock = React.useCallback(() => client.cancelKnock(), [client]);

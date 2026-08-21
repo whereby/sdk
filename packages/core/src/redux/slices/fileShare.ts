@@ -134,9 +134,14 @@ function uploadFile(file: File, uploadUrl: FileUploadUrl["uploadUrl"]) {
     return fetch(uploadUrl.url, { method: "POST", body: form });
 }
 
+export interface SendFilesOptions {
+    parentId?: string;
+    isBroadcast?: boolean;
+}
+
 export const doSendFiles = createAsyncRoomConnectedThunk(
     "fileShare/sendFiles",
-    async (payload: { files: File[] }, { dispatch, getState }) => {
+    async (payload: { files: File[] } & SendFilesOptions, { dispatch, getState }) => {
         const state = getState();
 
         if (state.fileShare.requestInFlight) {
@@ -239,7 +244,9 @@ export const doSendFiles = createAsyncRoomConnectedThunk(
                             type: file.type,
                             key: urls.uploadUrl.fields.key,
                         },
+                        ...(payload.parentId && { parentId: payload.parentId }),
                         ...(breakoutCurrentId && { breakoutGroup: breakoutCurrentId }),
+                        ...(payload.isBroadcast && { broadcast: true }),
                     });
 
                     dispatch(fileUploadSucceeded({ id: upload.id }));

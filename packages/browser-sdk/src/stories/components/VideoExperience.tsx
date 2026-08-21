@@ -17,6 +17,18 @@ import {
     LiveCaptionsState,
 } from "@whereby.com/core";
 
+type ChatMessageWithFile = { text: string; file?: { name: string } };
+
+function describeChatMessage(message?: ChatMessageWithFile) {
+    if (!message) {
+        return "unknown message";
+    }
+    if (message.text) {
+        return message.text;
+    }
+    return message.file ? `📎 ${message.file.name}` : "(empty message)";
+}
+
 export default function VideoExperience({
     displayName,
     roomName,
@@ -47,6 +59,7 @@ export default function VideoExperience({
     const [chatMessage, setChatMessage] = useState("");
     const [chatMessageParent, setChatMessageParent] = useState("");
     const [chatBroadcast, setChatBroadcast] = useState(false);
+    const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
     const [audioDenoiserSupported, setAudioDenoiserSupported] = useState<boolean | null>(null);
@@ -733,17 +746,13 @@ export default function VideoExperience({
                     <div className="chat">
                         {chatMessages.length > 0 && <h3>Chat messages</h3>}
                         {chatMessages.map((m) => {
+                            const parent = m.parentId ? chatMessages.find((cM) => cM.id === m.parentId) : undefined;
+
                             return (
                                 <div key={m.id}>
                                     {m.parentId && (
                                         <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "4px" }}>
-                                            Reply to{" "}
-                                            <i>
-                                                &quot;
-                                                {(chatMessages.find((cM) => cM.id === m.parentId) || {}).text}
-                                                &quot;
-                                            </i>
-                                            :{" "}
+                                            Reply to <i>&quot;{describeChatMessage(parent)}&quot;</i>:{" "}
                                         </div>
                                     )}
                                     {m.removed ? <s>{m.text}</s> : m.text}{" "}
@@ -757,6 +766,11 @@ export default function VideoExperience({
                                             ⬇ {m.file.name} ({Math.round(m.file.size / 1024)} KB)
                                         </button>
                                     )}
+                                    {!m.removed && (
+                                        <button type="button" onClick={() => setChatMessageParent(m.id)}>
+                                            Reply
+                                        </button>
+                                    )}
                                     <hr />
                                 </div>
                             );
@@ -764,12 +778,56 @@ export default function VideoExperience({
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                sendChatMessage(chatMessage, chatMessageParent, chatBroadcast);
+
+                                const parentId = chatMessageParent || undefined;
+
+                                if (chatMessage) {
+                                    sendChatMessage(chatMessage, parentId, chatBroadcast);
+                                }
+                                if (showFileSharing && stagedFiles.length) {
+                                    sendFiles(stagedFiles, { parentId, isBroadcast: chatBroadcast });
+                                }
+
                                 setChatMessage("");
+                                setStagedFiles([]);
                                 setChatMessageParent("");
                             }}
                         >
-                            <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+                            {chatMessageParent && (
+                                <div className="chatReplyTarget">
+                                    Replying to{" "}
+                                    <i>
+                                        &quot;
+                                        {describeChatMessage(chatMessages.find((m) => m.id === chatMessageParent))}
+                                        &quot;
+                                    </i>{" "}
+                                    <button type="button" onClick={() => setChatMessageParent("")}>
+                                        Cancel reply
+                                    </button>
+                                </div>
+                            )}
+                            <input
+                                type="text"
+                                placeholder="Message"
+                                value={chatMessage}
+                                onChange={(e) => setChatMessage(e.target.value)}
+                            />
+                            {showFileSharing && (
+                                <label>
+                                    Attach files:{" "}
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files ?? []);
+                                            if (files.length) {
+                                                setStagedFiles((prev) => [...prev, ...files]);
+                                            }
+                                            e.target.value = "";
+                                        }}
+                                    />
+                                </label>
+                            )}
                             {breakout.isActive ? (
                                 <label>
                                     <input
@@ -787,39 +845,48 @@ export default function VideoExperience({
                                 {chatMessages.map((m) => {
                                     return (
                                         <option key={`chat-select-${m.id}`} value={m.id}>
-                                            Reply to: {m.text}
+                                            Reply to: {describeChatMessage(m)}
                                         </option>
                                     );
                                 })}
                             </select>
-                            <button type="submit">Send message</button>
+                            <button type="submit" disabled={!chatMessage && !stagedFiles.length}>
+                                {stagedFiles.length
+                                    ? `Send message with ${stagedFiles.length} file(s)`
+                                    : "Send message"}
+                            </button>
                         </form>
-                        {showFileSharing && (
+                        {showFileSharing && stagedFiles.length > 0 && (
                             <div className="fileSharing">
-                                <label>
-                                    Share files:{" "}
-                                    <input
-                                        type="file"
-                                        multiple
-                                        onChange={(e) => {
-                                            const files = Array.from(e.target.files ?? []);
-                                            if (files.length) {
-                                                sendFiles(files);
-                                            }
-                                            e.target.value = "";
-                                        }}
-                                    />
-                                </label>
-                                {fileUploads.length > 0 && (
-                                    <ul className="fileUploads">
-                                        {fileUploads.map((upload) => (
-                                            <li key={upload.id}>
-                                                {upload.name} —{" "}
-                                                {upload.status === "error" ? `error: ${upload.error}` : upload.status}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                                <h4>Attached, not sent yet</h4>
+                                <ul className="stagedFiles">
+                                    {stagedFiles.map((file, index) => (
+                                        <li key={`${file.name}-${index}`}>
+                                            {file.name} ({Math.round(file.size / 1024)} KB){" "}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setStagedFiles((prev) => prev.filter((_, i) => i !== index))
+                                                }
+                                            >
+                                                Remove
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                        {showFileSharing && fileUploads.length > 0 && (
+                            <div className="fileSharing">
+                                <h4>Uploads</h4>
+                                <ul className="fileUploads">
+                                    {fileUploads.map((upload) => (
+                                        <li key={upload.id}>
+                                            {upload.name} —{" "}
+                                            {upload.status === "error" ? `error: ${upload.error}` : upload.status}
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
                         )}
                     </div>
