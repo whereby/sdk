@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 9.7.4
+
+### Patch Changes
+
+- a3768da: Stop retrying with looser constraints after a denied permission during initial acquisition
+
 ## 9.7.3
 
 ### Patch Changes
