@@ -46,6 +46,66 @@ describe("fileShare actions", () => {
             expect(store.getState().fileShare.requestInFlight).toBe(false);
         });
 
+        it("shares each file as a reply when a parentId is given", async () => {
+            const store = createStore({ withSignalConnection: true, connectToRoom: true });
+            global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+            mockSignalEmit.mockImplementation((event: string, _payload: unknown, ack?: (urls: unknown) => void) => {
+                if (event === "request_file_upload_url" && ack) {
+                    ack([
+                        { downloadUrl: "https://dl/a", uploadUrl: { url: "https://s3", fields: { key: "key-a" } } },
+                        { downloadUrl: "https://dl/b", uploadUrl: { url: "https://s3", fields: { key: "key-b" } } },
+                    ]);
+                }
+            });
+
+            const files = [
+                new File(["abc"], "a.txt", { type: "text/plain" }),
+                new File(["abc"], "b.txt", { type: "text/plain" }),
+            ];
+
+            await store.dispatch(doSendFiles({ files, parentId: "parent-1" }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith("chat_message", {
+                text: "",
+                file: {
+                    downloadUrl: "https://dl/a",
+                    name: "a.txt",
+                    size: 3,
+                    type: "text/plain",
+                    key: "key-a",
+                },
+                parentId: "parent-1",
+            });
+            expect(mockSignalEmit).toHaveBeenCalledWith(
+                "chat_message",
+                expect.objectContaining({
+                    file: expect.objectContaining({ name: "b.txt" }),
+                    parentId: "parent-1",
+                }),
+            );
+        });
+
+        it("broadcasts file messages to all breakout groups when isBroadcast is set", async () => {
+            const store = createStore({ withSignalConnection: true, connectToRoom: true });
+            global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+            mockSignalEmit.mockImplementation((event: string, _payload: unknown, ack?: (urls: unknown) => void) => {
+                if (event === "request_file_upload_url" && ack) {
+                    ack([{ downloadUrl: "https://dl/a", uploadUrl: { url: "https://s3", fields: { key: "key-a" } } }]);
+                }
+            });
+
+            const file = new File(["abc"], "a.txt", { type: "text/plain" });
+
+            await store.dispatch(doSendFiles({ files: [file], parentId: "parent-1", isBroadcast: true }));
+
+            expect(mockSignalEmit).toHaveBeenCalledWith(
+                "chat_message",
+                expect.objectContaining({ parentId: "parent-1", broadcast: true }),
+            );
+        });
+
         it("fails the whole batch when the server rejects the request", async () => {
             const store = createStore({ withSignalConnection: true, connectToRoom: true });
             global.fetch = jest.fn().mockResolvedValue({ ok: true });

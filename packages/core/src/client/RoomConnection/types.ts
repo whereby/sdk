@@ -4,7 +4,7 @@ import { ClientView, ConnectionStatus, FileUpload, NotificationsEventEmitter } f
 import LiveCaption from "../../api/models/LiveCaption";
 
 export type { RoomJoinedSuccess, ChatFileShare, KnockResponse, KnockResponseSender } from "@whereby.com/media";
-export type { FileUpload, FileShareError } from "../../redux";
+export type { FileUpload, FileShareError, SendFilesOptions } from "../../redux";
 
 export type LocalMediaOptions = {
     audio: boolean;
