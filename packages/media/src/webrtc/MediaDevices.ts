@@ -256,9 +256,16 @@ export async function getInitialStream(constraintOpt: GetInitialStreamOptions): 
             try {
                 stream = await attempt(getConstraints(retryOpts));
                 return stream;
-            } catch (e) {
+            } catch (e: any) {
                 logger.error(e);
+                lastError = e;
             }
+        }
+
+        // An ask carrying an exact deviceId can be rejected as overconstrained while the permission
+        // is denied, so the ask without one is the first to report the denial.
+        if (lastError?.name === "NotAllowedError") {
+            return;
         }
 
         // Try with lax constraints.
