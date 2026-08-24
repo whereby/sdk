@@ -2,7 +2,7 @@ import BandwidthTestTokenService from "../index";
 import ApiClient from "../../ApiClient";
 import BandwidthTestToken from "../../BandwidthTestToken";
 import Response from "../../Response";
-import { RateLimitError } from "../../errors";
+import { ForbiddenError, RateLimitError } from "../../errors";
 
 jest.mock("../../ApiClient");
 
@@ -49,6 +49,13 @@ describe("BandwidthTestTokenService", () => {
             apiClient.request.mockRejectedValue(error);
 
             await expect(bandwidthTestTokenService.getToken(roomUrl)).rejects.toThrow(error);
+        });
+
+        it("should return forbidden error if the request was not allowed", async () => {
+            const response = new Response({ status: 403 });
+            apiClient.request.mockRejectedValue(response);
+
+            await expect(bandwidthTestTokenService.getToken(roomUrl)).rejects.toThrow(ForbiddenError);
         });
 
         it("should return rate limit error if the request was rate limited", async () => {

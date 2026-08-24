@@ -5,14 +5,20 @@ import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { doAppStop } from "./app";
 import { selectIsHDModeEnabled, selectIsLowDataModeEnabled } from "./localMedia";
-import { RateLimitError } from "../../api/errors";
+import { ForbiddenError, RateLimitError } from "../../api/errors";
 import { PrecallTestOptions } from "../../client/RoomConnection/types";
 
 export const PRE_CALL_TEST_DURATION_S = 15;
 
 export type PreCallTestStatus = "idle" | "running" | "completed" | "failed";
 
-export type PreCallTestErrorReason = "invalidClaim" | "rateLimited" | "timeout" | "unsupported" | "unknown";
+export type PreCallTestErrorReason =
+    | "forbidden"
+    | "invalidClaim"
+    | "rateLimited"
+    | "timeout"
+    | "unsupported"
+    | "unknown";
 
 export interface PreCallTestError {
     reason: PreCallTestErrorReason;
@@ -25,15 +31,15 @@ export interface PreCallTestError {
  */
 interface PreCallTestErrorDetails {
     invalidClaim?: boolean;
-    rateLimited?: boolean;
     timeout?: boolean;
 }
 
-const PRE_CALL_TEST_ERROR_FLAGS = ["invalidClaim", "rateLimited", "timeout"] as const;
+const PRE_CALL_TEST_ERROR_FLAGS = ["invalidClaim", "timeout"] as const;
 
 const PRE_CALL_TEST_ERROR_MESSAGES: Record<PreCallTestErrorReason, string> = {
     invalidClaim: "The pre-call test was rejected with an invalid bandwidth test claim",
     rateLimited: "The pre-call test was rate limited by the Whereby media servers",
+    forbidden: "Not authorized to access this service",
     timeout: "Timed out connecting to the Whereby media servers",
     unsupported: "The pre-call test is not supported in this environment",
     unknown: "The connection to the Whereby media servers failed",
@@ -194,16 +200,18 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
                 },
             });
         } catch (error) {
+            const reason =
+                error instanceof ForbiddenError
+                    ? "forbidden"
+                    : error instanceof RateLimitError
+                      ? "rateLimited"
+                      : "unknown";
+
             dispatch(
                 preCallTestFailed({
                     error: {
-                        reason: error instanceof RateLimitError ? "rateLimited" : "unknown",
-                        message:
-                            error instanceof RateLimitError
-                                ? PRE_CALL_TEST_ERROR_MESSAGES["rateLimited"]
-                                : error instanceof Error
-                                  ? error.message
-                                  : "Failed to set up the pre-call test",
+                        reason,
+                        message: PRE_CALL_TEST_ERROR_MESSAGES[reason],
                     },
                 }),
             );
