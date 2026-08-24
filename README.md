@@ -39,4 +39,4 @@ by adding a comment to the PR with the text `/canary`, or `/canary-release`. Thi
 
 
 ## Contact
-Join our [discord server](https://discord.gg/yWrAhZdvDG) to get in touch with us.
+Email us at [embedded@whereby.com](mailto:embedded@whereby.com) to get in touch with us.
