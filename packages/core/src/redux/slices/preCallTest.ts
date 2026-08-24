@@ -182,7 +182,7 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
         let tester: BandwidthTester;
 
         try {
-            const { token } = await extra.services.bandwidthTestTokenService.getToken();
+            const { token } = await extra.services.bandwidthTestTokenService.getToken(roomUrl);
 
             tester = new BandwidthTester({
                 token,

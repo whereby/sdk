@@ -1,3 +1,4 @@
+import { fromLocation } from "@whereby.com/media";
 import { doStartPreCallTest, doStopPreCallTest, type PreCallTestResult } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import { BaseClient } from "../BaseClient";
@@ -95,7 +96,11 @@ export class PreCallTestClient extends BaseClient<PreCallTestState, PreCallTestE
             throw new Error("Room URL is required to run a bandwidth test.");
         }
 
-        return await this.store.dispatch(doStartPreCallTest({ roomUrl })).unwrap();
+        const url = new URL(roomUrl);
+        const urls = fromLocation({ host: url.hostname });
+        const resolvedRoomUrl = `https://${urls.subdomain}.whereby.com${url.pathname}`;
+
+        return await this.store.dispatch(doStartPreCallTest({ roomUrl: resolvedRoomUrl })).unwrap();
     }
 
     /** Aborts a running test and returns to the idle state. */

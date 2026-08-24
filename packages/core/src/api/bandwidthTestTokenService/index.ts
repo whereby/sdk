@@ -24,10 +24,13 @@ export default class BandwidthTestTokenService {
      * @return {Promise} A promise which is fulfilled or failed based on the
      * response.
      */
-    getToken(): Promise<BandwidthTestToken> {
+    getToken(roomUrl: string): Promise<BandwidthTestToken> {
         return this._apiClient
             .request("/bandwidth-test-token", {
-                method: "get",
+                method: "post",
+                data: {
+                    roomUrl,
+                },
             })
             .then(({ data }) => {
                 return BandwidthTestToken.fromJson(data);
