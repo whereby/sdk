@@ -91,10 +91,7 @@ function MyNetworkCheck() {
 
             {status === "completed" && result.success && <p>Your connection looks good.</p>}
             {status === "completed" && result.warning && (
-                <p>
-                    Your connection may struggle: {result.details.recvAvailableBitrate.toFixed(1)} Mbps down,{" "}
-                    {(result.details.recvLoss * 100).toFixed(1)}% packet loss.
-                </p>
+                <p>Your connection may struggle with video. Consider turning your camera off.</p>
             )}
             {status === "failed" && <p>Could not test your connection: {error.message}</p>}
         </div>
@@ -120,18 +117,17 @@ and a message naming the missing capability.
 ##### Reading the result
 
 The test runs for a fixed duration, exported as `PRE_CALL_TEST_DURATION_S` if
-you want to show a countdown. It is not configurable on purpose: the pass and
-warn thresholds below are calibrated for a run of that length, so varying it
-would quietly change what a verdict means.
+you want to show a countdown. It is not configurable on purpose: the verdict is
+calibrated for a run of that length, so varying it would quietly change what a
+verdict means.
 
 `startTest()` also resolves with the same result object, if you prefer to await
 it rather than read `state`. Call `actions.stopTest()` to abort a run.
 
-`result.success` means no problems were found. `result.warning` means the test
-completed but the connection is degraded — the flags in `result.details` say
-which check tripped: `lowRecvAvailableBitrate` (below 1.5 Mbps), `highSendLoss`
-or `highRecvLoss` (above 3% packet loss). A test that could not produce a
-verdict at all sets `status` to `"failed"` and fills in `error`.
+The result is a verdict, not a measurement: `result.success` means no problems
+were found, `result.warning` means the test completed but the connection is
+likely to struggle with a call. A test that could not produce a verdict at all
+sets `status` to `"failed"` and fills in `error`.
 
 ##### Checking camera, microphone and speakers
 

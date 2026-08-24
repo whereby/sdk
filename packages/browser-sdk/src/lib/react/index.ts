@@ -26,7 +26,6 @@ export type { UsePreCallTestResult } from "./usePreCallTest/types";
 export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConnection/types";
 
 export type {
-    PreCallTestDetails,
     PreCallTestError,
     PreCallTestErrorReason,
     PreCallTestResult,

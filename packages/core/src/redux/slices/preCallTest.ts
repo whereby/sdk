@@ -17,20 +17,9 @@ export interface PreCallTestError {
     message: string;
 }
 
-export interface PreCallTestDetails {
-    testTime: number;
-    recvAvailableBitrate: number;
-    lowRecvAvailableBitrate: boolean;
-    sendLoss: number;
-    recvLoss: number;
-    highSendLoss: boolean;
-    highRecvLoss: boolean;
-}
-
 export interface PreCallTestResult {
     success: boolean;
     warning: boolean;
-    details: PreCallTestDetails;
 }
 
 export interface PreCallTestState {
@@ -196,7 +185,7 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
                 error?: boolean;
                 success?: boolean;
                 warning?: boolean;
-                details?: Partial<PreCallTestDetails> & { timeout?: boolean };
+                details?: { timeout?: boolean };
             }) => {
                 if (wasStopped()) {
                     settle(null);
@@ -221,15 +210,6 @@ export const doStartPreCallTest = createAppAsyncThunk<PreCallTestResult | null, 
                 const preCallTestResult: PreCallTestResult = {
                     success: !!result.success,
                     warning: !!result.warning,
-                    details: {
-                        testTime: result.details?.testTime ?? 0,
-                        recvAvailableBitrate: result.details?.recvAvailableBitrate ?? 0,
-                        lowRecvAvailableBitrate: !!result.details?.lowRecvAvailableBitrate,
-                        sendLoss: result.details?.sendLoss ?? 0,
-                        recvLoss: result.details?.recvLoss ?? 0,
-                        highSendLoss: !!result.details?.highSendLoss,
-                        highRecvLoss: !!result.details?.highRecvLoss,
-                    },
                 };
 
                 dispatch(preCallTestCompleted({ result: preCallTestResult }));

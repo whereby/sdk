@@ -67,7 +67,7 @@ const startTest = async (store: ReturnType<typeof createStore>) => {
     };
 };
 
-const successResult = {
+const testerSuccessResult = {
     success: true,
     warning: false,
     details: {
@@ -80,6 +80,8 @@ const successResult = {
         highRecvLoss: false,
     },
 };
+
+const successVerdict = { success: true, warning: false };
 
 describe("preCallTest", () => {
     describe("doStartPreCallTest", () => {
@@ -96,33 +98,21 @@ describe("preCallTest", () => {
             const store = createStore();
 
             const { dispatched, tester } = await startTest(store);
-            tester.emit("result", successResult);
+            tester.emit("result", testerSuccessResult);
 
-            expect(await dispatched.unwrap()).toEqual(successResult);
+            expect(await dispatched.unwrap()).toEqual(successVerdict);
             expect(selectPreCallTestStatus(store.getState())).toEqual("completed");
-            expect(selectPreCallTestResult(store.getState())).toEqual(successResult);
+            expect(selectPreCallTestResult(store.getState())).toEqual(successVerdict);
             expect(selectPreCallTestError(store.getState())).toEqual(null);
         });
 
-        it("fills in details the tester left out", async () => {
+        it("reduces the tester's metrics to a verdict", async () => {
             const store = createStore();
 
             const { dispatched, tester } = await startTest(store);
             tester.emit("result", { warning: true, details: { recvAvailableBitrate: 0.5 } });
 
-            expect(await dispatched.unwrap()).toEqual({
-                success: false,
-                warning: true,
-                details: {
-                    testTime: 0,
-                    recvAvailableBitrate: 0.5,
-                    lowRecvAvailableBitrate: false,
-                    sendLoss: 0,
-                    recvLoss: 0,
-                    highSendLoss: false,
-                    highRecvLoss: false,
-                },
-            });
+            expect(await dispatched.unwrap()).toEqual({ success: false, warning: true });
         });
 
         it("reports a timeout as a failure", async () => {
@@ -155,12 +145,12 @@ describe("preCallTest", () => {
             const store = createStore();
 
             const { tester } = await startTest(store);
-            tester.emit("result", successResult);
+            tester.emit("result", testerSuccessResult);
             tester.emit("result", { error: true });
             tester.emit("close");
 
             expect(selectPreCallTestStatus(store.getState())).toEqual("completed");
-            expect(selectPreCallTestResult(store.getState())).toEqual(successResult);
+            expect(selectPreCallTestResult(store.getState())).toEqual(successVerdict);
         });
 
         it("leaves a running test alone", async () => {

@@ -10,7 +10,6 @@ export interface PreCallTestState {
 }
 
 export type {
-    PreCallTestDetails,
     PreCallTestError,
     PreCallTestErrorReason,
     PreCallTestResult,

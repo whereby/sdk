@@ -105,7 +105,7 @@ if (!isPreCallTestSupported()) {
 const result = await preCallTest.startTest();
 
 if (result?.warning) {
-    console.log("Degraded connection", result.details);
+    console.log("This connection is likely to struggle with a call");
 }
 
 // or drive your UI from state instead of awaiting
@@ -113,6 +113,8 @@ preCallTest.subscribeStatus((status) => {
     console.log("Pre-call test:", status); // idle | running | completed | failed
 });
 ```
+
+The result is a verdict, not a measurement: `success` means no problems were found, `warning` means the connection is likely to struggle with a call.
 
 Whether a camera or microphone *works* is a judgement only the end user can make, so there is no equivalent client for those — build that on `LocalMediaClient` and let the user confirm what they see and hear. Errors that are machine-detectable, like blocked permissions, surface on `LocalMediaClient` as `cameraDeviceError`, `microphoneDeviceError` and `startError`.
 

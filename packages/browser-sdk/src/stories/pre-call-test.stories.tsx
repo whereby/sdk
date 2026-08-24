@@ -92,8 +92,7 @@ export const BandwidthTestBeforeJoiningRoom = ({ roomUrl, displayName }: { roomU
                     <p className="preCallTestVerdictSuccess">Your connection looks good.</p>
                 ) : (
                     <p className="preCallTestVerdictWarning">
-                        Your connection may struggle with video ({result.details.recvAvailableBitrate.toFixed(2)} Mbps
-                        available). Consider turning your camera off.
+                        Your connection may struggle with video. Consider turning your camera off.
                     </p>
                 ))}
         </div>

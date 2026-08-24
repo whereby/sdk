@@ -1,6 +1,6 @@
 import * as React from "react";
 import { PRE_CALL_TEST_DURATION_S, usePreCallTest } from "../../lib/react";
-import type { PreCallTestDetails, PreCallTestResult } from "../../lib/react";
+import type { PreCallTestResult } from "../../lib/react";
 
 function Verdict({ result }: { result: PreCallTestResult }) {
     if (result.success) {
@@ -12,32 +12,6 @@ function Verdict({ result }: { result: PreCallTestResult }) {
     }
 
     return <strong className="preCallTestVerdictFailure">Connection is too poor for a call</strong>;
-}
-
-function Details({ details }: { details: PreCallTestDetails }) {
-    const rows: Array<[string, string, boolean]> = [
-        ["Test time", `${(details.testTime / 1000).toFixed(1)} s`, false],
-        [
-            "Available downstream bitrate",
-            `${details.recvAvailableBitrate.toFixed(2)} Mbps`,
-            details.lowRecvAvailableBitrate,
-        ],
-        ["Upstream packet loss", `${(details.sendLoss * 100).toFixed(1)} %`, details.highSendLoss],
-        ["Downstream packet loss", `${(details.recvLoss * 100).toFixed(1)} %`, details.highRecvLoss],
-    ];
-
-    return (
-        <table className="preCallTestDetails">
-            <tbody>
-                {rows.map(([label, value, isBad]) => (
-                    <tr key={label}>
-                        <td>{label}</td>
-                        <td className={isBad ? "preCallTestVerdictWarning" : undefined}>{value}</td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    );
 }
 
 export default function PreCallTestExperience() {
@@ -72,12 +46,7 @@ export default function PreCallTestExperience() {
                     Test failed ({error.reason}): {error.message}
                 </p>
             )}
-            {result && (
-                <div>
-                    <Verdict result={result} />
-                    <Details details={result.details} />
-                </div>
-            )}
+            {result && <Verdict result={result} />}
         </div>
     );
 }

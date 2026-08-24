@@ -320,13 +320,3 @@
 .preCallTestVerdictFailure {
     color: #b00020;
 }
-
-.preCallTestDetails {
-    margin-top: 8px;
-    border-collapse: collapse;
-}
-
-.preCallTestDetails td {
-    padding: 2px 12px 2px 0;
-    font-size: 14px;
-}
