@@ -32,6 +32,7 @@
         "REACT_APP_IS_DEV",
         "REACT_APP_SIGNAL_BASE_URL",
         "REACT_APP_API_BASE_URL",
+        "REACT_APP_SFU_BASE_URL",
         "NODE_ENV",
         "RTCSTATS_URL",
         "STORYBOOK_ROOM",
