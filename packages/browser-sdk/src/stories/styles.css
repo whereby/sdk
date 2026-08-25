@@ -197,9 +197,17 @@
     gap: 4px;
 }
 
-.fileUploads {
+.fileUploads,
+.stagedFiles {
     margin: 0;
     padding-left: 18px;
+}
+
+.chatReplyTarget {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
 }
 
 /* Breakout */

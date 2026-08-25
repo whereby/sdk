@@ -22,6 +22,7 @@ export type {
     ChatFileShare,
     FileUpload,
     FileShareError,
+    SendFilesOptions,
     CloudRecordingState as CloudRecording,
     LiveStreamState as LiveStreaming,
     BreakoutState as Breakout,

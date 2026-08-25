@@ -445,5 +445,5 @@ export const RoomConnectionWithFileSharing = ({ roomUrl, displayName }: { roomUr
         return <p>Set room url on the Controls panel</p>;
     }
 
-    return <VideoExperience displayName={displayName} roomName={roomUrl} showFileSharing />;
+    return <VideoExperience displayName={displayName} roomName={roomUrl} showFileSharing showBreakoutGroups />;
 };

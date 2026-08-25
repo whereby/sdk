@@ -2,6 +2,7 @@ import {
     ChatFileShare,
     LocalMediaOptions,
     RoomJoinedSuccess,
+    SendFilesOptions,
     StartBreakoutSessionOptions,
     UpdateBreakoutSessionOptions,
 } from "@whereby.com/core";
@@ -37,7 +38,7 @@ export interface RoomConnectionActions {
     rejectWaitingParticipant: (participantId: string, response?: string) => void;
     sendChatMessage: (text: string, parentId?: string, isBroadcast?: boolean) => void;
     removeChatMessage: (id: string, sig?: string | null) => void;
-    sendFiles: (files: File[]) => void;
+    sendFiles: (files: File[], options?: SendFilesOptions) => void;
     downloadFile: (file: ChatFileShare) => Promise<Blob>;
     setDisplayName: (displayName: string) => void;
     startCloudRecording: () => void;

@@ -68,6 +68,7 @@ import type {
     RemoteParticipantState,
     RoomConnectionState,
     RoomJoinedSuccess,
+    SendFilesOptions,
     ScreenshareState,
     WaitingParticipantState,
     WherebyClientOptions,
@@ -466,11 +467,16 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     }
 
     /**
-     * Upload files and share them with the room as chat messages.
+     * Upload files and share them with the room as chat messages. Each file is shared as its own
+     * chat message, so replying with both text and files means calling
+     * {@link RoomConnectionClient.sendChatMessage} and this method with the same `parentId`.
      * @param files - The files to share.
+     * @param options.parentId - Optional id of the message the files are a reply to.
+     * @param options.isBroadcast - When true and a breakout session is active, the files are broadcast
+     * to all breakout groups instead of only the sender's group.
      */
-    public sendFiles(files: File[]) {
-        this.store.dispatch(doSendFiles({ files }));
+    public sendFiles(files: File[], options?: SendFilesOptions) {
+        this.store.dispatch(doSendFiles({ files, ...options }));
     }
 
     /**
