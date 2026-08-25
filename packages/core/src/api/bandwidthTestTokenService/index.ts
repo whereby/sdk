@@ -1,7 +1,7 @@
 import ApiClient from "../ApiClient";
 import BandwidthTestToken from "../BandwidthTestToken";
 import Response from "../Response";
-import { RateLimitError } from "../errors";
+import { ForbiddenError, RateLimitError } from "../errors";
 /**
  * Related to device calls needed to obtain credentials
  */
@@ -24,10 +24,13 @@ export default class BandwidthTestTokenService {
      * @return {Promise} A promise which is fulfilled or failed based on the
      * response.
      */
-    getToken(): Promise<BandwidthTestToken> {
+    getToken(roomUrl: string): Promise<BandwidthTestToken> {
         return this._apiClient
             .request("/bandwidth-test-token", {
-                method: "get",
+                method: "post",
+                data: {
+                    roomUrl,
+                },
             })
             .then(({ data }) => {
                 return BandwidthTestToken.fromJson(data);
@@ -36,6 +39,10 @@ export default class BandwidthTestTokenService {
                 if (res instanceof Response) {
                     if (res.status === 429) {
                         throw new RateLimitError(res.statusText);
+                    }
+
+                    if (res.status === 403) {
+                        throw new ForbiddenError(res.statusText);
                     }
 
                     throw new Error(res.statusText);

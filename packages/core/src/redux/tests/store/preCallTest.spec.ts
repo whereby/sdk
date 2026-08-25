@@ -58,7 +58,7 @@ const flushMicrotasks = async () => {
 };
 
 const startTest = async (store: ReturnType<typeof createStore>) => {
-    const dispatched = store.dispatch(doStartPreCallTest());
+    const dispatched = store.dispatch(doStartPreCallTest({ roomUrl: "roomUrl" }));
     await flushMicrotasks();
 
     return {

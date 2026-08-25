@@ -11,7 +11,7 @@ import { WherebyContext } from "../Provider";
  * room and no local media, but it does compete for bandwidth with any call
  * already in progress, so run it before joining.
  */
-export function usePreCallTest(): UsePreCallTestResult {
+export function usePreCallTest(roomUrl: string): UsePreCallTestResult {
     const client = React.useContext(WherebyContext)?.getPreCallTest();
 
     if (!client) {
@@ -34,7 +34,10 @@ export function usePreCallTest(): UsePreCallTestResult {
         };
     }, [client]);
 
-    const startTest = React.useCallback(() => client.startTest(), [client]);
+    const startTest = React.useCallback(() => {
+        client.initialize({ roomUrl });
+        return client.startTest();
+    }, [client]);
     const stopTest = React.useCallback(() => client.stopTest(), [client]);
 
     return {

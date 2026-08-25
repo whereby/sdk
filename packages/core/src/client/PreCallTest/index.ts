@@ -1,6 +1,8 @@
+import { fromLocation } from "@whereby.com/media";
 import { doStartPreCallTest, doStopPreCallTest, type PreCallTestResult } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import { BaseClient } from "../BaseClient";
+import { PrecallTestOptions } from "../RoomConnection/types";
 import {
     PRE_CALL_TEST_ERROR_CHANGED,
     PRE_CALL_TEST_RESULT_CHANGED,
@@ -19,12 +21,15 @@ import type { PreCallTestError, PreCallTestState, PreCallTestStatus } from "./ty
  * any call already in progress.
  */
 export class PreCallTestClient extends BaseClient<PreCallTestState, PreCallTestEvents> {
+    protected options: Partial<PrecallTestOptions>;
+
     private statusSubscribers = new Set<(status: PreCallTestStatus) => void>();
     private resultSubscribers = new Set<(result: PreCallTestResult | null) => void>();
     private errorSubscribers = new Set<(error: PreCallTestError | null) => void>();
 
     constructor(store: AppStore) {
         super(store);
+        this.options = {};
     }
 
     protected handleStateChanges(state: PreCallTestState, previousState: PreCallTestState): void {
@@ -71,12 +76,31 @@ export class PreCallTestClient extends BaseClient<PreCallTestState, PreCallTestE
     /* Actions */
 
     /**
+     * Initialize the precall test with options.
+     * This method can be called multiple times to update options.
+     * @param options<PrecallTestOptions> - Options for the Precall Test.
+     */
+    public initialize(options: PrecallTestOptions) {
+        this.options = options;
+    }
+
+    /**
      * Runs a test and resolves with its result, or with `null` if the test could
      * not complete - read `getState().error` for why. Calling this while a test
      * is already running resolves with `null` and leaves that test alone.
      */
     public async startTest(): Promise<PreCallTestResult | null> {
-        return await this.store.dispatch(doStartPreCallTest()).unwrap();
+        const { roomUrl } = this.options;
+
+        if (!roomUrl) {
+            throw new Error("Room URL is required to run a bandwidth test.");
+        }
+
+        const url = new URL(roomUrl);
+        const urls = fromLocation({ host: url.hostname });
+        const resolvedRoomUrl = `https://${urls.subdomain}.whereby.com${url.pathname}`;
+
+        return await this.store.dispatch(doStartPreCallTest({ roomUrl: resolvedRoomUrl })).unwrap();
     }
 
     /** Aborts a running test and returns to the idle state. */
