@@ -62,6 +62,22 @@ export function getNumberOfTemporalLayers(consumer: any) {
     return /T3/.test(consumer._rtpParameters?.encodings?.[0]?.scalabilityMode || "") ? 3 : 2;
 }
 
+const SCALABILITY_MODE_REGEX = /^([LS])([1-9]\d?)T([1-9]\d?)(_KEY)?/;
+
+// Given an SVC encoding's current scalabilityMode (e.g. "L3T2"), returns a scalabilityMode
+// with its spatial layer count reduced to (at most) spatialLayer + 1, keeping the original
+// mode letter, temporal layer count and _KEY suffix. Returns undefined when scalabilityMode
+// isn't a recognized SVC mode (i.e. this isn't an SVC encoding).
+export function getReducedScalabilityMode(scalabilityMode: string | undefined, spatialLayer: number) {
+    const match = SCALABILITY_MODE_REGEX.exec(scalabilityMode || "");
+    if (!match) return undefined;
+
+    const [, mode, spatialLayers, temporalLayers, key = ""] = match;
+    const reducedSpatialLayers = Math.min(Math.max(spatialLayer + 1, 1), Number(spatialLayers));
+
+    return `${mode}${reducedSpatialLayers}T${temporalLayers}${key}`;
+}
+
 // this adds a polling monitor for cpu overuse by checking if the lowest layer of a simulcast stream has reduced resolution
 //
 // on chromium browsers we could probably check the qualityLimitationReason and qualityLimitationDurations, but since not all

@@ -304,4 +304,102 @@ describe("VegaRtcManager", () => {
             expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         });
     });
+
+    describe("_onChangedHighestLayerDemanded", () => {
+        let setParameters: jest.Mock;
+        let parameters: { encodings: any[] };
+
+        const createWebcamProducer = (encodings: any[]) => {
+            parameters = { encodings };
+            setParameters = jest.fn().mockResolvedValue(undefined);
+            rtcManager._webcamProducer = {
+                id: "webcam-producer-1",
+                rtpSender: {
+                    getParameters: () => parameters,
+                    setParameters,
+                },
+            };
+        };
+
+        it("ignores demand changes for a different producer", async () => {
+            createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+            await rtcManager._onChangedHighestLayerDemanded({ producerId: "other-producer", spatialLayer: 0 });
+
+            expect(setParameters).not.toHaveBeenCalled();
+        });
+
+        describe("simulcast (multiple encodings)", () => {
+            it("pauses encodings above the demanded layer and keeps the rest active", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestLayerDemanded({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: false }, { active: false }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("resumes previously paused encodings up to the demanded layer", async () => {
+                createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
+
+                await rtcManager._onChangedHighestLayerDemanded({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 2,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: true }, { active: true }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("does not call setParameters when nothing changes", async () => {
+                createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
+
+                await rtcManager._onChangedHighestLayerDemanded({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(setParameters).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("SVC (single encoding with scalabilityMode)", () => {
+            it("shrinks the scalabilityMode's spatial layer count to the demanded layer", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestLayerDemanded({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 1,
+                });
+
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2" }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("does not call setParameters when the scalabilityMode is unchanged", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestLayerDemanded({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 2,
+                });
+
+                expect(setParameters).not.toHaveBeenCalled();
+            });
+
+            it("does not call setParameters for a plain (non-SVC) single encoding", async () => {
+                createWebcamProducer([{}]);
+
+                await rtcManager._onChangedHighestLayerDemanded({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(setParameters).not.toHaveBeenCalled();
+            });
+        });
+    });
 });

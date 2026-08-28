@@ -1,5 +1,11 @@
 import { Producer } from "mediasoup-client/lib/Producer";
-import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "../utils";
+import {
+    addProducerCpuOveruseWatch,
+    getLayers,
+    getNumberOfActiveVideos,
+    getNumberOfTemporalLayers,
+    getReducedScalabilityMode,
+} from "../utils";
 
 describe("utils", () => {
     describe("getLayers", () => {
@@ -68,6 +74,36 @@ describe("utils", () => {
             const result = getNumberOfTemporalLayers(consumer);
 
             expect(result).toBe(3);
+        });
+    });
+
+    describe("getReducedScalabilityMode", () => {
+        it.each`
+            scalabilityMode | spatialLayer | expected
+            ${"L3T2"}       | ${2}         | ${"L3T2"}
+            ${"L3T2"}       | ${1}         | ${"L2T2"}
+            ${"L3T2"}       | ${0}         | ${"L1T2"}
+            ${"S3T3"}       | ${1}         | ${"S2T3"}
+            ${"L3T3_KEY"}   | ${1}         | ${"L2T3_KEY"}
+            ${"L1T3"}       | ${0}         | ${"L1T3"}
+        `(
+            "reduces $scalabilityMode to $expected when the demanded spatial layer is $spatialLayer",
+            ({ scalabilityMode, spatialLayer, expected }) => {
+                expect(getReducedScalabilityMode(scalabilityMode, spatialLayer)).toBe(expected);
+            },
+        );
+
+        it("never raises the spatial layer count above what the original scalabilityMode declared", () => {
+            expect(getReducedScalabilityMode("L2T2", 5)).toBe("L2T2");
+        });
+
+        it("never reduces below a single spatial layer", () => {
+            expect(getReducedScalabilityMode("L3T2", -1)).toBe("L1T2");
+        });
+
+        it("returns undefined for a non-SVC (simulcast/plain) encoding", () => {
+            expect(getReducedScalabilityMode(undefined, 1)).toBeUndefined();
+            expect(getReducedScalabilityMode("", 1)).toBeUndefined();
         });
     });
 

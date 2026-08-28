@@ -22,7 +22,13 @@ import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSett
 import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
-import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
+import {
+    addProducerCpuOveruseWatch,
+    getLayers,
+    getNumberOfActiveVideos,
+    getNumberOfTemporalLayers,
+    getReducedScalabilityMode,
+} from "./utils";
 import { ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
@@ -61,6 +67,9 @@ const logger = new Logger();
 
 const browserName = adapter.browserDetails.browser;
 let unloading = false;
+
+// @types/web's RTCRtpEncodingParameters doesn't (yet) declare scalabilityMode.
+type RtpEncodingParametersWithScalabilityMode = RTCRtpEncodingParameters & { scalabilityMode?: string };
 
 const RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS = 3500;
 const RESTARTICE_ERROR_MAX_RETRY_COUNT = 5;
@@ -1871,6 +1880,8 @@ export default class VegaRtcManager implements RtcManager {
                         return this._onConsumerScore(data);
                     case "producerScore":
                         return this._onProducerScore(data);
+                    case "changedHighestLayerDemanded":
+                        return this._onChangedHighestLayerDemanded(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -2006,6 +2017,45 @@ export default class VegaRtcManager implements RtcManager {
                 }
             },
         );
+    }
+
+    // Keep every simulcast encoding up to and including the demanded layer active, pause the rest.
+    _toggleSimulcastLayers(encodings: RtpEncodingParametersWithScalabilityMode[], spatialLayer: number) {
+        return encodings.reduce((changed: boolean, encoding, index) => {
+            const active = index <= spatialLayer;
+            if (encoding.active === active) return changed;
+            encoding.active = active;
+            return true;
+        }, false);
+    }
+
+    // SVC has a single encoding carrying every spatial layer, so instead of toggling encodings
+    // on/off we shrink its scalabilityMode to stop encoding layers above the demanded one.
+    _toggleSvcLayers(encoding: RtpEncodingParametersWithScalabilityMode, spatialLayer: number) {
+        const reducedScalabilityMode = getReducedScalabilityMode(encoding.scalabilityMode, spatialLayer);
+        if (!reducedScalabilityMode || reducedScalabilityMode === encoding.scalabilityMode) return false;
+
+        encoding.scalabilityMode = reducedScalabilityMode;
+        return true;
+    }
+
+    async _onChangedHighestLayerDemanded({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
+        // Only allow change webcam video
+        if (producerId !== this._webcamProducer.id) return;
+
+        const rtpSender = this._webcamProducer.rtpSender;
+        const parameters = rtpSender.getParameters();
+        const encodings: RtpEncodingParametersWithScalabilityMode[] = parameters.encodings;
+
+        const changed =
+            encodings.length > 1
+                ? this._toggleSimulcastLayers(encodings, spatialLayer)
+                : this._toggleSvcLayers(encodings[0], spatialLayer);
+
+        if (!changed) return;
+
+        logger.info("_onChangedHighestLayerDemanded()", { producerId, spatialLayer });
+        await rtpSender.setParameters(parameters);
     }
 
     async _onDataConsumerReady(options: DataConsumerOptions<DataConsumerAppData>) {
