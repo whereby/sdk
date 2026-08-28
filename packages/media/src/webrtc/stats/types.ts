@@ -76,9 +76,12 @@ export interface SsrcStats {
     audioAcceleration?: number;
     sourceHeight?: number;
     jitter?: number;
+    remotePacketsLost?: number;
     roundTripTime?: number;
     codec?: string;
     byteCount?: number;
+    rawByteCount?: number;
+    rawPacketsLost?: number;
     kind?: string;
     ssrc?: number;
     mid?: number;

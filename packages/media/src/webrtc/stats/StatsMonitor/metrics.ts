@@ -91,9 +91,11 @@ export function captureCommonSsrcMetrics(
         ssrcMetrics.packetLossCount = (ssrcMetrics.packetLossCount || 0) + packetLossCountDiff;
         ssrcMetrics.packetLossRate = (1000 * packetLossCountDiff) / timeDiff;
         ssrcMetrics.lossRatio = (1000 * (packetLossCountDiff / (packetLossCountDiff + packetCountDiff))) / timeDiff;
+        ssrcMetrics.rawPacketsLost = currentSsrcStats.packetsLost;
 
         const byteCountDiff = currentSsrcStats.bytesReceived - (prevSsrcStats?.bytesReceived || 0);
         ssrcMetrics.byteCount = (ssrcMetrics.byteCount || 0) + byteCountDiff;
+        ssrcMetrics.rawByteCount = currentSsrcStats.bytesReceived;
         let headerByteCountDiff = 0;
         if (currentSsrcStats.headerBytesReceived) {
             headerByteCountDiff = currentSsrcStats.headerBytesReceived - (prevSsrcStats?.headerBytesReceived || 0);
@@ -120,6 +122,7 @@ export function captureCommonSsrcMetrics(
 
         const byteCountDiff = currentSsrcStats.bytesSent - (prevSsrcStats?.bytesSent || 0);
         ssrcMetrics.byteCount = (ssrcMetrics.byteCount || 0) + byteCountDiff;
+        ssrcMetrics.rawByteCount = currentSsrcStats.bytesSent;
         let headerByteCountDiff = 0;
         if (currentSsrcStats.headerBytesSent) {
             headerByteCountDiff = currentSsrcStats.headerBytesSent - (prevSsrcStats?.headerBytesSent || 0);
@@ -142,6 +145,7 @@ export function captureCommonSsrcMetrics(
                 ssrcMetrics.roundTripTime = remoteReport.roundTripTime || 0;
                 ssrcMetrics.jitter = remoteReport.jitter || 0;
                 ssrcMetrics.fractionLost = remoteReport.fractionLost || 0;
+                ssrcMetrics.remotePacketsLost = remoteReport.packetsLost;
             }
         }
     }
