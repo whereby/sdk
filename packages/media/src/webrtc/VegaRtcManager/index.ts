@@ -1641,15 +1641,12 @@ export default class VegaRtcManager implements RtcManager {
     /**
      * Only for mic.
      *
-     * This is called when the PWA toggles the audio on or off.
-     *
-     * @param {MediaStream} stream
-     * @param {boolean} enabled
+     * The consuming app toggled the microphone.
      */
-    stopOrResumeAudio(stream: MediaStream, enabled: boolean) {
-        logger.info("stopOrResumeAudio() [enabled:%s]", enabled);
+    stopOrResumeAudio({ enable }: { enable: boolean }) {
+        logger.info("stopOrResumeAudio() [enable:%s]", enable);
 
-        this._micPaused = !enabled;
+        this._micPaused = !enable;
 
         this._pauseResumeMic();
     }

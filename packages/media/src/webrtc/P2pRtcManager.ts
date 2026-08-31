@@ -1294,8 +1294,8 @@ export default class P2pRtcManager implements RtcManager {
         if (trackId) updateRenderedDimensions(trackId, { width, height, time: Date.now() });
     }
 
-    stopOrResumeAudio(/*localStream, enable*/) {
-        // detaches the audio from the peerconnection. No-op in P2P mode.
+    stopOrResumeAudio(/*{ enable }*/) {
+        // Nothing to pause in P2P; consuming app needs to disable the track.
     }
 
     _handleStopOrResumeVideo({ enable, track }: { enable: boolean; track: MediaStreamTrack }) {
