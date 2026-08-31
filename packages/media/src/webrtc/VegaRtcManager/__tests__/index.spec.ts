@@ -1,6 +1,7 @@
 import VegaRtcManager from "../";
 
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
+import rtcManagerEvents from "../../rtcManagerEvents";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
 import WS from "jest-websocket-mock";
@@ -282,6 +283,25 @@ describe("VegaRtcManager", () => {
             rtcManager.disconnectAll();
 
             expect(rtcManager._qualityMonitor.close).toHaveBeenCalled();
+        });
+    });
+
+    describe("stopOrResumeVideo", () => {
+        it("leaves stopping the track to the consuming app", () => {
+            const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+            rtcManager.stopOrResumeVideo({ enable: false, track });
+
+            expect(track.stop).not.toHaveBeenCalled();
+        });
+
+        it("reports a resumed track that ends", () => {
+            const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+            rtcManager.stopOrResumeVideo({ enable: true, track });
+            track.dispatchEvent(new Event("ended"));
+
+            expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         });
     });
 });

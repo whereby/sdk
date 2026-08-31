@@ -1220,9 +1220,7 @@ describe("P2pRtcManager", () => {
                 jest.spyOn(rtcManager, "_replaceTrackToPeerConnections");
                 const newTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-                stream.dispatchEvent(
-                    new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } }),
-                );
+                stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { enable: true, track: newTrack } }));
 
                 expect(rtcManager._replaceTrackToPeerConnections).toHaveBeenCalledWith(stoppedTrack, newTrack);
             });
@@ -1236,6 +1234,25 @@ describe("P2pRtcManager", () => {
 
                 expect(rtcManager._stoppedVideoTrack).toEqual(track);
             });
+        });
+    });
+
+    describe("stopOrResumeVideo", () => {
+        it("leaves stopping the track to the consuming app", () => {
+            const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+            rtcManager.stopOrResumeVideo({ enable: false, track });
+
+            expect(track.stop).not.toHaveBeenCalled();
+        });
+
+        it("reports a resumed track that ends", () => {
+            const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
+
+            rtcManager.stopOrResumeVideo({ enable: true, track });
+            track.dispatchEvent(new Event("ended"));
+
+            expect(emitterStub.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         });
     });
 });
