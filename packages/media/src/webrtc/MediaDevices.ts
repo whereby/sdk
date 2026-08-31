@@ -80,8 +80,7 @@ function getSettingsFromTrack(
     let settings: any = { deviceId: null };
 
     if (!track) {
-        // In SFU V2 the track can be closed by the RtcManager, so check if the
-        // last used deviceId still is available
+        // The consuming app stops the camera track on mute, so fall back to the last used deviceId.
         if (lastUsedId && devices) {
             settings.deviceId = devices.find((d) => d.deviceId === lastUsedId && d.kind === kind)?.deviceId;
         }
