@@ -14,6 +14,7 @@ import { initialLocalMediaState } from "../../slices/localMedia";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
 import { doAppStop } from "../../slices/app";
+import { signalEvents } from "../../slices/signalConnection";
 
 jest.mock("@whereby.com/media");
 
@@ -289,6 +290,20 @@ describe("middleware", () => {
             store.dispatch(doAppStop());
 
             expect(rtcManager?.rtcStatsDisconnect).toHaveBeenCalled();
+        });
+    });
+
+    describe("signalEvents.clientLeft", () => {
+        it("it emits the leaving client's event claim", () => {
+            const store = createStore({
+                withRtcManager: true,
+            });
+            const rtcManager = selectRtcManager(store.getState());
+            const clientId = randomString();
+            const eventClaim = randomString();
+            store.dispatch(signalEvents.clientLeft({ clientId, eventClaim }));
+
+            expect(rtcManager?.disconnect).toHaveBeenCalledWith(clientId, eventClaim);
         });
     });
 });

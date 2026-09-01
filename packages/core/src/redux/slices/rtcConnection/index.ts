@@ -425,6 +425,14 @@ startAppListening({
     },
 });
 
+startAppListening({
+    actionCreator: signalEvents.clientLeft,
+    effect: (action, { getState }) => {
+        const rtcManager = selectRtcManager(getState());
+        rtcManager?.disconnect(action.payload.clientId, action.payload.eventClaim);
+    },
+});
+
 export const selectShouldConnectRtc = createSelector(
     selectRtcStatus,
     selectAppIsActive,
