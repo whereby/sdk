@@ -382,9 +382,8 @@ describe("P2pRtcManager", () => {
                 const oldVideoTrack = oldCameraStream.getVideoTracks()[0];
                 oldVideoTrack.enabled = false;
 
-                rtcManager.stopOrResumeVideo({ enable: false, track: oldVideoTrack });
                 await jest.runAllTimersAsync();
-                // the track will have been removed from the stream
+                // the consuming app stopped the track and removed it from the stream
                 oldCameraStream.getVideoTracks = () => [];
 
                 sender = { track: oldVideoTrack, replaceTrack: jest.fn() } as unknown as RTCRtpSender;
@@ -400,7 +399,7 @@ describe("P2pRtcManager", () => {
 
                     const newCameraTrack = newCameraStream.getVideoTracks()[0];
 
-                    rtcManager.stopOrResumeVideo({ enable: true, track: newCameraTrack });
+                    rtcManager.replaceTrack(null, newCameraTrack);
 
                     await jest.runAllTimersAsync();
 
@@ -420,7 +419,7 @@ describe("P2pRtcManager", () => {
 
                     const newCameraTrack = newCameraStream.getVideoTracks()[0];
 
-                    rtcManager.stopOrResumeVideo({ enable: true, track: newCameraTrack });
+                    rtcManager.replaceTrack(null, newCameraTrack);
 
                     await jest.runAllTimersAsync();
 
@@ -441,7 +440,7 @@ describe("P2pRtcManager", () => {
 
                     const newCameraTrack = newCameraStream.getVideoTracks()[0];
 
-                    rtcManager.stopOrResumeVideo({ enable: true, track: newCameraTrack });
+                    rtcManager.replaceTrack(null, newCameraTrack);
 
                     await jest.runAllTimersAsync();
 
@@ -1237,19 +1236,19 @@ describe("P2pRtcManager", () => {
         });
     });
 
-    describe("stopOrResumeVideo", () => {
+    describe("replaceTrack", () => {
         it("leaves stopping the track to the consuming app", () => {
             const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-            rtcManager.stopOrResumeVideo({ enable: false, track });
+            rtcManager.replaceTrack(null, track);
 
             expect(track.stop).not.toHaveBeenCalled();
         });
 
-        it("reports a resumed track that ends", () => {
+        it("reports a handed over track that ends", () => {
             const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-            rtcManager.stopOrResumeVideo({ enable: true, track });
+            rtcManager.replaceTrack(null, track);
             track.dispatchEvent(new Event("ended"));
 
             expect(emitterStub.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});

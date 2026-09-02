@@ -1311,20 +1311,8 @@ export default class P2pRtcManager implements RtcManager {
         }
     }
 
-    /**
-     * The consuming app toggled the webcam. Pass the camera track it stopped or acquired,
-     * or leave it out when no track changed.
-     */
-    stopOrResumeVideo({ enable, track }: { enable: boolean; track?: MediaStreamTrack }) {
-        logger.info("stopOrResumeVideo() [enable: %s]", enable);
-
-        if (!track) {
-            return;
-        }
-        if (enable && !trackAnnotations(track).isEffectTrack) {
-            this._monitorVideoTrack(track);
-        }
-        this._handleStopOrResumeVideo({ enable, track });
+    stopOrResumeVideo(/*{ enable }*/) {
+        // Nothing to pause in P2P; consuming app needs to disable the track.
     }
 
     removeScreenshareStream(stream: MediaStream, { requestedByClientId }: RemoveScreenshareStreamOptions = {}) {

@@ -1663,25 +1663,15 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
     /**
-     * Only for webcam.
-     *
-     * The consuming app toggled the webcam. Pass the camera track it stopped or acquired,
-     * or leave it out when no track changed.
+     * Only for webcam. The consuming app toggled the webcam. Camera tracks arrive
+     * through replaceTrack, whenever the app has one.
      */
-    stopOrResumeVideo({ enable, track }: { enable: boolean; track?: MediaStreamTrack }) {
+    stopOrResumeVideo({ enable }: { enable: boolean }) {
         logger.info("stopOrResumeVideo() [enable:%s]", enable);
 
         this._webcamPaused = !enable;
 
         this._pauseResumeWebcam();
-
-        if (!track) {
-            return;
-        }
-        if (enable && !trackAnnotations(track).isEffectTrack) {
-            this._monitorVideoTrack(track);
-        }
-        this._handleStopOrResumeVideo({ enable, track });
     }
 
     /**

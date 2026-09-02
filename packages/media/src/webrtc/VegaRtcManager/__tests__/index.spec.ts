@@ -286,19 +286,19 @@ describe("VegaRtcManager", () => {
         });
     });
 
-    describe("stopOrResumeVideo", () => {
+    describe("replaceTrack", () => {
         it("leaves stopping the track to the consuming app", () => {
             const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-            rtcManager.stopOrResumeVideo({ enable: false, track });
+            rtcManager.replaceTrack(null, track);
 
             expect(track.stop).not.toHaveBeenCalled();
         });
 
-        it("reports a resumed track that ends", () => {
+        it("reports a handed over track that ends", () => {
             const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
 
-            rtcManager.stopOrResumeVideo({ enable: true, track });
+            rtcManager.replaceTrack(null, track);
             track.dispatchEvent(new Event("ended"));
 
             expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
