@@ -92,6 +92,7 @@ describe("remoteParticipantsSlice", () => {
                 state,
                 signalEvents.clientLeft({
                     clientId: participant.id,
+                    eventClaim: randomString(),
                 }),
             );
 

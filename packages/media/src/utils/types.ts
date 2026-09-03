@@ -142,6 +142,7 @@ export interface CloudRecordingStartedEvent {
 
 export interface ClientLeftEvent {
     clientId: string;
+    eventClaim: string;
 }
 export interface NewClientEvent {
     client: SignalClient;
