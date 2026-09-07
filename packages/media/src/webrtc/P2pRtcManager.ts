@@ -79,7 +79,6 @@ type P2PAnalytics = {
     P2POffendingInitialOffer: number;
     P2POnTrackNoStream: number;
     P2PRelayedIceCandidate: number;
-    P2PReplaceTrackNewTrackNotInStream: number;
     P2PReplaceTrackNoStream: number;
     P2PStaleAnswerIgnored: number;
 };
@@ -191,7 +190,6 @@ export default class P2pRtcManager implements RtcManager {
             P2POffendingInitialOffer: 0,
             P2POnTrackNoStream: 0,
             P2PRelayedIceCandidate: 0,
-            P2PReplaceTrackNewTrackNotInStream: 0,
             P2PReplaceTrackNoStream: 0,
             P2PStaleAnswerIgnored: 0,
         };
@@ -300,7 +298,7 @@ export default class P2pRtcManager implements RtcManager {
         if (newTrack.kind === "video" && !trackAnnotations(newTrack).isEffectTrack) {
             this._monitorVideoTrack(newTrack);
         }
-        return this._replaceTrackToPeerConnections(oldTrack, newTrack);
+        return this._replaceTrackToPeerConnections(oldTrack, newTrack, this._localCameraStream);
     }
 
     close() {
@@ -429,9 +427,9 @@ export default class P2pRtcManager implements RtcManager {
             this._serverSocket.on(PROTOCOL_RESPONSES.SCREENSHARE_STOPPED, (payload: ScreenshareStoppedEvent) => {
                 const session = this._getSession(payload.clientId);
                 if (session) {
-                    const streamIdIndex = session.streamIds.indexOf(payload.streamId);
+                    const streamIdIndex = session.remoteStreamIds.indexOf(payload.streamId);
                     if (streamIdIndex !== -1) {
-                        session.streamIds.splice(streamIdIndex, 1);
+                        session.remoteStreamIds.splice(streamIdIndex, 1);
                     }
                 }
             }),
@@ -510,7 +508,6 @@ export default class P2pRtcManager implements RtcManager {
 
         setTimeout(() => {
             this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED, {
-                streamIds: session.streamIds,
                 clientId,
                 status: newStatus,
                 previous: previousStatus,
@@ -897,11 +894,21 @@ export default class P2pRtcManager implements RtcManager {
 
     _addTrackToPeerConnections(track: MediaStreamTrack) {
         this._forEachPeerConnection((session: Session) => {
-            this._withForcedRenegotiation(session, () => session.addTrack(track));
+            this._withForcedRenegotiation(session, () => {
+                if (!this._localCameraStream) {
+                    throw new Error("No local camera stream when adding track to PCs")
+                }
+                session.addTrack(track, this._localCameraStream)
+            })
+            
         });
     }
 
     _replaceTrackToPeerConnections(oldTrack: any, newTrack: any) {
+        const stream = this._localCameraStream
+        if (!stream) {
+            throw new Error("No local camera stream when replacing track in PCs")
+        }
         const promises: Promise<any>[] = [];
         this._forEachPeerConnection((session: Session) => {
             if (!session.hasConnectedPeerConnection()) {
@@ -910,7 +917,7 @@ export default class P2pRtcManager implements RtcManager {
                 const promise = new Promise((resolve, reject) => {
                     const action = async () => {
                         try {
-                            await session.replaceTrack(oldTrack, newTrack);
+                            await session.replaceTrack(oldTrack, newTrack, stream);
                             resolve({});
                         } catch (error) {
                             reject(error);
@@ -921,7 +928,7 @@ export default class P2pRtcManager implements RtcManager {
                 promises.push(promise);
                 return;
             }
-            promises.push(session.replaceTrack(oldTrack, newTrack));
+            promises.push(session.replaceTrack(oldTrack, newTrack, stream));
         });
         return Promise.all(promises).catch((error) => {
             logger.error(String(error));

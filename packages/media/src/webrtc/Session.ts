@@ -35,8 +35,7 @@ export default class Session {
     bandwidth: any;
     pending: any[];
     isOperationPending: boolean;
-    streamIds: string[];
-    streams: MediaStream[];
+    remoteStreamIds: string[];
     earlyIceCandidates: any[];
     afterConnected: Promise<unknown>;
     registerConnected?: (value: unknown) => void;
@@ -48,6 +47,8 @@ export default class Session {
     srdComplete?: ReturnType<RTCPeerConnection["setRemoteDescription"]>;
     _incrementAnalyticMetric: P2PIncrementAnalyticMetric;
     pendingReplaceTrackActions: (() => Promise<void>)[];
+    _localCameraStream?: MediaStream
+    _localScreenshareStream?: MediaStream;
 
     constructor({
         clientId,
@@ -94,8 +95,7 @@ export default class Session {
         this.bandwidth = bandwidth || 0; // maximum bandwidth in kbps.
         this.pending = [];
         this.isOperationPending = false;
-        this.streamIds = [];
-        this.streams = [];
+        this.remoteStreamIds = [];
         this.earlyIceCandidates = [];
         this.afterConnected = new Promise((resolve) => {
             this.registerConnected = resolve;
@@ -105,8 +105,6 @@ export default class Session {
     }
 
     addStream(stream: MediaStream) {
-        this.streamIds.push(stream.id);
-        this.streams.push(stream);
         stream.getAudioTracks().forEach((track) => {
             this.pc.addTrack(track, stream);
         });
@@ -119,29 +117,15 @@ export default class Session {
         });
     }
 
-    addTrack(track: MediaStreamTrack) {
+    addTrack(track: MediaStreamTrack, stream: MediaStream) {
         if (track.kind === "video" && this._mediaPrefs?.wantsVideo === false) {
             return;
         }
-
-        const stream = this.streams[0];
-
-        // TODO: remove responsibility to add track from Session.
-        stream?.addTrack(track);
 
         this.pc.addTrack(track, stream);
     }
 
     removeStream(stream: MediaStream) {
-        const streamIdIndex = this.streamIds.indexOf(stream.id);
-        if (streamIdIndex !== -1) {
-            this.streamIds.splice(streamIdIndex, 1);
-        }
-        const streamIndex = this.streams.indexOf(stream);
-        if (streamIndex !== -1) {
-            this.streams.splice(streamIndex, 1);
-        }
-
         stream.getTracks().forEach((track) => {
             const sender = this.pc.getSenders().find((sender) => sender.track === track);
             if (sender) {
@@ -290,7 +274,7 @@ export default class Session {
         return this.pc.connectionState === "connected";
     }
 
-    async replaceTrack(oldTrack: MediaStreamTrack | undefined, newTrack: MediaStreamTrack) {
+    async replaceTrack(oldTrack: MediaStreamTrack | undefined, newTrack: MediaStreamTrack, stream: MediaStream) {
         logger.info("replacetrack() [oldTrackId: %s, newTrackId: %s]", oldTrack?.id, newTrack.id);
         if (newTrack.readyState === "ended") {
             throw new Error(`refusing to use ended track with id: ${newTrack.id}, kind: ${newTrack.kind}`);
@@ -319,30 +303,7 @@ export default class Session {
             return await sender.replaceTrack(newTrack);
         }
 
-        // If we get here, we falsely believe we've added a track to the webrtc layer.
-        // Actually, this is the first track of its kind obtained from gUM.
-
-        let stream = this.streams.find((s) => s.getTracks().find((t) => t.id === newTrack.id));
-        if (!stream) {
-            // This check was here from before, let's see if it ever happens.
-            rtcStats.sendEvent("P2PReplaceTrackNewTrackNotInStream", {
-                oldTrackId: oldTrack?.id,
-                oldTrackKind: oldTrack?.kind,
-                oldTrackIsEffect: oldTrack && trackAnnotations(oldTrack).isEffectTrack,
-                newTrackId: newTrack.id,
-                newTrackKind: newTrack.kind,
-                newTrackIsEffect: trackAnnotations(newTrack).isEffectTrack,
-            });
-            this._incrementAnalyticMetric("P2PReplaceTrackNewTrackNotInStream");
-        }
-        // TODO: Don't depend on array index for the stream.
-        stream = this.streams[0];
-        if (!stream) {
-            rtcStats.sendEvent("P2PReplaceTrackNoStream", {});
-            this._incrementAnalyticMetric("P2PReplaceTrackNoStream");
-            throw new Error("replaceTrack: No stream?");
-        }
-
+        // If we get here, way may have already added tracks but they were pending until the PC connects.
         pc.addTrack(newTrack, stream);
     }
 
