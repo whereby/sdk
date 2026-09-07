@@ -788,7 +788,6 @@ describe("P2pRtcManager", () => {
                             CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
                             expect.objectContaining({
                                 clientId,
-                                streamIds: [],
                                 status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
                             }),
                         );
@@ -1185,7 +1184,6 @@ describe("P2pRtcManager", () => {
                     CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
                     expect.objectContaining({
                         clientId,
-                        streamIds: [],
                         status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
                     }),
                 );

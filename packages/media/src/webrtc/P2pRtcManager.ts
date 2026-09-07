@@ -79,7 +79,6 @@ type P2PAnalytics = {
     P2POffendingInitialOffer: number;
     P2POnTrackNoStream: number;
     P2PRelayedIceCandidate: number;
-    P2PReplaceTrackNewTrackNotInStream: number;
     P2PReplaceTrackNoStream: number;
     P2PStaleAnswerIgnored: number;
 };
@@ -191,7 +190,6 @@ export default class P2pRtcManager implements RtcManager {
             P2POffendingInitialOffer: 0,
             P2POnTrackNoStream: 0,
             P2PRelayedIceCandidate: 0,
-            P2PReplaceTrackNewTrackNotInStream: 0,
             P2PReplaceTrackNoStream: 0,
             P2PStaleAnswerIgnored: 0,
         };
@@ -425,13 +423,13 @@ export default class P2pRtcManager implements RtcManager {
                 });
             }),
 
-            // Clean up session.streamIds after stopped screenshare from remote peer.
+            // Clean up session.remoteStreamIds after stopped screenshare from remote peer.
             this._serverSocket.on(PROTOCOL_RESPONSES.SCREENSHARE_STOPPED, (payload: ScreenshareStoppedEvent) => {
                 const session = this._getSession(payload.clientId);
                 if (session) {
-                    const streamIdIndex = session.streamIds.indexOf(payload.streamId);
+                    const streamIdIndex = session.remoteStreamIds.indexOf(payload.streamId);
                     if (streamIdIndex !== -1) {
-                        session.streamIds.splice(streamIdIndex, 1);
+                        session.remoteStreamIds.splice(streamIdIndex, 1);
                     }
                 }
             }),
@@ -510,7 +508,6 @@ export default class P2pRtcManager implements RtcManager {
 
         setTimeout(() => {
             this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED, {
-                streamIds: session.streamIds,
                 clientId,
                 status: newStatus,
                 previous: previousStatus,
@@ -722,8 +719,8 @@ export default class P2pRtcManager implements RtcManager {
                 return;
             }
             if (event.track.kind === "video") this._videoTrackIdByStreamId[stream.id] = event.track.id;
-            if (session.streamIds.indexOf(stream.id) === -1) {
-                session.streamIds.push(stream.id);
+            if (session.remoteStreamIds.indexOf(stream.id) === -1) {
+                session.remoteStreamIds.push(stream.id);
                 this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
                     clientId,
                     stream,
@@ -897,7 +894,12 @@ export default class P2pRtcManager implements RtcManager {
 
     _addTrackToPeerConnections(track: MediaStreamTrack) {
         this._forEachPeerConnection((session: Session) => {
-            this._withForcedRenegotiation(session, () => session.addTrack(track));
+            this._withForcedRenegotiation(session, () => {
+                if (!this._localCameraStream) {
+                    throw new Error("No local camera stream when adding track to PCs");
+                }
+                session.addTrack(track, this._localCameraStream);
+            });
         });
     }
 
@@ -910,7 +912,7 @@ export default class P2pRtcManager implements RtcManager {
                 const promise = new Promise((resolve, reject) => {
                     const action = async () => {
                         try {
-                            await session.replaceTrack(oldTrack, newTrack);
+                            await session.replaceTrack(oldTrack, newTrack, this._localCameraStream);
                             resolve({});
                         } catch (error) {
                             reject(error);
@@ -921,7 +923,7 @@ export default class P2pRtcManager implements RtcManager {
                 promises.push(promise);
                 return;
             }
-            promises.push(session.replaceTrack(oldTrack, newTrack));
+            promises.push(session.replaceTrack(oldTrack, newTrack, this._localCameraStream));
         });
         return Promise.all(promises).catch((error) => {
             logger.error(String(error));

@@ -61,7 +61,6 @@ export interface RtcStreamAddedPayload {
 }
 
 export interface RtcClientConnectionStatusChangedPayload {
-    streamIds: string[];
     clientId: string;
     status: string;
     previous: string;

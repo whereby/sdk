@@ -43,15 +43,6 @@ describe("Session", () => {
     });
 
     describe("addStream", () => {
-        it("updates the Session streams and streamIds", () => {
-            const stream = helpers.createMockedMediaStream();
-
-            session.addStream(stream);
-
-            expect(session.streamIds).toEqual([stream.id]);
-            expect(session.streams).toEqual([stream]);
-        });
-
         it("Adds the stream tracks to the peer connection", () => {
             const stream = helpers.createMockedMediaStream();
             const audioTrack = stream.getAudioTracks()[0];
@@ -94,16 +85,6 @@ describe("Session", () => {
     });
 
     describe("addTrack", () => {
-        it("adds the track to the existing media stream", () => {
-            const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-            const stream = helpers.createMockedMediaStream();
-            session.streams.push(stream);
-
-            session.addTrack(track);
-
-            expect(stream.addTrack).toHaveBeenCalledWith(track);
-        });
-
         it("adds the track to the peer connection", () => {
             const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
             const stream = helpers.createMockedMediaStream();
@@ -112,9 +93,8 @@ describe("Session", () => {
             };
             // @ts-expect-error not a real RTCPeerConnection
             session.pc = pc;
-            session.streams = [stream];
 
-            session.addTrack(track);
+            session.addTrack(track, stream);
 
             expect(pc.addTrack).toHaveBeenCalledWith(track, stream);
         });
@@ -131,16 +111,6 @@ describe("Session", () => {
                 });
             });
 
-            it("adds the track to the existing media stream", () => {
-                const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-                const stream = helpers.createMockedMediaStream();
-                session.streams.push(stream);
-
-                session.addTrack(track);
-
-                expect(stream.addTrack).toHaveBeenCalledWith(track);
-            });
-
             it("adds the track to the peer connection", () => {
                 const track = helpers.createMockedMediaStreamTrack({ kind: "audio" });
                 const stream = helpers.createMockedMediaStream();
@@ -149,21 +119,10 @@ describe("Session", () => {
                 };
                 // @ts-expect-error not a real RTCPeerConnection
                 session.pc = pc;
-                session.streams = [stream];
 
-                session.addTrack(track);
+                session.addTrack(track, stream);
 
                 expect(pc.addTrack).toHaveBeenCalledWith(track, stream);
-            });
-
-            it("does not add video tracks to the existing media stream", () => {
-                const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-                const stream = helpers.createMockedMediaStream();
-                session.streams.push(stream);
-
-                session.addTrack(track);
-
-                expect(stream.addTrack).not.toHaveBeenCalledWith(track);
             });
 
             it("does not add video tracks to the provided media stream", () => {
@@ -206,9 +165,8 @@ describe("Session", () => {
 
             const spyAddTrack = jest.spyOn(pc, "addTrack");
             const stream = helpers.createMockedMediaStream();
-            session.streams.push(stream);
 
-            session.replaceTrack(undefined, newTrack);
+            session.replaceTrack(undefined, newTrack, stream);
 
             expect(tracksAddedToPC.includes(newTrack)).toBe(true);
             expect(spyAddTrack).toHaveBeenCalledWith(newTrack, stream);
@@ -233,9 +191,8 @@ describe("Session", () => {
                 // @ts-ignore
                 addTrack: (track) => tracksAddedToPC.push(track),
             };
-            session.streams.push(helpers.createMockedMediaStream());
 
-            session.replaceTrack(oldTrack, newTrack);
+            session.replaceTrack(oldTrack, newTrack, helpers.createMockedMediaStream());
 
             expect(tracksAddedToPC.includes(newTrack)).toBe(true);
             expect(replaceTrackSpy).toHaveBeenLastCalledWith(newTrack);
@@ -264,9 +221,8 @@ describe("Session", () => {
             stream.addTrack(newTrack);
             // @ts-ignore
             session.pc = pc;
-            session.streams.push(stream);
 
-            session.replaceTrack(oldTrack, newTrack);
+            session.replaceTrack(oldTrack, newTrack, stream);
 
             expect(tracksAddedToPC.includes(newTrack)).toBe(true);
             expect(addTrackSpy).toHaveBeenLastCalledWith(newTrack, stream);
@@ -287,9 +243,8 @@ describe("Session", () => {
                 // @ts-ignore
                 addTrack: (track: MediaStreamTrack) => tracksAddedToPC.push(track),
             };
-            session.streams.push(helpers.createMockedMediaStream());
 
-            session.replaceTrack(oldTrack, newTrack);
+            session.replaceTrack(oldTrack, newTrack, helpers.createMockedMediaStream());
 
             expect(tracksAddedToPC.includes(newTrack)).toBe(true);
             expect(replaceTrackSpy).toHaveBeenLastCalledWith(newTrack);
@@ -317,9 +272,8 @@ describe("Session", () => {
 
                 const spyAddTrack = jest.spyOn(pc, "addTrack");
                 const stream = helpers.createMockedMediaStream();
-                session.streams.push(stream);
 
-                session.replaceTrack(undefined, newTrack);
+                session.replaceTrack(undefined, newTrack, stream);
 
                 expect(spyAddTrack).not.toHaveBeenCalled();
             });
