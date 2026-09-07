@@ -1,6 +1,6 @@
 import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage, KnockResponse } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
-import { ClientView, ConnectionStatus, FileUpload, NotificationsEventEmitter } from "../../redux";
+import { ClientView, ConnectionStatus, FileUpload, InitialMuteStates, NotificationsEventEmitter } from "../../redux";
 import LiveCaption from "../../api/models/LiveCaption";
 
 export type { RoomJoinedSuccess, ChatFileShare, KnockResponse, KnockResponseSender } from "@whereby.com/media";
@@ -13,6 +13,7 @@ export type LocalMediaOptions = {
 
 export interface WherebyClientOptions {
     localMediaOptions?: LocalMediaOptions;
+    initialMuteStates?: InitialMuteStates;
     displayName?: string;
     roomUrl?: string;
     assistantKey?: string | null;

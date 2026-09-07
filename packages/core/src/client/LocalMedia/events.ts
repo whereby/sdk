@@ -1,6 +1,8 @@
 /* Local media events */
 export const CAMERA_DEVICE_ERROR_CHANGED = "local-media:camera-device-error-changed";
 export const CAMERA_DEVICES_CHANGED = "local-media:camera-devices-changed";
+export const CAMERA_ENABLED_CHANGED = "local-media:camera-enabled-changed";
+export const MICROPHONE_ENABLED_CHANGED = "local-media:microphone-enabled-changed";
 export const IS_SETTING_CAMERA_DEVICE = "local-media:is-setting-camera-device";
 export const IS_SETTING_MICROPHONE_DEVICE = "local-media:is-setting-microphone-device";
 export const MICROPHONE_DEVICE_ERROR_CHANGED = "local-media:microphone-device-error-changed";
@@ -16,6 +18,8 @@ export const LOCAL_MEDIA_START_ERROR_CHANGED = "local-media:start-error-changed"
 export type LocalMediaEvents = {
     [CAMERA_DEVICE_ERROR_CHANGED]: [error: unknown | null];
     [CAMERA_DEVICES_CHANGED]: [devices: MediaDeviceInfo[]];
+    [CAMERA_ENABLED_CHANGED]: [isCameraEnabled: boolean];
+    [MICROPHONE_ENABLED_CHANGED]: [isMicrophoneEnabled: boolean];
     [IS_SETTING_CAMERA_DEVICE]: [isSetting: boolean];
     [IS_SETTING_MICROPHONE_DEVICE]: [isSetting: boolean];
     [MICROPHONE_DEVICE_ERROR_CHANGED]: [error: unknown | null];

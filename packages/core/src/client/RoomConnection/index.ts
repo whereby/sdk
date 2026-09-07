@@ -408,6 +408,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
 
         const roomConfig: AppConfig = {
             localMediaOptions: this.options.localMediaOptions || undefined,
+            initialMuteStates: this.options.initialMuteStates || undefined,
             displayName: this.options.displayName || "Guest",
             roomKey: this.options.roomKey || null,
             externalId: this.options.externalId || null,

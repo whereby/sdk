@@ -8,7 +8,7 @@ import {
 } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
-import { getFakeMediaStream } from "@whereby.com/core";
+import { getFakeMediaStream, InitialMuteStates } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
@@ -38,6 +38,19 @@ export default defaultArgs;
 
 const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
+const joinMutedArgType = {
+    name: "Join muted",
+    description: "Acquire the device, but join the room with it muted.",
+    control: {
+        type: "check" as const,
+        labels: { camera: "Camera", microphone: "Microphone" },
+    },
+    options: ["camera", "microphone"],
+};
+
+const toInitialMuteStates = (devices?: Array<keyof InitialMuteStates>): InitialMuteStates | undefined =>
+    devices?.length ? Object.fromEntries(devices.map((device) => [device, true])) : undefined;
+
 export const StartStop = () => {
     return <div>Go to this story to eg verify all resources (camera, microphone, connections) are released.</div>;
 };
@@ -46,16 +59,19 @@ function RoomConnectionWithLocalMediaInner({
     roomUrl,
     displayName,
     externalId,
+    initialMuteStates,
 }: {
     roomUrl: string;
     displayName?: string;
     externalId?: string;
+    initialMuteStates?: InitialMuteStates;
 }) {
     const localMedia = useLocalMedia({ audio: true, video: true });
     const [shouldJoin, setShouldJoin] = useState(false);
     const {
+        state: { isCameraEnabled, isMicrophoneEnabled },
         actions: { switchCameraEffect, clearCameraEffect, joinRoom, leaveRoom },
-    } = useRoomConnection(roomUrl, { localMedia, displayName, externalId });
+    } = useRoomConnection(roomUrl, { localMedia, displayName, externalId, initialMuteStates });
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
 
     useEffect(() => {
@@ -89,6 +105,11 @@ function RoomConnectionWithLocalMediaInner({
                     ))}
                 </select>
             </div>
+            <p>
+                Set the camera and microphone above, then join. The room connection should join with exactly that state
+                - camera {isCameraEnabled ? "on" : "off"}, microphone {isMicrophoneEnabled ? "on" : "off"}
+                {initialMuteStates ? ` (overridden by initialMuteStates: ${JSON.stringify(initialMuteStates)})` : ""}.
+            </p>
             <button onClick={handleToggleJoin}>{shouldJoin ? "Leave room" : "Join room"}</button>
 
             {shouldJoin && (
@@ -103,20 +124,42 @@ function RoomConnectionWithLocalMediaInner({
     );
 }
 
-export const RoomConnectionWithLocalMedia = ({
-    roomUrl,
-    displayName,
-    externalId,
-}: {
-    roomUrl: string;
-    displayName?: string;
-    externalId?: string;
-}) => {
-    if (!roomUrl || !roomUrl.match(roomRegEx)) {
-        return <p>Set room url on the Controls panel</p>;
-    }
+export const RoomConnectionWithLocalMedia = {
+    render: ({
+        roomUrl,
+        displayName,
+        externalId,
+        initialMuteStates,
+    }: {
+        roomUrl: string;
+        displayName?: string;
+        externalId?: string;
+        initialMuteStates?: Array<keyof InitialMuteStates>;
+    }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
 
-    return <RoomConnectionWithLocalMediaInner roomUrl={roomUrl} displayName={displayName} externalId={externalId} />;
+        return (
+            <RoomConnectionWithLocalMediaInner
+                roomUrl={roomUrl}
+                displayName={displayName}
+                externalId={externalId}
+                initialMuteStates={toInitialMuteStates(initialMuteStates)}
+            />
+        );
+    },
+    argTypes: {
+        ...defaultArgs.argTypes,
+        initialMuteStates: {
+            ...joinMutedArgType,
+            description: "Acquire the device, but join with it muted. Overrides the pre-call toggles above.",
+        },
+    },
+    args: {
+        ...defaultArgs.args,
+        initialMuteStates: [],
+    },
 };
 
 export const LocalMediaOnly = () => {
@@ -212,12 +255,36 @@ export const LocalMediaWithFakeMediaStream = ({ roomUrl }: { roomUrl: string }) 
     );
 };
 
-export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
-    if (!roomUrl || !roomUrl.match(roomRegEx)) {
-        return <p>Set room url on the Controls panel</p>;
-    }
+export const RoomConnectionOnly = {
+    render: ({
+        roomUrl,
+        displayName,
+        initialMuteStates,
+    }: {
+        roomUrl: string;
+        displayName?: string;
+        initialMuteStates?: Array<keyof InitialMuteStates>;
+    }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
 
-    return <VideoExperience displayName={displayName} roomName={roomUrl} />;
+        return (
+            <VideoExperience
+                displayName={displayName}
+                roomName={roomUrl}
+                initialMuteStates={toInitialMuteStates(initialMuteStates)}
+            />
+        );
+    },
+    argTypes: {
+        ...defaultArgs.argTypes,
+        initialMuteStates: joinMutedArgType,
+    },
+    args: {
+        ...defaultArgs.args,
+        initialMuteStates: [],
+    },
 };
 
 export const RoomConnectionWithHostControls = {

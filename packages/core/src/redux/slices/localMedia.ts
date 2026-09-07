@@ -3,7 +3,7 @@ import { getStream, getUpdatedDevices, getDeviceData, replaceTracksInStream } fr
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
-import { doAppStart, selectAppIsActive } from "./app";
+import { doAppStart, selectAppInitialMuteStates, selectAppIsActive } from "./app";
 import { debounce } from "../../utils";
 import { signalEvents } from "./signalConnection/actions";
 
@@ -746,6 +746,30 @@ export const selectLocalMediaShouldStop = createSelector(
 createReactor([selectLocalMediaShouldStop], ({ dispatch }, localMediaShouldStop) => {
     if (localMediaShouldStop) {
         dispatch(doStopLocalMedia());
+    }
+});
+
+export const selectShouldApplyInitialMuteStates = createSelector(
+    selectAppIsActive,
+    selectLocalMediaStatus,
+    selectAppInitialMuteStates,
+    (appIsActive, localMediaStatus, initialMuteStates) =>
+        appIsActive && localMediaStatus === "started" && !!initialMuteStates,
+);
+
+createReactor([selectShouldApplyInitialMuteStates], ({ dispatch, getState }, shouldApplyInitialMuteStates) => {
+    if (!shouldApplyInitialMuteStates) {
+        return;
+    }
+
+    const { camera, microphone } = selectAppInitialMuteStates(getState()) ?? {};
+
+    if (camera !== undefined) {
+        dispatch(toggleCameraEnabled({ enabled: !camera }));
+    }
+
+    if (microphone !== undefined) {
+        dispatch(toggleMicrophoneEnabled({ enabled: !microphone }));
     }
 });
 

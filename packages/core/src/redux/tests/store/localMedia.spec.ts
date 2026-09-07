@@ -1,7 +1,7 @@
 import * as localMediaSlice from "../../slices/localMedia";
-import { initialState as appInitialState } from "../../slices/app";
+import { doAppStart, doAppStop, initialState as appInitialState, InitialMuteStates } from "../../slices/app";
 import { signalEvents } from "../../slices/signalConnection/actions";
-import { createStore } from "../store.setup";
+import { createStore, mockSignalEmit } from "../store.setup";
 import { diff } from "deep-object-diff";
 import * as MediaDevices from "@whereby.com/media";
 
@@ -670,5 +670,95 @@ describe("actions", () => {
                 expect(replaced.length).toEqual(0);
             });
         });
+    });
+});
+
+describe("initial mute states", () => {
+    const activeApp = (initialMuteStates?: InitialMuteStates) =>
+        createStore({
+            initialState: { app: { ...appInitialState, isActive: true, initialMuteStates } },
+        });
+
+    const acquiredStream = () =>
+        new MockMediaStream([new MockMediaStreamTrack("audio"), new MockMediaStreamTrack("video")]);
+
+    it("joins muted once the devices have been acquired", async () => {
+        const store = activeApp({ camera: true, microphone: true });
+
+        await store.dispatch(localMediaSlice.doStartLocalMedia(acquiredStream()));
+
+        const { cameraEnabled, microphoneEnabled } = store.getState().localMedia;
+        expect(cameraEnabled).toBe(false);
+        expect(microphoneEnabled).toBe(false);
+    });
+
+    it("leaves omitted devices untouched", async () => {
+        const store = activeApp({ camera: true });
+
+        await store.dispatch(localMediaSlice.doStartLocalMedia(acquiredStream()));
+
+        const { cameraEnabled, microphoneEnabled } = store.getState().localMedia;
+        expect(cameraEnabled).toBe(false);
+        expect(microphoneEnabled).toBe(true);
+    });
+
+    it("is applied before the room is joined", async () => {
+        const store = createStore({
+            withSignalConnection: true,
+            initialState: {
+                app: {
+                    ...appInitialState,
+                    isActive: true,
+                    roomName: "/test",
+                    roomUrl: "https://example.whereby.com/test",
+                    initialMuteStates: { camera: true, microphone: true },
+                },
+                deviceCredentials: {
+                    isFetching: false,
+                    data: { credentials: { uuid: "uuid" } } as RootState["deviceCredentials"]["data"],
+                },
+                organization: {
+                    isFetching: false,
+                    error: null,
+                    data: { organizationId: "org" } as RootState["organization"]["data"],
+                },
+            },
+        });
+
+        await store.dispatch(localMediaSlice.doStartLocalMedia(acquiredStream()));
+
+        const joinRoom = mockSignalEmit.mock.calls.find(([event]) => event === "join_room");
+        expect(joinRoom?.[1].config).toEqual({ isAudioEnabled: false, isVideoEnabled: false });
+    });
+
+    it("does nothing when not configured", async () => {
+        const store = activeApp();
+
+        await store.dispatch(localMediaSlice.doStartLocalMedia(acquiredStream()));
+
+        const { cameraEnabled, microphoneEnabled } = store.getState().localMedia;
+        expect(cameraEnabled).toBe(true);
+        expect(microphoneEnabled).toBe(true);
+    });
+
+    it("applies when the app starts after media has been acquired", async () => {
+        const store = createStore();
+
+        await store.dispatch(localMediaSlice.doStartLocalMedia(acquiredStream()));
+        expect(store.getState().localMedia.cameraEnabled).toBe(true);
+
+        store.dispatch(
+            doAppStart({
+                displayName: "Test",
+                externalId: null,
+                initialMuteStates: { camera: true },
+                roomKey: null,
+                roomUrl: "https://example.whereby.com/test",
+            }),
+        );
+
+        expect(store.getState().localMedia.cameraEnabled).toBe(false);
+
+        store.dispatch(doAppStop());
     });
 });

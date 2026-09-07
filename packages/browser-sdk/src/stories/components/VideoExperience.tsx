@@ -15,6 +15,7 @@ import {
     NotificationEvents,
     RequestVideoEvent,
     LiveCaptionsState,
+    InitialMuteStates,
 } from "@whereby.com/core";
 
 type ChatMessageWithFile = { text: string; file?: { name: string } };
@@ -35,6 +36,7 @@ export default function VideoExperience({
     roomKey,
     localMedia,
     externalId,
+    initialMuteStates,
     showHostControls,
     hostOptions,
     joinRoomOnLoad,
@@ -48,6 +50,7 @@ export default function VideoExperience({
     roomKey?: string;
     localMedia?: UseLocalMediaResult;
     externalId?: string;
+    initialMuteStates?: InitialMuteStates;
     showHostControls?: boolean;
     hostOptions?: Array<string>;
     joinRoomOnLoad?: boolean;
@@ -75,6 +78,7 @@ export default function VideoExperience({
         ...(Boolean(roomKey) && { roomKey }),
         ...(Boolean(localMedia) && { localMedia }),
         ...(Boolean(externalId) && { externalId }),
+        ...(Boolean(initialMuteStates) && { initialMuteStates }),
     });
 
     const {
@@ -90,6 +94,8 @@ export default function VideoExperience({
         liveCaptions,
         liveTranscription,
         fileUploads,
+        isCameraEnabled,
+        isMicrophoneEnabled,
     } = state;
     const {
         knock,
@@ -722,9 +728,21 @@ export default function VideoExperience({
                         )}
                     </div>
                     <div className="controls">
+                        <strong>Camera:</strong> media {isCameraEnabled ? "on" : "off"} / participant{" "}
+                        {localParticipant?.isVideoEnabled ? "on" : "off"}
+                        <button onClick={() => toggleCamera()}>Toggle</button>
+                        <button onClick={() => toggleCamera(false)}>Off</button>
+                        <button onClick={() => toggleCamera(true)}>On</button>
+                    </div>
+                    <div className="controls">
+                        <strong>Microphone:</strong> media {isMicrophoneEnabled ? "on" : "off"} / participant{" "}
+                        {localParticipant?.isAudioEnabled ? "on" : "off"}
+                        <button onClick={() => toggleMicrophone()}>Toggle</button>
+                        <button onClick={() => toggleMicrophone(false)}>Off</button>
+                        <button onClick={() => toggleMicrophone(true)}>On</button>
+                    </div>
+                    <div className="controls">
                         <button onClick={() => leaveRoom()}>Leave</button>
-                        <button onClick={() => toggleCamera()}>Toggle camera</button>
-                        <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                         <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>
                         <button onClick={() => toggleHdMode()}>Toggle hd video mode</button>
                         <button onClick={() => toggleWidescreenMode()}>Toggle widescreen video mode</button>

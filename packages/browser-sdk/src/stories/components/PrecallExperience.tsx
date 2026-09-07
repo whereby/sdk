@@ -14,6 +14,8 @@ export default function PrecallExperience(props: PrecallExperienceProps) {
         currentMicrophoneDeviceId,
         currentSpeakerDeviceId,
         cameraDevices,
+        isCameraEnabled,
+        isMicrophoneEnabled,
         localStream,
         microphoneDevices,
         speakerDevices,
@@ -76,8 +78,16 @@ export default function PrecallExperience(props: PrecallExperienceProps) {
                 </div>
             </div>
             <div className="controls">
+                <strong>Camera: {isCameraEnabled ? "on" : "off"}</strong>
                 <button onClick={() => toggleCameraEnabled()}>Toggle camera</button>
+                <button onClick={() => toggleCameraEnabled(false)}>Camera off</button>
+                <button onClick={() => toggleCameraEnabled(true)}>Camera on</button>
+            </div>
+            <div className="controls">
+                <strong>Microphone: {isMicrophoneEnabled ? "on" : "off"}</strong>
                 <button onClick={() => toggleMicrophoneEnabled()}>Toggle microphone</button>
+                <button onClick={() => toggleMicrophoneEnabled(false)}>Microphone off</button>
+                <button onClick={() => toggleMicrophoneEnabled(true)}>Microphone on</button>
             </div>
             {!hideVideoPreview && <div>{localStream && <VideoView muted stream={localStream} />}</div>}
         </div>

@@ -1,5 +1,5 @@
 import { RoomConnectionClient } from "../";
-import { Store, RootState } from "../../../redux";
+import { doAppStart, Store, RootState } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
 
 describe("RoomConnectionClient", () => {
@@ -383,6 +383,33 @@ describe("RoomConnectionClient", () => {
             });
             storeSubscriber();
             expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("joinRoom", () => {
+        it("carries the options from initialize into the app config", () => {
+            (mockStore.dispatch as jest.Mock).mockImplementation(() => jest.fn());
+
+            client.initialize({
+                roomUrl: "https://example.whereby.com/test",
+                displayName: "Test",
+                localMediaOptions: { audio: true, video: true },
+                initialMuteStates: { camera: true, microphone: true },
+            });
+
+            client.joinRoom();
+
+            expect(mockStore.dispatch).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: doAppStart.type,
+                    payload: expect.objectContaining({
+                        roomUrl: "https://example.whereby.com/test",
+                        displayName: "Test",
+                        localMediaOptions: { audio: true, video: true },
+                        initialMuteStates: { camera: true, microphone: true },
+                    }),
+                }),
+            );
         });
     });
 });

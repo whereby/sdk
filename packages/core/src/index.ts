@@ -13,7 +13,7 @@ export * from "./client/RoomConnection/events";
 export * from "./client/Grid";
 export * from "./client/Grid/types";
 export * from "./client/Grid/events";
-export type { AppConfig } from "./redux/slices/app";
+export type { AppConfig, InitialMuteStates } from "./redux/slices/app";
 export type {
     BreakoutSessionSettings,
     StartBreakoutSessionOptions,

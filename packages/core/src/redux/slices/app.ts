@@ -8,11 +8,22 @@ import decodeRoomName from "../../utils/decodeRoomName";
  * Reducer
  */
 
+/**
+ * Whether to join with the camera and/or microphone muted. The devices are still
+ * acquired according to `localMediaOptions` - this only decides the state we join
+ * with. `true` means muted, an omitted key leaves that device untouched.
+ */
+export type InitialMuteStates = {
+    camera?: boolean;
+    microphone?: boolean;
+};
+
 export interface AppConfig {
     assistantKey?: string | null;
     displayName: string;
     externalId: string | null;
     ignoreBreakoutGroups?: boolean;
+    initialMuteStates?: InitialMuteStates;
     isAudioRecorder?: boolean;
     isDialIn?: boolean;
     isNodeSdk?: boolean;
@@ -27,6 +38,7 @@ export interface AppState {
     externalId: string | null;
     ignoreBreakoutGroups: boolean;
     initialConfig?: AppConfig;
+    initialMuteStates?: InitialMuteStates;
     isActive: boolean;
     isAssistant: boolean;
     isAudioRecorder: boolean;
@@ -95,4 +107,5 @@ export const selectAppUserAgent = (state: RootState) => state.app.userAgent;
 export const selectAppExternalId = (state: RootState) => state.app.externalId;
 export const selectAppIsNodeSdk = (state: RootState) => state.app.isNodeSdk;
 export const selectAppInitialConfig = (state: RootState) => state.app.initialConfig;
+export const selectAppInitialMuteStates = (state: RootState) => state.app.initialMuteStates;
 export const selectAppIgnoreBreakoutGroups = (state: RootState) => state.app.ignoreBreakoutGroups;
