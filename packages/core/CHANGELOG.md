@@ -1,5 +1,18 @@
 # @whereby.com/core
 
+## 1.19.0
+
+### Minor Changes
+
+- 670bf27: Send rtcManager.disconnect with clientClaim on clientLeft event
+
+### Patch Changes
+
+- Updated dependencies [670bf27]
+- Updated dependencies [084798b]
+    - @whereby.com/media@10.0.0
+    - @whereby.com/audio-denoiser@1.0.15
+
 ## 1.18.7
 
 ### Patch Changes
