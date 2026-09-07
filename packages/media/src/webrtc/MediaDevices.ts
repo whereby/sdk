@@ -80,8 +80,7 @@ function getSettingsFromTrack(
     let settings: any = { deviceId: null };
 
     if (!track) {
-        // In SFU V2 the track can be closed by the RtcManager, so check if the
-        // last used deviceId still is available
+        // The consuming app stops the camera track on mute, so fall back to the last used deviceId.
         if (lastUsedId && devices) {
             settings.deviceId = devices.find((d) => d.deviceId === lastUsedId && d.kind === kind)?.deviceId;
         }
@@ -126,19 +125,17 @@ export function getDeviceData({
     audioTrack,
     videoTrack,
     devices,
-    stoppedVideoTrack,
     lastAudioId,
     lastVideoId,
 }: {
     audioTrack?: MediaStreamTrack | null;
     videoTrack?: MediaStreamTrack | null;
     devices: MediaDeviceInfo[];
-    stoppedVideoTrack?: MediaStreamTrack;
     lastAudioId?: string | undefined;
     lastVideoId?: string | undefined;
 }): GetDeviceDataResult {
     const usable = (d?: MediaStreamTrack | null) => (d?.readyState === "live" ? d : null);
-    videoTrack = usable(videoTrack) || stoppedVideoTrack;
+    videoTrack = usable(videoTrack);
     audioTrack = usable(audioTrack);
     const video = getSettingsFromTrack("videoinput", videoTrack, devices, lastVideoId);
     const audio = getSettingsFromTrack("audioinput", audioTrack, devices, lastAudioId);

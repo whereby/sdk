@@ -782,22 +782,6 @@ describe("getDeviceData", () => {
         });
     });
 
-    it("find videoId when only audio and stoppedVideoTrack", () => {
-        const atrack = helpers.createMockedMediaStreamTrack({ id: "audiotrack", kind: "audio" });
-        const stopVtrack = helpers.createMockedMediaStreamTrack({ id: "stopVtrack", kind: "video" });
-
-        const res = MediaDevices.getDeviceData({
-            audioTrack: atrack as any,
-            stoppedVideoTrack: stopVtrack as any,
-            devices: [],
-        });
-
-        expect(res).toEqual({
-            audio: { deviceId: "audiotrack", label: undefined },
-            video: { deviceId: "stopVtrack", label: undefined },
-        });
-    });
-
     it("find videoId by vtrack.getSettings and audioId by atrack.label", () => {
         const stream = helpers.createMockedMediaStream();
         const vtrack = stream.getVideoTracks()[0];
