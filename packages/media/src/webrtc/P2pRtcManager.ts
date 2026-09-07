@@ -117,7 +117,6 @@ export default class P2pRtcManager implements RtcManager {
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: ClearableTimeout | null;
     _icePublicIPGatheringTimeoutID: ClearableTimeout | null;
-    // Kept so resuming video is a replaceTrack rather than an addTrack, which would renegotiate.
     _stoppedVideoTrack?: MediaStreamTrack;
     _videoTrackBeingMonitored?: MediaStreamTrack;
     _audioTrackBeingMonitored?: MediaStreamTrack;
