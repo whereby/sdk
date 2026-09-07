@@ -1,5 +1,17 @@
 # @whereby.com/media
 
+## 10.0.0
+
+### Major Changes
+
+- 084798b: Leave stopping and re-acquiring the camera track on video toggle to the consuming app.
+  Update the stopOrResumeVideo and stopOrResumeAudio parameters, and drop the stopped video
+  track from getDeviceData
+
+### Patch Changes
+
+- 670bf27: Send rtcManager.disconnect with clientClaim on clientLeft event
+
 ## 9.7.4
 
 ### Patch Changes
