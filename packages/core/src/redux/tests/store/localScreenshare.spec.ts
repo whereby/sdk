@@ -1,5 +1,6 @@
 import { diff } from "deep-object-diff";
 import { doStartScreenshare, doStopScreenshare } from "../../slices/localScreenshare";
+import { selectRoomConnectionState } from "../../../client/RoomConnection/selector";
 import { createStore, mockRtcManager } from "../store.setup";
 
 import MockMediaStream from "../../../__mocks__/MediaStream";
@@ -59,6 +60,41 @@ describe("actions", () => {
         expect(diff(before, after)).toEqual({
             status: "inactive",
             stream: null,
+        });
+    });
+});
+
+describe("room connection state", () => {
+    let stream: MediaStream;
+
+    beforeEach(() => {
+        stream = new MockMediaStream();
+        mockedGetDisplayMedia.mockResolvedValue(stream);
+    });
+
+    it("exposes localScreenshareStatus while screensharing", async () => {
+        const store = createStore({
+            withRtcManager: true,
+            connectToRoom: true,
+        });
+
+        expect(selectRoomConnectionState(store.getState())).toMatchObject({
+            localScreenshareStatus: undefined,
+            localParticipant: { isScreenSharing: false },
+        });
+
+        await store.dispatch(doStartScreenshare());
+
+        expect(selectRoomConnectionState(store.getState())).toMatchObject({
+            localScreenshareStatus: "active",
+            localParticipant: { isScreenSharing: true },
+        });
+
+        store.dispatch(doStopScreenshare());
+
+        expect(selectRoomConnectionState(store.getState())).toMatchObject({
+            localScreenshareStatus: undefined,
+            localParticipant: { isScreenSharing: false },
         });
     });
 });

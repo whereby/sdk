@@ -19,7 +19,6 @@ import {
 } from "./selectors";
 
 export interface LocalParticipantState extends LocalParticipant {
-    isScreenSharing: boolean;
     roleName: RoleName;
     clientClaim?: string;
     breakoutGroupAssigned: string;
@@ -35,7 +34,6 @@ export const localParticipantSliceInitialState: LocalParticipantState = {
     isAudioRecorder: false,
     isDialIn: false,
     isLocalParticipant: true,
-    isScreenSharing: false,
     isVideoEnabled: true,
     roleName: "none",
     stickyReaction: undefined,

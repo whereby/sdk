@@ -11,6 +11,7 @@ import {
     selectWaitingParticipants,
     selectLiveTranscriptionRaw,
     selectLocalMediaStream,
+    selectLocalScreenshareStatus,
     selectStreamingRaw,
     selectNotificationsEmitter,
     selectSpotlightedClientViews,
@@ -70,6 +71,7 @@ export const selectRoomConnectionState = createSelector(
     selectLiveTranscriptionRaw,
     selectLocalParticipantRaw,
     selectLocalMediaStream,
+    selectLocalScreenshareStatus,
     selectRemoteParticipants,
     selectScreenshares,
     selectRoomConnectionStatus,
@@ -109,6 +111,7 @@ export const selectRoomConnectionState = createSelector(
         liveTranscription,
         localParticipant,
         localMediaStream,
+        localScreenshareStatus,
         remoteParticipants,
         screenshares,
         connectionStatus,
@@ -186,8 +189,12 @@ export const selectRoomConnectionState = createSelector(
                       status: liveTranscription.status,
                   }
                 : undefined,
-            localScreenshareStatus: localParticipant.isScreenSharing ? "active" : undefined,
-            localParticipant: { ...localParticipant, stream: localMediaStream },
+            localScreenshareStatus: localScreenshareStatus === "inactive" ? undefined : localScreenshareStatus,
+            localParticipant: {
+                ...localParticipant,
+                isScreenSharing: localScreenshareStatus === "active",
+                stream: localMediaStream,
+            },
             remoteParticipants: remoteParticipants.map((participant) => ({
                 ...participant,
                 breakoutGroupAssigned: breakoutAssignments?.[participant.deviceId] || "",
