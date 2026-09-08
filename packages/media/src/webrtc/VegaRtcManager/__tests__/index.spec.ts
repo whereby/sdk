@@ -305,7 +305,7 @@ describe("VegaRtcManager", () => {
         });
     });
 
-    describe("_onChangedHighestLayerDemanded", () => {
+    describe("_onChangedHighestRequiredLayer", () => {
         let setParameters: jest.Mock;
         let parameters: { encodings: any[] };
 
@@ -324,7 +324,7 @@ describe("VegaRtcManager", () => {
         it("ignores demand changes for a different producer", async () => {
             createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
 
-            await rtcManager._onChangedHighestLayerDemanded({ producerId: "other-producer", spatialLayer: 0 });
+            await rtcManager._onChangedHighestRequiredLayer({ producerId: "other-producer", spatialLayer: 0 });
 
             expect(setParameters).not.toHaveBeenCalled();
         });
@@ -333,7 +333,7 @@ describe("VegaRtcManager", () => {
             it("pauses encodings above the demanded layer and keeps the rest active", async () => {
                 createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
 
-                await rtcManager._onChangedHighestLayerDemanded({
+                await rtcManager._onChangedHighestRequiredLayer({
                     producerId: "webcam-producer-1",
                     spatialLayer: 0,
                 });
@@ -345,7 +345,7 @@ describe("VegaRtcManager", () => {
             it("resumes previously paused encodings up to the demanded layer", async () => {
                 createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
 
-                await rtcManager._onChangedHighestLayerDemanded({
+                await rtcManager._onChangedHighestRequiredLayer({
                     producerId: "webcam-producer-1",
                     spatialLayer: 2,
                 });
@@ -357,7 +357,7 @@ describe("VegaRtcManager", () => {
             it("does not call setParameters when nothing changes", async () => {
                 createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
 
-                await rtcManager._onChangedHighestLayerDemanded({
+                await rtcManager._onChangedHighestRequiredLayer({
                     producerId: "webcam-producer-1",
                     spatialLayer: 0,
                 });
@@ -370,7 +370,7 @@ describe("VegaRtcManager", () => {
             it("shrinks the scalabilityMode's spatial layer count to the demanded layer", async () => {
                 createWebcamProducer([{ scalabilityMode: "L3T2" }]);
 
-                await rtcManager._onChangedHighestLayerDemanded({
+                await rtcManager._onChangedHighestRequiredLayer({
                     producerId: "webcam-producer-1",
                     spatialLayer: 1,
                 });
@@ -382,7 +382,7 @@ describe("VegaRtcManager", () => {
             it("does not call setParameters when the scalabilityMode is unchanged", async () => {
                 createWebcamProducer([{ scalabilityMode: "L3T2" }]);
 
-                await rtcManager._onChangedHighestLayerDemanded({
+                await rtcManager._onChangedHighestRequiredLayer({
                     producerId: "webcam-producer-1",
                     spatialLayer: 2,
                 });
@@ -393,7 +393,7 @@ describe("VegaRtcManager", () => {
             it("does not call setParameters for a plain (non-SVC) single encoding", async () => {
                 createWebcamProducer([{}]);
 
-                await rtcManager._onChangedHighestLayerDemanded({
+                await rtcManager._onChangedHighestRequiredLayer({
                     producerId: "webcam-producer-1",
                     spatialLayer: 0,
                 });

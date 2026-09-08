@@ -1880,8 +1880,8 @@ export default class VegaRtcManager implements RtcManager {
                         return this._onConsumerScore(data);
                     case "producerScore":
                         return this._onProducerScore(data);
-                    case "changedHighestLayerDemanded":
-                        return this._onChangedHighestLayerDemanded(data);
+                    case "changedHighestRequiredLayer":
+                        return this._onChangedHighestRequiredLayer(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -2039,7 +2039,7 @@ export default class VegaRtcManager implements RtcManager {
         return true;
     }
 
-    async _onChangedHighestLayerDemanded({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
+    async _onChangedHighestRequiredLayer({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
         // Only allow change webcam video
         if (producerId !== this._webcamProducer.id) return;
 
@@ -2054,7 +2054,7 @@ export default class VegaRtcManager implements RtcManager {
 
         if (!changed) return;
 
-        logger.info("_onChangedHighestLayerDemanded()", { producerId, spatialLayer });
+        logger.info("_onChangedHighestRequiredLayer()", { producerId, spatialLayer });
         await rtpSender.setParameters(parameters);
     }
 
