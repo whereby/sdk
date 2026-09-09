@@ -319,6 +319,9 @@ describe("VegaRtcManager", () => {
                     setParameters,
                 },
             };
+            // Mirrors what the real producer-creation path captures: the encoding's
+            // scalabilityMode before any reduction has ever been applied.
+            rtcManager._webcamProducerOriginalScalabilityMode = encodings[0]?.scalabilityMode;
         };
 
         it("ignores demand changes for a different producer", async () => {
@@ -367,7 +370,7 @@ describe("VegaRtcManager", () => {
         });
 
         describe("SVC (single encoding with scalabilityMode)", () => {
-            it("shrinks the scalabilityMode's spatial layer count to the demanded layer", async () => {
+            it("shrinks the scalabilityMode's spatial layer count and scales the resolution down to match", async () => {
                 createWebcamProducer([{ scalabilityMode: "L3T2" }]);
 
                 await rtcManager._onChangedHighestRequiredLayer({
@@ -375,11 +378,64 @@ describe("VegaRtcManager", () => {
                     spatialLayer: 1,
                 });
 
-                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2" }]);
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
                 expect(setParameters).toHaveBeenCalledWith(parameters);
             });
 
-            it("does not call setParameters when the scalabilityMode is unchanged", async () => {
+            it("scales down by 4 and caps maxBitrate when only the lowest of 3 layers is required", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestRequiredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                ]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("keeps computing the reduction relative to the original scalabilityMode across repeated changes", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestRequiredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 1,
+                });
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+
+                // Reducing further from the already-reduced L2T2 must still land on scaleResolutionDownBy 4,
+                // not 2, since the original producer only ever had 3 layers.
+                await rtcManager._onChangedHighestRequiredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                ]);
+            });
+
+            it("removes the maxBitrate cap once a higher layer is required again", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2", maxBitrate: 1_000_000 }]);
+
+                await rtcManager._onChangedHighestRequiredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                ]);
+
+                await rtcManager._onChangedHighestRequiredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 1,
+                });
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+                expect(parameters.encodings[0]).not.toHaveProperty("maxBitrate");
+            });
+
+            it("does not call setParameters when neither the scalabilityMode, resolution scale, nor maxBitrate changes", async () => {
                 createWebcamProducer([{ scalabilityMode: "L3T2" }]);
 
                 await rtcManager._onChangedHighestRequiredLayer({

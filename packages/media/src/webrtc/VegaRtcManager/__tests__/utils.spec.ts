@@ -4,7 +4,7 @@ import {
     getLayers,
     getNumberOfActiveVideos,
     getNumberOfTemporalLayers,
-    getReducedScalabilityMode,
+    getReducedSvcEncodingParams,
 } from "../utils";
 
 describe("utils", () => {
@@ -77,33 +77,52 @@ describe("utils", () => {
         });
     });
 
-    describe("getReducedScalabilityMode", () => {
+    describe("getReducedSvcEncodingParams", () => {
         it.each`
-            scalabilityMode | spatialLayer | expected
-            ${"L3T2"}       | ${2}         | ${"L3T2"}
-            ${"L3T2"}       | ${1}         | ${"L2T2"}
-            ${"L3T2"}       | ${0}         | ${"L1T2"}
-            ${"S3T3"}       | ${1}         | ${"S2T3"}
-            ${"L3T3_KEY"}   | ${1}         | ${"L2T3_KEY"}
-            ${"L1T3"}       | ${0}         | ${"L1T3"}
+            originalScalabilityMode | spatialLayer | scalabilityMode | scaleResolutionDownBy | maxBitrate
+            ${"L3T2"}               | ${2}         | ${"L3T2"}       | ${1}                  | ${undefined}
+            ${"L3T2"}               | ${1}         | ${"L2T2"}       | ${2}                  | ${undefined}
+            ${"L3T2"}               | ${0}         | ${"L1T2"}       | ${4}                  | ${100_000}
+            ${"L2T2"}               | ${0}         | ${"L1T2"}       | ${2}                  | ${100_000}
+            ${"S3T3"}               | ${1}         | ${"S2T3"}       | ${2}                  | ${undefined}
+            ${"L3T3_KEY"}           | ${1}         | ${"L2T3_KEY"}   | ${2}                  | ${undefined}
+            ${"L1T3"}               | ${0}         | ${"L1T3"}       | ${1}                  | ${100_000}
         `(
-            "reduces $scalabilityMode to $expected when the demanded spatial layer is $spatialLayer",
-            ({ scalabilityMode, spatialLayer, expected }) => {
-                expect(getReducedScalabilityMode(scalabilityMode, spatialLayer)).toBe(expected);
+            "reduces $originalScalabilityMode to $scalabilityMode scaled down by $scaleResolutionDownBy (maxBitrate $maxBitrate) when the required spatial layer is $spatialLayer",
+            ({ originalScalabilityMode, spatialLayer, scalabilityMode, scaleResolutionDownBy, maxBitrate }) => {
+                expect(getReducedSvcEncodingParams(originalScalabilityMode, spatialLayer)).toEqual({
+                    scalabilityMode,
+                    scaleResolutionDownBy,
+                    maxBitrate,
+                });
             },
         );
 
         it("never raises the spatial layer count above what the original scalabilityMode declared", () => {
-            expect(getReducedScalabilityMode("L2T2", 5)).toBe("L2T2");
+            expect(getReducedSvcEncodingParams("L2T2", 5)).toEqual({
+                scalabilityMode: "L2T2",
+                scaleResolutionDownBy: 1,
+                maxBitrate: undefined,
+            });
         });
 
         it("never reduces below a single spatial layer", () => {
-            expect(getReducedScalabilityMode("L3T2", -1)).toBe("L1T2");
+            expect(getReducedSvcEncodingParams("L3T2", -1)).toEqual({
+                scalabilityMode: "L1T2",
+                scaleResolutionDownBy: 4,
+                maxBitrate: 100_000,
+            });
+        });
+
+        it("caps maxBitrate only when the lowest layer is the only one required, undefined (no cap) otherwise", () => {
+            expect(getReducedSvcEncodingParams("L3T2", 0)?.maxBitrate).toBe(100_000);
+            expect(getReducedSvcEncodingParams("L3T2", 1)?.maxBitrate).toBeUndefined();
+            expect(getReducedSvcEncodingParams("L3T2", 2)?.maxBitrate).toBeUndefined();
         });
 
         it("returns undefined for a non-SVC (simulcast/plain) encoding", () => {
-            expect(getReducedScalabilityMode(undefined, 1)).toBeUndefined();
-            expect(getReducedScalabilityMode("", 1)).toBeUndefined();
+            expect(getReducedSvcEncodingParams(undefined, 1)).toBeUndefined();
+            expect(getReducedSvcEncodingParams("", 1)).toBeUndefined();
         });
     });
 
