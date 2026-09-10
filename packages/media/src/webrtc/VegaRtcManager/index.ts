@@ -1804,14 +1804,6 @@ export default class VegaRtcManager implements RtcManager {
         this._qualityMonitor.close();
     }
 
-    sendAudioMutedStats(muted: boolean) {
-        rtcStats.sendEvent("audio_muted", { muted });
-    }
-
-    sendVideoMutedStats(muted: boolean) {
-        rtcStats.sendEvent("video_muted", { muted });
-    }
-
     sendStatsCustomEvent(eventName: string, data?: any) {
         rtcStats.sendEvent(eventName, data);
     }
