@@ -62,6 +62,41 @@ export function getNumberOfTemporalLayers(consumer: any) {
     return /T3/.test(consumer._rtpParameters?.encodings?.[0]?.scalabilityMode || "") ? 3 : 2;
 }
 
+const SCALABILITY_MODE_REGEX = /^([LS])([1-9]\d?)T([1-9]\d?)(_KEY)?/;
+
+// When the reduction leaves only the lowest SVC spatial layer active, there's no reason to
+// spend more than this on what is by then a heavily downscaled single layer.
+const LOWEST_SVC_LAYER_MAX_BITRATE = 100_000; // 100 kbit/s
+
+// SVC spatial layers are dyadic: each layer below the top halves both dimensions, i.e.
+// quarters the pixel count, relative to the *original* (full quality) top layer.
+// Dropping the top layer(s) of the mode string alone doesn't shrink the resolution or
+// bitrate the encoder targets for what remains - the encoder still renders its new top
+// layer at the original capture resolution unless scaleResolutionDownBy is adjusted to
+// match. So, given the encoding's ORIGINAL scalabilityMode (i.e. from before any reduction
+// was ever applied) and the highest spatial layer actually required (0-indexed, where 0 is
+// the lowest), this returns the scalabilityMode and scaleResolutionDownBy needed so the new
+// top layer lands at the resolution/bitrate it would have had as one of the original layers.
+// maxBitrate is capped to LOWEST_SVC_LAYER_MAX_BITRATE when only the lowest layer remains,
+// and undefined (meaning: remove any maxBitrate override) as soon as a higher layer is
+// required again. Returns undefined when originalScalabilityMode isn't a recognized SVC
+// mode (i.e. this isn't an SVC encoding).
+export function getReducedSvcEncodingParams(originalScalabilityMode: string | undefined, spatialLayer: number) {
+    const match = SCALABILITY_MODE_REGEX.exec(originalScalabilityMode || "");
+    if (!match) return undefined;
+
+    const [, mode, originalSpatialLayers, temporalLayers, key = ""] = match;
+    const topLayerIndex = Number(originalSpatialLayers) - 1;
+    const requiredLayerIndex = Math.min(Math.max(spatialLayer, 0), topLayerIndex);
+    const onlyLowestLayerRequired = requiredLayerIndex === 0;
+
+    return {
+        scalabilityMode: `${mode}${requiredLayerIndex + 1}T${temporalLayers}${key}`,
+        scaleResolutionDownBy: 2 ** (topLayerIndex - requiredLayerIndex),
+        maxBitrate: onlyLowestLayerRequired ? LOWEST_SVC_LAYER_MAX_BITRATE : undefined,
+    };
+}
+
 // this adds a polling monitor for cpu overuse by checking if the lowest layer of a simulcast stream has reduced resolution
 //
 // on chromium browsers we could probably check the qualityLimitationReason and qualityLimitationDurations, but since not all

@@ -22,7 +22,13 @@ import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSett
 import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
-import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
+import {
+    addProducerCpuOveruseWatch,
+    getLayers,
+    getNumberOfActiveVideos,
+    getNumberOfTemporalLayers,
+    getReducedSvcEncodingParams,
+} from "./utils";
 import { ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
@@ -61,6 +67,9 @@ const logger = new Logger();
 
 const browserName = adapter.browserDetails.browser;
 let unloading = false;
+
+// @types/web's RTCRtpEncodingParameters doesn't (yet) declare scalabilityMode.
+type RtpEncodingParametersWithScalabilityMode = RTCRtpEncodingParameters & { scalabilityMode?: string };
 
 const RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS = 3500;
 const RESTARTICE_ERROR_MAX_RETRY_COUNT = 5;
@@ -101,6 +110,11 @@ export default class VegaRtcManager implements RtcManager {
     _micScoreProducer: any;
     _micScoreProducerPromise: any;
     _webcamProducer: any;
+    // The scalabilityMode the current webcam producer's encoding was created with, before
+    // any reduction for a lower highest-required-layer was ever applied. Needed because
+    // reductions must always be computed relative to the original (full quality) layers,
+    // not whatever the mode was last reduced to.
+    _webcamProducerOriginalScalabilityMode: string | undefined;
     _webcamProducerPromise: any;
     _webcamPaused: any;
     _screenVideoProducer: any;
@@ -185,6 +199,7 @@ export default class VegaRtcManager implements RtcManager {
         this._micScoreProducer = null;
         this._micScoreProducerPromise = null;
         this._webcamProducer = null;
+        this._webcamProducerOriginalScalabilityMode = undefined;
         this._webcamProducerPromise = null;
         this._webcamPaused = false;
         this._screenVideoProducer = null;
@@ -468,7 +483,7 @@ export default class VegaRtcManager implements RtcManager {
                             .reduce((prev, current) => ({ ...prev, [current]: this._features[current] }), {}),
                     });
                     const queryString = searchParams.toString();
-                    const wsUrl = `wss://${host}?${queryString}`;
+                    const wsUrl = `wss://${host}:4543?${queryString}`;
                     return wsUrl;
                 },
                 onConnected: (vegaConnection, info) => {
@@ -1117,6 +1132,11 @@ export default class VegaRtcManager implements RtcManager {
                     : () => {};
 
                 this._webcamProducer = producer;
+                this._webcamProducerOriginalScalabilityMode = (
+                    producer.rtpSender?.getParameters()?.encodings?.[0] as
+                        | RtpEncodingParametersWithScalabilityMode
+                        | undefined
+                )?.scalabilityMode;
                 this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('webcamProducer "close" event');
@@ -1127,6 +1147,7 @@ export default class VegaRtcManager implements RtcManager {
                     cleanUpCpuWatch();
 
                     this._webcamProducer = null;
+                    this._webcamProducerOriginalScalabilityMode = undefined;
                     this._webcamProducerPromise = null;
                     this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
@@ -1148,6 +1169,7 @@ export default class VegaRtcManager implements RtcManager {
                 if (!this._webcamTrack) {
                     this._stopProducer(this._webcamProducer);
                     this._webcamProducer = null;
+                    this._webcamProducerOriginalScalabilityMode = undefined;
                 }
             }
         })();
@@ -1656,6 +1678,7 @@ export default class VegaRtcManager implements RtcManager {
             if (this._webcamProducer && !this._webcamProducer.closed && this._webcamProducer.track === track) {
                 this._stopProducer(this._webcamProducer);
                 this._webcamProducer = null;
+                this._webcamProducerOriginalScalabilityMode = undefined;
                 this._webcamTrack = null;
             }
         } else {
@@ -1871,6 +1894,8 @@ export default class VegaRtcManager implements RtcManager {
                         return this._onConsumerScore(data);
                     case "producerScore":
                         return this._onProducerScore(data);
+                    case "changedHighestRequiredLayer":
+                        return this._onChangedHighestRequiredLayer(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -2006,6 +2031,67 @@ export default class VegaRtcManager implements RtcManager {
                 }
             },
         );
+    }
+
+    // Keep every simulcast encoding up to and including the demanded layer active, pause the rest.
+    _toggleSimulcastLayers(encodings: RtpEncodingParametersWithScalabilityMode[], spatialLayer: number) {
+        return encodings.reduce((changed: boolean, encoding, index) => {
+            const active = index <= spatialLayer;
+            if (encoding.active === active) return changed;
+            encoding.active = active;
+            return true;
+        }, false);
+    }
+
+    // SVC has a single encoding carrying every spatial layer, so instead of toggling encodings
+    // on/off we shrink its scalabilityMode to stop encoding layers above the demanded one, and
+    // scale the resolution down to match what that layer would have been at full quality -
+    // otherwise the encoder just keeps targeting the original capture resolution/bitrate for
+    // its new top layer, and nothing is actually saved. When only the lowest layer is left,
+    // also cap maxBitrate down further, removing that cap again as soon as a higher layer is
+    // required.
+    _toggleSvcLayers(encoding: RtpEncodingParametersWithScalabilityMode, spatialLayer: number) {
+        const reduced = getReducedSvcEncodingParams(this._webcamProducerOriginalScalabilityMode, spatialLayer);
+        if (!reduced) return false;
+
+        // scaleResolutionDownBy defaults to 1 per the WebRTC spec when unset, so treat it as
+        // such here too - otherwise the very first call always looks "changed".
+        const currentScaleResolutionDownBy = encoding.scaleResolutionDownBy ?? 1;
+        if (
+            reduced.scalabilityMode === encoding.scalabilityMode &&
+            reduced.scaleResolutionDownBy === currentScaleResolutionDownBy &&
+            reduced.maxBitrate === encoding.maxBitrate
+        ) {
+            return false;
+        }
+
+        encoding.scalabilityMode = reduced.scalabilityMode;
+        encoding.scaleResolutionDownBy = reduced.scaleResolutionDownBy;
+        if (reduced.maxBitrate === undefined) {
+            delete encoding.maxBitrate;
+        } else {
+            encoding.maxBitrate = reduced.maxBitrate;
+        }
+        return true;
+    }
+
+    async _onChangedHighestRequiredLayer({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
+        // Only allow change webcam video
+        if (producerId !== this._webcamProducer.id) return;
+
+        const rtpSender = this._webcamProducer.rtpSender;
+        const parameters = rtpSender.getParameters();
+        const encodings: RtpEncodingParametersWithScalabilityMode[] = parameters.encodings;
+
+        const changed =
+            encodings.length > 1
+                ? this._toggleSimulcastLayers(encodings, spatialLayer)
+                : this._toggleSvcLayers(encodings[0], spatialLayer);
+
+        if (!changed) return;
+
+        logger.info("_onChangedHighestRequiredLayer()", { producerId, spatialLayer });
+        await rtpSender.setParameters(parameters);
     }
 
     async _onDataConsumerReady(options: DataConsumerOptions<DataConsumerAppData>) {
