@@ -441,14 +441,6 @@ export default class P2pRtcManager implements RtcManager {
         ];
     }
 
-    sendAudioMutedStats(muted: boolean) {
-        rtcStats.sendEvent("audio_muted", { muted });
-    }
-
-    sendVideoMutedStats(muted: boolean) {
-        rtcStats.sendEvent("video_muted", { muted });
-    }
-
     sendStatsCustomEvent(eventName: string, data: any) {
         rtcStats.sendEvent(eventName, data);
     }

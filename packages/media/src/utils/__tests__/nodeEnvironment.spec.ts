@@ -19,11 +19,9 @@ describe("@whereby.com/media in a non-browser (Node) environment", () => {
         expect(typeof rtcStats.server.connect).toBe("function");
     });
 
-    it("does not throw when sendEvent/sendAudioMuted/sendVideoMuted are called", () => {
+    it("does not throw when sendEvent is called", () => {
         const { rtcStats } = require("../../index");
 
         expect(() => rtcStats.sendEvent("custom_event", { foo: "bar" })).not.toThrow();
-        expect(() => rtcStats.sendAudioMuted(true)).not.toThrow();
-        expect(() => rtcStats.sendVideoMuted(false)).not.toThrow();
     });
 });
