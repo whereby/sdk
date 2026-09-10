@@ -90,16 +90,13 @@ function useGridParticipants({
     floatingParticipant,
     isConstrained = false,
 }: Props = {}) {
-    const [state, setState] = React.useState<GridState>({
-        allClientViews: [],
-        spotlightedParticipants: [],
-        numParticipants: 0,
-    });
     const client = React.useContext(WherebyContext)?.getGrid();
 
     if (!client) {
         throw new Error("useGridParticipants must be used within a WherebyProvider");
     }
+
+    const [state, setState] = React.useState<GridState>(() => client.getState());
 
     const handleClientViewChanged = React.useCallback(
         (clientViews: ClientView[]) => {
@@ -135,6 +132,8 @@ function useGridParticipants({
         const unsubscribeClientViews = client.subscribeClientViews(handleClientViewChanged);
         const unsubscribeSpotlighted = client.subscribeSpotlightedParticipants(handleSpotlightedParticipantsChanged);
         const unsubscribeNumParticipants = client.subscribeNumberOfClientViews(handleNumParticipantsChanged);
+
+        setState(client.getState());
 
         return () => {
             unsubscribeClientViews();

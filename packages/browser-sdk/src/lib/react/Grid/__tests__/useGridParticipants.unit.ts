@@ -1,4 +1,38 @@
-import { calculateSubgridViews } from "../useGridParticipants";
+import * as React from "react";
+import { renderHook } from "@testing-library/react";
+
+import { ClientView, GridState, WherebyClient } from "@whereby.com/core";
+import { WherebyContext } from "../../Provider";
+import { calculateSubgridViews, useGridParticipants } from "../useGridParticipants";
+
+function makeFakeGridClient(clientViews: ClientView[]) {
+    const subscribers = new Set<() => void>();
+
+    return {
+        getState: (): GridState => ({
+            allClientViews: clientViews,
+            spotlightedParticipants: [],
+            numParticipants: clientViews.length,
+        }),
+        subscribeClientViews: (cb: (views: ClientView[]) => void) => {
+            const notify = () => cb(clientViews);
+            subscribers.add(notify);
+            return () => subscribers.delete(notify);
+        },
+        subscribeSpotlightedParticipants: () => () => {},
+        subscribeNumberOfClientViews: () => () => {},
+    };
+}
+
+function renderGridParticipants(clientViews: ClientView[]) {
+    const grid = makeFakeGridClient(clientViews);
+    const client = { getGrid: () => grid } as unknown as WherebyClient;
+
+    return renderHook(() => useGridParticipants(), {
+        wrapper: ({ children }: { children: React.ReactNode }) =>
+            React.createElement(WherebyContext.Provider, { value: client }, children),
+    });
+}
 
 describe("useGridParticipants", () => {
     const client1 = { id: "some-stream-id-1" };
@@ -54,5 +88,19 @@ describe("useGridParticipants", () => {
                 ).toEqual(result);
             },
         );
+    });
+
+    describe("mounting after the state has settled", () => {
+        it("returns the client views already present when the hook mounts", () => {
+            const { result } = renderGridParticipants([videoLocalClient as ClientView]);
+
+            expect(result.current.clientViewsInGrid).toEqual([videoLocalClient]);
+        });
+
+        it("returns an empty grid when there are no client views", () => {
+            const { result } = renderGridParticipants([]);
+
+            expect(result.current.clientViewsInGrid).toEqual([]);
+        });
     });
 });

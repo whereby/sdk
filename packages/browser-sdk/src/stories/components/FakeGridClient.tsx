@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { ClientView, WherebyClient } from "@whereby.com/core";
+import { ClientView, GridState, WherebyClient } from "@whereby.com/core";
 import { WherebyContext } from "../../lib/react/Provider";
 import { NAMES, sampleNameForIndex } from "./VideoGridTestData";
 
@@ -90,21 +90,26 @@ export class FakeGridClient {
         this.numberOfClientViewsSubscribers.forEach((cb) => cb(this.clientViews.length));
     }
 
+    public getState(): GridState {
+        return {
+            allClientViews: this.clientViews,
+            spotlightedParticipants: this.spotlighted,
+            numParticipants: this.clientViews.length,
+        };
+    }
+
     public subscribeClientViews(callback: (clientViews: ClientView[]) => void): () => void {
         this.clientViewSubscribers.add(callback);
-        callback(this.clientViews);
         return () => this.clientViewSubscribers.delete(callback);
     }
 
     public subscribeSpotlightedParticipants(callback: (spotlighted: ClientView[]) => void): () => void {
         this.spotlightedSubscribers.add(callback);
-        callback(this.spotlighted);
         return () => this.spotlightedSubscribers.delete(callback);
     }
 
     public subscribeNumberOfClientViews(callback: (num: number) => void): () => void {
         this.numberOfClientViewsSubscribers.add(callback);
-        callback(this.clientViews.length);
         return () => this.numberOfClientViewsSubscribers.delete(callback);
     }
 

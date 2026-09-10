@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { StoryObj } from "@storybook/react-vite";
 import "./styles.css";
-import { useRoomConnection } from "../lib/react";
+import { useLocalMedia, useRoomConnection } from "../lib/react";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
 import { Grid as VideoGrid, GridCell, GridVideoView } from "../lib/react/Grid";
 import {
@@ -12,6 +12,7 @@ import {
     ParticipantMenuTrigger,
 } from "../lib/react/Grid/ParticipantMenu";
 import { FakeParticipantsProvider } from "./components/FakeGridClient";
+import PrecallExperience from "./components/PrecallExperience";
 
 const defaultArgs: StoryObj = {
     name: "Examples/Video Grid UI",
@@ -228,6 +229,123 @@ export const VideoGridStoryCustom = {
         gridGap: 0,
         videoGridGap: 0,
         enableSubgrid: true,
+    },
+};
+
+function VideoGridWithLocalMediaInner({
+    roomUrl,
+    displayName,
+    externalId,
+    gridGap,
+    videoGridGap,
+    enableSubgrid,
+    stageParticipantLimit,
+}: {
+    roomUrl: string;
+    displayName?: string;
+    externalId?: string;
+    gridGap?: number;
+    videoGridGap?: number;
+    enableSubgrid?: boolean;
+    stageParticipantLimit?: number;
+}) {
+    const localMedia = useLocalMedia({ audio: true, video: true });
+    const [shouldJoin, setShouldJoin] = React.useState(false);
+    const {
+        state: { connectionStatus },
+        actions: { joinRoom, leaveRoom, knock, cancelKnock },
+    } = useRoomConnection(roomUrl, { localMedia, displayName, externalId });
+
+    const handleToggleJoin = () => {
+        if (shouldJoin) {
+            leaveRoom();
+        } else {
+            joinRoom();
+        }
+        setShouldJoin(!shouldJoin);
+    };
+
+    return (
+        <>
+            <PrecallExperience {...localMedia} hideVideoPreview={shouldJoin} />
+            <div className="controls">
+                <button onClick={handleToggleJoin}>{shouldJoin ? "Leave room" : "Join room"}</button>
+                <span>Connection status: {connectionStatus}</span>
+            </div>
+            {connectionStatus === "room_locked" && (
+                <div style={{ color: "red" }}>
+                    <span>Room locked, please knock....</span>
+                    <button onClick={() => knock()}>Knock</button>
+                </div>
+            )}
+            {connectionStatus === "knocking" && (
+                <div>
+                    <span>Knocking...</span>
+                    <button onClick={() => cancelKnock()}>Cancel</button>
+                </div>
+            )}
+            {connectionStatus === "knock_rejected" && <span>Rejected :(</span>}
+            {connectionStatus === "connected" && (
+                <div style={{ height: "500px", width: "100%" }}>
+                    <VideoGrid
+                        gridGap={gridGap}
+                        videoGridGap={videoGridGap}
+                        stageParticipantLimit={stageParticipantLimit}
+                        enableSubgrid={enableSubgrid}
+                    />
+                </div>
+            )}
+        </>
+    );
+}
+
+export const VideoGridWithLocalMedia = {
+    render: ({
+        roomUrl,
+        displayName,
+        externalId,
+        gridGap,
+        videoGridGap,
+        enableSubgrid,
+        stageParticipantLimit,
+    }: {
+        roomUrl: string;
+        displayName?: string;
+        externalId?: string;
+        gridGap?: number;
+        videoGridGap?: number;
+        enableSubgrid?: boolean;
+        stageParticipantLimit?: number;
+    }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
+
+        return (
+            <VideoGridWithLocalMediaInner
+                roomUrl={roomUrl}
+                displayName={displayName}
+                externalId={externalId}
+                gridGap={gridGap}
+                videoGridGap={videoGridGap}
+                enableSubgrid={enableSubgrid}
+                stageParticipantLimit={stageParticipantLimit}
+            />
+        );
+    },
+    argTypes: {
+        ...defaultArgs.argTypes,
+        gridGap: { control: "range", min: 0, max: 100 },
+        videoGridGap: { control: "range", min: 0, max: 100 },
+        enableSubgrid: { control: "boolean" },
+        stageParticipantLimit: { control: { type: "range", min: 1, max: 24 } },
+    },
+    args: {
+        ...defaultArgs.args,
+        gridGap: 8,
+        videoGridGap: 8,
+        enableSubgrid: true,
+        stageParticipantLimit: 12,
     },
 };
 
