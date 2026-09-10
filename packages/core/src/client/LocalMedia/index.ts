@@ -15,6 +15,8 @@ import { selectLocalMediaState } from "./selector";
 import {
     CAMERA_DEVICE_ERROR_CHANGED,
     CAMERA_DEVICES_CHANGED,
+    CAMERA_ENABLED_CHANGED,
+    MICROPHONE_ENABLED_CHANGED,
     CURRENT_CAMERA_CHANGED,
     CURRENT_MICROPHONE_CHANGED,
     CURRENT_SPEAKER_CHANGED,
@@ -35,6 +37,8 @@ import { BaseClient } from "../BaseClient";
 export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEvents> {
     private cameraDeviceErrorSubscribers = new Set<(error: unknown | null) => void>();
     private cameraDeviceSubscribers = new Set<(cameraDevices: MediaDeviceInfo[]) => void>();
+    private cameraEnabledSubscribers = new Set<(isCameraEnabled: boolean) => void>();
+    private microphoneEnabledSubscribers = new Set<(isMicrophoneEnabled: boolean) => void>();
     private isSettingCameraDeviceSubscribers = new Set<(isSetting: boolean) => void>();
     private isSettingMicrophoneDeviceSubscribers = new Set<(isSetting: boolean) => void>();
     private microphoneDeviceErrorSubscribers = new Set<(error: unknown | null) => void>();
@@ -60,6 +64,16 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         if (state.cameraDevices !== previousState.cameraDevices) {
             this.cameraDeviceSubscribers.forEach((cb) => cb(state.cameraDevices));
             this.emit(CAMERA_DEVICES_CHANGED, state.cameraDevices);
+        }
+
+        if (state.isCameraEnabled !== previousState.isCameraEnabled) {
+            this.cameraEnabledSubscribers.forEach((cb) => cb(state.isCameraEnabled));
+            this.emit(CAMERA_ENABLED_CHANGED, state.isCameraEnabled);
+        }
+
+        if (state.isMicrophoneEnabled !== previousState.isMicrophoneEnabled) {
+            this.microphoneEnabledSubscribers.forEach((cb) => cb(state.isMicrophoneEnabled));
+            this.emit(MICROPHONE_ENABLED_CHANGED, state.isMicrophoneEnabled);
         }
 
         if (state.isSettingCameraDevice !== previousState.isSettingCameraDevice) {
@@ -134,6 +148,18 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         this.cameraDeviceSubscribers.add(callback);
 
         return () => this.cameraDeviceSubscribers.delete(callback);
+    }
+
+    public subscribeCameraEnabled(callback: (isCameraEnabled: boolean) => void): () => void {
+        this.cameraEnabledSubscribers.add(callback);
+
+        return () => this.cameraEnabledSubscribers.delete(callback);
+    }
+
+    public subscribeMicrophoneEnabled(callback: (isMicrophoneEnabled: boolean) => void): () => void {
+        this.microphoneEnabledSubscribers.add(callback);
+
+        return () => this.microphoneEnabledSubscribers.delete(callback);
     }
 
     public subscribeIsSettingCameraDevice(callback: (isSetting: boolean) => void): () => void {
@@ -253,6 +279,8 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         this.stopMedia();
         this.removeAllListeners();
         this.cameraDeviceSubscribers.clear();
+        this.cameraEnabledSubscribers.clear();
+        this.microphoneEnabledSubscribers.clear();
         this.microphoneDeviceSubscribers.clear();
         this.speakerDeviceSubscribers.clear();
         this.currentCameraSubscribers.clear();

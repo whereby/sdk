@@ -1,5 +1,6 @@
 import {
     ChatFileShare,
+    InitialMuteStates,
     LocalMediaOptions,
     RoomJoinedSuccess,
     SendFilesOptions,
@@ -11,7 +12,13 @@ import { UseLocalMediaResult } from "../useLocalMedia/types";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
+    /** Which devices to acquire. These are passed on as getUserMedia constraints. */
     localMediaOptions?: LocalMediaOptions;
+    /**
+     * Whether to join with the camera and/or microphone muted, while still acquiring them.
+     * `true` means muted, an omitted key leaves that device untouched.
+     */
+    initialMuteStates?: InitialMuteStates;
     roomKey?: string;
     localMedia?: UseLocalMediaResult;
     externalId?: string;

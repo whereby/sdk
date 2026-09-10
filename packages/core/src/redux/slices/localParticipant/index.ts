@@ -4,7 +4,12 @@ import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../../t
 import { LocalParticipant } from "../../../RoomParticipant";
 import { selectSignalConnectionRaw } from "../signalConnection";
 import { doAppStart, selectAppIsAssistant } from "../app";
-import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../localMedia";
+import {
+    selectIsCameraEnabled,
+    selectIsMicrophoneEnabled,
+    toggleCameraEnabled,
+    toggleMicrophoneEnabled,
+} from "../localMedia";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
 import { selectRoomConnectionStatus } from "../roomConnection/selectors";
@@ -111,6 +116,10 @@ export const localParticipantSlice = createSlice({
                 roleName: client?.role?.roleName || "none",
                 clientClaim,
                 breakoutGroup: client?.breakoutGroup || null,
+                // Toggles made before joining never reach this slice, so adopt the state the
+                // server echoes back from our join config.
+                isAudioEnabled: client?.isAudioEnabled ?? state.isAudioEnabled,
+                isVideoEnabled: client?.isVideoEnabled ?? state.isVideoEnabled,
             };
         });
         builder.addCase(signalEvents.breakoutGroupJoined, (state, action) => {
@@ -209,31 +218,31 @@ export const doSendClientMetadata = createRoomConnectedThunk(() => (_, getState)
  * Reactors
  */
 
+// localMedia has already resolved the toggle by the time these run, so its state is the
+// requested value - deriving it again here would make an explicit `false` toggle back on.
 startAppListening({
     actionCreator: toggleCameraEnabled,
-    effect: ({ payload }, { dispatch, getState }) => {
-        const { enabled } = payload;
-        const { isVideoEnabled } = selectLocalParticipantRaw(getState());
-        const roomConnectionStatus = selectRoomConnectionStatus(getState());
+    effect: (_, { dispatch, getState }) => {
+        const state = getState();
+        const roomConnectionStatus = selectRoomConnectionStatus(state);
 
         if (roomConnectionStatus !== "connected") {
             return;
         }
-        dispatch(doEnableVideo({ enabled: enabled || !isVideoEnabled }));
+        dispatch(doEnableVideo({ enabled: selectIsCameraEnabled(state) }));
     },
 });
 
 startAppListening({
     actionCreator: toggleMicrophoneEnabled,
-    effect: ({ payload }, { dispatch, getState }) => {
-        const { enabled } = payload;
-        const { isAudioEnabled } = selectLocalParticipantRaw(getState());
-        const roomConnectionStatus = selectRoomConnectionStatus(getState());
+    effect: (_, { dispatch, getState }) => {
+        const state = getState();
+        const roomConnectionStatus = selectRoomConnectionStatus(state);
 
         if (roomConnectionStatus !== "connected") {
             return;
         }
-        dispatch(doEnableAudio({ enabled: enabled || !isAudioEnabled }));
+        dispatch(doEnableAudio({ enabled: selectIsMicrophoneEnabled(state) }));
     },
 });
 

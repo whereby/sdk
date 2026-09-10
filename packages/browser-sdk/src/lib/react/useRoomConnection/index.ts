@@ -46,6 +46,7 @@ export function useRoomConnection(
         return {
             displayName: roomConnectionOptions.displayName || "Guest",
             localMediaOptions: roomConnectionOptions.localMedia ? undefined : roomConnectionOptions.localMediaOptions,
+            initialMuteStates: roomConnectionOptions.initialMuteStates,
             roomKey,
             roomUrl,
             userAgent: `browser-sdk:${browserSdkVersion}`,
