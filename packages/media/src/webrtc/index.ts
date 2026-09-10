@@ -5,7 +5,6 @@ export * from "./stats/StatsMonitor";
 export * from "./stats/StatsMonitor/metrics";
 export * from "./stats/StatsMonitor/peerConnectionTracker";
 export { default as BandwidthTester } from "./BandwidthTester";
-export * from "./bugDetector";
 export * from "./constants";
 export * from "./mediaConstraints";
 export { default as getConstraints } from "./mediaConstraints";
