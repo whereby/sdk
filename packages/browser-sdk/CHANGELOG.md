@@ -1,5 +1,31 @@
 # @whereby.com/browser-sdk
 
+## 3.30.0
+
+### Minor Changes
+
+- b132cab: Fix the local participant's camera and microphone state when joining muted.
+
+    `toggleCamera(false)` / `toggleMicrophone(false)` are now idempotent - an explicit
+    `false` while already off no longer turns the device back on - and the local
+    participant adopts the mute state it joined with, so the in-call controls and the
+    local grid tile match the tracks.
+
+    Adds `initialMuteStates` to `RoomConnectionOptions`, `WherebyClientOptions` and
+    `AppConfig`, for joining with the camera and/or microphone muted while still acquiring
+    the devices.
+
+    Adds `isCameraEnabled` and `isMicrophoneEnabled` to the local media state, so a pre-call
+    UI can render what `toggleCameraEnabled` / `toggleMicrophoneEnabled` have set.
+
+### Patch Changes
+
+- 643b839: Fix an empty grid when it mounts after the client views have settled. useGridParticipants now
+  seeds its state from the current grid snapshot instead of waiting for the next change event.
+- Updated dependencies [b132cab]
+- Updated dependencies [589c2ae]
+    - @whereby.com/core@1.20.0
+
 ## 3.29.8
 
 ### Patch Changes
