@@ -199,18 +199,32 @@ describe("RoomConnectionClient", () => {
 
             (mockStore.getState as jest.Mock).mockReturnValue({
                 ...initialState,
-                localParticipant: { isScreenSharing: true },
+                localScreenshare: { ...initialState.localScreenshare, status: "starting" },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith("starting");
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                localScreenshare: { ...initialState.localScreenshare, status: "active" },
             });
             storeSubscriber();
             expect(callback).toHaveBeenCalledWith("active");
 
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                localScreenshare: { ...initialState.localScreenshare, status: "inactive" },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(undefined);
+
             unsubscribe();
             (mockStore.getState as jest.Mock).mockReturnValue({
                 ...initialState,
-                localParticipant: { isScreenSharing: false },
+                localScreenshare: { ...initialState.localScreenshare, status: "active" },
             });
             storeSubscriber();
-            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledTimes(3);
         });
     });
 
@@ -227,7 +241,7 @@ describe("RoomConnectionClient", () => {
                 localParticipant: { id: "1", displayName: "Me" },
             });
             storeSubscriber();
-            expect(callback).toHaveBeenCalledWith({ id: "1", displayName: "Me" });
+            expect(callback).toHaveBeenCalledWith({ id: "1", displayName: "Me", isScreenSharing: false });
 
             unsubscribe();
             (mockStore.getState as jest.Mock).mockReturnValue({

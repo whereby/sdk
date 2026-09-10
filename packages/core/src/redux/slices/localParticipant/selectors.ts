@@ -12,7 +12,6 @@ export const selectLocalParticipantRaw = (state: RootState) => state.localPartic
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
 export const selectLocalParticipantDisplayName = (state: RootState) => state.localParticipant.displayName;
 export const selectLocalParticipantClientClaim = (state: RootState) => state.localParticipant.clientClaim;
-export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
 export const selectLocalParticipantStickyReaction = (state: RootState) => state.localParticipant.stickyReaction;
 export const selectLocalParticipantBreakoutGroup = (state: RootState) => state.localParticipant.breakoutGroup;
 export const selectLocalParticipantBreakoutAssigned = (state: RootState) =>
