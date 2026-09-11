@@ -217,7 +217,10 @@ class Processor extends EventEmitter {
     // stop effect and free resources
     terminate() {
         if (this.transformController) this.transformController.terminate();
-        if (this.timerWorker) this.timerWorker.terminate();
+        if (this.timerWorker) {
+            this.timerWorker.terminate();
+            this.timerWorker = null;
+        }
         if (this.engine) {
             this.engine.dispose();
             this.engine = null;
@@ -300,6 +303,7 @@ class Processor extends EventEmitter {
             this.timerWorker.postMessage(returnDelay);
         } else {
             setTimeout(() => {
+                if (this._terminated) return;
                 this.emit("output", { frame }, [frame]);
             }, returnDelay);
         }

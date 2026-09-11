@@ -27,8 +27,11 @@
         "build:dev": "REACT_APP_IS_DEV=true rollup -c",
         "build:prod": "REACT_APP_IS_DEV=false rollup -c",
         "clean": "rimraf dist",
-        "lint": "eslint .",
-        "lint:fix": "eslint --fix ."
+        "test": "npm run test:lint && npm run test:unit",
+        "test:unit": "jest",
+        "test:lint": "eslint src",
+        "lint": "eslint src",
+        "lint:fix": "eslint --fix src"
     },
     "devDependencies": {
         "@rollup/plugin-wasm": "^6.2.2",
