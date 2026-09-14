@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.0.0
+
+### Major Changes
+
+- c06798e: Remove sendAudioMutedStats and sendVideoMutedStats, which sent the audio_muted and video_muted rtcstats events
+
 ## 10.0.1
 
 ### Patch Changes
