@@ -1,7 +1,6 @@
 import rtcStats from "./rtcStatsService";
 import Session from "./Session";
 import { MEDIA_JITTER_BUFFER_TARGET } from "./constants";
-import * as webrtcBugDetector from "./bugDetector";
 import { PROTOCOL_REQUESTS, RELAY_MESSAGES, PROTOCOL_RESPONSES } from "../model/protocol";
 import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
@@ -80,7 +79,6 @@ type P2PAnalytics = {
     P2PReplaceTrackNoStream: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2POnTrackNoStream: number;
-    P2PMicNotWorking: number;
     P2PLocalNetworkFailed: number;
     P2PRelayedIceCandidate: number;
     P2PAddIceCandidateFailure: number;
@@ -193,7 +191,6 @@ export default class P2pRtcManager implements RtcManager {
             P2PReplaceTrackNoStream: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2POnTrackNoStream: 0,
-            P2PMicNotWorking: 0,
             P2PLocalNetworkFailed: 0,
             P2PRelayedIceCandidate: 0,
             P2PAddIceCandidateFailure: 0,
@@ -813,23 +810,6 @@ export default class P2pRtcManager implements RtcManager {
             logger.info(`connectionState changed to ${pc.connectionState} for session ${session.clientId}`);
             switch (pc.connectionState) {
                 case "connected":
-                    // try to detect audio problems.
-                    // this waits 3 seconds after the connection is up
-                    // to be sure the DTLS handshake is done even in Firefox.
-                    setTimeout(() => {
-                        webrtcBugDetector.detectMicrophoneNotWorking(session.pc).then((failureDirection) => {
-                            if (failureDirection) {
-                                this.analytics.P2PMicNotWorking++;
-                                rtcStats.sendEvent("P2PMicNotWorking", { clientId, failureDirection });
-                                // TODO: Decide if we want to act on this or not.
-
-                                // this._emit(rtcManagerEvents.MICROPHONE_NOT_WORKING, {
-                                //     failureDirection,
-                                //     clientId,
-                                // });
-                            }
-                        });
-                    }, 3000);
                     session.registerConnected?.({});
                     break;
                 case "failed":
