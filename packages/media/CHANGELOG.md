@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 10.0.1
+
+### Patch Changes
+
+- aa84f44: Remove the unused camera and microphone not-working detection in P2P
+
 ## 10.0.0
 
 ### Major Changes
