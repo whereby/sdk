@@ -208,12 +208,6 @@ const rtcStats = {
             value,
         });
     },
-    sendAudioMuted: (muted: boolean) => {
-        rtcStats.sendEvent("audio_muted", { muted });
-    },
-    sendVideoMuted: (muted: boolean) => {
-        rtcStats.sendEvent("video_muted", { muted });
-    },
     server,
 };
 export default rtcStats;
