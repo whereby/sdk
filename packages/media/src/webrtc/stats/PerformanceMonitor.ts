@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- Browser-only: built on window.requestIdleCallback. */
 const WINDOW_SIZE = 10;
 const SET_TIMEOUT_INTERVAL = 500;
 const RIC_TIMEOUT = 500;

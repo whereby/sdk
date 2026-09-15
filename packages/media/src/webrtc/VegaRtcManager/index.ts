@@ -23,7 +23,7 @@ import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
 import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
-import { ServerSocket, trackAnnotations } from "../../utils";
+import { ServerSocket, browserDocument, browserWindow, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import { updateRenderedDimensions } from "../stats/StatsMonitor";
@@ -67,7 +67,7 @@ const RESTARTICE_ERROR_MAX_RETRY_COUNT = 5;
 const OUTBOUND_CAM_OUTBOUND_STREAM_ID = uuidv4();
 const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 
-if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
+if (browserName === "chrome") browserDocument()?.addEventListener("beforeunload", () => (unloading = true));
 
 export default class VegaRtcManager implements RtcManager {
     _selfId: string;
@@ -242,9 +242,7 @@ export default class VegaRtcManager implements RtcManager {
             offlineDetectedAt: null,
             onBrowserOffline: () => this._sfuZombieOnOffline(),
         };
-        if (typeof window !== "undefined") {
-            window.addEventListener("offline", this._sfuZombie.onBrowserOffline);
-        }
+        browserWindow()?.addEventListener("offline", this._sfuZombie.onBrowserOffline);
 
         this.analytics = {
             vegaRequestTimeout: 0,
@@ -1772,9 +1770,7 @@ export default class VegaRtcManager implements RtcManager {
         // so it's indistinguishable from a self-heal — don't bank it. Just reset and release the
         // listener.
         this._sfuZombieReset();
-        if (typeof window !== "undefined") {
-            window.removeEventListener("offline", this._sfuZombie.onBrowserOffline);
-        }
+        browserWindow()?.removeEventListener("offline", this._sfuZombie.onBrowserOffline);
         this._socketListenerDeregisterFunctions.forEach((func: any) => {
             func();
         });

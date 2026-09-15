@@ -24,7 +24,14 @@ import {
     SignalIceEndOfCandidatesMessage,
     MediaPrefs,
 } from "./types";
-import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
+import {
+    ClearableTimeout,
+    ScreenshareStoppedEvent,
+    ServerSocket,
+    browserDocument,
+    sortCodecs,
+    trackAnnotations,
+} from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { updateRenderedDimensions } from "./stats/StatsMonitor";
 
@@ -52,7 +59,7 @@ const browserVersion = adapter.browserDetails.version;
 
 let unloading = false;
 if (browserName === "chrome") {
-    window.document.addEventListener("beforeunload", () => {
+    browserDocument()?.addEventListener("beforeunload", () => {
         unloading = true;
     });
 }

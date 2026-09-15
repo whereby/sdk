@@ -12,9 +12,11 @@ import {
     UpdatedDevicesInfo,
 } from "./types";
 import { trackAnnotations } from "../utils/annotations";
+import { browserWindow } from "../utils/environment";
 
 const logger = new Logger();
 
+// eslint-disable-next-line no-restricted-syntax
 export const isMobile = typeof navigator !== "undefined" && /mobi/i.test(navigator.userAgent);
 
 export class NoDevicesError extends Error {
@@ -455,8 +457,8 @@ export function hasGetDisplayMedia() {
 
 const defaultDisplayMediaConstraints = {
     video: {
-        width: { max: typeof window !== "undefined" ? window.screen.width : 0 },
-        height: { max: typeof window !== "undefined" ? window.screen.height : 0 },
+        width: { max: browserWindow()?.screen.width ?? 0 },
+        height: { max: browserWindow()?.screen.height ?? 0 },
     },
 };
 /**

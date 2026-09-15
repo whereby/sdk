@@ -1,5 +1,6 @@
 let localStorage;
 try {
+    // eslint-disable-next-line no-restricted-syntax
     localStorage = self.localStorage;
 } catch {
     localStorage = {

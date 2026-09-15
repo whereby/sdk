@@ -6,14 +6,7 @@ import { assertString } from "./parameterAssertUtils";
 import Credentials from "./Credentials";
 import Response from "./Response";
 
-let btoa: (str: string) => string;
-if (typeof window === "object") {
-    btoa = window.btoa || nodeBtoa;
-} else if (typeof global === "object") {
-    btoa = global.btoa || nodeBtoa;
-} else {
-    btoa = nodeBtoa;
-}
+const btoa: (str: string) => string = globalThis.btoa ?? nodeBtoa;
 
 /**
  * Create an object, which should be merged into the request header
