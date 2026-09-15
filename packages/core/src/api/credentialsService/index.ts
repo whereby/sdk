@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- Browser-only: reads chrome extension storage off window. */
 import { EventEmitter } from "events";
 
 import DeviceService from "../deviceService/index";

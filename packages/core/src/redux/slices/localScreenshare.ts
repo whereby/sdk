@@ -3,7 +3,7 @@ import { createAsyncRoomConnectedThunk, createRoomConnectedThunk } from "../thun
 import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { localMediaStopped } from "./localMedia";
-import { getDisplayMedia } from "@whereby.com/media";
+import { browserWindow, getDisplayMedia } from "@whereby.com/media";
 
 export interface LocalScreenshareState {
     status: "inactive" | "starting" | "active";
@@ -78,8 +78,8 @@ export const doStartScreenshare = createAsyncRoomConnectedThunk(
 
             const stream = await getDisplayMedia({
                 video: {
-                    width: { max: window.screen.width },
-                    height: { max: window.screen.height },
+                    width: { max: browserWindow()?.screen.width ?? 0 },
+                    height: { max: browserWindow()?.screen.height ?? 0 },
                 },
                 audio: {
                     autoGainControl: false,

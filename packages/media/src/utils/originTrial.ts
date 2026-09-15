@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- Browser-only: injects an origin-trial <meta> into document.head. */
 export interface OriginTrial {
     hostnamePattern: RegExp;
     token: string;

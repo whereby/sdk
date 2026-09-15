@@ -5,6 +5,7 @@
     "type": "module",
     "exports": {
         "./base": "./base.js",
+        "./browser-globals": "./browser-globals.js",
         "./nextjs": "./nextjs.js",
         "./react": "./react.js"
     },

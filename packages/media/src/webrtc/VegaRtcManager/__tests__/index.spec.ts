@@ -145,6 +145,49 @@ describe("VegaRtcManager", () => {
             expect(getMediasoupDeviceAsync).toHaveBeenCalledWith({ isNodeSdk: true });
             expect(await rtcManager._mediasoupDeviceInitializedAsync).toEqual(device);
         });
+
+        it("does not throw against the partial window the Node SDK polyfills", () => {
+            const realWindow = global.window;
+            Object.defineProperty(global, "window", {
+                value: { location: { pathname: "/room" }, screen: { width: 0 }, setInterval },
+                configurable: true,
+                writable: true,
+            });
+
+            try {
+                expect(
+                    () =>
+                        new VegaRtcManager({
+                            selfId,
+                            eventClaim: "claim",
+                            room: {
+                                name: helpers.randomString("/room-"),
+                                turnServers: [],
+                                clients: [],
+                                isLocked: false,
+                                isClaimed: false,
+                                iceServers: { iceServers: [] },
+                                knockers: [],
+                                mediaserverConfigTtlSeconds: 0,
+                                mode: "group",
+                                organizationId: "",
+                                spotlights: [],
+                                session: null,
+                            },
+                            emitter,
+                            serverSocket,
+                            webrtcProvider,
+                            features: { isNodeSdk: true },
+                        }),
+                ).not.toThrow();
+            } finally {
+                Object.defineProperty(global, "window", {
+                    value: realWindow,
+                    configurable: true,
+                    writable: true,
+                });
+            }
+        });
     });
 
     describe("addCameraStream", () => {
