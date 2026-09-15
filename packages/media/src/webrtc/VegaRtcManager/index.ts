@@ -2245,8 +2245,10 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _toggleSimulcastLayers(encodings: RtpEncodingParametersWithScalabilityMode[], spatialLayer: number) {
+        const clampedSpatialLayer = Math.max(0, Math.min(spatialLayer, encodings.length - 1));
+
         return encodings.reduce((changed: boolean, encoding, index) => {
-            const active = index <= spatialLayer;
+            const active = index <= clampedSpatialLayer;
             if (encoding.active === active) return changed;
             encoding.active = active;
             return true;

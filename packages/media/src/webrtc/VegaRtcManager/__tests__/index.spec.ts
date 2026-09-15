@@ -596,6 +596,30 @@ describe("VegaRtcManager", () => {
                 expect(setParameters).toHaveBeenCalledWith(parameters);
             });
 
+            it("clamps an out-of-range demanded layer (above the top) to the highest real encoding, rather than trusting it", async () => {
+                createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
+
+                await rtcManager._onChangedHighestRequiredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 99,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: true }, { active: true }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("clamps a negative demanded layer to the base layer, rather than deactivating everything", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestRequiredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: -5,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: false }, { active: false }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
             it("does not call setParameters when nothing changes", async () => {
                 createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
 
