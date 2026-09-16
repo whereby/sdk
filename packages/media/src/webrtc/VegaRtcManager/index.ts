@@ -22,11 +22,20 @@ import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSett
 import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
-import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
+import {
+    addProducerCpuOveruseWatch,
+    aggregateSamples,
+    getLayers,
+    getNumberOfActiveVideos,
+    getNumberOfTemporalLayers,
+    getReducedSvcEncodingParams,
+    getTopSpatialLayer,
+    recordSample,
+} from "./utils";
 import { ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
-import { updateRenderedDimensions } from "../stats/StatsMonitor";
+import { subscribeStats, updateRenderedDimensions } from "../stats/StatsMonitor";
 import {
     VegaCreateTransportResponse,
     VegaGetCapabilitiesResponse,
@@ -62,10 +71,15 @@ const logger = new Logger();
 const browserName = adapter.browserDetails.browser;
 let unloading = false;
 
+type RtpEncodingParametersWithScalabilityMode = RTCRtpEncodingParameters & { scalabilityMode?: string };
+
 const RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS = 3500;
 const RESTARTICE_ERROR_MAX_RETRY_COUNT = 5;
 const OUTBOUND_CAM_OUTBOUND_STREAM_ID = uuidv4();
 const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
+
+const PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS = 500;
+const PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS = 10_000;
 
 if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
@@ -101,7 +115,16 @@ export default class VegaRtcManager implements RtcManager {
     _micScoreProducer: any;
     _micScoreProducerPromise: any;
     _webcamProducer: any;
+    _webcamProducerOriginalScalabilityMode: string | undefined;
+    _webcamProducerHighestPreferredLayer: number | undefined;
+    _highestPreferredLayerUpdateQueue: Promise<void>;
     _webcamProducerPromise: any;
+    _preferredLayerSwitchLatenciesMs: number[];
+    _preferredLayerSwitchWatches: Map<string, { stop: () => void }>;
+    _statsSubscription: { stop: () => void };
+    _lastSeenSsrcCounters: Map<string, { rawByteCount: number; rawPacketsLost: number; remotePacketsLost: number }>;
+    _inboundJitterSamplesMs: number[];
+    _outboundJitterSamplesMs: number[];
     _webcamPaused: any;
     _screenVideoProducer: any;
     _screenVideoProducerPromise: any;
@@ -185,6 +208,9 @@ export default class VegaRtcManager implements RtcManager {
         this._micScoreProducer = null;
         this._micScoreProducerPromise = null;
         this._webcamProducer = null;
+        this._webcamProducerOriginalScalabilityMode = undefined;
+        this._webcamProducerHighestPreferredLayer = undefined;
+        this._highestPreferredLayerUpdateQueue = Promise.resolve();
         this._webcamProducerPromise = null;
         this._webcamPaused = false;
         this._screenVideoProducer = null;
@@ -271,7 +297,43 @@ export default class VegaRtcManager implements RtcManager {
             sfuMsFromOfflineToClose: 0,
             sfuOfflineWhileConnectedCount: 0,
             sfuOfflineToCloseCount: 0,
+            numPreferredSpatialLayerChanges: 0,
+            preferredSpatialLayerChangeCounts: {},
+            numHighestPreferredLayerChanges: 0,
+            highestPreferredLayerChangeCounts: {},
+            numPreferredLayerSwitchLatencySamples: 0,
+            minPreferredLayerSwitchLatencyMs: undefined,
+            maxPreferredLayerSwitchLatencyMs: undefined,
+            avgPreferredLayerSwitchLatencyMs: undefined,
+            p95PreferredLayerSwitchLatencyMs: undefined,
+            p99PreferredLayerSwitchLatencyMs: undefined,
+            totalBytesSent: 0,
+            totalBytesReceived: 0,
+            totalPacketsLostInbound: 0,
+            totalPacketsLostOutbound: 0,
+            numInboundJitterSamples: 0,
+            minInboundJitterMs: undefined,
+            maxInboundJitterMs: undefined,
+            avgInboundJitterMs: undefined,
+            p95InboundJitterMs: undefined,
+            p99InboundJitterMs: undefined,
+            numOutboundJitterSamples: 0,
+            minOutboundJitterMs: undefined,
+            maxOutboundJitterMs: undefined,
+            avgOutboundJitterMs: undefined,
+            p95OutboundJitterMs: undefined,
+            p99OutboundJitterMs: undefined,
         };
+
+        this._preferredLayerSwitchLatenciesMs = [];
+        this._preferredLayerSwitchWatches = new Map();
+
+        this._lastSeenSsrcCounters = new Map();
+        this._inboundJitterSamplesMs = [];
+        this._outboundJitterSamplesMs = [];
+        this._statsSubscription = subscribeStats({
+            onUpdatedStats: (statsByView) => this._onUpdatedStats(statsByView),
+        });
     }
 
     _updateAndScheduleMediaServersRefresh({
@@ -1117,6 +1179,22 @@ export default class VegaRtcManager implements RtcManager {
                     : () => {};
 
                 this._webcamProducer = producer;
+                if (this._features.sfuHighestPreferredLayerTrackingOn) {
+                    const originalWebcamEncodings = producer.rtpSender?.getParameters()?.encodings as
+                        | RtpEncodingParametersWithScalabilityMode[]
+                        | undefined;
+                    this._webcamProducerOriginalScalabilityMode = originalWebcamEncodings?.[0]?.scalabilityMode;
+
+                    const topSpatialLayer = getTopSpatialLayer(originalWebcamEncodings);
+                    this._webcamProducerHighestPreferredLayer =
+                        topSpatialLayer !== undefined ? Math.min(topSpatialLayer, 1) : undefined;
+
+                    if (this._webcamProducerHighestPreferredLayer !== undefined) {
+                        await this._applyHighestPreferredLayerToWebcamEncoder(
+                            this._webcamProducerHighestPreferredLayer,
+                        );
+                    }
+                }
                 this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('webcamProducer "close" event');
@@ -1127,6 +1205,8 @@ export default class VegaRtcManager implements RtcManager {
                     cleanUpCpuWatch();
 
                     this._webcamProducer = null;
+                    this._webcamProducerOriginalScalabilityMode = undefined;
+                    this._webcamProducerHighestPreferredLayer = undefined;
                     this._webcamProducerPromise = null;
                     this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
@@ -1148,6 +1228,8 @@ export default class VegaRtcManager implements RtcManager {
                 if (!this._webcamTrack) {
                     this._stopProducer(this._webcamProducer);
                     this._webcamProducer = null;
+                    this._webcamProducerOriginalScalabilityMode = undefined;
+                    this._webcamProducerHighestPreferredLayer = undefined;
                 }
             }
         })();
@@ -1656,6 +1738,8 @@ export default class VegaRtcManager implements RtcManager {
             if (this._webcamProducer && !this._webcamProducer.closed && this._webcamProducer.track === track) {
                 this._stopProducer(this._webcamProducer);
                 this._webcamProducer = null;
+                this._webcamProducerOriginalScalabilityMode = undefined;
+                this._webcamProducerHighestPreferredLayer = undefined;
                 this._webcamTrack = null;
             }
         } else {
@@ -1746,6 +1830,16 @@ export default class VegaRtcManager implements RtcManager {
         );
 
         if (consumer.appData.spatialLayer !== spatialLayer || consumer.appData.temporalLayer !== temporalLayer) {
+            const spatialLayerChanged = consumer.appData.spatialLayer !== spatialLayer;
+
+            if (spatialLayerChanged) {
+                this.analytics.numPreferredSpatialLayerChanges++;
+                this._incrementHistogramCount(
+                    this.analytics.preferredSpatialLayerChangeCounts,
+                    `${consumer.appData.spatialLayer}->${spatialLayer}`,
+                );
+            }
+
             consumer.appData.spatialLayer = spatialLayer;
             consumer.appData.temporalLayer = temporalLayer;
 
@@ -1754,6 +1848,155 @@ export default class VegaRtcManager implements RtcManager {
                 spatialLayer,
                 temporalLayer,
             });
+
+            if (spatialLayerChanged) {
+                this._watchForPreferredLayerSwitch(consumerId, consumer);
+            }
+        }
+    }
+
+    _watchForPreferredLayerSwitch(consumerId: string, consumer: any) {
+        this._preferredLayerSwitchWatches.get(consumerId)?.stop();
+
+        let stopped = false;
+        let intervalId: ReturnType<typeof setInterval> | undefined;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+        const stop = () => {
+            if (stopped) return;
+            stopped = true;
+            clearInterval(intervalId);
+            clearTimeout(timeoutId);
+            this._preferredLayerSwitchWatches.delete(consumerId);
+        };
+
+        this._preferredLayerSwitchWatches.set(consumerId, { stop });
+
+        (async () => {
+            const sentAt = Date.now();
+            const baseline = await this._getConsumerFrameSize(consumer);
+
+            if (stopped || !baseline) {
+                stop();
+                return;
+            }
+
+            intervalId = setInterval(async () => {
+                if (stopped || consumer.closed) {
+                    stop();
+                    return;
+                }
+
+                const current = await this._getConsumerFrameSize(consumer);
+                if (current && (current.width !== baseline.width || current.height !== baseline.height)) {
+                    this._recordPreferredLayerSwitchLatency(Date.now() - sentAt);
+                    stop();
+                }
+            }, PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS);
+
+            timeoutId = setTimeout(stop, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
+        })();
+    }
+
+    async _getConsumerFrameSize(consumer: any): Promise<{ width?: number; height?: number } | undefined> {
+        try {
+            const stats = await consumer.getStats();
+            let frameSize: { width?: number; height?: number } | undefined;
+
+            stats.forEach((report: any) => {
+                if (report.type === "inbound-rtp") {
+                    frameSize = { width: report.frameWidth, height: report.frameHeight };
+                }
+            });
+
+            return frameSize;
+        } catch (error) {
+            logger.warn("_getConsumerFrameSize() failed to read stats", { error });
+            return undefined;
+        }
+    }
+
+    _recordPreferredLayerSwitchLatency(latencyMs: number) {
+        recordSample(this._preferredLayerSwitchLatenciesMs, latencyMs);
+
+        const { count, min, max, avg, p95, p99 } = aggregateSamples(this._preferredLayerSwitchLatenciesMs);
+        this.analytics.numPreferredLayerSwitchLatencySamples = count;
+        this.analytics.minPreferredLayerSwitchLatencyMs = min;
+        this.analytics.maxPreferredLayerSwitchLatencyMs = max;
+        this.analytics.avgPreferredLayerSwitchLatencyMs = avg;
+        this.analytics.p95PreferredLayerSwitchLatencyMs = p95;
+        this.analytics.p99PreferredLayerSwitchLatencyMs = p99;
+    }
+
+    _onUpdatedStats(statsByView: Record<string, any>) {
+        const seenKeys = new Set<string>();
+
+        Object.entries(statsByView).forEach(([clientId, viewStats]: [string, any]) => {
+            Object.entries(viewStats.tracks || {}).forEach(([trackId, trackStats]: [string, any]) => {
+                Object.entries(trackStats.ssrcs || {}).forEach(([ssrc, ssrcMetrics]: [string, any]) => {
+                    const key = `${clientId}:${trackId}:${ssrc}`;
+                    seenKeys.add(key);
+
+                    const previous = this._lastSeenSsrcCounters.get(key) || {
+                        rawByteCount: 0,
+                        rawPacketsLost: 0,
+                        remotePacketsLost: 0,
+                    };
+
+                    const rawByteCount = ssrcMetrics.rawByteCount || 0;
+                    const rawPacketsLost = ssrcMetrics.rawPacketsLost || 0;
+                    const remotePacketsLost = ssrcMetrics.remotePacketsLost || 0;
+                    const byteCountDelta = Math.max(0, rawByteCount - previous.rawByteCount);
+
+                    if (ssrcMetrics.direction === "out") {
+                        this.analytics.totalBytesSent += byteCountDelta;
+                        this.analytics.totalPacketsLostOutbound += Math.max(
+                            0,
+                            remotePacketsLost - previous.remotePacketsLost,
+                        );
+
+                        if (typeof ssrcMetrics.jitter === "number") {
+                            this._recordJitterSample("outbound", ssrcMetrics.jitter * 1000);
+                        }
+                    } else if (ssrcMetrics.direction === "in") {
+                        this.analytics.totalBytesReceived += byteCountDelta;
+                        this.analytics.totalPacketsLostInbound += Math.max(0, rawPacketsLost - previous.rawPacketsLost);
+
+                        if (typeof ssrcMetrics.jitter === "number") {
+                            this._recordJitterSample("inbound", ssrcMetrics.jitter * 1000);
+                        }
+                    }
+
+                    this._lastSeenSsrcCounters.set(key, { rawByteCount, rawPacketsLost, remotePacketsLost });
+                });
+            });
+        });
+
+        for (const key of this._lastSeenSsrcCounters.keys()) {
+            if (!seenKeys.has(key)) this._lastSeenSsrcCounters.delete(key);
+        }
+    }
+
+    _recordJitterSample(direction: "inbound" | "outbound", jitterMs: number) {
+        const samples = direction === "inbound" ? this._inboundJitterSamplesMs : this._outboundJitterSamplesMs;
+        recordSample(samples, jitterMs);
+
+        const { count, min, max, avg, p95, p99 } = aggregateSamples(samples);
+
+        if (direction === "inbound") {
+            this.analytics.numInboundJitterSamples = count;
+            this.analytics.minInboundJitterMs = min;
+            this.analytics.maxInboundJitterMs = max;
+            this.analytics.avgInboundJitterMs = avg;
+            this.analytics.p95InboundJitterMs = p95;
+            this.analytics.p99InboundJitterMs = p99;
+        } else {
+            this.analytics.numOutboundJitterSamples = count;
+            this.analytics.minOutboundJitterMs = min;
+            this.analytics.maxOutboundJitterMs = max;
+            this.analytics.avgOutboundJitterMs = avg;
+            this.analytics.p95OutboundJitterMs = p95;
+            this.analytics.p99OutboundJitterMs = p99;
         }
     }
 
@@ -1802,6 +2045,7 @@ export default class VegaRtcManager implements RtcManager {
 
         this._mediasoupDeviceInitializedAsync = Promise.resolve(null);
         this._qualityMonitor.close();
+        this._statsSubscription.stop();
     }
 
     sendStatsCustomEvent(eventName: string, data?: any) {
@@ -1863,6 +2107,8 @@ export default class VegaRtcManager implements RtcManager {
                         return this._onConsumerScore(data);
                     case "producerScore":
                         return this._onProducerScore(data);
+                    case "changedHighestPreferredLayer":
+                        return this._onChangedHighestPreferredLayer(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -1998,6 +2244,94 @@ export default class VegaRtcManager implements RtcManager {
                 }
             },
         );
+    }
+
+    _toggleSimulcastLayers(encodings: RtpEncodingParametersWithScalabilityMode[], spatialLayer: number) {
+        const clampedSpatialLayer = Math.max(0, Math.min(spatialLayer, encodings.length - 1));
+
+        return encodings.reduce((changed: boolean, encoding, index) => {
+            const active = index <= clampedSpatialLayer;
+            if (encoding.active === active) return changed;
+            encoding.active = active;
+            return true;
+        }, false);
+    }
+
+    _toggleSvcLayers(encoding: RtpEncodingParametersWithScalabilityMode, spatialLayer: number) {
+        const reduced = getReducedSvcEncodingParams(this._webcamProducerOriginalScalabilityMode, spatialLayer);
+        if (!reduced) return false;
+
+        const currentScaleResolutionDownBy = encoding.scaleResolutionDownBy ?? 1;
+        if (
+            reduced.scalabilityMode === encoding.scalabilityMode &&
+            reduced.scaleResolutionDownBy === currentScaleResolutionDownBy &&
+            reduced.maxBitrate === encoding.maxBitrate
+        ) {
+            return false;
+        }
+
+        encoding.scalabilityMode = reduced.scalabilityMode;
+        encoding.scaleResolutionDownBy = reduced.scaleResolutionDownBy;
+        if (reduced.maxBitrate === undefined) {
+            delete encoding.maxBitrate;
+        } else {
+            encoding.maxBitrate = reduced.maxBitrate;
+        }
+        return true;
+    }
+
+    async _onChangedHighestPreferredLayer({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
+        if (!this._features.sfuHighestPreferredLayerTrackingOn) return;
+
+        if (this._webcamProducer?.id !== producerId) return;
+
+        this._highestPreferredLayerUpdateQueue = this._highestPreferredLayerUpdateQueue
+            .catch(() => {})
+            .then(() => this._applyChangedHighestPreferredLayer(producerId, spatialLayer));
+
+        return this._highestPreferredLayerUpdateQueue;
+    }
+
+    async _applyChangedHighestPreferredLayer(producerId: string, spatialLayer: number) {
+        if (this._webcamProducer?.id !== producerId) return;
+
+        if (
+            this._webcamProducerHighestPreferredLayer !== undefined &&
+            this._webcamProducerHighestPreferredLayer !== spatialLayer
+        ) {
+            this.analytics.numHighestPreferredLayerChanges++;
+            this._incrementHistogramCount(
+                this.analytics.highestPreferredLayerChangeCounts,
+                `${this._webcamProducerHighestPreferredLayer}->${spatialLayer}`,
+            );
+        }
+        this._webcamProducerHighestPreferredLayer = spatialLayer;
+
+        logger.info("_onChangedHighestPreferredLayer()", { producerId, spatialLayer });
+        await this._applyHighestPreferredLayerToWebcamEncoder(spatialLayer);
+    }
+
+    async _applyHighestPreferredLayerToWebcamEncoder(spatialLayer: number) {
+        if (!this._webcamProducer) return;
+
+        const rtpSender = this._webcamProducer.rtpSender;
+        const parameters = rtpSender.getParameters();
+        const encodings: RtpEncodingParametersWithScalabilityMode[] = parameters.encodings;
+
+        let changed = false;
+        if (encodings.length > 1) {
+            changed = this._toggleSimulcastLayers(encodings, spatialLayer);
+    -    } else if (encodings.length === 1 && this._webcamProducerOriginalScalabilityMode) {
+            changed = this._toggleSvcLayers(encodings[0], spatialLayer);
+        }
+
+        if (!changed) return;
+
+        await rtpSender.setParameters(parameters);
+    }
+
+    _incrementHistogramCount(histogram: Record<string, number>, key: string) {
+        histogram[key] = (histogram[key] || 0) + 1;
     }
 
     async _onDataConsumerReady(options: DataConsumerOptions<DataConsumerAppData>) {

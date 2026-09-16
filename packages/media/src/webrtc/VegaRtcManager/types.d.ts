@@ -99,9 +99,37 @@ type VegaAnalytics = {
     sfuMsFromOfflineToClose: number;
     sfuOfflineWhileConnectedCount: number;
     sfuOfflineToCloseCount: number;
+    numPreferredSpatialLayerChanges: number;
+    preferredSpatialLayerChangeCounts: Record<string, number>;
+    numHighestPreferredLayerChanges: number;
+    highestPreferredLayerChangeCounts: Record<string, number>;
+    numPreferredLayerSwitchLatencySamples: number;
+    minPreferredLayerSwitchLatencyMs: number | undefined;
+    maxPreferredLayerSwitchLatencyMs: number | undefined;
+    avgPreferredLayerSwitchLatencyMs: number | undefined;
+    p95PreferredLayerSwitchLatencyMs: number | undefined;
+    p99PreferredLayerSwitchLatencyMs: number | undefined;
+    totalBytesSent: number;
+    totalBytesReceived: number;
+    totalPacketsLostInbound: number;
+    totalPacketsLostOutbound: number;
+    numInboundJitterSamples: number;
+    minInboundJitterMs: number | undefined;
+    maxInboundJitterMs: number | undefined;
+    avgInboundJitterMs: number | undefined;
+    p95InboundJitterMs: number | undefined;
+    p99InboundJitterMs: number | undefined;
+    numOutboundJitterSamples: number;
+    minOutboundJitterMs: number | undefined;
+    maxOutboundJitterMs: number | undefined;
+    avgOutboundJitterMs: number | undefined;
+    p95OutboundJitterMs: number | undefined;
+    p99OutboundJitterMs: number | undefined;
 };
 
-type VegaAnalyticMetric = keyof VegaAnalytics;
+type VegaAnalyticMetric = {
+    [K in keyof VegaAnalytics]: VegaAnalytics[K] extends number ? K : never;
+}[keyof VegaAnalytics];
 
 export type VegaIncrementAnalyticMetric = (metric: VegaAnalyticMetric) => void;
 

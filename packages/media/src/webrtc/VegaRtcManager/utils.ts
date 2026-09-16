@@ -47,6 +47,31 @@ export function getLayers(
     return { spatialLayer, temporalLayer };
 }
 
+export function aggregateSamples(samples: number[]) {
+    const sorted = [...samples].sort((a, b) => a - b);
+    const sum = sorted.reduce((total, value) => total + value, 0);
+    const percentile = (p: number) => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * p) - 1)];
+
+    return {
+        count: sorted.length,
+        min: sorted[0],
+        max: sorted[sorted.length - 1],
+        avg: Math.round(sum / sorted.length),
+        p95: percentile(0.95),
+        p99: percentile(0.99),
+    };
+}
+
+export const MAX_METRIC_SAMPLES = 2000;
+
+export function recordSample(samples: number[], value: number) {
+    samples.push(value);
+
+    if (samples.length > MAX_METRIC_SAMPLES * 2) {
+        samples.splice(0, samples.length - MAX_METRIC_SAMPLES);
+    }
+}
+
 export function getNumberOfActiveVideos(consumers: any) {
     let numberOfActiveVideos = 0;
     consumers.forEach((c: any) => {
@@ -60,6 +85,37 @@ export function getNumberOfActiveVideos(consumers: any) {
 export function getNumberOfTemporalLayers(consumer: any) {
     // assume it is using T2 mode unless we detect otherwise
     return /T3/.test(consumer._rtpParameters?.encodings?.[0]?.scalabilityMode || "") ? 3 : 2;
+}
+
+const SCALABILITY_MODE_REGEX = /^([LS])([1-9]\d?)T([1-9]\d?)(_KEY)?$/;
+
+export function getTopSpatialLayer(encodings: { scalabilityMode?: string }[] | undefined): number | undefined {
+    if (!encodings || encodings.length === 0) return undefined;
+    if (encodings.length > 1) return encodings.length - 1;
+
+    const match = SCALABILITY_MODE_REGEX.exec(encodings[0].scalabilityMode || "");
+    if (!match) return undefined;
+
+    const spatialLayers = Number(match[2]);
+    return spatialLayers > 1 ? spatialLayers - 1 : undefined;
+}
+
+const LOWEST_SVC_LAYER_MAX_BITRATE = 100_000;
+
+export function getReducedSvcEncodingParams(originalScalabilityMode: string | undefined, spatialLayer: number) {
+    const match = SCALABILITY_MODE_REGEX.exec(originalScalabilityMode || "");
+    if (!match) return undefined;
+
+    const [, mode, originalSpatialLayers, temporalLayers, key = ""] = match;
+    const topLayerIndex = Number(originalSpatialLayers) - 1;
+    const preferredLayerIndex = Math.min(Math.max(spatialLayer, 0), topLayerIndex);
+    const onlyLowestLayerPreferred = preferredLayerIndex === 0;
+
+    return {
+        scalabilityMode: `${mode}${preferredLayerIndex + 1}T${temporalLayers}${key}`,
+        scaleResolutionDownBy: 2 ** (topLayerIndex - preferredLayerIndex),
+        maxBitrate: onlyLowestLayerPreferred ? LOWEST_SVC_LAYER_MAX_BITRATE : undefined,
+    };
 }
 
 // this adds a polling monitor for cpu overuse by checking if the lowest layer of a simulcast stream has reduced resolution

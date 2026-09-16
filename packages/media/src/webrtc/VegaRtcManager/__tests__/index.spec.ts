@@ -1,4 +1,6 @@
 import VegaRtcManager from "../";
+import { getTopSpatialLayer } from "../utils";
+import * as StatsMonitor from "../../stats/StatsMonitor";
 
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
 import rtcManagerEvents from "../../rtcManagerEvents";
@@ -145,6 +147,45 @@ describe("VegaRtcManager", () => {
             expect(getMediasoupDeviceAsync).toHaveBeenCalledWith({ isNodeSdk: true });
             expect(await rtcManager._mediasoupDeviceInitializedAsync).toEqual(device);
         });
+
+        const roomOptions = {
+            selfId,
+            eventClaim: "claim",
+            room: {
+                name: helpers.randomString("/room-"),
+                turnServers: [],
+                clients: [],
+                isLocked: false,
+                isClaimed: false,
+                iceServers: { iceServers: [] },
+                knockers: [],
+                mediaserverConfigTtlSeconds: 0,
+                mode: "group" as const,
+                organizationId: "",
+                spotlights: [],
+                session: null,
+            },
+            emitter,
+            serverSocket,
+            webrtcProvider,
+        };
+
+        it("subscribes to the StatsMonitor rtcstats polling loop regardless of the sfuHighestPreferredLayerTrackingOn feature flag", () => {
+            const subscribeStatsSpy = jest.spyOn(StatsMonitor, "subscribeStats");
+
+            const flaggedOffRtcManager = new VegaRtcManager({ ...roomOptions, features: {} });
+            expect(subscribeStatsSpy).toHaveBeenCalledTimes(1);
+            flaggedOffRtcManager.disconnectAll();
+
+            const flaggedOnRtcManager = new VegaRtcManager({
+                ...roomOptions,
+                features: { sfuHighestPreferredLayerTrackingOn: true },
+            });
+            expect(subscribeStatsSpy).toHaveBeenCalledTimes(2);
+            flaggedOnRtcManager.disconnectAll();
+
+            subscribeStatsSpy.mockRestore();
+        });
     });
 
     describe("addCameraStream", () => {
@@ -216,6 +257,88 @@ describe("VegaRtcManager", () => {
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledWith({ track: newTrack });
             sfuWebsocketServer.close();
+        });
+    });
+
+    describe("initial highest-preferred-layer cap (no consumers yet)", () => {
+        class MockProducerWithRtpSender extends MockProducer {
+            rtpSender: { getParameters: () => { encodings: any[] }; setParameters: jest.Mock };
+
+            constructor({ kind, encodings }: { kind: string; encodings: any[] }) {
+                super({ kind });
+                const parameters = { encodings };
+                this.rtpSender = {
+                    getParameters: () => parameters,
+                    setParameters: jest.fn().mockResolvedValue(undefined),
+                };
+            }
+        }
+
+        const produceWebcam = async (mockVideoProducer: MockProducer) => {
+            jest.spyOn(mockSendTransport, "produce").mockImplementation(({ track }: { track: MediaStreamTrack }) => {
+                if (track.kind === "video") return mockVideoProducer;
+                return new MockProducer({ kind: "audio" });
+            });
+
+            rtcManager.setupSocketListeners();
+            rtcManager.addCameraStream(helpers.createMockedMediaStream());
+            await setTimeout(250);
+            sfuWebsocketServer.close();
+        };
+
+        it("caps a simulcast webcam producer to spatialLayer 1 right after creation, when the flag is on", async () => {
+            rtcManager._features.sfuHighestPreferredLayerTrackingOn = true;
+            const mockVideoProducer = new MockProducerWithRtpSender({
+                kind: "video",
+                encodings: [{ active: true }, { active: true }, { active: true }],
+            });
+
+            await produceWebcam(mockVideoProducer);
+
+            expect(mockVideoProducer.rtpSender.setParameters).toHaveBeenCalledWith({
+                encodings: [{ active: true }, { active: true }, { active: false }],
+            });
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(1);
+        });
+
+        it("caps an SVC webcam producer to spatialLayer 1 right after creation, when the flag is on", async () => {
+            rtcManager._features.sfuHighestPreferredLayerTrackingOn = true;
+            const mockVideoProducer = new MockProducerWithRtpSender({
+                kind: "video",
+                encodings: [{ scalabilityMode: "L3T2" }],
+            });
+
+            await produceWebcam(mockVideoProducer);
+
+            expect(mockVideoProducer.rtpSender.setParameters).toHaveBeenCalledWith({
+                encodings: [{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }],
+            });
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(1);
+        });
+
+        it("does not cap the webcam producer when the sfuHighestPreferredLayerTrackingOn feature flag is off", async () => {
+            const mockVideoProducer = new MockProducerWithRtpSender({
+                kind: "video",
+                encodings: [{ active: true }, { active: true }, { active: true }],
+            });
+
+            await produceWebcam(mockVideoProducer);
+
+            expect(mockVideoProducer.rtpSender.setParameters).not.toHaveBeenCalled();
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBeUndefined();
+        });
+
+        it("does not throw, or cap anything, when there is no spare layer to track (e.g. a plain single encoding)", async () => {
+            rtcManager._features.sfuHighestPreferredLayerTrackingOn = true;
+            const mockVideoProducer = new MockProducerWithRtpSender({
+                kind: "video",
+                encodings: [{}],
+            });
+
+            await produceWebcam(mockVideoProducer);
+
+            expect(mockVideoProducer.rtpSender.setParameters).not.toHaveBeenCalled();
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBeUndefined();
         });
     });
 
@@ -302,6 +425,648 @@ describe("VegaRtcManager", () => {
             track.dispatchEvent(new Event("ended"));
 
             expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
+        });
+    });
+
+    describe("_onChangedHighestPreferredLayer", () => {
+        let setParameters: jest.Mock;
+        let parameters: { encodings: any[] };
+
+        beforeEach(() => {
+            rtcManager._features.sfuHighestPreferredLayerTrackingOn = true;
+        });
+
+        const createWebcamProducer = (encodings: any[]) => {
+            parameters = { encodings };
+            setParameters = jest.fn().mockResolvedValue(undefined);
+            rtcManager._webcamProducer = {
+                id: "webcam-producer-1",
+                rtpSender: {
+                    getParameters: () => parameters,
+                    setParameters,
+                },
+            };
+            rtcManager._webcamProducerOriginalScalabilityMode = encodings[0]?.scalabilityMode;
+            rtcManager._webcamProducerHighestPreferredLayer = getTopSpatialLayer(encodings);
+        };
+
+        it("ignores demand changes for a different producer", async () => {
+            createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+            await rtcManager._onChangedHighestPreferredLayer({ producerId: "other-producer", spatialLayer: 0 });
+
+            expect(setParameters).not.toHaveBeenCalled();
+            expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+        });
+
+        it("does nothing when the sfuHighestPreferredLayerTrackingOn feature flag is off", async () => {
+            rtcManager._features.sfuHighestPreferredLayerTrackingOn = false;
+            createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+            await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+
+            expect(setParameters).not.toHaveBeenCalled();
+            expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+        });
+
+        it("does not throw when there is no webcam producer (e.g. the camera was turned off just before the message arrived)", async () => {
+            rtcManager._webcamProducer = null;
+
+            await expect(
+                rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 }),
+            ).resolves.toBeUndefined();
+
+            expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+        });
+
+        it("serializes overlapping calls so a later message can't race an earlier one's setParameters()", async () => {
+            createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+            let resolveSetParameters: (() => void) | undefined;
+            setParameters.mockImplementation(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveSetParameters = resolve;
+                    }),
+            );
+
+            const firstCall = rtcManager._onChangedHighestPreferredLayer({
+                producerId: "webcam-producer-1",
+                spatialLayer: 0,
+            });
+            const secondCall = rtcManager._onChangedHighestPreferredLayer({
+                producerId: "webcam-producer-1",
+                spatialLayer: 1,
+            });
+
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
+            expect(setParameters).toHaveBeenCalledTimes(1);
+
+            resolveSetParameters!();
+            await firstCall;
+            await Promise.resolve();
+            await Promise.resolve();
+
+            resolveSetParameters!();
+            await secondCall;
+
+            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1, "0->1": 1 });
+            expect(setParameters).toHaveBeenCalledTimes(2);
+        });
+
+        describe("highestPreferredLayer analytics", () => {
+            it("counts the first message as a transition from the top spatial layer (the SFU's own initial assumption)", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+
+                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
+            });
+
+            it("does not count a first message that matches the initial top spatial layer", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
+
+                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({});
+            });
+
+            it("counts and histograms a transition once a second, different value arrives", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+
+                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
+            });
+
+            it("does not count a repeated message carrying the same value", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+
+                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
+            });
+
+            it("aggregates counts across multiple transitions in the session, including repeats", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
+                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+
+                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(3);
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 2, "0->2": 1 });
+            });
+        });
+
+        describe("simulcast (multiple encodings)", () => {
+            it("pauses encodings above the demanded layer and keeps the rest active", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: false }, { active: false }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("resumes previously paused encodings up to the demanded layer", async () => {
+                createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 2,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: true }, { active: true }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("clamps an out-of-range demanded layer (above the top) to the highest real encoding, rather than trusting it", async () => {
+                createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 99,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: true }, { active: true }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("clamps a negative demanded layer to the base layer, rather than deactivating everything", async () => {
+                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: -5,
+                });
+
+                expect(parameters.encodings).toEqual([{ active: true }, { active: false }, { active: false }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("does not call setParameters when nothing changes", async () => {
+                createWebcamProducer([{ active: true }, { active: false }, { active: false }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(setParameters).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("SVC (single encoding with scalabilityMode)", () => {
+            it("shrinks the scalabilityMode's spatial layer count and scales the resolution down to match", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 1,
+                });
+
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("scales down by 4 and caps maxBitrate when only the lowest of 3 layers is preferred", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                ]);
+                expect(setParameters).toHaveBeenCalledWith(parameters);
+            });
+
+            it("keeps computing the reduction relative to the original scalabilityMode across repeated changes", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 1,
+                });
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                ]);
+            });
+
+            it("removes the maxBitrate cap once a higher layer is preferred again", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2", maxBitrate: 1_000_000 }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                ]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 1,
+                });
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+                expect(parameters.encodings[0]).not.toHaveProperty("maxBitrate");
+            });
+
+            it("does not call setParameters when neither the scalabilityMode, resolution scale, nor maxBitrate changes", async () => {
+                createWebcamProducer([{ scalabilityMode: "L3T2" }]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 2,
+                });
+
+                expect(setParameters).not.toHaveBeenCalled();
+            });
+
+            it("does not call setParameters for a plain (non-SVC) single encoding", async () => {
+                createWebcamProducer([{}]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 0,
+                });
+
+                expect(setParameters).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe("updateStreamResolution", () => {
+        const createConsumer = ({ spatialLayer = 2, temporalLayer = 1, scalabilityMode = "T2" } = {}) => ({
+            appData: { spatialLayer, temporalLayer },
+            _appData: { source: "webcam" },
+            _closed: false,
+            _paused: false,
+            _rtpParameters: { encodings: [{ scalabilityMode }] },
+        });
+
+        const registerConsumer = (streamId: string, consumerId: string, consumer: any) => {
+            rtcManager._streamIdToVideoConsumerId.set(streamId, consumerId);
+            rtcManager._consumers.set(consumerId, consumer);
+        };
+
+        it("increments numPreferredSpatialLayerChanges and the transition histogram when the spatial layer changes", () => {
+            const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
+            registerConsumer("stream1", "consumer1", consumer);
+
+            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+            expect(consumer.appData.spatialLayer).toBe(0);
+            expect(consumer.appData.temporalLayer).toBe(1);
+            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(1);
+            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 1 });
+        });
+
+        it("still records the spatial-layer-change analytics and starts the switch-latency watch when the sfuHighestPreferredLayerTrackingOn feature flag is off", () => {
+            rtcManager._features.sfuHighestPreferredLayerTrackingOn = false;
+            const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
+            registerConsumer("stream1", "consumer1", consumer);
+            const message = jest.fn();
+            rtcManager._vegaConnection = { message } as any;
+
+            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+            expect(consumer.appData.spatialLayer).toBe(0);
+            expect(message).toHaveBeenCalledWith("setConsumersPreferredLayers", {
+                consumerIds: ["consumer1"],
+                spatialLayer: 0,
+                temporalLayer: 1,
+            });
+            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(1);
+            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 1 });
+            expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+        });
+
+        it("does not increment when only the temporal layer changes (spatial layer unchanged)", () => {
+            const consumer = createConsumer({ spatialLayer: 0, temporalLayer: 1 });
+            registerConsumer("stream1", "consumer1", consumer);
+
+            for (let i = 0; i < 9; i++) {
+                rtcManager._consumers.set(`filler${i}`, {
+                    _appData: { source: "webcam" },
+                    _closed: false,
+                    _paused: false,
+                });
+            }
+
+            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+            expect(consumer.appData.spatialLayer).toBe(0);
+            expect(consumer.appData.temporalLayer).toBe(0);
+            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(0);
+            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({});
+        });
+
+        it("does not increment, or send a message, when nothing changes", () => {
+            const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
+            registerConsumer("stream1", "consumer1", consumer);
+            const message = jest.fn();
+            rtcManager._vegaConnection = { message } as any;
+
+            rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(0);
+            expect(message).not.toHaveBeenCalled();
+        });
+
+        it("aggregates counts across multiple transitions in the session, including repeats", () => {
+            const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
+            registerConsumer("stream1", "consumer1", consumer);
+
+            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+            rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(3);
+            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 2, "0->2": 1 });
+        });
+
+        describe("preferred layer switch latency", () => {
+            const createConsumerWithFrameSizes = (
+                frameSizes: ({ width: number; height: number } | undefined)[],
+                { spatialLayer = 2, temporalLayer = 1, scalabilityMode = "T2" } = {},
+            ) => {
+                let callIndex = 0;
+                return {
+                    appData: { spatialLayer, temporalLayer },
+                    _appData: { source: "webcam" },
+                    _closed: false,
+                    _paused: false,
+                    closed: false,
+                    _rtpParameters: { encodings: [{ scalabilityMode }] },
+                    getStats: jest.fn(async () => {
+                        const frameSize = frameSizes[Math.min(callIndex, frameSizes.length - 1)];
+                        callIndex++;
+                        if (!frameSize) return [];
+                        return [{ type: "inbound-rtp", frameWidth: frameSize.width, frameHeight: frameSize.height }];
+                    }),
+                };
+            };
+
+            beforeEach(() => {
+                jest.useFakeTimers();
+            });
+
+            afterEach(() => {
+                jest.useRealTimers();
+            });
+
+            it("records a latency sample once the consumer's actual frame size changes", async () => {
+                const consumer = createConsumerWithFrameSizes([
+                    { width: 960, height: 540 },
+                    { width: 960, height: 540 },
+                    { width: 480, height: 270 },
+                ]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+                await jest.advanceTimersByTimeAsync(0);
+                await jest.advanceTimersByTimeAsync(500);
+                await jest.advanceTimersByTimeAsync(500);
+
+                expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(1);
+                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBe(1000);
+                expect(rtcManager.analytics.maxPreferredLayerSwitchLatencyMs).toBe(1000);
+                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(1000);
+                expect(rtcManager.analytics.p95PreferredLayerSwitchLatencyMs).toBe(1000);
+                expect(rtcManager.analytics.p99PreferredLayerSwitchLatencyMs).toBe(1000);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("does not start a watch when only the temporal layer changes (spatial layer unchanged)", () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }], {
+                    spatialLayer: 0,
+                    temporalLayer: 1,
+                });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                for (let i = 0; i < 9; i++) {
+                    rtcManager._consumers.set(`filler${i}`, {
+                        _appData: { source: "webcam" },
+                        _closed: false,
+                        _paused: false,
+                    });
+                }
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+                expect(consumer.appData.spatialLayer).toBe(0);
+                expect(consumer.appData.temporalLayer).toBe(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
+            });
+
+            it("does not record anything if the frame size never changes before the watch times out", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(0);
+                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBeUndefined();
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("cancels a stale watch when a newer resize happens for the same consumer", async () => {
+                const consumer = createConsumerWithFrameSizes([
+                    { width: 960, height: 540 },
+                    { width: 480, height: 270 },
+                    { width: 480, height: 270 },
+                    { width: 720, height: 405 },
+                ]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(0);
+
+                await jest.advanceTimersByTimeAsync(100);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(0);
+
+                await jest.advanceTimersByTimeAsync(500);
+                await jest.advanceTimersByTimeAsync(500);
+
+                expect(consumer.getStats).toHaveBeenCalledTimes(4);
+                expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(1);
+                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBe(1000);
+            });
+
+            it("stops watching once the consumer closes", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(0);
+
+                consumer.closed = true;
+
+                await jest.advanceTimersByTimeAsync(500);
+
+                expect(consumer.getStats).toHaveBeenCalledTimes(1);
+                expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("does not record anything, or throw, when there's no inbound-rtp report to baseline against", async () => {
+                const consumer = createConsumerWithFrameSizes([]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("aggregates min/max/avg/p95/p99 across multiple recorded samples", () => {
+                Array.from({ length: 20 }, (_, i) => (i + 1) * 50).forEach((latencyMs) => {
+                    rtcManager._recordPreferredLayerSwitchLatency(latencyMs);
+                });
+
+                expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(20);
+                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBe(50);
+                expect(rtcManager.analytics.maxPreferredLayerSwitchLatencyMs).toBe(1000);
+                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(525);
+                expect(rtcManager.analytics.p95PreferredLayerSwitchLatencyMs).toBe(950);
+                expect(rtcManager.analytics.p99PreferredLayerSwitchLatencyMs).toBe(1000);
+            });
+        });
+    });
+
+    describe("_onUpdatedStats", () => {
+        const makeStatsByView = (ssrcMetrics: any, { clientId = "client1", trackId = "track1", ssrc = "1" } = {}) => ({
+            [clientId]: { tracks: { [trackId]: { ssrcs: { [ssrc]: ssrcMetrics } } } },
+        });
+
+        it("accumulates totalBytesSent from the delta of an outbound ssrc's byteCount", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 1000 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 2500 }));
+
+            expect(rtcManager.analytics.totalBytesSent).toBe(2500);
+            expect(rtcManager.analytics.totalBytesReceived).toBe(0);
+        });
+
+        it("accumulates totalBytesReceived and totalPacketsLostInbound from an inbound ssrc", () => {
+            rtcManager._onUpdatedStats(
+                makeStatsByView({ direction: "in", rawByteCount: 1000, rawPacketsLost: 2, jitter: 0.01 }),
+            );
+            rtcManager._onUpdatedStats(
+                makeStatsByView({ direction: "in", rawByteCount: 1800, rawPacketsLost: 5, jitter: 0.02 }),
+            );
+
+            expect(rtcManager.analytics.totalBytesReceived).toBe(1800);
+            expect(rtcManager.analytics.totalPacketsLostInbound).toBe(5);
+        });
+
+        it("accumulates totalPacketsLostOutbound from an outbound ssrc's remotePacketsLost", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, remotePacketsLost: 3 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, remotePacketsLost: 7 }));
+
+            expect(rtcManager.analytics.totalPacketsLostOutbound).toBe(7);
+            expect(rtcManager.analytics.totalPacketsLostInbound).toBe(0);
+        });
+
+        it("records inbound jitter samples (converted to ms) and aggregates them", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", rawByteCount: 0, jitter: 0.01 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", rawByteCount: 0, jitter: 0.03 }));
+
+            expect(rtcManager.analytics.numInboundJitterSamples).toBe(2);
+            expect(rtcManager.analytics.minInboundJitterMs).toBe(10);
+            expect(rtcManager.analytics.maxInboundJitterMs).toBe(30);
+            expect(rtcManager.analytics.avgInboundJitterMs).toBe(20);
+            expect(rtcManager.analytics.p95InboundJitterMs).toBe(30);
+            expect(rtcManager.analytics.p99InboundJitterMs).toBe(30);
+            expect(rtcManager.analytics.numOutboundJitterSamples).toBe(0);
+        });
+
+        it("records outbound jitter samples (converted to ms) separately from inbound", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, jitter: 0.02 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, jitter: 0.04 }));
+
+            expect(rtcManager.analytics.numOutboundJitterSamples).toBe(2);
+            expect(rtcManager.analytics.minOutboundJitterMs).toBe(20);
+            expect(rtcManager.analytics.maxOutboundJitterMs).toBe(40);
+            expect(rtcManager.analytics.avgOutboundJitterMs).toBe(30);
+            expect(rtcManager.analytics.p95OutboundJitterMs).toBe(40);
+            expect(rtcManager.analytics.p99OutboundJitterMs).toBe(40);
+            expect(rtcManager.analytics.numInboundJitterSamples).toBe(0);
+        });
+
+        it("does not record a jitter sample when no jitter value is present on the report", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", rawByteCount: 0 }));
+
+            expect(rtcManager.analytics.numInboundJitterSamples).toBe(0);
+            expect(rtcManager.analytics.numOutboundJitterSamples).toBe(0);
+        });
+
+        it("does not decrease totals if a cumulative counter appears to reset", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 5000 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 100 }));
+
+            expect(rtcManager.analytics.totalBytesSent).toBe(5000);
+        });
+
+        it("prunes a ssrc's last-seen counters once it stops appearing in stats, without losing its already-counted total", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 1000 }));
+            expect(rtcManager._lastSeenSsrcCounters.size).toBe(1);
+
+            rtcManager._onUpdatedStats({});
+
+            expect(rtcManager._lastSeenSsrcCounters.size).toBe(0);
+            expect(rtcManager.analytics.totalBytesSent).toBe(1000);
+        });
+
+        it("sums across multiple ssrcs/tracks/clients reported in the same tick", () => {
+            rtcManager._onUpdatedStats({
+                client1: {
+                    tracks: {
+                        trackA: { ssrcs: { "1": { direction: "out", rawByteCount: 1000 } } },
+                    },
+                },
+                client2: {
+                    tracks: {
+                        trackB: { ssrcs: { "2": { direction: "in", rawByteCount: 2000 } } },
+                        trackC: { ssrcs: { "3": { direction: "in", rawByteCount: 500 } } },
+                    },
+                },
+            });
+
+            expect(rtcManager.analytics.totalBytesSent).toBe(1000);
+            expect(rtcManager.analytics.totalBytesReceived).toBe(2500);
         });
     });
 });

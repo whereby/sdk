@@ -1,7 +1,63 @@
 import { Producer } from "mediasoup-client/lib/Producer";
-import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "../utils";
+import {
+    addProducerCpuOveruseWatch,
+    aggregateSamples,
+    getLayers,
+    getNumberOfActiveVideos,
+    getNumberOfTemporalLayers,
+    getReducedSvcEncodingParams,
+    getTopSpatialLayer,
+    MAX_METRIC_SAMPLES,
+    recordSample,
+} from "../utils";
 
 describe("utils", () => {
+    describe("aggregateSamples", () => {
+        it("computes count/min/max/avg/p95/p99 over the given samples", () => {
+            const samples = Array.from({ length: 20 }, (_, i) => (i + 1) * 50);
+
+            expect(aggregateSamples(samples)).toEqual({
+                count: 20,
+                min: 50,
+                max: 1000,
+                avg: 525,
+                p95: 950,
+                p99: 1000,
+            });
+        });
+
+        it("does not depend on the input array's order, or mutate it", () => {
+            const samples = [300, 100, 200];
+
+            expect(aggregateSamples(samples)).toEqual({ count: 3, min: 100, max: 300, avg: 200, p95: 300, p99: 300 });
+            expect(samples).toEqual([300, 100, 200]);
+        });
+
+        it("handles a single sample", () => {
+            expect(aggregateSamples([42])).toEqual({ count: 1, min: 42, max: 42, avg: 42, p95: 42, p99: 42 });
+        });
+    });
+
+    describe("recordSample", () => {
+        it("appends to the array below the cap", () => {
+            const samples = [1, 2, 3];
+
+            recordSample(samples, 4);
+
+            expect(samples).toEqual([1, 2, 3, 4]);
+        });
+
+        it("keeps the array bounded and drops the oldest samples once far enough over the cap", () => {
+            const samples = Array.from({ length: MAX_METRIC_SAMPLES * 2 }, (_, i) => i);
+
+            recordSample(samples, 999999);
+
+            expect(samples.length).toBe(MAX_METRIC_SAMPLES);
+            expect(samples[0]).toBe(MAX_METRIC_SAMPLES + 1);
+            expect(samples[samples.length - 1]).toBe(999999);
+        });
+    });
+
     describe("getLayers", () => {
         it.each`
             width  | height | numberOfActiveVideos | numberOfTemporalLayers | uncappedSingleRemoteVideoOn | expected
@@ -68,6 +124,84 @@ describe("utils", () => {
             const result = getNumberOfTemporalLayers(consumer);
 
             expect(result).toBe(3);
+        });
+    });
+
+    describe("getTopSpatialLayer", () => {
+        it("returns the last index for simulcast (multiple encodings)", () => {
+            expect(getTopSpatialLayer([{}, {}, {}])).toBe(2);
+            expect(getTopSpatialLayer([{}, {}])).toBe(1);
+        });
+
+        it("returns the spatial layer count minus one for a single SVC encoding", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L3T2" }])).toBe(2);
+            expect(getTopSpatialLayer([{ scalabilityMode: "L2T2" }])).toBe(1);
+        });
+
+        it("returns undefined for a single-spatial-layer SVC mode", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L1T3" }])).toBeUndefined();
+        });
+
+        it("returns undefined for a plain (non-SVC) single encoding", () => {
+            expect(getTopSpatialLayer([{}])).toBeUndefined();
+        });
+
+        it("returns undefined when there are no encodings", () => {
+            expect(getTopSpatialLayer([])).toBeUndefined();
+            expect(getTopSpatialLayer(undefined)).toBeUndefined();
+        });
+
+        it("returns undefined for a malformed scalabilityMode with unexpected trailing content", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L3T2_UNEXPECTED_SUFFIX" }])).toBeUndefined();
+        });
+    });
+
+    describe("getReducedSvcEncodingParams", () => {
+        it.each`
+            originalScalabilityMode | spatialLayer | scalabilityMode | scaleResolutionDownBy | maxBitrate
+            ${"L3T2"}               | ${2}         | ${"L3T2"}       | ${1}                  | ${undefined}
+            ${"L3T2"}               | ${1}         | ${"L2T2"}       | ${2}                  | ${undefined}
+            ${"L3T2"}               | ${0}         | ${"L1T2"}       | ${4}                  | ${100_000}
+            ${"L2T2"}               | ${0}         | ${"L1T2"}       | ${2}                  | ${100_000}
+            ${"S3T3"}               | ${1}         | ${"S2T3"}       | ${2}                  | ${undefined}
+            ${"L3T3_KEY"}           | ${1}         | ${"L2T3_KEY"}   | ${2}                  | ${undefined}
+            ${"L1T3"}               | ${0}         | ${"L1T3"}       | ${1}                  | ${100_000}
+        `(
+            "reduces $originalScalabilityMode to $scalabilityMode scaled down by $scaleResolutionDownBy (maxBitrate $maxBitrate) when the preferred spatial layer is $spatialLayer",
+            ({ originalScalabilityMode, spatialLayer, scalabilityMode, scaleResolutionDownBy, maxBitrate }) => {
+                expect(getReducedSvcEncodingParams(originalScalabilityMode, spatialLayer)).toEqual({
+                    scalabilityMode,
+                    scaleResolutionDownBy,
+                    maxBitrate,
+                });
+            },
+        );
+
+        it("never raises the spatial layer count above what the original scalabilityMode declared", () => {
+            expect(getReducedSvcEncodingParams("L2T2", 5)).toEqual({
+                scalabilityMode: "L2T2",
+                scaleResolutionDownBy: 1,
+                maxBitrate: undefined,
+            });
+        });
+
+        it("never reduces below a single spatial layer", () => {
+            expect(getReducedSvcEncodingParams("L3T2", -1)).toEqual({
+                scalabilityMode: "L1T2",
+                scaleResolutionDownBy: 4,
+                maxBitrate: 100_000,
+            });
+        });
+
+        it("caps maxBitrate only when the lowest layer is the only one preferred, undefined (no cap) otherwise", () => {
+            expect(getReducedSvcEncodingParams("L3T2", 0)?.maxBitrate).toBe(100_000);
+            expect(getReducedSvcEncodingParams("L3T2", 1)?.maxBitrate).toBeUndefined();
+            expect(getReducedSvcEncodingParams("L3T2", 2)?.maxBitrate).toBeUndefined();
+        });
+
+        it("returns undefined for a non-SVC (simulcast/plain) encoding", () => {
+            expect(getReducedSvcEncodingParams(undefined, 1)).toBeUndefined();
+            expect(getReducedSvcEncodingParams("", 1)).toBeUndefined();
         });
     });
 
