@@ -14,7 +14,7 @@ import {
 describe("utils", () => {
     describe("aggregateSamples", () => {
         it("computes count/min/max/avg/p95/p99 over the given samples", () => {
-            const samples = Array.from({ length: 20 }, (_, i) => (i + 1) * 50); // 50, 100, ..., 1000
+            const samples = Array.from({ length: 20 }, (_, i) => (i + 1) * 50);
 
             expect(aggregateSamples(samples)).toEqual({
                 count: 20,
@@ -167,7 +167,7 @@ describe("utils", () => {
             ${"L3T3_KEY"}           | ${1}         | ${"L2T3_KEY"}   | ${2}                  | ${undefined}
             ${"L1T3"}               | ${0}         | ${"L1T3"}       | ${1}                  | ${100_000}
         `(
-            "reduces $originalScalabilityMode to $scalabilityMode scaled down by $scaleResolutionDownBy (maxBitrate $maxBitrate) when the required spatial layer is $spatialLayer",
+            "reduces $originalScalabilityMode to $scalabilityMode scaled down by $scaleResolutionDownBy (maxBitrate $maxBitrate) when the preferred spatial layer is $spatialLayer",
             ({ originalScalabilityMode, spatialLayer, scalabilityMode, scaleResolutionDownBy, maxBitrate }) => {
                 expect(getReducedSvcEncodingParams(originalScalabilityMode, spatialLayer)).toEqual({
                     scalabilityMode,
@@ -193,7 +193,7 @@ describe("utils", () => {
             });
         });
 
-        it("caps maxBitrate only when the lowest layer is the only one required, undefined (no cap) otherwise", () => {
+        it("caps maxBitrate only when the lowest layer is the only one preferred, undefined (no cap) otherwise", () => {
             expect(getReducedSvcEncodingParams("L3T2", 0)?.maxBitrate).toBe(100_000);
             expect(getReducedSvcEncodingParams("L3T2", 1)?.maxBitrate).toBeUndefined();
             expect(getReducedSvcEncodingParams("L3T2", 2)?.maxBitrate).toBeUndefined();

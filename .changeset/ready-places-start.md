@@ -2,4 +2,4 @@
 "@whereby.com/media": patch
 ---
 
-media: Handle changedHighestRequiredLayer message
+media: Handle changedHighestPreferredLayer message

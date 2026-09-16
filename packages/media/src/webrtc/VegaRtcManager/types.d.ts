@@ -101,8 +101,8 @@ type VegaAnalytics = {
     sfuOfflineToCloseCount: number;
     numPreferredSpatialLayerChanges: number;
     preferredSpatialLayerChangeCounts: Record<string, number>;
-    numHighestRequiredLayerChanges: number;
-    highestRequiredLayerChangeCounts: Record<string, number>;
+    numHighestPreferredLayerChanges: number;
+    highestPreferredLayerChangeCounts: Record<string, number>;
     numPreferredLayerSwitchLatencySamples: number;
     minPreferredLayerSwitchLatencyMs: number | undefined;
     maxPreferredLayerSwitchLatencyMs: number | undefined;

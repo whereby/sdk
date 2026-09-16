@@ -116,8 +116,8 @@ export default class VegaRtcManager implements RtcManager {
     _micScoreProducerPromise: any;
     _webcamProducer: any;
     _webcamProducerOriginalScalabilityMode: string | undefined;
-    _webcamProducerHighestRequiredLayer: number | undefined;
-    _highestRequiredLayerUpdateQueue: Promise<void>;
+    _webcamProducerHighestPreferredLayer: number | undefined;
+    _highestPreferredLayerUpdateQueue: Promise<void>;
     _webcamProducerPromise: any;
     _preferredLayerSwitchLatenciesMs: number[];
     _preferredLayerSwitchWatches: Map<string, { stop: () => void }>;
@@ -209,8 +209,8 @@ export default class VegaRtcManager implements RtcManager {
         this._micScoreProducerPromise = null;
         this._webcamProducer = null;
         this._webcamProducerOriginalScalabilityMode = undefined;
-        this._webcamProducerHighestRequiredLayer = undefined;
-        this._highestRequiredLayerUpdateQueue = Promise.resolve();
+        this._webcamProducerHighestPreferredLayer = undefined;
+        this._highestPreferredLayerUpdateQueue = Promise.resolve();
         this._webcamProducerPromise = null;
         this._webcamPaused = false;
         this._screenVideoProducer = null;
@@ -299,8 +299,8 @@ export default class VegaRtcManager implements RtcManager {
             sfuOfflineToCloseCount: 0,
             numPreferredSpatialLayerChanges: 0,
             preferredSpatialLayerChangeCounts: {},
-            numHighestRequiredLayerChanges: 0,
-            highestRequiredLayerChangeCounts: {},
+            numHighestPreferredLayerChanges: 0,
+            highestPreferredLayerChangeCounts: {},
             numPreferredLayerSwitchLatencySamples: 0,
             minPreferredLayerSwitchLatencyMs: undefined,
             maxPreferredLayerSwitchLatencyMs: undefined,
@@ -1179,18 +1179,20 @@ export default class VegaRtcManager implements RtcManager {
                     : () => {};
 
                 this._webcamProducer = producer;
-                if (this._features.sfuHighestRequiredLayerTrackingOn) {
+                if (this._features.sfuHighestPreferredLayerTrackingOn) {
                     const originalWebcamEncodings = producer.rtpSender?.getParameters()?.encodings as
                         | RtpEncodingParametersWithScalabilityMode[]
                         | undefined;
                     this._webcamProducerOriginalScalabilityMode = originalWebcamEncodings?.[0]?.scalabilityMode;
 
                     const topSpatialLayer = getTopSpatialLayer(originalWebcamEncodings);
-                    this._webcamProducerHighestRequiredLayer =
+                    this._webcamProducerHighestPreferredLayer =
                         topSpatialLayer !== undefined ? Math.min(topSpatialLayer, 1) : undefined;
 
-                    if (this._webcamProducerHighestRequiredLayer !== undefined) {
-                        await this._applyHighestRequiredLayerToWebcamEncoder(this._webcamProducerHighestRequiredLayer);
+                    if (this._webcamProducerHighestPreferredLayer !== undefined) {
+                        await this._applyHighestPreferredLayerToWebcamEncoder(
+                            this._webcamProducerHighestPreferredLayer,
+                        );
                     }
                 }
                 this._qualityMonitor.addProducer(this._selfId, producer.id);
@@ -1204,7 +1206,7 @@ export default class VegaRtcManager implements RtcManager {
 
                     this._webcamProducer = null;
                     this._webcamProducerOriginalScalabilityMode = undefined;
-                    this._webcamProducerHighestRequiredLayer = undefined;
+                    this._webcamProducerHighestPreferredLayer = undefined;
                     this._webcamProducerPromise = null;
                     this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
@@ -1227,7 +1229,7 @@ export default class VegaRtcManager implements RtcManager {
                     this._stopProducer(this._webcamProducer);
                     this._webcamProducer = null;
                     this._webcamProducerOriginalScalabilityMode = undefined;
-                    this._webcamProducerHighestRequiredLayer = undefined;
+                    this._webcamProducerHighestPreferredLayer = undefined;
                 }
             }
         })();
@@ -1737,7 +1739,7 @@ export default class VegaRtcManager implements RtcManager {
                 this._stopProducer(this._webcamProducer);
                 this._webcamProducer = null;
                 this._webcamProducerOriginalScalabilityMode = undefined;
-                this._webcamProducerHighestRequiredLayer = undefined;
+                this._webcamProducerHighestPreferredLayer = undefined;
                 this._webcamTrack = null;
             }
         } else {
@@ -2105,8 +2107,8 @@ export default class VegaRtcManager implements RtcManager {
                         return this._onConsumerScore(data);
                     case "producerScore":
                         return this._onProducerScore(data);
-                    case "changedHighestRequiredLayer":
-                        return this._onChangedHighestRequiredLayer(data);
+                    case "changedHighestPreferredLayer":
+                        return this._onChangedHighestPreferredLayer(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -2259,8 +2261,6 @@ export default class VegaRtcManager implements RtcManager {
         const reduced = getReducedSvcEncodingParams(this._webcamProducerOriginalScalabilityMode, spatialLayer);
         if (!reduced) return false;
 
-        // scaleResolutionDownBy defaults to 1 per the WebRTC spec when unset, so treat it as
-        // such here too - otherwise the very first call always looks "changed".
         const currentScaleResolutionDownBy = encoding.scaleResolutionDownBy ?? 1;
         if (
             reduced.scalabilityMode === encoding.scalabilityMode &&
@@ -2280,38 +2280,38 @@ export default class VegaRtcManager implements RtcManager {
         return true;
     }
 
-    async _onChangedHighestRequiredLayer({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
-        if (!this._features.sfuHighestRequiredLayerTrackingOn) return;
+    async _onChangedHighestPreferredLayer({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
+        if (!this._features.sfuHighestPreferredLayerTrackingOn) return;
 
         if (this._webcamProducer?.id !== producerId) return;
 
-        this._highestRequiredLayerUpdateQueue = this._highestRequiredLayerUpdateQueue
+        this._highestPreferredLayerUpdateQueue = this._highestPreferredLayerUpdateQueue
             .catch(() => {})
-            .then(() => this._applyChangedHighestRequiredLayer(producerId, spatialLayer));
+            .then(() => this._applyChangedHighestPreferredLayer(producerId, spatialLayer));
 
-        return this._highestRequiredLayerUpdateQueue;
+        return this._highestPreferredLayerUpdateQueue;
     }
 
-    async _applyChangedHighestRequiredLayer(producerId: string, spatialLayer: number) {
+    async _applyChangedHighestPreferredLayer(producerId: string, spatialLayer: number) {
         if (this._webcamProducer?.id !== producerId) return;
 
         if (
-            this._webcamProducerHighestRequiredLayer !== undefined &&
-            this._webcamProducerHighestRequiredLayer !== spatialLayer
+            this._webcamProducerHighestPreferredLayer !== undefined &&
+            this._webcamProducerHighestPreferredLayer !== spatialLayer
         ) {
-            this.analytics.numHighestRequiredLayerChanges++;
+            this.analytics.numHighestPreferredLayerChanges++;
             this._incrementHistogramCount(
-                this.analytics.highestRequiredLayerChangeCounts,
-                `${this._webcamProducerHighestRequiredLayer}->${spatialLayer}`,
+                this.analytics.highestPreferredLayerChangeCounts,
+                `${this._webcamProducerHighestPreferredLayer}->${spatialLayer}`,
             );
         }
-        this._webcamProducerHighestRequiredLayer = spatialLayer;
+        this._webcamProducerHighestPreferredLayer = spatialLayer;
 
-        logger.info("_onChangedHighestRequiredLayer()", { producerId, spatialLayer });
-        await this._applyHighestRequiredLayerToWebcamEncoder(spatialLayer);
+        logger.info("_onChangedHighestPreferredLayer()", { producerId, spatialLayer });
+        await this._applyHighestPreferredLayerToWebcamEncoder(spatialLayer);
     }
 
-    async _applyHighestRequiredLayerToWebcamEncoder(spatialLayer: number) {
+    async _applyHighestPreferredLayerToWebcamEncoder(spatialLayer: number) {
         if (!this._webcamProducer) return;
 
         const rtpSender = this._webcamProducer.rtpSender;
