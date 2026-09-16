@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- Browser-only: built on the window.PressureObserver API. */
 import { Logger } from "../../../utils";
 import { PressureRecord } from "../types";
 

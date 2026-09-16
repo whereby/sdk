@@ -1,3 +1,5 @@
+import { browserWindow } from "./environment";
+
 const defaultSubdomainPattern = /^(?:([^.]+)[.])?((:?[^.]+[.]){1,}[^.]+)$/;
 const localstackPattern = /^(?:([^.]+)-)?(ip-[^.]*[.](?:hereby[.]dev|rfc1918[.]disappear[.]at)(?::\d+|))$/;
 const localhostPattern = /^(?:([^.]+)[.])?(localhost:?\d*)/;
@@ -41,4 +43,4 @@ export function fromLocation({ host = "whereby.com", protocol = "https:" } = {})
     };
 }
 
-export default fromLocation(typeof window !== "undefined" ? window.location : undefined);
+export default fromLocation(browserWindow()?.location);

@@ -1,5 +1,6 @@
 export { default as assert } from "./assert";
 export * from "./bandwidthTestUtils";
+export * from "./environment";
 export * from "./getMediasoupDevice";
 export { default as ipRegex } from "./ipRegex";
 export { default as Logger } from "./Logger";
