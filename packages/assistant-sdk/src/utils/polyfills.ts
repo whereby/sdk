@@ -91,9 +91,16 @@ global.RTCRtpSender = wrtc.RTCRtpSender;
 global.RTCRtpTransceiver = wrtc.RTCRtpTransceiver;
 global.RTCSctpTransport = wrtc.RTCSctpTransport;
 global.RTCSessionDescription = wrtc.RTCSessionDescription;
+// Node's `global` is not an EventTarget, so the spread below copies no event methods. Back them
+// with one so window listeners (e.g. "offline") attach instead of throwing; nothing fires in Node.
+const windowEventTarget = new EventTarget();
+
 global.window = {
     ...global,
     location: { pathname: "" },
     screen: { width: 0 },
     setInterval: global.setInterval,
+    addEventListener: windowEventTarget.addEventListener.bind(windowEventTarget),
+    removeEventListener: windowEventTarget.removeEventListener.bind(windowEventTarget),
+    dispatchEvent: windowEventTarget.dispatchEvent.bind(windowEventTarget),
 }; // make sure all the classes / setInterval are available on window for rtcstats
