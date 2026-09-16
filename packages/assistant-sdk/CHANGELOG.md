@@ -1,5 +1,11 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.110
+
+### Patch Changes
+
+- 85d03d4: Fix `TypeError: window.addEventListener is not a function` when joining a room. The polyfilled `window` is built by spreading Node's `global`, which is not an EventTarget, so it carried no event methods.
+
 ## 1.2.109
 
 ### Patch Changes
