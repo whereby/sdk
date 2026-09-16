@@ -2318,10 +2318,12 @@ export default class VegaRtcManager implements RtcManager {
         const parameters = rtpSender.getParameters();
         const encodings: RtpEncodingParametersWithScalabilityMode[] = parameters.encodings;
 
-        const changed =
-            encodings.length > 1
-                ? this._toggleSimulcastLayers(encodings, spatialLayer)
-                : this._toggleSvcLayers(encodings[0], spatialLayer);
+        let changed = false;
+        if (encodings.length > 1 && !this._webcamProducerOriginalScalabilityMode) {
+            changed = this._toggleSimulcastLayers(encodings, spatialLayer);
+        } else if (encodings.length === 1 && this._webcamProducerOriginalScalabilityMode) {
+            changed = this._toggleSvcLayers(encodings[0], spatialLayer);
+        }
 
         if (!changed) return;
 
