@@ -9,6 +9,7 @@ import {
     LiveTranscriptionState,
     LocalParticipantState,
     LocalScreenshareStatus,
+    LocalScreenshareState,
     RemoteParticipantState,
 } from "./types";
 
@@ -28,7 +29,9 @@ export const LIVE_TRANSCRIPTION_STATUS_CHANGED = "live-transcription:status-chan
 export const CONNECTION_ERROR_CHANGED = "connection:error-changed";
 /* Local participant events */
 export const LOCAL_PARTICIPANT_CHANGED = "local-participant:changed";
+/* Local screenshare events */
 export const LOCAL_SCREENSHARE_STATUS_CHANGED = "local-screenshare:status-changed";
+export const LOCAL_SCREENSHARE_CHANGED = "local-screenshare:state-changed";
 /* Remote participant events */
 export const REMOTE_PARTICIPANTS_CHANGED = "remote-participants:changed";
 /* Screen share events */
@@ -71,6 +74,7 @@ export type RoomConnectionEvents = {
     [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
     [LOCAL_SCREENSHARE_STATUS_CHANGED]: [status?: LocalScreenshareStatus];
+    [LOCAL_SCREENSHARE_CHANGED]: [status: LocalScreenshareState | undefined];
     [MICROPHONE_STATE_CHANGED]: [isMicrophoneEnabled: boolean];
     [REMOTE_PARTICIPANTS_CHANGED]: [participants: RemoteParticipantState[]];
     [SCREENSHARE_STARTED]: [screenshare: Screenshare];

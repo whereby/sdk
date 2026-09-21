@@ -65,6 +65,7 @@ import type {
     LiveTranscriptionState,
     LocalParticipantState,
     LocalScreenshareStatus,
+    LocalScreenshareState,
     RemoteParticipantState,
     RoomConnectionState,
     RoomJoinedSuccess,
@@ -83,6 +84,7 @@ import {
     LIVE_CAPTIONS_STATUS_CHANGED,
     LIVE_TRANSCRIPTION_STATUS_CHANGED,
     LOCAL_PARTICIPANT_CHANGED,
+    LOCAL_SCREENSHARE_CHANGED,
     LOCAL_SCREENSHARE_STATUS_CHANGED,
     MICROPHONE_STATE_CHANGED,
     REMOTE_PARTICIPANTS_CHANGED,
@@ -119,6 +121,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private liveTranscriptionSubscribers = new Set<(status: LiveTranscriptionState | undefined) => void>();
     private localParticipantSubscribers = new Set<(participant?: LocalParticipantState) => void>();
     private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
+    private localScreenshareSubscribers = new Set<(status: LocalScreenshareState | undefined) => void>();
     private microphoneStateSubscribers = new Set<(isMicrophoneEnabled: boolean) => void>();
     private remoteParticipantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
     private screenshareSubscribers = new Set<(screenshares: ScreenshareState[]) => void>();
@@ -192,6 +195,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.localScreenshareStatus !== previousState.localScreenshareStatus) {
             this.localScreenshareStatusSubscribers.forEach((cb) => cb(state.localScreenshareStatus));
             this.emit(LOCAL_SCREENSHARE_STATUS_CHANGED, state.localScreenshareStatus);
+        }
+
+        if (state.localScreenshare !== previousState.localScreenshare) {
+            this.localScreenshareSubscribers.forEach((cb) => cb(state.localScreenshare));
+            this.emit(LOCAL_SCREENSHARE_CHANGED, state.localScreenshare);
         }
 
         if (state.localParticipant !== previousState.localParticipant) {
@@ -330,9 +338,17 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         return () => this.liveStreamSubscribers.delete(callback);
     }
 
+    /**
+     * @deprecated Use 'subscribeToLocalScreenshare' instead
+     */
     public subscribeToLocalScreenshareStatus(callback: (status?: LocalScreenshareStatus) => void): () => void {
         this.localScreenshareStatusSubscribers.add(callback);
         return () => this.localScreenshareStatusSubscribers.delete(callback);
+    }
+
+    public subscribeToLocalScreenshare(callback: (status: LocalScreenshareState | undefined) => void): () => void {
+        this.localScreenshareSubscribers.add(callback);
+        return () => this.localScreenshareSubscribers.delete(callback);
     }
 
     public subscribeToLocalParticipant(callback: (participant?: LocalParticipantState) => void): () => void {
@@ -936,6 +952,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.liveStreamSubscribers.clear();
         this.localParticipantSubscribers.clear();
         this.localScreenshareStatusSubscribers.clear();
+        this.localScreenshareSubscribers.clear();
         this.microphoneStateSubscribers.clear();
         this.remoteParticipantsSubscribers.clear();
         this.screenshareSubscribers.clear();

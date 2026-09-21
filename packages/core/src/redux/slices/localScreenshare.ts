@@ -6,15 +6,17 @@ import { localMediaStopped } from "./localMedia";
 import { getDisplayMedia } from "@whereby.com/media";
 
 export interface LocalScreenshareState {
-    status: "inactive" | "starting" | "active";
-    stream: MediaStream | null;
-    error: unknown | null;
+    status: "inactive" | "starting" | "active" | "error";
+    stream?: MediaStream;
+    error?: unknown;
+    startedAt?: number;
 }
 
 export const localScreenshareSliceInitialState: LocalScreenshareState = {
     status: "inactive",
-    stream: null,
-    error: null,
+    stream: undefined,
+    error: undefined,
+    startedAt: undefined,
 };
 
 /**
@@ -30,7 +32,8 @@ export const localScreenshareSlice = createSlice({
             return {
                 ...state,
                 status: "inactive",
-                stream: null,
+                stream: undefined,
+                startedAt: undefined,
             };
         },
     },
@@ -46,14 +49,15 @@ export const localScreenshareSlice = createSlice({
                 ...state,
                 status: "active",
                 stream,
+                startedAt: new Date().getTime(),
             };
         });
         builder.addCase(doStartScreenshare.rejected, (state, { payload }) => {
             return {
                 ...state,
                 error: payload,
-                status: "inactive",
-                stream: null,
+                status: "error",
+                stream: undefined,
             };
         });
     },
@@ -126,6 +130,8 @@ export const doStopScreenshare = createRoomConnectedThunk(() => (dispatch, getSt
 export const selectLocalScreenshareRaw = (state: RootState) => state.localScreenshare;
 export const selectLocalScreenshareStatus = (state: RootState) => state.localScreenshare.status;
 export const selectLocalScreenshareStream = (state: RootState) => state.localScreenshare.stream;
+export const selectLocalScreenshareStartedAt = (state: RootState) => state.localScreenshare.startedAt;
+export const selectLocalScreenshareError = (state: RootState) => state.localScreenshare.error;
 
 /**
  * Reactors
