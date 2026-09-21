@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.1.0
+
+### Minor Changes
+
+- fee01ea: Add bandwidth test token retrieval and send as bandwidth test claim to media servers when starting bandwidth tests
+
 ## 11.0.0
 
 ### Major Changes
