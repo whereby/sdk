@@ -2321,7 +2321,7 @@ export default class VegaRtcManager implements RtcManager {
         let changed = false;
         if (encodings.length > 1) {
             changed = this._toggleSimulcastLayers(encodings, spatialLayer);
-    -    } else if (encodings.length === 1 && this._webcamProducerOriginalScalabilityMode) {
+        } else if (encodings.length === 1 && this._webcamProducerOriginalScalabilityMode) {
             changed = this._toggleSvcLayers(encodings[0], spatialLayer);
         }
 
