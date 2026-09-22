@@ -5,6 +5,8 @@ import adapterRaw from "webrtc-adapter";
 import rtcstats from "@whereby.com/rtcstats";
 import { v4 as uuidv4 } from "uuid";
 
+import { anyWindow } from "../utils/environment";
+
 // @ts-ignore
 const adapter = adapterRaw.default ?? adapterRaw;
 
@@ -118,7 +120,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             ws?.close();
             connection.connected = true;
             connection.attemptedConnectedAtLeastOnce = true;
-            ws = new WebSocket(wsURL + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
+            ws = new WebSocket(wsURL + (anyWindow()?.location.pathname ?? ""), RTCSTATS_PROTOCOL_VERSION);
 
             ws.onerror = (e: Event) => {
                 connection.connected = false;
@@ -192,7 +194,7 @@ const noopServer = {
 // node context
 let server: ReturnType<typeof rtcStatsConnection> | typeof noopServer;
 
-if (typeof window !== "undefined") {
+if (anyWindow()) {
     server = rtcStatsConnection(RTCSTATS_URL || "wss://rtcstats.srv.whereby.com");
     const stats = rtcstats(server.trace, 10000, [""]);
     // on node clients this function can be undefined

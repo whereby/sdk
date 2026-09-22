@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- Browser-only: renders into a <canvas> attached to document.body. */
 import { Device } from "mediasoup-client";
 import EventEmitter from "events";
 import VegaConnection from "./VegaConnection";
