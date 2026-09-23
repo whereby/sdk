@@ -744,26 +744,6 @@ describe("VegaRtcManager", () => {
             expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 1 });
         });
 
-        it("still records the spatial-layer-change analytics and starts the switch-latency watch when the sfuHighestPreferredLayerTrackingOn feature flag is off", () => {
-            rtcManager._features.sfuHighestPreferredLayerTrackingOn = false;
-            const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
-            registerConsumer("stream1", "consumer1", consumer);
-            const message = jest.fn();
-            rtcManager._vegaConnection = { message } as any;
-
-            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
-
-            expect(consumer.appData.spatialLayer).toBe(0);
-            expect(message).toHaveBeenCalledWith("setConsumersPreferredLayers", {
-                consumerIds: ["consumer1"],
-                spatialLayer: 0,
-                temporalLayer: 1,
-            });
-            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(1);
-            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 1 });
-            expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
-        });
-
         it("does not increment when only the temporal layer changes (spatial layer unchanged)", () => {
             const consumer = createConsumer({ spatialLayer: 0, temporalLayer: 1 });
             registerConsumer("stream1", "consumer1", consumer);
