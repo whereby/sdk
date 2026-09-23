@@ -499,17 +499,15 @@ describe("VegaRtcManager", () => {
                 spatialLayer: 1,
             });
 
-            await Promise.resolve();
-            await Promise.resolve();
-            await Promise.resolve();
+            const flushPromises = () => new Promise(jest.requireActual("timers").setImmediate);
+            await flushPromises();
 
             expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
             expect(setParameters).toHaveBeenCalledTimes(1);
 
             resolveSetParameters!();
             await firstCall;
-            await Promise.resolve();
-            await Promise.resolve();
+            await flushPromises();
 
             resolveSetParameters!();
             await secondCall;
