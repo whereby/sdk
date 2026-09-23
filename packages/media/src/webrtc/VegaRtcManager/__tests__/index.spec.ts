@@ -744,7 +744,7 @@ describe("VegaRtcManager", () => {
             expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 1 });
         });
 
-        it("does not increment when only the temporal layer changes (spatial layer unchanged)", () => {
+        it("does not increment numPreferredSpatialLayerChanges when only the temporal layer changes (spatial layer unchanged)", () => {
             const consumer = createConsumer({ spatialLayer: 0, temporalLayer: 1 });
             registerConsumer("stream1", "consumer1", consumer);
 
@@ -764,7 +764,7 @@ describe("VegaRtcManager", () => {
             expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({});
         });
 
-        it("does not increment, or send a message, when nothing changes", () => {
+        it("does not increment numPreferredSpatialLayerChanges, or send a message, when nothing changes", () => {
             const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
             registerConsumer("stream1", "consumer1", consumer);
             const message = jest.fn();
