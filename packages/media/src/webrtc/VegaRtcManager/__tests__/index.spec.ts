@@ -1,4 +1,5 @@
 import VegaRtcManager from "../";
+import { LOWEST_SVC_LAYER_MAX_BITRATE } from "../utils";
 import { getTopSpatialLayer } from "../utils";
 import * as StatsMonitor from "../../stats/StatsMonitor";
 
@@ -652,7 +653,7 @@ describe("VegaRtcManager", () => {
                 });
 
                 expect(parameters.encodings).toEqual([
-                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: LOWEST_SVC_LAYER_MAX_BITRATE },
                 ]);
                 expect(setParameters).toHaveBeenCalledWith(parameters);
             });
@@ -671,7 +672,7 @@ describe("VegaRtcManager", () => {
                     spatialLayer: 0,
                 });
                 expect(parameters.encodings).toEqual([
-                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: LOWEST_SVC_LAYER_MAX_BITRATE },
                 ]);
             });
 
@@ -683,7 +684,7 @@ describe("VegaRtcManager", () => {
                     spatialLayer: 0,
                 });
                 expect(parameters.encodings).toEqual([
-                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: 100_000 },
+                    { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: LOWEST_SVC_LAYER_MAX_BITRATE },
                 ]);
 
                 await rtcManager._onChangedHighestPreferredLayer({

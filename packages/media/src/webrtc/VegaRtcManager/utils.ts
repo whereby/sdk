@@ -100,7 +100,7 @@ export function getTopSpatialLayer(encodings: { scalabilityMode?: string }[] | u
     return spatialLayers > 1 ? spatialLayers - 1 : undefined;
 }
 
-const LOWEST_SVC_LAYER_MAX_BITRATE = 100_000;
+export const LOWEST_SVC_LAYER_MAX_BITRATE = 100_000;
 
 export function getReducedSvcEncodingParams(originalScalabilityMode: string | undefined, spatialLayer: number) {
     const match = SCALABILITY_MODE_REGEX.exec(originalScalabilityMode || "");

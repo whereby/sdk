@@ -1,3 +1,4 @@
+import { LOWEST_SVC_LAYER_MAX_BITRATE } from "../utils";
 import { Producer } from "mediasoup-client/lib/Producer";
 import {
     addProducerCpuOveruseWatch,
@@ -161,11 +162,11 @@ describe("utils", () => {
             originalScalabilityMode | spatialLayer | scalabilityMode | scaleResolutionDownBy | maxBitrate
             ${"L3T2"}               | ${2}         | ${"L3T2"}       | ${1}                  | ${undefined}
             ${"L3T2"}               | ${1}         | ${"L2T2"}       | ${2}                  | ${undefined}
-            ${"L3T2"}               | ${0}         | ${"L1T2"}       | ${4}                  | ${100_000}
-            ${"L2T2"}               | ${0}         | ${"L1T2"}       | ${2}                  | ${100_000}
+            ${"L3T2"}               | ${0}         | ${"L1T2"}       | ${4}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
+            ${"L2T2"}               | ${0}         | ${"L1T2"}       | ${2}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
             ${"S3T3"}               | ${1}         | ${"S2T3"}       | ${2}                  | ${undefined}
             ${"L3T3_KEY"}           | ${1}         | ${"L2T3_KEY"}   | ${2}                  | ${undefined}
-            ${"L1T3"}               | ${0}         | ${"L1T3"}       | ${1}                  | ${100_000}
+            ${"L1T3"}               | ${0}         | ${"L1T3"}       | ${1}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
         `(
             "reduces $originalScalabilityMode to $scalabilityMode scaled down by $scaleResolutionDownBy (maxBitrate $maxBitrate) when the preferred spatial layer is $spatialLayer",
             ({ originalScalabilityMode, spatialLayer, scalabilityMode, scaleResolutionDownBy, maxBitrate }) => {
@@ -189,12 +190,12 @@ describe("utils", () => {
             expect(getReducedSvcEncodingParams("L3T2", -1)).toEqual({
                 scalabilityMode: "L1T2",
                 scaleResolutionDownBy: 4,
-                maxBitrate: 100_000,
+                maxBitrate: LOWEST_SVC_LAYER_MAX_BITRATE,
             });
         });
 
         it("caps maxBitrate only when the lowest layer is the only one preferred, undefined (no cap) otherwise", () => {
-            expect(getReducedSvcEncodingParams("L3T2", 0)?.maxBitrate).toBe(100_000);
+            expect(getReducedSvcEncodingParams("L3T2", 0)?.maxBitrate).toBe(LOWEST_SVC_LAYER_MAX_BITRATE);
             expect(getReducedSvcEncodingParams("L3T2", 1)?.maxBitrate).toBeUndefined();
             expect(getReducedSvcEncodingParams("L3T2", 2)?.maxBitrate).toBeUndefined();
         });
