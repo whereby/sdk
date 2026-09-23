@@ -28,12 +28,22 @@ export const localScreenshareSlice = createSlice({
     initialState: localScreenshareSliceInitialState,
     reducers: {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {
+        stopScreenshare: (state, action: PayloadAction<{ stream: MediaStream }>) => {
             return {
                 ...state,
                 status: "inactive",
                 stream: undefined,
                 startedAt: undefined,
+                error: undefined,
+            };
+        },
+        stopScreenshareFailed: (state) => {
+            return {
+                ...state,
+                status: "inactive",
+                stream: undefined,
+                startedAt: undefined,
+                error: undefined,
             };
         },
     },
@@ -42,6 +52,7 @@ export const localScreenshareSlice = createSlice({
             return {
                 ...state,
                 status: "starting",
+                error: undefined,
             };
         });
         builder.addCase(doStartScreenshare.fulfilled, (state, { payload: { stream } }) => {
@@ -50,6 +61,7 @@ export const localScreenshareSlice = createSlice({
                 status: "active",
                 stream,
                 startedAt: new Date().getTime(),
+                error: undefined,
             };
         });
         builder.addCase(doStartScreenshare.rejected, (state, { payload }) => {
@@ -116,6 +128,7 @@ export const doStopScreenshare = createRoomConnectedThunk(() => (dispatch, getSt
     const screenshareStream = selectLocalScreenshareStream(state);
 
     if (!screenshareStream) {
+        dispatch(localScreenshareSlice.actions.stopScreenshareFailed());
         return;
     }
 
