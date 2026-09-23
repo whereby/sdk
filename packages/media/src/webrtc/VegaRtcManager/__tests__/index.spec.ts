@@ -972,8 +972,8 @@ describe("VegaRtcManager", () => {
         });
 
         it("accumulates totalBytesSent from the delta of an outbound ssrc's byteCount", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 1000 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 2500 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 1000 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 2500 }));
 
             expect(rtcManager.analytics.totalBytesSent).toBe(2500);
             expect(rtcManager.analytics.totalBytesReceived).toBe(0);
@@ -981,10 +981,10 @@ describe("VegaRtcManager", () => {
 
         it("accumulates totalBytesReceived and totalPacketsLostInbound from an inbound ssrc", () => {
             rtcManager._onUpdatedStats(
-                makeStatsByView({ direction: "in", rawByteCount: 1000, rawPacketsLost: 2, jitter: 0.01 }),
+                makeStatsByView({ direction: "in", byteCount: 1000, packetsLost: 2, jitter: 0.01 }),
             );
             rtcManager._onUpdatedStats(
-                makeStatsByView({ direction: "in", rawByteCount: 1800, rawPacketsLost: 5, jitter: 0.02 }),
+                makeStatsByView({ direction: "in", byteCount: 1800, packetsLost: 5, jitter: 0.02 }),
             );
 
             expect(rtcManager.analytics.totalBytesReceived).toBe(1800);
@@ -992,16 +992,16 @@ describe("VegaRtcManager", () => {
         });
 
         it("accumulates totalPacketsLostOutbound from an outbound ssrc's remotePacketsLost", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, remotePacketsLost: 3 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, remotePacketsLost: 7 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, remotePacketsLost: 3 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, remotePacketsLost: 7 }));
 
             expect(rtcManager.analytics.totalPacketsLostOutbound).toBe(7);
             expect(rtcManager.analytics.totalPacketsLostInbound).toBe(0);
         });
 
         it("records inbound jitter samples (converted to ms) and aggregates them", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", rawByteCount: 0, jitter: 0.01 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", rawByteCount: 0, jitter: 0.03 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", byteCount: 0, jitter: 0.01 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", byteCount: 0, jitter: 0.03 }));
 
             expect(rtcManager.analytics.numInboundJitterSamples).toBe(2);
             expect(rtcManager.analytics.minInboundJitterMs).toBe(10);
@@ -1013,8 +1013,8 @@ describe("VegaRtcManager", () => {
         });
 
         it("records outbound jitter samples (converted to ms) separately from inbound", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, jitter: 0.02 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0, jitter: 0.04 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, jitter: 0.02 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, jitter: 0.04 }));
 
             expect(rtcManager.analytics.numOutboundJitterSamples).toBe(2);
             expect(rtcManager.analytics.minOutboundJitterMs).toBe(20);
@@ -1026,22 +1026,22 @@ describe("VegaRtcManager", () => {
         });
 
         it("does not record a jitter sample when no jitter value is present on the report", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 0 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", rawByteCount: 0 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", byteCount: 0 }));
 
             expect(rtcManager.analytics.numInboundJitterSamples).toBe(0);
             expect(rtcManager.analytics.numOutboundJitterSamples).toBe(0);
         });
 
         it("does not decrease totals if a cumulative counter appears to reset", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 5000 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 100 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 5000 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 100 }));
 
             expect(rtcManager.analytics.totalBytesSent).toBe(5000);
         });
 
         it("prunes a ssrc's last-seen counters once it stops appearing in stats, without losing its already-counted total", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", rawByteCount: 1000 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 1000 }));
             expect(rtcManager._lastSeenSsrcCounters.size).toBe(1);
 
             rtcManager._onUpdatedStats({});
@@ -1054,13 +1054,13 @@ describe("VegaRtcManager", () => {
             rtcManager._onUpdatedStats({
                 client1: {
                     tracks: {
-                        trackA: { ssrcs: { "1": { direction: "out", rawByteCount: 1000 } } },
+                        trackA: { ssrcs: { "1": { direction: "out", byteCount: 1000 } } },
                     },
                 },
                 client2: {
                     tracks: {
-                        trackB: { ssrcs: { "2": { direction: "in", rawByteCount: 2000 } } },
-                        trackC: { ssrcs: { "3": { direction: "in", rawByteCount: 500 } } },
+                        trackB: { ssrcs: { "2": { direction: "in", byteCount: 2000 } } },
+                        trackC: { ssrcs: { "3": { direction: "in", byteCount: 500 } } },
                     },
                 },
             });

@@ -80,8 +80,6 @@ export interface SsrcStats {
     roundTripTime?: number;
     codec?: string;
     byteCount?: number;
-    rawByteCount?: number;
-    rawPacketsLost?: number;
     kind?: string;
     ssrc?: number;
     mid?: number;

@@ -122,7 +122,7 @@ export default class VegaRtcManager implements RtcManager {
     _preferredLayerSwitchLatenciesMs: number[];
     _preferredLayerSwitchWatches: Map<string, { stop: () => void }>;
     _statsSubscription: { stop: () => void };
-    _lastSeenSsrcCounters: Map<string, { rawByteCount: number; rawPacketsLost: number; remotePacketsLost: number }>;
+    _lastSeenSsrcCounters: Map<string, { byteCount: number; packetsLost: number; remotePacketsLost: number }>;
     _inboundJitterSamplesMs: number[];
     _outboundJitterSamplesMs: number[];
     _webcamPaused: any;
@@ -1938,15 +1938,15 @@ export default class VegaRtcManager implements RtcManager {
                     seenKeys.add(key);
 
                     const previous = this._lastSeenSsrcCounters.get(key) || {
-                        rawByteCount: 0,
-                        rawPacketsLost: 0,
+                        byteCount: 0,
+                        packetsLost: 0,
                         remotePacketsLost: 0,
                     };
 
-                    const rawByteCount = ssrcMetrics.rawByteCount || 0;
-                    const rawPacketsLost = ssrcMetrics.rawPacketsLost || 0;
+                    const byteCount = ssrcMetrics.byteCount || 0;
+                    const packetsLost = ssrcMetrics.packetsLost || 0;
                     const remotePacketsLost = ssrcMetrics.remotePacketsLost || 0;
-                    const byteCountDelta = Math.max(0, rawByteCount - previous.rawByteCount);
+                    const byteCountDelta = Math.max(0, byteCount - previous.byteCount);
 
                     if (ssrcMetrics.direction === "out") {
                         this.analytics.totalBytesSent += byteCountDelta;
@@ -1960,14 +1960,14 @@ export default class VegaRtcManager implements RtcManager {
                         }
                     } else if (ssrcMetrics.direction === "in") {
                         this.analytics.totalBytesReceived += byteCountDelta;
-                        this.analytics.totalPacketsLostInbound += Math.max(0, rawPacketsLost - previous.rawPacketsLost);
+                        this.analytics.totalPacketsLostInbound += Math.max(0, packetsLost - previous.packetsLost);
 
                         if (typeof ssrcMetrics.jitter === "number") {
                             this._recordJitterSample("inbound", ssrcMetrics.jitter * 1000);
                         }
                     }
 
-                    this._lastSeenSsrcCounters.set(key, { rawByteCount, rawPacketsLost, remotePacketsLost });
+                    this._lastSeenSsrcCounters.set(key, { byteCount, packetsLost, remotePacketsLost });
                 });
             });
         });
