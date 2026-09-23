@@ -41,6 +41,7 @@ import {
     doStopLiveCaptions,
     doStopLiveTranscription,
     doStopScreenshare,
+    doRequestScreenshareEnable,
     selectNotificationsEmitter,
     setDisplayName,
     signalEvents,
@@ -606,6 +607,14 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     }
 
     /**
+     * Ask a participant to share their screen.
+     * @param participantId - The ID of the participant to ask.
+     */
+    public askToTurnOnScreenshare(participantId: string) {
+        this.store.dispatch(doRequestScreenshareEnable({ clientId: participantId, enable: true }));
+    }
+
+    /**
      * Accept a waiting participant.
      * @param participantId - The ID of the participant to accept.
      */
@@ -686,6 +695,14 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public stopScreenshare() {
         this.store.dispatch(doStopScreenshare());
+    }
+
+    /**
+     * Stop participant screenshare.
+     * @param participantId - The ID of the participant to stop screensharing.
+     */
+    public stopParticipantScreenshare(participantId: string) {
+        this.store.dispatch(doRequestScreenshareEnable({ clientId: participantId, enable: false }));
     }
 
     /**

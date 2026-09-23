@@ -419,6 +419,11 @@ export interface VideoEnableRequestedEvent {
     enable: boolean;
 }
 
+export interface ScreenshareEnableRequestedEvent {
+    requestedByClientId: string;
+    enable: boolean;
+}
+
 export interface SpotlightAddedEvent {
     clientId: string;
     streamId: string;
@@ -483,6 +488,7 @@ export interface SignalEvents {
     room_session_ended: RoomSessionEndedEvent;
     screenshare_started: ScreenshareStartedEvent;
     screenshare_stopped: ScreenshareStoppedEvent;
+    screenshare_enable_requested: ScreenshareEnableRequestedEvent;
     spotlight_added: SpotlightAddedEvent;
     spotlight_removed: SpotlightRemovedEvent;
     streaming_stopped: void;
@@ -540,6 +546,11 @@ export interface VideoEnableRequest {
     enable: boolean;
 }
 
+export interface ScreenshareEnableRequest {
+    clientId: string;
+    enable: boolean;
+}
+
 export interface AddSpotlightRequest {
     clientId: string;
     streamId: string;
@@ -586,6 +597,7 @@ export interface SignalRequests {
     request_file_upload_url: { files: { name: string; size: number; type: string }[] };
     request_audio_enable: AudioEnableRequest;
     request_video_enable: VideoEnableRequest;
+    request_screenshare_enable: ScreenshareEnableRequest;
     send_client_metadata: { type: string; payload: { displayName?: string; stickyReaction?: unknown } };
     set_lock: { locked: boolean };
     start_live_transcription: void;

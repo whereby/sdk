@@ -1,6 +1,12 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { SignalClient, RtcStreamAddedPayload, AudioEnableRequest, VideoEnableRequest } from "@whereby.com/media";
+import {
+    SignalClient,
+    RtcStreamAddedPayload,
+    AudioEnableRequest,
+    VideoEnableRequest,
+    ScreenshareEnableRequest,
+} from "@whereby.com/media";
 import { RemoteParticipant, StreamState } from "../../RoomParticipant";
 import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
@@ -10,6 +16,7 @@ import {
     selectIsAuthorizedToAskToSpeak,
     selectIsAuthorizedToRequestAudioEnable,
     selectIsAuthorizedToRequestVideoEnable,
+    selectIsAuthorizedToRequestScreenshareEnable,
 } from "./authorization";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { NON_PERSON_ROLES } from "../constants";
@@ -331,6 +338,17 @@ export const doRequestVideoEnable = createAuthorizedRoomConnectedThunk(
         const socket = selectSignalConnectionRaw(state).socket;
 
         socket?.emit("request_video_enable", payload);
+    },
+);
+
+export const doRequestScreenshareEnable = createAuthorizedRoomConnectedThunk(
+    (state) => selectIsAuthorizedToRequestScreenshareEnable(state),
+    (payload: ScreenshareEnableRequest) => (_, getState) => {
+        const state = getState();
+
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("request_screenshare_enable", payload);
     },
 );
 

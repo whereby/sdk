@@ -1,4 +1,8 @@
-import { doRequestAudioEnable, doRequestVideoEnable } from "../../slices/remoteParticipants";
+import {
+    doRequestAudioEnable,
+    doRequestVideoEnable,
+    doRequestScreenshareEnable,
+} from "../../slices/remoteParticipants";
 import { createStore, mockSignalEmit } from "../store.setup";
 import { randomString } from "../../../__mocks__/appMocks";
 
@@ -69,6 +73,43 @@ describe("actions", () => {
                 const clientId = randomString();
 
                 expect(() => store.dispatch(doRequestVideoEnable({ clientIds: [clientId], enable: false }))).toThrow(
+                    `Not authorized to perform this action`,
+                );
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe("doRequestScreenshareEnable", () => {
+        describe("when authorized", () => {
+            it("should request screenshare enable", () => {
+                const store = createStore({
+                    initialState: { authorization: { roomKey: null, roleName: "host" } },
+                    withSignalConnection: true,
+                    connectToRoom: true,
+                });
+                const clientId = randomString();
+
+                store.dispatch(doRequestScreenshareEnable({ clientId, enable: true }));
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("request_screenshare_enable", {
+                    clientId,
+                    enable: true,
+                });
+            });
+        });
+
+        describe("when not authorized", () => {
+            it("should not request video enable", () => {
+                const store = createStore({
+                    initialState: { authorization: { roomKey: null, roleName: "visitor" } },
+                    withSignalConnection: true,
+                    connectToRoom: true,
+                });
+                const clientId = randomString();
+
+                expect(() => store.dispatch(doRequestScreenshareEnable({ clientId, enable: true }))).toThrow(
                     `Not authorized to perform this action`,
                 );
 

@@ -78,8 +78,7 @@ export function useRoomConnection(
         return client.joinRoom();
     }, [client]);
     const sendChatMessage = React.useCallback(
-        (text: string, parentId?: string, isBroadcast?: boolean) =>
-            client.sendChatMessage(text, parentId, isBroadcast),
+        (text: string, parentId?: string, isBroadcast?: boolean) => client.sendChatMessage(text, parentId, isBroadcast),
         [client],
     );
     const removeChatMessage = React.useCallback(
@@ -166,14 +165,8 @@ export function useRoomConnection(
         (assignments: { [clientId: string]: string }) => client.assignBreakoutParticipants(assignments),
         [client],
     );
-    const assignAllBreakoutParticipants = React.useCallback(
-        () => client.assignAllBreakoutParticipants(),
-        [client],
-    );
-    const unassignAllBreakoutParticipants = React.useCallback(
-        () => client.unassignAllBreakoutParticipants(),
-        [client],
-    );
+    const assignAllBreakoutParticipants = React.useCallback(() => client.assignAllBreakoutParticipants(), [client]);
+    const unassignAllBreakoutParticipants = React.useCallback(() => client.unassignAllBreakoutParticipants(), [client]);
     const shuffleBreakoutParticipants = React.useCallback(() => client.shuffleBreakoutParticipants(), [client]);
     const extendBreakoutTimer = React.useCallback((seconds?: number) => client.extendBreakoutTimer(seconds), [client]);
     const stopBreakoutTimer = React.useCallback(() => client.stopBreakoutTimer(), [client]);
@@ -206,6 +199,14 @@ export function useRoomConnection(
     const disableAudioDenoiser = React.useCallback(async () => {
         await client.disableAudioDenoiser();
     }, [client]);
+    const askToTurnOnScreenshare = React.useCallback(
+        (participantId: string) => client.askToTurnOnScreenshare(participantId),
+        [client],
+    );
+    const stopParticipantScreenshare = React.useCallback(
+        (participantId: string) => client.stopParticipantScreenshare(participantId),
+        [client],
+    );
 
     const { events, ...state } = roomConnectionState;
 
@@ -266,6 +267,8 @@ export function useRoomConnection(
             clearCameraEffect,
             enableAudioDenoiser,
             disableAudioDenoiser,
+            askToTurnOnScreenshare,
+            stopParticipantScreenshare,
         },
     };
 }
