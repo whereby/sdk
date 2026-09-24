@@ -2,6 +2,8 @@ name: End-to-end Tests
 on:
     pull_request:
         branches: [main, development]
+    schedule:
+        - cron: "0 12 * * *"
 jobs:
     test:
         timeout-minutes: 60
@@ -43,10 +45,14 @@ jobs:
               run: npx playwright install --with-deps
               if: steps.playwright-cache.outputs.cache-hit != 'true'
 
+            - name: Install FFmpeg
+              run: brew install ffmpeg
+
             - name: Run Playwright tests
               run: pnpm test:e2e --cache-dir=.turbo
               env:
                   WHEREBY_API_KEY: ${{ secrets.WHEREBY_API_KEY }}
+                  ASSISTANT_KEY: ${{ secrets.ASSISTANT_KEY }}
 
             - uses: actions/upload-artifact@v4
               if: always()
