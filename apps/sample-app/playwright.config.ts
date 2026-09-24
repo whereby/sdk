@@ -10,6 +10,8 @@ dotenv.config({
     path: "../../.env",
 });
 
+const nodeOnlySpecs = /assistant\.spec\.ts/;
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -49,6 +51,7 @@ export default defineConfig({
 
         {
             name: "firefox",
+            testIgnore: nodeOnlySpecs,
             use: {
                 ...devices["Desktop Firefox"],
                 launchOptions: {
@@ -62,6 +65,7 @@ export default defineConfig({
 
         {
             name: "webkit",
+            testIgnore: nodeOnlySpecs,
             use: {
                 ...devices["Desktop Safari"],
             },

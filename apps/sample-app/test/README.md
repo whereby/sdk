@@ -34,6 +34,7 @@ endpoints as environment variables:
 REACT_APP_API_BASE_URL=<api-base-url> \
 REACT_APP_SIGNAL_BASE_URL=<signal-base-url> \
 WHEREBY_API_KEY=<local-api-key> \
+ASSISTANT_KEY=<local-assistant-key> \
 yarn test:e2e
 ```
 
