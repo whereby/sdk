@@ -4,6 +4,7 @@ import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { localMediaStopped } from "./localMedia";
 import { getDisplayMedia } from "@whereby.com/media";
+import { signalEvents } from "./signalConnection/actions";
 
 export interface LocalScreenshareState {
     status: "inactive" | "starting" | "active" | "error";
@@ -163,5 +164,18 @@ startAppListening({
         screenshareStream?.getTracks().forEach((track) => {
             track.stop();
         });
+    },
+});
+
+startAppListening({
+    actionCreator: signalEvents.screenshareEnableRequested,
+    effect: ({ payload }, { dispatch }) => {
+        const { enable } = payload;
+
+        // Only handle disable screenshare case automatically.
+        // Enable local screensharing case must be handled via `requestScreenshareEnable` notification
+        if (!enable) {
+            dispatch(doStopScreenshare());
+        }
     },
 });

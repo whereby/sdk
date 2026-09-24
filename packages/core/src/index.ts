@@ -34,6 +34,7 @@ export type {
     RequestAudioEvent,
     ChatMessageEvent,
     RequestVideoEvent,
+    RequestScreenshareEvent,
     SignalStatusEvent,
     SignalClientEvent,
     StickyReactionEvent,

@@ -5,6 +5,7 @@ import {
     selectIsAuthorizedToKickClient,
     selectIsAuthorizedToEndMeeting,
     selectIsAuthorizedToRequestAudioEnable,
+    selectIsAuthorizedToRequestScreenshareEnable,
 } from "../authorization";
 import { signalEvents } from "../signalConnection/actions";
 import { doAppStart } from "../app";
@@ -158,6 +159,21 @@ describe("authorizationSlice", () => {
                 "should return $expectedResult when localParticipantRole=$localParticipantRole",
                 ({ localParticipantRole, expectedResult }) => {
                     expect(selectIsAuthorizedToRequestAudioEnable.resultFunc(localParticipantRole)).toEqual(
+                        expectedResult,
+                    );
+                },
+            );
+        });
+
+        describe("selectIsAuthorizedToRequestScreenshareEnable", () => {
+            it.each`
+                localParticipantRole | expectedResult
+                ${"visitor"}         | ${false}
+                ${"host"}            | ${true}
+            `(
+                "should return $expectedResult when localParticipantRole=$localParticipantRole",
+                ({ localParticipantRole, expectedResult }) => {
+                    expect(selectIsAuthorizedToRequestScreenshareEnable.resultFunc(localParticipantRole)).toEqual(
                         expectedResult,
                     );
                 },

@@ -14,6 +14,7 @@ import {
     StickyReactionEvent,
     NotificationEvents,
     RequestVideoEvent,
+    RequestScreenshareEvent,
     LiveCaptionsState,
     InitialMuteStates,
 } from "@whereby.com/core";
@@ -63,7 +64,6 @@ export default function VideoExperience({
     const [chatMessageParent, setChatMessageParent] = useState("");
     const [chatBroadcast, setChatBroadcast] = useState(false);
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
-    const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
     const [effectPresets, setEffectPresets] = useState<Array<string>>([]);
     const [audioDenoiserSupported, setAudioDenoiserSupported] = useState<boolean | null>(null);
     const [audioDenoiserOn, setAudioDenoiserOn] = useState(false);
@@ -133,6 +133,8 @@ export default function VideoExperience({
         removeSpotlight,
         turnOffParticipantCameras,
         askToTurnOnCamera,
+        askToTurnOnScreenshare,
+        stopParticipantScreenshare,
         switchCameraEffect,
         switchCameraEffectCustom,
         clearCameraEffect,
@@ -259,6 +261,37 @@ export default function VideoExperience({
         });
     }
 
+    function showRequestScreenshareEnableNotification({ message }: RequestScreenshareEvent) {
+        toast(
+            (t) => (
+                <div>
+                    {message}
+                    <div>
+                        <button
+                            onClick={() => {
+                                startScreenshare();
+                                toast.dismiss(t.id);
+                            }}
+                        >
+                            Start screen share
+                        </button>{" "}
+                        <button onClick={() => toast.dismiss(t.id)}>Got it</button>
+                    </div>
+                </div>
+            ),
+            {
+                id: "requestScreenshareEnable",
+                duration: Infinity,
+            },
+        );
+    }
+
+    function showRequestScreenshareDisableNotification({ message }: RequestScreenshareEvent) {
+        toast(message, {
+            id: "requestScreenshareDisable",
+        });
+    }
+
     function showSignalTroubleNotification({ message }: SignalStatusEvent) {
         toast.remove(); // clear notifications
 
@@ -333,6 +366,12 @@ export default function VideoExperience({
                     break;
                 case "requestVideoDisable":
                     showRequestVideoDisableNotification(event);
+                    break;
+                case "requestScreenshareEnable":
+                    showRequestScreenshareEnableNotification(event);
+                    break;
+                case "requestScreenshareDisable":
+                    showRequestScreenshareDisableNotification(event);
                     break;
                 case "breakoutTimerEnding":
                     toast(event.message, { id: "breakoutTimerEnding", icon: "⏳" });
@@ -599,6 +638,9 @@ export default function VideoExperience({
                     <div className="container">
                         {[localParticipant, ...remoteParticipants].map((participant, i) => {
                             const isSpotlighted = !!spotlightedParticipants.find((p) => p.id === participant?.id);
+                            const isScreensharing = screenshares.find(
+                                ({ participantId }) => participantId === participant?.id,
+                            );
 
                             return (
                                 <div className="participantWrapper" key={participant?.id || i}>
@@ -688,6 +730,23 @@ export default function VideoExperience({
                                                         >
                                                             Turn {participant.isVideoEnabled ? "off" : "on"} camera
                                                         </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (isScreensharing) {
+                                                                    stopParticipantScreenshare(participant.id);
+                                                                } else {
+                                                                    askToTurnOnScreenshare(participant.id);
+                                                                }
+                                                            }}
+                                                            className={
+                                                                localParticipant?.roleName !== "host"
+                                                                    ? "hostControlActionDisallowed"
+                                                                    : ""
+                                                            }
+                                                        >
+                                                            {isScreensharing ? "Turn off" : "Ask to turn on"} screen
+                                                            share
+                                                        </button>
                                                     </div>
                                                 ) : null}
                                                 {showHostControls ? (
@@ -749,12 +808,11 @@ export default function VideoExperience({
                         <button onClick={() => toggleRaiseHand()}>Toggle raise hand</button>
                         <button
                             onClick={() => {
-                                if (isLocalScreenshareActive) {
+                                if (state.localScreenshare?.startedAt) {
                                     stopScreenshare();
                                 } else {
                                     startScreenshare();
                                 }
-                                setIsLocalScreenshareActive((prev) => !prev);
                             }}
                         >
                             Toggle screenshare

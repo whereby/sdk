@@ -15,6 +15,7 @@ import {
     NotificationEvents,
     NotificationEventMap,
     RequestAudioEventProps,
+    RequestScreenshareEventProps,
     ChatMessageEventProps,
     StickyReactionEventProps,
     SignalStatusEventProps,
@@ -189,6 +190,39 @@ startAppListening({
                     message: enable
                         ? `${client.displayName} has requested for you to start video`
                         : `${client.displayName} has stopped your video`,
+                    props: {
+                        client,
+                        enable,
+                    },
+                }),
+            ),
+        );
+    },
+});
+
+startAppListening({
+    actionCreator: signalEvents.screenshareEnableRequested,
+    effect: ({ payload }, { dispatch, getState }) => {
+        const { enable, requestedByClientId } = payload;
+
+        const state = getState();
+        const client = selectRemoteParticipants(state).find(({ id }) => id === requestedByClientId);
+
+        if (!client) {
+            console.warn("Could not find remote client that requested a local screenshare change");
+            return;
+        }
+
+        dispatch(
+            doSetNotification(
+                createNotificationEvent<
+                    "requestScreenshareEnable" | "requestScreenshareDisable",
+                    RequestScreenshareEventProps
+                >({
+                    type: enable ? "requestScreenshareEnable" : "requestScreenshareDisable",
+                    message: enable
+                        ? `${client.displayName} has requested for you to share your screen`
+                        : `${client.displayName} has stopped your screen share`,
                     props: {
                         client,
                         enable,

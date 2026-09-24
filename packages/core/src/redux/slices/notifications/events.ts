@@ -23,6 +23,16 @@ export interface RequestVideoEventProps {
 
 export type RequestVideoEvent = NotificationEvent<"requestVideoEnable" | "requestVideoDisable", RequestVideoEventProps>;
 
+export interface RequestScreenshareEventProps {
+    client: RemoteParticipant;
+    enable: boolean;
+}
+
+export type RequestScreenshareEvent = NotificationEvent<
+    "requestScreenshareEnable" | "requestScreenshareDisable",
+    RequestScreenshareEventProps
+>;
+
 export interface ChatMessageEventProps {
     client: RemoteParticipant;
     chatMessage: ChatMessage;
@@ -67,6 +77,8 @@ type NotificationEventTypes = {
     ["clientUnableToJoinFullRoom"]: SignalClientEvent;
     ["requestVideoEnable"]: RequestVideoEvent;
     ["requestVideoDisable"]: RequestVideoEvent;
+    ["requestScreenshareEnable"]: RequestScreenshareEvent;
+    ["requestScreenshareDisable"]: RequestScreenshareEvent;
     ["breakoutTimerEnding"]: BreakoutTimerEvent;
     ["breakoutTimerEnded"]: BreakoutTimerEvent;
     ["breakoutTimerExtended"]: BreakoutTimerEvent;

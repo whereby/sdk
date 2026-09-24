@@ -8,6 +8,7 @@ const ROOM_ACTION_PERMISSIONS_BY_ROLE: { [permissionKey: string]: Array<RoleName
     canLockRoom: ["host"],
     canRequestAudioEnable: ["host"],
     canRequestVideoEnable: ["host"],
+    canRequestScreenshareEnable: ["host"],
     canKickClient: ["host"],
     canEndMeeting: ["host"],
     canAskToSpeak: ["host"],
@@ -97,6 +98,11 @@ export const selectIsAuthorizedToRequestAudioEnable = createSelector(
 export const selectIsAuthorizedToRequestVideoEnable = createSelector(
     selectAuthorizationRoleName,
     (localParticipantRole) => ROOM_ACTION_PERMISSIONS_BY_ROLE.canRequestVideoEnable.includes(localParticipantRole),
+);
+export const selectIsAuthorizedToRequestScreenshareEnable = createSelector(
+    selectAuthorizationRoleName,
+    (localParticipantRole) =>
+        ROOM_ACTION_PERMISSIONS_BY_ROLE.canRequestScreenshareEnable.includes(localParticipantRole),
 );
 export const selectIsAuthorizedToKickClient = createSelector(selectAuthorizationRoleName, (localParticipantRole) =>
     ROOM_ACTION_PERMISSIONS_BY_ROLE.canKickClient.includes(localParticipantRole),

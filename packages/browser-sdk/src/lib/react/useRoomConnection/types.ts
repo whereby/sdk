@@ -82,4 +82,6 @@ export interface RoomConnectionActions {
     clearCameraEffect: () => Promise<void>;
     enableAudioDenoiser: () => Promise<void>;
     disableAudioDenoiser: () => Promise<void>;
+    askToTurnOnScreenshare: (participantId: string) => void;
+    stopParticipantScreenshare: (participantId: string) => void;
 }

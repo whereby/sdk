@@ -32,6 +32,7 @@ import {
     RoomSessionEndedEvent,
     ScreenshareStartedEvent,
     ScreenshareStoppedEvent,
+    ScreenshareEnableRequestedEvent,
     ServerSocket,
     SpotlightAddedEvent,
     SpotlightRemovedEvent,
@@ -87,6 +88,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     );
     socket.on("screenshare_stopped", (payload: ScreenshareStoppedEvent) =>
         dispatch(signalEvents.screenshareStopped(payload)),
+    );
+    socket.on("screenshare_enable_requested", (payload: ScreenshareEnableRequestedEvent) =>
+        dispatch(signalEvents.screenshareEnableRequested(payload)),
     );
     socket.on("cloud_recording_started", (payload: CloudRecordingStartedEvent) =>
         dispatch(signalEvents.cloudRecordingStarted(payload)),
