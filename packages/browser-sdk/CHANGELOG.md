@@ -1,5 +1,19 @@
 # @whereby.com/browser-sdk
 
+## 3.31.0
+
+### Minor Changes
+
+- d859106: Add ability to ask participant to screen share and/or turn off participant screenshares (host-only controls)
+
+### Patch Changes
+
+- Updated dependencies [d859106]
+- Updated dependencies [d859106]
+- Updated dependencies [ac6abfc]
+    - @whereby.com/media@11.1.1
+    - @whereby.com/core@1.21.0
+
 ## 3.30.3
 
 ### Patch Changes
