@@ -1,5 +1,18 @@
 # @whereby.com/core
 
+## 1.21.0
+
+### Minor Changes
+
+- d859106: Add ability to ask participant to screen share and/or turn off participant screenshares (host-only controls)
+- ac6abfc: Add 'subscribeToLocalScreenshare' and deprecate 'subscribeToLocalScreenshareStatus' in Core API RoomConnection client API
+
+### Patch Changes
+
+- Updated dependencies [d859106]
+    - @whereby.com/media@11.1.1
+    - @whereby.com/audio-denoiser@1.0.19
+
 ## 1.20.3
 
 ### Patch Changes

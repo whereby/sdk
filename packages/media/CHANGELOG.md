@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.1.1
+
+### Patch Changes
+
+- d859106: Add screenshare enable requested typescript definitions
+
 ## 11.1.0
 
 ### Minor Changes
