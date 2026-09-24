@@ -39,6 +39,7 @@ describe("actions", () => {
         expect(diff(before, after)).toEqual({
             status: "active",
             stream,
+            startedAt: expect.any(Number),
         });
     });
 
@@ -59,7 +60,7 @@ describe("actions", () => {
 
         expect(diff(before, after)).toEqual({
             status: "inactive",
-            stream: null,
+            stream: undefined,
         });
     });
 });
@@ -72,7 +73,7 @@ describe("room connection state", () => {
         mockedGetDisplayMedia.mockResolvedValue(stream);
     });
 
-    it("exposes localScreenshareStatus while screensharing", async () => {
+    it("exposes localScreenshare state while screensharing", async () => {
         const store = createStore({
             withRtcManager: true,
             connectToRoom: true,
@@ -80,6 +81,7 @@ describe("room connection state", () => {
 
         expect(selectRoomConnectionState(store.getState())).toMatchObject({
             localScreenshareStatus: undefined,
+            localScreenshare: undefined,
             localParticipant: { isScreenSharing: false },
         });
 
@@ -87,6 +89,11 @@ describe("room connection state", () => {
 
         expect(selectRoomConnectionState(store.getState())).toMatchObject({
             localScreenshareStatus: "active",
+            localScreenshare: {
+                status: "screensharing",
+                error: undefined,
+                startedAt: expect.any(Number),
+            },
             localParticipant: { isScreenSharing: true },
         });
 
@@ -94,6 +101,7 @@ describe("room connection state", () => {
 
         expect(selectRoomConnectionState(store.getState())).toMatchObject({
             localScreenshareStatus: undefined,
+            localScreenshare: undefined,
             localParticipant: { isScreenSharing: false },
         });
     });

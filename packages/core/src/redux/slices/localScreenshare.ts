@@ -6,15 +6,17 @@ import { localMediaStopped } from "./localMedia";
 import { getDisplayMedia } from "@whereby.com/media";
 
 export interface LocalScreenshareState {
-    status: "inactive" | "starting" | "active";
-    stream: MediaStream | null;
-    error: unknown | null;
+    status: "inactive" | "starting" | "active" | "error";
+    stream?: MediaStream;
+    error?: unknown;
+    startedAt?: number;
 }
 
 export const localScreenshareSliceInitialState: LocalScreenshareState = {
     status: "inactive",
-    stream: null,
-    error: null,
+    stream: undefined,
+    error: undefined,
+    startedAt: undefined,
 };
 
 /**
@@ -26,11 +28,22 @@ export const localScreenshareSlice = createSlice({
     initialState: localScreenshareSliceInitialState,
     reducers: {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {
+        stopScreenshare: (state, action: PayloadAction<{ stream: MediaStream }>) => {
             return {
                 ...state,
                 status: "inactive",
-                stream: null,
+                stream: undefined,
+                startedAt: undefined,
+                error: undefined,
+            };
+        },
+        stopScreenshareFailed: (state) => {
+            return {
+                ...state,
+                status: "inactive",
+                stream: undefined,
+                startedAt: undefined,
+                error: undefined,
             };
         },
     },
@@ -39,6 +52,7 @@ export const localScreenshareSlice = createSlice({
             return {
                 ...state,
                 status: "starting",
+                error: undefined,
             };
         });
         builder.addCase(doStartScreenshare.fulfilled, (state, { payload: { stream } }) => {
@@ -46,14 +60,16 @@ export const localScreenshareSlice = createSlice({
                 ...state,
                 status: "active",
                 stream,
+                startedAt: new Date().getTime(),
+                error: undefined,
             };
         });
         builder.addCase(doStartScreenshare.rejected, (state, { payload }) => {
             return {
                 ...state,
                 error: payload,
-                status: "inactive",
-                stream: null,
+                status: "error",
+                stream: undefined,
             };
         });
     },
@@ -112,6 +128,7 @@ export const doStopScreenshare = createRoomConnectedThunk(() => (dispatch, getSt
     const screenshareStream = selectLocalScreenshareStream(state);
 
     if (!screenshareStream) {
+        dispatch(localScreenshareSlice.actions.stopScreenshareFailed());
         return;
     }
 
@@ -126,6 +143,8 @@ export const doStopScreenshare = createRoomConnectedThunk(() => (dispatch, getSt
 export const selectLocalScreenshareRaw = (state: RootState) => state.localScreenshare;
 export const selectLocalScreenshareStatus = (state: RootState) => state.localScreenshare.status;
 export const selectLocalScreenshareStream = (state: RootState) => state.localScreenshare.stream;
+export const selectLocalScreenshareStartedAt = (state: RootState) => state.localScreenshare.startedAt;
+export const selectLocalScreenshareError = (state: RootState) => state.localScreenshare.error;
 
 /**
  * Reactors

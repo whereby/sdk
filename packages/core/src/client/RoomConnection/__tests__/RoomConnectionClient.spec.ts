@@ -228,6 +228,31 @@ describe("RoomConnectionClient", () => {
         });
     });
 
+    describe("subscribeToLocalScreenshare", () => {
+        it("triggers the local screenshare listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToLocalScreenshare(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                localScreenshare: { status: "starting" },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith({ status: "requested" });
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                localScreenshare: { status: "active" },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe("subscribeToLocalParticipant", () => {
         it("triggers the local participant listener", () => {
             const callback = jest.fn();

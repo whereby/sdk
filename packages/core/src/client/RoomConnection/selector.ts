@@ -11,7 +11,7 @@ import {
     selectWaitingParticipants,
     selectLiveTranscriptionRaw,
     selectLocalMediaStream,
-    selectLocalScreenshareStatus,
+    selectLocalScreenshareRaw,
     selectStreamingRaw,
     selectNotificationsEmitter,
     selectSpotlightedClientViews,
@@ -71,7 +71,7 @@ export const selectRoomConnectionState = createSelector(
     selectLiveTranscriptionRaw,
     selectLocalParticipantRaw,
     selectLocalMediaStream,
-    selectLocalScreenshareStatus,
+    selectLocalScreenshareRaw,
     selectRemoteParticipants,
     selectScreenshares,
     selectRoomConnectionStatus,
@@ -111,7 +111,7 @@ export const selectRoomConnectionState = createSelector(
         liveTranscription,
         localParticipant,
         localMediaStream,
-        localScreenshareStatus,
+        localScreenshare,
         remoteParticipants,
         screenshares,
         connectionStatus,
@@ -189,10 +189,24 @@ export const selectRoomConnectionState = createSelector(
                       status: liveTranscription.status,
                   }
                 : undefined,
-            localScreenshareStatus: localScreenshareStatus === "inactive" ? undefined : localScreenshareStatus,
+            localScreenshareStatus: ["starting", "active"].includes(localScreenshare.status)
+                ? (localScreenshare.status as "starting" | "active")
+                : undefined,
+            localScreenshare:
+                localScreenshare.status !== "inactive"
+                    ? {
+                          error: localScreenshare.error,
+                          startedAt: localScreenshare.startedAt,
+                          status: {
+                              starting: "requested",
+                              active: "screensharing",
+                              error: "error",
+                          }[localScreenshare.status] as "requested" | "screensharing" | "error",
+                      }
+                    : undefined,
             localParticipant: {
                 ...localParticipant,
-                isScreenSharing: localScreenshareStatus === "active",
+                isScreenSharing: localScreenshare.status === "active",
                 stream: localMediaStream,
             },
             remoteParticipants: remoteParticipants.map((participant) => ({

@@ -42,7 +42,7 @@ export interface ChatMessageState {
 }
 export type ScreenshareState = Screenshare;
 
-export type LocalScreenshareStatus = "starting" | "active";
+export type LocalScreenshareStatus = "starting" | "active" | "error";
 
 export type ChatMessage = Pick<SignalChatMessage, "id" | "senderId" | "parentId" | "timestamp" | "text" | "sig"> & {
     removed: boolean;
@@ -65,6 +65,12 @@ export type LiveCaptionsState = {
 export type LiveTranscriptionState = {
     error?: string;
     status: "transcribing" | "requested" | "error";
+    startedAt?: number;
+};
+
+export type LocalScreenshareState = {
+    error?: unknown;
+    status: "screensharing" | "requested" | "error";
     startedAt?: number;
 };
 
@@ -121,6 +127,7 @@ export interface RoomConnectionState {
     liveCaptions?: LiveCaptionsState;
     liveTranscription?: LiveTranscriptionState;
     localScreenshareStatus?: LocalScreenshareStatus;
+    localScreenshare?: LocalScreenshareState;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
