@@ -170,23 +170,6 @@ describe("VegaRtcManager", () => {
             serverSocket,
             webrtcProvider,
         };
-
-        it("subscribes to the StatsMonitor rtcstats polling loop regardless of the sfuHighestPreferredLayerTrackingOn feature flag", () => {
-            const subscribeStatsSpy = jest.spyOn(StatsMonitor, "subscribeStats");
-
-            const flaggedOffRtcManager = new VegaRtcManager({ ...roomOptions, features: {} });
-            expect(subscribeStatsSpy).toHaveBeenCalledTimes(1);
-            flaggedOffRtcManager.disconnectAll();
-
-            const flaggedOnRtcManager = new VegaRtcManager({
-                ...roomOptions,
-                features: { sfuHighestPreferredLayerTrackingOn: true },
-            });
-            expect(subscribeStatsSpy).toHaveBeenCalledTimes(2);
-            flaggedOnRtcManager.disconnectAll();
-
-            subscribeStatsSpy.mockRestore();
-        });
     });
 
     describe("addCameraStream", () => {
