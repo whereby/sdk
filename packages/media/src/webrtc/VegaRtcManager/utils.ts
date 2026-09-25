@@ -47,29 +47,23 @@ export function getLayers(
     return { spatialLayer, temporalLayer };
 }
 
-export function aggregateSamples(samples: number[]) {
-    const sorted = [...samples].sort((a, b) => a - b);
-    const sum = sorted.reduce((total, value) => total + value, 0);
-    const percentile = (p: number) => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * p) - 1)];
-
-    return {
-        count: sorted.length,
-        min: sorted[0],
-        max: sorted[sorted.length - 1],
-        avg: Math.round(sum / sorted.length),
-        p95: percentile(0.95),
-        p99: percentile(0.99),
-    };
+// tracks count/avg of a metric stream, without keeping the individual samples around
+export function createMetricStats() {
+    return { count: 0, sum: 0 };
 }
 
-export const MAX_METRIC_SAMPLES = 2000;
+export type MetricStats = ReturnType<typeof createMetricStats>;
 
-export function recordSample(samples: number[], value: number) {
-    samples.push(value);
+export function recordMetricSample(stats: MetricStats, value: number) {
+    stats.count++;
+    stats.sum += value;
+}
 
-    if (samples.length > MAX_METRIC_SAMPLES * 2) {
-        samples.splice(0, samples.length - MAX_METRIC_SAMPLES);
-    }
+export function aggregateMetricStats(stats: MetricStats) {
+    return {
+        count: stats.count,
+        avg: stats.count ? Math.round(stats.sum / stats.count) : undefined,
+    };
 }
 
 export function getNumberOfActiveVideos(consumers: any) {

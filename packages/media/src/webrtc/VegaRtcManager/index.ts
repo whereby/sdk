@@ -24,13 +24,15 @@ import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
 import {
     addProducerCpuOveruseWatch,
-    aggregateSamples,
+    aggregateMetricStats,
+    createMetricStats,
     getLayers,
     getNumberOfActiveVideos,
     getNumberOfTemporalLayers,
     getReducedSvcEncodingParams,
     getTopSpatialLayer,
-    recordSample,
+    MetricStats,
+    recordMetricSample,
 } from "./utils";
 import { ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
@@ -119,12 +121,11 @@ export default class VegaRtcManager implements RtcManager {
     _webcamProducerHighestPreferredLayer: number | undefined;
     _highestPreferredLayerUpdateQueue: Promise<void>;
     _webcamProducerPromise: any;
-    _preferredLayerSwitchLatenciesMs: number[];
+    _preferredLayerSwitchLatencyStats: MetricStats;
     _preferredLayerSwitchWatches: Map<string, { stop: () => void }>;
     _statsSubscription: { stop: () => void };
-    _lastSeenSsrcCounters: Map<string, { byteCount: number; packetsLost: number; remotePacketsLost: number }>;
-    _inboundJitterSamplesMs: number[];
-    _outboundJitterSamplesMs: number[];
+    _lastSeenSsrcCounters: Map<string, { remotePacketsLost: number }>;
+    _outboundJitterStats: MetricStats;
     _webcamPaused: any;
     _screenVideoProducer: any;
     _screenVideoProducerPromise: any;
@@ -302,35 +303,17 @@ export default class VegaRtcManager implements RtcManager {
             numHighestPreferredLayerChanges: 0,
             highestPreferredLayerChangeCounts: {},
             numPreferredLayerSwitchLatencySamples: 0,
-            minPreferredLayerSwitchLatencyMs: undefined,
-            maxPreferredLayerSwitchLatencyMs: undefined,
             avgPreferredLayerSwitchLatencyMs: undefined,
-            p95PreferredLayerSwitchLatencyMs: undefined,
-            p99PreferredLayerSwitchLatencyMs: undefined,
-            totalBytesSent: 0,
-            totalBytesReceived: 0,
-            totalPacketsLostInbound: 0,
-            totalPacketsLostOutbound: 0,
-            numInboundJitterSamples: 0,
-            minInboundJitterMs: undefined,
-            maxInboundJitterMs: undefined,
-            avgInboundJitterMs: undefined,
-            p95InboundJitterMs: undefined,
-            p99InboundJitterMs: undefined,
+            webcamPacketsLostOutbound: 0,
             numOutboundJitterSamples: 0,
-            minOutboundJitterMs: undefined,
-            maxOutboundJitterMs: undefined,
             avgOutboundJitterMs: undefined,
-            p95OutboundJitterMs: undefined,
-            p99OutboundJitterMs: undefined,
         };
 
-        this._preferredLayerSwitchLatenciesMs = [];
+        this._preferredLayerSwitchLatencyStats = createMetricStats();
         this._preferredLayerSwitchWatches = new Map();
 
         this._lastSeenSsrcCounters = new Map();
-        this._inboundJitterSamplesMs = [];
-        this._outboundJitterSamplesMs = [];
+        this._outboundJitterStats = createMetricStats();
         this._statsSubscription = subscribeStats({
             onUpdatedStats: (statsByView) => this._onUpdatedStats(statsByView),
         });
@@ -1917,57 +1900,41 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _recordPreferredLayerSwitchLatency(latencyMs: number) {
-        recordSample(this._preferredLayerSwitchLatenciesMs, latencyMs);
+        recordMetricSample(this._preferredLayerSwitchLatencyStats, latencyMs);
 
-        const { count, min, max, avg, p95, p99 } = aggregateSamples(this._preferredLayerSwitchLatenciesMs);
+        const { count, avg } = aggregateMetricStats(this._preferredLayerSwitchLatencyStats);
         this.analytics.numPreferredLayerSwitchLatencySamples = count;
-        this.analytics.minPreferredLayerSwitchLatencyMs = min;
-        this.analytics.maxPreferredLayerSwitchLatencyMs = max;
         this.analytics.avgPreferredLayerSwitchLatencyMs = avg;
-        this.analytics.p95PreferredLayerSwitchLatencyMs = p95;
-        this.analytics.p99PreferredLayerSwitchLatencyMs = p99;
     }
 
     _onUpdatedStats(statsByView: Record<string, any>) {
         const seenKeys = new Set<string>();
+        const webcamProducerTrackId = this._webcamProducer?.track?.id;
 
         Object.entries(statsByView).forEach(([clientId, viewStats]: [string, any]) => {
             Object.entries(viewStats.tracks || {}).forEach(([trackId, trackStats]: [string, any]) => {
+                if (trackId !== webcamProducerTrackId) return;
+
                 Object.entries(trackStats.ssrcs || {}).forEach(([ssrc, ssrcMetrics]: [string, any]) => {
+                    if (ssrcMetrics.direction !== "out") return;
+
                     const key = `${clientId}:${trackId}:${ssrc}`;
                     seenKeys.add(key);
 
-                    const previous = this._lastSeenSsrcCounters.get(key) || {
-                        byteCount: 0,
-                        packetsLost: 0,
-                        remotePacketsLost: 0,
-                    };
+                    const previous = this._lastSeenSsrcCounters.get(key) || { remotePacketsLost: 0 };
 
-                    const byteCount = ssrcMetrics.byteCount || 0;
-                    const packetsLost = ssrcMetrics.packetsLost || 0;
                     const remotePacketsLost = ssrcMetrics.remotePacketsLost || 0;
-                    const byteCountDelta = Math.max(0, byteCount - previous.byteCount);
 
-                    if (ssrcMetrics.direction === "out") {
-                        this.analytics.totalBytesSent += byteCountDelta;
-                        this.analytics.totalPacketsLostOutbound += Math.max(
-                            0,
-                            remotePacketsLost - previous.remotePacketsLost,
-                        );
+                    this.analytics.webcamPacketsLostOutbound += Math.max(
+                        0,
+                        remotePacketsLost - previous.remotePacketsLost,
+                    );
 
-                        if (typeof ssrcMetrics.jitter === "number") {
-                            this._recordJitterSample("outbound", ssrcMetrics.jitter * 1000);
-                        }
-                    } else if (ssrcMetrics.direction === "in") {
-                        this.analytics.totalBytesReceived += byteCountDelta;
-                        this.analytics.totalPacketsLostInbound += Math.max(0, packetsLost - previous.packetsLost);
-
-                        if (typeof ssrcMetrics.jitter === "number") {
-                            this._recordJitterSample("inbound", ssrcMetrics.jitter * 1000);
-                        }
+                    if (typeof ssrcMetrics.jitter === "number") {
+                        this._recordJitterSample(ssrcMetrics.jitter * 1000);
                     }
 
-                    this._lastSeenSsrcCounters.set(key, { byteCount, packetsLost, remotePacketsLost });
+                    this._lastSeenSsrcCounters.set(key, { remotePacketsLost });
                 });
             });
         });
@@ -1977,27 +1944,12 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    _recordJitterSample(direction: "inbound" | "outbound", jitterMs: number) {
-        const samples = direction === "inbound" ? this._inboundJitterSamplesMs : this._outboundJitterSamplesMs;
-        recordSample(samples, jitterMs);
+    _recordJitterSample(jitterMs: number) {
+        recordMetricSample(this._outboundJitterStats, jitterMs);
 
-        const { count, min, max, avg, p95, p99 } = aggregateSamples(samples);
-
-        if (direction === "inbound") {
-            this.analytics.numInboundJitterSamples = count;
-            this.analytics.minInboundJitterMs = min;
-            this.analytics.maxInboundJitterMs = max;
-            this.analytics.avgInboundJitterMs = avg;
-            this.analytics.p95InboundJitterMs = p95;
-            this.analytics.p99InboundJitterMs = p99;
-        } else {
-            this.analytics.numOutboundJitterSamples = count;
-            this.analytics.minOutboundJitterMs = min;
-            this.analytics.maxOutboundJitterMs = max;
-            this.analytics.avgOutboundJitterMs = avg;
-            this.analytics.p95OutboundJitterMs = p95;
-            this.analytics.p99OutboundJitterMs = p99;
-        }
+        const { count, avg } = aggregateMetricStats(this._outboundJitterStats);
+        this.analytics.numOutboundJitterSamples = count;
+        this.analytics.avgOutboundJitterMs = avg;
     }
 
     close() {

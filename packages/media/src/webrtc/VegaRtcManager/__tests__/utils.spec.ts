@@ -2,60 +2,41 @@ import { LOWEST_SVC_LAYER_MAX_BITRATE } from "../utils";
 import { Producer } from "mediasoup-client/lib/Producer";
 import {
     addProducerCpuOveruseWatch,
-    aggregateSamples,
+    aggregateMetricStats,
+    createMetricStats,
     getLayers,
     getNumberOfActiveVideos,
     getNumberOfTemporalLayers,
     getReducedSvcEncodingParams,
     getTopSpatialLayer,
-    MAX_METRIC_SAMPLES,
-    recordSample,
+    recordMetricSample,
 } from "../utils";
 
 describe("utils", () => {
-    describe("aggregateSamples", () => {
-        it("computes count/min/max/avg/p95/p99 over the given samples", () => {
-            const samples = Array.from({ length: 20 }, (_, i) => (i + 1) * 50);
+    describe("createMetricStats / recordMetricSample / aggregateMetricStats", () => {
+        it("computes count/avg over the recorded samples", () => {
+            const stats = createMetricStats();
+            [50, 100, 150, 200].forEach((value) => recordMetricSample(stats, value));
 
-            expect(aggregateSamples(samples)).toEqual({
-                count: 20,
-                min: 50,
-                max: 1000,
-                avg: 525,
-                p95: 950,
-                p99: 1000,
-            });
+            expect(aggregateMetricStats(stats)).toEqual({ count: 4, avg: 125 });
         });
 
-        it("does not depend on the input array's order, or mutate it", () => {
-            const samples = [300, 100, 200];
+        it("does not depend on the recording order", () => {
+            const stats = createMetricStats();
+            [300, 100, 200].forEach((value) => recordMetricSample(stats, value));
 
-            expect(aggregateSamples(samples)).toEqual({ count: 3, min: 100, max: 300, avg: 200, p95: 300, p99: 300 });
-            expect(samples).toEqual([300, 100, 200]);
+            expect(aggregateMetricStats(stats)).toEqual({ count: 3, avg: 200 });
         });
 
         it("handles a single sample", () => {
-            expect(aggregateSamples([42])).toEqual({ count: 1, min: 42, max: 42, avg: 42, p95: 42, p99: 42 });
-        });
-    });
+            const stats = createMetricStats();
+            recordMetricSample(stats, 42);
 
-    describe("recordSample", () => {
-        it("appends to the array below the cap", () => {
-            const samples = [1, 2, 3];
-
-            recordSample(samples, 4);
-
-            expect(samples).toEqual([1, 2, 3, 4]);
+            expect(aggregateMetricStats(stats)).toEqual({ count: 1, avg: 42 });
         });
 
-        it("keeps the array bounded and drops the oldest samples once far enough over the cap", () => {
-            const samples = Array.from({ length: MAX_METRIC_SAMPLES * 2 }, (_, i) => i);
-
-            recordSample(samples, 999999);
-
-            expect(samples.length).toBe(MAX_METRIC_SAMPLES);
-            expect(samples[0]).toBe(MAX_METRIC_SAMPLES + 1);
-            expect(samples[samples.length - 1]).toBe(999999);
+        it("has no avg before any sample is recorded", () => {
+            expect(aggregateMetricStats(createMetricStats())).toEqual({ count: 0, avg: undefined });
         });
     });
 

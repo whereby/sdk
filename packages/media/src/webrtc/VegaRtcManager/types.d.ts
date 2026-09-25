@@ -104,27 +104,10 @@ type VegaAnalytics = {
     numHighestPreferredLayerChanges: number;
     highestPreferredLayerChangeCounts: Record<string, number>;
     numPreferredLayerSwitchLatencySamples: number;
-    minPreferredLayerSwitchLatencyMs: number | undefined;
-    maxPreferredLayerSwitchLatencyMs: number | undefined;
     avgPreferredLayerSwitchLatencyMs: number | undefined;
-    p95PreferredLayerSwitchLatencyMs: number | undefined;
-    p99PreferredLayerSwitchLatencyMs: number | undefined;
-    totalBytesSent: number;
-    totalBytesReceived: number;
-    totalPacketsLostInbound: number;
-    totalPacketsLostOutbound: number;
-    numInboundJitterSamples: number;
-    minInboundJitterMs: number | undefined;
-    maxInboundJitterMs: number | undefined;
-    avgInboundJitterMs: number | undefined;
-    p95InboundJitterMs: number | undefined;
-    p99InboundJitterMs: number | undefined;
+    webcamPacketsLostOutbound: number;
     numOutboundJitterSamples: number;
-    minOutboundJitterMs: number | undefined;
-    maxOutboundJitterMs: number | undefined;
     avgOutboundJitterMs: number | undefined;
-    p95OutboundJitterMs: number | undefined;
-    p99OutboundJitterMs: number | undefined;
 };
 
 type VegaAnalyticMetric = {

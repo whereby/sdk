@@ -834,11 +834,7 @@ describe("VegaRtcManager", () => {
                 await jest.advanceTimersByTimeAsync(500);
 
                 expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(1);
-                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBe(1000);
-                expect(rtcManager.analytics.maxPreferredLayerSwitchLatencyMs).toBe(1000);
                 expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(1000);
-                expect(rtcManager.analytics.p95PreferredLayerSwitchLatencyMs).toBe(1000);
-                expect(rtcManager.analytics.p99PreferredLayerSwitchLatencyMs).toBe(1000);
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
             });
 
@@ -874,7 +870,7 @@ describe("VegaRtcManager", () => {
                 await jest.advanceTimersByTimeAsync(10_000);
 
                 expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(0);
-                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBeUndefined();
+                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBeUndefined();
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
             });
 
@@ -899,7 +895,7 @@ describe("VegaRtcManager", () => {
 
                 expect(consumer.getStats).toHaveBeenCalledTimes(4);
                 expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(1);
-                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBe(1000);
+                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(1000);
             });
 
             it("stops watching once the consumer closes", async () => {
@@ -930,122 +926,86 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
             });
 
-            it("aggregates min/max/avg/p95/p99 across multiple recorded samples", () => {
+            it("aggregates avg across multiple recorded samples", () => {
                 Array.from({ length: 20 }, (_, i) => (i + 1) * 50).forEach((latencyMs) => {
                     rtcManager._recordPreferredLayerSwitchLatency(latencyMs);
                 });
 
                 expect(rtcManager.analytics.numPreferredLayerSwitchLatencySamples).toBe(20);
-                expect(rtcManager.analytics.minPreferredLayerSwitchLatencyMs).toBe(50);
-                expect(rtcManager.analytics.maxPreferredLayerSwitchLatencyMs).toBe(1000);
                 expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(525);
-                expect(rtcManager.analytics.p95PreferredLayerSwitchLatencyMs).toBe(950);
-                expect(rtcManager.analytics.p99PreferredLayerSwitchLatencyMs).toBe(1000);
             });
         });
     });
 
     describe("_onUpdatedStats", () => {
-        const makeStatsByView = (ssrcMetrics: any, { clientId = "client1", trackId = "track1", ssrc = "1" } = {}) => ({
+        const webcamTrackId = "webcam-track";
+
+        const makeStatsByView = (
+            ssrcMetrics: any,
+            { clientId = "client1", trackId = webcamTrackId, ssrc = "1" } = {},
+        ) => ({
             [clientId]: { tracks: { [trackId]: { ssrcs: { [ssrc]: ssrcMetrics } } } },
         });
 
-        it("accumulates totalBytesSent from the delta of an outbound ssrc's byteCount", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 1000 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 2500 }));
-
-            expect(rtcManager.analytics.totalBytesSent).toBe(2500);
-            expect(rtcManager.analytics.totalBytesReceived).toBe(0);
+        beforeEach(() => {
+            // bytes/packet-loss/jitter are only tracked for our own webcam upload (producer) - mic,
+            // screenshare, and every remote peer's inbound video are excluded
+            rtcManager._webcamProducer = { track: { id: webcamTrackId } };
         });
 
-        it("accumulates totalBytesReceived and totalPacketsLostInbound from an inbound ssrc", () => {
-            rtcManager._onUpdatedStats(
-                makeStatsByView({ direction: "in", byteCount: 1000, packetsLost: 2, jitter: 0.01 }),
-            );
-            rtcManager._onUpdatedStats(
-                makeStatsByView({ direction: "in", byteCount: 1800, packetsLost: 5, jitter: 0.02 }),
-            );
+        it("accumulates webcamPacketsLostOutbound from an outbound ssrc's remotePacketsLost", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", remotePacketsLost: 3 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", remotePacketsLost: 7 }));
 
-            expect(rtcManager.analytics.totalBytesReceived).toBe(1800);
-            expect(rtcManager.analytics.totalPacketsLostInbound).toBe(5);
+            expect(rtcManager.analytics.webcamPacketsLostOutbound).toBe(7);
         });
 
-        it("accumulates totalPacketsLostOutbound from an outbound ssrc's remotePacketsLost", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, remotePacketsLost: 3 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, remotePacketsLost: 7 }));
-
-            expect(rtcManager.analytics.totalPacketsLostOutbound).toBe(7);
-            expect(rtcManager.analytics.totalPacketsLostInbound).toBe(0);
-        });
-
-        it("records inbound jitter samples (converted to ms) and aggregates them", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", byteCount: 0, jitter: 0.01 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", byteCount: 0, jitter: 0.03 }));
-
-            expect(rtcManager.analytics.numInboundJitterSamples).toBe(2);
-            expect(rtcManager.analytics.minInboundJitterMs).toBe(10);
-            expect(rtcManager.analytics.maxInboundJitterMs).toBe(30);
-            expect(rtcManager.analytics.avgInboundJitterMs).toBe(20);
-            expect(rtcManager.analytics.p95InboundJitterMs).toBe(30);
-            expect(rtcManager.analytics.p99InboundJitterMs).toBe(30);
-            expect(rtcManager.analytics.numOutboundJitterSamples).toBe(0);
-        });
-
-        it("records outbound jitter samples (converted to ms) separately from inbound", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, jitter: 0.02 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0, jitter: 0.04 }));
+        it("records jitter samples (converted to ms) and aggregates them", () => {
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", jitter: 0.01 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", jitter: 0.03 }));
 
             expect(rtcManager.analytics.numOutboundJitterSamples).toBe(2);
-            expect(rtcManager.analytics.minOutboundJitterMs).toBe(20);
-            expect(rtcManager.analytics.maxOutboundJitterMs).toBe(40);
-            expect(rtcManager.analytics.avgOutboundJitterMs).toBe(30);
-            expect(rtcManager.analytics.p95OutboundJitterMs).toBe(40);
-            expect(rtcManager.analytics.p99OutboundJitterMs).toBe(40);
-            expect(rtcManager.analytics.numInboundJitterSamples).toBe(0);
+            expect(rtcManager.analytics.avgOutboundJitterMs).toBe(20);
         });
 
         it("does not record a jitter sample when no jitter value is present on the report", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 0 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "in", byteCount: 0 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out" }));
 
-            expect(rtcManager.analytics.numInboundJitterSamples).toBe(0);
             expect(rtcManager.analytics.numOutboundJitterSamples).toBe(0);
         });
 
         it("does not decrease totals if a cumulative counter appears to reset", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 5000 }));
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 100 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", remotePacketsLost: 5000 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", remotePacketsLost: 100 }));
 
-            expect(rtcManager.analytics.totalBytesSent).toBe(5000);
+            expect(rtcManager.analytics.webcamPacketsLostOutbound).toBe(5000);
         });
 
         it("prunes a ssrc's last-seen counters once it stops appearing in stats, without losing its already-counted total", () => {
-            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", byteCount: 1000 }));
+            rtcManager._onUpdatedStats(makeStatsByView({ direction: "out", remotePacketsLost: 1000 }));
             expect(rtcManager._lastSeenSsrcCounters.size).toBe(1);
 
             rtcManager._onUpdatedStats({});
 
             expect(rtcManager._lastSeenSsrcCounters.size).toBe(0);
-            expect(rtcManager.analytics.totalBytesSent).toBe(1000);
+            expect(rtcManager.analytics.webcamPacketsLostOutbound).toBe(1000);
         });
 
-        it("sums across multiple ssrcs/tracks/clients reported in the same tick", () => {
+        it("sums across multiple outbound ssrcs/clients reported in the same tick", () => {
             rtcManager._onUpdatedStats({
                 client1: {
                     tracks: {
-                        trackA: { ssrcs: { "1": { direction: "out", byteCount: 1000 } } },
+                        [webcamTrackId]: { ssrcs: { "1": { direction: "out", remotePacketsLost: 1000 } } },
                     },
                 },
                 client2: {
                     tracks: {
-                        trackB: { ssrcs: { "2": { direction: "in", byteCount: 2000 } } },
-                        trackC: { ssrcs: { "3": { direction: "in", byteCount: 500 } } },
+                        [webcamTrackId]: { ssrcs: { "2": { direction: "out", remotePacketsLost: 2000 } } },
                     },
                 },
             });
 
-            expect(rtcManager.analytics.totalBytesSent).toBe(1000);
-            expect(rtcManager.analytics.totalBytesReceived).toBe(2500);
+            expect(rtcManager.analytics.webcamPacketsLostOutbound).toBe(3000);
         });
     });
 });
