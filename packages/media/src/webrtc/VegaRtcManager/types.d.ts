@@ -99,9 +99,20 @@ type VegaAnalytics = {
     sfuMsFromOfflineToClose: number;
     sfuOfflineWhileConnectedCount: number;
     sfuOfflineToCloseCount: number;
+    numPreferredSpatialLayerChanges: number;
+    preferredSpatialLayerChangeCounts: Record<string, number>;
+    numHighestPreferredLayerChanges: number;
+    highestPreferredLayerChangeCounts: Record<string, number>;
+    numPreferredLayerSwitchLatencySamples: number;
+    avgPreferredLayerSwitchLatencyMs: number | undefined;
+    webcamPacketsLostOutbound: number;
+    numOutboundJitterSamples: number;
+    avgOutboundJitterMs: number | undefined;
 };
 
-type VegaAnalyticMetric = keyof VegaAnalytics;
+type VegaAnalyticMetric = {
+    [K in keyof VegaAnalytics]: VegaAnalytics[K] extends number ? K : never;
+}[keyof VegaAnalytics];
 
 export type VegaIncrementAnalyticMetric = (metric: VegaAnalyticMetric) => void;
 
