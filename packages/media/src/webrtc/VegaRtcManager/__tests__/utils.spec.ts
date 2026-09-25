@@ -1,4 +1,4 @@
-import { LOWEST_SVC_LAYER_MAX_BITRATE } from "../utils";
+import { LOWEST_SVC_LAYER_MAX_BITRATE, MIDDLE_SVC_LAYER_MAX_BITRATE } from "../utils";
 import { Producer } from "mediasoup-client/lib/Producer";
 import {
     addProducerCpuOveruseWatch,
@@ -142,11 +142,11 @@ describe("utils", () => {
         it.each`
             originalScalabilityMode | spatialLayer | scalabilityMode | scaleResolutionDownBy | maxBitrate
             ${"L3T2"}               | ${2}         | ${"L3T2"}       | ${1}                  | ${undefined}
-            ${"L3T2"}               | ${1}         | ${"L2T2"}       | ${2}                  | ${undefined}
+            ${"L3T2"}               | ${1}         | ${"L2T2"}       | ${2}                  | ${MIDDLE_SVC_LAYER_MAX_BITRATE}
             ${"L3T2"}               | ${0}         | ${"L1T2"}       | ${4}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
             ${"L2T2"}               | ${0}         | ${"L1T2"}       | ${2}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
-            ${"S3T3"}               | ${1}         | ${"S2T3"}       | ${2}                  | ${undefined}
-            ${"L3T3_KEY"}           | ${1}         | ${"L2T3_KEY"}   | ${2}                  | ${undefined}
+            ${"S3T3"}               | ${1}         | ${"S2T3"}       | ${2}                  | ${MIDDLE_SVC_LAYER_MAX_BITRATE}
+            ${"L3T3_KEY"}           | ${1}         | ${"L2T3_KEY"}   | ${2}                  | ${MIDDLE_SVC_LAYER_MAX_BITRATE}
             ${"L1T3"}               | ${0}         | ${"L1T3"}       | ${1}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
         `(
             "reduces $originalScalabilityMode to $scalabilityMode scaled down by $scaleResolutionDownBy (maxBitrate $maxBitrate) when the preferred spatial layer is $spatialLayer",
@@ -175,9 +175,9 @@ describe("utils", () => {
             });
         });
 
-        it("caps maxBitrate only when the lowest layer is the only one preferred, undefined (no cap) otherwise", () => {
+        it("caps maxBitrate for the lowest and middle layers, undefined (no cap) for the top layer", () => {
             expect(getReducedSvcEncodingParams("L3T2", 0)?.maxBitrate).toBe(LOWEST_SVC_LAYER_MAX_BITRATE);
-            expect(getReducedSvcEncodingParams("L3T2", 1)?.maxBitrate).toBeUndefined();
+            expect(getReducedSvcEncodingParams("L3T2", 1)?.maxBitrate).toBe(MIDDLE_SVC_LAYER_MAX_BITRATE);
             expect(getReducedSvcEncodingParams("L3T2", 2)?.maxBitrate).toBeUndefined();
         });
 

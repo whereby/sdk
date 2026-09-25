@@ -1,5 +1,5 @@
 import VegaRtcManager from "../";
-import { LOWEST_SVC_LAYER_MAX_BITRATE } from "../utils";
+import { LOWEST_SVC_LAYER_MAX_BITRATE, MIDDLE_SVC_LAYER_MAX_BITRATE } from "../utils";
 import { getTopSpatialLayer } from "../utils";
 import * as StatsMonitor from "../../stats/StatsMonitor";
 
@@ -312,7 +312,9 @@ describe("VegaRtcManager", () => {
             await produceWebcam(mockVideoProducer);
 
             expect(mockVideoProducer.rtpSender.setParameters).toHaveBeenCalledWith({
-                encodings: [{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }],
+                encodings: [
+                    { scalabilityMode: "L2T2", scaleResolutionDownBy: 2, maxBitrate: MIDDLE_SVC_LAYER_MAX_BITRATE },
+                ],
             });
             expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(1);
         });
@@ -632,7 +634,7 @@ describe("VegaRtcManager", () => {
         });
 
         describe("SVC (single encoding with scalabilityMode)", () => {
-            it("shrinks the scalabilityMode's spatial layer count and scales the resolution down to match", async () => {
+            it("shrinks the scalabilityMode's spatial layer count, scales the resolution down to match, and caps maxBitrate for the middle layer", async () => {
                 createWebcamProducer([{ scalabilityMode: "L3T2" }]);
 
                 await rtcManager._onChangedHighestPreferredLayer({
@@ -640,7 +642,9 @@ describe("VegaRtcManager", () => {
                     spatialLayer: 1,
                 });
 
-                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L2T2", scaleResolutionDownBy: 2, maxBitrate: MIDDLE_SVC_LAYER_MAX_BITRATE },
+                ]);
                 expect(setParameters).toHaveBeenCalledWith(parameters);
             });
 
@@ -665,7 +669,9 @@ describe("VegaRtcManager", () => {
                     producerId: "webcam-producer-1",
                     spatialLayer: 1,
                 });
-                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L2T2", scaleResolutionDownBy: 2, maxBitrate: MIDDLE_SVC_LAYER_MAX_BITRATE },
+                ]);
 
                 await rtcManager._onChangedHighestPreferredLayer({
                     producerId: "webcam-producer-1",
@@ -676,7 +682,7 @@ describe("VegaRtcManager", () => {
                 ]);
             });
 
-            it("removes the maxBitrate cap once a higher layer is preferred again", async () => {
+            it("changes the maxBitrate cap as a different layer is preferred, removing it once the top layer is preferred", async () => {
                 createWebcamProducer([{ scalabilityMode: "L3T2", maxBitrate: 1_000_000 }]);
 
                 await rtcManager._onChangedHighestPreferredLayer({
@@ -691,7 +697,15 @@ describe("VegaRtcManager", () => {
                     producerId: "webcam-producer-1",
                     spatialLayer: 1,
                 });
-                expect(parameters.encodings).toEqual([{ scalabilityMode: "L2T2", scaleResolutionDownBy: 2 }]);
+                expect(parameters.encodings).toEqual([
+                    { scalabilityMode: "L2T2", scaleResolutionDownBy: 2, maxBitrate: MIDDLE_SVC_LAYER_MAX_BITRATE },
+                ]);
+
+                await rtcManager._onChangedHighestPreferredLayer({
+                    producerId: "webcam-producer-1",
+                    spatialLayer: 2,
+                });
+                expect(parameters.encodings).toEqual([{ scalabilityMode: "L3T2", scaleResolutionDownBy: 1 }]);
                 expect(parameters.encodings[0]).not.toHaveProperty("maxBitrate");
             });
 

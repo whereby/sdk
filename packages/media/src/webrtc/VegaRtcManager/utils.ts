@@ -95,6 +95,7 @@ export function getTopSpatialLayer(encodings: { scalabilityMode?: string }[] | u
 }
 
 export const LOWEST_SVC_LAYER_MAX_BITRATE = 100_000;
+export const MIDDLE_SVC_LAYER_MAX_BITRATE = 500_000;
 
 export function getReducedSvcEncodingParams(originalScalabilityMode: string | undefined, spatialLayer: number) {
     const match = SCALABILITY_MODE_REGEX.exec(originalScalabilityMode || "");
@@ -104,11 +105,19 @@ export function getReducedSvcEncodingParams(originalScalabilityMode: string | un
     const topLayerIndex = Number(originalSpatialLayers) - 1;
     const preferredLayerIndex = Math.min(Math.max(spatialLayer, 0), topLayerIndex);
     const onlyLowestLayerPreferred = preferredLayerIndex === 0;
+    const middleLayerPreferred = preferredLayerIndex > 0 && preferredLayerIndex < topLayerIndex;
+
+    let maxBitrate: number | undefined;
+    if (onlyLowestLayerPreferred) {
+        maxBitrate = LOWEST_SVC_LAYER_MAX_BITRATE;
+    } else if (middleLayerPreferred) {
+        maxBitrate = MIDDLE_SVC_LAYER_MAX_BITRATE;
+    }
 
     return {
         scalabilityMode: `${mode}${preferredLayerIndex + 1}T${temporalLayers}${key}`,
         scaleResolutionDownBy: 2 ** (topLayerIndex - preferredLayerIndex),
-        maxBitrate: onlyLowestLayerPreferred ? LOWEST_SVC_LAYER_MAX_BITRATE : undefined,
+        maxBitrate,
     };
 }
 
