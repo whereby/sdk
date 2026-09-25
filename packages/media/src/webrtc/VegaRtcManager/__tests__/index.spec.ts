@@ -314,7 +314,7 @@ describe("VegaRtcManager", () => {
             expect(rtcManager._webcamProducerHighestPreferredLayer).toBeUndefined();
         });
 
-        it("does not throw, or cap anything, when there is no spare layer to track (e.g. a plain single encoding)", async () => {
+        it("does not call setParameters for a plain (non-SVC) single encoding, since there's no scalabilityMode to reduce", async () => {
             rtcManager._features.sfuHighestPreferredLayerTrackingOn = true;
             const mockVideoProducer = new MockProducerWithRtpSender({
                 kind: "video",
@@ -324,7 +324,7 @@ describe("VegaRtcManager", () => {
             await produceWebcam(mockVideoProducer);
 
             expect(mockVideoProducer.rtpSender.setParameters).not.toHaveBeenCalled();
-            expect(rtcManager._webcamProducerHighestPreferredLayer).toBeUndefined();
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(1);
         });
     });
 

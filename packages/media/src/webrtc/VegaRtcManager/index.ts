@@ -1168,7 +1168,9 @@ export default class VegaRtcManager implements RtcManager {
                         | undefined;
                     this._webcamProducerOriginalScalabilityMode = originalWebcamEncodings?.[0]?.scalabilityMode;
 
-                    const topSpatialLayer = getTopSpatialLayer(originalWebcamEncodings);
+                    const topSpatialLayer = originalWebcamEncodings?.length
+                        ? getTopSpatialLayer(originalWebcamEncodings)
+                        : undefined;
                     this._webcamProducerHighestPreferredLayer =
                         topSpatialLayer !== undefined ? Math.min(topSpatialLayer, 1) : undefined;
 

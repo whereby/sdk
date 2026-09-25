@@ -120,21 +120,16 @@ describe("utils", () => {
             expect(getTopSpatialLayer([{ scalabilityMode: "L2T2" }])).toBe(1);
         });
 
-        it("returns undefined for a single-spatial-layer SVC mode", () => {
-            expect(getTopSpatialLayer([{ scalabilityMode: "L1T3" }])).toBeUndefined();
+        it("returns 0 for a single-spatial-layer SVC mode", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L1T3" }])).toBe(0);
         });
 
-        it("returns undefined for a plain (non-SVC) single encoding", () => {
-            expect(getTopSpatialLayer([{}])).toBeUndefined();
+        it("returns 1 for a plain (non-SVC) single encoding", () => {
+            expect(getTopSpatialLayer([{}])).toBe(1);
         });
 
-        it("returns undefined when there are no encodings", () => {
-            expect(getTopSpatialLayer([])).toBeUndefined();
-            expect(getTopSpatialLayer(undefined)).toBeUndefined();
-        });
-
-        it("returns undefined for a malformed scalabilityMode with unexpected trailing content", () => {
-            expect(getTopSpatialLayer([{ scalabilityMode: "L3T2_UNEXPECTED_SUFFIX" }])).toBeUndefined();
+        it("returns 1 for a malformed scalabilityMode with unexpected trailing content", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L3T2_UNEXPECTED_SUFFIX" }])).toBe(1);
         });
     });
 

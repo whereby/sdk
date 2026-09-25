@@ -83,15 +83,15 @@ export function getNumberOfTemporalLayers(consumer: any) {
 
 const SCALABILITY_MODE_REGEX = /^([LS])([1-9]\d?)T([1-9]\d?)(_KEY)?$/;
 
-export function getTopSpatialLayer(encodings: { scalabilityMode?: string }[] | undefined): number | undefined {
-    if (!encodings || encodings.length === 0) return undefined;
+// caller must ensure `encodings` is non-empty
+export function getTopSpatialLayer(encodings: { scalabilityMode?: string }[]): number {
     if (encodings.length > 1) return encodings.length - 1;
 
     const match = SCALABILITY_MODE_REGEX.exec(encodings[0].scalabilityMode || "");
-    if (!match) return undefined;
+    if (!match) return 1;
 
-    const spatialLayers = Number(match[2]);
-    return spatialLayers > 1 ? spatialLayers - 1 : undefined;
+    const spatialLayers = Number(match[2]) || 1;
+    return spatialLayers - 1;
 }
 
 export const LOWEST_SVC_LAYER_MAX_BITRATE = 100_000;
