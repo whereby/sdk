@@ -119,7 +119,7 @@ export default class VegaRtcManager implements RtcManager {
     _webcamProducer: any;
     _webcamProducerOriginalScalabilityMode: string | undefined;
     _webcamProducerHighestPreferredLayer: number | undefined;
-    _highestPreferredLayerUpdateQueue: Promise<void>;
+    _highestPreferredLayerUpdate: Promise<void> | null;
     _webcamProducerPromise: any;
     _preferredLayerSwitchLatencyStats: MetricStats;
     _preferredLayerSwitchWatches: Map<string, { stop: () => void }>;
@@ -211,7 +211,7 @@ export default class VegaRtcManager implements RtcManager {
         this._webcamProducer = null;
         this._webcamProducerOriginalScalabilityMode = undefined;
         this._webcamProducerHighestPreferredLayer = undefined;
-        this._highestPreferredLayerUpdateQueue = Promise.resolve();
+        this._highestPreferredLayerUpdate = null;
         this._webcamProducerPromise = null;
         this._webcamPaused = false;
         this._screenVideoProducer = null;
@@ -1174,11 +1174,7 @@ export default class VegaRtcManager implements RtcManager {
                     this._webcamProducerHighestPreferredLayer =
                         topSpatialLayer !== undefined ? Math.min(topSpatialLayer, 1) : undefined;
 
-                    if (this._webcamProducerHighestPreferredLayer !== undefined) {
-                        await this._applyHighestPreferredLayerToWebcamEncoder(
-                            this._webcamProducerHighestPreferredLayer,
-                        );
-                    }
+                    await this._syncWebcamEncoderToHighestPreferredLayer();
                 }
                 this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
@@ -2239,16 +2235,6 @@ export default class VegaRtcManager implements RtcManager {
 
         if (this._webcamProducer?.id !== producerId) return;
 
-        this._highestPreferredLayerUpdateQueue = this._highestPreferredLayerUpdateQueue
-            .catch(() => {})
-            .then(() => this._applyChangedHighestPreferredLayer(producerId, spatialLayer));
-
-        return this._highestPreferredLayerUpdateQueue;
-    }
-
-    async _applyChangedHighestPreferredLayer(producerId: string, spatialLayer: number) {
-        if (this._webcamProducer?.id !== producerId) return;
-
         if (
             this._webcamProducerHighestPreferredLayer !== undefined &&
             this._webcamProducerHighestPreferredLayer !== spatialLayer
@@ -2262,7 +2248,36 @@ export default class VegaRtcManager implements RtcManager {
         this._webcamProducerHighestPreferredLayer = spatialLayer;
 
         logger.info("_onChangedHighestPreferredLayer()", { producerId, spatialLayer });
-        await this._applyHighestPreferredLayerToWebcamEncoder(spatialLayer);
+
+        return this._syncWebcamEncoderToHighestPreferredLayer();
+    }
+
+    _syncWebcamEncoderToHighestPreferredLayer() {
+        // An update already in flight will pick up the latest layer when its setParameters() settles
+        if (!this._highestPreferredLayerUpdate) {
+            this._highestPreferredLayerUpdate = this._applyLatestHighestPreferredLayerUntilSettled().finally(() => {
+                this._highestPreferredLayerUpdate = null;
+            });
+        }
+        return this._highestPreferredLayerUpdate;
+    }
+
+    async _applyLatestHighestPreferredLayerUntilSettled() {
+        let appliedProducer: unknown = null;
+        let appliedLayer: number | undefined;
+        while (
+            this._webcamProducer &&
+            this._webcamProducerHighestPreferredLayer !== undefined &&
+            (this._webcamProducer !== appliedProducer || this._webcamProducerHighestPreferredLayer !== appliedLayer)
+        ) {
+            appliedProducer = this._webcamProducer;
+            appliedLayer = this._webcamProducerHighestPreferredLayer;
+            try {
+                await this._applyHighestPreferredLayerToWebcamEncoder(appliedLayer);
+            } catch (error) {
+                logger.error("Failed to apply highest preferred layer %d: %o", appliedLayer, error);
+            }
+        }
     }
 
     async _applyHighestPreferredLayerToWebcamEncoder(spatialLayer: number) {

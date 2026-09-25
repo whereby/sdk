@@ -469,7 +469,7 @@ describe("VegaRtcManager", () => {
             createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
 
             let resolveSetParameters: (() => void) | undefined;
-            setParameters.mockImplementation(
+            setParameters.mockImplementationOnce(
                 () =>
                     new Promise<void>((resolve) => {
                         resolveSetParameters = resolve;
@@ -485,20 +485,38 @@ describe("VegaRtcManager", () => {
                 spatialLayer: 1,
             });
 
-            const flushPromises = () => new Promise(jest.requireActual("timers").setImmediate);
-            await flushPromises();
-
-            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
+            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1, "0->1": 1 });
             expect(setParameters).toHaveBeenCalledTimes(1);
 
             resolveSetParameters!();
-            await firstCall;
-            await flushPromises();
+            await Promise.all([firstCall, secondCall]);
 
-            resolveSetParameters!();
-            await secondCall;
+            expect(setParameters).toHaveBeenCalledTimes(2);
+        });
 
-            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1, "0->1": 1 });
+        it("still applies a newer layer when an earlier setParameters() fails", async () => {
+            createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+
+            let rejectSetParameters: ((error: Error) => void) | undefined;
+            setParameters.mockImplementationOnce(
+                () =>
+                    new Promise<void>((_resolve, reject) => {
+                        rejectSetParameters = reject;
+                    }),
+            );
+
+            const firstCall = rtcManager._onChangedHighestPreferredLayer({
+                producerId: "webcam-producer-1",
+                spatialLayer: 0,
+            });
+            const secondCall = rtcManager._onChangedHighestPreferredLayer({
+                producerId: "webcam-producer-1",
+                spatialLayer: 1,
+            });
+
+            rejectSetParameters!(new Error("InvalidModificationError"));
+
+            await expect(Promise.all([firstCall, secondCall])).resolves.toBeDefined();
             expect(setParameters).toHaveBeenCalledTimes(2);
         });
 
