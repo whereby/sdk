@@ -120,6 +120,7 @@ export default class VegaRtcManager implements RtcManager {
     _webcamProducerOriginalScalabilityMode: string | undefined;
     _webcamProducerHighestPreferredLayer: number | undefined;
     _highestPreferredLayerUpdate: Promise<void> | null;
+    _highestPreferredLayerUpdatePending: boolean;
     _webcamProducerPromise: any;
     _preferredLayerSwitchLatencyStats: MetricStats;
     _preferredLayerSwitchWatches: Map<string, { stop: () => void }>;
@@ -212,6 +213,7 @@ export default class VegaRtcManager implements RtcManager {
         this._webcamProducerOriginalScalabilityMode = undefined;
         this._webcamProducerHighestPreferredLayer = undefined;
         this._highestPreferredLayerUpdate = null;
+        this._highestPreferredLayerUpdatePending = false;
         this._webcamProducerPromise = null;
         this._webcamPaused = false;
         this._screenVideoProducer = null;
@@ -2197,26 +2199,24 @@ export default class VegaRtcManager implements RtcManager {
     _toggleSimulcastLayers(encodings: RtpEncodingParametersWithScalabilityMode[], spatialLayer: number) {
         const clampedSpatialLayer = Math.max(0, Math.min(spatialLayer, encodings.length - 1));
 
-        return encodings.reduce((changed: boolean, encoding, index) => {
+        let changed = false;
+        encodings.forEach((encoding, index) => {
             const active = index <= clampedSpatialLayer;
-            if (encoding.active === active) return changed;
+            changed ||= encoding.active !== active;
             encoding.active = active;
-            return true;
-        }, false);
+        });
+        return changed;
     }
 
     _toggleSvcLayers(encoding: RtpEncodingParametersWithScalabilityMode, spatialLayer: number) {
         const reduced = getReducedSvcEncodingParams(this._webcamProducerOriginalScalabilityMode, spatialLayer);
         if (!reduced) return false;
 
-        const currentScaleResolutionDownBy = encoding.scaleResolutionDownBy ?? 1;
-        if (
-            reduced.scalabilityMode === encoding.scalabilityMode &&
-            reduced.scaleResolutionDownBy === currentScaleResolutionDownBy &&
-            reduced.maxBitrate === encoding.maxBitrate
-        ) {
-            return false;
-        }
+        const changed =
+            reduced.scalabilityMode !== encoding.scalabilityMode ||
+            reduced.scaleResolutionDownBy !== (encoding.scaleResolutionDownBy ?? 1) ||
+            reduced.maxBitrate !== encoding.maxBitrate;
+        if (!changed) return false;
 
         encoding.scalabilityMode = reduced.scalabilityMode;
         encoding.scaleResolutionDownBy = reduced.scaleResolutionDownBy;
@@ -2251,35 +2251,29 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     _syncWebcamEncoderToHighestPreferredLayer() {
-        // An update already in flight will pick up the latest layer when its setParameters() settles
+        // An update already in flight re-applies the latest state once its setParameters() settles
+        this._highestPreferredLayerUpdatePending = true;
         if (!this._highestPreferredLayerUpdate) {
-            this._highestPreferredLayerUpdate = this._applyLatestHighestPreferredLayerUntilSettled().finally(() => {
-                this._highestPreferredLayerUpdate = null;
-            });
+            this._highestPreferredLayerUpdate = this._applyPendingHighestPreferredLayerUpdates();
         }
         return this._highestPreferredLayerUpdate;
     }
 
-    async _applyLatestHighestPreferredLayerUntilSettled() {
-        let appliedProducer: unknown = null;
-        let appliedLayer: number | undefined;
-        while (
-            this._webcamProducer &&
-            this._webcamProducerHighestPreferredLayer !== undefined &&
-            (this._webcamProducer !== appliedProducer || this._webcamProducerHighestPreferredLayer !== appliedLayer)
-        ) {
-            appliedProducer = this._webcamProducer;
-            appliedLayer = this._webcamProducerHighestPreferredLayer;
+    async _applyPendingHighestPreferredLayerUpdates() {
+        while (this._highestPreferredLayerUpdatePending) {
+            this._highestPreferredLayerUpdatePending = false;
             try {
-                await this._applyHighestPreferredLayerToWebcamEncoder(appliedLayer);
+                await this._applyHighestPreferredLayerToWebcamEncoder();
             } catch (error) {
-                logger.error("Failed to apply highest preferred layer %d: %o", appliedLayer, error);
+                logger.error("Failed to apply highest preferred layer: %o", error);
             }
         }
+        this._highestPreferredLayerUpdate = null;
     }
 
-    async _applyHighestPreferredLayerToWebcamEncoder(spatialLayer: number) {
-        if (!this._webcamProducer) return;
+    async _applyHighestPreferredLayerToWebcamEncoder() {
+        const spatialLayer = this._webcamProducerHighestPreferredLayer;
+        if (!this._webcamProducer || spatialLayer === undefined) return;
 
         const rtpSender = this._webcamProducer.rtpSender;
         const parameters = rtpSender.getParameters();
@@ -2292,9 +2286,7 @@ export default class VegaRtcManager implements RtcManager {
             changed = this._toggleSvcLayers(encodings[0], spatialLayer);
         }
 
-        if (!changed) return;
-
-        await rtpSender.setParameters(parameters);
+        if (changed) await rtpSender.setParameters(parameters);
     }
 
     _incrementHistogramCount(histogram: Record<string, number>, key: string) {
