@@ -26,11 +26,11 @@ import {
     addProducerCpuOveruseWatch,
     aggregateMetricStats,
     createMetricStats,
+    getInitialHighestPreferredLayer,
     getLayers,
     getNumberOfActiveVideos,
     getNumberOfTemporalLayers,
     getReducedSvcEncodingParams,
-    getTopSpatialLayer,
     MetricStats,
     recordMetricSample,
 } from "./utils";
@@ -1168,11 +1168,9 @@ export default class VegaRtcManager implements RtcManager {
                         | undefined;
                     this._webcamProducerOriginalScalabilityMode = originalWebcamEncodings?.[0]?.scalabilityMode;
 
-                    const topSpatialLayer = originalWebcamEncodings?.length
-                        ? getTopSpatialLayer(originalWebcamEncodings)
+                    this._webcamProducerHighestPreferredLayer = originalWebcamEncodings?.length
+                        ? getInitialHighestPreferredLayer(originalWebcamEncodings)
                         : undefined;
-                    this._webcamProducerHighestPreferredLayer =
-                        topSpatialLayer !== undefined ? Math.min(topSpatialLayer, 1) : undefined;
 
                     await this._syncWebcamEncoderToHighestPreferredLayer();
                 }

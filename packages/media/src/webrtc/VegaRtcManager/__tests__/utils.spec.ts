@@ -7,8 +7,10 @@ import {
     getLayers,
     getNumberOfActiveVideos,
     getNumberOfTemporalLayers,
+    getInitialHighestPreferredLayer,
     getReducedSvcEncodingParams,
     getTopSpatialLayer,
+    INITIAL_HIGHEST_PREFERRED_LAYER,
     recordMetricSample,
 } from "../utils";
 
@@ -130,6 +132,19 @@ describe("utils", () => {
 
         it("returns 1 for a malformed scalabilityMode with unexpected trailing content", () => {
             expect(getTopSpatialLayer([{ scalabilityMode: "L3T2_UNEXPECTED_SUFFIX" }])).toBe(1);
+        });
+    });
+
+    describe("getInitialHighestPreferredLayer", () => {
+        it("caps the top spatial layer at INITIAL_HIGHEST_PREFERRED_LAYER", () => {
+            expect(getInitialHighestPreferredLayer([{}, {}, {}])).toBe(Math.min(2, INITIAL_HIGHEST_PREFERRED_LAYER));
+            expect(getInitialHighestPreferredLayer([{ scalabilityMode: "L3T2" }])).toBe(
+                Math.min(2, INITIAL_HIGHEST_PREFERRED_LAYER),
+            );
+        });
+
+        it("never returns a layer above what the encodings have", () => {
+            expect(getInitialHighestPreferredLayer([{ scalabilityMode: "L1T3" }])).toBe(0);
         });
     });
 

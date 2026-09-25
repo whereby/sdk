@@ -94,6 +94,14 @@ export function getTopSpatialLayer(encodings: { scalabilityMode?: string }[]): n
     return spatialLayers - 1;
 }
 
+// the webcam starts capped at this layer until the SFU reports what its consumers actually demand
+export const INITIAL_HIGHEST_PREFERRED_LAYER = 1;
+
+// caller must ensure `encodings` is non-empty
+export function getInitialHighestPreferredLayer(encodings: { scalabilityMode?: string }[]): number {
+    return Math.min(getTopSpatialLayer(encodings), INITIAL_HIGHEST_PREFERRED_LAYER);
+}
+
 export const LOWEST_SVC_LAYER_MAX_BITRATE = 100_000;
 export const MIDDLE_SVC_LAYER_MAX_BITRATE = 500_000;
 

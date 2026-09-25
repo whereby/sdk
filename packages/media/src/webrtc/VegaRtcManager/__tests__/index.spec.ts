@@ -1,6 +1,10 @@
 import VegaRtcManager from "../";
-import { LOWEST_SVC_LAYER_MAX_BITRATE, MIDDLE_SVC_LAYER_MAX_BITRATE } from "../utils";
-import { getTopSpatialLayer } from "../utils";
+import {
+    getInitialHighestPreferredLayer,
+    INITIAL_HIGHEST_PREFERRED_LAYER,
+    LOWEST_SVC_LAYER_MAX_BITRATE,
+    MIDDLE_SVC_LAYER_MAX_BITRATE,
+} from "../utils";
 import * as StatsMonitor from "../../stats/StatsMonitor";
 
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
@@ -270,7 +274,7 @@ describe("VegaRtcManager", () => {
             sfuWebsocketServer.close();
         };
 
-        it("caps a simulcast webcam producer to spatialLayer 1 right after creation, when the flag is on", async () => {
+        it("caps a simulcast webcam producer to the initial highest preferred layer right after creation, when the flag is on", async () => {
             rtcManager._features.sfuHighestPreferredLayerTrackingOn = true;
             const mockVideoProducer = new MockProducerWithRtpSender({
                 kind: "video",
@@ -279,13 +283,13 @@ describe("VegaRtcManager", () => {
 
             await produceWebcam(mockVideoProducer);
 
-            expect(mockVideoProducer.rtpSender.setParameters).toHaveBeenCalledWith({
-                encodings: [{ active: true }, { active: true }, { active: false }],
-            });
-            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(1);
+            expect(mockVideoProducer.rtpSender.getParameters().encodings).toEqual(
+                [0, 1, 2].map((layer) => ({ active: layer <= INITIAL_HIGHEST_PREFERRED_LAYER })),
+            );
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(INITIAL_HIGHEST_PREFERRED_LAYER);
         });
 
-        it("caps an SVC webcam producer to spatialLayer 1 right after creation, when the flag is on", async () => {
+        it("caps an SVC webcam producer to the initial highest preferred layer right after creation, when the flag is on", async () => {
             rtcManager._features.sfuHighestPreferredLayerTrackingOn = true;
             const mockVideoProducer = new MockProducerWithRtpSender({
                 kind: "video",
@@ -294,12 +298,15 @@ describe("VegaRtcManager", () => {
 
             await produceWebcam(mockVideoProducer);
 
-            expect(mockVideoProducer.rtpSender.setParameters).toHaveBeenCalledWith({
-                encodings: [
-                    { scalabilityMode: "L2T2", scaleResolutionDownBy: 2, maxBitrate: MIDDLE_SVC_LAYER_MAX_BITRATE },
-                ],
-            });
-            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(1);
+            const expectedEncodingByLayer = [
+                { scalabilityMode: "L1T2", scaleResolutionDownBy: 4, maxBitrate: LOWEST_SVC_LAYER_MAX_BITRATE },
+                { scalabilityMode: "L2T2", scaleResolutionDownBy: 2, maxBitrate: MIDDLE_SVC_LAYER_MAX_BITRATE },
+                { scalabilityMode: "L3T2" },
+            ];
+            expect(mockVideoProducer.rtpSender.getParameters().encodings).toEqual([
+                expectedEncodingByLayer[INITIAL_HIGHEST_PREFERRED_LAYER],
+            ]);
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(INITIAL_HIGHEST_PREFERRED_LAYER);
         });
 
         it("does not cap the webcam producer when the sfuHighestPreferredLayerTrackingOn feature flag is off", async () => {
@@ -324,7 +331,8 @@ describe("VegaRtcManager", () => {
             await produceWebcam(mockVideoProducer);
 
             expect(mockVideoProducer.rtpSender.setParameters).not.toHaveBeenCalled();
-            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(1);
+            // a plain encoding is treated as having two spatial layers (see getTopSpatialLayer)
+            expect(rtcManager._webcamProducerHighestPreferredLayer).toBe(Math.min(1, INITIAL_HIGHEST_PREFERRED_LAYER));
         });
     });
 
@@ -433,8 +441,12 @@ describe("VegaRtcManager", () => {
                 },
             };
             rtcManager._webcamProducerOriginalScalabilityMode = encodings[0]?.scalabilityMode;
-            rtcManager._webcamProducerHighestPreferredLayer = getTopSpatialLayer(encodings);
+            rtcManager._webcamProducerHighestPreferredLayer = getInitialHighestPreferredLayer(encodings);
         };
+
+        // derived rather than hardcoded so the tests keep working if INITIAL_HIGHEST_PREFERRED_LAYER changes
+        const initialLayer = getInitialHighestPreferredLayer([{}, {}, {}]);
+        const otherLayer = initialLayer === 0 ? 1 : 0;
 
         it("ignores demand changes for a different producer", async () => {
             createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
@@ -478,14 +490,17 @@ describe("VegaRtcManager", () => {
 
             const firstCall = rtcManager._onChangedHighestPreferredLayer({
                 producerId: "webcam-producer-1",
-                spatialLayer: 0,
+                spatialLayer: otherLayer,
             });
             const secondCall = rtcManager._onChangedHighestPreferredLayer({
                 producerId: "webcam-producer-1",
-                spatialLayer: 1,
+                spatialLayer: initialLayer,
             });
 
-            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1, "0->1": 1 });
+            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
+                [`${initialLayer}->${otherLayer}`]: 1,
+                [`${otherLayer}->${initialLayer}`]: 1,
+            });
             expect(setParameters).toHaveBeenCalledTimes(1);
 
             resolveSetParameters!();
@@ -521,55 +536,61 @@ describe("VegaRtcManager", () => {
         });
 
         describe("highestPreferredLayer analytics", () => {
-            it("counts the first message as a transition from the top spatial layer (the SFU's own initial assumption)", async () => {
+            const sendHighestPreferredLayer = (spatialLayer: number) =>
+                rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer });
+
+            beforeEach(() => {
                 createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
-
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
-
-                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
             });
 
-            it("does not count a first message that matches the initial top spatial layer", async () => {
-                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
+            it("counts the first message as a transition from the initial highest preferred layer the webcam was capped to", async () => {
+                await sendHighestPreferredLayer(otherLayer);
 
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
+                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
+                    [`${initialLayer}->${otherLayer}`]: 1,
+                });
+            });
+
+            it("does not count a first message that matches the initial highest preferred layer", async () => {
+                await sendHighestPreferredLayer(initialLayer);
 
                 expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
                 expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({});
             });
 
             it("counts and histograms a transition once a second, different value arrives", async () => {
-                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
-
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+                await sendHighestPreferredLayer(initialLayer);
+                await sendHighestPreferredLayer(otherLayer);
 
                 expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
+                    [`${initialLayer}->${otherLayer}`]: 1,
+                });
             });
 
             it("does not count a repeated message carrying the same value", async () => {
-                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
-
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+                await sendHighestPreferredLayer(initialLayer);
+                await sendHighestPreferredLayer(otherLayer);
+                await sendHighestPreferredLayer(otherLayer);
 
                 expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 1 });
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
+                    [`${initialLayer}->${otherLayer}`]: 1,
+                });
             });
 
             it("aggregates counts across multiple transitions in the session, including repeats", async () => {
-                createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
-
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 2 });
-                await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
+                await sendHighestPreferredLayer(initialLayer);
+                await sendHighestPreferredLayer(otherLayer);
+                await sendHighestPreferredLayer(initialLayer);
+                await sendHighestPreferredLayer(otherLayer);
 
                 expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(3);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({ "2->0": 2, "0->2": 1 });
+                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
+                    [`${initialLayer}->${otherLayer}`]: 2,
+                    [`${otherLayer}->${initialLayer}`]: 1,
+                });
             });
         });
 
