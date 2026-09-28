@@ -99,6 +99,10 @@ function SubgridClient({ index, cellPaddings }: { index: number; cellPaddings: {
 }
 
 export function renderCellView({ cellView, isPresentation }: { cellView: CellView; isPresentation?: boolean }) {
+    if (cellView.type !== "video") {
+        return undefined;
+    }
+
     const clientId = cellView.client?.id || "";
 
     switch (cellView.type) {
