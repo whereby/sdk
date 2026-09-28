@@ -4,6 +4,7 @@ import {
     ChatFileShare,
     NotificationsEventEmitter,
     RoomConnectionState,
+    RoomIntegrationProps,
     SendFilesOptions,
     StartBreakoutSessionOptions,
     UpdateBreakoutSessionOptions,
@@ -152,6 +153,20 @@ export function useRoomConnection(
     const endMeeting = React.useCallback((stayBehind?: boolean) => client.endMeeting(stayBehind), [client]);
     const joinBreakoutGroup = React.useCallback((group: string) => client.joinBreakoutGroup(group), [client]);
     const joinBreakoutMainRoom = React.useCallback(() => client.joinBreakoutMainRoom(), [client]);
+    const startRoomIntegration = React.useCallback(
+        (options: { roomIntegrationId: string; tagName: string; shareUrl: string; props?: RoomIntegrationProps }) =>
+            client.startRoomIntegration(options),
+        [client],
+    );
+    const stopRoomIntegration = React.useCallback(
+        (options: { roomIntegrationSessionId: string; intent?: "stop" | "end" }) => client.stopRoomIntegration(options),
+        [client],
+    );
+    const updateRoomIntegrationProps = React.useCallback(
+        (options: { roomIntegrationSessionId: string; props: RoomIntegrationProps }) =>
+            client.updateRoomIntegrationProps(options),
+        [client],
+    );
     const startBreakoutSession = React.useCallback(
         (options: StartBreakoutSessionOptions) => client.startBreakoutSession(options),
         [client],
@@ -251,6 +266,9 @@ export function useRoomConnection(
             removeSpotlight,
             joinBreakoutGroup,
             joinBreakoutMainRoom,
+            startRoomIntegration,
+            stopRoomIntegration,
+            updateRoomIntegrationProps,
             startBreakoutSession,
             updateBreakoutSession,
             stopBreakoutSession,
