@@ -4,17 +4,19 @@ import {
     CLIENT_VIEW_SPOTLIGHTS_CHANGED,
     GridEvents,
     NUMBER_OF_CLIENT_VIEWS_CHANGED,
+    RUNNING_ROOM_INTEGRATIONS_CHANGED,
 } from "./events";
 import { selectGridState } from "./selector";
 import { GridState } from "./types";
 import { doRemoveSpotlight, doSpotlightParticipant } from "../../redux/slices/spotlights";
 import { BaseClient } from "../BaseClient";
-import { ClientView } from "../../redux";
+import { ClientView, RoomIntegrationSessionView } from "../../redux";
 
 export class GridClient extends BaseClient<GridState, GridEvents> {
     private clientViewSubscribers = new Set<(clientViews: ClientView[]) => void>();
     private spotlightedSubscribers = new Set<(spotlighted: ClientView[]) => void>();
     private numberOfClientViewsSubscribers = new Set<(num: number) => void>();
+    private runningRoomIntegrationsSubscribers = new Set<(sessions: RoomIntegrationSessionView[]) => void>();
 
     constructor(store: AppStore) {
         super(store);
@@ -34,6 +36,11 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
         if (state.numParticipants !== previousState.numParticipants) {
             this.numberOfClientViewsSubscribers.forEach((cb) => cb(state.numParticipants));
             this.emit(NUMBER_OF_CLIENT_VIEWS_CHANGED, state.numParticipants);
+        }
+
+        if (state.runningRoomIntegrations !== previousState.runningRoomIntegrations) {
+            this.runningRoomIntegrationsSubscribers.forEach((cb) => cb(state.runningRoomIntegrations));
+            this.emit(RUNNING_ROOM_INTEGRATIONS_CHANGED, state.runningRoomIntegrations);
         }
     }
 
@@ -58,6 +65,11 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
         return () => this.numberOfClientViewsSubscribers.delete(callback);
     }
 
+    public subscribeRunningRoomIntegrations(callback: (sessions: RoomIntegrationSessionView[]) => void): () => void {
+        this.runningRoomIntegrationsSubscribers.add(callback);
+        return () => this.runningRoomIntegrationsSubscribers.delete(callback);
+    }
+
     /* Actions */
 
     public spotlightParticipant(id: string) {
@@ -73,6 +85,7 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
         this.clientViewSubscribers.clear();
         this.spotlightedSubscribers.clear();
         this.numberOfClientViewsSubscribers.clear();
+        this.runningRoomIntegrationsSubscribers.clear();
         this.removeAllListeners();
     }
 }

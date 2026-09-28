@@ -3,5 +3,16 @@
     "compilerOptions": {
         "jsx": "react",
         "moduleResolution": "Bundler"
-    }
+    },
+    "exclude": [
+        "node_modules",
+        "dist",
+        "src/stories",
+        "src/**/__tests__",
+        "src/**/*.spec.ts",
+        "src/**/*.spec.tsx",
+        "src/**/*.unit.ts",
+        "src/**/*.unit.tsx",
+        "src/lib/__mocks__"
+    ]
 }

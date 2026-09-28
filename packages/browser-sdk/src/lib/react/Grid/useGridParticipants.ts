@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { ClientView, GridState } from "@whereby.com/core";
+import { ClientView, GridState, RoomIntegrationSessionView } from "@whereby.com/core";
 import { ACTIVE_VIDEO_SUBGRID_TRIGGER, ACTIVE_VIDEOS_PHONE_LIMIT, STAGE_PARTICIPANT_LIMIT } from "./contants";
 import { WherebyContext } from "../Provider";
 
@@ -9,25 +9,25 @@ export function calculateSubgridViews({
     activeVideosSubgridTrigger,
     shouldShowSubgrid,
     spotlightedParticipants,
-    maximizedParticipant,
+    maximizedCellId,
+    hasStagedIntegration = false,
     isPhoneResolution,
 }: {
     clientViews: ClientView[];
     activeVideosSubgridTrigger: number;
     shouldShowSubgrid: boolean;
     spotlightedParticipants: ClientView[];
-    maximizedParticipant?: ClientView | null;
+    maximizedCellId?: string | null;
+    hasStagedIntegration?: boolean;
     isPhoneResolution?: boolean;
 }) {
     if (!shouldShowSubgrid) {
         return [];
     }
     const hasSpotlights = spotlightedParticipants.length > 0;
-    const hasPresentationStage = hasSpotlights;
+    const hasPresentationStage = hasSpotlights || hasStagedIntegration;
 
-    const notMaximized = maximizedParticipant
-        ? clientViews.filter((client) => client.id !== maximizedParticipant.id)
-        : clientViews;
+    const notMaximized = maximizedCellId ? clientViews.filter((client) => client.id !== maximizedCellId) : clientViews;
 
     const notSpotlighted = notMaximized.filter(
         (client) => !client.isPresentation && !spotlightedParticipants.includes(client),
@@ -76,8 +76,8 @@ interface Props {
     forceSubgrid?: boolean;
     stageParticipantLimit?: number;
     enableSubgrid?: boolean;
-    maximizedParticipant?: ClientView | null;
-    floatingParticipant?: ClientView | null;
+    maximizedCellId?: string | null;
+    floatingCellId?: string | null;
     isConstrained?: boolean;
 }
 
@@ -86,8 +86,8 @@ function useGridParticipants({
     stageParticipantLimit = STAGE_PARTICIPANT_LIMIT,
     forceSubgrid = true,
     enableSubgrid = true,
-    maximizedParticipant,
-    floatingParticipant,
+    maximizedCellId,
+    floatingCellId,
     isConstrained = false,
 }: Props = {}) {
     const client = React.useContext(WherebyContext)?.getGrid();
@@ -118,6 +118,16 @@ function useGridParticipants({
         [setState],
     );
 
+    const handleRunningRoomIntegrationsChanged = React.useCallback(
+        (runningRoomIntegrations: RoomIntegrationSessionView[]) => {
+            setState((prevState) => ({
+                ...prevState,
+                runningRoomIntegrations,
+            }));
+        },
+        [setState],
+    );
+
     const handleNumParticipantsChanged = React.useCallback(
         (num: number) => {
             setState((prevState) => ({
@@ -132,6 +142,9 @@ function useGridParticipants({
         const unsubscribeClientViews = client.subscribeClientViews(handleClientViewChanged);
         const unsubscribeSpotlighted = client.subscribeSpotlightedParticipants(handleSpotlightedParticipantsChanged);
         const unsubscribeNumParticipants = client.subscribeNumberOfClientViews(handleNumParticipantsChanged);
+        const unsubscribeRunningRoomIntegrations = client.subscribeRunningRoomIntegrations(
+            handleRunningRoomIntegrationsChanged,
+        );
 
         setState(client.getState());
 
@@ -139,16 +152,27 @@ function useGridParticipants({
             unsubscribeClientViews();
             unsubscribeSpotlighted();
             unsubscribeNumParticipants();
+            unsubscribeRunningRoomIntegrations();
         };
     }, [client]);
 
     const allClientViews = React.useMemo(() => state.allClientViews, [state.allClientViews]);
     const spotlightedParticipants = React.useMemo(() => state.spotlightedParticipants, [state.spotlightedParticipants]);
     const numParticipants = React.useMemo(() => state.numParticipants, [state.numParticipants]);
+    const runningRoomIntegrations = React.useMemo(() => state.runningRoomIntegrations, [state.runningRoomIntegrations]);
 
-    const floatingClientView = React.useMemo(() => {
-        return floatingParticipant;
-    }, [floatingParticipant]);
+    // Resolved from the live list on every render rather than held: client views are rebuilt
+    // whenever the store updates, so a captured object still reports the video state it had when
+    // the consumer picked it, and no longer matches the object the grid is laying out.
+    const maximizedClientView = React.useMemo(
+        () => (maximizedCellId ? allClientViews.find((client) => client.id === maximizedCellId) || null : null),
+        [allClientViews, maximizedCellId],
+    );
+
+    const floatingClientView = React.useMemo(
+        () => (floatingCellId ? allClientViews.find((client) => client.id === floatingCellId) || null : null),
+        [allClientViews, floatingCellId],
+    );
 
     const clientViewsNotFloating = React.useMemo(() => {
         if (floatingClientView) {
@@ -164,28 +188,67 @@ function useGridParticipants({
         return forceSubgrid ? true : numParticipants > stageParticipantLimit;
     }, [forceSubgrid, numParticipants, stageParticipantLimit, enableSubgrid]);
 
+    const integrationsInPresentationGrid = React.useMemo(() => {
+        if (!runningRoomIntegrations.length || maximizedClientView) {
+            return [];
+        }
+        return [runningRoomIntegrations[0]];
+    }, [runningRoomIntegrations, maximizedClientView]);
+
+    const integrationsInSubgrid = React.useMemo(() => {
+        if (!shouldShowSubgrid) {
+            return [];
+        }
+        return runningRoomIntegrations.filter(
+            (session) =>
+                !integrationsInPresentationGrid.some(
+                    (staged) => staged.roomIntegrationSessionId === session.roomIntegrationSessionId,
+                ),
+        );
+    }, [runningRoomIntegrations, integrationsInPresentationGrid, shouldShowSubgrid]);
+
+    const integrationsHidden = React.useMemo(() => {
+        const visible = [...integrationsInPresentationGrid, ...integrationsInSubgrid];
+        return runningRoomIntegrations.filter(
+            (session) => !visible.some((shown) => shown.roomIntegrationSessionId === session.roomIntegrationSessionId),
+        );
+    }, [runningRoomIntegrations, integrationsInPresentationGrid, integrationsInSubgrid]);
+
     const clientViewsInSubgrid = React.useMemo(() => {
         return calculateSubgridViews({
             clientViews: clientViewsNotFloating,
             activeVideosSubgridTrigger,
             shouldShowSubgrid,
             spotlightedParticipants,
-            maximizedParticipant,
+            maximizedCellId,
+            hasStagedIntegration: integrationsInPresentationGrid.length > 0,
             isPhoneResolution: isConstrained,
         });
-    }, [clientViewsNotFloating, shouldShowSubgrid, activeVideosSubgridTrigger, spotlightedParticipants, isConstrained]);
+    }, [
+        clientViewsNotFloating,
+        shouldShowSubgrid,
+        activeVideosSubgridTrigger,
+        spotlightedParticipants,
+        maximizedCellId,
+        integrationsInPresentationGrid,
+        isConstrained,
+    ]);
 
     const clientViewsOnStage = React.useMemo(() => {
         return clientViewsNotFloating.filter((client) => !clientViewsInSubgrid.includes(client));
     }, [clientViewsNotFloating, clientViewsInSubgrid]);
 
     const clientViewsInPresentationGrid = React.useMemo(() => {
-        if (maximizedParticipant) {
-            return [maximizedParticipant];
+        if (maximizedClientView) {
+            return [maximizedClientView];
         }
 
-        return spotlightedParticipants;
-    }, [spotlightedParticipants, maximizedParticipant]);
+        if (integrationsInPresentationGrid.length) {
+            return [];
+        }
+
+        return spotlightedParticipants.filter((client) => clientViewsOnStage.includes(client));
+    }, [spotlightedParticipants, maximizedClientView, integrationsInPresentationGrid, clientViewsOnStage]);
 
     const clientViewsInGrid = React.useMemo(() => {
         return clientViewsOnStage.filter((client) => !clientViewsInPresentationGrid.includes(client));
@@ -193,9 +256,13 @@ function useGridParticipants({
 
     return {
         floatingClientView,
+        maximizedClientView,
         clientViewsInGrid,
         clientViewsInPresentationGrid,
         clientViewsInSubgrid,
+        integrationsInPresentationGrid,
+        integrationsInSubgrid,
+        integrationsHidden,
         spotlightedParticipants,
     };
 }

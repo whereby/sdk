@@ -1,5 +1,11 @@
 import { fromLocation } from "@whereby.com/media";
-import { ApiClient, CredentialsService, OrganizationService, OrganizationServiceCache } from "./api";
+import {
+    ApiClient,
+    CredentialsService,
+    OrganizationService,
+    OrganizationServiceCache,
+    RoomIntegrationService,
+} from "./api";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -12,6 +18,7 @@ export function createServices() {
         baseUrl: API_BASE_URL,
     });
     const organizationService = new OrganizationService({ apiClient });
+    const roomIntegrationService = new RoomIntegrationService({ apiClient });
 
     const fetchOrganizationFromRoomUrl = (roomUrl: string) => {
         const roomUrlObj = new URL(roomUrl);
@@ -29,6 +36,7 @@ export function createServices() {
         credentialsService,
         apiClient,
         organizationService,
+        roomIntegrationService,
         fetchOrganizationFromRoomUrl,
     };
 }
