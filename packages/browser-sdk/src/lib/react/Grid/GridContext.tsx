@@ -9,10 +9,12 @@ type GridContextValue = {
     cellViewsInPresentationGrid: CellView[];
     cellViewsInSubgrid: CellView[];
     clientAspectRatios: { [key: string]: number };
+    maximizedCellId: string | null;
+    setMaximizedCellId: React.Dispatch<React.SetStateAction<string | null>>;
     maximizedParticipant: ClientView | null;
-    setMaximizedParticipant: React.Dispatch<React.SetStateAction<ClientView | null>>;
+    floatingCellId: string | null;
+    setFloatingCellId: React.Dispatch<React.SetStateAction<string | null>>;
     floatingParticipant: ClientView | null;
-    setFloatingParticipant: React.Dispatch<React.SetStateAction<ClientView | null>>;
     isConstrained?: boolean;
 };
 

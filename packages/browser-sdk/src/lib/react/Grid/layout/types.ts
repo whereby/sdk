@@ -1,4 +1,4 @@
-import { ClientView } from "@whereby.com/core";
+import { ClientView, RoomIntegrationSessionView } from "@whereby.com/core";
 
 export type Box = {
     top: number;
@@ -22,17 +22,28 @@ export type Frame = {
     bounds: Bounds;
 };
 
-export type CellView = {
+type CellViewBase = {
     aspectRatio?: number;
     avatarSize?: number;
     cellPaddings?: { top: number; right: number };
-    client?: ClientView;
+    cellId: string;
     clientId: string;
     isDraggable?: boolean;
     isPlaceholder?: boolean;
     isSubgrid?: boolean;
-    type: string;
 };
+
+export type VideoCellView = CellViewBase & {
+    type: "video";
+    client?: ClientView;
+};
+
+export type IntegrationCellView = CellViewBase & {
+    type: "integration";
+    session: RoomIntegrationSessionView;
+};
+
+export type CellView = VideoCellView | IntegrationCellView;
 
 export type ResultCellView = {
     aspectRatio: number;
