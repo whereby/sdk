@@ -42,6 +42,9 @@ import {
     doStopLiveTranscription,
     doStopScreenshare,
     doRequestScreenshareEnable,
+    doStartRoomIntegration,
+    doStopRoomIntegration,
+    doUpdateRoomIntegrationProps,
     selectNotificationsEmitter,
     setDisplayName,
     signalEvents,
@@ -69,6 +72,7 @@ import type {
     LocalScreenshareState,
     RemoteParticipantState,
     RoomConnectionState,
+    RoomIntegrationProps,
     RoomJoinedSuccess,
     SendFilesOptions,
     ScreenshareState,
@@ -762,6 +766,47 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public endMeeting(stayBehind: boolean = false) {
         this.store.dispatch(doEndMeeting({ stayBehind }));
+    }
+
+    /**
+     * Share a room integration with everyone in the room, or in the current breakout group.
+     *
+     * The integration must be enabled for the room. `tagName` and `props` come from the integration's
+     * own bootstrap: they describe which content element to render and with which attributes.
+     *
+     * @param options.roomIntegrationId - The integration to start.
+     * @param options.tagName - Custom element name for the content frame.
+     * @param options.shareUrl - The https url of the shared content.
+     * @param options.props - Optional props to pass to the content frame.
+     */
+    public startRoomIntegration(options: {
+        roomIntegrationId: string;
+        tagName: string;
+        shareUrl: string;
+        props?: RoomIntegrationProps;
+    }) {
+        this.store.dispatch(doStartRoomIntegration(options));
+    }
+
+    /**
+     * Stop a running room integration.
+     *
+     * @param options.roomIntegrationSessionId - The running session to stop.
+     * @param options.intent - "end" when the user deliberately ended it, otherwise "stop".
+     */
+    public stopRoomIntegration(options: { roomIntegrationSessionId: string; intent?: "stop" | "end" }) {
+        this.store.dispatch(doStopRoomIntegration(options));
+    }
+
+    /**
+     * Update the props of a running room integration, propagating them to everyone in the room.
+     * This is how integration state such as playback position is kept in sync.
+     *
+     * @param options.roomIntegrationSessionId - The running session to update.
+     * @param options.props - Partial patch, merged into the session's existing props.
+     */
+    public updateRoomIntegrationProps(options: { roomIntegrationSessionId: string; props: RoomIntegrationProps }) {
+        this.store.dispatch(doUpdateRoomIntegrationProps(options));
     }
 
     /**

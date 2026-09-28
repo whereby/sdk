@@ -1,5 +1,6 @@
 export * from "./api";
 export * from "./effects";
+export * from "./roomIntegrationContent";
 export * from "./RoomParticipant";
 export { createServices } from "./services";
 export * from "./utils";
@@ -27,6 +28,12 @@ export {
     defaultBreakoutGroupName,
 } from "./redux/slices/breakout";
 export { MAX_FILES_PER_UPLOAD, MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "./redux/slices/fileShare";
+export { ROOM_INTEGRATION_PICKER_MESSAGES, roomIntegrationPickerUrl } from "./redux/slices/roomIntegrations";
+export type {
+    RoomIntegrationError,
+    RoomIntegrationErrorDetail,
+    RoomIntegrationPickerResult,
+} from "./redux/slices/roomIntegrations";
 export type { ClientView } from "./redux/types";
 export type { ConnectionStatus } from "./redux/slices/roomConnection";
 export type {
