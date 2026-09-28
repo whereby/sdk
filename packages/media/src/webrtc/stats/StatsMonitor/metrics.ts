@@ -142,6 +142,7 @@ export function captureCommonSsrcMetrics(
                 ssrcMetrics.roundTripTime = remoteReport.roundTripTime || 0;
                 ssrcMetrics.jitter = remoteReport.jitter || 0;
                 ssrcMetrics.fractionLost = remoteReport.fractionLost || 0;
+                ssrcMetrics.remotePacketsLost = remoteReport.packetsLost;
             }
         }
     }
