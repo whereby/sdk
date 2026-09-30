@@ -30,6 +30,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
     private client: WherebyClient;
     private roomConnection: RoomConnectionClient;
     private localMedia: LocalMediaClient;
+    private audioMixer: AudioMixer | null = null;
     private combinedAudioSink: AudioSink | null = null;
     private remoteMediaTracks: Record<string, { participantId: string; track: wrtc.MediaStreamTrack }> = {};
     private roomUrl: string | null = null;
@@ -57,6 +58,8 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         }
         if (["left", "kicked"].includes(status)) {
             this.stateSubscriptions.forEach((unsubscribe) => unsubscribe());
+            this.stateSubscriptions = [];
+            this.stopCombinedAudio();
 
             this.emit(ASSISTANT_LEFT_ROOM, { roomUrl: this.roomUrl || "" });
         }
@@ -187,6 +190,7 @@ export class Assistant extends EventEmitter<AssistantEvents> {
         const audioTracks = stream?.getAudioTracks();
 
         if (audioTracks?.length) {
+            this.audioMixer = audioMixer;
             this.combinedAudioSink = new AudioSink(audioTracks[0]);
 
             this.stateSubscriptions.push(
@@ -196,6 +200,14 @@ export class Assistant extends EventEmitter<AssistantEvents> {
             return this.combinedAudioSink;
         }
 
+        audioMixer.stopAudioMixer();
         return null;
+    }
+
+    private stopCombinedAudio(): void {
+        this.combinedAudioSink?.stop();
+        this.combinedAudioSink = null;
+        this.audioMixer?.stopAudioMixer();
+        this.audioMixer = null;
     }
 }
