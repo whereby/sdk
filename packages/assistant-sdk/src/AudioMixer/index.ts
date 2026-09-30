@@ -120,6 +120,7 @@ export class AudioMixer extends EventEmitter {
     }
 
     public getCombinedAudioStream(): MediaStream | null {
+        if (!this.combinedAudioStream) this.setupMediaStream();
         return this.combinedAudioStream;
     }
 
@@ -132,6 +133,7 @@ export class AudioMixer extends EventEmitter {
             if (pid && !liveIds.has(pid)) this.detachMixable(pid);
         }
 
+        if (!this.rtcAudioSource) this.setupMediaStream();
         if (!this.ffmpegProcess && this.rtcAudioSource) {
             this.ffmpegProcess = DEBUG_MIXER_OUTPUT
                 ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource)
@@ -158,6 +160,7 @@ export class AudioMixer extends EventEmitter {
             return;
         }
 
+        if (!this.rtcAudioSource) this.setupMediaStream();
         if (!this.ffmpegProcess && this.rtcAudioSource) {
             this.ffmpegProcess = DEBUG_MIXER_OUTPUT
                 ? this.mixer.spawnFFmpegProcessDebug(this.rtcAudioSource)
@@ -173,13 +176,23 @@ export class AudioMixer extends EventEmitter {
     }
 
     public stopAudioMixer(): void {
+        for (const binding of Object.values(this.activeSlots)) {
+            if (!binding) continue;
+            try {
+                binding.stop();
+            } catch (e) {
+                console.error("Failed to stop existing audio track", { error: e });
+            }
+        }
+        this.combinedAudioStream?.getTracks().forEach((track) => track.stop());
         if (this.ffmpegProcess) {
             this.mixer.stopFFmpegProcess(this.ffmpegProcess);
             this.ffmpegProcess = null;
         }
         this.mixableSlots = new Map(Array.from({ length: MIXER_SLOTS }, (_, i) => [i, ""]));
         this.activeSlots = {};
-        // Recreate the media stream to avoid stale references
-        this.setupMediaStream();
+        // The media stream is recreated lazily if the mixer is used again
+        this.combinedAudioStream = null;
+        this.rtcAudioSource = null;
     }
 }

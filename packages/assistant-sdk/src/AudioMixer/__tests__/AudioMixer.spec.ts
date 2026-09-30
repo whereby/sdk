@@ -36,12 +36,13 @@ jest.mock("@roamhq/wrtc", () => ({
     })),
     nonstandard: {
         RTCAudioSource: jest.fn().mockImplementation(() => ({
-            createTrack: jest.fn().mockReturnValue({
+            createTrack: jest.fn(() => ({
                 id: "mock-track-id",
                 kind: "audio",
+                stop: jest.fn(),
                 addEventListener: jest.fn(),
                 removeEventListener: jest.fn(),
-            }),
+            })),
         })),
     },
 }));
@@ -675,6 +676,24 @@ describe("AudioMixer", () => {
 
         it("should handle being called when no FFmpeg process is running", () => {
             expect(() => audioMixer.stopAudioMixer()).not.toThrow();
+        });
+
+        it("should stop the audio sinks of all active slots", () => {
+            const participants = [createMockParticipant({ id: "p1" }), createMockParticipant({ id: "p2" })];
+            audioMixer.handleRemoteParticipants(participants);
+            mockSlotBinding.stop.mockClear();
+
+            audioMixer.stopAudioMixer();
+
+            expect(mockSlotBinding.stop).toHaveBeenCalledTimes(2);
+        });
+
+        it("should stop the combined audio track", () => {
+            const [track] = audioMixer.getCombinedAudioStream()!.getTracks();
+
+            audioMixer.stopAudioMixer();
+
+            expect(track.stop).toHaveBeenCalled();
         });
     });
 
