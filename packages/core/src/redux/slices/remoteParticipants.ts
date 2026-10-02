@@ -173,6 +173,8 @@ function addStream(state: RemoteParticipantSliceState, payload: RtcStreamAddedPa
         (!remoteParticipant.stream && streamType === "webcam") ||
         (!remoteParticipant.stream && !streamType && !remoteParticipantStream)
     ) {
+        // eslint-disable-next-line no-console
+        console.log("participant stream being attached", stream);
         return updateParticipant(state, clientId, { stream });
     }
     // screen share
@@ -239,6 +241,8 @@ export const remoteParticipantsSlice = createSlice({
             return state;
         });
         builder.addCase(rtcEvents.streamAdded, (state, action) => {
+            // eslint-disable-next-line no-console
+            console.log("rtcEvents.streamAdded", action);
             return addStream(state, action.payload);
         });
         builder.addCase(signalEvents.newClient, (state, action) => {

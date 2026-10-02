@@ -251,6 +251,8 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
         const participant = remoteClients.find((p) => p.id === clientId);
         if (!participant) continue;
         if (state === "to_accept" || (state === "new_accept" && shouldAcceptNewClients)) {
+            // eslint-disable-next-line no-console
+            console.log("New stream accepted", streamId);
             rtcManager.acceptNewStream({
                 streamId: streamId === CAMERA_STREAM_ID ? clientId : streamId,
                 clientId,
@@ -548,7 +550,11 @@ export const selectStreamsToAccept = createSelector(
 createReactor(
     [selectStreamsToAccept, selectIsAcceptingStreams],
     ({ dispatch }, streamsToAccept, isAcceptingStreams) => {
+        // eslint-disable-next-line no-console
+        console.log("Reactor triggered");
         if (0 < streamsToAccept.length && !isAcceptingStreams) {
+            // eslint-disable-next-line no-console
+            console.log("Start accepting new streams", streamsToAccept);
             dispatch(doHandleAcceptStreams(streamsToAccept));
         }
     },
