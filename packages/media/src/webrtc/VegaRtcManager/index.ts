@@ -472,22 +472,30 @@ export default class VegaRtcManager implements RtcManager {
                     return wsUrl;
                 },
                 onConnected: (vegaConnection, info) => {
+                    // eslint-disable-next-line no-console
+                    console.log("VEGA: Connected", vegaConnection, info);
                     this._vegaConnection = vegaConnection;
                     this._vegaConnection.on("message", (message: any) => this._onMessage(message));
                     this._emitToPWA(rtcManagerEvents.SFU_CONNECTION_INFO, info);
                     this._join();
                 },
                 onDisconnected: () => {
+                    // eslint-disable-next-line no-console
+                    console.log("VEGA: Disconnected");
                     this._vegaConnection = null;
                     this._isConnectingOrConnected = false;
                     this._onClose();
                 },
                 onFailed: () => {
+                    // eslint-disable-next-line no-console
+                    console.log("VEGA: Connection Failed");
                     this._vegaConnection = null;
                     this._isConnectingOrConnected = false;
                     this._onClose();
                 },
                 onAttemptFailed: ({ host, dc }) => {
+                    // eslint-disable-next-line no-console
+                    console.log("VEGA: Connection attempt failed", host, dc);
                     rtcStats.sendEvent("SfuConnectAttemptFailed", { host, dc });
                 },
             });
@@ -1841,11 +1849,15 @@ export default class VegaRtcManager implements RtcManager {
     }
 
     async _onMessage(message: any) {
+        // eslint-disable-next-line no-console
+        console.log("MEDIA: message received from SFU", message);
         const { method, data } = message;
         return Promise.resolve()
             .then(() => {
                 switch (method) {
                     case "consumerReady":
+                        // eslint-disable-next-line no-console
+                        console.log("MEDIA: Received consumerReady from SFU", data);
                         return this._onConsumerReady(data);
                     case "consumerClosed":
                         return this._onConsumerClosed(data);
@@ -1884,6 +1896,8 @@ export default class VegaRtcManager implements RtcManager {
             }
             consumer = await this._receiveTransport.consume(options);
         } catch (error) {
+            // eslint-disable-next-line no-console
+            console.log("MEDIA: Error consuming receive transport", error);
             this.analytics.vegaConsumerCreationFailed++;
             rtcStats.sendEvent("VegaConsumerCreationFailed", { producerId: options.producerId, error });
             throw error;
