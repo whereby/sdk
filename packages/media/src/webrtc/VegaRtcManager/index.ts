@@ -2093,15 +2093,8 @@ export default class VegaRtcManager implements RtcManager {
         const toPauseConsumers: any[] = [];
         const toResumeConsumers: any[] = [];
 
-        // eslint-disable-next-line no-console
-        console.log("MEDIA: consumers", this._consumers);
-
         this._consumers.forEach((consumer: any) => {
-            if (consumer.appData.sourceClientId !== clientId) {
-                // eslint-disable-next-line no-console
-                console.log("MEDIA: source client id matches", consumer.appData.sourceClientId, clientId);
-                return;
-            }
+            if (consumer.appData.sourceClientId !== clientId) return;
 
             const hasAccepted = consumer.appData.screenShare ? hasAcceptedScreenStream : hasAcceptedWebcamStream;
 
@@ -2132,18 +2125,8 @@ export default class VegaRtcManager implements RtcManager {
             });
         }
 
-        // eslint-disable-next-line no-console
-        console.log(
-            "MEDIA: Should emit webcam stream added",
-            webcamStream,
-            hasEmittedWebcamStream,
-            hasAcceptedWebcamStream,
-        );
-
         // If the webcam stream has not been emitted, we emit it.
         if (webcamStream && !hasEmittedWebcamStream && hasAcceptedWebcamStream) {
-            // eslint-disable-next-line no-console
-            console.log("MEDIA: Emitting webcam stream added");
             this._emitToPWA(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                 clientId,
                 stream: webcamStream,
