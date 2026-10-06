@@ -75,30 +75,30 @@ type DataConsumerAppData = {
 };
 
 type VegaAnalytics = {
-    vegaUnknownResponse: number;
-    vegaRequestTimeout: number;
-    vegaJoinFailed: number;
-    vegaJoinWithoutVegaConnection: number;
-    vegaCreateTransportWithoutVegaConnection: number;
-    vegaIceRestarts: number;
-    vegaIceRestartMissingTransport: number;
-    vegaIceRestartWrongTransportId: number;
-    vegaReplaceTrackNoProducerNoEnabledTrack: number;
-    vegaMicProducerFailed: number;
-    vegaWebcamProducerFailed: number;
-    vegaScreenVideoProducerFailed: number;
-    vegaScreenAudioProducerFailed: number;
-    vegaConsumerCreationFailed: number;
-    vegaMicProducerClosed: number;
-    micTrackEndedCount: number;
     camTrackEndedCount: number;
-    numNewPc: number;
+    micTrackEndedCount: number;
     numIceConnected: number;
     numIceDisconnected: number;
     numIceFailed: number;
+    numNewPc: number;
     sfuMsFromOfflineToClose: number;
-    sfuOfflineWhileConnectedCount: number;
     sfuOfflineToCloseCount: number;
+    sfuOfflineWhileConnectedCount: number;
+    vegaConsumerCreationFailed: number;
+    vegaCreateTransportWithoutVegaConnection: number;
+    vegaIceRestartMissingTransport: number;
+    vegaIceRestarts: number;
+    vegaIceRestartWrongTransportId: number;
+    vegaJoinFailed: number;
+    vegaJoinWithoutVegaConnection: number;
+    vegaMicProducerClosed: number;
+    vegaMicProducerFailed: number;
+    vegaReplaceTrackNoProducerNoEnabledTrack: number;
+    vegaRequestTimeout: number;
+    vegaScreenAudioProducerFailed: number;
+    vegaScreenVideoProducerFailed: number;
+    vegaUnknownResponse: number;
+    vegaWebcamProducerFailed: number;
 };
 
 type VegaAnalyticMetric = keyof VegaAnalytics;

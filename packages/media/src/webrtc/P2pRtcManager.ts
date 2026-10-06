@@ -58,30 +58,30 @@ if (browserName === "chrome") {
 }
 
 type P2PAnalytics = {
-    P2POffendingInitialOffer: number;
-    numNewPc: number;
+    camTrackEndedCount: number;
+    micTrackEndedCount: number;
     numIceConnected: number;
     numIceDisconnected: number;
     numIceFailed: number;
-    numIceRestart: number;
+    numIceIpv6Seen: number;
+    numIceIpv6SixToFour: number;
+    numIceIpv6TeredoSeen: number;
+    numIceMdnsSeen: number;
     numIceNoPublicIpGathered: number;
     numIceNoPublicIpGatheredIn3sec: number;
-    numIceIpv6Seen: number;
-    numIceIpv6TeredoSeen: number;
-    numIceIpv6SixToFour: number;
-    numIceMdnsSeen: number;
-    micTrackEndedCount: number;
-    camTrackEndedCount: number;
+    numIceRestart: number;
+    numNewPc: number;
     numPcOnAnswerFailure: number;
     numPcOnOfferFailure: number;
     numPcSldFailure: number;
-    P2PStaleAnswerIgnored: number;
-    P2PReplaceTrackNoStream: number;
-    P2PReplaceTrackNewTrackNotInStream: number;
-    P2POnTrackNoStream: number;
-    P2PLocalNetworkFailed: number;
-    P2PRelayedIceCandidate: number;
     P2PAddIceCandidateFailure: number;
+    P2PLocalNetworkFailed: number;
+    P2POffendingInitialOffer: number;
+    P2POnTrackNoStream: number;
+    P2PRelayedIceCandidate: number;
+    P2PReplaceTrackNewTrackNotInStream: number;
+    P2PReplaceTrackNoStream: number;
+    P2PStaleAnswerIgnored: number;
 };
 
 type P2PAnalyticMetric = keyof P2PAnalytics;
@@ -170,30 +170,30 @@ export default class P2pRtcManager implements RtcManager {
         });
 
         this.analytics = {
-            P2POffendingInitialOffer: 0,
-            numNewPc: 0,
+            camTrackEndedCount: 0,
+            micTrackEndedCount: 0,
             numIceConnected: 0,
             numIceDisconnected: 0,
             numIceFailed: 0,
-            numIceRestart: 0,
+            numIceIpv6Seen: 0,
+            numIceIpv6SixToFour: 0,
+            numIceIpv6TeredoSeen: 0,
+            numIceMdnsSeen: 0,
             numIceNoPublicIpGathered: 0,
             numIceNoPublicIpGatheredIn3sec: 0,
-            numIceIpv6Seen: 0,
-            numIceIpv6TeredoSeen: 0,
-            numIceIpv6SixToFour: 0,
-            numIceMdnsSeen: 0,
-            micTrackEndedCount: 0,
-            camTrackEndedCount: 0,
-            numPcSldFailure: 0,
+            numIceRestart: 0,
+            numNewPc: 0,
             numPcOnAnswerFailure: 0,
             numPcOnOfferFailure: 0,
-            P2PStaleAnswerIgnored: 0,
-            P2PReplaceTrackNoStream: 0,
-            P2PReplaceTrackNewTrackNotInStream: 0,
-            P2POnTrackNoStream: 0,
-            P2PLocalNetworkFailed: 0,
-            P2PRelayedIceCandidate: 0,
+            numPcSldFailure: 0,
             P2PAddIceCandidateFailure: 0,
+            P2PLocalNetworkFailed: 0,
+            P2POffendingInitialOffer: 0,
+            P2POnTrackNoStream: 0,
+            P2PRelayedIceCandidate: 0,
+            P2PReplaceTrackNewTrackNotInStream: 0,
+            P2PReplaceTrackNoStream: 0,
+            P2PStaleAnswerIgnored: 0,
         };
     }
 
