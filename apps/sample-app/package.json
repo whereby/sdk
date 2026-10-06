@@ -11,13 +11,14 @@
         "react-hot-toast": "^2.4.1"
     },
     "devDependencies": {
-        "@whereby.com/prettier-config": "workspace:*",
-        "@whereby.com/tsconfig": "workspace:*",
         "@playwright/test": "^1.60.0",
         "@vitejs/plugin-react": "^4.2.1",
-        "vite": "^5.0.13",
+        "@whereby.com/assistant-sdk": "workspace:*",
+        "@whereby.com/prettier-config": "workspace:*",
+        "@whereby.com/tsconfig": "workspace:*",
         "prettier": "catalog:",
-        "typescript": "catalog:"
+        "typescript": "catalog:",
+        "vite": "^5.0.13"
     },
     "scripts": {
         "clean": "rm -rf dist node_modules .turbo",
