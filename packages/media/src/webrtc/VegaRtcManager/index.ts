@@ -242,9 +242,7 @@ export default class VegaRtcManager implements RtcManager {
             offlineDetectedAt: null,
             onBrowserOffline: () => this._sfuZombieOnOffline(),
         };
-        if (typeof window !== "undefined") {
-            window.addEventListener("offline", this._sfuZombie.onBrowserOffline);
-        }
+        window?.addEventListener?.("offline", this._sfuZombie.onBrowserOffline); // browser-only
 
         this.analytics = {
             camTrackEndedCount: 0,
@@ -1772,9 +1770,8 @@ export default class VegaRtcManager implements RtcManager {
         // so it's indistinguishable from a self-heal — don't bank it. Just reset and release the
         // listener.
         this._sfuZombieReset();
-        if (typeof window !== "undefined") {
-            window.removeEventListener("offline", this._sfuZombie.onBrowserOffline);
-        }
+        window?.removeEventListener?.("offline", this._sfuZombie.onBrowserOffline); // browser-only
+
         this._socketListenerDeregisterFunctions.forEach((func: any) => {
             func();
         });
