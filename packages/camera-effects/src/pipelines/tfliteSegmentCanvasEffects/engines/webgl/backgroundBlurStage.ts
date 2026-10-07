@@ -12,7 +12,6 @@ function generateOptimizedGaussianKernel(sigma) {
     let x = 0;
     let currentSum = 0;
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
         const n = g(x);
         const nextSum = currentSum + (currentSum ? n * 2 : n);
