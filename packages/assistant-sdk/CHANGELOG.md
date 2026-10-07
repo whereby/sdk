@@ -1,5 +1,13 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.113
+
+### Patch Changes
+
+- f260959: Remove window.addEventListener polyfilling (restore default Node behavior)
+- 6522767: Release combined audio resources when the assistant leaves the room. The ffmpeg process, pacer interval and audio sinks created by `getCombinedAudioSink()` are now stopped on leave, and `AudioSink` no longer creates a second native sink that was never stopped.
+    - @whereby.com/core@1.21.1
+
 ## 1.2.112
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.1.2
+
+### Patch Changes
+
+- d341894: Feature detect window.addEventListener before usage to continue supporting non-browser environments
+
 ## 11.1.1
 
 ### Patch Changes
