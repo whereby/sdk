@@ -68,6 +68,7 @@ export default function VideoExperience({
     const [audioDenoiserSupported, setAudioDenoiserSupported] = useState<boolean | null>(null);
     const [audioDenoiserOn, setAudioDenoiserOn] = useState(false);
     const [knockMessages, setKnockMessages] = useState<Record<string, string>>({});
+    const [autoDisableLocalCamera, setAutoDisableLocalCamera] = useState(false);
 
     const { state, actions, events } = useRoomConnection(roomName, {
         localMediaOptions: {
@@ -94,6 +95,7 @@ export default function VideoExperience({
         liveCaptions,
         liveTranscription,
         fileUploads,
+        isAudioOnlyModeEnabled,
         isCameraEnabled,
         isMicrophoneEnabled,
     } = state;
@@ -115,6 +117,7 @@ export default function VideoExperience({
         toggleMicrophone,
         toggleHdMode,
         toggleLowDataMode,
+        toggleAudioOnlyMode,
         toggleWidescreenMode,
         toggleRaiseHand,
         askToSpeak,
@@ -800,6 +803,7 @@ export default function VideoExperience({
                         <button onClick={() => toggleMicrophone(false)}>Off</button>
                         <button onClick={() => toggleMicrophone(true)}>On</button>
                     </div>
+                    <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
                     <div className="controls">
                         <button onClick={() => leaveRoom()}>Leave</button>
                         <button onClick={() => toggleLowDataMode()}>Toggle low data mode</button>
@@ -817,7 +821,30 @@ export default function VideoExperience({
                         >
                             Toggle screenshare
                         </button>
-                        <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
+                        <div
+                            style={{
+                                display: "inline-flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                                border: "1px solid lightgrey",
+                                padding: "2px 4px",
+                            }}
+                        >
+                            <button
+                                style={{ alignSelf: "stretch", padding: "4px 8px" }}
+                                onClick={() => toggleAudioOnlyMode(!isAudioOnlyModeEnabled, { autoDisableLocalCamera })}
+                            >
+                                Audio-only mode: {isAudioOnlyModeEnabled ? "on" : "off"}
+                            </button>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={autoDisableLocalCamera}
+                                    onChange={(e) => setAutoDisableLocalCamera(e.target.checked)}
+                                />
+                                Also disable local camera
+                            </label>
+                        </div>
                     </div>
                     <div className="chat">
                         {chatMessages.length > 0 && <h3>Chat messages</h3>}
