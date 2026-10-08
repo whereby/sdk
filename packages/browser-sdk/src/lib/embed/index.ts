@@ -132,6 +132,7 @@ interface WherebyEmbedElementCommands {
     stopLiveTranscription: () => void;
     toggleBreakout: (enabled?: boolean) => void;
     toggleCamera: (enabled?: boolean) => void;
+    toggleAudioOnlyMode: (enabled?: boolean, options?: { autoDisableLocalCamera?: boolean }) => void;
     toggleMicrophone: (enabled?: boolean) => void;
     togglePeople: (enabled?: boolean) => void;
     toggleScreenshare: (enabled?: boolean) => void;
@@ -284,6 +285,9 @@ define("WherebyEmbed", {
     },
     toggleCamera(enabled?: boolean) {
         this._postCommand("toggle_camera", [enabled]);
+    },
+    toggleAudioOnlyMode(enabled?: boolean, options?: { autoDisableLocalCamera?: boolean }) {
+        this._postCommand("toggle_audio_only_mode", options ? [enabled, options] : [enabled]);
     },
     toggleMicrophone(enabled?: boolean) {
         this._postCommand("toggle_microphone", [enabled]);
