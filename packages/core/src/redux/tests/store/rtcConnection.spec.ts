@@ -5,6 +5,8 @@ import {
     doDisconnectRtc,
     doRtcReportStreamResolution,
     doRtcManagerInitialize,
+    rtcManagerCreated,
+    rtcManagerDestroyed,
     selectRtcManager,
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
@@ -170,6 +172,42 @@ describe("actions", () => {
             videoPaused: true,
         });
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
+    });
+
+    describe("when the rtcManager is recreated", () => {
+        it("resets rtcManagerInitialized when the rtcManager is destroyed", () => {
+            const store = createStore({ withRtcManager: true });
+
+            store.dispatch(rtcManagerDestroyed());
+
+            expect(store.getState().rtcConnection.rtcManager).toBe(null);
+            expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(false);
+        });
+
+        it("adds the local camera stream to the new rtcManager", () => {
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    localMedia: {
+                        ...initialLocalMediaState,
+                        status: "started",
+                        stream: new MockMediaStream(),
+                    },
+                },
+            });
+            const newRtcManager = { ...mockRtcManager, addCameraStream: jest.fn() };
+
+            store.dispatch(rtcManagerDestroyed());
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            store.dispatch(rtcManagerCreated(newRtcManager as any));
+
+            expect(newRtcManager.addCameraStream).toHaveBeenCalledTimes(1);
+            expect(newRtcManager.addCameraStream).toHaveBeenCalledWith(store.getState().localMedia.stream, {
+                audioPaused: true,
+                videoPaused: true,
+            });
+            expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
+        });
     });
 
     describe("doAcceptStreams", () => {
