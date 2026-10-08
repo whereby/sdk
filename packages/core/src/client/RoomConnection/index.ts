@@ -28,6 +28,7 @@ import {
     doRequestVideoEnable,
     doRtcReportStreamResolution,
     doSendChatMessage,
+    doToggleAudioOnlyMode,
     doRemoveChatMessage,
     doSendFiles,
     doDownloadFile,
@@ -57,6 +58,7 @@ import {
     toggleWidescreenModeEnabled,
     toggleMicrophoneEnabled,
     AppConfig,
+    ToggleAudioOnlyModeOptions,
 } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import type {
@@ -574,6 +576,18 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
      */
     public toggleLowDataMode(enabled?: boolean) {
         this.store.dispatch(toggleLowDataModeEnabled({ enabled }));
+    }
+
+    /**
+     * Toggle audio-only mode on or off. While enabled, all incoming video is paused and only audio is received.
+     * @param enabled - If true, enables audio-only mode; if false, disables it.
+     * If undefined, toggles the current state.
+     * @param options - Optional settings for audio-only mode.
+     * @param options.autoDisableLocalCamera - If true, also turns off the local camera when enabling audio-only mode.
+     * The camera is not turned back on when audio-only mode is disabled.
+     */
+    public toggleAudioOnlyMode(enabled?: boolean, options?: ToggleAudioOnlyModeOptions) {
+        this.store.dispatch(doToggleAudioOnlyMode({ enabled, ...options }));
     }
 
     /**

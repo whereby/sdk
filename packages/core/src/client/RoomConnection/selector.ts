@@ -38,6 +38,7 @@ import {
     selectRoomConnectionError,
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
+    selectIsAudioOnlyModeEnabled,
     selectLiveCaptionsRaw,
     selectRoomIntegrationsRaw,
     selectEnabledRoomIntegrations,
@@ -91,6 +92,7 @@ export const selectRoomConnectionState = createSelector(
     selectEnabledRoomIntegrations,
     selectEmbeddableRoomIntegrations,
     selectRunningRoomIntegrations,
+    selectIsAudioOnlyModeEnabled,
     (
         chatMessages,
         fileUploads,
@@ -135,6 +137,7 @@ export const selectRoomConnectionState = createSelector(
         enabledRoomIntegrations,
         embeddableRoomIntegrations,
         runningRoomIntegrations,
+        isAudioOnlyModeEnabled,
     ) => {
         // Main-room participants that are spotlighted broadcast their audio/video into every group.
         // Only relevant for participants who are currently inside a group.
@@ -178,6 +181,7 @@ export const selectRoomConnectionState = createSelector(
             connectionError,
             knockResponse,
             events: notificationsEmitter,
+            isAudioOnlyModeEnabled,
             isCameraEnabled,
             isMicrophoneEnabled,
             liveStream: streaming.isStreaming

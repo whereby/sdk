@@ -26,6 +26,7 @@ import {
     doStartLocalMedia,
     doLocalStreamEffect,
     selectLocalMediaConstraintsOptions,
+    toggleCameraEnabled,
 } from "../localMedia";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
@@ -77,6 +78,7 @@ export interface RtcConnectionState {
     rtcManagerInitialized: boolean;
     status: "inactive" | "ready" | "reconnecting";
     isAcceptingStreams: boolean;
+    isAudioOnlyModeEnabled: boolean;
 }
 
 export const rtcConnectionSliceInitialState: RtcConnectionState = {
@@ -89,12 +91,19 @@ export const rtcConnectionSliceInitialState: RtcConnectionState = {
     rtcManagerInitialized: false,
     status: "inactive",
     isAcceptingStreams: false,
+    isAudioOnlyModeEnabled: false,
 };
 
 export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",
     initialState: rtcConnectionSliceInitialState,
     reducers: {
+        audioOnlyModeToggled: (state, action: PayloadAction<{ enabled?: boolean }>) => {
+            return {
+                ...state,
+                isAudioOnlyModeEnabled: action.payload.enabled ?? !state.isAudioOnlyModeEnabled,
+            };
+        },
         isAcceptingStreams: (state, action: PayloadAction<boolean>) => {
             return {
                 ...state,
@@ -183,6 +192,7 @@ export const rtcConnectionSlice = createSlice({
  */
 
 export const {
+    audioOnlyModeToggled,
     resolutionReported,
     rtcDispatcherCreated,
     rtcDisconnected,
@@ -323,6 +333,22 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     dispatch(rtcManagerInitialized());
 });
 
+export interface ToggleAudioOnlyModeOptions {
+    autoDisableLocalCamera?: boolean;
+}
+
+export const doToggleAudioOnlyMode = createAppThunk(
+    ({ enabled, autoDisableLocalCamera }: { enabled?: boolean } & ToggleAudioOnlyModeOptions) =>
+        (dispatch, getState) => {
+            dispatch(audioOnlyModeToggled({ enabled }));
+
+            const state = getState();
+            if (autoDisableLocalCamera && selectIsAudioOnlyModeEnabled(state) && selectIsCameraEnabled(state)) {
+                dispatch(toggleCameraEnabled({ enabled: false }));
+            }
+        },
+);
+
 /**
  * Selectors
  */
@@ -334,6 +360,7 @@ export const selectRtcDispatcherCreated = (state: RootState) => state.rtcConnect
 export const selectRtcIsCreatingDispatcher = (state: RootState) => state.rtcConnection.isCreatingDispatcher;
 export const selectRtcStatus = (state: RootState) => state.rtcConnection.status;
 export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnection.isAcceptingStreams;
+export const selectIsAudioOnlyModeEnabled = (state: RootState) => state.rtcConnection.isAudioOnlyModeEnabled;
 
 /**
  * Reactors
@@ -402,6 +429,26 @@ startAppListening({
             payload?.replacedTracks?.forEach((t) => {
                 replace(t.kind, t);
             });
+        }
+    },
+});
+
+startAppListening({
+    actionCreator: audioOnlyModeToggled,
+    effect: (_, { getState }) => {
+        const state = getState();
+        const rtcManager = selectRtcManager(state);
+
+        rtcManager?.setAudioOnly(selectIsAudioOnlyModeEnabled(state));
+    },
+});
+
+startAppListening({
+    actionCreator: rtcManagerCreated,
+    effect: ({ payload: rtcManager }, { getState }) => {
+        // Re-apply audio-only mode when the rtc manager is recreated
+        if (selectIsAudioOnlyModeEnabled(getState())) {
+            rtcManager.setAudioOnly(true);
         }
     },
 });

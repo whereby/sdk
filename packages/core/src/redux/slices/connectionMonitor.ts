@@ -56,7 +56,7 @@ export const doStartConnectionMonitor = createAppThunk(() => (dispatch, getState
         const clientViews = selectAllClientViews(state).map((clientView) => ({
             id: clientView.id,
             clientId: clientView.clientId,
-            // isAudioOnlyModeEnabled: clientView.isAudioOnlyModeEnabled, // not yet supported in SDK
+            isAudioOnlyModeEnabled: clientView.isAudioOnlyModeEnabled,
             isLocalClient: clientView.isLocalClient,
             audio: {
                 enabled: clientView.isAudioEnabled,

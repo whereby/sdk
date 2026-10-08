@@ -1,18 +1,24 @@
 import { createStore, mockRtcManager } from "../store.setup";
+import { RootState } from "../../store";
 import {
+    audioOnlyModeToggled,
     doHandleAcceptStreams,
     doConnectRtc,
     doDisconnectRtc,
     doRtcReportStreamResolution,
     doRtcManagerInitialize,
+    doToggleAudioOnlyMode,
+    rtcConnectionSlice,
+    rtcConnectionSliceInitialState,
     rtcManagerCreated,
     rtcManagerDestroyed,
     selectRtcManager,
+    RtcConnectionState,
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import { CAMERA_STREAM_ID, RtcManagerDispatcher } from "@whereby.com/media";
-import { initialLocalMediaState } from "../../slices/localMedia";
+import { initialLocalMediaState, toggleCameraEnabled } from "../../slices/localMedia";
 import { localScreenshareSliceInitialState } from "../../slices/localScreenshare";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
@@ -20,6 +26,41 @@ import { doAppStop } from "../../slices/app";
 import { signalEvents } from "../../slices/signalConnection";
 
 jest.mock("@whereby.com/media");
+
+describe("reducers", () => {
+    describe("audioOnlyModeToggled", () => {
+        it.each`
+            current  | enabled      | expected
+            ${false} | ${undefined} | ${true}
+            ${true}  | ${undefined} | ${false}
+            ${false} | ${true}      | ${true}
+            ${true}  | ${true}      | ${true}
+            ${false} | ${false}     | ${false}
+            ${true}  | ${false}     | ${false}
+        `(
+            "should set isAudioOnlyModeEnabled=$expected when current=$current and enabled=$enabled",
+            ({ current, enabled, expected }) => {
+                const result = rtcConnectionSlice.reducer(
+                    { ...rtcConnectionSliceInitialState, isAudioOnlyModeEnabled: current },
+                    audioOnlyModeToggled({ enabled }),
+                );
+
+                expect(result.isAudioOnlyModeEnabled).toEqual(expected);
+            },
+        );
+    });
+
+    it("should keep audio-only mode when the rtc manager is destroyed and recreated", () => {
+        const initialState = { ...rtcConnectionSliceInitialState, isAudioOnlyModeEnabled: true };
+
+        const destroyed = rtcConnectionSlice.reducer(initialState, rtcManagerDestroyed());
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const created = rtcConnectionSlice.reducer(destroyed, rtcManagerCreated({} as any));
+
+        expect(destroyed.isAudioOnlyModeEnabled).toBe(true);
+        expect(created.isAudioOnlyModeEnabled).toBe(true);
+    });
+});
 
 describe("actions", () => {
     it("doHandleAcceptStreams", () => {
@@ -367,9 +408,124 @@ describe("actions", () => {
             });
         });
     });
+
+    describe("doToggleAudioOnlyMode", () => {
+        const createState = ({
+            isAudioOnlyModeEnabled,
+            cameraEnabled,
+        }: {
+            isAudioOnlyModeEnabled: boolean;
+            cameraEnabled: boolean;
+        }) =>
+            ({
+                rtcConnection: { ...rtcConnectionSliceInitialState, isAudioOnlyModeEnabled },
+                localMedia: { cameraEnabled },
+            }) as unknown as RootState;
+
+        it.each`
+            enabled  | autoDisableLocalCamera | cameraEnabled | shouldDisableCamera
+            ${true}  | ${true}                | ${true}       | ${true}
+            ${true}  | ${true}                | ${false}      | ${false}
+            ${true}  | ${false}               | ${true}       | ${false}
+            ${true}  | ${undefined}           | ${true}       | ${false}
+            ${false} | ${true}                | ${true}       | ${false}
+        `(
+            "should disable camera=$shouldDisableCamera when enabled=$enabled, autoDisableLocalCamera=$autoDisableLocalCamera, cameraEnabled=$cameraEnabled",
+            ({ enabled, autoDisableLocalCamera, cameraEnabled, shouldDisableCamera }) => {
+                const dispatch = jest.fn();
+                const getState = () => createState({ isAudioOnlyModeEnabled: enabled, cameraEnabled });
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                doToggleAudioOnlyMode({ enabled, autoDisableLocalCamera })(dispatch, getState, {} as any);
+
+                expect(dispatch).toHaveBeenCalledWith(audioOnlyModeToggled({ enabled }));
+                if (shouldDisableCamera) {
+                    expect(dispatch).toHaveBeenCalledWith(toggleCameraEnabled({ enabled: false }));
+                } else {
+                    expect(dispatch).not.toHaveBeenCalledWith(toggleCameraEnabled({ enabled: false }));
+                }
+            },
+        );
+    });
 });
 
 describe("middleware", () => {
+    // Merged over the `withRtcManager` defaults in createStore
+    const audioOnlyModeEnabledState = { isAudioOnlyModeEnabled: true } as RtcConnectionState;
+
+    describe("doToggleAudioOnlyMode", () => {
+        it("enables audio-only mode on the rtc manager", () => {
+            const store = createStore({ withRtcManager: true });
+
+            store.dispatch(doToggleAudioOnlyMode({ enabled: true }));
+
+            expect(store.getState().rtcConnection.isAudioOnlyModeEnabled).toBe(true);
+            expect(mockRtcManager.setAudioOnly).toHaveBeenCalledWith(true);
+        });
+
+        it("disables audio-only mode on the rtc manager", () => {
+            const store = createStore({
+                withRtcManager: true,
+                initialState: { rtcConnection: audioOnlyModeEnabledState },
+            });
+
+            store.dispatch(doToggleAudioOnlyMode({ enabled: false }));
+
+            expect(store.getState().rtcConnection.isAudioOnlyModeEnabled).toBe(false);
+            expect(mockRtcManager.setAudioOnly).toHaveBeenCalledWith(false);
+        });
+
+        it("turns off the local camera when autoDisableLocalCamera is set", () => {
+            const store = createStore({
+                withRtcManager: true,
+                initialState: { localMedia: { ...initialLocalMediaState, cameraEnabled: true } },
+            });
+
+            store.dispatch(doToggleAudioOnlyMode({ enabled: true, autoDisableLocalCamera: true }));
+
+            expect(store.getState().localMedia.cameraEnabled).toBe(false);
+        });
+
+        it("does not turn the local camera back on when audio-only mode is disabled", () => {
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    rtcConnection: audioOnlyModeEnabledState,
+                    localMedia: { ...initialLocalMediaState, cameraEnabled: false },
+                },
+            });
+
+            store.dispatch(doToggleAudioOnlyMode({ enabled: false, autoDisableLocalCamera: true }));
+
+            expect(store.getState().localMedia.cameraEnabled).toBe(false);
+        });
+    });
+
+    describe("rtcManagerCreated", () => {
+        it("re-applies audio-only mode to a new rtc manager", () => {
+            const store = createStore({
+                withRtcManager: true,
+                initialState: { rtcConnection: audioOnlyModeEnabledState },
+            });
+            const newRtcManager = { ...mockRtcManager, setAudioOnly: jest.fn() };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            store.dispatch(rtcManagerCreated(newRtcManager as any));
+
+            expect(newRtcManager.setAudioOnly).toHaveBeenCalledWith(true);
+        });
+
+        it("does not touch audio-only mode on a new rtc manager when disabled", () => {
+            const store = createStore({ withRtcManager: true });
+            const newRtcManager = { ...mockRtcManager, setAudioOnly: jest.fn() };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            store.dispatch(rtcManagerCreated(newRtcManager as any));
+
+            expect(newRtcManager.setAudioOnly).not.toHaveBeenCalled();
+        });
+    });
+
     describe("doAppStop", () => {
         it("closes the rtcstats connection", () => {
             const store = createStore({
