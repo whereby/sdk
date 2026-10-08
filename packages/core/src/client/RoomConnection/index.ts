@@ -87,6 +87,7 @@ import {
     CHAT_NEW_MESSAGE,
     CLOUD_RECORDING_STATUS_CHANGED,
     CONNECTION_ERROR_CHANGED,
+    AUDIO_ONLY_MODE_CHANGED,
     CONNECTION_STATUS_CHANGED,
     LIVE_CAPTIONS_STATUS_CHANGED,
     LIVE_TRANSCRIPTION_STATUS_CHANGED,
@@ -122,6 +123,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private fileUploadsSubscribers = new Set<(uploads: FileUpload[]) => void>();
     private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined | undefined) => void>();
     private connectionErrorSubscribers = new Set<(status: string | null) => void>();
+    private audioOnlyModeSubscribers = new Set<(isEnabled: boolean) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
     private liveCaptionsSubscribers = new Set<(status: LiveCaptionsState | undefined) => void>();
@@ -178,6 +180,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.connectionError !== previousState.connectionError) {
             this.connectionErrorSubscribers.forEach((cb) => cb(state.connectionError));
             this.emit(CONNECTION_ERROR_CHANGED, state.connectionError);
+        }
+
+        if (state.isAudioOnlyModeEnabled !== previousState.isAudioOnlyModeEnabled) {
+            this.audioOnlyModeSubscribers.forEach((cb) => cb(state.isAudioOnlyModeEnabled));
+            this.emit(AUDIO_ONLY_MODE_CHANGED, state.isAudioOnlyModeEnabled);
         }
 
         if (state.isCameraEnabled !== previousState.isCameraEnabled) {
@@ -338,6 +345,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToConnectionError(callback: (error: string | null) => void): () => void {
         this.connectionErrorSubscribers.add(callback);
         return () => this.connectionErrorSubscribers.delete(callback);
+    }
+
+    public subscribeToAudioOnlyMode(callback: (isEnabled: boolean) => void): () => void {
+        this.audioOnlyModeSubscribers.add(callback);
+        return () => this.audioOnlyModeSubscribers.delete(callback);
     }
 
     public subscribeToLiveStream(callback: (status: { status: "streaming" } | undefined) => void): () => void {
@@ -1024,6 +1036,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.fileUploadsSubscribers.clear();
         this.cloudRecordingSubscribers.clear();
         this.connectionErrorSubscribers.clear();
+        this.audioOnlyModeSubscribers.clear();
         this.connectionStatusSubscribers.clear();
         this.liveStreamSubscribers.clear();
         this.localParticipantSubscribers.clear();
