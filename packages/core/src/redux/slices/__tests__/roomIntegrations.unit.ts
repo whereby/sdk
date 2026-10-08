@@ -176,28 +176,29 @@ describe("roomIntegrations", () => {
                 shareUrl: "https://youtu.be/dQw4w9WgXcQ",
                 props: sessionEvent.props,
                 clientId: "client-1",
-                sessionStartedAt: null,
+                roomIntegrationSessionStartedAt: null,
             });
         });
 
-        it("keeps sessionStartedAt null when the server did not send one", () => {
-            expect(parseRoomIntegrationSession(sessionEvent)?.sessionStartedAt).toBeNull();
+        it("keeps roomIntegrationSessionStartedAt null when the server did not send one", () => {
+            expect(parseRoomIntegrationSession(sessionEvent)?.roomIntegrationSessionStartedAt).toBeNull();
         });
 
-        it("carries a server-assigned sessionStartedAt through", () => {
+        it("carries a server-assigned roomIntegrationSessionStartedAt through", () => {
             expect(
-                parseRoomIntegrationSession({ ...sessionEvent, sessionStartedAt: 1758537120000 })?.sessionStartedAt,
+                parseRoomIntegrationSession({ ...sessionEvent, roomIntegrationSessionStartedAt: 1758537120000 })
+                    ?.roomIntegrationSessionStartedAt,
             ).toEqual(1758537120000);
         });
 
-        it("reads sessionStartedAt from the event, not from the client-supplied state", () => {
+        it("reads roomIntegrationSessionStartedAt from the event, not from the client-supplied state", () => {
             const started = roomIntegrationsSlice.reducer(
                 roomIntegrationsSliceInitialState,
                 signalEvents.roomIntegrationStarted({
                     roomIntegrationId: 5,
                     roomIntegrationSessionId: "session-1",
                     breakoutGroupId: null,
-                    sessionStartedAt: 1758537120000,
+                    roomIntegrationSessionStartedAt: 1758537120000,
                     state: {
                         tagName: sessionEvent.tagName,
                         shareUrl: sessionEvent.shareUrl,
@@ -207,7 +208,7 @@ describe("roomIntegrations", () => {
                 }),
             );
 
-            expect(started.running[0]?.sessionStartedAt).toEqual(1758537120000);
+            expect(started.running[0]?.roomIntegrationSessionStartedAt).toEqual(1758537120000);
         });
 
         it("does not let the client-supplied state shadow the server's session fields", () => {
@@ -238,10 +239,10 @@ describe("roomIntegrations", () => {
             });
         });
 
-        it("ignores a sessionStartedAt that is not a finite number", () => {
+        it("ignores a roomIntegrationSessionStartedAt that is not a finite number", () => {
             expect(
-                parseRoomIntegrationSession({ ...sessionEvent, sessionStartedAt: "10:12am" as never })
-                    ?.sessionStartedAt,
+                parseRoomIntegrationSession({ ...sessionEvent, roomIntegrationSessionStartedAt: "10:12am" as never })
+                    ?.roomIntegrationSessionStartedAt,
             ).toBeNull();
         });
 

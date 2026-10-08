@@ -29,7 +29,7 @@ const session: RoomIntegrationSessionView = {
     shareUrl: "https://youtu.be/dQw4w9WgXcQ",
     props: { videoref: "dQw4w9WgXcQ", seek: 0, paused: false },
     clientId: "client-1",
-    sessionStartedAt: null,
+    roomIntegrationSessionStartedAt: null,
     isPresenter: true,
     presenterDisplayName: null,
     canStop: true,

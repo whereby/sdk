@@ -45,7 +45,7 @@ export interface RoomIntegrationSession {
     shareUrl: string;
     props: RoomIntegrationProps;
     clientId: string;
-    sessionStartedAt: number | null;
+    roomIntegrationSessionStartedAt: number | null;
 }
 
 export interface RoomIntegrationSessionView extends RoomIntegrationSession {
@@ -142,7 +142,7 @@ export function parseRoomIntegrationSession(event: RoomIntegrationSessionEvent):
         shareUrl,
         props,
         clientId,
-        sessionStartedAt,
+        roomIntegrationSessionStartedAt,
     } = event || ({} as RoomIntegrationSessionEvent);
 
     if (
@@ -166,7 +166,10 @@ export function parseRoomIntegrationSession(event: RoomIntegrationSessionEvent):
         shareUrl,
         props,
         clientId,
-        sessionStartedAt: typeof sessionStartedAt === "number" && isFinite(sessionStartedAt) ? sessionStartedAt : null,
+        roomIntegrationSessionStartedAt:
+            typeof roomIntegrationSessionStartedAt === "number" && isFinite(roomIntegrationSessionStartedAt)
+                ? roomIntegrationSessionStartedAt
+                : null,
     };
 }
 
@@ -272,13 +275,14 @@ export const roomIntegrationsSlice = createSlice({
                 return;
             }
 
-            const { roomIntegrationId, roomIntegrationSessionId, breakoutGroupId, sessionStartedAt } = action.payload;
+            const { roomIntegrationId, roomIntegrationSessionId, breakoutGroupId, roomIntegrationSessionStartedAt } =
+                action.payload;
             const session = parseRoomIntegrationSession({
                 ...action.payload.state,
                 roomIntegrationId,
                 roomIntegrationSessionId,
                 breakoutGroupId,
-                sessionStartedAt,
+                roomIntegrationSessionStartedAt,
             });
 
             if (!session) {

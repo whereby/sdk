@@ -72,7 +72,7 @@ export function makeFakeRoomIntegrationSession(index: number): RoomIntegrationSe
         shareUrl: "https://youtu.be/dQw4w9WgXcQ",
         props: { aspectratio: 16 / 9 },
         clientId: "fake-0",
-        sessionStartedAt: null,
+        roomIntegrationSessionStartedAt: null,
         isPresenter: index === 0,
         presenterDisplayName: index === 0 ? null : "Someone else",
         canStop: true,

@@ -367,7 +367,7 @@ export interface RoomIntegrationSessionState {
 }
 
 interface RoomIntegrationSessionTiming {
-    sessionStartedAt?: number;
+    roomIntegrationSessionStartedAt?: number;
 }
 
 export interface RoomIntegrationSessionEvent extends RoomIntegrationSessionState, RoomIntegrationSessionTiming {
