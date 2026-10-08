@@ -509,6 +509,66 @@ describe("VegaRtcManager", () => {
         });
     });
 
+    describe("setAudioOnly", () => {
+        let vegaConnection: any;
+
+        beforeEach(() => {
+            vegaConnection = { message: jest.fn() };
+            rtcManager._vegaConnection = vegaConnection;
+        });
+
+        it("sends enableAudioOnly to the SFU when enabling", () => {
+            rtcManager.setAudioOnly(true);
+
+            expect(vegaConnection.message).toHaveBeenCalledWith("enableAudioOnly");
+            expect(rtcManager._isAudioOnlyMode).toBe(true);
+        });
+
+        it("sends disableAudioOnly to the SFU when disabling", () => {
+            rtcManager.setAudioOnly(true);
+            rtcManager.setAudioOnly(false);
+
+            expect(vegaConnection.message).toHaveBeenLastCalledWith("disableAudioOnly");
+            expect(rtcManager._isAudioOnlyMode).toBe(false);
+        });
+
+        it("remembers the mode when there is no SFU connection", () => {
+            rtcManager._vegaConnection = null;
+
+            rtcManager.setAudioOnly(true);
+
+            expect(rtcManager._isAudioOnlyMode).toBe(true);
+        });
+    });
+
+    describe("_join", () => {
+        let vegaConnection: any;
+
+        beforeEach(() => {
+            vegaConnection = {
+                message: jest.fn(),
+                request: jest.fn().mockResolvedValue({ routerRtpCapabilities: {} }),
+            };
+            rtcManager._vegaConnection = vegaConnection;
+            jest.spyOn(rtcManager, "_createTransport").mockResolvedValue(undefined);
+        });
+
+        it("re-applies audio-only mode when it is enabled", async () => {
+            rtcManager._isAudioOnlyMode = true;
+
+            await rtcManager._join();
+
+            expect(vegaConnection.message).toHaveBeenCalledWith("enableAudioOnly");
+        });
+
+        it("does not send audio-only mode when it is disabled", async () => {
+            await rtcManager._join();
+
+            expect(vegaConnection.message).not.toHaveBeenCalledWith("enableAudioOnly");
+            expect(vegaConnection.message).not.toHaveBeenCalledWith("disableAudioOnly");
+        });
+    });
+
     describe("disconnectAll", () => {
         it("closes the VegaQualityMonitor connection", () => {
             jest.spyOn(rtcManager._qualityMonitor, "close");
