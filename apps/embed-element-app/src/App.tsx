@@ -35,6 +35,7 @@ const events = [
     "streaming_status_change",
     "recording_status_change",
     "transcription_status_change",
+    "audio_only_mode_status_change",
 ];
 
 function App() {

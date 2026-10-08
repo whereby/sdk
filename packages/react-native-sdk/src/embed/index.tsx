@@ -121,6 +121,7 @@ const WHEREBY_EVENT_TYPES = [
     "streaming_status_change",
     "recording_status_change",
     "transcription_status_change",
+    "audio_only_mode_status_change",
     "connection_status_change",
     "precall_check_skipped",
     "precall_check_completed",
@@ -146,6 +147,7 @@ export type WherebyEvent =
     | { type: "streaming_status_change"; payload: { status: string } }
     | { type: "recording_status_change"; payload: { status: "starting" | "started" | "stopped" } }
     | { type: "transcription_status_change"; payload: { status: "starting" | "started" | "stopped" } }
+    | { type: "audio_only_mode_status_change"; payload: { enabled: boolean } }
     | { type: "connection_status_change"; payload: { status: "stable" | "unstable" } }
     | { type: "precall_check_skipped"; payload: undefined }
     | {
@@ -205,6 +207,9 @@ interface WherebyEmbedProps extends WebViewProps, WherebyEmbedElementAttributes 
     onRecordingStatusChange?: (data: Extract<WherebyEvent, { type: "recording_status_change" }>["payload"]) => void;
     onTranscriptionStatusChange?: (
         data: Extract<WherebyEvent, { type: "transcription_status_change" }>["payload"],
+    ) => void;
+    onAudioOnlyModeStatusChange?: (
+        data: Extract<WherebyEvent, { type: "audio_only_mode_status_change" }>["payload"],
     ) => void;
     onConnectionStatusChange?: (data: Extract<WherebyEvent, { type: "connection_status_change" }>["payload"]) => void;
     onPrecallCheckSkipped?: () => void;
@@ -409,6 +414,9 @@ const WherebyEmbed = React.forwardRef<WherebyWebView, WherebyEmbedProps>(
                             break;
                         case "transcription_status_change":
                             props.onTranscriptionStatusChange?.(data.payload);
+                            break;
+                        case "audio_only_mode_status_change":
+                            props.onAudioOnlyModeStatusChange?.(data.payload);
                             break;
                         case "connection_status_change":
                             props.onConnectionStatusChange?.(data.payload);
