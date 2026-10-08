@@ -168,6 +168,21 @@ export const selectScreenshares = createSelector(
     },
 );
 
+export const selectRemoteScreenshareVideoTrackIds = createSelector(
+    selectScreenshares,
+    (screenshares) =>
+        screenshares
+            .filter((screenshare) => !screenshare.isLocal)
+            .flatMap((screenshare) => screenshare.stream?.getVideoTracks().map((track) => track.id) ?? []),
+    {
+        memoizeOptions: {
+            // Only produce a new array (and trigger reactors) when the track ids actually change
+            resultEqualityCheck: (a: string[], b: string[]) =>
+                a.length === b.length && a.every((trackId, index) => trackId === b[index]),
+        },
+    },
+);
+
 export const selectRemoteClientViews = createSelector(
     selectLocalScreenshareStream,
     selectLocalParticipantRaw,

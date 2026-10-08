@@ -24,6 +24,7 @@ import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
 import { doAppStop } from "../../slices/app";
 import { signalEvents } from "../../slices/signalConnection";
+import { rtcEvents } from "../../slices/rtcConnection/actions";
 
 jest.mock("@whereby.com/media");
 
@@ -498,6 +499,41 @@ describe("middleware", () => {
             store.dispatch(doToggleAudioOnlyMode({ enabled: false, autoDisableLocalCamera: true }));
 
             expect(store.getState().localMedia.cameraEnabled).toBe(false);
+        });
+    });
+
+    describe("remote screenshares", () => {
+        it("passes remote screenshare video track ids to the rtc manager", () => {
+            const participant = randomRemoteParticipant({
+                stream: Object.assign(new MockMediaStream(), { id: "webcam" }),
+                streams: [
+                    { id: "0", state: "done_accept" },
+                    { id: "screen", state: "done_accept" },
+                ],
+            });
+            const store = createStore({
+                withRtcManager: true,
+                initialState: { remoteParticipants: { remoteParticipants: [participant] } },
+            });
+            const screenshareStream = Object.assign(new MockMediaStream(), { id: "screen" });
+            screenshareStream.addTrack({ id: "screen-video", kind: "video" } as MediaStreamTrack);
+
+            store.dispatch(
+                rtcEvents.streamAdded({
+                    clientId: participant.id,
+                    stream: screenshareStream,
+                    streamId: "screen",
+                    streamType: "screenshare",
+                }),
+            );
+
+            expect(mockRtcManager.setRemoteScreenshareVideoTrackIds).toHaveBeenCalledTimes(1);
+            expect(mockRtcManager.setRemoteScreenshareVideoTrackIds).toHaveBeenCalledWith(["screen-video"]);
+
+            // Unrelated participant updates should not re-send unchanged track ids
+            store.dispatch(signalEvents.audioEnabled({ clientId: participant.id, isAudioEnabled: false }));
+
+            expect(mockRtcManager.setRemoteScreenshareVideoTrackIds).toHaveBeenCalledTimes(1);
         });
     });
 

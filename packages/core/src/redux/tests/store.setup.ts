@@ -24,6 +24,7 @@ export const mockRtcManager = {
     updateStreamResolution: jest.fn(),
     sendStatsCustomEvent: jest.fn(),
     setAudioOnly: jest.fn(),
+    setRemoteScreenshareVideoTrackIds: jest.fn(),
     shouldAcceptStreamsFromBothSides: jest.fn(),
 };
 export const mockRtcEmitter = {

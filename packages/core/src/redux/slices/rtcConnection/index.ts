@@ -34,6 +34,7 @@ import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } fro
 import { selectBreakoutCurrentId } from "../breakout";
 import { selectLocalParticipantRaw } from "../localParticipant/selectors";
 import { selectSpotlights } from "../spotlights";
+import { selectRemoteScreenshareVideoTrackIds } from "../room";
 
 import { rtcEvents } from "./actions";
 export { rtcEvents } from "./actions";
@@ -538,6 +539,15 @@ createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) =
         dispatch(doDisconnectRtc());
     }
 });
+
+// Let the rtc manager know which remote video tracks are screenshares, so that
+// audio-only mode keeps them flowing (only used by P2P)
+createReactor(
+    [selectRtcManager, selectRemoteScreenshareVideoTrackIds],
+    (_, rtcManager, remoteScreenshareVideoTrackIds) => {
+        rtcManager?.setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds);
+    },
+);
 
 // react accept streams
 export const selectStreamsToAccept = createSelector(

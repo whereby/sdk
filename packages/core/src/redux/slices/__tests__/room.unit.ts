@@ -1,7 +1,8 @@
 import { SignalRoom } from "@whereby.com/media";
-import { roomSlice, roomSliceInitialState, selectScreenshares } from "../room";
+import { roomSlice, roomSliceInitialState, selectRemoteScreenshareVideoTrackIds, selectScreenshares } from "../room";
 import { signalEvents } from "../signalConnection/actions";
 import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
+import { Screenshare } from "../../../RoomParticipant";
 
 describe("roomSlice", () => {
     describe("reducers", () => {
@@ -137,6 +138,38 @@ describe("roomSlice", () => {
                     ).toEqual(expected);
                 },
             );
+        });
+
+        describe("selectRemoteScreenshareVideoTrackIds", () => {
+            const createScreenshare = ({ isLocal, trackIds }: { isLocal: boolean; trackIds: string[] }) => {
+                const stream = randomMediaStream();
+                trackIds.forEach((id) => stream.addTrack({ id, kind: "video" } as MediaStreamTrack));
+                stream.addTrack({ id: `${trackIds[0]}-audio`, kind: "audio" } as MediaStreamTrack);
+
+                return { id: stream.id, participantId: "p", hasAudioTrack: true, isLocal, stream } as Screenshare;
+            };
+
+            it("should return the video track ids of remote screenshares only", () => {
+                const screenshares = [
+                    createScreenshare({ isLocal: true, trackIds: ["local-video"] }),
+                    createScreenshare({ isLocal: false, trackIds: ["remote-video-1"] }),
+                    createScreenshare({ isLocal: false, trackIds: ["remote-video-2"] }),
+                ];
+
+                expect(selectRemoteScreenshareVideoTrackIds.resultFunc(screenshares)).toEqual([
+                    "remote-video-1",
+                    "remote-video-2",
+                ]);
+            });
+
+            it("should return the same array when the track ids have not changed", () => {
+                const remoteScreenshare = createScreenshare({ isLocal: false, trackIds: ["remote-video"] });
+
+                const first = selectRemoteScreenshareVideoTrackIds.memoizedResultFunc([remoteScreenshare]);
+                const second = selectRemoteScreenshareVideoTrackIds.memoizedResultFunc([{ ...remoteScreenshare }]);
+
+                expect(second).toBe(first);
+            });
         });
     });
 });
