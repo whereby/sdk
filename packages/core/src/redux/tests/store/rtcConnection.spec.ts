@@ -13,6 +13,7 @@ import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMoc
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import { CAMERA_STREAM_ID, RtcManagerDispatcher } from "@whereby.com/media";
 import { initialLocalMediaState } from "../../slices/localMedia";
+import { localScreenshareSliceInitialState } from "../../slices/localScreenshare";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
 import { doAppStop } from "../../slices/app";
@@ -172,6 +173,30 @@ describe("actions", () => {
             videoPaused: true,
         });
         expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
+        expect(mockRtcManager.addScreenshareStream).not.toHaveBeenCalled();
+    });
+
+    it("doRtcManagerInitialize adds an active local screenshare", () => {
+        const screenshareStream = new MockMediaStream();
+        const store = createStore({
+            withRtcManager: true,
+            initialState: {
+                localMedia: {
+                    ...initialLocalMediaState,
+                    stream: new MockMediaStream(),
+                },
+                localScreenshare: {
+                    ...localScreenshareSliceInitialState,
+                    status: "active",
+                    stream: screenshareStream,
+                },
+            },
+        });
+
+        store.dispatch(doRtcManagerInitialize());
+
+        expect(mockRtcManager.addScreenshareStream).toHaveBeenCalledTimes(1);
+        expect(mockRtcManager.addScreenshareStream).toHaveBeenCalledWith(screenshareStream);
     });
 
     describe("when the rtcManager is recreated", () => {
@@ -207,6 +232,33 @@ describe("actions", () => {
                 videoPaused: true,
             });
             expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
+        });
+
+        it("adds an active local screenshare to the new rtcManager", () => {
+            const screenshareStream = new MockMediaStream();
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    localMedia: {
+                        ...initialLocalMediaState,
+                        status: "started",
+                        stream: new MockMediaStream(),
+                    },
+                    localScreenshare: {
+                        ...localScreenshareSliceInitialState,
+                        status: "active",
+                        stream: screenshareStream,
+                    },
+                },
+            });
+            const newRtcManager = { ...mockRtcManager, addCameraStream: jest.fn(), addScreenshareStream: jest.fn() };
+
+            store.dispatch(rtcManagerDestroyed());
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            store.dispatch(rtcManagerCreated(newRtcManager as any));
+
+            expect(newRtcManager.addScreenshareStream).toHaveBeenCalledTimes(1);
+            expect(newRtcManager.addScreenshareStream).toHaveBeenCalledWith(screenshareStream);
         });
     });
 
