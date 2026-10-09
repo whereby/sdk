@@ -19,7 +19,7 @@ export type {
     KnockResponseSender,
     RoomIntegrationProps,
 } from "@whereby.com/media";
-export type { FileUpload, FileShareError, SendFilesOptions } from "../../redux";
+export type { FileUpload, FileShareError, SendFilesOptions, ToggleAudioOnlyModeOptions } from "../../redux";
 export type {
     RoomIntegration,
     RoomIntegrationError,
@@ -152,6 +152,7 @@ export interface RoomConnectionState {
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
     events?: NotificationsEventEmitter;
+    isAudioOnlyModeEnabled: boolean;
     isCameraEnabled: boolean;
     isMicrophoneEnabled: boolean;
     liveStream?: LiveStreamState;

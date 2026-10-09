@@ -7,6 +7,7 @@ import {
     RoomIntegrationProps,
     SendFilesOptions,
     StartBreakoutSessionOptions,
+    ToggleAudioOnlyModeOptions,
     UpdateBreakoutSessionOptions,
 } from "@whereby.com/core";
 
@@ -98,6 +99,10 @@ export function useRoomConnection(
     const toggleMicrophone = React.useCallback((enabled?: boolean) => client.toggleMicrophone(enabled), [client]);
     const toggleHdMode = React.useCallback((enabled?: boolean) => client.toggleHdMode(enabled), [client]);
     const toggleLowDataMode = React.useCallback((enabled?: boolean) => client.toggleLowDataMode(enabled), [client]);
+    const toggleAudioOnlyMode = React.useCallback(
+        (enabled?: boolean, options?: ToggleAudioOnlyModeOptions) => client.toggleAudioOnlyMode(enabled, options),
+        [client],
+    );
     const toggleWidescreenMode = React.useCallback(
         (enabled?: boolean) => client.toggleWidescreenMode(enabled),
         [client],
@@ -261,6 +266,7 @@ export function useRoomConnection(
             toggleRaiseHand,
             toggleHdMode,
             toggleLowDataMode,
+            toggleAudioOnlyMode,
             toggleWidescreenMode,
             spotlightParticipant,
             removeSpotlight,

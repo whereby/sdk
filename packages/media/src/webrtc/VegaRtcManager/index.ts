@@ -152,6 +152,7 @@ export default class VegaRtcManager implements RtcManager {
     _sndTransportIceRestartPromise: any;
     _rcvTransportIceRestartPromise: any;
     _colocation: any;
+    _isAudioOnlyMode: boolean;
     _audioTrackOnEnded: any;
     _videoTrackOnEnded: any;
     _socketListenerDeregisterFunctions: any;
@@ -243,6 +244,7 @@ export default class VegaRtcManager implements RtcManager {
         this._rcvTransportIceRestartPromise = null;
 
         this._colocation = null;
+        this._isAudioOnlyMode = false;
 
         this._audioTrackOnEnded = () => {
             // There are a couple of reasons the microphone could stop working.
@@ -617,6 +619,9 @@ export default class VegaRtcManager implements RtcManager {
             });
 
             if (this._colocation) this._vegaConnection.message("setColocation", { colocation: this._colocation });
+
+            // Re-apply audio-only mode, as the SFU does not keep it across reconnects
+            if (this._isAudioOnlyMode) this._vegaConnection.message("enableAudioOnly");
 
             await Promise.all([this._createTransport(true), this._createTransport(false)]);
 
@@ -1554,6 +1559,7 @@ export default class VegaRtcManager implements RtcManager {
      * @param {boolean} audioOnly
      */
     setAudioOnly(audioOnly: boolean) {
+        this._isAudioOnlyMode = audioOnly;
         this._vegaConnection?.message(audioOnly ? "enableAudioOnly" : "disableAudioOnly");
     }
 

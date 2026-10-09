@@ -1,5 +1,6 @@
 import { localParticipantSlice, localParticipantSliceInitialState } from "../localParticipant";
 import { signalEvents } from "../signalConnection/actions";
+import { selectLocalParticipantView } from "../localParticipant/selectors";
 import { randomSignalClient, randomLocalParticipant } from "../../../__mocks__/appMocks";
 
 describe("localParticipantSlice", () => {
@@ -94,6 +95,18 @@ describe("localParticipantSlice", () => {
                     ...participant,
                     breakoutGroup: breakoutGroupId,
                 });
+            });
+        });
+    });
+
+    describe("selectors", () => {
+        describe("selectLocalParticipantView", () => {
+            it.each([true, false])("should set isAudioOnlyModeEnabled=%s on the local client view", (enabled) => {
+                const localParticipant = randomLocalParticipant({ roleName: "visitor" });
+
+                const result = selectLocalParticipantView.resultFunc(localParticipant, undefined, enabled);
+
+                expect(result?.isAudioOnlyModeEnabled).toBe(enabled);
             });
         });
     });

@@ -6,6 +6,7 @@ import {
     RoomJoinedSuccess,
     SendFilesOptions,
     StartBreakoutSessionOptions,
+    ToggleAudioOnlyModeOptions,
     UpdateBreakoutSessionOptions,
 } from "@whereby.com/core";
 
@@ -62,6 +63,7 @@ export interface RoomConnectionActions {
     toggleRaiseHand: (enabled?: boolean) => void;
     toggleHdMode: (enabled?: boolean) => void;
     toggleLowDataMode: (enabled?: boolean) => void;
+    toggleAudioOnlyMode: (enabled?: boolean, options?: ToggleAudioOnlyModeOptions) => void;
     toggleWidescreenMode: (enabled?: boolean) => void;
     spotlightParticipant: (clientId: string) => void;
     removeSpotlight: (clientId: string) => void;

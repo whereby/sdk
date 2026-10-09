@@ -23,6 +23,8 @@ export const mockRtcManager = {
     rtcStatsDisconnect: jest.fn(),
     updateStreamResolution: jest.fn(),
     sendStatsCustomEvent: jest.fn(),
+    setAudioOnly: jest.fn(),
+    setRemoteScreenshareVideoTrackIds: jest.fn(),
     shouldAcceptStreamsFromBothSides: jest.fn(),
 };
 export const mockRtcEmitter = {
@@ -104,6 +106,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rtcManager: mockRtcManager as any,
             isAcceptingStreams: false,
+            isAudioOnlyModeEnabled: false,
             ...initialState.rtcConnection,
         };
     }

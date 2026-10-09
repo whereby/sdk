@@ -20,7 +20,8 @@ export const selectLocalParticipantBreakoutAssigned = (state: RootState) =>
 export const selectLocalParticipantView = createSelector(
     selectLocalParticipantRaw,
     selectLocalMediaStream,
-    (participant, localStream) => {
+    (state: RootState) => state.rtcConnection.isAudioOnlyModeEnabled,
+    (participant, localStream, isAudioOnlyModeEnabled) => {
         const clientView: ClientView = {
             id: participant.id,
             clientId: participant.id,
@@ -30,6 +31,7 @@ export const selectLocalParticipantView = createSelector(
             isLocalClient: true,
             isAudioEnabled: participant.isAudioEnabled,
             isVideoEnabled: participant.isVideoEnabled,
+            isAudioOnlyModeEnabled,
         };
 
         if (NON_PERSON_ROLES.includes(participant.roleName)) {

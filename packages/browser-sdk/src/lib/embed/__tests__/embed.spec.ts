@@ -92,11 +92,32 @@ describe("@whereby/browser-sdk", () => {
                     startRecording: expect.any(Function),
                     stopRecording: expect.any(Function),
                     toggleCamera: expect.any(Function),
+                    toggleAudioOnlyMode: expect.any(Function),
                     toggleMicrophone: expect.any(Function),
                     toggleScreenshare: expect.any(Function),
                     toggleChat: expect.any(Function),
                 }),
             );
         });
+
+        it.each`
+            args                                        | expectedArgs
+            ${[]}                                       | ${[undefined]}
+            ${[true]}                                   | ${[true]}
+            ${[true, { autoDisableLocalCamera: true }]} | ${[true, { autoDisableLocalCamera: true }]}
+        `(
+            "should post toggle_audio_only_mode with $expectedArgs when called with $args",
+            async ({ args, expectedArgs }) => {
+                await import("../");
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const definition = define.mock.calls[0][1] as any;
+                const element = { _postCommand: jest.fn() };
+
+                definition.toggleAudioOnlyMode.apply(element, args);
+
+                expect(element._postCommand).toHaveBeenCalledWith("toggle_audio_only_mode", expectedArgs);
+            },
+        );
     });
 });

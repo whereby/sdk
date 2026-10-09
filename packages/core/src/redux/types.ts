@@ -8,6 +8,7 @@ export type ClientView = {
     isPresentation?: boolean;
     isVideoEnabled?: boolean;
     isAudioEnabled?: boolean;
+    isAudioOnlyModeEnabled?: boolean;
     breakoutGroup?: string | null;
     breakoutGroupAssigned?: string;
 };

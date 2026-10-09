@@ -40,6 +40,7 @@ export type {
     FileUpload,
     FileShareError,
     SendFilesOptions,
+    ToggleAudioOnlyModeOptions,
     CloudRecordingState as CloudRecording,
     LiveStreamState as LiveStreaming,
     BreakoutState as Breakout,

@@ -1,4 +1,5 @@
 import { RoomConnectionClient } from "../";
+import { AUDIO_ONLY_MODE_CHANGED } from "../events";
 import { doAppStart, Store, RootState } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
 
@@ -160,6 +161,44 @@ describe("RoomConnectionClient", () => {
             });
             storeSubscriber();
             expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("subscribeToAudioOnlyMode", () => {
+        it("triggers the audio-only mode listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToAudioOnlyMode(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                rtcConnection: { ...initialState.rtcConnection, isAudioOnlyModeEnabled: true },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(true);
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                rtcConnection: { ...initialState.rtcConnection, isAudioOnlyModeEnabled: false },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it("emits the audio-only mode changed event", () => {
+            const listener = jest.fn();
+            client.on(AUDIO_ONLY_MODE_CHANGED, listener);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                rtcConnection: { ...initialState.rtcConnection, isAudioOnlyModeEnabled: true },
+            });
+            storeSubscriber();
+
+            expect(listener).toHaveBeenCalledWith(true);
         });
     });
 

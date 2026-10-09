@@ -104,6 +104,7 @@ interface WherebyEmbedElementEventMap {
     streaming_status_change: CustomEvent<{ status: string }>;
     recording_status_change: CustomEvent<{ status: "starting" | "started" | "stopped" }>;
     transcription_status_change: CustomEvent<{ status: "starting" | "started" | "stopped" }>;
+    audio_only_mode_status_change: CustomEvent<{ enabled: boolean }>;
     connection_status_change: CustomEvent<{ status: "stable" | "unstable" }>;
     precall_check_skipped: CustomEvent;
     precall_check_completed: CustomEvent<{
@@ -131,6 +132,7 @@ interface WherebyEmbedElementCommands {
     stopLiveTranscription: () => void;
     toggleBreakout: (enabled?: boolean) => void;
     toggleCamera: (enabled?: boolean) => void;
+    toggleAudioOnlyMode: (enabled?: boolean, options?: { autoDisableLocalCamera?: boolean }) => void;
     toggleMicrophone: (enabled?: boolean) => void;
     togglePeople: (enabled?: boolean) => void;
     toggleScreenshare: (enabled?: boolean) => void;
@@ -283,6 +285,9 @@ define("WherebyEmbed", {
     },
     toggleCamera(enabled?: boolean) {
         this._postCommand("toggle_camera", [enabled]);
+    },
+    toggleAudioOnlyMode(enabled?: boolean, options?: { autoDisableLocalCamera?: boolean }) {
+        this._postCommand("toggle_audio_only_mode", options ? [enabled, options] : [enabled]);
     },
     toggleMicrophone(enabled?: boolean) {
         this._postCommand("toggle_microphone", [enabled]);
