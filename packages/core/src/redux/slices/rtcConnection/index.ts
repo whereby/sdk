@@ -29,7 +29,7 @@ import {
 } from "../localMedia";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
-import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
+import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "../localScreenshare";
 import { selectBreakoutCurrentId } from "../breakout";
 import { selectLocalParticipantRaw } from "../localParticipant/selectors";
 import { selectSpotlights } from "../spotlights";
@@ -313,6 +313,11 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
             audioPaused: !isMicrophoneEnabled,
             videoPaused: !isCameraEnabled,
         });
+    }
+
+    const screenshareStream = selectLocalScreenshareStream(getState());
+    if (screenshareStream && rtcManager) {
+        rtcManager.addScreenshareStream(screenshareStream);
     }
 
     dispatch(rtcManagerInitialized());
