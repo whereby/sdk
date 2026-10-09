@@ -1,5 +1,25 @@
 # @whereby.com/browser-sdk
 
+## 3.33.0
+
+### Minor Changes
+
+- af3e6ea: Add `toggleAudioOnlyMode()` command on embed element
+- da2d8e4: Add toggleAudioOnlyMode to useRoomConnection
+
+### Patch Changes
+
+- f1ceb19: Add audio_only_mode_status_change embed event
+- Updated dependencies [6c3e121]
+- Updated dependencies [dd9b5bd]
+- Updated dependencies [bb0b42f]
+- Updated dependencies [b8901d6]
+- Updated dependencies [82112a4]
+- Updated dependencies [77ead1a]
+- Updated dependencies [409e5e5]
+    - @whereby.com/media@11.2.1
+    - @whereby.com/core@1.23.0
+
 ## 3.32.0
 
 ### Minor Changes

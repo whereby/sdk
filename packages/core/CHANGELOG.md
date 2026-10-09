@@ -1,5 +1,22 @@
 # @whereby.com/core
 
+## 1.23.0
+
+### Minor Changes
+
+- 82112a4: Add audio-only mode (pause incoming video) to Core SDK
+- 409e5e5: Add subscribeToAudioOnlyMode and audio-only-mode:changed event to RoomConnectionClient
+
+### Patch Changes
+
+- dd9b5bd: Re-add the local camera stream when the RtcManager is recreated (e.g. after rejoining with a new selfId)
+- bb0b42f: Re-add an active local screenshare when the RtcManager is recreated (e.g. after rejoining with a new selfId)
+- b8901d6: Keep remote screenshares visible in P2P rooms when audio-only mode is enabled
+- Updated dependencies [6c3e121]
+- Updated dependencies [77ead1a]
+    - @whereby.com/media@11.2.1
+    - @whereby.com/audio-denoiser@1.0.23
+
 ## 1.22.0
 
 ### Minor Changes

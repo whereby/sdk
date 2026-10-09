@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 11.2.1
+
+### Patch Changes
+
+- 6c3e121: Keep audio-only mode enabled across SFU reconnects
+- 77ead1a: Expose setAudioOnly on the RtcManager interface
+
 ## 11.2.0
 
 ### Minor Changes
