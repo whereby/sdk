@@ -12,6 +12,9 @@ describe("subscribeStats", () => {
     let baseState: StatsMonitorState;
 
     beforeEach(() => {
+        // monitors started by earlier tests would otherwise keep running on the shared fake timers
+        jest.clearAllTimers();
+        jest.clearAllMocks();
         baseState = {
             currentMonitor: null,
             getClients: jest.fn(),
@@ -82,6 +85,53 @@ describe("subscribeStats", () => {
                 getUpdatedStats: expect.any(Function),
                 stop: expect.any(Function),
             });
+        });
+
+        it("should keep collecting stats every interval", async () => {
+            (collectStats as jest.Mock).mockResolvedValue(undefined);
+            const state = { ...baseState };
+
+            subscribeStats({ onUpdatedStats: jest.fn() }, options, state);
+            await jest.advanceTimersByTimeAsync(options.interval * 3);
+
+            expect(collectStats).toHaveBeenCalledTimes(3);
+        });
+
+        it("should keep collecting stats after a run failed unexpectedly", async () => {
+            (collectStats as jest.Mock).mockRejectedValueOnce(new Error("unexpected")).mockResolvedValue(undefined);
+            const state = { ...baseState };
+
+            subscribeStats({ onUpdatedStats: jest.fn() }, options, state);
+            await jest.advanceTimersByTimeAsync(options.interval * 3);
+
+            expect(collectStats).toHaveBeenCalledTimes(3);
+        });
+
+        it("should never collect stats when stopped before the first run", async () => {
+            const state = { ...baseState };
+
+            subscribeStats({ onUpdatedStats: jest.fn() }, options, state).stop();
+            await jest.advanceTimersByTimeAsync(options.interval * 3);
+
+            expect(collectStats).not.toHaveBeenCalled();
+        });
+
+        it("should not schedule another run when stopped while stats are being collected", async () => {
+            let finishCollecting: (() => void) | undefined;
+            (collectStats as jest.Mock).mockImplementationOnce(
+                () => new Promise<void>((resolve) => (finishCollecting = resolve)),
+            );
+            const state = { ...baseState };
+
+            const subscription = subscribeStats({ onUpdatedStats: jest.fn() }, options, state);
+            await jest.advanceTimersByTimeAsync(options.interval);
+            expect(collectStats).toHaveBeenCalledTimes(1);
+
+            subscription.stop();
+            finishCollecting!();
+            await jest.advanceTimersByTimeAsync(options.interval * 3);
+
+            expect(collectStats).toHaveBeenCalledTimes(1);
         });
 
         it("should stop cpu monitor on stop", () => {

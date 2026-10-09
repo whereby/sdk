@@ -71,6 +71,25 @@ export function captureSsrcInfo(
     ssrcMetrics.rid = currentSsrcStats.rid;
 }
 
+const selectedCandidatePairIdByReport = new WeakMap<object, string | undefined>();
+
+// the candidate pair (network route) an rtp stream is sent over: Chrome and Safari report it on the stream's
+// transport, Firefox (without transport stats) marks the one in use as selected
+export function getSelectedCandidatePairId(report: any, transportId: string | undefined): string | undefined {
+    const selectedCandidatePairId = transportId ? report.get(transportId)?.selectedCandidatePairId : undefined;
+    if (selectedCandidatePairId) return selectedCandidatePairId;
+
+    // the same for every stream in the report, so only look it up once per report
+    if (!selectedCandidatePairIdByReport.has(report)) {
+        let selectedId: string | undefined;
+        report.forEach((stats: any) => {
+            if (stats.type === "candidate-pair" && stats.selected) selectedId = stats.id;
+        });
+        selectedCandidatePairIdByReport.set(report, selectedId);
+    }
+    return selectedCandidatePairIdByReport.get(report);
+}
+
 export function captureCommonSsrcMetrics(
     ssrcMetrics: any,
     currentSsrcStats: any,
@@ -78,6 +97,8 @@ export function captureCommonSsrcMetrics(
     timeDiff: any,
     report: any,
 ) {
+    ssrcMetrics.selectedCandidatePairId = getSelectedCandidatePairId(report, currentSsrcStats.transportId);
+
     const nackCountDiff = (currentSsrcStats.nackCount || 0) - (prevSsrcStats?.nackCount || 0);
     ssrcMetrics.nackCount = (ssrcMetrics.nackCount || 0) + nackCountDiff;
     ssrcMetrics.nackRate = (1000 * nackCountDiff) / timeDiff;
@@ -142,6 +163,8 @@ export function captureCommonSsrcMetrics(
                 ssrcMetrics.roundTripTime = remoteReport.roundTripTime || 0;
                 ssrcMetrics.jitter = remoteReport.jitter || 0;
                 ssrcMetrics.fractionLost = remoteReport.fractionLost || 0;
+                // when the remote report was received, so consumers can tell a new report from a repeated one
+                ssrcMetrics.remoteReportTimestamp = remoteReport.timestamp;
             }
         }
     }

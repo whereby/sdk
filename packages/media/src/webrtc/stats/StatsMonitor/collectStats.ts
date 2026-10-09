@@ -86,8 +86,6 @@ export async function collectStats(
     { logger, interval }: StatsMonitorOptions,
     immediate: boolean,
 ): Promise<Record<string, ViewStats> | undefined> {
-    const collectStatsBound = collectStats.bind(null, state, { interval, logger });
-
     try {
         // refresh provided clients before each run
         const clients = state.getClients();
@@ -110,7 +108,6 @@ export async function collectStats(
             state.subscriptions.forEach((subscription) =>
                 subscription.onUpdatedStats?.(state.statsByView, clients, state.renderedDimensionsByTrack),
             );
-            state.nextTimeout = setTimeout(collectStatsBound, interval);
             return;
         }
 
@@ -283,6 +280,4 @@ export async function collectStats(
             message: e?.message,
         });
     }
-
-    state.nextTimeout = setTimeout(collectStatsBound, interval);
 }

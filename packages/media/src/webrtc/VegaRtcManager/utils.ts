@@ -1,4 +1,12 @@
 import { Producer } from "mediasoup-client/lib/Producer";
+import {
+    INITIAL_HIGHEST_PREFERRED_LAYER,
+    LOWEST_SVC_LAYER_MAX_BITRATE,
+    MIDDLE_SVC_LAYER_MAX_BITRATE,
+} from "../constants";
+import Logger from "../../utils/Logger";
+
+const logger = new Logger();
 
 export function getLayers(
     {
@@ -47,6 +55,39 @@ export function getLayers(
     return { spatialLayer, temporalLayer };
 }
 
+// tracks count/avg of a metric stream, without keeping the individual samples around
+export function createMetricStats() {
+    return { count: 0, sum: 0 };
+}
+
+export type MetricStats = ReturnType<typeof createMetricStats>;
+
+export function recordMetricSample(stats: MetricStats, value: number) {
+    stats.count++;
+    stats.sum += value;
+}
+
+export function aggregateMetricStats(stats: MetricStats) {
+    return {
+        count: stats.count,
+        avg: stats.count ? Math.round(stats.sum / stats.count) : undefined,
+    };
+}
+
+// the fraction of packets lost across simulcast layers, each layer's fractionLost weighted by its packet rate: a
+// low layer sends so few packets that one random loss alone is several percent. Without packet rates, the layers
+// weigh the same
+export function getPacketWeightedFractionLost(reports: { fractionLost?: number; packetRate?: number }[]) {
+    const weights = reports.map(({ packetRate }) => (packetRate && packetRate > 0 ? packetRate : 0));
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    if (!totalWeight) {
+        return reports.reduce((sum, { fractionLost }) => sum + (fractionLost || 0), 0) / (reports.length || 1);
+    }
+    return (
+        reports.reduce((sum, { fractionLost }, index) => sum + (fractionLost || 0) * weights[index], 0) / totalWeight
+    );
+}
+
 export function getNumberOfActiveVideos(consumers: any) {
     let numberOfActiveVideos = 0;
     consumers.forEach((c: any) => {
@@ -60,6 +101,71 @@ export function getNumberOfActiveVideos(consumers: any) {
 export function getNumberOfTemporalLayers(consumer: any) {
     // assume it is using T2 mode unless we detect otherwise
     return /T3/.test(consumer._rtpParameters?.encodings?.[0]?.scalabilityMode || "") ? 3 : 2;
+}
+
+const SCALABILITY_MODE_REGEX = /^([LS])([1-9]\d?)T([1-9]\d?)(_KEY)?$/;
+
+// caller must ensure `encodings` is non-empty
+export function getTopSpatialLayer(encodings: { scalabilityMode?: string }[]): number {
+    if (encodings.length > 1) return encodings.length - 1;
+
+    const { scalabilityMode } = encodings[0];
+    const match = SCALABILITY_MODE_REGEX.exec(scalabilityMode || "");
+    if (!match) {
+        // a plain encoding has no scalabilityMode, so only one that can't be parsed is unexpected
+        if (scalabilityMode) {
+            logger.warn(
+                "getTopSpatialLayer() unrecognized scalabilityMode %s, using a single spatial layer",
+                scalabilityMode,
+            );
+        }
+        return 0;
+    }
+
+    const spatialLayers = Number(match[2]) || 1;
+    return spatialLayers - 1;
+}
+
+// caller must ensure `encodings` is non-empty
+export function getInitialHighestPreferredLayer(encodings: { scalabilityMode?: string }[]): number {
+    return Math.min(getTopSpatialLayer(encodings), INITIAL_HIGHEST_PREFERRED_LAYER);
+}
+
+// `originalMaxBitrate` is the producer's own cap: restored at the top layer and never exceeded below it
+export function getReducedSvcEncodingParams(
+    originalScalabilityMode: string | undefined,
+    spatialLayer: number,
+    originalMaxBitrate?: number,
+) {
+    const match = SCALABILITY_MODE_REGEX.exec(originalScalabilityMode || "");
+    if (!match) return undefined;
+
+    const [, mode, originalSpatialLayers, temporalLayers, key = ""] = match;
+    const topLayerIndex = Number(originalSpatialLayers) - 1;
+    // a single spatial layer (e.g. a browser-reported "L1T3") has nothing to reduce, and would otherwise be
+    // mistaken for "only the lowest layer is preferred" and capped at LOWEST_SVC_LAYER_MAX_BITRATE
+    if (topLayerIndex === 0) return undefined;
+    const preferredLayerIndex = Math.min(Math.max(spatialLayer, 0), topLayerIndex);
+    const onlyLowestLayerPreferred = preferredLayerIndex === 0;
+    const middleLayerPreferred = preferredLayerIndex > 0 && preferredLayerIndex < topLayerIndex;
+
+    let maxBitrate = originalMaxBitrate;
+    if (onlyLowestLayerPreferred) {
+        maxBitrate = Math.min(LOWEST_SVC_LAYER_MAX_BITRATE, originalMaxBitrate ?? Infinity);
+    } else if (middleLayerPreferred) {
+        maxBitrate = Math.min(MIDDLE_SVC_LAYER_MAX_BITRATE, originalMaxBitrate ?? Infinity);
+    }
+
+    // a single spatial layer is only valid as a plain "L1T<n>" mode, without "S" or "_KEY"
+    const scalabilityMode = onlyLowestLayerPreferred
+        ? `L1T${temporalLayers}`
+        : `${mode}${preferredLayerIndex + 1}T${temporalLayers}${key}`;
+
+    return {
+        scalabilityMode,
+        scaleResolutionDownBy: 2 ** (topLayerIndex - preferredLayerIndex),
+        maxBitrate,
+    };
 }
 
 // this adds a polling monitor for cpu overuse by checking if the lowest layer of a simulcast stream has reduced resolution

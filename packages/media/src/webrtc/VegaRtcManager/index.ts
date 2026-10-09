@@ -14,7 +14,16 @@ import {
     VegaRtcManagerOptions,
 } from "../types";
 import VegaMediaQualityMonitor from "../VegaMediaQualityMonitor";
-import { MEDIA_JITTER_BUFFER_TARGET } from "../constants";
+import {
+    CAM_SAMPLES_SKIPPED_AFTER_CANDIDATE_PAIR_CHANGE,
+    CONGESTED_FRACTION_LOST,
+    CONGESTED_RTT_INFLATION_MS,
+    INITIAL_CONSUMER_SPATIAL_LAYER,
+    MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES,
+    MEDIA_JITTER_BUFFER_TARGET,
+    PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS,
+    PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS,
+} from "../constants";
 
 import { PROTOCOL_EVENTS, PROTOCOL_REQUESTS, PROTOCOL_RESPONSES } from "../../model/protocol";
 import * as CONNECTION_STATUS from "../../model/connectionStatusConstants";
@@ -22,11 +31,25 @@ import { getMediaSettings, modifyMediaCapabilities } from "../../utils/mediaSett
 import { getMediasoupDeviceAsync } from "../../utils/getMediasoupDevice";
 import { maybeTurnOnly, turnServerOverride } from "../../utils/iceServers";
 import Logger from "../../utils/Logger";
-import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "./utils";
+import {
+    addProducerCpuOveruseWatch,
+    aggregateMetricStats,
+    createMetricStats,
+    getInitialHighestPreferredLayer,
+    getLayers,
+    getNumberOfActiveVideos,
+    getNumberOfTemporalLayers,
+    getPacketWeightedFractionLost,
+    getReducedSvcEncodingParams,
+    MetricStats,
+    recordMetricSample,
+} from "./utils";
 import { ServerSocket, trackAnnotations } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
-import { updateRenderedDimensions } from "../stats/StatsMonitor";
+import { subscribeStats, updateRenderedDimensions } from "../stats/StatsMonitor";
+import { getPeerConnectionIndex } from "../stats/StatsMonitor/peerConnectionTracker";
+import { SsrcStats } from "../stats/types";
 import {
     VegaCreateTransportResponse,
     VegaGetCapabilitiesResponse,
@@ -62,10 +85,15 @@ const logger = new Logger();
 const browserName = adapter.browserDetails.browser;
 let unloading = false;
 
+type RtpEncodingParametersWithScalabilityMode = RTCRtpEncodingParameters & { scalabilityMode?: string };
+
 const RESTARTICE_ERROR_RETRY_THRESHOLD_IN_MS = 3500;
 const RESTARTICE_ERROR_MAX_RETRY_COUNT = 5;
 const OUTBOUND_CAM_OUTBOUND_STREAM_ID = uuidv4();
 const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
+
+const getFrameArea = (frameSize?: { width?: number; height?: number }) =>
+    (frameSize?.width ?? 0) * (frameSize?.height ?? 0);
 
 if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
@@ -101,7 +129,21 @@ export default class VegaRtcManager implements RtcManager {
     _micScoreProducer: any;
     _micScoreProducerPromise: any;
     _webcamProducer: any;
+    _webcamProducerOriginalSvcScalabilityMode: string | undefined;
+    _webcamProducerOriginalSvcMaxBitrate: number | undefined;
+    _webcamProducerHighestPreferredLayer: number | undefined;
+    _highestPreferredLayerUpdate: Promise<void> | null;
+    _highestPreferredLayerUpdatePending: boolean;
     _webcamProducerPromise: any;
+    _preferredLayerSwitchLatencyStats: MetricStats;
+    _preferredLayerSwitchWatches: Map<string, { stop: () => void }>;
+    _statsSubscription: { stop: () => void } | null;
+    _lastSeenRemoteReportTimestamps: Map<string, number>;
+    _camOutboundCandidatePairId: string | undefined;
+    _camOutboundSamplesToSkip: number;
+    _camOutboundPathRtt: { sumMs: number; count: number; minMs: number | undefined };
+    _camOutboundRttInflation: { sumMs: number; count: number };
+    _camOutboundSamples: { total: number; congested: number };
     _webcamPaused: any;
     _screenVideoProducer: any;
     _screenVideoProducerPromise: any;
@@ -185,6 +227,11 @@ export default class VegaRtcManager implements RtcManager {
         this._micScoreProducer = null;
         this._micScoreProducerPromise = null;
         this._webcamProducer = null;
+        this._webcamProducerOriginalSvcScalabilityMode = undefined;
+        this._webcamProducerOriginalSvcMaxBitrate = undefined;
+        this._webcamProducerHighestPreferredLayer = undefined;
+        this._highestPreferredLayerUpdate = null;
+        this._highestPreferredLayerUpdatePending = false;
         this._webcamProducerPromise = null;
         this._webcamPaused = false;
         this._screenVideoProducer = null;
@@ -245,12 +292,19 @@ export default class VegaRtcManager implements RtcManager {
         window?.addEventListener?.("offline", this._sfuZombie.onBrowserOffline); // browser-only
 
         this.analytics = {
+            avgPreferredLayerSwitchLatencyMs: undefined,
+            camOutboundCongestedFraction: undefined,
+            camOutboundRttInflationMs: undefined,
             camTrackEndedCount: 0,
+            highestPreferredLayerChangeCounts: {},
             micTrackEndedCount: 0,
+            numHighestPreferredLayerChanges: 0,
             numIceConnected: 0,
             numIceDisconnected: 0,
             numIceFailed: 0,
             numNewPc: 0,
+            numPreferredSpatialLayerChanges: 0,
+            preferredSpatialLayerChangeCounts: {},
             sfuMsFromOfflineToClose: 0,
             sfuOfflineToCloseCount: 0,
             sfuOfflineWhileConnectedCount: 0,
@@ -270,6 +324,17 @@ export default class VegaRtcManager implements RtcManager {
             vegaUnknownResponse: 0,
             vegaWebcamProducerFailed: 0,
         };
+
+        this._preferredLayerSwitchLatencyStats = createMetricStats();
+        this._preferredLayerSwitchWatches = new Map();
+
+        this._lastSeenRemoteReportTimestamps = new Map();
+        this._camOutboundCandidatePairId = undefined;
+        this._camOutboundSamplesToSkip = 0;
+        this._camOutboundPathRtt = { sumMs: 0, count: 0, minMs: undefined };
+        this._camOutboundRttInflation = { sumMs: 0, count: 0 };
+        this._camOutboundSamples = { total: 0, congested: 0 };
+        this._statsSubscription = null;
     }
 
     _updateAndScheduleMediaServersRefresh({
@@ -503,9 +568,9 @@ export default class VegaRtcManager implements RtcManager {
         this._sendTransport = null;
         this._receiveTransport = null;
 
-        // Clear all mappings we have
+        // Clear all mappings we have, except the app's last requested resolution per stream: the app only updates it
+        // when a tile's size changes, so it's re-applied to the consumers created after reconnecting
         this._streamIdToVideoConsumerId.clear();
-        this._streamIdToVideoResolution.clear();
 
         if (this._reconnect) {
             this._reconnectTimeOut = setTimeout(() => this._connect(), 1000);
@@ -1049,6 +1114,16 @@ export default class VegaRtcManager implements RtcManager {
 
             // only do this when we are using 3 layer simulcast
             if (params?.encodings?.length === 3) {
+                if (this._features.sfuHighestPreferredLayerTrackingOn) {
+                    // combined with the SFU's highest preferred layer there, so neither can undo the other
+                    this._syncWebcamEncoderToHighestPreferredLayer();
+                    rtcStats.sendEvent("simulcast_layer_activation_changed", {
+                        layerIndex: 2,
+                        active: simulcastLayer3ShouldBeActive,
+                    });
+                    return;
+                }
+
                 // only update if needed, in case of unwanted side effects
                 const targetMaxSpatialLayer = simulcastLayer3ShouldBeActive ? 2 : 1;
                 if (this._webcamProducer.maxSpatialLayer !== targetMaxSpatialLayer) {
@@ -1115,6 +1190,21 @@ export default class VegaRtcManager implements RtcManager {
                     : () => {};
 
                 this._webcamProducer = producer;
+                if (this._features.sfuHighestPreferredLayerTrackingOn) {
+                    const originalWebcamEncodings = producer.rtpSender?.getParameters()?.encodings as
+                        | RtpEncodingParametersWithScalabilityMode[]
+                        | undefined;
+                    // only an SVC encoding is reduced through these, simulcast switches whole encodings on and off
+                    const svcEncoding = originalWebcamEncodings?.length === 1 ? originalWebcamEncodings[0] : undefined;
+                    this._webcamProducerOriginalSvcScalabilityMode = svcEncoding?.scalabilityMode;
+                    this._webcamProducerOriginalSvcMaxBitrate = svcEncoding?.maxBitrate;
+
+                    this._webcamProducerHighestPreferredLayer = originalWebcamEncodings?.length
+                        ? getInitialHighestPreferredLayer(originalWebcamEncodings)
+                        : undefined;
+
+                    this._syncWebcamEncoderToHighestPreferredLayer();
+                }
                 this._qualityMonitor.addProducer(this._selfId, producer.id);
                 producer.observer.once("close", () => {
                     logger.info('webcamProducer "close" event');
@@ -1123,11 +1213,16 @@ export default class VegaRtcManager implements RtcManager {
                         this._vegaConnection?.message("closeProducers", { producerIds: [producer.id] });
 
                     cleanUpCpuWatch();
+                    this._stopWebcamStatsSubscription();
 
                     this._webcamProducer = null;
+                    this._webcamProducerOriginalSvcScalabilityMode = undefined;
+                    this._webcamProducerOriginalSvcMaxBitrate = undefined;
+                    this._webcamProducerHighestPreferredLayer = undefined;
                     this._webcamProducerPromise = null;
                     this._qualityMonitor.removeProducer(this._selfId, producer.id);
                 });
+                this._startWebcamStatsSubscription();
 
                 // Has someone replaced the track?
                 if (this._webcamTrack && this._webcamTrack !== this._webcamProducer?.track) {
@@ -1146,6 +1241,9 @@ export default class VegaRtcManager implements RtcManager {
                 if (!this._webcamTrack) {
                     this._stopProducer(this._webcamProducer);
                     this._webcamProducer = null;
+                    this._webcamProducerOriginalSvcScalabilityMode = undefined;
+                    this._webcamProducerOriginalSvcMaxBitrate = undefined;
+                    this._webcamProducerHighestPreferredLayer = undefined;
                 }
             }
         })();
@@ -1491,6 +1589,10 @@ export default class VegaRtcManager implements RtcManager {
         if (clientState) {
             clientState.hasAcceptedWebcamStream = false;
             clientState.hasAcceptedScreenStream = false;
+            // the client left, so its streams' requested resolutions aren't needed anymore
+            [clientState.webcamStream, clientState.screenStream].forEach(
+                (stream) => stream && this._streamIdToVideoResolution.delete(stream.id),
+            );
             this._syncIncomingStreamsWithPWA(clientId);
         }
 
@@ -1654,6 +1756,9 @@ export default class VegaRtcManager implements RtcManager {
             if (this._webcamProducer && !this._webcamProducer.closed && this._webcamProducer.track === track) {
                 this._stopProducer(this._webcamProducer);
                 this._webcamProducer = null;
+                this._webcamProducerOriginalSvcScalabilityMode = undefined;
+                this._webcamProducerOriginalSvcMaxBitrate = undefined;
+                this._webcamProducerHighestPreferredLayer = undefined;
                 this._webcamTrack = null;
             }
         } else {
@@ -1722,13 +1827,20 @@ export default class VegaRtcManager implements RtcManager {
     ) {
         logger.info("updateStreamResolution()", { streamId, width, height });
 
+        // kept to apply to the stream's next consumer too, e.g. after an SFU reconnect
+        this._streamIdToVideoResolution.set(streamId, { width, height });
+
+        this._applyStreamResolution(streamId);
+    }
+
+    // asks the SFU for the layers fitting the stream's last requested resolution, if they changed
+    _applyStreamResolution(streamId: string) {
+        const resolution = this._streamIdToVideoResolution.get(streamId);
         const consumerId = this._streamIdToVideoConsumerId.get(streamId);
         const consumer = this._consumers.get(consumerId);
 
-        if (!consumer) {
-            this._streamIdToVideoResolution.set(streamId, { width, height });
-            return;
-        }
+        if (!resolution || !consumer) return;
+        const { width, height } = resolution;
         updateRenderedDimensions(consumer.track?.id, { width, height, time: Date.now() });
 
         const numberOfActiveVideos = getNumberOfActiveVideos(this._consumers);
@@ -1744,6 +1856,17 @@ export default class VegaRtcManager implements RtcManager {
         );
 
         if (consumer.appData.spatialLayer !== spatialLayer || consumer.appData.temporalLayer !== temporalLayer) {
+            const previousSpatialLayer = consumer.appData.spatialLayer;
+            const spatialLayerChanged = previousSpatialLayer !== spatialLayer;
+
+            if (spatialLayerChanged) {
+                this.analytics.numPreferredSpatialLayerChanges++;
+                this._incrementHistogramCount(
+                    this.analytics.preferredSpatialLayerChangeCounts,
+                    `${previousSpatialLayer}->${spatialLayer}`,
+                );
+            }
+
             consumer.appData.spatialLayer = spatialLayer;
             consumer.appData.temporalLayer = temporalLayer;
 
@@ -1752,7 +1875,225 @@ export default class VegaRtcManager implements RtcManager {
                 spatialLayer,
                 temporalLayer,
             });
+
+            if (spatialLayerChanged) {
+                this._watchForPreferredLayerSwitch(consumerId, consumer, {
+                    toHigherLayer: spatialLayer > previousSpatialLayer,
+                });
+            }
         }
+    }
+
+    _watchForPreferredLayerSwitch(consumerId: string, consumer: any, { toHigherLayer }: { toHigherLayer: boolean }) {
+        // a newer switch of an already watched consumer replaces its watch, even at the limit
+        const previousWatch = this._preferredLayerSwitchWatches.get(consumerId);
+        if (!previousWatch && this._preferredLayerSwitchWatches.size >= MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES) {
+            return;
+        }
+        previousWatch?.stop();
+
+        let stopped = false;
+        let intervalId: ReturnType<typeof setInterval> | undefined;
+
+        const stop = () => {
+            if (stopped) return;
+            stopped = true;
+            clearInterval(intervalId);
+            clearTimeout(timeoutId);
+            this._preferredLayerSwitchWatches.delete(consumerId);
+        };
+
+        this._preferredLayerSwitchWatches.set(consumerId, { stop });
+        // started before the first getStats(), so a call that never settles can't keep the watch forever
+        const timeoutId = setTimeout(stop, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
+
+        (async () => {
+            const sentAt = Date.now();
+            const baseline = await this._getConsumerFrameSize(consumer);
+
+            // without a decoded frame there's no size to compare against: the first frame would look like the switch
+            if (stopped || !baseline?.width || !baseline?.height) {
+                stop();
+                return;
+            }
+
+            let polling = false;
+            intervalId = setInterval(async () => {
+                if (stopped || consumer.closed) {
+                    stop();
+                    return;
+                }
+                // a slow getStats() (e.g. under CPU load) mustn't stack up overlapping calls
+                if (polling) return;
+
+                polling = true;
+                const current = await this._getConsumerFrameSize(consumer);
+                polling = false;
+                if (stopped) return;
+                // only a change in the requested direction counts, so an earlier switch that is still landing
+                // (e.g. a quick 2->0->2) isn't mistaken for this one
+                const switched = toHigherLayer
+                    ? getFrameArea(current) > getFrameArea(baseline)
+                    : getFrameArea(current) < getFrameArea(baseline);
+                if (current && switched) {
+                    this._recordPreferredLayerSwitchLatency(Date.now() - sentAt);
+                    stop();
+                }
+            }, PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS);
+        })();
+    }
+
+    async _getConsumerFrameSize(consumer: any): Promise<{ width?: number; height?: number } | undefined> {
+        try {
+            const stats = await consumer.getStats();
+            let frameSize: { width?: number; height?: number } | undefined;
+
+            stats.forEach((report: any) => {
+                if (report.type === "inbound-rtp") {
+                    frameSize = { width: report.frameWidth, height: report.frameHeight };
+                }
+            });
+
+            return frameSize;
+        } catch (error) {
+            logger.warn("_getConsumerFrameSize() failed to read stats", { error });
+            return undefined;
+        }
+    }
+
+    _recordPreferredLayerSwitchLatency(latencyMs: number) {
+        recordMetricSample(this._preferredLayerSwitchLatencyStats, latencyMs);
+
+        const { avg } = aggregateMetricStats(this._preferredLayerSwitchLatencyStats);
+        this.analytics.avgPreferredLayerSwitchLatencyMs = avg;
+    }
+
+    _onUpdatedStats(statsByView: Record<string, any>) {
+        // the webcam's streams are found by its transceiver's mid: unlike the track id they're filed under, it doesn't
+        // change when the track is replaced (outbound stats have no track id of their own)
+        const webcamProducerMid = this._webcamProducer?.rtpParameters?.mid;
+        if (webcamProducerMid === undefined) return;
+
+        // a mid is only unique within one peer connection, and the stats cover every one on the page (e.g. the
+        // bandwidth tester's), so the streams must also come from the send transport's. mediasoup keeps it internal,
+        // so without it this falls back to the mid alone
+        const sendTransportPc = (this._sendTransport as any)?.handler?._pc;
+        const sendTransportPcIndex = sendTransportPc ? getPeerConnectionIndex(sendTransportPc) : undefined;
+
+        const newRemoteReports: SsrcStats[] = [];
+
+        Object.values(statsByView).forEach((viewStats: any) => {
+            Object.values(viewStats.tracks || {}).forEach((trackStats: any) => {
+                Object.entries(trackStats.ssrcs || {}).forEach(([ssrc, ssrcMetrics]: [string, any]) => {
+                    if (ssrcMetrics.direction !== "out" || String(ssrcMetrics.mid) !== webcamProducerMid) return;
+                    if (sendTransportPcIndex !== undefined && ssrcMetrics.pcIndex !== sendTransportPcIndex) return;
+
+                    this._followCamOutboundCandidatePair(ssrcMetrics);
+
+                    // an ssrc only has a remote report timestamp once the SFU has sent a report for it, and the
+                    // stats poll repeats the last report's values until a new one arrives (forever for a paused
+                    // layer), so only reports with a new timestamp are sampled
+                    const { remoteReportTimestamp } = ssrcMetrics;
+                    if (remoteReportTimestamp === undefined) return;
+                    if (remoteReportTimestamp === this._lastSeenRemoteReportTimestamps.get(ssrc)) return;
+
+                    this._lastSeenRemoteReportTimestamps.set(ssrc, remoteReportTimestamp);
+                    newRemoteReports.push(ssrcMetrics);
+                });
+            });
+        });
+
+        if (!newRemoteReports.length) return;
+
+        if (this._camOutboundSamplesToSkip > 0) {
+            this._camOutboundSamplesToSkip--;
+            return;
+        }
+
+        this._recordCamOutboundSample(newRemoteReports);
+        this._updateCamOutboundAnalytics();
+    }
+
+    // one sample per stats poll with new reports: their highest round-trip time, as the simulcast layers share the
+    // route and so its queueing, and their loss weighted by packets, as a low layer sends so few that one random loss
+    // alone is several percent
+    _recordCamOutboundSample(newRemoteReports: SsrcStats[]) {
+        // 0 means the report had no round-trip time measurement yet
+        const rttsMs = newRemoteReports.map(({ roundTripTime }) => (roundTripTime || 0) * 1000).filter((ms) => ms > 0);
+        const rttMs = rttsMs.length ? Math.max(...rttsMs) : undefined;
+        const fractionLost = getPacketWeightedFractionLost(newRemoteReports);
+
+        const path = this._camOutboundPathRtt;
+        if (rttMs !== undefined) {
+            path.sumMs += rttMs;
+            path.count++;
+            path.minMs = Math.min(path.minMs ?? Infinity, rttMs);
+        }
+
+        // compared to the lowest round-trip time on this path so far, so congestion early on is judged against a
+        // baseline that may still be too high
+        const congested =
+            (rttMs !== undefined && rttMs - (path.minMs ?? rttMs) > CONGESTED_RTT_INFLATION_MS) ||
+            fractionLost > CONGESTED_FRACTION_LOST;
+
+        this._camOutboundSamples.total++;
+        if (congested) this._camOutboundSamples.congested++;
+    }
+
+    // a new selected candidate pair is a new network route (an ICE restart, a network switch, a fallback to TURN),
+    // with its own lowest round-trip time
+    _followCamOutboundCandidatePair({ selectedCandidatePairId }: SsrcStats) {
+        if (!selectedCandidatePairId || selectedCandidatePairId === this._camOutboundCandidatePairId) return;
+
+        if (this._camOutboundCandidatePairId !== undefined) {
+            this._finishCamOutboundRttPath();
+            this._camOutboundSamplesToSkip = CAM_SAMPLES_SKIPPED_AFTER_CANDIDATE_PAIR_CHANGE;
+        }
+        this._camOutboundCandidatePairId = selectedCandidatePairId;
+    }
+
+    // a new webcam producer (e.g. after a reconnect) or candidate pair may take another network path with its own
+    // lowest round-trip time, so each path's time spent queued is measured against its own lowest
+    _finishCamOutboundRttPath() {
+        const path = this._camOutboundPathRtt;
+        if (path.count && path.minMs !== undefined) {
+            this._camOutboundRttInflation.sumMs += path.sumMs - path.count * path.minMs;
+            this._camOutboundRttInflation.count += path.count;
+        }
+        this._camOutboundPathRtt = { sumMs: 0, count: 0, minMs: undefined };
+    }
+
+    _updateCamOutboundAnalytics() {
+        // the lowest round-trip time is the path's own delay, anything above it is time spent queued on the way
+        const path = this._camOutboundPathRtt;
+        const inflationSumMs =
+            this._camOutboundRttInflation.sumMs + (path.minMs !== undefined ? path.sumMs - path.count * path.minMs : 0);
+        const inflationCount = this._camOutboundRttInflation.count + path.count;
+        // the average over every sample of the session, the finished paths' and the current one's, so a path with
+        // more samples weighs more, rather than an average of the paths' own averages
+        this.analytics.camOutboundRttInflationMs = inflationCount
+            ? Math.round(inflationSumMs / inflationCount)
+            : undefined;
+
+        const { congested, total } = this._camOutboundSamples;
+        this.analytics.camOutboundCongestedFraction = total ? congested / total : undefined;
+    }
+
+    // stats are only used for our own webcam upload, so only collect them while it exists
+    _startWebcamStatsSubscription() {
+        if (this._statsSubscription) return;
+        this._statsSubscription = subscribeStats({
+            onUpdatedStats: (statsByView) => this._onUpdatedStats(statsByView),
+        });
+    }
+
+    _stopWebcamStatsSubscription() {
+        this._statsSubscription?.stop();
+        this._statsSubscription = null;
+        this._lastSeenRemoteReportTimestamps.clear();
+        this._finishCamOutboundRttPath();
+        this._camOutboundCandidatePairId = undefined;
+        this._camOutboundSamplesToSkip = 0;
     }
 
     close() {
@@ -1796,9 +2137,12 @@ export default class VegaRtcManager implements RtcManager {
         this._screenAudioTrack = null;
 
         this._streamIdToVideoConsumerId.clear();
+        this._streamIdToVideoResolution.clear();
 
         this._mediasoupDeviceInitializedAsync = Promise.resolve(null);
         this._qualityMonitor.close();
+        this._stopWebcamStatsSubscription();
+        this._preferredLayerSwitchWatches.forEach(({ stop }) => stop());
     }
 
     sendStatsCustomEvent(eventName: string, data?: any) {
@@ -1860,6 +2204,8 @@ export default class VegaRtcManager implements RtcManager {
                         return this._onConsumerScore(data);
                     case "producerScore":
                         return this._onProducerScore(data);
+                    case "changedHighestPreferredLayer":
+                        return this._onChangedHighestPreferredLayer(data);
                     default:
                         logger.info(`unknown message method "${method}"`);
                         return;
@@ -1888,7 +2234,9 @@ export default class VegaRtcManager implements RtcManager {
 
         consumer.pause();
         consumer.appData.localPaused = true;
-        consumer.appData.spatialLayer = 2;
+        // the layer a new consumer is assumed to start at. The temporal layer is left unset, so the first
+        // updateStreamResolution() always sends its preferred layers
+        consumer.appData.spatialLayer = INITIAL_CONSUMER_SPATIAL_LAYER;
 
         this._consumers.set(consumer.id, consumer);
         this._qualityMonitor.addConsumer(consumer.appData.sourceClientId, consumer.id);
@@ -1897,6 +2245,11 @@ export default class VegaRtcManager implements RtcManager {
             this._qualityMonitor.removeConsumer(consumer.appData.sourceClientId, consumer.id);
 
             this._consumerClosedCleanup(consumer);
+
+            // not while the whole receive transport is closing, e.g. on an SFU reconnect
+            if (consumer.kind === "video" && this._receiveTransport && !this._receiveTransport.closed) {
+                this._reapplyStreamResolutions();
+            }
         });
 
         if (this._features.increaseIncomingMediaBufferOn && consumer.rtpReceiver) {
@@ -1936,12 +2289,14 @@ export default class VegaRtcManager implements RtcManager {
         stream.addTrack(consumer.track);
         this._syncIncomingStreamsWithPWA(clientId);
 
-        // Update resolution if we already have it
-        const resolution = this._streamIdToVideoResolution.get(stream.id);
-        if (resolution) {
-            this.updateStreamResolution(stream.id, null, resolution);
-            this._streamIdToVideoResolution.delete(stream.id);
-        }
+        // includes this consumer's own stream, e.g. while the consumers are recreated after an SFU reconnect
+        this._reapplyStreamResolutions();
+    }
+
+    // the layers depend on the number of active videos, and the app only updates a stream's resolution when its tile
+    // changes size, so re-apply every stream's whenever that number may have changed. Unchanged layers aren't resent
+    _reapplyStreamResolutions() {
+        this._streamIdToVideoResolution.forEach((_resolution, streamId) => this._applyStreamResolution(streamId));
     }
 
     async _onConsumerClosed({ consumerId, reason }: { consumerId: string; reason: string }) {
@@ -1959,6 +2314,8 @@ export default class VegaRtcManager implements RtcManager {
 
         consumer.appData.remotePaused = true;
         consumer.pause();
+
+        if (consumer.kind === "video") this._reapplyStreamResolutions();
     }
 
     _onConsumerResumed({ consumerId }: { consumerId: string }) {
@@ -1973,6 +2330,8 @@ export default class VegaRtcManager implements RtcManager {
         if (!consumer.appData.localPaused) {
             consumer.resume();
         }
+
+        if (consumer.kind === "video") this._reapplyStreamResolutions();
     }
 
     _onConsumerScore({ consumerId, kind, score }: { consumerId: string; kind: string; score: number }) {
@@ -1995,6 +2354,109 @@ export default class VegaRtcManager implements RtcManager {
                 }
             },
         );
+    }
+
+    // the SVC encoding params for `spatialLayer`, or undefined when the encoding already has them
+    _getSvcEncodingUpdate(encoding: RtpEncodingParametersWithScalabilityMode, spatialLayer: number) {
+        const reduced = getReducedSvcEncodingParams(
+            this._webcamProducerOriginalSvcScalabilityMode,
+            spatialLayer,
+            this._webcamProducerOriginalSvcMaxBitrate,
+        );
+        if (!reduced) return undefined;
+
+        const changed =
+            reduced.scalabilityMode !== encoding.scalabilityMode ||
+            reduced.scaleResolutionDownBy !== (encoding.scaleResolutionDownBy ?? 1) ||
+            reduced.maxBitrate !== encoding.maxBitrate;
+        return changed ? reduced : undefined;
+    }
+
+    async _onChangedHighestPreferredLayer({ producerId, spatialLayer }: { producerId: string; spatialLayer: number }) {
+        if (!this._features.sfuHighestPreferredLayerTrackingOn) return;
+
+        if (this._webcamProducer?.id !== producerId) return;
+
+        // a missing/NaN layer would fail every `index <= spatialLayer` check and deactivate all simulcast encodings
+        if (!Number.isFinite(spatialLayer)) {
+            logger.warn("_onChangedHighestPreferredLayer() ignoring invalid spatialLayer", {
+                producerId,
+                spatialLayer,
+            });
+            return;
+        }
+
+        if (
+            this._webcamProducerHighestPreferredLayer !== undefined &&
+            this._webcamProducerHighestPreferredLayer !== spatialLayer
+        ) {
+            this.analytics.numHighestPreferredLayerChanges++;
+            this._incrementHistogramCount(
+                this.analytics.highestPreferredLayerChangeCounts,
+                `${this._webcamProducerHighestPreferredLayer}->${spatialLayer}`,
+            );
+        }
+        this._webcamProducerHighestPreferredLayer = spatialLayer;
+
+        logger.info("_onChangedHighestPreferredLayer()", { producerId, spatialLayer });
+
+        return this._syncWebcamEncoderToHighestPreferredLayer();
+    }
+
+    _syncWebcamEncoderToHighestPreferredLayer() {
+        // An update already in flight re-applies the latest state once its encoder update settles
+        this._highestPreferredLayerUpdatePending = true;
+        if (!this._highestPreferredLayerUpdate) {
+            this._highestPreferredLayerUpdate = this._applyPendingHighestPreferredLayerUpdates();
+        }
+        return this._highestPreferredLayerUpdate;
+    }
+
+    async _applyPendingHighestPreferredLayerUpdates() {
+        while (this._highestPreferredLayerUpdatePending) {
+            this._highestPreferredLayerUpdatePending = false;
+            try {
+                await this._applyHighestPreferredLayerToWebcamEncoder();
+            } catch (error) {
+                logger.error("Failed to apply highest preferred layer: %o", error);
+            }
+        }
+        this._highestPreferredLayerUpdate = null;
+    }
+
+    // goes through mediasoup rather than rtpSender.setParameters(), so the remote SDP keeps matching the active
+    // layers (a renegotiation would otherwise re-activate them) and it's serialized with other transport operations
+    async _applyHighestPreferredLayerToWebcamEncoder() {
+        const producer = this._webcamProducer;
+        const highestPreferredLayer = this._webcamProducerHighestPreferredLayer;
+        if (!producer || highestPreferredLayer === undefined) return;
+
+        const encodings: RtpEncodingParametersWithScalabilityMode[] = producer.rtpSender.getParameters().encodings;
+
+        if (encodings.length > 1) {
+            const cpuOveruseLimit = this._cpuOveruseDetected && encodings.length === 3 ? 1 : Infinity;
+            const spatialLayer = Math.max(0, Math.min(highestPreferredLayer, cpuOveruseLimit, encodings.length - 1));
+
+            if (producer.maxSpatialLayer === spatialLayer) return;
+
+            await producer.setMaxSpatialLayer(spatialLayer);
+
+            // mediasoup swallows a failed update and records the layer as applied anyway, so at least surface it
+            const applied = producer.rtpSender
+                .getParameters()
+                .encodings.every(
+                    (encoding: RTCRtpEncodingParameters, index: number) => encoding.active === index <= spatialLayer,
+                );
+            if (!applied) logger.error("setMaxSpatialLayer(%d) was not applied to the encodings", spatialLayer);
+        } else if (encodings.length === 1 && this._webcamProducerOriginalSvcScalabilityMode) {
+            const update = this._getSvcEncodingUpdate(encodings[0], highestPreferredLayer);
+
+            if (update) await producer.setRtpEncodingParameters(update);
+        }
+    }
+
+    _incrementHistogramCount(histogram: Record<string, number>, key: string) {
+        histogram[key] = (histogram[key] || 0) + 1;
     }
 
     async _onDataConsumerReady(options: DataConsumerOptions<DataConsumerAppData>) {
@@ -2055,11 +2517,12 @@ export default class VegaRtcManager implements RtcManager {
 
         if (stream.getTracks().length === 0) {
             this._streamIdToVideoConsumerId.delete(stream.id);
-            this._streamIdToVideoResolution.delete(stream.id);
 
             // We need to clean up our clientState
             // TODO: @geirbakke investigate missing mic audio if screenshare starts during reconnect
             if (screenShare) {
+                // a new screenshare gets a new stream, so its resolution won't be needed again
+                this._streamIdToVideoResolution.delete(stream.id);
                 clientState.screenStream = undefined;
                 clientState.hasEmittedScreenStream = false;
                 clientState.screenShareStreamId = undefined;
@@ -2121,6 +2584,8 @@ export default class VegaRtcManager implements RtcManager {
                 consumerIds: toResumeConsumers,
             });
         }
+
+        if (toPauseConsumers.length > 0 || toResumeConsumers.length > 0) this._reapplyStreamResolutions();
 
         // If the webcam stream has not been emitted, we emit it.
         if (webcamStream && !hasEmittedWebcamStream && hasAcceptedWebcamStream) {
