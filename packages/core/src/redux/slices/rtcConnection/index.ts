@@ -135,6 +135,7 @@ export const rtcConnectionSlice = createSlice({
             return {
                 ...state,
                 rtcManager: null,
+                rtcManagerInitialized: false,
             };
         },
         rtcManagerInitialized: (state) => {
