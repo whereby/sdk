@@ -1,5 +1,21 @@
 # @whereby.com/react-native-sdk
 
+## 0.9.0
+
+### Minor Changes
+
+- af3e6ea: Add `toggleAudioOnlyMode()` command on embed element
+
+### Patch Changes
+
+- f1ceb19: Add audio_only_mode_status_change embed event
+- Updated dependencies [dd9b5bd]
+- Updated dependencies [bb0b42f]
+- Updated dependencies [b8901d6]
+- Updated dependencies [82112a4]
+- Updated dependencies [409e5e5]
+    - @whereby.com/core@1.23.0
+
 ## 0.8.138
 
 ### Patch Changes
