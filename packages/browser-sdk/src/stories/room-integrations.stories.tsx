@@ -109,18 +109,6 @@ function IntegrationPicker({
  * The same, for a running integration. Fills whatever box it is given — a grid cell sizes it, so it
  * must not bring a size of its own.
  */
-function RunningIntegrationFrame({ session }: { session: RoomIntegrationSessionView }) {
-    const { iframeProps } = useRoomIntegrationView({
-        session,
-        onContentReady: () => console.warn("contentReady", session.roomIntegrationSessionId),
-        onAudioOverride: (enabled) => console.warn("audioOverride", enabled),
-    });
-
-    return iframeProps ? (
-        <iframe {...iframeProps} allowFullScreen style={{ border: "none", width: "100%", height: "100%" }} />
-    ) : null;
-}
-
 /** The frame plus a box to put it in and the volume controls the hook hands back. */
 function RunningIntegration({ session }: { session: RoomIntegrationSessionView }) {
     const { iframeProps, getVolume, setVolume } = useRoomIntegrationView({ session });
@@ -336,10 +324,10 @@ export const RoomIntegrationsStory = {
 /**
  * The same integration, placed by the grid instead of rendered beside it.
  *
- * `renderIntegration` is what connects the two: the grid decides where a running integration goes —
- * the stage, the subgrid, or offscreen while something else is maximized — and hands the session
- * back here to be rendered. There is no default renderer, because the content comes from the
- * integration's own origin in a frame this app owns.
+ * The grid needs nothing extra for this: it decides where a running integration goes — the stage,
+ * the subgrid, or offscreen while something else is maximized — and renders it in a frame by
+ * default. Pass `renderIntegration` to render it yourself, or `enableIntegrations={false}` to leave
+ * integrations out of the grid.
  *
  * Share a video from the Room integrations story (or the Whereby app) in the same room, and it
  * appears on the stage here. Spotlight a participant while it runs to see the integration keep the
@@ -370,10 +358,7 @@ function RoomIntegrationsInGrid({ roomUrl, displayName }: { roomUrl: string; dis
                 </span>
             </div>
             <div style={{ height: "70vh", width: "100%" }}>
-                <VideoGrid
-                    enableParticipantMenu
-                    renderIntegration={({ session }) => <RunningIntegrationFrame session={session} />}
-                />
+                <VideoGrid enableParticipantMenu />
             </div>
         </>
     );

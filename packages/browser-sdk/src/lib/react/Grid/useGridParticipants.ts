@@ -71,6 +71,9 @@ export function calculateSubgridViews({
     return noVideoViews;
 }
 
+// Shared so that excluding integrations keeps a stable reference and memos downstream don't rerun.
+const NO_INTEGRATIONS: RoomIntegrationSessionView[] = [];
+
 interface Props {
     activeVideosSubgridTrigger?: number;
     forceSubgrid?: boolean;
@@ -79,6 +82,11 @@ interface Props {
     maximizedCellId?: string | null;
     floatingCellId?: string | null;
     isConstrained?: boolean;
+    /**
+     * Lay out running room integrations: they take the stage and push spotlights into the grid.
+     * Off by default, so a grid that doesn't render integration cells lays out as if none were running.
+     */
+    includeIntegrations?: boolean;
 }
 
 function useGridParticipants({
@@ -89,6 +97,7 @@ function useGridParticipants({
     maximizedCellId,
     floatingCellId,
     isConstrained = false,
+    includeIntegrations = false,
 }: Props = {}) {
     const client = React.useContext(WherebyContext)?.getGrid();
 
@@ -159,7 +168,10 @@ function useGridParticipants({
     const allClientViews = React.useMemo(() => state.allClientViews, [state.allClientViews]);
     const spotlightedParticipants = React.useMemo(() => state.spotlightedParticipants, [state.spotlightedParticipants]);
     const numParticipants = React.useMemo(() => state.numParticipants, [state.numParticipants]);
-    const runningRoomIntegrations = React.useMemo(() => state.runningRoomIntegrations, [state.runningRoomIntegrations]);
+    const runningRoomIntegrations = React.useMemo(
+        () => (includeIntegrations ? state.runningRoomIntegrations : NO_INTEGRATIONS),
+        [includeIntegrations, state.runningRoomIntegrations],
+    );
 
     // Resolved from the live list on every render rather than held: client views are rebuilt
     // whenever the store updates, so a captured object still reports the video state it had when

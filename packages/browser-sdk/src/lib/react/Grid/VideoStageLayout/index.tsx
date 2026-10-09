@@ -83,6 +83,9 @@ function renderSubgridVideoCells({
 }: RenderSubgridVideoCellsProps) {
     const cells = stageLayout.subgrid.cells;
     return content.map((child, index) => {
+        if (!child) {
+            return null;
+        }
         const cell = cells[index];
         const style = { height: Math.round(cell.bounds.height), width: Math.round(cell.bounds.width), transform: "" };
 
@@ -94,7 +97,7 @@ function renderSubgridVideoCells({
         const clientId = child?.props?.cellId || child?.props?.participant?.id;
         const leftPaddings = cell.paddings?.left || 0;
         const rightPaddings = cell.paddings?.right || 0;
-        const childWithProps = React.cloneElement(child!, {
+        const childWithProps = React.cloneElement(child, {
             avatarSize: cell.bounds.width - leftPaddings - rightPaddings,
             canZoom: false,
             cellPaddings: cell.paddings,
@@ -132,7 +135,7 @@ function renderPresentationGridVideoCells({
 }: RenderVideoCellsProps) {
     const cells = stageLayout.presentationGrid?.cells || [];
     return content.map((child, index) => {
-        if (!stageLayout.presentationGrid) {
+        if (!child || !stageLayout.presentationGrid) {
             return null;
         }
         const cell = cells[index];
@@ -149,7 +152,7 @@ function renderPresentationGridVideoCells({
             transform: `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`,
         };
         const clientId = child?.props?.cellId || child?.props?.participant?.id;
-        const childWithProps = React.cloneElement(child!, {
+        const childWithProps = React.cloneElement(child, {
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault:
                 !!isConstrained && !!child?.props?.participant && !child.props.participant.isPresentation,
@@ -177,7 +180,7 @@ function renderGridVideoCells({
 }: RenderVideoCellsProps) {
     const cells = stageLayout.videoGrid?.cells || [];
     const gridVideoCells = content.map((child, index) => {
-        if (!stageLayout.videoGrid) {
+        if (!child || !stageLayout.videoGrid) {
             return null;
         }
         const cell = cells[index];
@@ -192,7 +195,7 @@ function renderGridVideoCells({
         };
 
         const clientId = child?.props?.cellId || child?.props?.participant?.id;
-        const childWithProps = React.cloneElement(child!, {
+        const childWithProps = React.cloneElement(child, {
             isSmallCell: cell.isSmallCell,
             isZoomedByDefault:
                 !!isConstrained && !!child?.props?.participant && !child.props.participant.isPresentation,
@@ -282,8 +285,11 @@ function renderHiddenCells({ content }: { content: (React.JSX.Element | undefine
     const cell = { bounds: { width: 1, height: 1 }, aspectRatio: 1 };
 
     return content.map((child, index) => {
-        const clientId = child?.props?.cellId || `hidden-${index}`;
-        const childWithProps = React.cloneElement(child!, { isHiddenCell: true, key: clientId });
+        if (!child) {
+            return null;
+        }
+        const clientId = child.props?.cellId || `hidden-${index}`;
+        const childWithProps = React.cloneElement(child, { isHiddenCell: true, key: clientId });
 
         return renderVideoCell({ cell, child: childWithProps, clientId, style: HIDDEN_CELL_STYLE });
     });

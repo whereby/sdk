@@ -511,7 +511,8 @@ export const VideoGridWithIntegrationMockedStory = {
         videoGridGap,
         enableSubgrid,
         stageParticipantLimit,
-    }: MockedGridArgs & { numRunningIntegrations: number }) => {
+        enableIntegrations,
+    }: MockedGridArgs & { numRunningIntegrations: number; enableIntegrations: boolean }) => {
         return (
             <FakeParticipantsProvider
                 numParticipants={numParticipants}
@@ -525,8 +526,9 @@ export const VideoGridWithIntegrationMockedStory = {
                         stageParticipantLimit={stageParticipantLimit}
                         enableSubgrid={enableSubgrid}
                         enableParticipantMenu
-                        // With a real session this is where useRoomIntegrationView goes — see the
-                        // RunningIntegration component in room-integrations.stories.tsx.
+                        enableIntegrations={enableIntegrations}
+                        // A placeholder in place of the default frame, which needs a real session to
+                        // show anything — see the "Room integrations in the video grid" story.
                         renderIntegration={({ session }) => (
                             <div
                                 style={{
@@ -563,11 +565,16 @@ export const VideoGridWithIntegrationMockedStory = {
             control: { type: "range", min: 0, max: 3 },
             description: "Running integrations. The first takes the stage; the rest go to the subgrid.",
         },
+        enableIntegrations: {
+            control: "boolean",
+            description: "Off lays out the grid as if no integration were running.",
+        },
     },
     args: {
         ...mockedArgs,
         numParticipants: 5,
         numVideosOff: 1,
         numRunningIntegrations: 1,
+        enableIntegrations: true,
     },
 };

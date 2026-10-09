@@ -45,6 +45,8 @@ function renderGridParticipants(
     });
 }
 
+const withIntegrations = { includeIntegrations: true };
+
 function makeSession(roomIntegrationSessionId: string): RoomIntegrationSessionView {
     return { roomIntegrationSessionId } as RoomIntegrationSessionView;
 }
@@ -124,36 +126,43 @@ describe("useGridParticipants", () => {
         const spotlighted = presentationClient as ClientView;
 
         it("puts the running integration on the stage", () => {
-            const { result } = renderGridParticipants([videoLocalClient as ClientView], {
-                runningRoomIntegrations: [session],
-            });
+            const { result } = renderGridParticipants(
+                [videoLocalClient as ClientView],
+                { runningRoomIntegrations: [session] },
+                withIntegrations,
+            );
 
             expect(result.current.integrationsInPresentationGrid).toEqual([session]);
         });
 
         it("displaces spotlighted participants off the stage", () => {
-            const { result } = renderGridParticipants([videoLocalClient as ClientView, spotlighted], {
-                spotlightedParticipants: [spotlighted],
-                runningRoomIntegrations: [session],
-            });
+            const { result } = renderGridParticipants(
+                [videoLocalClient as ClientView, spotlighted],
+                { spotlightedParticipants: [spotlighted], runningRoomIntegrations: [session] },
+                withIntegrations,
+            );
 
             expect(result.current.clientViewsInPresentationGrid).toEqual([]);
             expect(result.current.clientViewsInGrid).toContain(spotlighted);
         });
 
         it("spotlights hold the stage again once the integration stops", () => {
-            const { result } = renderGridParticipants([videoLocalClient as ClientView, spotlighted], {
-                spotlightedParticipants: [spotlighted],
-            });
+            const { result } = renderGridParticipants(
+                [videoLocalClient as ClientView, spotlighted],
+                { spotlightedParticipants: [spotlighted] },
+                withIntegrations,
+            );
 
             expect(result.current.clientViewsInPresentationGrid).toEqual([spotlighted]);
         });
 
         it("keeps only the first integration on the stage, sending the rest to the subgrid", () => {
             const second = makeSession("session-2");
-            const { result } = renderGridParticipants([videoLocalClient as ClientView], {
-                runningRoomIntegrations: [session, second],
-            });
+            const { result } = renderGridParticipants(
+                [videoLocalClient as ClientView],
+                { runningRoomIntegrations: [session, second] },
+                withIntegrations,
+            );
 
             expect(result.current.integrationsInPresentationGrid).toEqual([session]);
             expect(result.current.integrationsInSubgrid).toEqual([second]);
@@ -162,12 +171,92 @@ describe("useGridParticipants", () => {
         it("shrinks muted participants into the subgrid as a spotlight would", () => {
             const clients = [videoLocalClient, audioClient, mutedVideoClient] as ClientView[];
 
-            const withIntegration = renderGridParticipants(clients, { runningRoomIntegrations: [session] });
+            const withIntegration = renderGridParticipants(
+                clients,
+                { runningRoomIntegrations: [session] },
+                withIntegrations,
+            );
             expect(withIntegration.result.current.clientViewsInSubgrid).toEqual([mutedVideoClient, audioClient]);
 
-            const withoutIntegration = renderGridParticipants(clients);
+            const withoutIntegration = renderGridParticipants(clients, {}, withIntegrations);
             expect(withoutIntegration.result.current.clientViewsInSubgrid).toEqual([audioClient]);
         });
+    });
+
+    // A grid with no way to render an integration cell has to lay out as it did before integrations
+    // existed, or a share from the Whereby app would take the stage and leave it empty.
+    describe("with integrations not included", () => {
+        const session = makeSession("session-1");
+        const second = makeSession("session-2");
+        const spotlighted = presentationClient as ClientView;
+        const clients = [videoLocalClient, audioClient, mutedVideoClient, spotlighted] as ClientView[];
+
+        function layoutOf(result: { current: ReturnType<typeof useGridParticipants> }) {
+            const {
+                clientViewsInGrid,
+                clientViewsInPresentationGrid,
+                clientViewsInSubgrid,
+                integrationsInPresentationGrid,
+                integrationsInSubgrid,
+                integrationsHidden,
+            } = result.current;
+
+            return {
+                clientViewsInGrid,
+                clientViewsInPresentationGrid,
+                clientViewsInSubgrid,
+                integrationsInPresentationGrid,
+                integrationsInSubgrid,
+                integrationsHidden,
+            };
+        }
+
+        it("ignores running integrations by default", () => {
+            const { result } = renderGridParticipants(clients, {
+                spotlightedParticipants: [spotlighted],
+                runningRoomIntegrations: [session, second],
+            });
+
+            expect(result.current.integrationsInPresentationGrid).toEqual([]);
+            expect(result.current.integrationsInSubgrid).toEqual([]);
+            expect(result.current.integrationsHidden).toEqual([]);
+        });
+
+        it("keeps spotlighted participants on the stage", () => {
+            const { result } = renderGridParticipants(clients, {
+                spotlightedParticipants: [spotlighted],
+                runningRoomIntegrations: [session],
+            });
+
+            expect(result.current.clientViewsInPresentationGrid).toEqual([spotlighted]);
+            expect(result.current.clientViewsInGrid).not.toContain(spotlighted);
+        });
+
+        it.each`
+            enableSubgrid | maximizedCellId
+            ${true}       | ${undefined}
+            ${false}      | ${undefined}
+            ${true}       | ${videoLocalClient.id}
+            ${false}      | ${videoLocalClient.id}
+        `(
+            "lays out as if nothing were running (enableSubgrid: $enableSubgrid, maximizedCellId: $maximizedCellId)",
+            ({ enableSubgrid, maximizedCellId }) => {
+                const props = { enableSubgrid, maximizedCellId };
+
+                const withRunning = renderGridParticipants(
+                    clients,
+                    { spotlightedParticipants: [spotlighted], runningRoomIntegrations: [session, second] },
+                    props,
+                );
+                const withoutRunning = renderGridParticipants(
+                    clients,
+                    { spotlightedParticipants: [spotlighted] },
+                    props,
+                );
+
+                expect(layoutOf(withRunning.result)).toEqual(layoutOf(withoutRunning.result));
+            },
+        );
     });
 
     describe("maximizing", () => {
@@ -177,7 +266,7 @@ describe("useGridParticipants", () => {
             const { result } = renderGridParticipants(
                 [videoLocalClient as ClientView],
                 { runningRoomIntegrations: [session] },
-                { maximizedCellId: videoLocalClient.id },
+                { ...withIntegrations, maximizedCellId: videoLocalClient.id },
             );
 
             expect(result.current.integrationsInPresentationGrid).toEqual([]);
@@ -190,7 +279,7 @@ describe("useGridParticipants", () => {
             const { result } = renderGridParticipants(
                 [videoLocalClient as ClientView],
                 { runningRoomIntegrations: [session] },
-                { maximizedCellId: videoLocalClient.id, enableSubgrid: false },
+                { ...withIntegrations, maximizedCellId: videoLocalClient.id, enableSubgrid: false },
             );
 
             expect(result.current.integrationsHidden).toEqual([session]);

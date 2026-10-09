@@ -5,6 +5,7 @@ import { ClientView, RoomIntegrationSessionView, debounce } from "@whereby.com/c
 import { CellView } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
 import { IntegrationCell } from "./IntegrationCell";
+import { DefaultIntegrationView } from "./DefaultIntegrationView";
 import { useGrid } from "./useGrid";
 import { VideoMutedIndicator } from "./VideoMutedIndicator";
 import { DefaultParticipantMenu } from "./DefaultParticipantMenu";
@@ -135,11 +136,15 @@ function renderCellView({ cellView, enableParticipantMenu, render, renderIntegra
             );
         }
         case "integration":
-            return renderIntegration ? (
+            return (
                 <IntegrationCell cellId={cellView.cellId}>
-                    {renderIntegration({ session: cellView.session })}
+                    {renderIntegration ? (
+                        renderIntegration({ session: cellView.session })
+                    ) : (
+                        <DefaultIntegrationView session={cellView.session} />
+                    )}
                 </IntegrationCell>
-            ) : undefined;
+            );
     }
 }
 
@@ -154,6 +159,11 @@ interface GridProps {
     stageParticipantLimit?: number;
     enableParticipantMenu?: boolean;
     enableConstrainedGrid?: boolean;
+    /**
+     * Show running room integrations, such as a shared YouTube video, in the grid. On by default;
+     * set to false to lay out the grid as if none were running.
+     */
+    enableIntegrations?: boolean;
 }
 
 function Grid({
@@ -167,6 +177,7 @@ function Grid({
     enableSubgrid,
     enableParticipantMenu,
     enableConstrainedGrid,
+    enableIntegrations = true,
 }: GridProps) {
     const gridRef = React.useRef<HTMLDivElement>(null);
 
@@ -195,6 +206,7 @@ function Grid({
         videoGridGap,
         enableSubgrid,
         enableConstrainedGrid,
+        includeIntegrations: enableIntegrations,
     });
 
     const handleSetClientAspectRatio = React.useCallback(

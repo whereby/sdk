@@ -14,6 +14,12 @@ interface Props {
     videoGridGap?: number;
     enableSubgrid?: boolean;
     enableConstrainedGrid?: boolean;
+    /**
+     * Lay out running room integrations as cells of type "integration". Off by default, because you
+     * render the cells yourself: turn it on once you render integration cells, or a running
+     * integration would take the stage and show nothing.
+     */
+    includeIntegrations?: boolean;
 }
 
 function useGrid({
@@ -24,6 +30,7 @@ function useGrid({
     videoGridGap = 8,
     enableSubgrid = true,
     enableConstrainedGrid = true,
+    includeIntegrations = false,
 }: Props = {}) {
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
     const [isConstrained, setIsConstrained] = React.useState(false);
@@ -47,6 +54,7 @@ function useGrid({
         maximizedCellId,
         floatingCellId,
         isConstrained: !!enableConstrainedGrid && !!isConstrained,
+        includeIntegrations,
     });
 
     const cellViewsFloating = React.useMemo(() => {
