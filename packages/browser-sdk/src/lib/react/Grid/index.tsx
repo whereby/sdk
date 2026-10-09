@@ -1,9 +1,11 @@
 import * as React from "react";
 
 import { VideoView, VideoViewProps, WherebyVideoElement } from "../VideoView";
-import { ClientView, debounce } from "@whereby.com/core";
+import { ClientView, RoomIntegrationSessionView, debounce } from "@whereby.com/core";
 import { CellView } from "./layout/types";
 import { VideoStageLayout } from "./VideoStageLayout";
+import { IntegrationCell } from "./IntegrationCell";
+import { DefaultIntegrationView } from "./DefaultIntegrationView";
 import { useGrid } from "./useGrid";
 import { VideoMutedIndicator } from "./VideoMutedIndicator";
 import { DefaultParticipantMenu } from "./DefaultParticipantMenu";
@@ -11,6 +13,7 @@ import { GridCellContext, GridContext, useGridCell } from "./GridContext";
 
 type GridCellSelfProps = {
     participant: ClientView;
+    cellId?: string;
 };
 
 type GridCellProps = GridCellSelfProps & React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
@@ -101,19 +104,24 @@ interface RenderCellViewProps {
     cellView: CellView;
     enableParticipantMenu?: boolean;
     render?: ({ participant }: { participant: ClientView }) => React.ReactNode;
+    renderIntegration?: ({ session }: { session: RoomIntegrationSessionView }) => React.ReactNode;
 }
 
-function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellViewProps) {
-    const participant = cellView?.client;
-
-    if (!participant) {
+function renderCellView({ cellView, enableParticipantMenu, render, renderIntegration }: RenderCellViewProps) {
+    if (!cellView) {
         return undefined;
     }
 
     switch (cellView.type) {
-        case "video":
+        case "video": {
+            const participant = cellView.client;
+
+            if (!participant) {
+                return undefined;
+            }
+
             return (
-                <GridCell participant={participant}>
+                <GridCell participant={participant} cellId={cellView.cellId}>
                     <>
                         {render ? (
                             render({ participant })
@@ -126,6 +134,17 @@ function renderCellView({ cellView, enableParticipantMenu, render }: RenderCellV
                     </>
                 </GridCell>
             );
+        }
+        case "integration":
+            return (
+                <IntegrationCell cellId={cellView.cellId}>
+                    {renderIntegration ? (
+                        renderIntegration({ session: cellView.session })
+                    ) : (
+                        <DefaultIntegrationView session={cellView.session} />
+                    )}
+                </IntegrationCell>
+            );
     }
 }
 
@@ -133,24 +152,32 @@ interface GridProps {
     renderParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
     renderSubgridParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
     renderFloatingParticipant?: ({ participant }: { participant: ClientView }) => React.ReactNode;
+    renderIntegration?: ({ session }: { session: RoomIntegrationSessionView }) => React.ReactNode;
     gridGap?: number;
     videoGridGap?: number;
     enableSubgrid?: boolean;
     stageParticipantLimit?: number;
     enableParticipantMenu?: boolean;
     enableConstrainedGrid?: boolean;
+    /**
+     * Show running room integrations, such as a shared YouTube video, in the grid. On by default;
+     * set to false to lay out the grid as if none were running.
+     */
+    enableIntegrations?: boolean;
 }
 
 function Grid({
     renderParticipant,
     renderSubgridParticipant,
     renderFloatingParticipant,
+    renderIntegration,
     stageParticipantLimit,
     gridGap,
     videoGridGap,
     enableSubgrid,
     enableParticipantMenu,
     enableConstrainedGrid,
+    enableIntegrations = true,
 }: GridProps) {
     const gridRef = React.useRef<HTMLDivElement>(null);
 
@@ -160,15 +187,18 @@ function Grid({
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,
+        cellViewsHidden,
         clientAspectRatios,
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
+        maximizedCellId,
+        setMaximizedCellId,
         maximizedParticipant,
-        setMaximizedParticipant,
         isConstrained,
+        floatingCellId,
+        setFloatingCellId,
         floatingParticipant,
-        setFloatingParticipant,
     } = useGrid({
         activeVideosSubgridTrigger: 12,
         stageParticipantLimit,
@@ -176,6 +206,7 @@ function Grid({
         videoGridGap,
         enableSubgrid,
         enableConstrainedGrid,
+        includeIntegrations: enableIntegrations,
     });
 
     const handleSetClientAspectRatio = React.useCallback(
@@ -204,10 +235,11 @@ function Grid({
                 renderCellView({
                     cellView,
                     enableParticipantMenu,
+                    renderIntegration,
                     ...(renderParticipant ? { render: ({ participant }) => renderParticipant({ participant }) } : {}),
                 }),
             ),
-        [cellViewsInPresentationGrid],
+        [cellViewsInPresentationGrid, renderIntegration],
     );
 
     const gridContent = React.useMemo(
@@ -228,15 +260,20 @@ function Grid({
                 renderCellView({
                     cellView,
                     enableParticipantMenu,
+                    renderIntegration,
                     ...(renderSubgridParticipant
                         ? { render: ({ participant }) => renderSubgridParticipant({ participant }) }
                         : {}),
                 }),
             ),
-        [cellViewsInSubgrid],
+        [cellViewsInSubgrid, renderIntegration],
     );
 
-    // Calculate container frame on resize
+    const hiddenContent = React.useMemo(
+        () => cellViewsHidden.map((cellView) => renderCellView({ cellView, renderIntegration })),
+        [cellViewsHidden, renderIntegration],
+    );
+
     React.useEffect(() => {
         if (!gridRef.current) {
             return;
@@ -268,10 +305,12 @@ function Grid({
                 cellViewsInPresentationGrid,
                 cellViewsInSubgrid,
                 clientAspectRatios,
+                maximizedCellId,
+                setMaximizedCellId,
                 maximizedParticipant,
-                setMaximizedParticipant,
+                floatingCellId,
+                setFloatingCellId,
                 floatingParticipant,
-                setFloatingParticipant,
                 isConstrained,
             }}
         >
@@ -290,6 +329,7 @@ function Grid({
                     presentationGridContent={presentationGridContent}
                     gridContent={gridContent}
                     subgridContent={subgridContent}
+                    hiddenContent={hiddenContent}
                 />
             </div>
         </GridContext.Provider>

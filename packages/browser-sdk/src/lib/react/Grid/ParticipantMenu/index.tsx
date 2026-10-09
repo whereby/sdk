@@ -100,30 +100,20 @@ type ParticipantMenuItemProps = React.ComponentPropsWithoutRef<"button"> & {
 
 const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, ParticipantMenuItemProps>(
     ({ children, style, participantAction, ...props }, ref) => {
-        const {
-            participant,
-            setOpen,
-            maximizedParticipant,
-            setMaximizedParticipant,
-            setFloatingParticipant,
-            floatingParticipant,
-        } = useParticipantMenu();
+        const { participant, setOpen, maximizedCellId, setMaximizedCellId, floatingCellId, setFloatingCellId } =
+            useParticipantMenu();
         const client = React.useContext(WherebyContext)?.getGrid();
         const { spotlightedParticipants } = useGridParticipants();
         const isSpotlighted = spotlightedParticipants.find((p) => p.id === participant.id);
-        const isMaximized = maximizedParticipant?.id === participant.id;
-        const isFloating = floatingParticipant?.id === participant.id;
+        const isMaximized = maximizedCellId === participant.id;
+        const isFloating = floatingCellId === participant.id;
 
         let onClick;
 
         switch (participantAction) {
             case "maximize":
                 onClick = () => {
-                    if (isMaximized) {
-                        setMaximizedParticipant(null);
-                    } else {
-                        setMaximizedParticipant(participant);
-                    }
+                    setMaximizedCellId(isMaximized ? null : participant.id);
                     setOpen(false);
                 };
                 break;
@@ -139,11 +129,7 @@ const ParticipantMenuItem = React.forwardRef<React.ElementRef<"button">, Partici
                 break;
             case "float":
                 onClick = () => {
-                    if (isFloating) {
-                        setFloatingParticipant(null);
-                    } else {
-                        setFloatingParticipant(participant);
-                    }
+                    setFloatingCellId(isFloating ? null : participant.id);
                     setOpen(false);
                 };
                 break;

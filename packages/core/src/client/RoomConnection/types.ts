@@ -1,10 +1,32 @@
 import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage, KnockResponse } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
-import { ClientView, ConnectionStatus, FileUpload, InitialMuteStates, NotificationsEventEmitter } from "../../redux";
+import {
+    ClientView,
+    ConnectionStatus,
+    FileUpload,
+    InitialMuteStates,
+    NotificationsEventEmitter,
+    RoomIntegration,
+    RoomIntegrationErrorDetail,
+    RoomIntegrationSessionView,
+} from "../../redux";
 import LiveCaption from "../../api/models/LiveCaption";
 
-export type { RoomJoinedSuccess, ChatFileShare, KnockResponse, KnockResponseSender } from "@whereby.com/media";
+export type {
+    RoomJoinedSuccess,
+    ChatFileShare,
+    KnockResponse,
+    KnockResponseSender,
+    RoomIntegrationProps,
+} from "@whereby.com/media";
 export type { FileUpload, FileShareError, SendFilesOptions } from "../../redux";
+export type {
+    RoomIntegration,
+    RoomIntegrationError,
+    RoomIntegrationErrorDetail,
+    RoomIntegrationSession,
+    RoomIntegrationSessionView,
+} from "../../redux/slices/roomIntegrations";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -112,6 +134,15 @@ export type BreakoutState = {
     broadcastingParticipants: ClientView[];
 };
 
+export type RoomIntegrationsState = {
+    hasFetched: boolean;
+    isFetching: boolean;
+    error: RoomIntegrationErrorDetail | null;
+    embeddable: RoomIntegration[];
+    enabled: RoomIntegration[];
+    running: RoomIntegrationSessionView[];
+};
+
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     connectionError: string | null;
@@ -130,6 +161,7 @@ export interface RoomConnectionState {
     localScreenshare?: LocalScreenshareState;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
+    roomIntegrations: RoomIntegrationsState;
     screenshares: Screenshare[];
     waitingParticipants: WaitingParticipantState[];
     spotlightedParticipants: ClientView[];

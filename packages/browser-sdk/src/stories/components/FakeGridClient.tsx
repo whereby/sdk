@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { ClientView, GridState, WherebyClient } from "@whereby.com/core";
+import { ClientView, GridState, RoomIntegrationSessionView, WherebyClient } from "@whereby.com/core";
 import { WherebyContext } from "../../lib/react/Provider";
 import { NAMES, sampleNameForIndex } from "./VideoGridTestData";
 
@@ -63,6 +63,36 @@ function stopFakeParticipants(participants: ClientView[]) {
     });
 }
 
+export function makeFakeRoomIntegrationSession(index: number): RoomIntegrationSessionView {
+    return {
+        roomIntegrationSessionId: `fake-session-${index}`,
+        roomIntegrationId: "5",
+        breakoutGroupId: "",
+        tagName: "youtube-integration-contentframe",
+        shareUrl: "https://youtu.be/dQw4w9WgXcQ",
+        props: { aspectratio: 16 / 9 },
+        clientId: "fake-0",
+        roomIntegrationSessionStartedAt: null,
+        isPresenter: index === 0,
+        presenterDisplayName: index === 0 ? null : "Someone else",
+        canStop: true,
+        integration: {
+            roomIntegrationId: "5",
+            name: "youtube",
+            title: `Shared video ${index + 1}`,
+            description: "",
+            type: "video",
+            contentTagName: "youtube-integration-contentframe",
+            icons: { small: "", large: "" },
+            link: { href: "", text: "" },
+            entrypoint: "",
+            webview: "https://integrations.whereby.dev/youtube/index.html",
+            matcher: /youtu\.be/i,
+            isEmbeddable: true,
+        },
+    };
+}
+
 /**
  * Implements the subset of GridClient the Grid component tree uses
  * (useGridParticipants + ParticipantMenu), backed by fake participants
@@ -71,9 +101,11 @@ function stopFakeParticipants(participants: ClientView[]) {
 export class FakeGridClient {
     private clientViews: ClientView[] = [];
     private spotlighted: ClientView[] = [];
+    private runningRoomIntegrations: RoomIntegrationSessionView[] = [];
     private clientViewSubscribers = new Set<(clientViews: ClientView[]) => void>();
     private spotlightedSubscribers = new Set<(spotlighted: ClientView[]) => void>();
     private numberOfClientViewsSubscribers = new Set<(num: number) => void>();
+    private runningRoomIntegrationsSubscribers = new Set<(sessions: RoomIntegrationSessionView[]) => void>();
 
     public setClientViews(clientViews: ClientView[]) {
         this.clientViews = clientViews;
@@ -84,16 +116,23 @@ export class FakeGridClient {
         this.emit();
     }
 
+    public setRunningRoomIntegrations(sessions: RoomIntegrationSessionView[]) {
+        this.runningRoomIntegrations = sessions;
+        this.emit();
+    }
+
     private emit() {
         this.clientViewSubscribers.forEach((cb) => cb(this.clientViews));
         this.spotlightedSubscribers.forEach((cb) => cb(this.spotlighted));
         this.numberOfClientViewsSubscribers.forEach((cb) => cb(this.clientViews.length));
+        this.runningRoomIntegrationsSubscribers.forEach((cb) => cb(this.runningRoomIntegrations));
     }
 
     public getState(): GridState {
         return {
             allClientViews: this.clientViews,
             spotlightedParticipants: this.spotlighted,
+            runningRoomIntegrations: this.runningRoomIntegrations,
             numParticipants: this.clientViews.length,
         };
     }
@@ -111,6 +150,11 @@ export class FakeGridClient {
     public subscribeNumberOfClientViews(callback: (num: number) => void): () => void {
         this.numberOfClientViewsSubscribers.add(callback);
         return () => this.numberOfClientViewsSubscribers.delete(callback);
+    }
+
+    public subscribeRunningRoomIntegrations(callback: (sessions: RoomIntegrationSessionView[]) => void): () => void {
+        this.runningRoomIntegrationsSubscribers.add(callback);
+        return () => this.runningRoomIntegrationsSubscribers.delete(callback);
     }
 
     public spotlightParticipant(id: string) {
@@ -134,10 +178,12 @@ export class FakeGridClient {
 export function FakeParticipantsProvider({
     numParticipants,
     numVideosOff,
+    numRunningIntegrations = 0,
     children,
 }: {
     numParticipants: number;
     numVideosOff: number;
+    numRunningIntegrations?: number;
     children: React.ReactNode;
 }) {
     const fakeGrid = React.useMemo(() => new FakeGridClient(), []);
@@ -166,6 +212,12 @@ export function FakeParticipantsProvider({
 
         return () => stopFakeParticipants(participants);
     }, [fakeGrid, numParticipants, numVideosOff]);
+
+    React.useEffect(() => {
+        fakeGrid.setRunningRoomIntegrations(
+            Array.from({ length: numRunningIntegrations }, (_, i) => makeFakeRoomIntegrationSession(i)),
+        );
+    }, [fakeGrid, numRunningIntegrations]);
 
     return <WherebyContext.Provider value={fakeClient}>{children}</WherebyContext.Provider>;
 }

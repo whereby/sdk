@@ -2,10 +2,9 @@ import * as React from "react";
 
 import { makeFrame } from "./layout/helpers";
 import { calculateLayout } from "./layout/stageLayout";
-import { makeVideoCellView } from "./layout/cellView";
+import { makeIntegrationCellView, makeVideoCellView } from "./layout/cellView";
 import { STAGE_PARTICIPANT_LIMIT } from "./contants";
 import { useGridParticipants } from "./useGridParticipants";
-import { ClientView } from "@whereby.com/core";
 
 interface Props {
     activeVideosSubgridTrigger?: number;
@@ -15,6 +14,12 @@ interface Props {
     videoGridGap?: number;
     enableSubgrid?: boolean;
     enableConstrainedGrid?: boolean;
+    /**
+     * Lay out running room integrations as cells of type "integration". Off by default, because you
+     * render the cells yourself: turn it on once you render integration cells, or a running
+     * integration would take the stage and show nothing.
+     */
+    includeIntegrations?: boolean;
 }
 
 function useGrid({
@@ -25,22 +30,32 @@ function useGrid({
     videoGridGap = 8,
     enableSubgrid = true,
     enableConstrainedGrid = true,
+    includeIntegrations = false,
 }: Props = {}) {
     const [containerBounds, setContainerBounds] = React.useState({ width: 0, height: 0 });
     const [isConstrained, setIsConstrained] = React.useState(false);
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
-    const [maximizedParticipant, setMaximizedParticipant] = React.useState<ClientView | null>(null);
-    const [floatingParticipant, setFloatingParticipant] = React.useState<ClientView | null>(null);
-    const { clientViewsInGrid, clientViewsInPresentationGrid, clientViewsInSubgrid, floatingClientView } =
-        useGridParticipants({
-            activeVideosSubgridTrigger,
-            forceSubgrid,
-            stageParticipantLimit,
-            enableSubgrid,
-            maximizedParticipant,
-            floatingParticipant,
-            isConstrained: !!enableConstrainedGrid && !!isConstrained,
-        });
+    const [maximizedCellId, setMaximizedCellId] = React.useState<string | null>(null);
+    const [floatingCellId, setFloatingCellId] = React.useState<string | null>(null);
+    const {
+        clientViewsInGrid,
+        clientViewsInPresentationGrid,
+        clientViewsInSubgrid,
+        floatingClientView,
+        maximizedClientView,
+        integrationsInPresentationGrid,
+        integrationsInSubgrid,
+        integrationsHidden,
+    } = useGridParticipants({
+        activeVideosSubgridTrigger,
+        forceSubgrid,
+        stageParticipantLimit,
+        enableSubgrid,
+        maximizedCellId,
+        floatingCellId,
+        isConstrained: !!enableConstrainedGrid && !!isConstrained,
+        includeIntegrations,
+    });
 
     const cellViewsFloating = React.useMemo(() => {
         return floatingClientView
@@ -66,28 +81,39 @@ function useGrid({
         });
     }, [clientViewsInGrid, clientAspectRatios]);
 
+    // Integrations first, so the stage keeps a stable order when spotlights come and go around it.
     const cellViewsInPresentationGrid = React.useMemo(() => {
-        return clientViewsInPresentationGrid.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: { top: 0, right: 0 },
-            });
-        });
-    }, [clientViewsInPresentationGrid, clientAspectRatios]);
+        return [
+            ...integrationsInPresentationGrid.map((session) => makeIntegrationCellView({ session })),
+            ...clientViewsInPresentationGrid.map((client) => {
+                return makeVideoCellView({
+                    client,
+                    aspectRatio: clientAspectRatios[client.id],
+                    avatarSize: 0,
+                    cellPaddings: { top: 0, right: 0 },
+                });
+            }),
+        ];
+    }, [clientViewsInPresentationGrid, integrationsInPresentationGrid, clientAspectRatios]);
 
     const cellViewsInSubgrid = React.useMemo(() => {
-        return clientViewsInSubgrid.map((client) => {
-            return makeVideoCellView({
-                client,
-                aspectRatio: clientAspectRatios[client.id],
-                avatarSize: 0,
-                cellPaddings: { top: 0, right: 0 },
-                isSubgrid: true,
-            });
-        });
-    }, [clientViewsInSubgrid, clientAspectRatios]);
+        return [
+            ...clientViewsInSubgrid.map((client) => {
+                return makeVideoCellView({
+                    client,
+                    aspectRatio: clientAspectRatios[client.id],
+                    avatarSize: 0,
+                    cellPaddings: { top: 0, right: 0 },
+                    isSubgrid: true,
+                });
+            }),
+            ...integrationsInSubgrid.map((session) => makeIntegrationCellView({ session, isSubgrid: true })),
+        ];
+    }, [clientViewsInSubgrid, integrationsInSubgrid, clientAspectRatios]);
+
+    const cellViewsHidden = React.useMemo(() => {
+        return integrationsHidden.map((session) => makeIntegrationCellView({ session }));
+    }, [integrationsHidden]);
 
     const containerFrame = React.useMemo(() => {
         return makeFrame(containerBounds);
@@ -129,14 +155,17 @@ function useGrid({
         cellViewsVideoGrid,
         cellViewsInPresentationGrid,
         cellViewsInSubgrid,
+        cellViewsHidden,
         clientAspectRatios,
         videoStage,
         setContainerBounds,
         setClientAspectRatios,
-        maximizedParticipant,
-        setMaximizedParticipant,
-        floatingParticipant,
-        setFloatingParticipant,
+        maximizedCellId,
+        setMaximizedCellId,
+        maximizedParticipant: maximizedClientView,
+        floatingCellId,
+        setFloatingCellId,
+        floatingParticipant: floatingClientView,
         isConstrained,
     };
 }

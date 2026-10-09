@@ -484,3 +484,97 @@ export const VideoGridMockedStoryCustom = {
     argTypes: mockedArgTypes,
     args: mockedArgs,
 };
+
+/**
+ * A running integration on the stage, without a room.
+ *
+ * The content of a real integration is served from the integration's own origin, so it needs a room
+ * that has one enabled — that is the "Room integrations" story. What this one shows is where the
+ * grid *puts* it, which is the part worth being able to poke at:
+ *
+ * - the integration takes the whole presentation area, and spotlighted participants drop back into
+ *   the video grid rather than sharing the stage with it
+ * - a second running integration goes to the subgrid, not the stage
+ * - maximizing a participant takes the stage back, and the integration keeps rendering offscreen
+ *   rather than unmounting — with a real integration that is the difference between the video
+ *   carrying on and restarting from the beginning
+ *
+ * Spotlight and maximize are on the participant menu, under Actions.
+ */
+export const VideoGridWithIntegrationMockedStory = {
+    name: "Video grid with a room integration (mocked)",
+    render: ({
+        numParticipants,
+        numVideosOff,
+        numRunningIntegrations,
+        gridGap,
+        videoGridGap,
+        enableSubgrid,
+        stageParticipantLimit,
+        enableIntegrations,
+    }: MockedGridArgs & { numRunningIntegrations: number; enableIntegrations: boolean }) => {
+        return (
+            <FakeParticipantsProvider
+                numParticipants={numParticipants}
+                numVideosOff={numVideosOff}
+                numRunningIntegrations={numRunningIntegrations}
+            >
+                <div style={{ height: "500px", width: "100%" }}>
+                    <VideoGrid
+                        gridGap={gridGap}
+                        videoGridGap={videoGridGap}
+                        stageParticipantLimit={stageParticipantLimit}
+                        enableSubgrid={enableSubgrid}
+                        enableParticipantMenu
+                        enableIntegrations={enableIntegrations}
+                        // A placeholder in place of the default frame, which needs a real session to
+                        // show anything — see the "Room integrations in the video grid" story.
+                        renderIntegration={({ session }) => (
+                            <div
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    background: "#1b1b2a",
+                                    color: "#fff",
+                                    borderRadius: 8,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 4,
+                                    fontFamily: "sans-serif",
+                                }}
+                            >
+                                <strong>{session.integration.title}</strong>
+                                <span style={{ fontSize: 11, opacity: 0.7 }}>
+                                    {session.isPresenter
+                                        ? "shared by you"
+                                        : `shared by ${session.presenterDisplayName}`}
+                                </span>
+                                <span style={{ fontSize: 10, opacity: 0.5 }}>{session.roomIntegrationSessionId}</span>
+                            </div>
+                        )}
+                    />
+                </div>
+            </FakeParticipantsProvider>
+        );
+    },
+    argTypes: {
+        ...mockedArgTypes,
+        numRunningIntegrations: {
+            control: { type: "range", min: 0, max: 3 },
+            description: "Running integrations. The first takes the stage; the rest go to the subgrid.",
+        },
+        enableIntegrations: {
+            control: "boolean",
+            description: "Off lays out the grid as if no integration were running.",
+        },
+    },
+    args: {
+        ...mockedArgs,
+        numParticipants: 5,
+        numVideosOff: 1,
+        numRunningIntegrations: 1,
+        enableIntegrations: true,
+    },
+};

@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { VideoCell } from "../VideoCell";
+import { IntegrationCell } from "../IntegrationCell";
 
 import { hasBounds, makeFrame } from "../layout/helpers";
 import { Bounds, Box, Frame, Origin, StageLayout } from "../layout/types";
@@ -82,6 +83,9 @@ function renderSubgridVideoCells({
 }: RenderSubgridVideoCellsProps) {
     const cells = stageLayout.subgrid.cells;
     return content.map((child, index) => {
+        if (!child) {
+            return null;
+        }
         const cell = cells[index];
         const style = { height: Math.round(cell.bounds.height), width: Math.round(cell.bounds.width), transform: "" };
 
@@ -90,10 +94,10 @@ function renderSubgridVideoCells({
             left: stageLayout.subgrid.origin.left + cell.origin.left,
         };
         style.transform = `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`;
-        const clientId = child?.props?.participant?.id;
+        const clientId = child?.props?.cellId || child?.props?.participant?.id;
         const leftPaddings = cell.paddings?.left || 0;
         const rightPaddings = cell.paddings?.right || 0;
-        const childWithProps = React.cloneElement(child!, {
+        const childWithProps = React.cloneElement(child, {
             avatarSize: cell.bounds.width - leftPaddings - rightPaddings,
             canZoom: false,
             cellPaddings: cell.paddings,
@@ -131,7 +135,7 @@ function renderPresentationGridVideoCells({
 }: RenderVideoCellsProps) {
     const cells = stageLayout.presentationGrid?.cells || [];
     return content.map((child, index) => {
-        if (!stageLayout.presentationGrid) {
+        if (!child || !stageLayout.presentationGrid) {
             return null;
         }
         const cell = cells[index];
@@ -147,10 +151,11 @@ function renderPresentationGridVideoCells({
             height: Math.round(cell.bounds.height),
             transform: `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`,
         };
-        const clientId = child?.props?.participant?.id;
-        const childWithProps = React.cloneElement(child!, {
+        const clientId = child?.props?.cellId || child?.props?.participant?.id;
+        const childWithProps = React.cloneElement(child, {
             isSmallCell: cell.isSmallCell,
-            isZoomedByDefault: !!isConstrained && !child?.props.participant.isPresentation,
+            isZoomedByDefault:
+                !!isConstrained && !!child?.props?.participant && !child.props.participant.isPresentation,
             canZoom: !!isConstrained,
             key: clientId || `presentation-${index}`,
         });
@@ -175,7 +180,7 @@ function renderGridVideoCells({
 }: RenderVideoCellsProps) {
     const cells = stageLayout.videoGrid?.cells || [];
     const gridVideoCells = content.map((child, index) => {
-        if (!stageLayout.videoGrid) {
+        if (!child || !stageLayout.videoGrid) {
             return null;
         }
         const cell = cells[index];
@@ -189,10 +194,11 @@ function renderGridVideoCells({
             transform: `translate3d(${Math.round(origin.left)}px, ${Math.round(origin.top)}px, 0)`,
         };
 
-        const clientId = child?.props?.participant?.id;
-        const childWithProps = React.cloneElement(child!, {
+        const clientId = child?.props?.cellId || child?.props?.participant?.id;
+        const childWithProps = React.cloneElement(child, {
             isSmallCell: cell.isSmallCell,
-            isZoomedByDefault: !!isConstrained && !child?.props.participant.isPresentation,
+            isZoomedByDefault:
+                !!isConstrained && !!child?.props?.participant && !child.props.participant.isPresentation,
             canZoom: !!isConstrained,
             key: clientId || `video-${index}`,
         });
@@ -260,6 +266,52 @@ function renderFloatingVideoCell({
     });
 }
 
+const HIDDEN_CELL_STYLE: React.CSSProperties = {
+    width: 1,
+    height: 1,
+    opacity: 0,
+    overflow: "hidden",
+    pointerEvents: "none",
+};
+
+/**
+ * Content with no place in the current layout that must keep running, such as an integration
+ * displaced from the stage by a maximized participant.
+ *
+ * Rendered as ordinary cells in the same list as the visible ones, not in a container of their own:
+ * a change of parent remounts the content, and for an iframe that means reloading it.
+ */
+function renderHiddenCells({ content }: { content: (React.JSX.Element | undefined)[] }) {
+    const cell = { bounds: { width: 1, height: 1 }, aspectRatio: 1 };
+
+    return content.map((child, index) => {
+        if (!child) {
+            return null;
+        }
+        const clientId = child.props?.cellId || `hidden-${index}`;
+        const childWithProps = React.cloneElement(child, { isHiddenCell: true, key: clientId });
+
+        return renderVideoCell({ cell, child: childWithProps, clientId, style: HIDDEN_CELL_STYLE });
+    });
+}
+
+/**
+ * Moves integration cells to the front of the list, in an order that depends only on their keys.
+ *
+ * React moves a DOM node when its position among keyed siblings changes relative to the others,
+ * and moving an iframe reloads it. Integration cells can change area (stage, subgrid, hidden) while
+ * the participants around them come and go, so keeping them first and mutually ordered means
+ * React never has to move them: at worst it moves the video cells after them.
+ */
+function withIntegrationCellsFirst(cells: (React.JSX.Element | null)[]) {
+    const isIntegrationCell = (cell: React.JSX.Element | null) => cell?.props?.children?.type === IntegrationCell;
+    const integrationCells = cells
+        .filter(isIntegrationCell)
+        .sort((a, b) => String(a?.key).localeCompare(String(b?.key)));
+
+    return [...integrationCells, ...cells.filter((cell) => !isIntegrationCell(cell))];
+}
+
 interface VideoStageLayoutProps {
     containerFrame: Frame;
     containerPaddings?: Box;
@@ -267,8 +319,7 @@ interface VideoStageLayoutProps {
     featureRoundedCornersOff?: boolean;
     floatingContent?: React.ReactElement & ContentProps;
     gridContent?: (React.JSX.Element | undefined)[];
-    hiddenGridContent?: React.ReactElement[];
-    hiddenPresentationGridContent?: React.ReactElement[];
+    hiddenContent?: (React.JSX.Element | undefined)[];
     isConstrained?: boolean;
     layoutOverflowBackdropFrame?: Frame;
     layoutVideoStage: StageLayout;
@@ -287,6 +338,7 @@ function VideoStageLayout({
     layoutVideoStage: stageLayout,
     presentationGridContent = [],
     subgridContent = [],
+    hiddenContent = [],
 }: VideoStageLayoutProps) {
     const withRoundedCorners = !featureRoundedCornersOff && !isConstrained;
 
@@ -343,6 +395,10 @@ function VideoStageLayout({
         );
     }
 
+    if (hiddenContent.length) {
+        cells.push(...renderHiddenCells({ content: hiddenContent }));
+    }
+
     return (
         <div
             key={"video-stage-layout"}
@@ -355,7 +411,7 @@ function VideoStageLayout({
             {hasBounds(layoutOverflowBackdropFrame.bounds) && (
                 <div style={generateStylesFromFrame(layoutOverflowBackdropFrame)} />
             )}
-            {cells}
+            {withIntegrationCellsFirst(cells)}
             {debug && (
                 <>
                     {/* <div style={generateStylesFromFrame(stageLayout.presentationGrid)} /> */}
