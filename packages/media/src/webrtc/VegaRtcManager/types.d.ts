@@ -75,12 +75,19 @@ type DataConsumerAppData = {
 };
 
 type VegaAnalytics = {
+    avgPreferredLayerSwitchLatencyMs: number | undefined;
+    camOutboundCongestedFraction: number | undefined;
+    camOutboundRttInflationMs: number | undefined;
     camTrackEndedCount: number;
+    highestPreferredLayerChangeCounts: Record<string, number>;
     micTrackEndedCount: number;
+    numHighestPreferredLayerChanges: number;
     numIceConnected: number;
     numIceDisconnected: number;
     numIceFailed: number;
     numNewPc: number;
+    numPreferredSpatialLayerChanges: number;
+    preferredSpatialLayerChangeCounts: Record<string, number>;
     sfuMsFromOfflineToClose: number;
     sfuOfflineToCloseCount: number;
     sfuOfflineWhileConnectedCount: number;
@@ -101,7 +108,9 @@ type VegaAnalytics = {
     vegaWebcamProducerFailed: number;
 };
 
-type VegaAnalyticMetric = keyof VegaAnalytics;
+type VegaAnalyticMetric = {
+    [K in keyof VegaAnalytics]: VegaAnalytics[K] extends number ? K : never;
+}[keyof VegaAnalytics];
 
 export type VegaIncrementAnalyticMetric = (metric: VegaAnalyticMetric) => void;
 

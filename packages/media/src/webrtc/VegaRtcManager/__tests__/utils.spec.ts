@@ -1,7 +1,47 @@
+import { LOWEST_SVC_LAYER_MAX_BITRATE, MIDDLE_SVC_LAYER_MAX_BITRATE } from "../../constants";
 import { Producer } from "mediasoup-client/lib/Producer";
-import { addProducerCpuOveruseWatch, getLayers, getNumberOfActiveVideos, getNumberOfTemporalLayers } from "../utils";
+import {
+    addProducerCpuOveruseWatch,
+    aggregateMetricStats,
+    createMetricStats,
+    getLayers,
+    getNumberOfActiveVideos,
+    getNumberOfTemporalLayers,
+    getPacketWeightedFractionLost,
+    getInitialHighestPreferredLayer,
+    getReducedSvcEncodingParams,
+    getTopSpatialLayer,
+    recordMetricSample,
+} from "../utils";
 
 describe("utils", () => {
+    describe("createMetricStats / recordMetricSample / aggregateMetricStats", () => {
+        it("computes count/avg over the recorded samples", () => {
+            const stats = createMetricStats();
+            [50, 100, 150, 200].forEach((value) => recordMetricSample(stats, value));
+
+            expect(aggregateMetricStats(stats)).toEqual({ count: 4, avg: 125 });
+        });
+
+        it("does not depend on the recording order", () => {
+            const stats = createMetricStats();
+            [300, 100, 200].forEach((value) => recordMetricSample(stats, value));
+
+            expect(aggregateMetricStats(stats)).toEqual({ count: 3, avg: 200 });
+        });
+
+        it("handles a single sample", () => {
+            const stats = createMetricStats();
+            recordMetricSample(stats, 42);
+
+            expect(aggregateMetricStats(stats)).toEqual({ count: 1, avg: 42 });
+        });
+
+        it("has no avg before any sample is recorded", () => {
+            expect(aggregateMetricStats(createMetricStats())).toEqual({ count: 0, avg: undefined });
+        });
+    });
+
     describe("getLayers", () => {
         it.each`
             width  | height | numberOfActiveVideos | numberOfTemporalLayers | uncappedSingleRemoteVideoOn | expected
@@ -68,6 +108,130 @@ describe("utils", () => {
             const result = getNumberOfTemporalLayers(consumer);
 
             expect(result).toBe(3);
+        });
+    });
+
+    describe("getPacketWeightedFractionLost", () => {
+        it("weighs each report's fraction lost by its packet rate", () => {
+            expect(
+                getPacketWeightedFractionLost([
+                    { fractionLost: 0.1, packetRate: 100 },
+                    { fractionLost: 0, packetRate: 300 },
+                ]),
+            ).toBeCloseTo(0.025);
+        });
+
+        it("weighs the reports the same without packet rates", () => {
+            expect(getPacketWeightedFractionLost([{ fractionLost: 0.1 }, { fractionLost: 0.3 }])).toBeCloseTo(0.2);
+        });
+
+        it("returns 0 without reports or losses", () => {
+            expect(getPacketWeightedFractionLost([])).toBe(0);
+            expect(getPacketWeightedFractionLost([{ packetRate: 100 }])).toBe(0);
+        });
+    });
+
+    describe("getTopSpatialLayer", () => {
+        it("returns the last index for simulcast (multiple encodings)", () => {
+            expect(getTopSpatialLayer([{}, {}, {}])).toBe(2);
+            expect(getTopSpatialLayer([{}, {}])).toBe(1);
+        });
+
+        it("returns the spatial layer count minus one for a single SVC encoding", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L3T2" }])).toBe(2);
+            expect(getTopSpatialLayer([{ scalabilityMode: "L2T2" }])).toBe(1);
+        });
+
+        it("returns 0 for a single-spatial-layer SVC mode", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L1T3" }])).toBe(0);
+        });
+
+        it("returns 0 for a plain (non-SVC) single encoding", () => {
+            expect(getTopSpatialLayer([{}])).toBe(0);
+        });
+
+        it("returns 0 for a malformed scalabilityMode with unexpected trailing content", () => {
+            expect(getTopSpatialLayer([{ scalabilityMode: "L3T2_UNEXPECTED_SUFFIX" }])).toBe(0);
+        });
+    });
+
+    describe("getInitialHighestPreferredLayer", () => {
+        it("starts a 3-layer webcam capped at layer 1", () => {
+            expect(getInitialHighestPreferredLayer([{}, {}, {}])).toBe(1);
+            expect(getInitialHighestPreferredLayer([{ scalabilityMode: "L3T2" }])).toBe(1);
+        });
+
+        it("never returns a layer above what the encodings have", () => {
+            expect(getInitialHighestPreferredLayer([{ scalabilityMode: "L1T3" }])).toBe(0);
+        });
+    });
+
+    describe("getReducedSvcEncodingParams", () => {
+        it.each`
+            originalScalabilityMode | spatialLayer | scalabilityMode | scaleResolutionDownBy | maxBitrate
+            ${"L3T2"}               | ${2}         | ${"L3T2"}       | ${1}                  | ${undefined}
+            ${"L3T2"}               | ${1}         | ${"L2T2"}       | ${2}                  | ${MIDDLE_SVC_LAYER_MAX_BITRATE}
+            ${"L3T2"}               | ${0}         | ${"L1T2"}       | ${4}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
+            ${"L2T2"}               | ${0}         | ${"L1T2"}       | ${2}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
+            ${"S3T3"}               | ${1}         | ${"S2T3"}       | ${2}                  | ${MIDDLE_SVC_LAYER_MAX_BITRATE}
+            ${"L3T3_KEY"}           | ${1}         | ${"L2T3_KEY"}   | ${2}                  | ${MIDDLE_SVC_LAYER_MAX_BITRATE}
+            ${"S3T3"}               | ${0}         | ${"L1T3"}       | ${4}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
+            ${"L3T3_KEY"}           | ${0}         | ${"L1T3"}       | ${4}                  | ${LOWEST_SVC_LAYER_MAX_BITRATE}
+        `(
+            "reduces $originalScalabilityMode to $scalabilityMode scaled down by $scaleResolutionDownBy (maxBitrate $maxBitrate) when the preferred spatial layer is $spatialLayer",
+            ({ originalScalabilityMode, spatialLayer, scalabilityMode, scaleResolutionDownBy, maxBitrate }) => {
+                expect(getReducedSvcEncodingParams(originalScalabilityMode, spatialLayer)).toEqual({
+                    scalabilityMode,
+                    scaleResolutionDownBy,
+                    maxBitrate,
+                });
+            },
+        );
+
+        it("never raises the spatial layer count above what the original scalabilityMode declared", () => {
+            expect(getReducedSvcEncodingParams("L2T2", 5)).toEqual({
+                scalabilityMode: "L2T2",
+                scaleResolutionDownBy: 1,
+                maxBitrate: undefined,
+            });
+        });
+
+        it("never reduces below a single spatial layer", () => {
+            expect(getReducedSvcEncodingParams("L3T2", -1)).toEqual({
+                scalabilityMode: "L1T2",
+                scaleResolutionDownBy: 4,
+                maxBitrate: LOWEST_SVC_LAYER_MAX_BITRATE,
+            });
+        });
+
+        it("caps maxBitrate for the lowest and middle layers, undefined (no cap) for the top layer of an uncapped producer", () => {
+            expect(getReducedSvcEncodingParams("L3T2", 0)?.maxBitrate).toBe(LOWEST_SVC_LAYER_MAX_BITRATE);
+            expect(getReducedSvcEncodingParams("L3T2", 1)?.maxBitrate).toBe(MIDDLE_SVC_LAYER_MAX_BITRATE);
+            expect(getReducedSvcEncodingParams("L3T2", 2)?.maxBitrate).toBeUndefined();
+        });
+
+        it("restores the producer's own maxBitrate at the top layer", () => {
+            expect(getReducedSvcEncodingParams("L3T2", 2, 1_000_000)?.maxBitrate).toBe(1_000_000);
+        });
+
+        it("keeps the lower layers' caps when the producer's own maxBitrate is higher", () => {
+            expect(getReducedSvcEncodingParams("L3T2", 0, 1_000_000)?.maxBitrate).toBe(LOWEST_SVC_LAYER_MAX_BITRATE);
+            expect(getReducedSvcEncodingParams("L3T2", 1, 1_000_000)?.maxBitrate).toBe(MIDDLE_SVC_LAYER_MAX_BITRATE);
+        });
+
+        it("never raises the maxBitrate above the producer's own lower cap", () => {
+            expect(getReducedSvcEncodingParams("L3T2", 1, 300_000)?.maxBitrate).toBe(300_000);
+            expect(getReducedSvcEncodingParams("L3T2", 0, 50_000)?.maxBitrate).toBe(50_000);
+        });
+
+        it("returns undefined for a single-spatial-layer mode, since there's nothing to reduce", () => {
+            expect(getReducedSvcEncodingParams("L1T3", 0)).toBeUndefined();
+            expect(getReducedSvcEncodingParams("L1T2", 2, 1_000_000)).toBeUndefined();
+        });
+
+        it("returns undefined for a non-SVC (simulcast/plain) encoding", () => {
+            expect(getReducedSvcEncodingParams(undefined, 1)).toBeUndefined();
+            expect(getReducedSvcEncodingParams("", 1)).toBeUndefined();
         });
     });
 

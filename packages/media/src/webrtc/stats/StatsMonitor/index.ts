@@ -23,7 +23,6 @@ export interface StatsMonitorState {
     getClients: () => StatsClient[];
     lastPressureObserverRecord?: PressureRecord;
     lastUpdateTime: number;
-    nextTimeout?: number;
     pressureObserver?: PressureObserver;
     renderedDimensionsByTrack: Record<string, RenderedDimensionsReport>;
     statsByView: Record<string, ViewStats>;
@@ -70,7 +69,22 @@ export const updateRenderedDimensions = (trackId: string, data: RenderedDimensio
 };
 
 function startStatsMonitor(state: StatsMonitorState, { interval, logger }: StatsMonitorOptions) {
-    const collectStatsBound = collectStats.bind(null, state, { interval, logger });
+    // the monitor alone schedules the collection runs, so once stopped nothing can schedule another one, not even
+    // a run that was still collecting when it was stopped
+    let stopped = false;
+    let nextTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const scheduleNextRun = () => {
+        nextTimeout = setTimeout(async () => {
+            try {
+                await collectStats(state, { interval, logger }, false);
+            } catch (error) {
+                // collectStats handles its own errors, so keep collecting even if a run failed unexpectedly
+                logger.error("Stats collection failed unexpectedly", error);
+            }
+            if (!stopped) scheduleNextRun();
+        }, interval);
+    };
 
     let cpuObserver: ReturnType<typeof startCpuObserver>;
 
@@ -80,15 +94,15 @@ function startStatsMonitor(state: StatsMonitorState, { interval, logger }: Stats
         logger.warn("Failed to observe CPU pressure", ex);
     }
 
-    // initial run
-    setTimeout(collectStatsBound, interval);
+    scheduleNextRun();
 
     return {
         getUpdatedStats: () => {
-            return collectStatsBound(true);
+            return collectStats(state, { interval, logger }, true);
         },
         stop: () => {
-            clearTimeout(state.nextTimeout);
+            stopped = true;
+            clearTimeout(nextTimeout);
             cpuObserver?.stop();
         },
     };
