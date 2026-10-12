@@ -1271,7 +1271,7 @@ describe("VegaRtcManager", () => {
             rtcManager._consumers.set(consumerId, consumer);
         };
 
-        it("increments numPreferredSpatialLayerChanges and the transition histogram when the spatial layer changes", () => {
+        it("requests a lower spatial layer for a smaller tile", () => {
             const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
             registerConsumer("stream1", "consumer1", consumer);
 
@@ -1279,11 +1279,9 @@ describe("VegaRtcManager", () => {
 
             expect(consumer.appData.spatialLayer).toBe(0);
             expect(consumer.appData.temporalLayer).toBe(1);
-            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(1);
-            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 1 });
         });
 
-        it("does not increment numPreferredSpatialLayerChanges when only the temporal layer changes (spatial layer unchanged)", () => {
+        it("only lowers the temporal layer of a spatial layer 0 tile when there are over 8 active videos", () => {
             const consumer = createConsumer({ spatialLayer: 0, temporalLayer: 1 });
             registerConsumer("stream1", "consumer1", consumer);
 
@@ -1301,11 +1299,9 @@ describe("VegaRtcManager", () => {
 
             expect(consumer.appData.spatialLayer).toBe(0);
             expect(consumer.appData.temporalLayer).toBe(0);
-            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(0);
-            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({});
         });
 
-        it("does not increment numPreferredSpatialLayerChanges, or send a message, when nothing changes", () => {
+        it("does not send a message when nothing changes", () => {
             const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
             registerConsumer("stream1", "consumer1", consumer);
             const message = jest.fn();
@@ -1313,20 +1309,7 @@ describe("VegaRtcManager", () => {
 
             rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
 
-            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(0);
             expect(message).not.toHaveBeenCalled();
-        });
-
-        it("aggregates counts across multiple transitions in the session, including repeats", () => {
-            const consumer = createConsumer({ spatialLayer: 2, temporalLayer: 1 });
-            registerConsumer("stream1", "consumer1", consumer);
-
-            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
-            rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
-            rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
-
-            expect(rtcManager.analytics.numPreferredSpatialLayerChanges).toBe(3);
-            expect(rtcManager.analytics.preferredSpatialLayerChangeCounts).toEqual({ "2->0": 2, "0->2": 1 });
         });
 
         describe("preferred layer switch latency", () => {

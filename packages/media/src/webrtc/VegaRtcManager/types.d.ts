@@ -86,8 +86,6 @@ type VegaAnalytics = {
     numIceDisconnected: number;
     numIceFailed: number;
     numNewPc: number;
-    numPreferredSpatialLayerChanges: number;
-    preferredSpatialLayerChangeCounts: Record<string, number>;
     sfuMsFromOfflineToClose: number;
     sfuOfflineToCloseCount: number;
     sfuOfflineWhileConnectedCount: number;

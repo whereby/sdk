@@ -305,8 +305,6 @@ export default class VegaRtcManager implements RtcManager {
             numIceDisconnected: 0,
             numIceFailed: 0,
             numNewPc: 0,
-            numPreferredSpatialLayerChanges: 0,
-            preferredSpatialLayerChangeCounts: {},
             sfuMsFromOfflineToClose: 0,
             sfuOfflineToCloseCount: 0,
             sfuOfflineWhileConnectedCount: 0,
@@ -1881,14 +1879,6 @@ export default class VegaRtcManager implements RtcManager {
         if (consumer.appData.spatialLayer !== spatialLayer || consumer.appData.temporalLayer !== temporalLayer) {
             const previousSpatialLayer = consumer.appData.spatialLayer;
             const spatialLayerChanged = previousSpatialLayer !== spatialLayer;
-
-            if (spatialLayerChanged) {
-                this.analytics.numPreferredSpatialLayerChanges++;
-                this._incrementHistogramCount(
-                    this.analytics.preferredSpatialLayerChangeCounts,
-                    `${previousSpatialLayer}->${spatialLayer}`,
-                );
-            }
 
             consumer.appData.spatialLayer = spatialLayer;
             consumer.appData.temporalLayer = temporalLayer;
