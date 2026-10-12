@@ -75,7 +75,7 @@ type DataConsumerAppData = {
 };
 
 type VegaAnalytics = {
-    avgPreferredLayerSwitchLatencyMs: number | undefined;
+    avgCamPreferredSpatialLayerSwitchLatencyMs: number | undefined;
     camOutboundCongestedFraction: number | undefined;
     camOutboundRttInflationMs: number | undefined;
     camTrackEndedCount: number;

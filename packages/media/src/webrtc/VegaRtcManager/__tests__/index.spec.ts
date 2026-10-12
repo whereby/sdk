@@ -1371,7 +1371,7 @@ describe("VegaRtcManager", () => {
                 await jest.advanceTimersByTimeAsync(100);
 
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(1);
-                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(200);
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
             });
 
@@ -1409,7 +1409,7 @@ describe("VegaRtcManager", () => {
                 await jest.advanceTimersByTimeAsync(10_000);
 
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
-                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBeUndefined();
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBeUndefined();
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
             });
 
@@ -1469,7 +1469,20 @@ describe("VegaRtcManager", () => {
 
                 expect(consumer.getStats).toHaveBeenCalledTimes(4);
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(1);
-                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(200);
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
+            });
+
+            it("doesn't watch a screenshare's switch", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                consumer.appData = { ...consumer.appData, screenShare: true } as any;
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBeUndefined();
             });
 
             it("does not mistake an earlier switch that is still landing for a quick reverse switch", async () => {
@@ -1526,7 +1539,7 @@ describe("VegaRtcManager", () => {
                 await jest.advanceTimersByTimeAsync(100);
 
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(1);
-                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(100);
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(100);
             });
 
             it("only watches 5 switches at a time, e.g. when a layout change switches every consumer", async () => {
@@ -1626,7 +1639,7 @@ describe("VegaRtcManager", () => {
                 });
 
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(20);
-                expect(rtcManager.analytics.avgPreferredLayerSwitchLatencyMs).toBe(525);
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(525);
             });
         });
     });

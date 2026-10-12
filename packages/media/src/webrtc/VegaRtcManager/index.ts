@@ -294,7 +294,7 @@ export default class VegaRtcManager implements RtcManager {
         window?.addEventListener?.("offline", this._sfuZombie.onBrowserOffline); // browser-only
 
         this.analytics = {
-            avgPreferredLayerSwitchLatencyMs: undefined,
+            avgCamPreferredSpatialLayerSwitchLatencyMs: undefined,
             camOutboundCongestedFraction: undefined,
             camOutboundRttInflationMs: undefined,
             camTrackEndedCount: 0,
@@ -1894,7 +1894,7 @@ export default class VegaRtcManager implements RtcManager {
                 temporalLayer,
             });
 
-            if (spatialLayerChanged) {
+            if (spatialLayerChanged && !consumer.appData.screenShare) {
                 this._watchForPreferredLayerSwitch(consumerId, consumer, {
                     toHigherLayer: spatialLayer > previousSpatialLayer,
                 });
@@ -1983,7 +1983,7 @@ export default class VegaRtcManager implements RtcManager {
         recordMetricSample(this._preferredLayerSwitchLatencyStats, latencyMs);
 
         const { avg } = aggregateMetricStats(this._preferredLayerSwitchLatencyStats);
-        this.analytics.avgPreferredLayerSwitchLatencyMs = avg;
+        this.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs = avg;
     }
 
     _onUpdatedStats(statsByView: Record<string, any>) {
