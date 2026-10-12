@@ -380,8 +380,12 @@ export default class VegaRtcManager implements RtcManager {
         );
 
         if (browserName !== "firefox") {
-            this._sendTransport?.updateIceServers(iceServersList);
-            this._receiveTransport?.updateIceServers(iceServersList);
+            this._sendTransport
+                ?.updateIceServers(iceServersList)
+                .catch((error) => logger.error("updateIceServers() on send transport failed [error:%o]", error));
+            this._receiveTransport
+                ?.updateIceServers(iceServersList)
+                .catch((error) => logger.error("updateIceServers() on receive transport failed [error:%o]", error));
         }
 
         this._clearMediaServersRefresh();
