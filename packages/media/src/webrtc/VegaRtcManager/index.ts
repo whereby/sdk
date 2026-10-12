@@ -298,9 +298,14 @@ export default class VegaRtcManager implements RtcManager {
             camOutboundCongestedFraction: undefined,
             camOutboundRttInflationMs: undefined,
             camTrackEndedCount: 0,
-            highestPreferredLayerChangeCounts: {},
             micTrackEndedCount: 0,
-            numHighestPreferredLayerChanges: 0,
+            numCamHighestPreferredSpatialLayerChanges: 0,
+            numCamHighestPreferredSpatialLayerChanges0To1: 0,
+            numCamHighestPreferredSpatialLayerChanges0To2: 0,
+            numCamHighestPreferredSpatialLayerChanges1To0: 0,
+            numCamHighestPreferredSpatialLayerChanges1To2: 0,
+            numCamHighestPreferredSpatialLayerChanges2To0: 0,
+            numCamHighestPreferredSpatialLayerChanges2To1: 0,
             numIceConnected: 0,
             numIceDisconnected: 0,
             numIceFailed: 0,
@@ -2403,11 +2408,8 @@ export default class VegaRtcManager implements RtcManager {
             this._webcamProducerHighestPreferredLayer !== undefined &&
             this._webcamProducerHighestPreferredLayer !== spatialLayer
         ) {
-            this.analytics.numHighestPreferredLayerChanges++;
-            this._incrementHistogramCount(
-                this.analytics.highestPreferredLayerChangeCounts,
-                `${this._webcamProducerHighestPreferredLayer}->${spatialLayer}`,
-            );
+            this.analytics.numCamHighestPreferredSpatialLayerChanges++;
+            this._incrementLayerChangeCount(this._webcamProducerHighestPreferredLayer, spatialLayer);
         }
         this._webcamProducerHighestPreferredLayer = spatialLayer;
 
@@ -2468,8 +2470,11 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    _incrementHistogramCount(histogram: Record<string, number>, key: string) {
-        histogram[key] = (histogram[key] || 0) + 1;
+    _incrementLayerChangeCount(from: number, to: number) {
+        const counts = this.analytics as unknown as Record<string, number | undefined>;
+        const key = `numCamHighestPreferredSpatialLayerChanges${from}To${to}`;
+        const count = counts[key];
+        if (count !== undefined) counts[key] = count + 1;
     }
 
     async _onDataConsumerReady(options: DataConsumerOptions<DataConsumerAppData>) {

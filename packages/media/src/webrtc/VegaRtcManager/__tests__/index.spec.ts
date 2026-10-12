@@ -49,6 +49,12 @@ describe("VegaRtcManager", () => {
     let mediaConstraints: GetConstraintsOptions;
 
     let rtcManager: VegaRtcManager;
+    const layerChangeCounts = (prefix: string) =>
+        Object.fromEntries(
+            Object.entries(rtcManager.analytics)
+                .filter(([key, count]) => key.startsWith(prefix) && /^\dTo\d$/.test(key.slice(prefix.length)) && count)
+                .map(([key, count]) => [key.slice(prefix.length), count]),
+        );
     let sfuWebsocketServer: WS;
     let sfuWebsocketServerUrl: string;
 
@@ -639,7 +645,7 @@ describe("VegaRtcManager", () => {
             await rtcManager._onChangedHighestPreferredLayer({ producerId: "other-producer", spatialLayer: 0 });
 
             expectNoEncoderUpdate();
-            expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+            expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(0);
         });
 
         it("does nothing when the sfuHighestPreferredLayerTrackingOn feature flag is off", async () => {
@@ -649,7 +655,7 @@ describe("VegaRtcManager", () => {
             await rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 });
 
             expectNoEncoderUpdate();
-            expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+            expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(0);
         });
 
         it.each([NaN, undefined, "1", Infinity])(
@@ -664,7 +670,7 @@ describe("VegaRtcManager", () => {
 
                 expectNoEncoderUpdate();
                 expect(parameters.encodings).toEqual([{ active: true }, { active: true }, { active: true }]);
-                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+                expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(0);
             },
         );
 
@@ -675,7 +681,7 @@ describe("VegaRtcManager", () => {
                 rtcManager._onChangedHighestPreferredLayer({ producerId: "webcam-producer-1", spatialLayer: 0 }),
             ).resolves.toBeUndefined();
 
-            expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
+            expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(0);
         });
 
         it("serializes overlapping calls so a later message can't race an earlier one's encoder update", async () => {
@@ -698,9 +704,9 @@ describe("VegaRtcManager", () => {
                 spatialLayer: initialLayer,
             });
 
-            expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
-                [`${initialLayer}->${otherLayer}`]: 1,
-                [`${otherLayer}->${initialLayer}`]: 1,
+            expect(layerChangeCounts("numCamHighestPreferredSpatialLayerChanges")).toEqual({
+                [`${initialLayer}To${otherLayer}`]: 1,
+                [`${otherLayer}To${initialLayer}`]: 1,
             });
             expect(setMaxSpatialLayer).toHaveBeenCalledTimes(1);
 
@@ -746,29 +752,38 @@ describe("VegaRtcManager", () => {
                 createWebcamProducer([{ active: true }, { active: true }, { active: true }]);
             });
 
+            it("reports every transition's count, starting at 0", () => {
+                expect(rtcManager.analytics).toEqual(
+                    expect.objectContaining({
+                        numCamHighestPreferredSpatialLayerChanges0To2: 0,
+                        numCamHighestPreferredSpatialLayerChanges1To0: 0,
+                    }),
+                );
+            });
+
             it("counts the first message as a transition from the initial highest preferred layer the webcam was capped to", async () => {
                 await sendHighestPreferredLayer(otherLayer);
 
-                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
-                    [`${initialLayer}->${otherLayer}`]: 1,
+                expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(1);
+                expect(layerChangeCounts("numCamHighestPreferredSpatialLayerChanges")).toEqual({
+                    [`${initialLayer}To${otherLayer}`]: 1,
                 });
             });
 
             it("does not count a first message that matches the initial highest preferred layer", async () => {
                 await sendHighestPreferredLayer(initialLayer);
 
-                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(0);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({});
+                expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(0);
+                expect(layerChangeCounts("numCamHighestPreferredSpatialLayerChanges")).toEqual({});
             });
 
-            it("counts and histograms a transition once a second, different value arrives", async () => {
+            it("counts a transition once a second, different value arrives", async () => {
                 await sendHighestPreferredLayer(initialLayer);
                 await sendHighestPreferredLayer(otherLayer);
 
-                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
-                    [`${initialLayer}->${otherLayer}`]: 1,
+                expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(1);
+                expect(layerChangeCounts("numCamHighestPreferredSpatialLayerChanges")).toEqual({
+                    [`${initialLayer}To${otherLayer}`]: 1,
                 });
             });
 
@@ -777,9 +792,9 @@ describe("VegaRtcManager", () => {
                 await sendHighestPreferredLayer(otherLayer);
                 await sendHighestPreferredLayer(otherLayer);
 
-                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(1);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
-                    [`${initialLayer}->${otherLayer}`]: 1,
+                expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(1);
+                expect(layerChangeCounts("numCamHighestPreferredSpatialLayerChanges")).toEqual({
+                    [`${initialLayer}To${otherLayer}`]: 1,
                 });
             });
 
@@ -789,10 +804,10 @@ describe("VegaRtcManager", () => {
                 await sendHighestPreferredLayer(initialLayer);
                 await sendHighestPreferredLayer(otherLayer);
 
-                expect(rtcManager.analytics.numHighestPreferredLayerChanges).toBe(3);
-                expect(rtcManager.analytics.highestPreferredLayerChangeCounts).toEqual({
-                    [`${initialLayer}->${otherLayer}`]: 2,
-                    [`${otherLayer}->${initialLayer}`]: 1,
+                expect(rtcManager.analytics.numCamHighestPreferredSpatialLayerChanges).toBe(3);
+                expect(layerChangeCounts("numCamHighestPreferredSpatialLayerChanges")).toEqual({
+                    [`${initialLayer}To${otherLayer}`]: 2,
+                    [`${otherLayer}To${initialLayer}`]: 1,
                 });
             });
         });
