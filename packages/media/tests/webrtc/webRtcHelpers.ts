@@ -33,6 +33,8 @@ export function createServerSocketStub() {
 
     socket.isConnected = jest.fn(() => true);
 
+    socket.joinRoomFinished = true;
+
     socket.emit = jest.fn();
 
     return {

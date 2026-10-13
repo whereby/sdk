@@ -541,11 +541,8 @@ export default class P2pRtcManager implements RtcManager {
             logger.warn("RtcManager closed. Will not send event", eventName, data);
             return;
         }
-        if (this._features.awaitJoinRoomFinished && !this._serverSocket.joinRoomFinished) {
-            rtcStats.sendEvent("skip_emitting_server_message", { eventName });
-        } else {
-            this._serverSocket.emit(eventName, data);
-        }
+        if (!this._serverSocket.joinRoomFinished) return;
+        this._serverSocket.emit(eventName, data);
     }
 
     _emit(eventName: string, data?: any) {
