@@ -105,6 +105,7 @@ type VegaAnalytics = {
     vegaScreenAudioProducerFailed: number;
     vegaScreenVideoProducerFailed: number;
     vegaUnknownResponse: number;
+    vegaUpdateIceServersFailed: number;
     vegaWebcamProducerFailed: number;
 };
 

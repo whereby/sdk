@@ -324,6 +324,7 @@ export default class VegaRtcManager implements RtcManager {
             vegaScreenAudioProducerFailed: 0,
             vegaScreenVideoProducerFailed: 0,
             vegaUnknownResponse: 0,
+            vegaUpdateIceServersFailed: 0,
             vegaWebcamProducerFailed: 0,
         };
 
@@ -380,8 +381,24 @@ export default class VegaRtcManager implements RtcManager {
         );
 
         if (browserName !== "firefox") {
-            this._sendTransport?.updateIceServers(iceServersList);
-            this._receiveTransport?.updateIceServers(iceServersList);
+            this._sendTransport?.updateIceServers(iceServersList).catch((error) => {
+                logger.error("updateIceServers() on send transport failed [error:%o]", error);
+                this.analytics.vegaUpdateIceServersFailed++;
+                rtcStats.sendEvent("VegaUpdateIceServersFailed", {
+                    direction: "send",
+                    errorName: error?.name,
+                    errorMessage: error?.message,
+                });
+            });
+            this._receiveTransport?.updateIceServers(iceServersList).catch((error) => {
+                logger.error("updateIceServers() on receive transport failed [error:%o]", error);
+                this.analytics.vegaUpdateIceServersFailed++;
+                rtcStats.sendEvent("VegaUpdateIceServersFailed", {
+                    direction: "recv",
+                    errorName: error?.name,
+                    errorMessage: error?.message,
+                });
+            });
         }
 
         this._clearMediaServersRefresh();
