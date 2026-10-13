@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.2.2
+
+### Patch Changes
+
+- f1c8481: Handle a failed ICE server update on SFU transports
+
 ## 11.2.1
 
 ### Patch Changes
