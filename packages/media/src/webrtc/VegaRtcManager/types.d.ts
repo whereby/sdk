@@ -87,6 +87,7 @@ type VegaAnalytics = {
     numCamHighestPreferredSpatialLayerChanges1To2: number;
     numCamHighestPreferredSpatialLayerChanges2To0: number;
     numCamHighestPreferredSpatialLayerChanges2To1: number;
+    numCamPreferredSpatialLayerSwitchTimeouts: number;
     numIceConnected: number;
     numIceDisconnected: number;
     numIceFailed: number;

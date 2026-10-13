@@ -1273,7 +1273,7 @@ describe("VegaRtcManager", () => {
     });
 
     describe("updateStreamResolution", () => {
-        const createConsumer = ({ spatialLayer = 2, temporalLayer = 1, scalabilityMode = "T2" } = {}) => ({
+        const createConsumer = ({ spatialLayer = 2, temporalLayer = 1, scalabilityMode = "L3T2" } = {}) => ({
             appData: { spatialLayer, temporalLayer },
             _appData: { source: "webcam" },
             _closed: false,
@@ -1330,7 +1330,7 @@ describe("VegaRtcManager", () => {
         describe("preferred layer switch latency", () => {
             const createConsumerWithFrameSizes = (
                 frameSizes: ({ width: number; height: number } | undefined)[],
-                { spatialLayer = 2, temporalLayer = 1, scalabilityMode = "T2" } = {},
+                { spatialLayer = 2, temporalLayer = 1, scalabilityMode = "L3T2" } = {},
             ) => {
                 let callIndex = 0;
                 return {
@@ -1413,6 +1413,60 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
             });
 
+            it("doesn't measure a switch up to a layer that was asked for but isn't available, as the frame size can't change", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 640, height: 360 }], {
+                    spatialLayer: 1,
+                    scalabilityMode: "L2T2",
+                });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1280, height: 720 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(consumer.appData.spatialLayer).toBe(2);
+                expect(consumer.getStats).not.toHaveBeenCalled();
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("measures a switch down from a layer that was asked for but isn't available, as it's measured from the webcam's top layer", async () => {
+                const consumer = createConsumerWithFrameSizes(
+                    [
+                        { width: 640, height: 360 },
+                        { width: 320, height: 180 },
+                    ],
+                    { spatialLayer: 2, scalabilityMode: "L2T2" },
+                );
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(100);
+
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(100);
+            });
+
+            it("counts a switch that doesn't land before the watch times out", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(9_900);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
+            });
+
+            it("doesn't count a timeout for a switch whose consumer closed", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                consumer.closed = true;
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
             it("gives up on time even if the first getStats() never settles", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
                 consumer.getStats.mockImplementation(() => new Promise(() => {}));
@@ -1424,6 +1478,7 @@ describe("VegaRtcManager", () => {
                 await jest.advanceTimersByTimeAsync(10_000);
 
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
             it("doesn't start another getStats() while the previous poll is still running", async () => {
@@ -1470,6 +1525,9 @@ describe("VegaRtcManager", () => {
                 expect(consumer.getStats).toHaveBeenCalledTimes(4);
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(1);
                 expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
+
+                await jest.advanceTimersByTimeAsync(10_000);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
             it("doesn't watch a screenshare's switch", async () => {
@@ -1483,6 +1541,7 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
                 expect(consumer.getStats).not.toHaveBeenCalled();
                 expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBeUndefined();
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
             it("does not mistake an earlier switch that is still landing for a quick reverse switch", async () => {

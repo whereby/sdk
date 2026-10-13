@@ -41,6 +41,7 @@ import {
     getNumberOfTemporalLayers,
     getPacketWeightedFractionLost,
     getReducedSvcEncodingParams,
+    getTopSpatialLayer,
     MetricStats,
     recordMetricSample,
 } from "./utils";
@@ -306,6 +307,7 @@ export default class VegaRtcManager implements RtcManager {
             numCamHighestPreferredSpatialLayerChanges1To2: 0,
             numCamHighestPreferredSpatialLayerChanges2To0: 0,
             numCamHighestPreferredSpatialLayerChanges2To1: 0,
+            numCamPreferredSpatialLayerSwitchTimeouts: 0,
             numIceConnected: 0,
             numIceDisconnected: 0,
             numIceFailed: 0,
@@ -1895,9 +1897,13 @@ export default class VegaRtcManager implements RtcManager {
             });
 
             if (spatialLayerChanged && !consumer.appData.screenShare) {
-                this._watchForPreferredLayerSwitch(consumerId, consumer, {
-                    toHigherLayer: spatialLayer > previousSpatialLayer,
-                });
+                const encodings = consumer._rtpParameters?.encodings;
+                const topSpatialLayer = getTopSpatialLayer(encodings?.length ? encodings : [{}]);
+                const fromLayer = Math.min(previousSpatialLayer, topSpatialLayer);
+                const toLayer = Math.min(spatialLayer, topSpatialLayer);
+                if (fromLayer !== toLayer) {
+                    this._watchForPreferredLayerSwitch(consumerId, consumer, { toHigherLayer: toLayer > fromLayer });
+                }
             }
         }
     }
@@ -1923,7 +1929,12 @@ export default class VegaRtcManager implements RtcManager {
 
         this._preferredLayerSwitchWatches.set(consumerId, { stop });
         // started before the first getStats(), so a call that never settles can't keep the watch forever
-        const timeoutId = setTimeout(stop, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
+        const timeoutId = setTimeout(() => {
+            if (!stopped && intervalId !== undefined && !consumer.closed) {
+                this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
+            }
+            stop();
+        }, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
 
         (async () => {
             const sentAt = Date.now();
