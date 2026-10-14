@@ -127,10 +127,14 @@ export default class BandwidthTester extends EventEmitter {
             this.emit("result", {
                 error: true,
             });
-            clearTimeout(this._resultTimeout);
         }
 
         this._clearTimeouts();
+
+        if (this._resultTimeout) {
+            clearTimeout(this._resultTimeout);
+            this._resultTimeout = null;
+        }
 
         clearInterval(this._drawInterval);
         this._drawInterval = null;
@@ -439,6 +443,10 @@ export default class BandwidthTester extends EventEmitter {
     }
 
     async _reportResults() {
+        if (this.closed) {
+            return;
+        }
+
         const [localSendStats, localRecvStats] = await Promise.all([
             this._sendTransport.getStats(),
             this._receiveTransport.getStats(),
