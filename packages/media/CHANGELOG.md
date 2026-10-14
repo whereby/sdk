@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.2.4
+
+### Patch Changes
+
+- f22a8f0: Hold back signaling messages in P2P until the room is joined
+
 ## 11.2.3
 
 ### Patch Changes
