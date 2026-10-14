@@ -41,6 +41,7 @@ import {
     getNumberOfTemporalLayers,
     getPacketWeightedFractionLost,
     getReducedSvcEncodingParams,
+    getTopSpatialLayer,
     MetricStats,
     recordMetricSample,
 } from "./utils";
@@ -294,19 +295,23 @@ export default class VegaRtcManager implements RtcManager {
         window?.addEventListener?.("offline", this._sfuZombie.onBrowserOffline); // browser-only
 
         this.analytics = {
-            avgPreferredLayerSwitchLatencyMs: undefined,
+            avgCamPreferredSpatialLayerSwitchLatencyMs: undefined,
             camOutboundCongestedFraction: undefined,
             camOutboundRttInflationMs: undefined,
             camTrackEndedCount: 0,
-            highestPreferredLayerChangeCounts: {},
             micTrackEndedCount: 0,
-            numHighestPreferredLayerChanges: 0,
+            numCamHighestPreferredSpatialLayerChanges: 0,
+            numCamHighestPreferredSpatialLayerChanges0To1: 0,
+            numCamHighestPreferredSpatialLayerChanges0To2: 0,
+            numCamHighestPreferredSpatialLayerChanges1To0: 0,
+            numCamHighestPreferredSpatialLayerChanges1To2: 0,
+            numCamHighestPreferredSpatialLayerChanges2To0: 0,
+            numCamHighestPreferredSpatialLayerChanges2To1: 0,
+            numCamPreferredSpatialLayerSwitchTimeouts: 0,
             numIceConnected: 0,
             numIceDisconnected: 0,
             numIceFailed: 0,
             numNewPc: 0,
-            numPreferredSpatialLayerChanges: 0,
-            preferredSpatialLayerChangeCounts: {},
             sfuMsFromOfflineToClose: 0,
             sfuOfflineToCloseCount: 0,
             sfuOfflineWhileConnectedCount: 0,
@@ -1882,14 +1887,6 @@ export default class VegaRtcManager implements RtcManager {
             const previousSpatialLayer = consumer.appData.spatialLayer;
             const spatialLayerChanged = previousSpatialLayer !== spatialLayer;
 
-            if (spatialLayerChanged) {
-                this.analytics.numPreferredSpatialLayerChanges++;
-                this._incrementHistogramCount(
-                    this.analytics.preferredSpatialLayerChangeCounts,
-                    `${previousSpatialLayer}->${spatialLayer}`,
-                );
-            }
-
             consumer.appData.spatialLayer = spatialLayer;
             consumer.appData.temporalLayer = temporalLayer;
 
@@ -1899,10 +1896,14 @@ export default class VegaRtcManager implements RtcManager {
                 temporalLayer,
             });
 
-            if (spatialLayerChanged) {
-                this._watchForPreferredLayerSwitch(consumerId, consumer, {
-                    toHigherLayer: spatialLayer > previousSpatialLayer,
-                });
+            if (spatialLayerChanged && !consumer.appData.screenShare) {
+                const encodings = consumer._rtpParameters?.encodings;
+                const topSpatialLayer = getTopSpatialLayer(encodings?.length ? encodings : [{}]);
+                const fromLayer = Math.min(previousSpatialLayer, topSpatialLayer);
+                const toLayer = Math.min(spatialLayer, topSpatialLayer);
+                if (fromLayer !== toLayer) {
+                    this._watchForPreferredLayerSwitch(consumerId, consumer, { toHigherLayer: toLayer > fromLayer });
+                }
             }
         }
     }
@@ -1928,7 +1929,12 @@ export default class VegaRtcManager implements RtcManager {
 
         this._preferredLayerSwitchWatches.set(consumerId, { stop });
         // started before the first getStats(), so a call that never settles can't keep the watch forever
-        const timeoutId = setTimeout(stop, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
+        const timeoutId = setTimeout(() => {
+            if (!stopped && intervalId !== undefined && !consumer.closed) {
+                this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
+            }
+            stop();
+        }, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
 
         (async () => {
             const sentAt = Date.now();
@@ -1988,7 +1994,7 @@ export default class VegaRtcManager implements RtcManager {
         recordMetricSample(this._preferredLayerSwitchLatencyStats, latencyMs);
 
         const { avg } = aggregateMetricStats(this._preferredLayerSwitchLatencyStats);
-        this.analytics.avgPreferredLayerSwitchLatencyMs = avg;
+        this.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs = avg;
     }
 
     _onUpdatedStats(statsByView: Record<string, any>) {
@@ -2413,11 +2419,8 @@ export default class VegaRtcManager implements RtcManager {
             this._webcamProducerHighestPreferredLayer !== undefined &&
             this._webcamProducerHighestPreferredLayer !== spatialLayer
         ) {
-            this.analytics.numHighestPreferredLayerChanges++;
-            this._incrementHistogramCount(
-                this.analytics.highestPreferredLayerChangeCounts,
-                `${this._webcamProducerHighestPreferredLayer}->${spatialLayer}`,
-            );
+            this.analytics.numCamHighestPreferredSpatialLayerChanges++;
+            this._incrementLayerChangeCount(this._webcamProducerHighestPreferredLayer, spatialLayer);
         }
         this._webcamProducerHighestPreferredLayer = spatialLayer;
 
@@ -2478,8 +2481,11 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    _incrementHistogramCount(histogram: Record<string, number>, key: string) {
-        histogram[key] = (histogram[key] || 0) + 1;
+    _incrementLayerChangeCount(from: number, to: number) {
+        const counts = this.analytics as unknown as Record<string, number | undefined>;
+        const key = `numCamHighestPreferredSpatialLayerChanges${from}To${to}`;
+        const count = counts[key];
+        if (count !== undefined) counts[key] = count + 1;
     }
 
     async _onDataConsumerReady(options: DataConsumerOptions<DataConsumerAppData>) {

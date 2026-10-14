@@ -75,19 +75,23 @@ type DataConsumerAppData = {
 };
 
 type VegaAnalytics = {
-    avgPreferredLayerSwitchLatencyMs: number | undefined;
+    avgCamPreferredSpatialLayerSwitchLatencyMs: number | undefined;
     camOutboundCongestedFraction: number | undefined;
     camOutboundRttInflationMs: number | undefined;
     camTrackEndedCount: number;
-    highestPreferredLayerChangeCounts: Record<string, number>;
     micTrackEndedCount: number;
-    numHighestPreferredLayerChanges: number;
+    numCamHighestPreferredSpatialLayerChanges: number;
+    numCamHighestPreferredSpatialLayerChanges0To1: number;
+    numCamHighestPreferredSpatialLayerChanges0To2: number;
+    numCamHighestPreferredSpatialLayerChanges1To0: number;
+    numCamHighestPreferredSpatialLayerChanges1To2: number;
+    numCamHighestPreferredSpatialLayerChanges2To0: number;
+    numCamHighestPreferredSpatialLayerChanges2To1: number;
+    numCamPreferredSpatialLayerSwitchTimeouts: number;
     numIceConnected: number;
     numIceDisconnected: number;
     numIceFailed: number;
     numNewPc: number;
-    numPreferredSpatialLayerChanges: number;
-    preferredSpatialLayerChangeCounts: Record<string, number>;
     sfuMsFromOfflineToClose: number;
     sfuOfflineToCloseCount: number;
     sfuOfflineWhileConnectedCount: number;
