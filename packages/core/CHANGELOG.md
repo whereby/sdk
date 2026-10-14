@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.23.2
+
+### Patch Changes
+
+- Updated dependencies [85853fd]
+    - @whereby.com/media@11.2.3
+    - @whereby.com/audio-denoiser@1.0.25
+
 ## 1.23.1
 
 ### Patch Changes

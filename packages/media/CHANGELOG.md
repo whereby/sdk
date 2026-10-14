@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.2.3
+
+### Patch Changes
+
+- 85853fd: Stop the bandwidth test from reporting results after it has closed
+
 ## 11.2.2
 
 ### Patch Changes
