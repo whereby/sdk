@@ -1010,6 +1010,56 @@ describe("P2pRtcManager", () => {
             });
         });
 
+        describe("IPv4 host candidates", () => {
+            it.each<[string, boolean]>([
+                ["8.8.8.8", true],
+                ["192.0.0.9", true],
+                ["192.0.0.10", true],
+                ["0.0.0.1", false],
+                ["10.0.0.1", false],
+                ["100.64.0.1", false],
+                ["127.0.0.1", false],
+                ["169.254.0.1", false],
+                ["172.16.0.1", false],
+                ["192.0.0.1", false],
+                ["192.0.2.1", false],
+                ["192.168.0.1", false],
+                ["198.18.0.1", false],
+                ["198.51.100.1", false],
+                ["203.0.113.1", false],
+                ["224.0.0.1", false],
+                ["240.0.0.1", false],
+                ["255.255.255.255", false],
+            ])("classifies %s as public: %s", (address, isPublic) => {
+                const session = rtcManager._connect(clientId);
+
+                session.pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
+
+                expect(session.publicHostCandidateSeen).toBe(isPublic);
+            });
+
+            it.each(["", "not-an-address", "256.1.1.1", "127.1", "010.0.0.1", "8.8.8.8/0"])(
+                "does not classify invalid address %s as public",
+                (address) => {
+                    const session = rtcManager._connect(clientId);
+
+                    session.pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
+
+                    expect(session.publicHostCandidateSeen).toBe(false);
+                },
+            );
+
+            it("keeps a public candidate recorded after a private candidate", () => {
+                const session = rtcManager._connect(clientId);
+
+                for (const address of ["8.8.8.8", "192.168.1.1"]) {
+                    session.pc.onicecandidate?.({ candidate: { address, type: "host" } } as RTCPeerConnectionIceEvent);
+                }
+
+                expect(session.publicHostCandidateSeen).toBe(true);
+            });
+        });
+
         describe("onicecandidate", () => {
             it("sends the ICE_CANDIDATE on the socket with the candidate object", async () => {
                 const { pc } = createRtcManager()._connect(clientId);
