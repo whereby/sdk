@@ -745,15 +745,12 @@ importers:
       '@whereby.com/webrtcapihealthcheck':
         specifier: 1.0.1
         version: 1.0.1
-      check-ip:
-        specifier: ^1.1.1
-        version: 1.1.1
       events:
         specifier: ^3.3.0
         version: 3.3.0
       ip-address:
-        specifier: ^10.1.1
-        version: 10.2.0
+        specifier: ^10.7.3
+        version: 10.7.3
       mediasoup-client:
         specifier: 3.19.0
         version: 3.19.0
@@ -4732,9 +4729,6 @@ packages:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
 
-  check-ip@1.1.1:
-    resolution: {integrity: sha512-LuLBA6r4aS/4B7pvOqmT4Bi+GKnNNC/V18K0zDTRFjAxNeUzGsr0wmsOfFhFH7fGjwdx6GX6wyIQBkUhFox2Pw==}
-
   chokidar@3.6.0:
     resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
     engines: {node: '>= 8.10.0'}
@@ -6276,13 +6270,9 @@ packages:
   invariant@2.2.4:
     resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
 
-  ip-address@10.2.0:
-    resolution: {integrity: sha512-/+S6j4E9AHvW9SWMSEY9Xfy66O5PWvVEJ08O0y5JGyEKQpojb0K0GKpz/v5HJ/G0vi3D2sjGK78119oXZeE0qA==}
+  ip-address@10.7.3:
+    resolution: {integrity: sha512-A1kdq/tSb5QjvKvAMgIoEvDBIgL7qaqVP/jkvSwYYRZ9iEzvPpopxp2wQfu3SuZRHtpHNxMn8Fs0bS+gf5Xmwg==}
     engines: {node: '>= 12'}
-
-  ip-range-check@0.0.2:
-    resolution: {integrity: sha512-sHbyog8viObPK2vZFNYpBM/d2mqs51uuxOhB+0EIMSWmmrflAWne7CeXOWunb5R6bWQVOijbLx7bEY0sE05bug==}
-    deprecated: Contains an SSRF filter-bypass vulnerability, upgrade to 0.2.1+ — see GHSA advisory
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -14134,10 +14124,6 @@ snapshots:
 
   check-error@2.1.1: {}
 
-  check-ip@1.1.1:
-    dependencies:
-      ip-range-check: 0.0.2
-
   chokidar@3.6.0:
     dependencies:
       anymatch: 3.1.3
@@ -15971,11 +15957,7 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  ip-address@10.2.0: {}
-
-  ip-range-check@0.0.2:
-    dependencies:
-      ipaddr.js: 1.9.1
+  ip-address@10.7.3: {}
 
   ipaddr.js@1.9.1: {}
 

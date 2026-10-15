@@ -50,9 +50,8 @@
         "dist/**/*.d.cts"
     ],
     "dependencies": {
-        "check-ip": "^1.1.1",
         "events": "^3.3.0",
-        "ip-address": "^10.1.1",
+        "ip-address": "^10.7.3",
         "mediasoup-client": "3.19.0",
         "@whereby.com/rtcstats": "5.4.2",
         "@whereby.com/webrtcapihealthcheck": "1.0.1",
