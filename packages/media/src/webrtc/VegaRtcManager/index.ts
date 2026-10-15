@@ -1901,7 +1901,7 @@ export default class VegaRtcManager implements RtcManager {
                 const topSpatialLayer = getTopSpatialLayer(encodings?.length ? encodings : [{}]);
                 const fromLayer = Math.min(previousSpatialLayer, topSpatialLayer);
                 const toLayer = Math.min(spatialLayer, topSpatialLayer);
-                if (fromLayer !== toLayer) {
+                if (fromLayer !== toLayer && !consumer.paused) {
                     this._watchForPreferredLayerSwitch(consumerId, consumer, { toHigherLayer: toLayer > fromLayer });
                 }
             }
@@ -1930,7 +1930,7 @@ export default class VegaRtcManager implements RtcManager {
         this._preferredLayerSwitchWatches.set(consumerId, { stop });
         // started before the first getStats(), so a call that never settles can't keep the watch forever
         const timeoutId = setTimeout(() => {
-            if (!stopped && intervalId !== undefined && !consumer.closed) {
+            if (!stopped && intervalId !== undefined && !consumer.closed && !consumer.paused) {
                 this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
             }
             stop();
@@ -1948,7 +1948,7 @@ export default class VegaRtcManager implements RtcManager {
 
             let polling = false;
             intervalId = setInterval(async () => {
-                if (stopped || consumer.closed) {
+                if (stopped || consumer.closed || consumer.paused) {
                     stop();
                     return;
                 }

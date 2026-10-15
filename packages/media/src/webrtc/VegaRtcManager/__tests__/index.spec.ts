@@ -1339,6 +1339,7 @@ describe("VegaRtcManager", () => {
                     _closed: false,
                     _paused: false,
                     closed: false,
+                    paused: false,
                     _rtpParameters: { encodings: [{ scalabilityMode }] },
                     getStats: jest.fn(async () => {
                         const frameSize = frameSizes[Math.min(callIndex, frameSizes.length - 1)];
@@ -1464,6 +1465,36 @@ describe("VegaRtcManager", () => {
                 consumer.closed = true;
                 await jest.advanceTimersByTimeAsync(10_000);
 
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("doesn't watch a switch of a paused consumer, e.g. one whose camera is off", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                consumer.paused = true;
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(consumer.appData.spatialLayer).toBe(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("stops watching a switch whose consumer gets paused, without counting a timeout", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                consumer.paused = true;
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                await jest.advanceTimersByTimeAsync(10_000);
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
