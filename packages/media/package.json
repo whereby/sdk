@@ -59,7 +59,7 @@
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
         "socket.io-client": "4.7.2",
-        "uuid": "^9.0.1",
+        "uuid": "^11.1.1",
         "uuid-validate": "^0.0.3",
         "webrtc-adapter": "9.0.4"
     },
@@ -67,7 +67,6 @@
         "@babel/core": "^7.23.2",
         "@babel/preset-env": "^7.23.2",
         "@types/sdp-transform": "^2.4.9",
-        "@types/uuid": "^9.0.1",
         "@types/uuid-validate": "^0.0.3",
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/jest-config": "workspace:*",
