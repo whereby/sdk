@@ -23,6 +23,7 @@ import {
     MEDIA_JITTER_BUFFER_TARGET,
     PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
     PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS,
+    PREFERRED_LAYER_SWITCH_SETTLE_MS,
     PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS,
 } from "../constants";
 
@@ -1903,20 +1904,21 @@ export default class VegaRtcManager implements RtcManager {
                 const topSpatialLayer = getTopSpatialLayer(encodings?.length ? encodings : [{}]);
                 const fromLayer = Math.min(previousSpatialLayer, topSpatialLayer);
                 const toLayer = Math.min(spatialLayer, topSpatialLayer);
-                if (fromLayer !== toLayer && !consumer.paused && !isDocumentHidden()) {
-                    this._watchForPreferredLayerSwitch(consumerId, consumer, { toHigherLayer: toLayer > fromLayer });
+                if (fromLayer !== toLayer) {
+                    const frameSizeSettled = performance.now() >= (consumer.appData.frameSizeSettlesAt ?? 0);
+                    this._markFrameSizeUnsettled(consumerId, consumer);
+                    if (frameSizeSettled && !consumer.paused && !isDocumentHidden()) {
+                        this._watchForPreferredLayerSwitch(consumerId, consumer, {
+                            toHigherLayer: toLayer > fromLayer,
+                        });
+                    }
                 }
             }
         }
     }
 
     _watchForPreferredLayerSwitch(consumerId: string, consumer: any, { toHigherLayer }: { toHigherLayer: boolean }) {
-        // a newer switch of an already watched consumer replaces its watch, even at the limit
-        const previousWatch = this._preferredLayerSwitchWatches.get(consumerId);
-        if (!previousWatch && this._preferredLayerSwitchWatches.size >= MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES) {
-            return;
-        }
-        previousWatch?.stop();
+        if (this._preferredLayerSwitchWatches.size >= MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES) return;
 
         const canMeasure = () => !consumer.closed && !consumer.paused && !isDocumentHidden();
 
@@ -1966,8 +1968,6 @@ export default class VegaRtcManager implements RtcManager {
                 const current = await this._getConsumerFrameSize(consumer);
                 polling = false;
                 if (stopped) return;
-                // only a change in the requested direction counts, so an earlier switch that is still landing
-                // (e.g. a quick 2->0->2) isn't mistaken for this one
                 const switched = toHigherLayer
                     ? getFrameArea(current) > getFrameArea(baseline)
                     : getFrameArea(current) < getFrameArea(baseline);
@@ -1977,6 +1977,11 @@ export default class VegaRtcManager implements RtcManager {
                 }
             }, PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS);
         })();
+    }
+
+    _markFrameSizeUnsettled(consumerId: string, consumer: any) {
+        this._preferredLayerSwitchWatches.get(consumerId)?.stop();
+        consumer.appData.frameSizeSettlesAt = performance.now() + PREFERRED_LAYER_SWITCH_SETTLE_MS;
     }
 
     async _getConsumerFrameSize(consumer: any): Promise<{ width?: number; height?: number } | undefined> {
