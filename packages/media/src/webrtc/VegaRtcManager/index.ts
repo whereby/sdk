@@ -1906,7 +1906,13 @@ export default class VegaRtcManager implements RtcManager {
                 const toLayer = Math.min(spatialLayer, topSpatialLayer);
                 if (fromLayer !== toLayer) {
                     const frameSizeSettled = performance.now() >= (consumer.appData.frameSizeSettlesAt ?? 0);
-                    this._markFrameSizeUnsettled(consumerId, consumer);
+                    this._markFrameSizeUnsettled(
+                        consumerId,
+                        consumer,
+                        toLayer > fromLayer
+                            ? PREFERRED_LAYER_SWITCH_SETTLE_MS
+                            : PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
+                    );
                     if (frameSizeSettled && !consumer.paused && !isDocumentHidden()) {
                         this._watchForPreferredLayerSwitch(consumerId, consumer, {
                             toHigherLayer: toLayer > fromLayer,
@@ -1979,9 +1985,12 @@ export default class VegaRtcManager implements RtcManager {
         })();
     }
 
-    _markFrameSizeUnsettled(consumerId: string, consumer: any) {
+    _markFrameSizeUnsettled(consumerId: string, consumer: any, settleMs = PREFERRED_LAYER_SWITCH_SETTLE_MS) {
         this._preferredLayerSwitchWatches.get(consumerId)?.stop();
-        consumer.appData.frameSizeSettlesAt = performance.now() + PREFERRED_LAYER_SWITCH_SETTLE_MS;
+        consumer.appData.frameSizeSettlesAt = Math.max(
+            consumer.appData.frameSizeSettlesAt ?? 0,
+            performance.now() + settleMs,
+        );
     }
 
     async _getConsumerFrameSize(consumer: any): Promise<{ width?: number; height?: number } | undefined> {
