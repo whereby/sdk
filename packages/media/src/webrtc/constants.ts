@@ -17,6 +17,7 @@ export const PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS = 2_000;
 // a layout change can switch every consumer's layer at once, and each watch polls getStats(), so only this many are
 // measured at a time
 export const MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES = 5;
+export const PREFERRED_LAYER_SWITCH_MIN_AREA_RATIO = 2.8;
 export const PREFERRED_LAYER_SWITCH_SETTLE_MS = 1_000;
 
 // a sample (one per stats poll with new remote reports) counts the cam upload as congested when its round-trip time is

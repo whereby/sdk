@@ -23,6 +23,7 @@ import {
     MEDIA_JITTER_BUFFER_TARGET,
     PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
     PREFERRED_LAYER_SWITCH_MAX_POLL_GAP_MS,
+    PREFERRED_LAYER_SWITCH_MIN_AREA_RATIO,
     PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS,
     PREFERRED_LAYER_SWITCH_SETTLE_MS,
     PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS,
@@ -1917,6 +1918,7 @@ export default class VegaRtcManager implements RtcManager {
                     if (frameSizeSettled && !consumer.paused && !isDocumentHidden()) {
                         this._watchForPreferredLayerSwitch(consumerId, consumer, {
                             toHigherLayer: toLayer > fromLayer,
+                            layerSteps: Math.abs(toLayer - fromLayer),
                         });
                     }
                 }
@@ -1924,7 +1926,11 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    _watchForPreferredLayerSwitch(consumerId: string, consumer: any, { toHigherLayer }: { toHigherLayer: boolean }) {
+    _watchForPreferredLayerSwitch(
+        consumerId: string,
+        consumer: any,
+        { toHigherLayer, layerSteps }: { toHigherLayer: boolean; layerSteps: number },
+    ) {
         if (this._preferredLayerSwitchWatches.size >= MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES) return;
 
         const canMeasure = () => !consumer.closed && !consumer.paused && !isDocumentHidden();
@@ -1993,10 +1999,11 @@ export default class VegaRtcManager implements RtcManager {
                 if (stopped) return;
                 lastPollDoneAt = performance.now();
                 if (performance.now() - polledAt > PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS) latencyUnreliable = true;
+                const areaRatio = getFrameArea(current) / getFrameArea(baseline);
                 const switched = toHigherLayer
-                    ? getFrameArea(current) > getFrameArea(baseline)
-                    : getFrameArea(current) < getFrameArea(baseline);
-                if (current && switched && canMeasure()) {
+                    ? areaRatio >= PREFERRED_LAYER_SWITCH_MIN_AREA_RATIO ** layerSteps
+                    : areaRatio > 0 && areaRatio <= 1 / PREFERRED_LAYER_SWITCH_MIN_AREA_RATIO;
+                if (switched && canMeasure()) {
                     if (!latencyUnreliable) this._recordPreferredLayerSwitchLatency(performance.now() - sentAt);
                     if (toHigherLayer) {
                         consumer.appData.frameSizeSettlesAt = sentAt + PREFERRED_LAYER_SWITCH_SETTLE_MS;

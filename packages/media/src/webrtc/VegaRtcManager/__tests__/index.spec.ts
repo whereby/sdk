@@ -1484,6 +1484,52 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
             });
 
+            it("doesn't record the publisher scaling its own frame down by less than a layer, only the switch down itself", async () => {
+                const consumer = createConsumerWithFrameSizes([
+                    { width: 960, height: 540 },
+                    { width: 720, height: 405 },
+                    { width: 480, height: 270 },
+                ]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
+            });
+
+            it("doesn't take a poll that reports no frame size for a switch down landing", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(0);
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp" } as any]);
+                await jest.advanceTimersByTimeAsync(200);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
+            it("doesn't record a switch up that lands only part of the way", async () => {
+                const consumer = createConsumerWithFrameSizes(
+                    [
+                        { width: 240, height: 135 },
+                        { width: 480, height: 270 },
+                    ],
+                    { spatialLayer: 0 },
+                );
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
+            });
+
             it("doesn't count a timeout for a switch whose consumer closed", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 registerConsumer("stream1", "consumer1", consumer);
@@ -2126,7 +2172,7 @@ describe("VegaRtcManager", () => {
             it("records a switch to a higher layer once the frame size grows", async () => {
                 const consumer = createConsumerWithFrameSizes(
                     [
-                        { width: 480, height: 270 },
+                        { width: 240, height: 135 },
                         { width: 960, height: 540 },
                     ],
                     { spatialLayer: 0 },
