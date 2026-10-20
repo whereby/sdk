@@ -78,6 +78,12 @@ export interface RtcLocalStreamTrackRemovedPayload {
     track: MediaStreamTrack;
 }
 
+export interface RtcMediaQualityChangedPayload {
+    clientId: string;
+    kind: string;
+    quality: "critical" | "warning" | "ok";
+}
+
 export type RtcEvents = {
     client_connection_status_changed: RtcClientConnectionStatusChangedPayload;
     stream_added: RtcStreamAddedPayload;
@@ -87,6 +93,7 @@ export type RtcEvents = {
     local_stream_track_removed: RtcLocalStreamTrackRemovedPayload;
     remote_stream_track_added: void;
     remote_stream_track_removed: void;
+    media_quality_changed: RtcMediaQualityChangedPayload;
 };
 
 export type SignalRTCSessionDescription = {
