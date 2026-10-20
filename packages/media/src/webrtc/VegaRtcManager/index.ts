@@ -1932,6 +1932,7 @@ export default class VegaRtcManager implements RtcManager {
         let stopped = false;
         let intervalId: ReturnType<typeof setInterval> | undefined;
         let lastTickAt = 0;
+        let lastPollDoneAt = 0;
         let latencyUnreliable = false;
         const sentAt = performance.now();
 
@@ -1947,7 +1948,10 @@ export default class VegaRtcManager implements RtcManager {
         // started before the first getStats(), so a call that never settles can't keep the watch forever
         const timeoutId = setTimeout(
             () => {
-                if (toHigherLayer && !stopped && intervalId !== undefined && canMeasure()) {
+                const checkedNearTheEnd =
+                    lastPollDoneAt - sentAt >=
+                    PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS - 2 * PREFERRED_LAYER_SWITCH_MAX_POLL_GAP_MS;
+                if (toHigherLayer && !stopped && intervalId !== undefined && checkedNearTheEnd && canMeasure()) {
                     this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
                 }
                 stop();
@@ -1987,6 +1991,7 @@ export default class VegaRtcManager implements RtcManager {
                 const current = await this._getConsumerFrameSize(consumer);
                 polling = false;
                 if (stopped) return;
+                lastPollDoneAt = performance.now();
                 if (performance.now() - polledAt > PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS) latencyUnreliable = true;
                 const switched = toHigherLayer
                     ? getFrameArea(current) > getFrameArea(baseline)

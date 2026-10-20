@@ -1690,6 +1690,20 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
             });
 
+            it("doesn't count a timeout when no poll got through for most of the watch, e.g. while the page was suspended", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(1_000);
+
+                consumer.getStats.mockImplementation(() => new Promise(() => {}));
+                await jest.advanceTimersByTimeAsync(9_000);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
             it("still counts a timeout after a slow poll", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 registerConsumer("stream1", "consumer1", consumer);
@@ -2019,6 +2033,39 @@ describe("VegaRtcManager", () => {
 
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
+            it.each([
+                ["doesn't count a timeout whose last poll got through 700 ms before its end", 9_300, 0],
+                ["counts a timeout whose last poll got through 600 ms before its end", 9_400, 1],
+            ])("%s", async (_, lastPollAt, timeouts) => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(lastPollAt);
+
+                consumer.getStats.mockImplementation(() => new Promise(() => {}));
+                await jest.advanceTimersByTimeAsync(10_000 - lastPollAt);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(timeouts);
+            });
+
+            it("still counts a timeout that fires late, as long as a poll got through near the end", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(9_900);
+
+                const now = performance.now.bind(performance);
+                const nowSpy = jest.spyOn(performance, "now").mockImplementation(() => now() + 1_000);
+                await jest.advanceTimersByTimeAsync(100);
+                nowSpy.mockRestore();
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
             });
 
             it("doesn't measure a switch whose first getStats() took longer than a poll, as the switch may have landed by then", async () => {
