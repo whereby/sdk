@@ -57,6 +57,18 @@ function useGrid({
         includeIntegrations,
     });
 
+    React.useEffect(() => {
+        if (maximizedCellId && !maximizedClientView) {
+            setMaximizedCellId(null);
+        }
+    }, [maximizedCellId, maximizedClientView]);
+
+    React.useEffect(() => {
+        if (floatingCellId && !floatingClientView) {
+            setFloatingCellId(null);
+        }
+    }, [floatingCellId, floatingClientView]);
+
     const cellViewsFloating = React.useMemo(() => {
         return floatingClientView
             ? [

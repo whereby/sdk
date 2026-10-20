@@ -4,7 +4,7 @@ import { StoryObj } from "@storybook/react-vite";
 import "./styles.css";
 import { useLocalMedia, useRoomConnection } from "../lib/react";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
-import { Grid as VideoGrid, GridCell, GridVideoView } from "../lib/react/Grid";
+import { Grid as VideoGrid, GridCell, GridVideoView, useGridCell } from "../lib/react/Grid";
 import {
     ParticipantMenu,
     ParticipantMenuContent,
@@ -13,6 +13,12 @@ import {
 } from "../lib/react/Grid/ParticipantMenu";
 import { FakeParticipantsProvider } from "./components/FakeGridClient";
 import PrecallExperience from "./components/PrecallExperience";
+
+function MaximizeLabel() {
+    const { participant, maximizedCellId } = useGridCell();
+
+    return <>{maximizedCellId === participant.id ? "Minimize" : "Maximize"}</>;
+}
 
 const defaultArgs: StoryObj = {
     name: "Examples/Video Grid UI",
@@ -191,7 +197,7 @@ export const VideoGridStoryCustom = {
                                                 className={"participantMenuItem"}
                                                 participantAction={"maximize"}
                                             >
-                                                Maximize
+                                                <MaximizeLabel />
                                             </ParticipantMenuItem>
                                             <ParticipantMenuItem
                                                 className={"participantMenuItem"}
@@ -454,7 +460,7 @@ export const VideoGridMockedStoryCustom = {
                                                 className={"participantMenuItem"}
                                                 participantAction={"maximize"}
                                             >
-                                                Maximize
+                                                <MaximizeLabel />
                                             </ParticipantMenuItem>
                                             <ParticipantMenuItem
                                                 className={"participantMenuItem"}

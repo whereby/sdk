@@ -1,10 +1,24 @@
 import * as React from "react";
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 
 import { ClientView, WherebyClient } from "@whereby.com/core";
 import { WherebyContext } from "../../Provider";
-import { Grid } from "..";
+import { Grid, useGridCell } from "..";
 import { FakeGridClient, makeFakeRoomIntegrationSession } from "../../../../stories/components/FakeGridClient";
+
+function MaximizeToggle() {
+    const { participant, maximizedCellId, setMaximizedCellId } = useGridCell();
+    const isMaximized = maximizedCellId === participant.id;
+
+    return (
+        <button
+            data-testid={`toggle-${participant.id}`}
+            onClick={() => setMaximizedCellId(isMaximized ? null : participant.id)}
+        >
+            {isMaximized ? "Minimize" : "Maximize"}
+        </button>
+    );
+}
 
 // Video off, so the cells render a muted indicator rather than needing a MediaStream.
 function makeParticipant(index: number): ClientView {
@@ -134,6 +148,36 @@ describe("VideoGrid", () => {
 
             expect(getByTestId("fake-session-0")).toBeTruthy();
             expect(container.querySelector("iframe")).toBeNull();
+        });
+    });
+
+    describe("with custom participant cells", () => {
+        it("lets a custom cell read and change the maximized participant through useGridCell", () => {
+            const { getByTestId } = renderGrid({
+                numRunningIntegrations: 0,
+                // Video-off participants sit in the subgrid until one is maximized onto the stage.
+                gridProps: {
+                    renderParticipant: () => <MaximizeToggle />,
+                    renderSubgridParticipant: () => <MaximizeToggle />,
+                },
+            });
+
+            expect(getByTestId("toggle-fake-1").textContent).toBe("Maximize");
+
+            fireEvent.click(getByTestId("toggle-fake-1"));
+            expect(getByTestId("toggle-fake-1").textContent).toBe("Minimize");
+            expect(getByTestId("toggle-fake-2").textContent).toBe("Maximize");
+
+            fireEvent.click(getByTestId("toggle-fake-1"));
+            expect(getByTestId("toggle-fake-1").textContent).toBe("Maximize");
+        });
+    });
+
+    describe("useGridCell", () => {
+        it("throws outside a GridCell", () => {
+            jest.spyOn(console, "error").mockImplementation(() => {});
+
+            expect(() => render(<MaximizeToggle />)).toThrow("useGridCell must be used within a GridCell");
         });
     });
 });
