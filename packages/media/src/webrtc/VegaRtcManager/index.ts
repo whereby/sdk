@@ -21,6 +21,7 @@ import {
     INITIAL_CONSUMER_SPATIAL_LAYER,
     MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES,
     MEDIA_JITTER_BUFFER_TARGET,
+    PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
     PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS,
     PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS,
 } from "../constants";
@@ -1930,12 +1931,15 @@ export default class VegaRtcManager implements RtcManager {
 
         this._preferredLayerSwitchWatches.set(consumerId, { stop });
         // started before the first getStats(), so a call that never settles can't keep the watch forever
-        const timeoutId = setTimeout(() => {
-            if (toHigherLayer && !stopped && intervalId !== undefined && !consumer.closed && !consumer.paused) {
-                this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
-            }
-            stop();
-        }, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
+        const timeoutId = setTimeout(
+            () => {
+                if (toHigherLayer && !stopped && intervalId !== undefined && !consumer.closed && !consumer.paused) {
+                    this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
+                }
+                stop();
+            },
+            toHigherLayer ? PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS : PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
+        );
 
         (async () => {
             const baseline = await this._getConsumerFrameSize(consumer);

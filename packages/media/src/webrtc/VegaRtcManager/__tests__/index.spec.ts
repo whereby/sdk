@@ -1540,10 +1540,10 @@ describe("VegaRtcManager", () => {
             });
 
             it("doesn't start another getStats() while the previous poll is still running", async () => {
-                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 registerConsumer("stream1", "consumer1", consumer);
 
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 await jest.advanceTimersByTimeAsync(0);
                 expect(consumer.getStats).toHaveBeenCalledTimes(1);
 
@@ -1552,7 +1552,7 @@ describe("VegaRtcManager", () => {
                     () =>
                         new Promise((resolve) =>
                             globalThis.setTimeout(
-                                () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 240, frameHeight: 135 }]),
                                 1150,
                             ),
                         ),
@@ -1561,6 +1561,24 @@ describe("VegaRtcManager", () => {
 
                 // polls at 0.1, 1.3 and 2.5 s; the other 27 ticks are skipped while one is running
                 expect(consumer.getStats).toHaveBeenCalledTimes(4);
+            });
+
+            it("gives up on a switch down after 2 s, so a later drop isn't recorded as its latency", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(1_900);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 480, frameHeight: 270 }]);
+                await jest.advanceTimersByTimeAsync(1_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
             it("cancels a stale watch when a newer resize happens for the same consumer", async () => {

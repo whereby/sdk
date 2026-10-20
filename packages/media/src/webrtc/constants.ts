@@ -12,6 +12,7 @@ export const MIDDLE_SVC_LAYER_MAX_BITRATE = 500_000;
 
 export const PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS = 100;
 export const PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS = 10_000;
+export const PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS = 2_000;
 // a layout change can switch every consumer's layer at once, and each watch polls getStats(), so only this many are
 // measured at a time
 export const MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES = 5;
