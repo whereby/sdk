@@ -8,4 +8,5 @@ export default {
     SFU_CONNECTION_INFO: "sfu_connection_info",
     COLOCATION_SPEAKER: "colocation_speaker",
     DOMINANT_SPEAKER: "dominant_speaker",
+    MEDIA_QUALITY_CHANGED: "media_quality_changed",
 };

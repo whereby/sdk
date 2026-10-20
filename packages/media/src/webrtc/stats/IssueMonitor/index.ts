@@ -53,7 +53,7 @@ type AggregatedMetrics = {
     [aggregatedMetricKey: string]: MetricDataAggregated;
 };
 
-interface IssueData {
+export interface IssueData {
     active: boolean;
     ticks: number; // ticks being enabled
     registered: number; // ticks being registered (as an issue)
@@ -72,7 +72,7 @@ interface IssueDataAggregated {
     curRegistered: number;
 }
 
-type AggregatedIssues = {
+export type AggregatedIssues = {
     [aggregatedIssueKey: string]: IssueDataAggregated;
 };
 
