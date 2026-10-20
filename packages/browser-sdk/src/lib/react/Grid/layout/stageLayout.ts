@@ -434,7 +434,8 @@ export function calculateStageLayout({
         subgrid: {
             ...makeFrame({ ...subgridBounds, ...subgridOrigin }),
             cells: subgridLayout.videoCells.map((cell, index) => ({
-                aspectRatio: subgridVideos[index]?.aspectRatio || 1,
+                // Subgrid tiles are squares of the avatar size, whatever shape the camera is
+                aspectRatio: 1,
                 type: "video",
                 clientId: subgridVideos[index]?.clientId,
                 ...cell,

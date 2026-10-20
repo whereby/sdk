@@ -4,6 +4,7 @@ import { Avatar } from "../../Avatar";
 import { useAudioElement } from "../../hooks/useAudioElement";
 
 interface Props {
+    avatarSize?: number;
     avatarUrl?: string;
     displayName: string;
     isSmallCell: boolean;
@@ -12,8 +13,17 @@ interface Props {
     muted?: boolean;
 }
 
-function VideoMutedIndicator({ avatarUrl, displayName, isSmallCell, withRoundedCorners, stream, muted }: Props) {
+function VideoMutedIndicator({
+    avatarSize,
+    avatarUrl,
+    displayName,
+    isSmallCell,
+    withRoundedCorners,
+    stream,
+    muted,
+}: Props) {
     const audioElRef = useAudioElement({ stream, muted });
+    const size = avatarSize ?? (isSmallCell ? 60 : 80);
     return (
         <>
             <div
@@ -32,13 +42,13 @@ function VideoMutedIndicator({ avatarUrl, displayName, isSmallCell, withRoundedC
             >
                 <div
                     style={{
-                        height: isSmallCell ? 60 : 80,
-                        width: isSmallCell ? 60 : 80,
+                        height: size,
+                        width: size,
                         pointerEvents: "none",
                         position: "relative",
                     }}
                 >
-                    <Avatar variant={"square"} avatarUrl={avatarUrl} name={displayName} size={isSmallCell ? 60 : 80} />
+                    <Avatar variant={"square"} avatarUrl={avatarUrl} name={displayName} size={size} />
                 </div>
             </div>
             <audio ref={audioElRef} autoPlay playsInline />

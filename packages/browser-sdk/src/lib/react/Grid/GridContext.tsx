@@ -23,6 +23,8 @@ const GridContext = React.createContext<GridContextValue>({} as GridContextValue
 type GridCellContextValue = {
     participant: ClientView;
     isHovered: boolean;
+    /** Side of the square tile in a subgrid cell. Not set outside the subgrid. */
+    avatarSize?: number;
 };
 
 const GridCellContext = React.createContext<GridCellContextValue | null>(null);

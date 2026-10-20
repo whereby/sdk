@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 
 import { VideoStageLayout } from "../VideoStageLayout";
 import { IntegrationCell } from "../IntegrationCell";
-import { calculateLayout } from "../layout/stageLayout";
+import { calculateLayout, SUBGRID_CELL_PADDING_BOX } from "../layout/stageLayout";
 import { makeFrame } from "../layout/helpers";
 import { CellView } from "../layout/types";
 
@@ -97,6 +97,85 @@ describe("VideoStageLayout", () => {
         observer.disconnect();
 
         expect(removed).not.toContain(cell);
+    });
+
+    describe("in the subgrid", () => {
+        // aspectRatios: each participant's camera shape, which the subgrid tile must not follow
+        const subgridStage = (
+            subgrid: string[],
+            aspectRatios: Record<string, number>,
+            bounds = { width: 1280, height: 720 },
+        ) => {
+            const frame = makeFrame(bounds);
+            const toCellView = (id: string): CellView => ({ ...cellView(id), aspectRatio: aspectRatios[id] ?? 16 / 9 });
+            const layout = calculateLayout({
+                frame,
+                roomBounds: frame.bounds,
+                gridGap: 8,
+                videoGridGap: 8,
+                isConstrained: false,
+                presentationVideos: ["presenter"].map(toCellView),
+                videos: [],
+                subgridVideos: subgrid.map(toCellView),
+            });
+
+            return (
+                <VideoStageLayout
+                    containerFrame={frame}
+                    layoutVideoStage={layout}
+                    presentationGridContent={content(["presenter"])}
+                    subgridContent={content(subgrid)}
+                />
+            );
+        };
+
+        // The box the tile is drawn in, relative to the stage
+        function tileFrame(container: HTMLElement, id: string) {
+            const box = container.querySelector<HTMLElement>(`[data-testid="${id}"]`)!.parentElement!;
+            const cell = box.parentElement!;
+            const offset = (el: HTMLElement) => {
+                const [left, top] = (el.style.transform.match(/-?[\d.]+(?=px)/g) || ["0", "0"]).map(Number);
+                return { left, top };
+            };
+
+            return {
+                left: offset(cell).left + offset(box).left,
+                top: offset(cell).top + offset(box).top,
+                width: parseFloat(box.style.width),
+                height: parseFloat(box.style.height),
+            };
+        }
+
+        it("draws every tile as the same avatar-sized square, whatever the camera shape", () => {
+            const { container } = render(subgridStage(["alice", "bob"], { alice: 16 / 9, bob: 9 / 16 }));
+
+            expect(tileFrame(container, "alice")).toMatchObject({ width: 80, height: 80 });
+            expect(tileFrame(container, "bob")).toMatchObject({ width: 80, height: 80 });
+        });
+
+        it("keeps the cell padding clear between stacked tiles", () => {
+            const { container } = render(subgridStage(["alice", "bob"], { alice: 16 / 9, bob: 16 / 9 }));
+            const alice = tileFrame(container, "alice");
+            const bob = tileFrame(container, "bob");
+
+            expect(alice.left).toEqual(bob.left);
+            expect(Math.abs(bob.top - alice.top) - alice.height).toEqual(
+                SUBGRID_CELL_PADDING_BOX.top + SUBGRID_CELL_PADDING_BOX.bottom,
+            );
+        });
+
+        it("keeps the cell padding clear between side-by-side tiles", () => {
+            const { container } = render(
+                subgridStage(["alice", "bob"], { alice: 16 / 9, bob: 16 / 9 }, { width: 360, height: 640 }),
+            );
+            const alice = tileFrame(container, "alice");
+            const bob = tileFrame(container, "bob");
+
+            expect(alice.top).toEqual(bob.top);
+            expect(Math.abs(bob.left - alice.left) - alice.width).toEqual(
+                SUBGRID_CELL_PADDING_BOX.left + SUBGRID_CELL_PADDING_BOX.right,
+            );
+        });
     });
 
     it("marks a displaced integration as hidden from assistive technology", () => {

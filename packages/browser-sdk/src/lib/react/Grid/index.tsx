@@ -14,35 +14,40 @@ import { GridCellContext, GridContext, useGridCell } from "./GridContext";
 type GridCellSelfProps = {
     participant: ClientView;
     cellId?: string;
+    /** Set by the layout on subgrid cells: the side of the square tile. */
+    avatarSize?: number;
 };
 
 type GridCellProps = GridCellSelfProps & React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
 
-const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(({ className, participant, children }, ref) => {
-    const [isHovered, setIsHovered] = React.useState(false);
+const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(
+    ({ className, participant, cellId, avatarSize, children }, ref) => {
+        const [isHovered, setIsHovered] = React.useState(false);
 
-    const handleMouseEnter = React.useCallback(() => {
-        setIsHovered(true);
-    }, []);
+        const handleMouseEnter = React.useCallback(() => {
+            setIsHovered(true);
+        }, []);
 
-    const handleMouseLeave = React.useCallback(() => {
-        setIsHovered(false);
-    }, []);
+        const handleMouseLeave = React.useCallback(() => {
+            setIsHovered(false);
+        }, []);
 
-    return (
-        <GridCellContext.Provider value={{ participant, isHovered }}>
-            <div
-                ref={ref}
-                className={className}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={{ height: "100%", width: "100%" }}
-            >
-                {children}
-            </div>
-        </GridCellContext.Provider>
-    );
-});
+        return (
+            <GridCellContext.Provider value={{ participant, isHovered, avatarSize }}>
+                <div
+                    ref={ref}
+                    data-cell-id={cellId}
+                    className={className}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    style={{ height: "100%", width: "100%" }}
+                >
+                    {children}
+                </div>
+            </GridCellContext.Provider>
+        );
+    },
+);
 
 GridCell.displayName = "GridCell";
 
@@ -52,7 +57,7 @@ type GridVideoViewProps = Omit<VideoViewProps, "stream" | "ref"> & {
 
 const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(({ stream, style, ...rest }, ref) => {
     const videoEl = React.useRef<WherebyVideoElement>(null);
-    const { onSetClientAspectRatio, clientAspectRatios, participant, isConstrained } = useGridCell();
+    const { onSetClientAspectRatio, clientAspectRatios, participant, isConstrained, avatarSize } = useGridCell();
     if (!participant) return null;
     const aspectRatio = clientAspectRatios[participant.id];
 
@@ -74,6 +79,7 @@ const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
         return (
             <VideoMutedIndicator
                 isSmallCell={false}
+                avatarSize={avatarSize}
                 displayName={participant?.displayName || "Guest"}
                 withRoundedCorners
                 muted={participant.isLocalClient}
@@ -87,7 +93,8 @@ const GridVideoView = React.forwardRef<WherebyVideoElement, GridVideoViewProps>(
             ref={videoEl}
             style={{
                 borderRadius: isConstrained ? 0 : "8px",
-                ...(isConstrained ? { objectFit: "cover" } : {}),
+                // Subgrid tiles are squares, so crop the video to fill them
+                ...(isConstrained || avatarSize ? { objectFit: "cover" } : {}),
                 ...style,
             }}
             muted={participant.isLocalClient}
