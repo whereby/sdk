@@ -12,7 +12,9 @@ export const CALL_QUALITY_LEVELS = {
     CRITICAL: "critical",
     WARNING: "warning",
     OK: "ok",
-};
+} as const;
+
+export type CallQualityLevel = (typeof CALL_QUALITY_LEVELS)[keyof typeof CALL_QUALITY_LEVELS];
 
 export type ConnectionMonitorReport = {
     critical: Record<string, { video?: Array<string>; audio?: Array<string> }>;
@@ -22,18 +24,20 @@ export type ConnectionMonitorReport = {
 export type CallQualityScores = Record<
     string,
     {
-        total: string;
-        video: string;
-        audio: string;
+        total: CallQualityLevel;
+        video: CallQualityLevel;
+        audio: CallQualityLevel;
     }
 >;
 
-export type MediaQualityScores = Record<string, { video?: string; audio?: string }>;
+export type MediaQualityScores = Record<string, { video?: CallQualityLevel; audio?: CallQualityLevel }>;
 
-function convertQualityScoreToNumber(score: string) {
+const CALL_QUALITY_LEVEL_ORDER: Array<CallQualityLevel> = Object.values(CALL_QUALITY_LEVELS);
+
+function convertQualityScoreToNumber(score: CallQualityLevel) {
     return score !== undefined && score !== null
-        ? Object.values(CALL_QUALITY_LEVELS).indexOf(score)
-        : Object.values(CALL_QUALITY_LEVELS).indexOf(CALL_QUALITY_LEVELS.OK);
+        ? CALL_QUALITY_LEVEL_ORDER.indexOf(score)
+        : CALL_QUALITY_LEVEL_ORDER.indexOf(CALL_QUALITY_LEVELS.OK);
 }
 
 const getActiveIssues = (
@@ -536,9 +540,9 @@ createReactor(
                 return [
                     clientId,
                     {
-                        total: Object.values(CALL_QUALITY_LEVELS)[overallScoreValue],
-                        video: Object.values(CALL_QUALITY_LEVELS)[videoScoreValue],
-                        audio: Object.values(CALL_QUALITY_LEVELS)[audioScoreValue],
+                        total: CALL_QUALITY_LEVEL_ORDER[overallScoreValue],
+                        video: CALL_QUALITY_LEVEL_ORDER[videoScoreValue],
+                        audio: CALL_QUALITY_LEVEL_ORDER[audioScoreValue],
                     },
                 ];
             }),

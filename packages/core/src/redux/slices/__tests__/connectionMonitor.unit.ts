@@ -4,7 +4,9 @@ import {
     connectionMonitorStarted,
     connectionMonitorStopped,
     connectionMonitorSlice,
+    updateCallQualityScores,
 } from "../connectionMonitor";
+import { rtcEvents } from "../rtcConnection/actions";
 
 describe("connectionMonitorSlice", () => {
     describe("reducers", () => {
@@ -37,6 +39,38 @@ describe("connectionMonitorSlice", () => {
                 expect(result).toEqual({
                     running: false,
                     stopCallbackFunction: undefined,
+                });
+            });
+        });
+        describe("updateCallQualityScores", () => {
+            it("should set the call quality scores", () => {
+                const scores = {
+                    "client-1": { total: "warning", video: "warning", audio: "ok" },
+                } as const;
+
+                const result = connectionMonitorSlice.reducer(undefined, updateCallQualityScores(scores));
+
+                expect(result.qualityScores).toEqual(scores);
+            });
+        });
+        describe("mediaQualityChanged", () => {
+            it("should merge media quality per client and per kind", () => {
+                let result = connectionMonitorSlice.reducer(
+                    undefined,
+                    rtcEvents.mediaQualityChanged({ clientId: "client-1", kind: "video", quality: "warning" }),
+                );
+                result = connectionMonitorSlice.reducer(
+                    result,
+                    rtcEvents.mediaQualityChanged({ clientId: "client-1", kind: "audio", quality: "critical" }),
+                );
+                result = connectionMonitorSlice.reducer(
+                    result,
+                    rtcEvents.mediaQualityChanged({ clientId: "client-2", kind: "video", quality: "ok" }),
+                );
+
+                expect(result.mediaScores).toEqual({
+                    "client-1": { video: "warning", audio: "critical" },
+                    "client-2": { video: "ok" },
                 });
             });
         });
