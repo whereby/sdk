@@ -1,8 +1,14 @@
 import * as React from "react";
 
-import { ClientView, GridState, RoomIntegrationSessionView, WherebyClient } from "@whereby.com/core";
+import { CallQualityScores, ClientView, GridState, RoomIntegrationSessionView, WherebyClient } from "@whereby.com/core";
 import { WherebyContext } from "../../lib/react/Provider";
 import { NAMES, sampleNameForIndex } from "./VideoGridTestData";
+
+// A couple of participants with poor call quality, so the call quality indicator shows in the mocked grid
+const FAKE_CALL_QUALITY_REPORT: CallQualityScores = {
+    "fake-1": { total: "warning", video: "warning", audio: "ok" },
+    "fake-2": { total: "critical", video: "critical", audio: "warning" },
+};
 
 const COLORS = ["#4a90d9", "#d94a6a", "#4ad98f", "#d9b34a", "#8f4ad9", "#4ad9d9", "#d97a4a", "#7ad94a"];
 
@@ -191,8 +197,13 @@ export function FakeParticipantsProvider({
         () =>
             ({
                 getGrid: () => fakeGrid,
-                // VideoView reports stream resolutions through the room connection — no-op here
-                getRoomConnection: () => ({ reportStreamResolution: () => {} }),
+                // VideoView reports stream resolutions through the room connection — no-op here.
+                // The call quality indicator reads a fixed report.
+                getRoomConnection: () => ({
+                    reportStreamResolution: () => {},
+                    getState: () => ({ callQualityReport: FAKE_CALL_QUALITY_REPORT }),
+                    subscribeToCallQualityReport: () => () => {},
+                }),
                 // useAudioElement tracks the current speaker device — static stub
                 getLocalMedia: () => ({
                     getState: () => ({ currentSpeakerDeviceId: "default" }),

@@ -13,6 +13,7 @@ import {
 } from "../lib/react/Grid/ParticipantMenu";
 import { FakeParticipantsProvider } from "./components/FakeGridClient";
 import PrecallExperience from "./components/PrecallExperience";
+import { GridCallQualityIndicator, withCallQualityIndicator } from "./components/CallQualityIndicator";
 
 function MaximizeLabel() {
     const { participant, maximizedCellId } = useGridCell();
@@ -106,6 +107,7 @@ export const VideoGridStory = {
                         enableSubgrid={enableSubgrid}
                         enableParticipantMenu={enableParticipantMenu}
                         enableConstrainedGrid={enableConstrainedGrid}
+                        {...withCallQualityIndicator({ enableParticipantMenu })}
                     />
                 </div>
             </>
@@ -208,6 +210,7 @@ export const VideoGridStoryCustom = {
                                         </ParticipantMenuContent>
                                     </ParticipantMenu>
                                     <div className={"gridCellName"}>{participant.displayName}</div>
+                                    <GridCallQualityIndicator />
                                 </GridCell>
                             );
                         }}
@@ -216,6 +219,7 @@ export const VideoGridStoryCustom = {
                                 <GridCell className={"subgridCell"} participant={participant}>
                                     <GridVideoView className={"videoView"} />
                                     <div className={"subgridCellName"}>{participant.displayName}</div>
+                                    <GridCallQualityIndicator />
                                 </GridCell>
                             );
                         }}
@@ -298,6 +302,7 @@ function VideoGridWithLocalMediaInner({
                         videoGridGap={videoGridGap}
                         stageParticipantLimit={stageParticipantLimit}
                         enableSubgrid={enableSubgrid}
+                        {...withCallQualityIndicator()}
                     />
                 </div>
             )}
@@ -415,6 +420,7 @@ export const VideoGridMockedStory = {
                         stageParticipantLimit={stageParticipantLimit}
                         enableSubgrid={enableSubgrid}
                         enableParticipantMenu={enableParticipantMenu}
+                        {...withCallQualityIndicator({ enableParticipantMenu })}
                     />
                 </div>
             </FakeParticipantsProvider>
@@ -471,6 +477,7 @@ export const VideoGridMockedStoryCustom = {
                                         </ParticipantMenuContent>
                                     </ParticipantMenu>
                                     <div className={"gridCellName"}>{participant.displayName}</div>
+                                    <GridCallQualityIndicator />
                                 </GridCell>
                             );
                         }}
@@ -479,6 +486,7 @@ export const VideoGridMockedStoryCustom = {
                                 <GridCell className={"subgridCell"} participant={participant}>
                                     <GridVideoView className={"videoView"} />
                                     <div className={"subgridCellName"}>{participant.displayName}</div>
+                                    <GridCallQualityIndicator />
                                 </GridCell>
                             );
                         }}
@@ -532,6 +540,7 @@ export const VideoGridWithIntegrationMockedStory = {
                         stageParticipantLimit={stageParticipantLimit}
                         enableSubgrid={enableSubgrid}
                         enableParticipantMenu
+                        {...withCallQualityIndicator({ enableParticipantMenu: true })}
                         enableIntegrations={enableIntegrations}
                         // A placeholder in place of the default frame, which needs a real session to
                         // show anything — see the "Room integrations in the video grid" story.
