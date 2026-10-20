@@ -1,9 +1,15 @@
 import { createStore, mockRtcManager } from "../store.setup";
 import { randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
 import {
+    CallQualityScores,
+    ConnectionMonitorReport,
+    ConnectionMonitorState,
+    doSetCallQualityScores,
     doStartConnectionMonitor,
     doStopConnectionMonitor,
+    doUpdateConnectionMonitorReport,
     selectCallQualityScores,
+    selectConnectionMonitorIssuesReport,
 } from "../../slices/connectionMonitor";
 import { rtcEvents } from "../../slices/rtcConnection/actions";
 import { signalEvents } from "../../slices/signalConnection/actions";
@@ -40,6 +46,24 @@ function createConnectedStore(mode: "normal" | "group") {
     });
 }
 
+// Not connected to a room, so the call quality scoring reactor leaves the state alone
+function createMonitorStore({
+    connectionMonitor,
+    withRtcManager = true,
+}: { connectionMonitor?: Partial<ConnectionMonitorState>; withRtcManager?: boolean } = {}) {
+    return createStore({
+        initialState: {
+            localParticipant: randomLocalParticipant({ id: LOCAL_ID }),
+            connectionMonitor: { running: true, ...connectionMonitor },
+        },
+        withRtcManager,
+    });
+}
+
+const ok = { total: "ok", video: "ok", audio: "ok" } as const;
+const warning = { total: "warning", video: "warning", audio: "ok" } as const;
+const critical = { total: "critical", video: "critical", audio: "ok" } as const;
+
 const activeIssue = { active: true, ticks: 3, registered: 3 };
 
 describe("connectionMonitorSlice", () => {
@@ -72,6 +96,192 @@ describe("connectionMonitorSlice", () => {
             store.dispatch(doStopConnectionMonitor());
 
             expect(mockStopIssueSubscription).toHaveBeenCalledTimes(1);
+        });
+
+        describe("doSetCallQualityScores", () => {
+            it("does nothing without an rtc manager", () => {
+                const store = createMonitorStore({ withRtcManager: false });
+
+                store.dispatch(doSetCallQualityScores({ [LOCAL_ID]: warning }));
+
+                expect(selectCallQualityScores(store.getState())).toBeUndefined();
+                expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalled();
+            });
+
+            it("stores the scores", () => {
+                const store = createMonitorStore();
+                const scores: CallQualityScores = { [LOCAL_ID]: ok, [REMOTE_ID]: warning };
+
+                store.dispatch(doSetCallQualityScores(scores));
+
+                expect(selectCallQualityScores(store.getState())).toEqual(scores);
+            });
+
+            it("reports the local total to rtcstats when it changes", () => {
+                const store = createMonitorStore({ connectionMonitor: { qualityScores: { [LOCAL_ID]: ok } } });
+
+                store.dispatch(doSetCallQualityScores({ [LOCAL_ID]: warning }));
+
+                expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("callQualityScoreTotalChanged", {
+                    total: "warning",
+                    _time: expect.any(Number),
+                });
+            });
+
+            it("does not report the local total to rtcstats when it is unchanged", () => {
+                const store = createMonitorStore({ connectionMonitor: { qualityScores: { [LOCAL_ID]: warning } } });
+
+                store.dispatch(
+                    doSetCallQualityScores({
+                        [LOCAL_ID]: { total: "warning", video: "ok", audio: "warning" },
+                        [REMOTE_ID]: critical,
+                    }),
+                );
+
+                expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith(
+                    "callQualityScoreTotalChanged",
+                    expect.anything(),
+                );
+            });
+
+            it("handles new scores without the local client when it had a score before", () => {
+                const store = createMonitorStore({ connectionMonitor: { qualityScores: { [LOCAL_ID]: ok } } });
+                const scores: CallQualityScores = { [REMOTE_ID]: warning };
+
+                expect(() => store.dispatch(doSetCallQualityScores(scores))).not.toThrow();
+
+                expect(selectCallQualityScores(store.getState())).toEqual(scores);
+                expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("callQualityScoreTotalChanged", {
+                    total: undefined,
+                    _time: expect.any(Number),
+                });
+                expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("remoteCallQualityScores", {
+                    total: "warning",
+                    _time: expect.any(Number),
+                });
+            });
+
+            it.each`
+                description               | remoteScores                                     | expected
+                ${"no remote clients"}    | ${{}}                                            | ${"ok"}
+                ${"all ok"}               | ${{ "remote-1": ok, "remote-2": ok }}            | ${"ok"}
+                ${"ok and warning"}       | ${{ "remote-1": ok, "remote-2": warning }}       | ${"warning"}
+                ${"warning and critical"} | ${{ "remote-1": warning, "remote-2": critical }} | ${"critical"}
+            `(
+                "reports the worst remote total ($expected) to rtcstats for $description",
+                ({ remoteScores, expected }) => {
+                    const store = createMonitorStore();
+
+                    store.dispatch(doSetCallQualityScores({ [LOCAL_ID]: critical, ...remoteScores }));
+
+                    expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("remoteCallQualityScores", {
+                        total: expected,
+                        _time: expect.any(Number),
+                    });
+                },
+            );
+        });
+
+        describe("doUpdateConnectionMonitorReport", () => {
+            const emptyReport: ConnectionMonitorReport = { critical: {}, warning: {} };
+
+            it("does nothing without an rtc manager", () => {
+                const store = createMonitorStore({ withRtcManager: false });
+
+                store.dispatch(
+                    doUpdateConnectionMonitorReport({
+                        critical: {},
+                        warning: { [REMOTE_ID]: { video: ["rem-cam-video-bad-network"] } },
+                    }),
+                );
+
+                expect(selectConnectionMonitorIssuesReport(store.getState())).toBeUndefined();
+            });
+
+            it("stores a new report", () => {
+                const store = createMonitorStore();
+                const report: ConnectionMonitorReport = {
+                    critical: { [REMOTE_ID]: { video: ["rem-cam-video-extreme-packetloss"] } },
+                    warning: {},
+                };
+
+                store.dispatch(doUpdateConnectionMonitorReport(report));
+
+                expect(selectConnectionMonitorIssuesReport(store.getState())).toEqual(report);
+            });
+
+            it("keeps the existing report when the new one is identical", () => {
+                const report: ConnectionMonitorReport = {
+                    critical: {},
+                    warning: { [REMOTE_ID]: { audio: ["rem-cam-audio-bad-network"] } },
+                };
+                const store = createMonitorStore({ connectionMonitor: { issuesReport: report } });
+
+                store.dispatch(doUpdateConnectionMonitorReport(JSON.parse(JSON.stringify(report))));
+
+                expect(selectConnectionMonitorIssuesReport(store.getState())).toBe(report);
+                expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalled();
+            });
+
+            it.each`
+                level         | kind       | clientId     | issue
+                ${"warning"}  | ${"video"} | ${REMOTE_ID} | ${{ video: ["rem-cam-video-bad-network"] }}
+                ${"warning"}  | ${"audio"} | ${REMOTE_ID} | ${{ audio: ["rem-cam-audio-bad-network"] }}
+                ${"critical"} | ${"video"} | ${REMOTE_ID} | ${{ video: ["rem-cam-video-bad-network"] }}
+                ${"warning"}  | ${"video"} | ${LOCAL_ID}  | ${{ video: ["loc-cam-video-bad-network"] }}
+            `(
+                "reports a $level $kind bad network issue for $clientId to rtcstats when it starts and ends",
+                ({ level, clientId, issue }) => {
+                    const store = createMonitorStore({ connectionMonitor: { issuesReport: emptyReport } });
+
+                    store.dispatch(doUpdateConnectionMonitorReport({ ...emptyReport, [level]: { [clientId]: issue } }));
+
+                    expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenLastCalledWith("clientStates", {
+                        updatesByClientId: { [clientId]: { badNetwork: true } },
+                        _time: expect.any(Number),
+                    });
+
+                    store.dispatch(doUpdateConnectionMonitorReport(emptyReport));
+
+                    expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenLastCalledWith("clientStates", {
+                        updatesByClientId: { [clientId]: { badNetwork: false } },
+                        _time: expect.any(Number),
+                    });
+                },
+            );
+
+            it("does not report to rtcstats for issues other than a bad network", () => {
+                const store = createMonitorStore({ connectionMonitor: { issuesReport: emptyReport } });
+
+                store.dispatch(
+                    doUpdateConnectionMonitorReport({
+                        critical: { [REMOTE_ID]: { video: ["rem-cam-video-extreme-packetloss"] } },
+                        warning: { [REMOTE_ID]: { audio: ["rem-cam-audio-high-packetloss"] } },
+                    }),
+                );
+
+                expect(selectConnectionMonitorIssuesReport(store.getState())).not.toBe(emptyReport);
+                expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalled();
+            });
+
+            it("does not report to rtcstats again while a bad network issue continues", () => {
+                const report: ConnectionMonitorReport = {
+                    critical: {},
+                    warning: { [REMOTE_ID]: { video: ["rem-cam-video-bad-network"] } },
+                };
+                const store = createMonitorStore({ connectionMonitor: { issuesReport: report } });
+
+                store.dispatch(
+                    doUpdateConnectionMonitorReport({
+                        critical: {},
+                        warning: {
+                            [REMOTE_ID]: { video: ["rem-cam-video-bad-network"], audio: ["rem-cam-audio-distorted"] },
+                        },
+                    }),
+                );
+
+                expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalled();
+            });
         });
     });
 
