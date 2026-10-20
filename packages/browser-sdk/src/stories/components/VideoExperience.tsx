@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import DisplayNameForm from "./DisplayNameForm";
 import BreakoutPanel from "./breakout/BreakoutPanel";
+import { CallQualityIndicator } from "./CallQualityIndicator";
 import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
 import { VideoView } from "../../lib/react/VideoView";
@@ -677,6 +678,7 @@ export default function VideoExperience({
                                                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                                     />
                                                 )}
+                                                <CallQualityIndicator clientId={participant.id} placement="bottom" />
                                             </div>
                                             <div
                                                 className="displayName"
