@@ -1376,6 +1376,22 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
             });
 
+            it("measures a switch with performance.now(), so a change of the system clock doesn't skew it", async () => {
+                const consumer = createConsumerWithFrameSizes([
+                    { width: 960, height: 540 },
+                    { width: 960, height: 540 },
+                    { width: 480, height: 270 },
+                ]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(100);
+                jest.setSystemTime(Date.now() + 60_000);
+                await jest.advanceTimersByTimeAsync(100);
+
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
+            });
+
             it("does not start a watch when only the temporal layer changes (spatial layer unchanged)", () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }], {
                     spatialLayer: 0,
