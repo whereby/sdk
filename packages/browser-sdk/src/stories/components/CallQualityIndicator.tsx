@@ -1,7 +1,9 @@
 import * as React from "react";
 
-import { CallQualityScores } from "@whereby.com/core";
+import { CallQualityScores, ClientView } from "@whereby.com/core";
 import { WherebyContext } from "../../lib/react/Provider";
+import { GridVideoView, useGridCell } from "../../lib/react/Grid";
+import { DefaultParticipantMenu } from "../../lib/react/Grid/DefaultParticipantMenu";
 
 const COLORS = {
     warning: "#f5c400",
@@ -76,4 +78,32 @@ export function CallQualityIndicator({
             }}
         />
     );
+}
+
+/**
+ * The call quality indicator for a VideoGrid cell, in the cell's bottom right.
+ */
+export function GridCallQualityIndicator() {
+    const { participant } = useGridCell();
+
+    return <CallQualityIndicator clientId={participant?.clientId} />;
+}
+
+/**
+ * Render props for VideoGrid that keep its default cell content and add the call quality indicator.
+ */
+export function withCallQualityIndicator({ enableParticipantMenu }: { enableParticipantMenu?: boolean } = {}) {
+    const render = ({ participant }: { participant: ClientView }) => (
+        <>
+            <GridVideoView />
+            {enableParticipantMenu ? <DefaultParticipantMenu participant={participant} /> : null}
+            <GridCallQualityIndicator />
+        </>
+    );
+
+    return {
+        renderParticipant: render,
+        renderSubgridParticipant: render,
+        renderFloatingParticipant: render,
+    };
 }
