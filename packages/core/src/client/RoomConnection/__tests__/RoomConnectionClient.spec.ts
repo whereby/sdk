@@ -1,5 +1,5 @@
 import { RoomConnectionClient } from "../";
-import { AUDIO_ONLY_MODE_CHANGED } from "../events";
+import { AUDIO_ONLY_MODE_CHANGED, CALL_QUALITY_REPORT_CHANGED } from "../events";
 import { doAppStart, Store, RootState } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
 
@@ -199,6 +199,52 @@ describe("RoomConnectionClient", () => {
             storeSubscriber();
 
             expect(listener).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe("subscribeToCallQualityReport", () => {
+        const report = {
+            "client-1": { total: "warning", video: "warning", audio: "ok" },
+        } as const;
+
+        it("triggers the call quality report listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToCallQualityReport(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                connectionMonitor: { ...initialState.connectionMonitor, qualityScores: report },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(report);
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                connectionMonitor: { ...initialState.connectionMonitor, qualityScores: undefined },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it("emits the call quality report changed event", () => {
+            const listener = jest.fn();
+            client.on(CALL_QUALITY_REPORT_CHANGED, listener);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                connectionMonitor: { ...initialState.connectionMonitor, qualityScores: report },
+            });
+            storeSubscriber();
+
+            expect(listener).toHaveBeenCalledWith(report);
+        });
+
+        it("reports an empty report while there are no scores", () => {
+            expect(client.getState().callQualityReport).toEqual({});
         });
     });
 

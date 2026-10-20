@@ -1,5 +1,5 @@
 import { RoomJoinedErrors } from "@whereby.com/media";
-import { ChatMessage, ClientView, ConnectionStatus } from "../../redux";
+import { CallQualityScores, ChatMessage, ClientView, ConnectionStatus } from "../../redux";
 import { Screenshare, WaitingParticipant } from "../../RoomParticipant";
 import {
     BreakoutState,
@@ -29,6 +29,8 @@ export const LIVE_TRANSCRIPTION_STATUS_CHANGED = "live-transcription:status-chan
 export const CONNECTION_ERROR_CHANGED = "connection:error-changed";
 /* Audio-only Mode Events */
 export const AUDIO_ONLY_MODE_CHANGED = "audio-only-mode:changed";
+/* Call Quality Events */
+export const CALL_QUALITY_REPORT_CHANGED = "call-quality-report:changed";
 /* Local participant events */
 export const LOCAL_PARTICIPANT_CHANGED = "local-participant:changed";
 /* Local screenshare events */
@@ -75,6 +77,7 @@ export type RoomConnectionEvents = {
     [LIVE_TRANSCRIPTION_STATUS_CHANGED]: [status: LiveTranscriptionState | undefined];
     [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [AUDIO_ONLY_MODE_CHANGED]: [isEnabled: boolean];
+    [CALL_QUALITY_REPORT_CHANGED]: [report: CallQualityScores];
     [LOCAL_PARTICIPANT_CHANGED]: [participant?: LocalParticipantState];
     [LOCAL_SCREENSHARE_STATUS_CHANGED]: [status?: LocalScreenshareStatus];
     [LOCAL_SCREENSHARE_CHANGED]: [status: LocalScreenshareState | undefined];

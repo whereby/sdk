@@ -44,9 +44,13 @@ import {
     selectEnabledRoomIntegrations,
     selectEmbeddableRoomIntegrations,
     selectRunningRoomIntegrations,
+    selectCallQualityScores,
+    CallQualityScores,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
+
+const EMPTY_CALL_QUALITY_REPORT: CallQualityScores = Object.freeze({});
 
 export const selectRoomConnectionState = createSelector(
     selectChatMessages,
@@ -93,6 +97,7 @@ export const selectRoomConnectionState = createSelector(
     selectEmbeddableRoomIntegrations,
     selectRunningRoomIntegrations,
     selectIsAudioOnlyModeEnabled,
+    selectCallQualityScores,
     (
         chatMessages,
         fileUploads,
@@ -138,6 +143,7 @@ export const selectRoomConnectionState = createSelector(
         embeddableRoomIntegrations,
         runningRoomIntegrations,
         isAudioOnlyModeEnabled,
+        callQualityScores,
     ) => {
         // Main-room participants that are spotlighted broadcast their audio/video into every group.
         // Only relevant for participants who are currently inside a group.
@@ -177,6 +183,7 @@ export const selectRoomConnectionState = createSelector(
                 participantsInCurrentGroup: clientViewsInCurrentGroup,
                 broadcastingParticipants,
             },
+            callQualityReport: callQualityScores ?? EMPTY_CALL_QUALITY_REPORT,
             connectionStatus,
             connectionError,
             knockResponse,

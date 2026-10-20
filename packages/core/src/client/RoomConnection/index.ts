@@ -63,6 +63,7 @@ import {
 import type { Store as AppStore } from "../../redux/store";
 import type {
     BreakoutState,
+    CallQualityScores,
     ChatFileShare,
     ChatMessage,
     CloudRecordingState,
@@ -88,6 +89,7 @@ import {
     CLOUD_RECORDING_STATUS_CHANGED,
     CONNECTION_ERROR_CHANGED,
     AUDIO_ONLY_MODE_CHANGED,
+    CALL_QUALITY_REPORT_CHANGED,
     CONNECTION_STATUS_CHANGED,
     LIVE_CAPTIONS_STATUS_CHANGED,
     LIVE_TRANSCRIPTION_STATUS_CHANGED,
@@ -124,6 +126,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined | undefined) => void>();
     private connectionErrorSubscribers = new Set<(status: string | null) => void>();
     private audioOnlyModeSubscribers = new Set<(isEnabled: boolean) => void>();
+    private callQualityReportSubscribers = new Set<(report: CallQualityScores) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
     private liveCaptionsSubscribers = new Set<(status: LiveCaptionsState | undefined) => void>();
@@ -185,6 +188,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.isAudioOnlyModeEnabled !== previousState.isAudioOnlyModeEnabled) {
             this.audioOnlyModeSubscribers.forEach((cb) => cb(state.isAudioOnlyModeEnabled));
             this.emit(AUDIO_ONLY_MODE_CHANGED, state.isAudioOnlyModeEnabled);
+        }
+
+        if (state.callQualityReport !== previousState.callQualityReport) {
+            this.callQualityReportSubscribers.forEach((cb) => cb(state.callQualityReport));
+            this.emit(CALL_QUALITY_REPORT_CHANGED, state.callQualityReport);
         }
 
         if (state.isCameraEnabled !== previousState.isCameraEnabled) {
@@ -350,6 +358,22 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToAudioOnlyMode(callback: (isEnabled: boolean) => void): () => void {
         this.audioOnlyModeSubscribers.add(callback);
         return () => this.audioOnlyModeSubscribers.delete(callback);
+    }
+
+    /**
+     * Subscribe to call quality report changes.
+     *
+     * The report is keyed by `clientId` and has an entry for the local client and each remote client.
+     * Each entry has `video`, `audio` and `total` levels (`"ok"`, `"warning"` or `"critical"`), where
+     * `total` is the worst of `video` and `audio`. The report is empty until the call quality monitor
+     * starts after joining a room, and is reset to empty after leaving.
+     *
+     * @param callback - Called with the latest report whenever it changes.
+     * @returns A function that removes the subscription.
+     */
+    public subscribeToCallQualityReport(callback: (report: CallQualityScores) => void): () => void {
+        this.callQualityReportSubscribers.add(callback);
+        return () => this.callQualityReportSubscribers.delete(callback);
     }
 
     public subscribeToLiveStream(callback: (status: { status: "streaming" } | undefined) => void): () => void {
@@ -1037,6 +1061,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.cloudRecordingSubscribers.clear();
         this.connectionErrorSubscribers.clear();
         this.audioOnlyModeSubscribers.clear();
+        this.callQualityReportSubscribers.clear();
         this.connectionStatusSubscribers.clear();
         this.liveStreamSubscribers.clear();
         this.localParticipantSubscribers.clear();
