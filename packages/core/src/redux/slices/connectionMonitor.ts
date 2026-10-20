@@ -315,7 +315,7 @@ export const doUpdateConnectionMonitorReport = createAppThunk(
         // Prepare and send delta updates of issues to rtcstats, for customer insights
         const localClientId = selectSelfId(state);
 
-        const updatedClientStates: Record<string, unknown> = {};
+        const updatedClientStates: Record<string, { badNetwork: boolean }> = {};
 
         (["critical", "warning"] as const).forEach((level) => {
             Object.keys(newConnectionMonitorReport[level] || {})
@@ -448,46 +448,24 @@ export const selectShouldStopConnectionMonitor = createSelector(
     },
 );
 
-/**
- * Reactors
- */
-
-createReactor([selectShouldStartConnectionMonitor], ({ dispatch }, shouldStartConnectionMonitor) => {
-    if (shouldStartConnectionMonitor) {
-        dispatch(doStartConnectionMonitor());
-    }
-});
-
-createReactor([selectShouldStopConnectionMonitor], ({ dispatch }, shouldStartConnectionMonitor) => {
-    if (shouldStartConnectionMonitor) {
-        dispatch(doStopConnectionMonitor());
-    }
-});
-
-createReactor(
-    [
-        selectAllClientViews,
-        selectConnectionMediaQualityScores,
-        selectConnectionMonitorIssuesReport,
-        selectCallQualityScores,
-    ],
+export const selectCalculatedCallQualityScores = createSelector(
+    selectRoomConnectionStatus,
+    selectRoomMode,
+    selectAllClientViews,
+    selectConnectionMediaQualityScores,
+    selectConnectionMonitorIssuesReport,
     (
-        { dispatch, getState },
+        roomConnectionStatus,
+        roomMode,
         allClientViews,
         mediaQualityScores,
         connectionMonitorIssuesReport,
-        oldCallQualityScores,
-    ) => {
-        const state = getState();
-
-        const roomConnectionStatus = selectRoomConnectionStatus(state);
-        const roomMode = selectRoomMode(state);
-
-        if (!["connected"].includes(roomConnectionStatus)) {
-            return;
+    ): CallQualityScores | undefined => {
+        if (roomConnectionStatus !== "connected") {
+            return undefined;
         }
 
-        const newCallQualityScores: CallQualityScores = Object.fromEntries(
+        return Object.fromEntries(
             allClientViews.map(({ clientId }) => {
                 const videoScoreValue = Math.min(
                     ...(roomMode === "normal"
@@ -547,6 +525,31 @@ createReactor(
                 ];
             }),
         );
+    },
+);
+
+/**
+ * Reactors
+ */
+
+createReactor([selectShouldStartConnectionMonitor], ({ dispatch }, shouldStartConnectionMonitor) => {
+    if (shouldStartConnectionMonitor) {
+        dispatch(doStartConnectionMonitor());
+    }
+});
+
+createReactor([selectShouldStopConnectionMonitor], ({ dispatch }, shouldStartConnectionMonitor) => {
+    if (shouldStartConnectionMonitor) {
+        dispatch(doStopConnectionMonitor());
+    }
+});
+
+createReactor(
+    [selectCalculatedCallQualityScores, selectCallQualityScores],
+    ({ dispatch }, newCallQualityScores, oldCallQualityScores) => {
+        if (!newCallQualityScores) {
+            return;
+        }
 
         if (oldCallQualityScores && JSON.stringify(newCallQualityScores) === JSON.stringify(oldCallQualityScores))
             return;
