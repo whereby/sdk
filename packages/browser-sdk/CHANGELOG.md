@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.34.0
+
+### Minor Changes
+
+- c5d327b: Export `useGridCell`, so a custom cell in `VideoGrid` (from `renderParticipant`, `renderSubgridParticipant` or `renderFloatingParticipant`) can read and change the grid's maximize and float state. For example, a custom participant menu can label its item "Minimize" when `maximizedCellId === participant.id`. `useGridCell` now throws when it's called outside a `GridCell`, as its error message always said.
+
+### Patch Changes
+
+- c5d327b: Stop a new screenshare from starting maximized or floating. The grid now forgets a maximized or floating cell once its view leaves the room, so when a participant shares again (and gets the same view id), the new share starts unmaximized and the first "Maximize" click maximizes it.
+- 471c0ed: VideoGrid: draw subgrid tiles as squares of the avatar size, inside the cell padding. Subgrid tiles no longer touch
+  their neighbours or change size with the participant's camera shape, with the default renderer or
+  `renderSubgridParticipant`. Camera video in the subgrid is cropped to fill the square.
+
 ## 3.33.4
 
 ### Patch Changes
