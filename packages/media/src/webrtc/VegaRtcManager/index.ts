@@ -2383,6 +2383,7 @@ export default class VegaRtcManager implements RtcManager {
 
         if (!consumer.appData.localPaused) {
             consumer.resume();
+            this._markFrameSizeUnsettled(consumerId, consumer);
         }
 
         if (consumer.kind === "video") this._reapplyStreamResolutions();
@@ -2616,6 +2617,7 @@ export default class VegaRtcManager implements RtcManager {
                 if (hasAccepted) {
                     if (!consumer.appData.remotePaused) {
                         consumer.resume();
+                        this._markFrameSizeUnsettled(consumer.id, consumer);
                     }
                     consumer.appData.localPaused = false;
                     toResumeConsumers.push(consumer.id);

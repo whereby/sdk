@@ -1771,6 +1771,28 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(measured ? 1 : 0);
             });
 
+            it.each([
+                ["doesn't let a resume during the 2 s after a switch down cut them short", 500, 1_600],
+                ["keeps the 1 s after a resume that comes near the end of the 2 s after a switch down", 1_800, 2_500],
+            ])("%s", async (_, resumeAt, switchAt) => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 960, height: 540 }]),
+                    pause: jest.fn(),
+                    resume: jest.fn(),
+                };
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(300);
+                rtcManager._onConsumerPaused({ consumerId: "consumer1" });
+                await jest.advanceTimersByTimeAsync(resumeAt - 300);
+                rtcManager._onConsumerResumed({ consumerId: "consumer1" });
+                await jest.advanceTimersByTimeAsync(switchAt - resumeAt);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
             it("doesn't let a switch down shorten the 10 s after a switch up that hasn't landed", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 registerConsumer("stream1", "consumer1", consumer);
@@ -1799,6 +1821,23 @@ describe("VegaRtcManager", () => {
 
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("doesn't measure a switch within 1 s of its consumer resuming, as the last frame is from before the pause", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 960, height: 540 }], { spatialLayer: 1 }),
+                    resume: jest.fn(),
+                };
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager._onConsumerResumed({ consumerId: "consumer1" });
+                await jest.advanceTimersByTimeAsync(900);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(consumer.resume).toHaveBeenCalled();
+                expect(consumer.appData.spatialLayer).toBe(2);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
             });
 
             it("gives up on a switch down after 2 s, so a later drop isn't recorded as its latency", async () => {
@@ -1860,6 +1899,25 @@ describe("VegaRtcManager", () => {
 
                 expect(consumer.pause).toHaveBeenCalled();
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("doesn't measure a switch within 1 s of the app accepting its stream, which resumes the consumer", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 960, height: 540 }], { spatialLayer: 1 }),
+                    id: "consumer1",
+                    resume: jest.fn(),
+                };
+                Object.assign(consumer.appData, { sourceClientId: "client-a", localPaused: true });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.acceptNewStream({ streamId: "client-a", clientId: "client-a" });
+                await jest.advanceTimersByTimeAsync(900);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(consumer.resume).toHaveBeenCalled();
+                expect(consumer.appData.spatialLayer).toBe(2);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
             });
 
             it("doesn't watch a screenshare's switch", async () => {
