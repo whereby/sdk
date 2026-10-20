@@ -384,7 +384,7 @@ export const doSetCallQualityScores = createAppThunk((scores: CallQualityScores)
 
     if (localCallQualityScore?.total !== oldCallQualityScores?.[localClientId]?.total) {
         rtcManager.sendStatsCustomEvent("callQualityScoreTotalChanged", {
-            total: localCallQualityScore.total,
+            total: localCallQualityScore?.total,
             _time,
         });
     }
