@@ -1461,11 +1461,22 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(100);
             });
 
-            it("counts a switch that doesn't land before the watch times out", async () => {
+            it("doesn't count a switch down that doesn't land, as the video is most likely already at or below the layer", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
                 registerConsumer("stream1", "consumer1", consumer);
 
                 rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("counts a switch up that doesn't land before the watch times out", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 await jest.advanceTimersByTimeAsync(9_900);
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
 
@@ -1474,10 +1485,10 @@ describe("VegaRtcManager", () => {
             });
 
             it("doesn't count a timeout for a switch whose consumer closed", async () => {
-                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 registerConsumer("stream1", "consumer1", consumer);
 
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 consumer.closed = true;
                 await jest.advanceTimersByTimeAsync(10_000);
 
@@ -1485,24 +1496,24 @@ describe("VegaRtcManager", () => {
             });
 
             it("doesn't watch a switch of a paused consumer, e.g. one whose camera is off", async () => {
-                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 consumer.paused = true;
                 registerConsumer("stream1", "consumer1", consumer);
 
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 await jest.advanceTimersByTimeAsync(10_000);
 
-                expect(consumer.appData.spatialLayer).toBe(0);
+                expect(consumer.appData.spatialLayer).toBe(2);
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
                 expect(consumer.getStats).not.toHaveBeenCalled();
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
             it("stops watching a switch whose consumer gets paused, without counting a timeout", async () => {
-                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 registerConsumer("stream1", "consumer1", consumer);
 
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 await jest.advanceTimersByTimeAsync(100);
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
 
@@ -1515,11 +1526,11 @@ describe("VegaRtcManager", () => {
             });
 
             it("gives up on time even if the first getStats() never settles", async () => {
-                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 consumer.getStats.mockImplementation(() => new Promise(() => {}));
                 registerConsumer("stream1", "consumer1", consumer);
 
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
 
                 await jest.advanceTimersByTimeAsync(10_000);

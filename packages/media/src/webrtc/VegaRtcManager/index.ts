@@ -1931,7 +1931,7 @@ export default class VegaRtcManager implements RtcManager {
         this._preferredLayerSwitchWatches.set(consumerId, { stop });
         // started before the first getStats(), so a call that never settles can't keep the watch forever
         const timeoutId = setTimeout(() => {
-            if (!stopped && intervalId !== undefined && !consumer.closed && !consumer.paused) {
+            if (toHigherLayer && !stopped && intervalId !== undefined && !consumer.closed && !consumer.paused) {
                 this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
             }
             stop();
