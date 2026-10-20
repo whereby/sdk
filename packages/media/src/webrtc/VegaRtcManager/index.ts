@@ -2350,6 +2350,7 @@ export default class VegaRtcManager implements RtcManager {
 
         consumer.appData.remotePaused = true;
         consumer.pause();
+        this._preferredLayerSwitchWatches.get(consumerId)?.stop();
 
         if (consumer.kind === "video") this._reapplyStreamResolutions();
     }
@@ -2603,6 +2604,7 @@ export default class VegaRtcManager implements RtcManager {
                     toResumeConsumers.push(consumer.id);
                 } else {
                     consumer.pause();
+                    this._preferredLayerSwitchWatches.get(consumer.id)?.stop();
                     consumer.appData.localPaused = true;
                     toPauseConsumers.push(consumer.id);
                 }

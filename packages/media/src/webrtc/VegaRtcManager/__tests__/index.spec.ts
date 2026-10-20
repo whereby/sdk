@@ -1656,6 +1656,49 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
+            it("stops watching a switch as soon as its consumer is paused, so a quick resume can't keep the old starting point", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 }),
+                    pause: jest.fn(),
+                    resume: jest.fn(),
+                };
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                rtcManager._onConsumerPaused({ consumerId: "consumer1" });
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                rtcManager._onConsumerResumed({ consumerId: "consumer1" });
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("stops watching a switch as soon as the app disconnects its stream, which pauses the consumer", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 }),
+                    id: "consumer1",
+                    pause: jest.fn(),
+                };
+                Object.assign(consumer.appData, { sourceClientId: "client-a", localPaused: false });
+                registerConsumer("stream1", "consumer1", consumer);
+                rtcManager._getOrCreateClientState("client-a").hasAcceptedWebcamStream = true;
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                rtcManager.disconnect("client-a");
+
+                expect(consumer.pause).toHaveBeenCalled();
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
             it("cancels a stale watch when a newer resize happens for the same consumer", async () => {
                 const consumer = createConsumerWithFrameSizes([
                     { width: 960, height: 540 },
