@@ -29,6 +29,7 @@ interface RenderVideoCellProps {
     cell: {
         bounds: Bounds;
         aspectRatio: number;
+        paddings?: Box;
     };
     child: React.ReactElement<{
         contentWidth?: number;
@@ -58,6 +59,7 @@ function renderVideoCell({
             width={cell.bounds.width}
             height={cell.bounds.height}
             aspectRatio={cell.aspectRatio}
+            paddings={cell.paddings}
             style={isHidden ? { width: 0, height: 0 } : style}
             withRoundedCorners={withRoundedCorners}
             withShadow={withShadow}

@@ -1,4 +1,4 @@
-import { calculateStageLayout } from "../stageLayout";
+import { calculateLayout, calculateStageLayout, SUBGRID_CELL_PADDING_BOX } from "../stageLayout";
 
 const GRID_GAP_PX = 10;
 const SUBGRID_CELL_PADDING = 8;
@@ -308,4 +308,37 @@ describe("calculateStageLayout", () => {
             ).toEqual(expectedResult);
         },
     );
+});
+
+describe("calculateLayout", () => {
+    it("gives every subgrid cell a square, padded avatar box whatever its camera shape", () => {
+        const subgridVideos = [16 / 9, 9 / 16, 4 / 3].map((aspectRatio, index) => ({
+            aspectRatio,
+            cellId: `client-${index}`,
+            clientId: `client-${index}`,
+            type: "video" as const,
+        }));
+        const frame = { origin: { top: 0, left: 0 }, bounds: { width: 1280, height: 720 } };
+
+        const { subgrid } = calculateLayout({
+            frame,
+            roomBounds: frame.bounds,
+            gridGap: 8,
+            videoGridGap: 8,
+            isConstrained: false,
+            presentationVideos: [{ aspectRatio: 16 / 9, cellId: "presenter", clientId: "presenter", type: "video" }],
+            videos: [],
+            subgridVideos,
+        });
+
+        expect(subgrid.cells).toHaveLength(3);
+        subgrid.cells.forEach((cell) => {
+            expect(cell.aspectRatio).toEqual(1);
+            expect(cell.paddings).toEqual(SUBGRID_CELL_PADDING_BOX);
+            expect(cell.bounds).toEqual({
+                width: 80 + SUBGRID_CELL_PADDING_BOX.left + SUBGRID_CELL_PADDING_BOX.right,
+                height: 80 + SUBGRID_CELL_PADDING_BOX.top + SUBGRID_CELL_PADDING_BOX.bottom,
+            });
+        });
+    });
 });

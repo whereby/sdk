@@ -7,7 +7,7 @@ interface AvatarProps {
     className?: string;
     variant?: "outline" | "round" | "square";
     name?: string;
-    size?: 32 | 36 | 40 | 60 | 80 | 200;
+    size?: number;
 }
 
 export const getInitialsFromName = (name = "") => {

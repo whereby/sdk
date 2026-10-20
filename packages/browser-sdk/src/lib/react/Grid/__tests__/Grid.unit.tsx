@@ -123,6 +123,37 @@ describe("VideoGrid", () => {
         );
     });
 
+    // With a spotlight on stage, the camera-off participants move to the subgrid.
+    describe("in the subgrid", () => {
+        // The box VideoGrid lays out for a cell's content: VideoCell's inner div, around GridCell
+        const contentBox = (el: Element) => el.closest<HTMLElement>("[data-cell-id]")!.parentElement!;
+
+        it("draws a camera-off participant's avatar at the size of the tile", () => {
+            const { container } = renderGrid({ numRunningIntegrations: 0, spotlight: "fake-1" });
+            const avatar = container.querySelector<HTMLElement>("[title='Participant 2']")!;
+            const box = contentBox(avatar);
+
+            expect(box.style.width).toEqual("80px");
+            expect(box.style.height).toEqual("80px");
+            expect(avatar.style.width).toEqual("80px");
+            expect(avatar.style.height).toEqual("80px");
+        });
+
+        it("gives renderSubgridParticipant a square tile", () => {
+            const { getAllByTestId } = renderGrid({
+                numRunningIntegrations: 0,
+                spotlight: "fake-1",
+                gridProps: { renderSubgridParticipant: ({ participant }) => <div data-testid={participant.id} /> },
+            });
+
+            ["fake-0", "fake-2"].forEach((id) => {
+                const box = contentBox(getAllByTestId(id)[0]);
+                expect(box.style.width).toEqual("80px");
+                expect(box.style.height).toEqual("80px");
+            });
+        });
+    });
+
     describe("with renderIntegration", () => {
         it("renders the running integration with it instead of the default frame", () => {
             const { container, getByTestId } = renderGrid({
