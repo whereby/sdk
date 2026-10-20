@@ -22,6 +22,7 @@ import {
     MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES,
     MEDIA_JITTER_BUFFER_TARGET,
     PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
+    PREFERRED_LAYER_SWITCH_MAX_POLL_GAP_MS,
     PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS,
     PREFERRED_LAYER_SWITCH_SETTLE_MS,
     PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS,
@@ -1930,6 +1931,8 @@ export default class VegaRtcManager implements RtcManager {
 
         let stopped = false;
         let intervalId: ReturnType<typeof setInterval> | undefined;
+        let lastTickAt = 0;
+        let latencyUnreliable = false;
         const sentAt = performance.now();
 
         const stop = () => {
@@ -1967,7 +1970,11 @@ export default class VegaRtcManager implements RtcManager {
             }
 
             let polling = false;
+            lastTickAt = performance.now();
             intervalId = setInterval(async () => {
+                const tickAt = performance.now();
+                if (tickAt - lastTickAt > PREFERRED_LAYER_SWITCH_MAX_POLL_GAP_MS) latencyUnreliable = true;
+                lastTickAt = tickAt;
                 if (stopped || !canMeasure()) {
                     stop();
                     return;
@@ -1976,14 +1983,16 @@ export default class VegaRtcManager implements RtcManager {
                 if (polling) return;
 
                 polling = true;
+                const polledAt = performance.now();
                 const current = await this._getConsumerFrameSize(consumer);
                 polling = false;
                 if (stopped) return;
+                if (performance.now() - polledAt > PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS) latencyUnreliable = true;
                 const switched = toHigherLayer
                     ? getFrameArea(current) > getFrameArea(baseline)
                     : getFrameArea(current) < getFrameArea(baseline);
                 if (current && switched && canMeasure()) {
-                    this._recordPreferredLayerSwitchLatency(performance.now() - sentAt);
+                    if (!latencyUnreliable) this._recordPreferredLayerSwitchLatency(performance.now() - sentAt);
                     if (toHigherLayer) {
                         consumer.appData.frameSizeSettlesAt = sentAt + PREFERRED_LAYER_SWITCH_SETTLE_MS;
                     }

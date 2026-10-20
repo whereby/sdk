@@ -1666,6 +1666,69 @@ describe("VegaRtcManager", () => {
                 expect(consumer.getStats).toHaveBeenCalledTimes(4);
             });
 
+            it("keeps watching after a slow poll, but records no latency for the switch, as it could be late", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                consumer.getStats.mockImplementationOnce(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 240, frameHeight: 135 }]),
+                                150,
+                            ),
+                        ),
+                );
+                await jest.advanceTimersByTimeAsync(300);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(100);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
+            it("still counts a timeout after a slow poll", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                consumer.getStats.mockImplementationOnce(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 240, frameHeight: 135 }]),
+                                150,
+                            ),
+                        ),
+                );
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
+            });
+
+            it("doesn't record a switch whose poll took longer than one, as it would be recorded late", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                consumer.getStats.mockImplementation(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                150,
+                            ),
+                        ),
+                );
+                await jest.advanceTimersByTimeAsync(250);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
             it("doesn't measure a quick reverse switch, nor the switch it ended the watch of", async () => {
                 const consumer = createConsumerWithFrameSizes([
                     { width: 960, height: 540 },
@@ -1918,6 +1981,44 @@ describe("VegaRtcManager", () => {
                 expect(consumer.appData.spatialLayer).toBe(2);
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
                 expect(consumer.getStats).not.toHaveBeenCalled();
+            });
+
+            it.each([
+                ["records the latency of a switch whose polls were 300 ms apart", 200, 1],
+                ["doesn't record the latency of a switch whose polls were 350 ms apart", 250, 0],
+            ])("%s", async (_, delayMs, recorded) => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(100);
+
+                const now = performance.now.bind(performance);
+                const nowSpy = jest.spyOn(performance, "now").mockImplementation(() => now() + delayMs);
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(100);
+                nowSpy.mockRestore();
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(recorded);
+            });
+
+            it("doesn't record a switch once the polls were held up, e.g. while the tab was briefly hidden", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                const now = performance.now.bind(performance);
+                const nowSpy = jest.spyOn(performance, "now").mockImplementation(() => now() + 1_000);
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(100);
+                nowSpy.mockRestore();
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
             });
 
             it("doesn't measure a switch whose first getStats() took longer than a poll, as the switch may have landed by then", async () => {
