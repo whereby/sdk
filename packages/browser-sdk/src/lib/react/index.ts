@@ -2,7 +2,7 @@ export { Provider as WherebyProvider } from "./Provider";
 export { VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { useLocalMedia } from "./useLocalMedia";
-export { Grid as VideoGrid, GridCell, GridVideoView } from "./Grid";
+export { Grid as VideoGrid, GridCell, GridVideoView, useGridCell } from "./Grid";
 export { useGrid } from "./Grid/useGrid";
 export type { CellView, IntegrationCellView, VideoCellView } from "./Grid/layout/types";
 export { useRoomIntegrationView } from "./useRoomIntegrationView";

@@ -25,7 +25,7 @@ type GridCellContextValue = {
     isHovered: boolean;
 };
 
-const GridCellContext = React.createContext<GridCellContextValue>({} as GridCellContextValue);
+const GridCellContext = React.createContext<GridCellContextValue | null>(null);
 
 const useGridCell = () => {
     const gridContext = React.useContext(GridContext);
