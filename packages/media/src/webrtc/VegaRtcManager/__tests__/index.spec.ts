@@ -1525,6 +1525,81 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
+            describe("while the tab is hidden", () => {
+                const setVisibilityState = (visibilityState: DocumentVisibilityState) =>
+                    Object.defineProperty(document, "visibilityState", { configurable: true, value: visibilityState });
+
+                afterEach(() => {
+                    delete (document as any).visibilityState;
+                });
+
+                it("doesn't watch a switch", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+                    setVisibilityState("hidden");
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(10_000);
+
+                    expect(consumer.appData.spatialLayer).toBe(2);
+                    expect(consumer.getStats).not.toHaveBeenCalled();
+                    expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+                });
+
+                it("stops watching a switch once the tab gets hidden, without counting a timeout", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(100);
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                    setVisibilityState("hidden");
+                    await jest.advanceTimersByTimeAsync(100);
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                    await jest.advanceTimersByTimeAsync(10_000);
+                    expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+                });
+
+                it("doesn't record a landing seen by a poll that was still running when the tab got hidden", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(0);
+                    consumer.getStats.mockImplementationOnce(
+                        () =>
+                            new Promise((resolve) =>
+                                globalThis.setTimeout(
+                                    () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                    50,
+                                ),
+                            ),
+                    );
+                    await jest.advanceTimersByTimeAsync(100);
+
+                    setVisibilityState("hidden");
+                    await jest.advanceTimersByTimeAsync(50);
+
+                    expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                });
+
+                it("doesn't count a timeout when the tab gets hidden just before it", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(9_950);
+
+                    setVisibilityState("hidden");
+                    await jest.advanceTimersByTimeAsync(100);
+
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                    expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+                });
+            });
+
             it("gives up on time even if the first getStats() never settles", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 consumer.getStats.mockImplementation(() => new Promise(() => {}));

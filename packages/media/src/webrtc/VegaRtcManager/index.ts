@@ -43,6 +43,7 @@ import {
     getPacketWeightedFractionLost,
     getReducedSvcEncodingParams,
     getTopSpatialLayer,
+    isDocumentHidden,
     MetricStats,
     recordMetricSample,
 } from "./utils";
@@ -1902,7 +1903,7 @@ export default class VegaRtcManager implements RtcManager {
                 const topSpatialLayer = getTopSpatialLayer(encodings?.length ? encodings : [{}]);
                 const fromLayer = Math.min(previousSpatialLayer, topSpatialLayer);
                 const toLayer = Math.min(spatialLayer, topSpatialLayer);
-                if (fromLayer !== toLayer && !consumer.paused) {
+                if (fromLayer !== toLayer && !consumer.paused && !isDocumentHidden()) {
                     this._watchForPreferredLayerSwitch(consumerId, consumer, { toHigherLayer: toLayer > fromLayer });
                 }
             }
@@ -1916,6 +1917,8 @@ export default class VegaRtcManager implements RtcManager {
             return;
         }
         previousWatch?.stop();
+
+        const canMeasure = () => !consumer.closed && !consumer.paused && !isDocumentHidden();
 
         let stopped = false;
         let intervalId: ReturnType<typeof setInterval> | undefined;
@@ -1933,7 +1936,7 @@ export default class VegaRtcManager implements RtcManager {
         // started before the first getStats(), so a call that never settles can't keep the watch forever
         const timeoutId = setTimeout(
             () => {
-                if (toHigherLayer && !stopped && intervalId !== undefined && !consumer.closed && !consumer.paused) {
+                if (toHigherLayer && !stopped && intervalId !== undefined && canMeasure()) {
                     this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
                 }
                 stop();
@@ -1952,7 +1955,7 @@ export default class VegaRtcManager implements RtcManager {
 
             let polling = false;
             intervalId = setInterval(async () => {
-                if (stopped || consumer.closed || consumer.paused) {
+                if (stopped || !canMeasure()) {
                     stop();
                     return;
                 }
@@ -1968,7 +1971,7 @@ export default class VegaRtcManager implements RtcManager {
                 const switched = toHigherLayer
                     ? getFrameArea(current) > getFrameArea(baseline)
                     : getFrameArea(current) < getFrameArea(baseline);
-                if (current && switched) {
+                if (current && switched && canMeasure()) {
                     this._recordPreferredLayerSwitchLatency(performance.now() - sentAt);
                     stop();
                 }
