@@ -1910,7 +1910,7 @@ export default class VegaRtcManager implements RtcManager {
                         consumerId,
                         consumer,
                         toLayer > fromLayer
-                            ? PREFERRED_LAYER_SWITCH_SETTLE_MS
+                            ? PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS
                             : PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
                     );
                     if (frameSizeSettled && !consumer.paused && !isDocumentHidden()) {
@@ -1979,6 +1979,9 @@ export default class VegaRtcManager implements RtcManager {
                     : getFrameArea(current) < getFrameArea(baseline);
                 if (current && switched && canMeasure()) {
                     this._recordPreferredLayerSwitchLatency(performance.now() - sentAt);
+                    if (toHigherLayer) {
+                        consumer.appData.frameSizeSettlesAt = sentAt + PREFERRED_LAYER_SWITCH_SETTLE_MS;
+                    }
                     stop();
                 }
             }, PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS);
