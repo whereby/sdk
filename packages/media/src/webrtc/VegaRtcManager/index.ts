@@ -1956,7 +1956,12 @@ export default class VegaRtcManager implements RtcManager {
             const baseline = await this._getConsumerFrameSize(consumer);
 
             // without a decoded frame there's no size to compare against: the first frame would look like the switch
-            if (stopped || !baseline?.width || !baseline?.height) {
+            if (
+                stopped ||
+                !baseline?.width ||
+                !baseline?.height ||
+                performance.now() - sentAt > PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS
+            ) {
                 stop();
                 return;
             }

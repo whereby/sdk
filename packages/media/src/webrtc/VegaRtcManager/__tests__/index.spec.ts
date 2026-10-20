@@ -1920,6 +1920,26 @@ describe("VegaRtcManager", () => {
                 expect(consumer.getStats).not.toHaveBeenCalled();
             });
 
+            it("doesn't measure a switch whose first getStats() took longer than a poll, as the switch may have landed by then", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                consumer.getStats.mockImplementationOnce(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                150,
+                            ),
+                        ),
+                );
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(150);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).toHaveBeenCalledTimes(1);
+            });
+
             it("doesn't watch a screenshare's switch", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
                 consumer.appData = { ...consumer.appData, screenShare: true } as any;
