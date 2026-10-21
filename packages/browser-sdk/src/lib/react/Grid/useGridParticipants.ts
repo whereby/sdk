@@ -25,7 +25,8 @@ export function calculateSubgridViews({
         return [];
     }
     const hasSpotlights = spotlightedParticipants.length > 0;
-    const hasPresentationStage = hasSpotlights || hasStagedIntegration;
+    const hasMaximized = !!maximizedCellId && clientViews.some((client) => client.id === maximizedCellId);
+    const hasPresentationStage = hasSpotlights || hasStagedIntegration || hasMaximized;
 
     const notMaximized = maximizedCellId ? clientViews.filter((client) => client.id !== maximizedCellId) : clientViews;
 
@@ -35,6 +36,11 @@ export function calculateSubgridViews({
     const noVideoViews = notSpotlighted.filter((client) => !client.isVideoEnabled);
     const videoLimitReached =
         notSpotlighted.filter((client) => client.isVideoEnabled).length > activeVideosSubgridTrigger;
+
+    if (isPhoneResolution && hasPresentationStage) {
+        const offStage = hasSpotlights && !hasStagedIntegration && !hasMaximized ? notSpotlighted : notMaximized;
+        return [...offStage.filter((client) => !noVideoViews.includes(client)), ...noVideoViews];
+    }
 
     const unmutedVideos = notSpotlighted.filter((client) => !noVideoViews.includes(client) && client.isAudioEnabled);
     const mutedVideos = notSpotlighted.filter((client) => !noVideoViews.includes(client) && !client.isAudioEnabled);
