@@ -6,8 +6,7 @@ import * as CONNECTION_STATUS from "../model/connectionStatusConstants";
 import { setCodecPreferenceSDP, addAbsCaptureTimeExtMap, cleanSdp } from "./sdpModifier";
 import adapterRaw from "webrtc-adapter";
 import ipRegex from "../utils/ipRegex";
-import { Address6 } from "ip-address";
-import checkIp from "check-ip";
+import { Address4, Address6 } from "ip-address";
 import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
@@ -639,8 +638,9 @@ export default class P2pRtcManager implements RtcManager {
                         }
                         try {
                             if (ipRegex.v4({ exact: true }).test(address)) {
-                                const ipv4 = checkIp(address);
-                                if (ipv4.isPublicIp) session.publicHostCandidateSeen = true;
+                                if (new Address4(address).isGlobal()) {
+                                    session.publicHostCandidateSeen = true;
+                                }
                             } else if (ipRegex.v6({ exact: true }).test(address.replace(/^\[(.*)\]/, "$1"))) {
                                 const ipv6 = new Address6(address.replace(/^\[(.*)\]/, "$1"));
                                 session.ipv6HostCandidateSeen = true;
