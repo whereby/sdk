@@ -105,6 +105,72 @@ describe("useGridParticipants", () => {
                 ).toEqual(result);
             },
         );
+
+        describe("with something on the stage", () => {
+            const fourClients = [videoLocalClient, audioClient, videoClient, presentationClient];
+
+            it.each`
+                description                                                     | allClientViews                                                    | isPhoneResolution | spotlightedParticipants | maximizedCellId       | hasStagedIntegration | result
+                ${"moves cameras next to a presentation into the subgrid"}      | ${fourClients}                                                    | ${true}           | ${[presentationClient]} | ${undefined}          | ${false}             | ${[videoLocalClient, videoClient, audioClient]}
+                ${"moves cameras even when nobody has video off"}               | ${[videoLocalClient, videoClient, presentationClient]}            | ${true}           | ${[presentationClient]} | ${undefined}          | ${false}             | ${[videoLocalClient, videoClient]}
+                ${"keeps unmuted cameras on a larger grid"}                     | ${fourClients}                                                    | ${false}          | ${[presentationClient]} | ${undefined}          | ${false}             | ${[videoClient, audioClient]}
+                ${"leaves the grid alone when nothing is staged"}               | ${[videoLocalClient, audioClient, videoClient]}                   | ${true}           | ${[]}                   | ${undefined}          | ${false}             | ${[audioClient]}
+                ${"moves spotlights displaced by an integration too"}           | ${fourClients}                                                    | ${true}           | ${[presentationClient]} | ${undefined}          | ${true}              | ${[videoLocalClient, videoClient, presentationClient, audioClient]}
+                ${"keeps an unspotlighted presentation out of the subgrid"}     | ${[videoLocalClient, mutedVideoClient, presentationClient]}       | ${true}           | ${[videoLocalClient]}   | ${undefined}          | ${false}             | ${[mutedVideoClient]}
+                ${"moves everyone but the maximized participant"}               | ${fourClients}                                                    | ${true}           | ${[presentationClient]} | ${videoClient.id}     | ${false}             | ${[videoLocalClient, presentationClient, audioClient]}
+                ${"treats a maximized participant as a stage on a larger grid"} | ${[videoLocalClient, mutedVideoClient, audioClient, videoClient]} | ${false}          | ${[]}                   | ${videoClient.id}     | ${false}             | ${[mutedVideoClient, audioClient]}
+                ${"ignores a maximized id that matches nobody"}                 | ${[videoLocalClient, videoClient]}                                | ${true}           | ${[]}                   | ${"someone-who-left"} | ${false}             | ${[]}
+            `(
+                "$description",
+                ({
+                    allClientViews,
+                    isPhoneResolution,
+                    spotlightedParticipants,
+                    maximizedCellId,
+                    hasStagedIntegration,
+                    result,
+                }) => {
+                    expect(
+                        calculateSubgridViews({
+                            clientViews: allClientViews,
+                            shouldShowSubgrid: true,
+                            activeVideosSubgridTrigger: 12,
+                            spotlightedParticipants,
+                            maximizedCellId,
+                            hasStagedIntegration,
+                            isPhoneResolution,
+                        }),
+                    ).toEqual(result);
+                },
+            );
+
+            it("leaves the subgrid empty when the subgrid is off", () => {
+                expect(
+                    calculateSubgridViews({
+                        clientViews: fourClients as ClientView[],
+                        shouldShowSubgrid: false,
+                        activeVideosSubgridTrigger: 12,
+                        spotlightedParticipants: [presentationClient as ClientView],
+                        isPhoneResolution: true,
+                    }),
+                ).toEqual([]);
+            });
+        });
+    });
+
+    describe("a presentation on a constrained grid", () => {
+        it("leaves the presentation alone on the stage", () => {
+            const presentation = presentationClient as ClientView;
+            const { result } = renderGridParticipants(
+                [videoLocalClient, audioClient, videoClient, presentationClient] as ClientView[],
+                { spotlightedParticipants: [presentation] },
+                { isConstrained: true },
+            );
+
+            expect(result.current.clientViewsInPresentationGrid).toEqual([presentation]);
+            expect(result.current.clientViewsInGrid).toEqual([]);
+            expect(result.current.clientViewsInSubgrid).toEqual([videoLocalClient, videoClient, audioClient]);
+        });
     });
 
     describe("mounting after the state has settled", () => {
