@@ -7,7 +7,8 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { signalEvents } from "../signalConnection/actions";
 import { selectRemoteParticipants } from "../remoteParticipants";
 import { selectSignalStatus } from "../signalConnection";
-import { selectRoomConnectionStatus } from "../roomConnection/selectors";
+import { selectRoomConnectionIsRejoining, selectRoomConnectionStatus } from "../roomConnection/selectors";
+import { roomRejoined } from "../roomConnection";
 import { selectIsAuthorizedToAskToSpeak } from "../authorization";
 import {
     Notification,
@@ -19,6 +20,8 @@ import {
     ChatMessageEventProps,
     StickyReactionEventProps,
     SignalStatusEventProps,
+    ReconnectingEventProps,
+    ReconnectedEventProps,
     SignalClientEventProps,
 } from "./events";
 import { selectSelfId } from "../localParticipant/selectors";
@@ -310,6 +313,35 @@ createReactor([selectSignalStatus], ({ dispatch, getState }, signalStatus) => {
             ),
         );
     }
+});
+
+createReactor([selectRoomConnectionIsRejoining], ({ dispatch }, isRejoining) => {
+    if (isRejoining) {
+        dispatch(
+            doSetNotification(
+                createNotificationEvent<"reconnecting", ReconnectingEventProps>({
+                    type: "reconnecting",
+                    message: `Reconnecting to the room...`,
+                    props: {},
+                }),
+            ),
+        );
+    }
+});
+
+startAppListening({
+    actionCreator: roomRejoined,
+    effect: (_, { dispatch }) => {
+        dispatch(
+            doSetNotification(
+                createNotificationEvent<"reconnected", ReconnectedEventProps>({
+                    type: "reconnected",
+                    message: `Reconnected to the room`,
+                    props: {},
+                }),
+            ),
+        );
+    },
 });
 
 startAppListening({

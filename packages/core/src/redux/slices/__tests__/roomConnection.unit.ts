@@ -1,5 +1,5 @@
 import { oneOf } from "../../../__mocks__/appMocks";
-import { roomConnectionSlice, selectShouldConnectRoom } from "../roomConnection";
+import { roomConnectionSlice, roomConnectionSliceInitialState, selectShouldConnectRoom } from "../roomConnection";
 import { signalEvents } from "../signalConnection/actions";
 
 describe("roomConnectionSlice", () => {
@@ -22,6 +22,7 @@ describe("roomConnectionSlice", () => {
                         session: null,
                         error: null,
                         knockResponse: null,
+                        isRejoining: false,
                     });
                 });
 
@@ -39,6 +40,7 @@ describe("roomConnectionSlice", () => {
                         session: null,
                         error: "room_full",
                         knockResponse: null,
+                        isRejoining: false,
                     });
                 });
             });
@@ -76,6 +78,7 @@ describe("roomConnectionSlice", () => {
                         session: null,
                         error: null,
                         knockResponse: null,
+                        isRejoining: false,
                     });
                 });
             });
@@ -95,20 +98,119 @@ describe("roomConnectionSlice", () => {
                     session: null,
                     error: null,
                     knockResponse: null,
+                    isRejoining: false,
                 });
             });
         });
 
         describe("signalEvents.disconnect", () => {
-            it("should set status to disconnected", () => {
-                const result = roomConnectionSlice.reducer(undefined, signalEvents.disconnect());
+            it("should set status to reconnecting when the socket will reconnect", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, status: "connected" },
+                    signalEvents.disconnect({ willReconnect: true }),
+                );
 
                 expect(result).toEqual({
-                    status: "disconnected",
-                    session: null,
-                    error: null,
-                    knockResponse: null,
+                    ...roomConnectionSliceInitialState,
+                    status: "reconnecting",
+                    isRejoining: true,
                 });
+            });
+
+            it("should set status to disconnected when the socket won't reconnect", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, status: "connected" },
+                    signalEvents.disconnect({ willReconnect: false }),
+                );
+
+                expect(result.status).toEqual("disconnected");
+                expect(result.isRejoining).toEqual(false);
+            });
+
+            it("should stop rejoining when the socket won't reconnect", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, status: "connecting", isRejoining: true },
+                    signalEvents.disconnect({ willReconnect: false }),
+                );
+
+                expect(result.status).toEqual("disconnected");
+                expect(result.isRejoining).toEqual(false);
+            });
+
+            it("should keep rejoining if the connection drops again before the room is rejoined", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, status: "connecting", isRejoining: true },
+                    signalEvents.disconnect({ willReconnect: true }),
+                );
+
+                expect(result.isRejoining).toEqual(true);
+            });
+
+            it("should not rejoin if the room was not joined", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, status: "connecting" },
+                    signalEvents.disconnect({ willReconnect: true }),
+                );
+
+                expect(result.isRejoining).toEqual(false);
+            });
+
+            it.each(["kicked", "left"] as const)("should keep status %s", (status) => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, status },
+                    signalEvents.disconnect({ willReconnect: false }),
+                );
+
+                expect(result.status).toEqual(status);
+            });
+        });
+
+        describe("signalEvents.roomJoined after a disconnect", () => {
+            const rejoiningState = {
+                ...roomConnectionSliceInitialState,
+                status: "connecting" as const,
+                isRejoining: true,
+            };
+
+            it("should stop rejoining on success", () => {
+                const result = roomConnectionSlice.reducer(
+                    rejoiningState,
+                    signalEvents.roomJoined({
+                        selfId: "selfId",
+                        breakoutGroup: "",
+                        clientClaim: "clientClaim",
+                        eventClaim: "",
+                        room: {
+                            mode: "group",
+                            clients: [],
+                            knockers: [],
+                            spotlights: [],
+                            session: null,
+                            isClaimed: true,
+                            isLocked: false,
+                            iceServers: {
+                                iceServers: [],
+                            },
+                            mediaserverConfigTtlSeconds: 0,
+                            name: "",
+                            organizationId: "",
+                            turnServers: [],
+                        },
+                    }),
+                );
+
+                expect(result).toEqual({ ...roomConnectionSliceInitialState, status: "connected" });
+            });
+
+            it("should stop rejoining on error", () => {
+                const result = roomConnectionSlice.reducer(
+                    rejoiningState,
+                    signalEvents.roomJoined({ error: "room_full", isClaimed: true }),
+                );
+
+                expect(result.status).toEqual("disconnected");
+                expect(result.error).toEqual("room_full");
+                expect(result.isRejoining).toEqual(false);
             });
         });
     });

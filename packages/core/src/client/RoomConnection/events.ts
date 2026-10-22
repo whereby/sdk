@@ -58,10 +58,18 @@ export const SPOTLIGHT_PARTICIPANT_REMOVED = "spotlight:participant-removed";
 /* Room joined events */
 export const ROOM_JOINED = "room:joined";
 export const ROOM_JOINED_ERROR = "room:joined:error";
+/* Emitted after ROOM_JOINED when the room was joined again after the signal connection dropped */
+export const ROOM_REJOINED = "room:rejoined";
 
 type RoomJoinedEvent = {
     isLocked: boolean;
     selfId: string;
+};
+
+type RoomRejoinedEvent = {
+    selfId: string;
+    previousSelfId: string;
+    selfIdChanged: boolean;
 };
 
 /* Event types for RoomConnection client */
@@ -84,6 +92,7 @@ export type RoomConnectionEvents = {
     [SCREENSHARE_STOPPED]: [screenshareId: string];
     [ROOM_JOINED]: [room: RoomJoinedEvent];
     [ROOM_JOINED_ERROR]: [error: RoomJoinedErrors | string];
+    [ROOM_REJOINED]: [room: RoomRejoinedEvent];
     [WAITING_PARTICIPANT_JOINED]: [participant: WaitingParticipant];
     [WAITING_PARTICIPANT_LEFT]: [participantId: string];
     [SPOTLIGHT_PARTICIPANT_ADDED]: [participant: ClientView];

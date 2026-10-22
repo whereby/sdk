@@ -2,7 +2,7 @@ import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { KnockResponse } from "@whereby.com/media";
 
 import { createReactor, startAppListening } from "../../listenerMiddleware";
-import { selectRoomConnectionError, selectRoomConnectionStatus } from "./selectors";
+import { selectRoomConnectionError, selectRoomConnectionIsRejoining, selectRoomConnectionStatus } from "./selectors";
 import { createAppThunk } from "../../thunk";
 import {
     doAppStop,
@@ -22,7 +22,6 @@ import {
     doSignalDisconnect,
     selectSignalConnectionDeviceIdentified,
     selectSignalConnectionRaw,
-    socketReconnecting,
 } from "../signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "../localMedia";
 import { selectSelfId, selectLocalParticipantClientClaim } from "../localParticipant/selectors";
@@ -50,6 +49,7 @@ export interface RoomConnectionState {
     status: ConnectionStatus;
     error: string | null;
     knockResponse: KnockResponse | null;
+    isRejoining: boolean;
 }
 
 export const roomConnectionSliceInitialState: RoomConnectionState = {
@@ -57,7 +57,13 @@ export const roomConnectionSliceInitialState: RoomConnectionState = {
     status: "ready",
     error: null,
     knockResponse: null,
+    isRejoining: false,
 };
+
+export interface RoomRejoinedPayload {
+    selfId: string;
+    previousSelfId: string;
+}
 
 export const roomConnectionSlice = createSlice({
     name: "roomConnection",
@@ -75,6 +81,12 @@ export const roomConnectionSlice = createSlice({
                 knockResponse: action.payload,
             };
         },
+        // Dispatched when the room has been joined again after the signal connection dropped. signalEvents.roomJoined
+        // has already updated the state.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        roomRejoined: (state, action: PayloadAction<RoomRejoinedPayload>) => {
+            return state;
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
@@ -90,6 +102,7 @@ export const roomConnectionSlice = createSlice({
                     ...state,
                     status: "disconnected",
                     error: action.payload.error,
+                    isRejoining: false,
                 };
             }
 
@@ -99,16 +112,21 @@ export const roomConnectionSlice = createSlice({
                 ...state,
                 status: "connected",
                 session: room.session ?? null,
+                isRejoining: false,
             };
         });
-        builder.addCase(signalEvents.disconnect, (state) => {
+        builder.addCase(signalEvents.disconnect, (state, action) => {
             if (["kicked", "left"].includes(state.status)) {
                 return { ...state };
             }
 
+            const { willReconnect } = action.payload;
+
             return {
                 ...state,
-                status: "disconnected",
+                status: willReconnect ? "reconnecting" : "disconnected",
+                // Only a dropped connection that will reconnect rejoins the room.
+                isRejoining: willReconnect && (state.isRejoining || state.status === "connected"),
             };
         });
         builder.addCase(signalEvents.newClient, (state, action) => {
@@ -139,12 +157,6 @@ export const roomConnectionSlice = createSlice({
                 status: "left",
             };
         });
-        builder.addCase(socketReconnecting, (state) => {
-            return {
-                ...state,
-                status: "reconnecting",
-            };
-        });
     },
 });
 
@@ -153,6 +165,8 @@ export const roomConnectionSlice = createSlice({
  */
 
 const { connectionStatusChanged, knockResponseReceived } = roomConnectionSlice.actions;
+
+export const { roomRejoined } = roomConnectionSlice.actions;
 
 export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
@@ -291,6 +305,23 @@ createReactor([selectShouldConnectRoom], ({ dispatch }, shouldConnectRoom) => {
     if (shouldConnectRoom) {
         dispatch(doConnectRoom());
     }
+});
+
+startAppListening({
+    actionCreator: signalEvents.roomJoined,
+    effect: ({ payload }, { dispatch, getOriginalState }) => {
+        if ("error" in payload) {
+            return;
+        }
+
+        const originalState = getOriginalState();
+
+        if (!selectRoomConnectionIsRejoining(originalState)) {
+            return;
+        }
+
+        dispatch(roomRejoined({ selfId: payload.selfId, previousSelfId: selectSelfId(originalState) }));
+    },
 });
 
 startAppListening({

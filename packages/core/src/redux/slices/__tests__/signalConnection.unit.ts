@@ -1,12 +1,32 @@
 import { oneOf } from "../../../__mocks__/appMocks";
 import { selectShouldConnectSignal, selectShouldIdentifyDevice, signalConnectionSlice } from "../signalConnection";
-import { signalEvents } from "../signalConnection/actions";
+import { createSignalDisconnectEvent, signalEvents } from "../signalConnection/actions";
+
+describe("createSignalDisconnectEvent", () => {
+    it.each(["ping timeout", "transport close", "transport error", "parse error"])(
+        "will reconnect after %s",
+        (reason) => {
+            expect(createSignalDisconnectEvent(reason)).toEqual({ willReconnect: true });
+        },
+    );
+
+    it.each(["io server disconnect", "io client disconnect"])("won't reconnect after %s", (reason) => {
+        expect(createSignalDisconnectEvent(reason)).toEqual({ willReconnect: false });
+    });
+
+    it("won't reconnect without a reason", () => {
+        expect(createSignalDisconnectEvent()).toEqual({ willReconnect: false });
+    });
+});
 
 describe("signalConnectionSlice", () => {
     describe("reducers", () => {
         describe("signalEvents.disconnect", () => {
             it("should set status to disconnected", () => {
-                const result = signalConnectionSlice.reducer(undefined, signalEvents.disconnect());
+                const result = signalConnectionSlice.reducer(
+                    undefined,
+                    signalEvents.disconnect({ willReconnect: true }),
+                );
 
                 expect(result).toEqual({
                     deviceIdentified: false,
