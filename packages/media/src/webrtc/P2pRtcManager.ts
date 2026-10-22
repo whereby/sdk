@@ -724,11 +724,14 @@ export default class P2pRtcManager implements RtcManager {
             if (event.track.kind === "video") this._videoTrackIdByStreamId[stream.id] = event.track.id;
             if (session.streamIds.indexOf(stream.id) === -1) {
                 session.streamIds.push(stream.id);
-                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
-                    clientId,
-                    stream,
-                });
             }
+            // Emit for every track, also when a stream we already emitted gains one (e.g. the participant
+            // picked a mic after joining). The stream object stays the same, so consumers can't otherwise
+            // tell it changed.
+            this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
+                clientId,
+                stream,
+            });
         };
 
         pc.oniceconnectionstatechange = () => {
