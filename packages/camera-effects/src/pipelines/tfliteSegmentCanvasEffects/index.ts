@@ -118,9 +118,13 @@ export const createEffectStream = async (inputStream, setup, params) => {
                 } catch {
                     console.warn("video element already removed from DOM");
                 }
-                videoElement.srcObject = null;
             });
         }
+
+        cleanup.push(() => {
+            videoElement.pause();
+            videoElement.srcObject = null;
+        });
 
         await new Promise((resolve) => {
             videoElement.addEventListener("loadedmetadata", resolve);
@@ -245,6 +249,7 @@ export const createEffectStream = async (inputStream, setup, params) => {
 
     const stop = () => {
         processor.terminate();
+        outputTrack?.stop?.();
     };
 
     const updateParams = async (params) => {
