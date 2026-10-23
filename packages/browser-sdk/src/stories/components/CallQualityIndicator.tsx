@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { CallQualityScores, ClientView } from "@whereby.com/core";
+import { RemoteParticipantQualityReport, ClientView } from "@whereby.com/core";
 import { WherebyContext } from "../../lib/react/Provider";
 import { GridVideoView, useGridCell } from "../../lib/react/Grid";
 import { DefaultParticipantMenu } from "../../lib/react/Grid/DefaultParticipantMenu";
@@ -26,18 +26,18 @@ const PLACEMENT_STYLES: Record<Placement, React.CSSProperties> = {
  * Subscribes to the call quality report on the room connection directly, rather than reading it from
  * useRoomConnection state: the grid memoises its cells, so a value captured by a render prop would go stale.
  */
-function useCallQualityReport(): CallQualityScores {
+function useRemoteParticipantQualityReport(): RemoteParticipantQualityReport {
     const client = React.useContext(WherebyContext);
     const roomConnection = React.useMemo(() => client?.getRoomConnection(), [client]);
-    const [report, setReport] = React.useState<CallQualityScores>(
-        () => roomConnection?.getState().callQualityReport ?? {},
+    const [report, setReport] = React.useState<RemoteParticipantQualityReport>(
+        () => roomConnection?.getState().remoteParticipantQualityReport ?? {},
     );
 
     React.useEffect(() => {
         if (!roomConnection) return;
 
-        setReport(roomConnection.getState().callQualityReport);
-        return roomConnection.subscribeToCallQualityReport(setReport);
+        setReport(roomConnection.getState().remoteParticipantQualityReport);
+        return roomConnection.subscribeToRemoteParticipantQualityReport(setReport);
     }, [roomConnection]);
 
     return report;
@@ -55,8 +55,8 @@ export function CallQualityIndicator({
     clientId?: string;
     placement?: Placement;
 }) {
-    const report = useCallQualityReport();
-    const quality = clientId ? report[clientId]?.total : undefined;
+    const report = useRemoteParticipantQualityReport();
+    const quality = clientId ? report[clientId]?.quality : undefined;
 
     if (quality !== "warning" && quality !== "critical") {
         return null;
@@ -81,12 +81,17 @@ export function CallQualityIndicator({
 }
 
 /**
- * The call quality indicator for a VideoGrid cell, in the cell's bottom right.
+ * The call quality indicator for a VideoGrid cell, in the cell's bottom right. Only shown for remote
+ * participants, as the quality report has no entry for the local client.
  */
 export function GridCallQualityIndicator() {
     const { participant } = useGridCell();
 
-    return <CallQualityIndicator clientId={participant?.clientId} />;
+    if (!participant || participant.isLocalClient) {
+        return null;
+    }
+
+    return <CallQualityIndicator clientId={participant.clientId} />;
 }
 
 /**

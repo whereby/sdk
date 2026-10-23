@@ -3,13 +3,16 @@ import { ClientView } from "../../types";
 import {
     ConnectionMonitorReport,
     MediaQualityScores,
-    selectCalculatedCallQualityScores,
+    selectCalculatedRemoteCallQualityScores,
+    selectCalculatedLocalCallQualityScore,
+    selectRemoteParticipantQualityReport,
     selectShouldStartConnectionMonitor,
     selectShouldStopConnectionMonitor,
     connectionMonitorStarted,
     connectionMonitorStopped,
     connectionMonitorSlice,
-    updateCallQualityScores,
+    updateRemoteCallQualityScores,
+    updateLocalCallQualityScore,
 } from "../connectionMonitor";
 import { ConnectionStatus } from "../roomConnection";
 import { rtcEvents } from "../rtcConnection/actions";
@@ -48,15 +51,24 @@ describe("connectionMonitorSlice", () => {
                 });
             });
         });
-        describe("updateCallQualityScores", () => {
+        describe("updateRemoteCallQualityScores", () => {
             it("should set the call quality scores", () => {
                 const scores = {
                     "client-1": { total: "warning", video: "warning", audio: "ok" },
                 } as const;
 
-                const result = connectionMonitorSlice.reducer(undefined, updateCallQualityScores(scores));
+                const result = connectionMonitorSlice.reducer(undefined, updateRemoteCallQualityScores(scores));
 
-                expect(result.qualityScores).toEqual(scores);
+                expect(result.remoteQualityScores).toEqual(scores);
+            });
+        });
+        describe("updateLocalCallQualityScore", () => {
+            it("should set the local call quality score", () => {
+                const score = { total: "warning", video: "warning", audio: "ok" } as const;
+
+                const result = connectionMonitorSlice.reducer(undefined, updateLocalCallQualityScore(score));
+
+                expect(result.localQualityScore).toEqual(score);
             });
         });
         describe("mediaQualityChanged", () => {
@@ -116,7 +128,27 @@ describe("connectionMonitorSlice", () => {
             );
         });
 
-        describe("selectCalculatedCallQualityScores", () => {
+        describe("selectRemoteParticipantQualityReport", () => {
+            it("should return undefined when there are no scores", () => {
+                expect(selectRemoteParticipantQualityReport.resultFunc(undefined)).toBeUndefined();
+            });
+
+            it("should report each client's total as its quality", () => {
+                expect(
+                    selectRemoteParticipantQualityReport.resultFunc({
+                        "remote-1": { total: "ok", video: "ok", audio: "ok" },
+                        "remote-2": { total: "critical", video: "critical", audio: "warning" },
+                        "remote-3": { total: "warning", video: "warning", audio: "ok" },
+                    }),
+                ).toEqual({
+                    "remote-1": { quality: "ok" },
+                    "remote-2": { quality: "critical" },
+                    "remote-3": { quality: "warning" },
+                });
+            });
+        });
+
+        describe("selectCalculatedRemoteCallQualityScores", () => {
             const clientViews = [{ clientId: "client-1" }, { clientId: "client-2" }] as ClientView[];
             const ok = { total: "ok", video: "ok", audio: "ok" };
 
@@ -131,7 +163,7 @@ describe("connectionMonitorSlice", () => {
                 mediaScores?: MediaQualityScores;
                 issuesReport?: ConnectionMonitorReport;
             }) =>
-                selectCalculatedCallQualityScores.resultFunc(
+                selectCalculatedRemoteCallQualityScores.resultFunc(
                     roomConnectionStatus,
                     roomMode,
                     clientViews,
@@ -145,6 +177,18 @@ describe("connectionMonitorSlice", () => {
                     expect(calculate({ roomConnectionStatus })).toBeUndefined();
                 },
             );
+
+            it("should leave out the local screenshare", () => {
+                expect(
+                    selectCalculatedRemoteCallQualityScores.resultFunc(
+                        "connected",
+                        "normal",
+                        [...clientViews, { clientId: "local-1", isLocalClient: true }] as ClientView[],
+                        undefined,
+                        undefined,
+                    ),
+                ).toEqual({ "client-1": ok, "client-2": ok });
+            });
 
             it("should score every client as ok when there are no issues", () => {
                 expect(calculate({ roomMode: "normal" })).toEqual({ "client-1": ok, "client-2": ok });
@@ -202,6 +246,52 @@ describe("connectionMonitorSlice", () => {
                         }),
                     ).toEqual({ "client-1": ok, "client-2": ok });
                 });
+            });
+        });
+
+        describe("selectCalculatedLocalCallQualityScore", () => {
+            const localParticipantView = { clientId: "local-1", isLocalClient: true } as ClientView;
+
+            it("should return undefined when not connected", () => {
+                expect(
+                    selectCalculatedLocalCallQualityScore.resultFunc(
+                        "connecting",
+                        "normal",
+                        localParticipantView,
+                        undefined,
+                        undefined,
+                    ),
+                ).toBeUndefined();
+            });
+
+            it("should return undefined without a local participant view", () => {
+                expect(
+                    selectCalculatedLocalCallQualityScore.resultFunc("connected", "normal", null, undefined, undefined),
+                ).toBeUndefined();
+            });
+
+            it("should score the local client from the issues report in a normal room", () => {
+                expect(
+                    selectCalculatedLocalCallQualityScore.resultFunc(
+                        "connected",
+                        "normal",
+                        localParticipantView,
+                        undefined,
+                        { critical: {}, warning: { "local-1": { audio: ["x"] } } },
+                    ),
+                ).toEqual({ total: "warning", video: "ok", audio: "warning" });
+            });
+
+            it("should score the local client from the media quality scores in a group room", () => {
+                expect(
+                    selectCalculatedLocalCallQualityScore.resultFunc(
+                        "connected",
+                        "group",
+                        localParticipantView,
+                        { "local-1": { video: "critical" } },
+                        undefined,
+                    ),
+                ).toEqual({ total: "critical", video: "critical", audio: "ok" });
             });
         });
     });

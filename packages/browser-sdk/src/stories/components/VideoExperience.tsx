@@ -678,7 +678,12 @@ export default function VideoExperience({
                                                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                                     />
                                                 )}
-                                                <CallQualityIndicator clientId={participant.id} placement="bottom" />
+                                                {!participant.isLocalParticipant && (
+                                                    <CallQualityIndicator
+                                                        clientId={participant.id}
+                                                        placement="bottom"
+                                                    />
+                                                )}
                                             </div>
                                             <div
                                                 className="displayName"

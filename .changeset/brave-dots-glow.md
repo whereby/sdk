@@ -2,4 +2,4 @@
 "@whereby.com/browser-sdk": minor
 ---
 
-Add callQualityReport to useRoomConnection state
+Add remoteParticipantQualityReport to useRoomConnection state

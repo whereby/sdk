@@ -2,4 +2,4 @@
 "@whereby.com/core": minor
 ---
 
-Add callQualityReport state and subscribeToCallQualityReport API to RoomConnectionClient
+Add remoteParticipantQualityReport state and subscribeToRemoteParticipantQualityReport API to RoomConnectionClient
