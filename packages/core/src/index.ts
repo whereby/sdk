@@ -43,6 +43,8 @@ export type {
     RequestVideoEvent,
     RequestScreenshareEvent,
     SignalStatusEvent,
+    ReconnectingEvent,
+    ReconnectedEvent,
     SignalClientEvent,
     StickyReactionEvent,
     BreakoutTimerEvent,

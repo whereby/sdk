@@ -1,6 +1,6 @@
 import { RoomConnectionClient } from "../";
-import { AUDIO_ONLY_MODE_CHANGED } from "../events";
-import { doAppStart, Store, RootState } from "../../../redux";
+import { AUDIO_ONLY_MODE_CHANGED, ROOM_REJOINED } from "../events";
+import { doAppStart, roomRejoined, Store, RootState } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
 
 describe("RoomConnectionClient", () => {
@@ -161,6 +161,21 @@ describe("RoomConnectionClient", () => {
             });
             storeSubscriber();
             expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("room:rejoined", () => {
+        it("is emitted when the room is rejoined", () => {
+            const callback = jest.fn();
+            client.on(ROOM_REJOINED, callback);
+
+            mockStore.dispatch(roomRejoined({ selfId: "second-id", previousSelfId: "first-id" }));
+
+            expect(callback).toHaveBeenCalledWith({
+                selfId: "second-id",
+                previousSelfId: "first-id",
+                selfIdChanged: true,
+            });
         });
     });
 

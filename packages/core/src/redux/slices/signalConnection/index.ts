@@ -48,7 +48,7 @@ import {
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
 import { selectAppIsActive } from "../app";
-import { signalEvents } from "./actions";
+import { createSignalDisconnectEvent, signalEvents } from "./actions";
 export { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, UnknownAction>) {
@@ -77,7 +77,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("chat_message_removed", (payload: ChatMessageRemoved) =>
         dispatch(signalEvents.chatMessageRemoved(payload)),
     );
-    socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
+    socket.on("disconnect", (reason?: string) =>
+        dispatch(signalEvents.disconnect(createSignalDisconnectEvent(reason))),
+    );
     socket.on("room_knocked", (payload: RoomKnockedEvent) => dispatch(signalEvents.roomKnocked(payload)));
     socket.on("room_left", () => dispatch(signalEvents.roomLeft()));
     socket.on("room_locked", (payload: RoomLockedEvent) => dispatch(signalEvents.roomLocked(payload)));

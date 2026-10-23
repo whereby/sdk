@@ -49,6 +49,7 @@ import {
     selectNotificationsEmitter,
     setDisplayName,
     signalEvents,
+    roomRejoined,
     StartBreakoutSessionOptions,
     UpdateBreakoutSessionOptions,
     startAppListening,
@@ -98,6 +99,7 @@ import {
     REMOTE_PARTICIPANTS_CHANGED,
     ROOM_JOINED,
     ROOM_JOINED_ERROR,
+    ROOM_REJOINED,
     SCREENSHARE_STARTED,
     SCREENSHARE_STOPPED,
     SPOTLIGHT_PARTICIPANT_ADDED,
@@ -291,6 +293,18 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
                 this.emit(ROOM_JOINED, {
                     isLocked: payload.room.isLocked,
                     selfId,
+                });
+            },
+        });
+
+        startAppListening({
+            actionCreator: roomRejoined,
+            effect: ({ payload }) => {
+                const { selfId, previousSelfId } = payload;
+                this.emit(ROOM_REJOINED, {
+                    selfId,
+                    previousSelfId,
+                    selfIdChanged: selfId !== previousSelfId,
                 });
             },
         });
