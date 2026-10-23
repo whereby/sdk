@@ -35,6 +35,8 @@ export type { UseLocalMediaResult } from "./useLocalMedia/types";
 export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConnection/types";
 
 export type {
+    CallQualityLevel,
+    RemoteParticipantQualityReport,
     ChatMessageState as ChatMessage,
     ChatFileShare,
     FileUpload,

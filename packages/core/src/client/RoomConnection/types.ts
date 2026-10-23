@@ -1,6 +1,7 @@
 import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage, KnockResponse } from "@whereby.com/media";
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
 import {
+    RemoteParticipantQualityReport,
     ClientView,
     ConnectionStatus,
     FileUpload,
@@ -19,7 +20,14 @@ export type {
     KnockResponseSender,
     RoomIntegrationProps,
 } from "@whereby.com/media";
-export type { FileUpload, FileShareError, SendFilesOptions, ToggleAudioOnlyModeOptions } from "../../redux";
+export type {
+    CallQualityLevel,
+    RemoteParticipantQualityReport,
+    FileUpload,
+    FileShareError,
+    SendFilesOptions,
+    ToggleAudioOnlyModeOptions,
+} from "../../redux";
 export type {
     RoomIntegration,
     RoomIntegrationError,
@@ -151,6 +159,7 @@ export interface RoomConnectionState {
     fileUploads: FileUpload[];
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
+    remoteParticipantQualityReport: RemoteParticipantQualityReport;
     events?: NotificationsEventEmitter;
     isAudioOnlyModeEnabled: boolean;
     isCameraEnabled: boolean;

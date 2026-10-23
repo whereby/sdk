@@ -9,6 +9,7 @@ import {
     RtcStreamAddedPayload,
     RtcClientConnectionStatusChangedPayload,
     CAMERA_STREAM_ID,
+    RtcMediaQualityChangedPayload,
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
@@ -50,6 +51,8 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
                 dispatch(rtcManagerDestroyed());
             } else if (eventName === "client_connection_status_changed") {
                 dispatch(rtcEvents.clientConnectionStatusChanged(data as RtcClientConnectionStatusChangedPayload));
+            } else if (eventName === "media_quality_changed") {
+                dispatch(rtcEvents.mediaQualityChanged(data as RtcMediaQualityChangedPayload));
             } else {
                 //console.log(`Unhandled RTC event ${eventName}`);
             }
