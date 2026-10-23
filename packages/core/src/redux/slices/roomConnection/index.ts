@@ -370,7 +370,7 @@ startAppListening({
 
             dispatch(connectionStatusChanged("leaving"));
         } else {
-            doSignalDisconnect();
+            dispatch(doSignalDisconnect());
         }
     },
 });
