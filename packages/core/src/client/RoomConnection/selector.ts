@@ -44,13 +44,13 @@ import {
     selectEnabledRoomIntegrations,
     selectEmbeddableRoomIntegrations,
     selectRunningRoomIntegrations,
-    selectCallQualityScores,
-    CallQualityScores,
+    selectRemoteParticipantQualityReport,
+    RemoteParticipantQualityReport,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
 
-const EMPTY_CALL_QUALITY_REPORT: CallQualityScores = Object.freeze({});
+const EMPTY_REMOTE_PARTICIPANT_QUALITY_REPORT: RemoteParticipantQualityReport = Object.freeze({});
 
 export const selectRoomConnectionState = createSelector(
     selectChatMessages,
@@ -97,7 +97,7 @@ export const selectRoomConnectionState = createSelector(
     selectEmbeddableRoomIntegrations,
     selectRunningRoomIntegrations,
     selectIsAudioOnlyModeEnabled,
-    selectCallQualityScores,
+    selectRemoteParticipantQualityReport,
     (
         chatMessages,
         fileUploads,
@@ -143,7 +143,7 @@ export const selectRoomConnectionState = createSelector(
         embeddableRoomIntegrations,
         runningRoomIntegrations,
         isAudioOnlyModeEnabled,
-        callQualityScores,
+        remoteParticipantQualityReport,
     ) => {
         // Main-room participants that are spotlighted broadcast their audio/video into every group.
         // Only relevant for participants who are currently inside a group.
@@ -183,7 +183,7 @@ export const selectRoomConnectionState = createSelector(
                 participantsInCurrentGroup: clientViewsInCurrentGroup,
                 broadcastingParticipants,
             },
-            callQualityReport: callQualityScores ?? EMPTY_CALL_QUALITY_REPORT,
+            remoteParticipantQualityReport: remoteParticipantQualityReport ?? EMPTY_REMOTE_PARTICIPANT_QUALITY_REPORT,
             connectionStatus,
             connectionError,
             knockResponse,

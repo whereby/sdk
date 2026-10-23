@@ -1,5 +1,5 @@
 import { RoomConnectionClient } from "../";
-import { AUDIO_ONLY_MODE_CHANGED, ROOM_REJOINED, CALL_QUALITY_REPORT_CHANGED } from "../events";
+import { AUDIO_ONLY_MODE_CHANGED, ROOM_REJOINED, REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED } from "../events";
 import { doAppStart, roomRejoined, Store, RootState } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
 
@@ -217,49 +217,46 @@ describe("RoomConnectionClient", () => {
         });
     });
 
-    describe("subscribeToCallQualityReport", () => {
-        const report = {
+    describe("subscribeToRemoteParticipantQualityReport", () => {
+        const remoteQualityScores = {
             "client-1": { total: "warning", video: "warning", audio: "ok" },
         } as const;
+        const report = { "client-1": { quality: "warning" } };
+
+        const withRemoteQualityScores = (scores?: typeof remoteQualityScores): RootState => ({
+            ...initialState,
+            connectionMonitor: { ...initialState.connectionMonitor, remoteQualityScores: scores },
+        });
 
         it("triggers the call quality report listener", () => {
             const callback = jest.fn();
-            const unsubscribe = client.subscribeToCallQualityReport(callback);
+            const unsubscribe = client.subscribeToRemoteParticipantQualityReport(callback);
 
             storeSubscriber();
             expect(callback).not.toHaveBeenCalled();
 
-            (mockStore.getState as jest.Mock).mockReturnValue({
-                ...initialState,
-                connectionMonitor: { ...initialState.connectionMonitor, qualityScores: report },
-            });
+            (mockStore.getState as jest.Mock).mockReturnValue(withRemoteQualityScores(remoteQualityScores));
             storeSubscriber();
             expect(callback).toHaveBeenCalledWith(report);
 
             unsubscribe();
-            (mockStore.getState as jest.Mock).mockReturnValue({
-                ...initialState,
-                connectionMonitor: { ...initialState.connectionMonitor, qualityScores: undefined },
-            });
+            (mockStore.getState as jest.Mock).mockReturnValue(withRemoteQualityScores(undefined));
             storeSubscriber();
             expect(callback).toHaveBeenCalledTimes(1);
         });
 
         it("emits the call quality report changed event", () => {
             const listener = jest.fn();
-            client.on(CALL_QUALITY_REPORT_CHANGED, listener);
+            client.on(REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED, listener);
 
-            (mockStore.getState as jest.Mock).mockReturnValue({
-                ...initialState,
-                connectionMonitor: { ...initialState.connectionMonitor, qualityScores: report },
-            });
+            (mockStore.getState as jest.Mock).mockReturnValue(withRemoteQualityScores(remoteQualityScores));
             storeSubscriber();
 
             expect(listener).toHaveBeenCalledWith(report);
         });
 
         it("reports an empty report while there are no scores", () => {
-            expect(client.getState().callQualityReport).toEqual({});
+            expect(client.getState().remoteParticipantQualityReport).toEqual({});
         });
     });
 
