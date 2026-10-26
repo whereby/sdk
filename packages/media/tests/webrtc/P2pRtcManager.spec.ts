@@ -788,7 +788,6 @@ describe("P2pRtcManager", () => {
                             CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
                             expect.objectContaining({
                                 clientId,
-                                streamIds: [],
                                 status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
                             }),
                         );
@@ -949,15 +948,38 @@ describe("P2pRtcManager", () => {
 
     describe("peerConnection callback", () => {
         describe("ontrack", () => {
-            const fakeStream = helpers.randomString("stream-");
-            const fakeTrack = helpers.randomString("track-");
+            const getStreamAddedEmits = () =>
+                emitterStub.emit.mock.calls.filter(
+                    ([eventName]: [string]) => eventName === CONNECTION_STATUS.EVENTS.STREAM_ADDED,
+                );
+
             it("emits STREAM_ADDED event to consuming apps", async () => {
+                const fakeStream = helpers.createMockedMediaStream();
                 const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
 
                 // @ts-ignore
-                pc.ontrack({ track: fakeTrack, streams: [fakeStream] });
+                pc.ontrack({ track: fakeStream.getAudioTracks()[0], streams: [fakeStream] });
 
                 expect(emitterStub.emit).toHaveBeenCalledWith(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+                    clientId,
+                    stream: fakeStream,
+                });
+            });
+
+            it("emits STREAM_ADDED again when the stream gains a track", async () => {
+                const videoTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+                const audioTrack = helpers.createMockedMediaStreamTrack({ kind: "audio" });
+                const fakeStream = helpers.createMockedMediaStream([videoTrack]);
+                const { pc } = rtcManager.acceptNewStream({ clientId, streamId: CAMERA_STREAM_ID });
+                // @ts-ignore
+                pc.ontrack({ track: videoTrack, streams: [fakeStream] });
+                fakeStream.addTrack(audioTrack);
+
+                // @ts-ignore
+                pc.ontrack({ track: audioTrack, streams: [fakeStream] });
+
+                expect(getStreamAddedEmits().length).toBe(2);
+                expect(emitterStub.emit).toHaveBeenLastCalledWith(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
                     clientId,
                     stream: fakeStream,
                 });
@@ -1185,7 +1207,6 @@ describe("P2pRtcManager", () => {
                     CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED,
                     expect.objectContaining({
                         clientId,
-                        streamIds: [],
                         status: (CONNECTION_STATUS.TYPES as any)[expectedStatus],
                     }),
                 );

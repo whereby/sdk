@@ -24,7 +24,7 @@ import {
     SignalIceEndOfCandidatesMessage,
     MediaPrefs,
 } from "./types";
-import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
+import { ClearableTimeout, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { updateRenderedDimensions } from "./stats/StatsMonitor";
 
@@ -424,17 +424,6 @@ export default class P2pRtcManager implements RtcManager {
                     this.analytics.numPcOnAnswerFailure++;
                 });
             }),
-
-            // Clean up session.streamIds after stopped screenshare from remote peer.
-            this._serverSocket.on(PROTOCOL_RESPONSES.SCREENSHARE_STOPPED, (payload: ScreenshareStoppedEvent) => {
-                const session = this._getSession(payload.clientId);
-                if (session) {
-                    const streamIdIndex = session.streamIds.indexOf(payload.streamId);
-                    if (streamIdIndex !== -1) {
-                        session.streamIds.splice(streamIdIndex, 1);
-                    }
-                }
-            }),
         ];
     }
 
@@ -510,7 +499,6 @@ export default class P2pRtcManager implements RtcManager {
 
         setTimeout(() => {
             this._emit(CONNECTION_STATUS.EVENTS.CLIENT_CONNECTION_STATUS_CHANGED, {
-                streamIds: session.streamIds,
                 clientId,
                 status: newStatus,
                 previous: previousStatus,
@@ -722,13 +710,13 @@ export default class P2pRtcManager implements RtcManager {
                 return;
             }
             if (event.track.kind === "video") this._videoTrackIdByStreamId[stream.id] = event.track.id;
-            if (session.streamIds.indexOf(stream.id) === -1) {
-                session.streamIds.push(stream.id);
-                this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
-                    clientId,
-                    stream,
-                });
-            }
+            // Emit for every track, also when a stream we already emitted gains one (e.g. the participant
+            // picked a mic after joining). The stream object stays the same, so consumers can't otherwise
+            // tell it changed.
+            this._emit(CONNECTION_STATUS.EVENTS.STREAM_ADDED as string, {
+                clientId,
+                stream,
+            });
         };
 
         pc.oniceconnectionstatechange = () => {
