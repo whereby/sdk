@@ -35,7 +35,6 @@ export default class Session {
     bandwidth: any;
     pending: any[];
     isOperationPending: boolean;
-    streamIds: string[];
     streams: MediaStream[];
     earlyIceCandidates: any[];
     afterConnected: Promise<unknown>;
@@ -94,7 +93,6 @@ export default class Session {
         this.bandwidth = bandwidth || 0; // maximum bandwidth in kbps.
         this.pending = [];
         this.isOperationPending = false;
-        this.streamIds = [];
         this.streams = [];
         this.earlyIceCandidates = [];
         this.afterConnected = new Promise((resolve) => {
@@ -105,7 +103,6 @@ export default class Session {
     }
 
     addStream(stream: MediaStream) {
-        this.streamIds.push(stream.id);
         this.streams.push(stream);
         stream.getAudioTracks().forEach((track) => {
             this.pc.addTrack(track, stream);
@@ -133,10 +130,6 @@ export default class Session {
     }
 
     removeStream(stream: MediaStream) {
-        const streamIdIndex = this.streamIds.indexOf(stream.id);
-        if (streamIdIndex !== -1) {
-            this.streamIds.splice(streamIdIndex, 1);
-        }
         const streamIndex = this.streams.indexOf(stream);
         if (streamIndex !== -1) {
             this.streams.splice(streamIndex, 1);

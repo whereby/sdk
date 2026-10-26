@@ -43,12 +43,11 @@ describe("Session", () => {
     });
 
     describe("addStream", () => {
-        it("updates the Session streams and streamIds", () => {
+        it("updates the Session streams", () => {
             const stream = helpers.createMockedMediaStream();
 
             session.addStream(stream);
 
-            expect(session.streamIds).toEqual([stream.id]);
             expect(session.streams).toEqual([stream]);
         });
 
