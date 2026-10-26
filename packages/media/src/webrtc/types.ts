@@ -84,8 +84,6 @@ export type RtcEvents = {
     rtc_manager_destroyed: void;
     local_stream_track_added: RtcLocalStreamTrackAddedPayload;
     local_stream_track_removed: RtcLocalStreamTrackRemovedPayload;
-    remote_stream_track_added: void;
-    remote_stream_track_removed: void;
 };
 
 export type SignalRTCSessionDescription = {

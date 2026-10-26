@@ -7,8 +7,6 @@ export const EVENTS: Record<string, keyof RtcEvents> = {
     RTC_MANAGER_DESTROYED: "rtc_manager_destroyed",
     LOCAL_STREAM_TRACK_ADDED: "local_stream_track_added",
     LOCAL_STREAM_TRACK_REMOVED: "local_stream_track_removed",
-    REMOTE_STREAM_TRACK_ADDED: "remote_stream_track_added",
-    REMOTE_STREAM_TRACK_REMOVED: "remote_stream_track_removed",
 };
 
 export const TYPES = {
