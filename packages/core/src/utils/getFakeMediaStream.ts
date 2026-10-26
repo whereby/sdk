@@ -1,7 +1,7 @@
 import fakeAudioStream from "./fakeAudioStream";
 import fakeWebcamFrame from "./fakeWebcamFrame";
 
-const CANVAS_VIDEO_FPS = 24;
+const CANVAS_VIDEO_FPS = 30;
 
 export function getAudioTrack() {
     const audioStream = fakeAudioStream();
