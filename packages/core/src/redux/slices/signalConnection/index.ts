@@ -1,7 +1,7 @@
 import { createSlice, ThunkDispatch, PayloadAction, createSelector, UnknownAction } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
-import { createReactor, startAppListening } from "../../listenerMiddleware";
+import { addAppListener, createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
 
 import {
@@ -47,7 +47,8 @@ import {
     LiveCaptionsStoppedEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
-import { selectAppIsActive } from "../app";
+import { doAppStart, selectAppIsActive } from "../app";
+import { selectRoomConnectionError } from "../roomConnection/selectors";
 import { createSignalDisconnectEvent, signalEvents } from "./actions";
 export { signalEvents } from "./actions";
 
@@ -264,6 +265,28 @@ export const doSignalConnect = createAppThunk(() => {
         socket.on("device_identified", () => dispatch(deviceIdentified()));
         socket.getManager().on("reconnect", () => dispatch(socketReconnecting()));
         forwardSocketEvents(socket, dispatch);
+
+        let isWatching = true;
+        const stopWatching = dispatch(
+            addAppListener({
+                predicate: (action, state) =>
+                    isWatching &&
+                    (doAppStart.match(action) ||
+                        !!selectRoomConnectionError(state) ||
+                        (!selectAppIsActive(state) && !socket.isConnected())),
+                effect: (action) => {
+                    isWatching = false;
+                    stopWatching();
+
+                    if (doAppStart.match(action)) {
+                        return;
+                    }
+
+                    socket.disconnect();
+                    dispatch(socketDisconnected());
+                },
+            }),
+        );
 
         socket.connect();
     };
