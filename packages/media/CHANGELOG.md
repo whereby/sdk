@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.3.0
+
+### Minor Changes
+
+- 4d4690e: media: Changes framerate to 30fps
+
 ## 11.2.5
 
 ### Patch Changes
