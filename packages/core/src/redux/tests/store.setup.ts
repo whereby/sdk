@@ -11,6 +11,7 @@ export const mockServerSocket = {
     }),
     once: jest.fn(),
     emit: mockSignalEmit,
+    isConnected: () => false,
 };
 export const mockRtcManager = {
     addCameraStream: jest.fn(),

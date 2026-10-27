@@ -419,8 +419,6 @@ startAppListening({
         }
 
         dispatch(joinRoomTimedOut(selectJoinRoomStage(getState())));
-        // join_room may already have been sent. Disconnect, so a late room_joined can't join after the error.
-        dispatch(doSignalDisconnect());
     },
 });
 
