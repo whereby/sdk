@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.3.1
+
+### Patch Changes
+
+- 60400ba: Expose media quality change in RTC connection payload events
+
 ## 11.3.0
 
 ### Minor Changes
