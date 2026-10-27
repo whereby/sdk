@@ -1,5 +1,18 @@
 # @whereby.com/core
 
+## 1.26.0
+
+### Minor Changes
+
+- dbe6908: Add remoteParticipantQualityReport state and subscribeToRemoteParticipantQualityReport API to RoomConnectionClient
+- 37a0a96: Add Call Quality API processing and state handling
+
+### Patch Changes
+
+- Updated dependencies [60400ba]
+    - @whereby.com/media@11.3.1
+    - @whereby.com/audio-denoiser@1.0.29
+
 ## 1.25.0
 
 ### Minor Changes

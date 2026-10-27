@@ -1,5 +1,19 @@
 # @whereby.com/browser-sdk
 
+## 3.36.0
+
+### Minor Changes
+
+- acdbb69: Add remoteParticipantQualityReport to useRoomConnection state
+
+### Patch Changes
+
+- Updated dependencies [dbe6908]
+- Updated dependencies [60400ba]
+- Updated dependencies [37a0a96]
+    - @whereby.com/core@1.26.0
+    - @whereby.com/media@11.3.1
+
 ## 3.35.0
 
 ### Minor Changes
