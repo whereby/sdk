@@ -1,6 +1,11 @@
 import * as React from "react";
 import { WherebyContext } from "../Provider";
 import { CURRENT_SPEAKER_CHANGED } from "@whereby.com/core";
+import adapterRaw from "webrtc-adapter";
+
+// @ts-ignore
+const adapter = adapterRaw.default ?? adapterRaw;
+const isSafari = adapter.browserDetails?.browser === "safari";
 
 export type AudioElement = HTMLAudioElement & { setSinkId?: (deviceId: string) => void };
 export const useAudioElement = ({ stream, muted }: { stream?: MediaStream | null; muted?: boolean }) => {
@@ -29,6 +34,14 @@ export const useAudioElement = ({ stream, muted }: { stream?: MediaStream | null
 
         if (audioEl.current.srcObject !== stream) {
             audioEl.current.srcObject = stream;
+        }
+
+        // Safari 27 won't autoplay an <audio> element that has no renderer (WebKit bug 326969),
+        // so start playback explicitly.
+        if (isSafari) {
+            audioEl.current.play().catch((err) => {
+                console.warn(`Failed to start audio playback: ${err}`);
+            });
         }
 
         if (audioEl.current.setSinkId) {

@@ -91,7 +91,8 @@
         "@whereby.com/core": "1.23.4",
         "clsx": "^2.1.1",
         "heresy": "^1.0.4",
-        "runes": "^0.4.3"
+        "runes": "^0.4.3",
+        "webrtc-adapter": "9.0.4"
     },
     "peerDependencies": {
         "react": ">=18.2.0",
