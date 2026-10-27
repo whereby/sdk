@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.35.0
+
+### Minor Changes
+
+- d36acdc: `connectionStatus` in `useRoomConnection` state is now `reconnecting` while the SDK retries a dropped connection, and
+  `disconnected` only once it has stopped retrying.
+
+### Patch Changes
+
+- 63c2a22: Call `play()` on remote audio elements on Safari so remote audio starts on Safari 27
+- Updated dependencies [9a5729a]
+    - @whereby.com/core@1.25.0
+
 ## 3.34.2
 
 ### Patch Changes
