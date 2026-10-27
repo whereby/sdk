@@ -2,6 +2,7 @@ import { createAction } from "@reduxjs/toolkit";
 import {
     RtcClientConnectionStatusChangedPayload,
     RtcManagerCreatedPayload,
+    RtcMediaQualityChangedPayload,
     RtcStreamAddedPayload,
 } from "@whereby.com/media";
 
@@ -16,4 +17,5 @@ export const rtcEvents = {
     clientConnectionStatusChanged: createRtcEventAction<RtcClientConnectionStatusChangedPayload>(
         "clientConnectionStatusChanged",
     ),
+    mediaQualityChanged: createRtcEventAction<RtcMediaQualityChangedPayload>("mediaQualityChanged"),
 };

@@ -12,6 +12,7 @@ import {
     RoomIntegrationSessionView,
 } from "../lib/react";
 import { Grid as VideoGrid } from "../lib/react/Grid";
+import { withCallQualityIndicator } from "./components/CallQualityIndicator";
 import { Provider as WherebyProvider } from "../lib/react/Provider";
 import "./styles.css";
 
@@ -358,7 +359,7 @@ function RoomIntegrationsInGrid({ roomUrl, displayName }: { roomUrl: string; dis
                 </span>
             </div>
             <div style={{ height: "70vh", width: "100%" }}>
-                <VideoGrid enableParticipantMenu />
+                <VideoGrid enableParticipantMenu {...withCallQualityIndicator({ enableParticipantMenu: true })} />
             </div>
         </>
     );
