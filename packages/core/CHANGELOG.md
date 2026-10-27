@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 1.24.0
+
+### Minor Changes
+
+- 4d4690e: media: Changes framerate to 30fps
+
+### Patch Changes
+
+- Updated dependencies [4d4690e]
+    - @whereby.com/media@11.3.0
+    - @whereby.com/audio-denoiser@1.0.28
+
 ## 1.23.4
 
 ### Patch Changes
