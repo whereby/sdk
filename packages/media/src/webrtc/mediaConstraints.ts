@@ -44,8 +44,8 @@ export function getMediaConstraints({
             ...(preferredDeviceIds.videoId ? { deviceId: preferredDeviceIds.videoId } : { facingMode: "user" }),
             height: lowDataMode ? LOW_HEIGHT : HIGH_HEIGHT,
             // Set a lower frame rate (15fps) for low data, but only for non-simulcast.
-            // Otherwise use 24fps to increase quality/bandwidth.
-            frameRate: lowDataMode && !simulcast ? 15 : 24,
+            // Otherwise use 30fps to increase quality/bandwidth.
+            frameRate: lowDataMode && !simulcast ? 15 : 30,
         },
     };
     if (lax) {

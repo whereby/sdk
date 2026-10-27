@@ -53,9 +53,9 @@ describe("getMediaConstraints", () => {
     describe("frameRate", () => {
         it.each`
             lowDataMode | simulcast | expected
-            ${false}    | ${false}  | ${24}
+            ${false}    | ${false}  | ${30}
             ${true}     | ${false}  | ${15}
-            ${true}     | ${true}   | ${24}
+            ${true}     | ${true}   | ${30}
         `(
             "should set frameRate to $expected if lowDataMode is $lowDataMode and simulcast is $simulcast",
             ({ lowDataMode, simulcast, expected }) => {

@@ -215,7 +215,7 @@ async function getIsCodecDecodingPowerEfficient(codec: string) {
             width: 1280,
             height: 720,
             bitrate: 2580,
-            framerate: 24,
+            framerate: 30,
             contentType: codec,
         },
     });
