@@ -76,8 +76,12 @@ export function useRoomConnection(
         };
     }, []);
 
+    // Read the latest options, but keep joinRoom stable for apps that pass the options inline.
+    const roomConfigRef = React.useRef(roomConfig);
+    roomConfigRef.current = roomConfig;
+
     const joinRoom = React.useCallback(() => {
-        client.initialize(roomConfig);
+        client.initialize(roomConfigRef.current);
         return client.joinRoom();
     }, [client]);
     const sendChatMessage = React.useCallback(
