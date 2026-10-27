@@ -15,6 +15,9 @@ export const events = {
     CREDENTIALS_SAVED: "credentials_saved",
 };
 
+const CREDENTIALS_FETCH_ATTEMPTS = 3;
+const CREDENTIALS_RETRY_BASE_DELAY = 1000;
+
 export default class CredentialsService extends EventEmitter {
     _deviceService: DeviceService;
     _credentialsStore: AbstractStore;
@@ -67,27 +70,32 @@ export default class CredentialsService extends EventEmitter {
     }
     /**
      * Contacts the REST API to get new credentials. DO NOT USE directly, call getCredentials() instead.
+     * Retries with backoff and rejects after CREDENTIALS_FETCH_ATTEMPTS failed attempts.
      *
      * @see getCredentials
      * @returns {Promise.<Credentials>} - Promise that resolves with the credentials.
      */
-    _fetchNewCredentialsFromApi(): Promise<Credentials | null> {
-        const credentialsStore = this._credentialsStore;
-        return new Promise((resolve) => {
-            const fetchCredentials = () => {
-                this._deviceService
-                    .getCredentials()
-                    .then((credentials) => {
-                        return credentialsStore
-                            .save(credentials ? credentials.toJson() : null)
-                            .then(() => resolve(credentials));
-                    })
-                    .catch(() => {
-                        setTimeout(fetchCredentials, 2000);
-                    });
-            };
-            fetchCredentials();
-        });
+    async _fetchNewCredentialsFromApi(): Promise<Credentials | null> {
+        for (let attempt = 1; ; attempt++) {
+            try {
+                const credentials = await this._deviceService.getCredentials();
+
+                if (!credentials) {
+                    throw new Error("No device credentials returned");
+                }
+
+                // Blocked storage must not fail the fetch. The store warns about it.
+                await this._credentialsStore.save(credentials.toJson()).catch(() => undefined);
+
+                return credentials;
+            } catch (error) {
+                if (attempt >= CREDENTIALS_FETCH_ATTEMPTS) {
+                    throw error;
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, CREDENTIALS_RETRY_BASE_DELAY * 2 ** (attempt - 1)));
+            }
+        }
     }
 
     /**
@@ -108,13 +116,22 @@ export default class CredentialsService extends EventEmitter {
      */
     getCredentials(): Promise<Credentials | null> {
         if (!this.credentialsPromise) {
-            this.credentialsPromise = this.getCurrentCredentials().then((storedCredentials) => {
+            const credentialsPromise = this.getCurrentCredentials().then((storedCredentials) => {
                 if (storedCredentials) {
                     return storedCredentials;
                 }
 
                 return this._fetchNewCredentialsFromApi();
             });
+
+            // Forget a failed fetch, so the next call tries again.
+            credentialsPromise.catch(() => {
+                if (this.credentialsPromise === credentialsPromise) {
+                    this.credentialsPromise = undefined;
+                }
+            });
+
+            this.credentialsPromise = credentialsPromise;
         }
 
         return this.credentialsPromise;

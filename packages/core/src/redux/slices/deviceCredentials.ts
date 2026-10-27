@@ -12,11 +12,13 @@ import { Credentials } from "../../api";
 export interface DeviceCredentialsState {
     isFetching: boolean;
     data?: Credentials | null;
+    error?: unknown;
 }
 
 export const deviceCredentialsSliceInitialState: DeviceCredentialsState = {
     isFetching: false,
     data: null,
+    error: null,
 };
 
 export const deviceCredentialsSlice = createSlice({
@@ -38,10 +40,10 @@ export const deviceCredentialsSlice = createSlice({
             };
         });
         builder.addCase(doGetDeviceCredentials.rejected, (state) => {
-            // not handled in the pwa either.
             return {
                 ...state,
-                isFetching: true,
+                isFetching: false,
+                error: true,
             };
         });
     },
@@ -54,13 +56,7 @@ export const deviceCredentialsSlice = createSlice({
 export const doGetDeviceCredentials = createAppAsyncThunk(
     "deviceCredentials/doGetDeviceCredentials",
     async (payload, { extra }) => {
-        try {
-            const deviceCredentials = await extra.services.credentialsService.getCredentials();
-
-            return deviceCredentials;
-        } catch (error) {
-            console.error(error);
-        }
+        return extra.services.credentialsService.getCredentials();
     },
 );
 
@@ -80,7 +76,7 @@ export const selectShouldFetchDeviceCredentials = createSelector(
     selectAppIsActive,
     selectDeviceCredentialsRaw,
     (appIsActive, deviceCredentials) => {
-        if (appIsActive && !deviceCredentials.isFetching && !deviceCredentials.data) {
+        if (appIsActive && !deviceCredentials.isFetching && !deviceCredentials.data && !deviceCredentials.error) {
             return true;
         }
         return false;

@@ -7,18 +7,20 @@ describe("deviceCredentialsSlice", () => {
             const credentials = randomDeviceCredentials();
 
             it.each`
-                appIsActive | isFetching | deviceCredentialsData | expected
-                ${true}     | ${false}   | ${undefined}          | ${true}
-                ${true}     | ${false}   | ${null}               | ${true}
-                ${true}     | ${false}   | ${credentials}        | ${false}
-                ${true}     | ${true}    | ${undefined}          | ${false}
-                ${true}     | ${true}    | ${null}               | ${false}
-                ${true}     | ${true}    | ${credentials}        | ${false}
+                appIsActive | isFetching | error    | deviceCredentialsData | expected
+                ${true}     | ${false}   | ${false} | ${undefined}          | ${true}
+                ${true}     | ${false}   | ${false} | ${null}               | ${true}
+                ${true}     | ${false}   | ${false} | ${credentials}        | ${false}
+                ${true}     | ${true}    | ${false} | ${undefined}          | ${false}
+                ${true}     | ${true}    | ${false} | ${null}               | ${false}
+                ${true}     | ${true}    | ${false} | ${credentials}        | ${false}
+                ${true}     | ${false}   | ${true}  | ${null}               | ${false}
             `(
-                "expected $expected when appIsActive=$appIsActive, isFetching=$isFetching, deviceCredentialsData=$deviceCredentialsData",
-                ({ appIsActive, isFetching, deviceCredentialsData, expected }) => {
+                "expected $expected when appIsActive=$appIsActive, isFetching=$isFetching, error=$error, deviceCredentialsData=$deviceCredentialsData",
+                ({ appIsActive, isFetching, error, deviceCredentialsData, expected }) => {
                     const deviceCredentials = {
                         isFetching,
+                        error,
                         data: deviceCredentialsData,
                     };
 
