@@ -1,6 +1,8 @@
 import ApiClient from "../ApiClient";
 import Credentials from "../Credentials";
 
+const CREDENTIALS_REQUEST_TIMEOUT = 10000;
+
 /**
  * Related to device calls needed to obtain credentials
  */
@@ -21,6 +23,7 @@ export default class DeviceService {
         return this._apiClient
             .request("/devices", {
                 method: "post",
+                timeout: CREDENTIALS_REQUEST_TIMEOUT,
             })
             .then(({ data }) => {
                 return Credentials.fromJson(data);

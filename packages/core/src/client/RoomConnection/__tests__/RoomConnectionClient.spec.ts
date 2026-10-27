@@ -563,5 +563,24 @@ describe("RoomConnectionClient", () => {
                 }),
             );
         });
+
+        it("rejects when the device credentials can't be fetched", async () => {
+            console.error = jest.fn();
+            mockServices.credentialsService.getCredentials.mockRejectedValue(new Error("Network error"));
+            // The organization request waits on the credentials, so it fails with them.
+            mockServices.fetchOrganizationFromRoomUrl.mockImplementation(async () => {
+                await mockServices.credentialsService.getCredentials();
+            });
+
+            client.initialize({ roomUrl: "https://example.whereby.com/test" });
+
+            await expect(client.joinRoom()).rejects.toEqual("device_credentials_fetch_failed");
+            expect(mockStore.getState().roomConnection).toEqual(
+                expect.objectContaining({
+                    status: "disconnected",
+                    error: "device_credentials_fetch_failed",
+                }),
+            );
+        });
     });
 });

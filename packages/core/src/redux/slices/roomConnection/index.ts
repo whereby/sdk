@@ -16,6 +16,7 @@ import {
 } from "../app";
 import { selectAssistantKey, selectRoomKey, setRoomKey } from "../authorization";
 
+import { doGetDeviceCredentials } from "../deviceCredentials";
 import { doOrganizationFetch, selectOrganizationId } from "../organization";
 import { signalEvents } from "../signalConnection/actions";
 import {
@@ -157,11 +158,19 @@ export const roomConnectionSlice = createSlice({
                 status: "left",
             };
         });
+        builder.addCase(doGetDeviceCredentials.rejected, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+                error: "device_credentials_fetch_failed",
+            };
+        });
         builder.addCase(doOrganizationFetch.rejected, (state) => {
             return {
                 ...state,
                 status: "disconnected",
-                error: "organization_fetch_failed",
+                // Failed credentials also fail this request. Keep the error that came first.
+                error: state.error ?? "organization_fetch_failed",
             };
         });
     },
