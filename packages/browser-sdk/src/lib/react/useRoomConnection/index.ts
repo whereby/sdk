@@ -53,6 +53,7 @@ export function useRoomConnection(
             roomUrl,
             userAgent: `browser-sdk:${browserSdkVersion}`,
             externalId: roomConnectionOptions.externalId || null,
+            joinRoomTimeout: roomConnectionOptions.joinRoomTimeout,
         };
     }, [roomUrl, roomConnectionOptions]);
 
