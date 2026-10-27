@@ -494,6 +494,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             isNodeSdk: this.options.isNodeSdk || false,
             isAudioRecorder: this.options.isAudioRecorder ?? false,
             isDialIn: this.options.isDialIn ?? false,
+            joinRoomTimeout: this.options.joinRoomTimeout,
         };
 
         this.store.dispatch(doAppStart(roomConfig));
@@ -522,7 +523,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             }),
         );
 
-        // Failures before join_room (credentials, organization) never produce roomJoined.
+        // Failures before join_room (credentials, organization, join timeout) never produce roomJoined.
         const unsubscribeJoinFailed = this.store.dispatch(
             addAppListener({
                 predicate: (_action, currentState) => !!selectRoomConnectionError(currentState),

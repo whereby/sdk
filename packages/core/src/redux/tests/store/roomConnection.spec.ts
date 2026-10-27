@@ -1,6 +1,6 @@
-import { createStore, mockSignalEmit } from "../store.setup";
+import { createStore, mockServices, mockSignalEmit } from "../store.setup";
 import { doKnockRoom, doConnectRoom, roomRejoined } from "../../slices/roomConnection";
-import { initialState as appInitialState } from "../../slices/app";
+import { AppConfig, doAppStart, doAppStop, initialState as appInitialState } from "../../slices/app";
 import { localParticipantSliceInitialState } from "../../slices/localParticipant";
 import { signalEvents } from "../../slices/signalConnection/actions";
 import { addAppListener } from "../../listenerMiddleware";
@@ -182,6 +182,89 @@ describe("actions", () => {
         expect(mockSignalEmit).toHaveBeenCalledWith("join_room", expect.any(Object));
         expect(diff(before, after)).toEqual({
             status: "connecting",
+        });
+    });
+
+    describe("join timeout", () => {
+        const appConfig: AppConfig = {
+            displayName: "Test",
+            externalId: null,
+            roomKey: null,
+            roomUrl: "https://example.whereby.com/test",
+        };
+
+        beforeEach(() => {
+            mockServices.credentialsService.getCredentials.mockReturnValue(new Promise(() => {}));
+            mockServices.fetchOrganizationFromRoomUrl.mockReturnValue(new Promise(() => {}));
+        });
+
+        it("reports the stage that stalled after 60 seconds", async () => {
+            const store = createStore();
+
+            store.dispatch(doAppStart(appConfig));
+
+            await jest.advanceTimersByTimeAsync(59999);
+            expect(store.getState().roomConnection.error).toEqual(null);
+
+            await jest.advanceTimersByTimeAsync(1);
+            expect(store.getState().roomConnection).toEqual(
+                expect.objectContaining({
+                    status: "disconnected",
+                    error: "join_timeout_credentials",
+                }),
+            );
+        });
+
+        it("uses the configured timeout", async () => {
+            const store = createStore();
+
+            store.dispatch(doAppStart({ ...appConfig, joinRoomTimeout: 5000 }));
+
+            await jest.advanceTimersByTimeAsync(5000);
+            expect(store.getState().roomConnection.error).toEqual("join_timeout_credentials");
+        });
+
+        it("is off when the timeout is 0", async () => {
+            const store = createStore();
+
+            store.dispatch(doAppStart({ ...appConfig, joinRoomTimeout: 0 }));
+
+            await jest.advanceTimersByTimeAsync(120000);
+            expect(store.getState().roomConnection.error).toEqual(null);
+        });
+
+        it("keeps the earlier error when the join already failed", async () => {
+            mockServices.credentialsService.getCredentials.mockRejectedValue(new Error("Network error"));
+            const store = createStore();
+
+            store.dispatch(doAppStart(appConfig));
+
+            await jest.advanceTimersByTimeAsync(60000);
+            expect(store.getState().roomConnection.error).toEqual("device_credentials_fetch_failed");
+        });
+
+        it("restarts when the app starts again", async () => {
+            const store = createStore();
+
+            store.dispatch(doAppStart(appConfig));
+            await jest.advanceTimersByTimeAsync(30000);
+            store.dispatch(doAppStart(appConfig));
+
+            await jest.advanceTimersByTimeAsync(59999);
+            expect(store.getState().roomConnection.error).toEqual(null);
+
+            await jest.advanceTimersByTimeAsync(1);
+            expect(store.getState().roomConnection.error).toEqual("join_timeout_credentials");
+        });
+
+        it("stops when the app stops", async () => {
+            const store = createStore();
+
+            store.dispatch(doAppStart(appConfig));
+            store.dispatch(doAppStop());
+
+            await jest.advanceTimersByTimeAsync(60000);
+            expect(store.getState().roomConnection.error).toEqual(null);
         });
     });
 });

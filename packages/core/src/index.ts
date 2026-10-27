@@ -35,7 +35,7 @@ export type {
     RoomIntegrationPickerResult,
 } from "./redux/slices/roomIntegrations";
 export type { ClientView } from "./redux/types";
-export type { ConnectionStatus } from "./redux/slices/roomConnection";
+export type { ConnectionStatus, JoinRoomError, JoinRoomStage } from "./redux/slices/roomConnection";
 export type {
     NotificationEvents,
     RequestAudioEvent,

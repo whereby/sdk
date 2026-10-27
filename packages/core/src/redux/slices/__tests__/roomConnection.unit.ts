@@ -1,5 +1,10 @@
 import { oneOf } from "../../../__mocks__/appMocks";
-import { roomConnectionSlice, roomConnectionSliceInitialState, selectShouldConnectRoom } from "../roomConnection";
+import {
+    roomConnectionSlice,
+    roomConnectionSliceInitialState,
+    selectJoinRoomStage,
+    selectShouldConnectRoom,
+} from "../roomConnection";
 import { signalEvents } from "../signalConnection/actions";
 
 describe("roomConnectionSlice", () => {
@@ -251,5 +256,32 @@ describe("roomConnectionSlice", () => {
                 },
             );
         });
+    });
+
+    describe("selectJoinRoomStage", () => {
+        it.each`
+            hasCredentials | organizationId | localMediaStatus | signalStatus    | deviceIdentified | expected
+            ${false}       | ${undefined}   | ${"inactive"}    | ${"ready"}      | ${false}         | ${"credentials"}
+            ${false}       | ${"orgId"}     | ${"started"}     | ${"connected"}  | ${false}         | ${"credentials"}
+            ${true}        | ${undefined}   | ${"started"}     | ${"connected"}  | ${true}          | ${"organization"}
+            ${true}        | ${"orgId"}     | ${"starting"}    | ${"connected"}  | ${true}          | ${"local_media"}
+            ${true}        | ${"orgId"}     | ${"error"}       | ${"connected"}  | ${true}          | ${"local_media"}
+            ${true}        | ${"orgId"}     | ${"started"}     | ${"connecting"} | ${false}         | ${"signal_connect"}
+            ${true}        | ${"orgId"}     | ${"started"}     | ${"connected"}  | ${false}         | ${"identify_device"}
+            ${true}        | ${"orgId"}     | ${"started"}     | ${"connected"}  | ${true}          | ${"room_joined"}
+        `(
+            "returns $expected when hasCredentials=$hasCredentials, organizationId=$organizationId, localMediaStatus=$localMediaStatus, signalStatus=$signalStatus, deviceIdentified=$deviceIdentified",
+            ({ hasCredentials, organizationId, localMediaStatus, signalStatus, deviceIdentified, expected }) => {
+                expect(
+                    selectJoinRoomStage.resultFunc(
+                        hasCredentials,
+                        organizationId,
+                        localMediaStatus,
+                        signalStatus,
+                        deviceIdentified,
+                    ),
+                ).toEqual(expected);
+            },
+        );
     });
 });
