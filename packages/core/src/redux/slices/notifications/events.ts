@@ -44,6 +44,14 @@ export interface SignalStatusEventProps {}
 export type SignalStatusEvent = NotificationEvent<"signalTrouble" | "signalOk", SignalStatusEventProps>;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ReconnectingEventProps {}
+export type ReconnectingEvent = NotificationEvent<"reconnecting", ReconnectingEventProps>;
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ReconnectedEventProps {}
+export type ReconnectedEvent = NotificationEvent<"reconnected", ReconnectedEventProps>;
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SignalClientEventProps {}
 export type SignalClientEvent = NotificationEvent<"clientUnableToJoinFullRoom", SignalClientEventProps>;
 
@@ -74,6 +82,8 @@ type NotificationEventTypes = {
     ["remoteHandLowered"]: StickyReactionEvent;
     ["signalTrouble"]: SignalStatusEvent;
     ["signalOk"]: SignalStatusEvent;
+    ["reconnecting"]: ReconnectingEvent;
+    ["reconnected"]: ReconnectedEvent;
     ["clientUnableToJoinFullRoom"]: SignalClientEvent;
     ["requestVideoEnable"]: RequestVideoEvent;
     ["requestVideoDisable"]: RequestVideoEvent;

@@ -41,6 +41,24 @@ import {
     BreakoutSessionUpdatedEvent,
 } from "@whereby.com/media";
 
+export interface SignalDisconnectEvent {
+    /** Whether the signal socket will try to reconnect on its own. */
+    willReconnect: boolean;
+}
+
+// socket.io doesn't retry after these disconnect reasons. It reconnects on its own after any other reason.
+const NON_RECONNECTING_DISCONNECT_REASONS = ["io server disconnect", "io client disconnect"];
+
+/**
+ * Create a SignalDisconnectEvent from the reason the signal socket's `disconnect` event gives.
+ * Without a reason we can't tell that the socket is reconnecting, so it's treated as a deliberate disconnect.
+ */
+export function createSignalDisconnectEvent(reason?: string): SignalDisconnectEvent {
+    return {
+        willReconnect: !!reason && !NON_RECONNECTING_DISCONNECT_REASONS.includes(reason),
+    };
+}
+
 function createSignalEventAction<T>(name: string) {
     return createAction<T>(`signalConnection/event/${name}`);
 }
@@ -64,7 +82,7 @@ export const signalEvents = {
     clientUnableToJoin: createSignalEventAction<ClientUnableToJoinEvent>("clientUnableToJoin"),
     cloudRecordingStarted: createSignalEventAction<CloudRecordingStartedEvent>("cloudRecordingStarted"),
     cloudRecordingStopped: createSignalEventAction<void>("cloudRecordingStopped"),
-    disconnect: createSignalEventAction<void>("disconnect"),
+    disconnect: createSignalEventAction<SignalDisconnectEvent>("disconnect"),
     knockerLeft: createSignalEventAction<KnockerLeftEvent>("knockerLeft"),
     knockHandled: createSignalEventAction<KnockAcceptedEvent | KnockOnHoldEvent | KnockRejectedEvent>("knockHandled"),
     newClient: createSignalEventAction<NewClientEvent>("newClient"),

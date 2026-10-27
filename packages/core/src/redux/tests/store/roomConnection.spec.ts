@@ -1,9 +1,11 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { doKnockRoom, doConnectRoom } from "../../slices/roomConnection";
+import { doKnockRoom, doConnectRoom, roomRejoined } from "../../slices/roomConnection";
 import { initialState as appInitialState } from "../../slices/app";
 import { localParticipantSliceInitialState } from "../../slices/localParticipant";
 import { signalEvents } from "../../slices/signalConnection/actions";
+import { addAppListener } from "../../listenerMiddleware";
 import { diff } from "deep-object-diff";
+import { randomSignalClient } from "../../../__mocks__/appMocks";
 
 describe("actions", () => {
     describe("doKnockRoom", () => {
@@ -11,7 +13,13 @@ describe("actions", () => {
             const store = createStore({
                 withSignalConnection: true,
                 initialState: {
-                    roomConnection: { status: "room_locked", session: null, error: null, knockResponse: null },
+                    roomConnection: {
+                        status: "room_locked",
+                        session: null,
+                        error: null,
+                        knockResponse: null,
+                        isRejoining: false,
+                    },
                 },
             });
 
@@ -60,7 +68,13 @@ describe("actions", () => {
                 withSignalConnection: true,
                 initialState: {
                     localParticipant: { ...localParticipantSliceInitialState, id: selfId },
-                    roomConnection: { status: "knocking", session: null, error: null, knockResponse: null },
+                    roomConnection: {
+                        status: "knocking",
+                        session: null,
+                        error: null,
+                        knockResponse: null,
+                        isRejoining: false,
+                    },
                 },
             });
 
@@ -110,6 +124,49 @@ describe("actions", () => {
             const { status, knockResponse } = store.getState().roomConnection;
             expect(status).toEqual("knocking");
             expect(knockResponse).toBeNull();
+        });
+    });
+
+    describe("signalEvents.roomJoined after a disconnect", () => {
+        const roomJoined = (selfId: string) =>
+            signalEvents.roomJoined({
+                selfId,
+                clientClaim: "client-claim",
+                eventClaim: "",
+                room: {
+                    mode: "group",
+                    clients: [randomSignalClient({ id: selfId })],
+                    knockers: [],
+                    spotlights: [],
+                    session: null,
+                    isClaimed: true,
+                    isLocked: false,
+                    iceServers: { iceServers: [] },
+                    mediaserverConfigTtlSeconds: 0,
+                    name: "",
+                    organizationId: "",
+                    turnServers: [],
+                },
+            });
+
+        it("dispatches roomRejoined with the previous selfId", () => {
+            const store = createStore({ withSignalConnection: true });
+            const onRejoined = jest.fn();
+            store.dispatch(addAppListener({ actionCreator: roomRejoined, effect: onRejoined }));
+
+            store.dispatch(roomJoined("first-id"));
+            expect(onRejoined).not.toHaveBeenCalled();
+
+            store.dispatch(signalEvents.disconnect({ willReconnect: true }));
+            expect(store.getState().roomConnection.status).toEqual("reconnecting");
+
+            store.dispatch(roomJoined("second-id"));
+
+            expect(store.getState().roomConnection.status).toEqual("connected");
+            expect(onRejoined).toHaveBeenCalledWith(
+                roomRejoined({ selfId: "second-id", previousSelfId: "first-id" }),
+                expect.anything(),
+            );
         });
     });
 

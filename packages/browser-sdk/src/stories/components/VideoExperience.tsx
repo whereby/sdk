@@ -11,6 +11,8 @@ import {
     ChatMessageEvent,
     RequestAudioEvent,
     SignalStatusEvent,
+    ReconnectingEvent,
+    ReconnectedEvent,
     StickyReactionEvent,
     NotificationEvents,
     RequestVideoEvent,
@@ -308,6 +310,22 @@ export default function VideoExperience({
         toast.remove("signalTrouble");
     }
 
+    function showReconnectingNotification({ message }: ReconnectingEvent) {
+        toast.loading(message, {
+            id: "reconnecting",
+            duration: Infinity,
+        });
+    }
+
+    function showReconnectedNotification({ message }: ReconnectedEvent) {
+        // Same id as the reconnecting toast, so it replaces it. Updating a toast keeps its old options, so reset the
+        // duration to get the default success timeout instead of the reconnecting toast's Infinity.
+        toast.success(message, {
+            id: "reconnecting",
+            duration: undefined,
+        });
+    }
+
     function showRemoteHandRaised({ message, props }: StickyReactionEvent) {
         toast(
             (t) => (
@@ -357,6 +375,12 @@ export default function VideoExperience({
                     break;
                 case "signalOk":
                     hideSignalTroublenNotification();
+                    break;
+                case "reconnecting":
+                    showReconnectingNotification(event);
+                    break;
+                case "reconnected":
+                    showReconnectedNotification(event);
                     break;
                 case "remoteHandRaised":
                     showRemoteHandRaised(event);
@@ -428,6 +452,8 @@ export default function VideoExperience({
 
     return (
         <div>
+            <div>Room connection status: {connectionStatus}</div>
+            <hr />
             {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
             {connectionStatus === "connecting" && <span>Connecting...</span>}
             {connectionStatus === "room_locked" && (
@@ -469,8 +495,7 @@ export default function VideoExperience({
                             })}
                         </div>
                     )}
-                    <div className="roomStatus" style={{ display: "flex", columnGap: "10px" }}>
-                        <span>Room status:</span>
+                    <div style={{ display: "flex", columnGap: "10px" }}>
                         {showHostControls ? (
                             <>
                                 <button
