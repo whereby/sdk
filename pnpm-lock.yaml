@@ -535,6 +535,9 @@ importers:
       runes:
         specifier: ^0.4.3
         version: 0.4.3
+      webrtc-adapter:
+        specifier: 9.0.4
+        version: 9.0.4
     devDependencies:
       '@storybook/addon-docs':
         specifier: ^9.0.16
