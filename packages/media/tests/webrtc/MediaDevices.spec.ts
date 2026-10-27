@@ -720,6 +720,49 @@ describe("getStream", () => {
     });
 });
 
+describe("hasGetDisplayMedia", () => {
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    it("should return true when getDisplayMedia is available", () => {
+        // @ts-ignore
+        global.navigator.mediaDevices = { getDisplayMedia: jest.fn() };
+
+        expect(MediaDevices.hasGetDisplayMedia()).toBe(true);
+    });
+
+    it("should return false when getDisplayMedia is missing", () => {
+        // @ts-ignore
+        global.navigator.mediaDevices = { getUserMedia: jest.fn() };
+
+        expect(MediaDevices.hasGetDisplayMedia()).toBe(false);
+    });
+
+    it("should return false when mediaDevices is missing", () => {
+        // @ts-ignore
+        global.navigator.mediaDevices = undefined;
+
+        expect(MediaDevices.hasGetDisplayMedia()).toBe(false);
+    });
+
+    it("should return false on Android", () => {
+        // @ts-ignore
+        global.navigator.mediaDevices = { getDisplayMedia: jest.fn() };
+        jest.spyOn(global.navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (Linux; Android 14)");
+
+        expect(MediaDevices.hasGetDisplayMedia()).toBe(false);
+    });
+
+    it("should return false when navigator is missing", () => {
+        const navigatorSpy = jest.spyOn(global, "navigator", "get").mockReturnValue(undefined as any);
+
+        expect(MediaDevices.hasGetDisplayMedia()).toBe(false);
+
+        navigatorSpy.mockRestore();
+    });
+});
+
 describe("getUserMedia", () => {
     it("should throw on no devices", async () => {
         let err;
