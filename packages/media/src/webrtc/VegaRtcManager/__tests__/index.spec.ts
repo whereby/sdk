@@ -29,6 +29,32 @@ const addMediasoupEncoderControls = (producer: any, parameters: { encodings: any
         }),
     });
 
+// jsdom has no MediaStream, so give the streams VegaRtcManager creates for its consumers a minimal one
+const useFakeMediaStream = () => {
+    const OriginalMediaStream = (global as any).MediaStream;
+
+    beforeEach(() => {
+        let count = 0;
+        (global as any).MediaStream = class {
+            id = `stream-${++count}`;
+            tracks: any[] = [];
+            addTrack(track: any) {
+                this.tracks.push(track);
+            }
+            removeTrack(track: any) {
+                this.tracks = this.tracks.filter((t) => t !== track);
+            }
+            getTracks() {
+                return this.tracks;
+            }
+        };
+    });
+
+    afterEach(() => {
+        (global as any).MediaStream = OriginalMediaStream;
+    });
+};
+
 jest.mock("../../../utils/getMediasoupDevice");
 const { getMediasoupDeviceAsync } = jest.requireMock("../../../utils/getMediasoupDevice");
 
@@ -1042,29 +1068,7 @@ describe("VegaRtcManager", () => {
     });
 
     describe("SFU reconnect", () => {
-        const OriginalMediaStream = (global as any).MediaStream;
-
-        beforeEach(() => {
-            // jsdom has no MediaStream
-            let count = 0;
-            (global as any).MediaStream = class {
-                id = `stream-${++count}`;
-                tracks: any[] = [];
-                addTrack(track: any) {
-                    this.tracks.push(track);
-                }
-                removeTrack(track: any) {
-                    this.tracks = this.tracks.filter((t) => t !== track);
-                }
-                getTracks() {
-                    return this.tracks;
-                }
-            };
-        });
-
-        afterEach(() => {
-            (global as any).MediaStream = OriginalMediaStream;
-        });
+        useFakeMediaStream();
 
         // a receive transport whose close() closes its consumers, as mediasoup's does
         const createReceiveTransport = () => {
@@ -1965,6 +1969,440 @@ describe("VegaRtcManager", () => {
                 rtcManager._onUpdatedStats(out({ fractionLost: 0, remoteReportTimestamp: 2 }));
 
                 expect(rtcManager.analytics.camOutboundCongestedFraction).toBe(0.5);
+            });
+        });
+    });
+
+    describe("incoming streams", () => {
+        useFakeMediaStream();
+
+        let message: jest.Mock;
+        let consumers: Record<string, any>;
+        let consumerCount: number;
+
+        beforeEach(() => {
+            message = jest.fn();
+            consumers = {};
+            consumerCount = 0;
+            rtcManager._vegaConnection = { message } as any;
+            // consumers that close like mediasoup's do
+            rtcManager._receiveTransport = {
+                closed: false,
+                consume: jest.fn(async (options: any) => {
+                    const closeListeners: (() => void)[] = [];
+                    const consumer: any = {
+                        id: options.id,
+                        kind: options.kind,
+                        track: { id: `track-${options.id}`, kind: options.kind },
+                        appData: options.appData,
+                        _rtpParameters: { encodings: [{ scalabilityMode: "L3T2" }] },
+                        pause: jest.fn(),
+                        resume: jest.fn(),
+                        observer: { once: (_event: string, listener: () => void) => closeListeners.push(listener) },
+                        close: () => closeListeners.forEach((listener) => listener()),
+                    };
+                    consumers[options.id] = consumer;
+                    return consumer;
+                }),
+                consumeData: jest.fn(async (options: any) => ({
+                    id: options.id,
+                    appData: options.appData,
+                    on: jest.fn(),
+                    once: jest.fn(),
+                })),
+            } as any;
+        });
+
+        // a sender's webcam stream id is its own uuid, not its client id
+        const webcamStreamId = (clientId: string) => `${clientId}-webcam`;
+        const screenshareStreamId = (clientId: string) => `${clientId}-screenshare`;
+
+        const addTrack = async (
+            clientId: string,
+            kind: "audio" | "video",
+            {
+                screenShare = false,
+                streamId = screenShare ? screenshareStreamId(clientId) : webcamStreamId(clientId),
+            }: { screenShare?: boolean; streamId?: string } = {},
+        ) => {
+            const id = `consumer-${++consumerCount}`;
+            await rtcManager._onConsumerReady({
+                id,
+                producerId: `producer-${consumerCount}`,
+                kind,
+                rtpParameters: {},
+                appData: { sourceClientId: clientId, streamId, screenShare },
+            } as any);
+            return consumers[id];
+        };
+
+        const addMicScoreDataConsumer = (clientId: string) =>
+            rtcManager._onDataConsumerReady({
+                id: `data-consumer-${clientId}`,
+                dataProducerId: `data-producer-${clientId}`,
+                sctpStreamParameters: {},
+                appData: { clientId, producerId: `mic-producer-${clientId}` },
+            } as any);
+
+        // the app accepts a webcam stream by the client's id, not its stream id, and a screenshare by its stream id
+        const accept = (clientId: string, { screenShare = false } = {}) =>
+            rtcManager.acceptNewStream({ clientId, streamId: screenShare ? screenshareStreamId(clientId) : clientId });
+
+        const streamAddedEvents = () =>
+            emitter.emit.mock.calls
+                .filter(([eventName]: [string]) => eventName === CONNECTION_STATUS.EVENTS.STREAM_ADDED)
+                .map(([, payload]: [string, any]) => payload);
+
+        const trackKinds = (stream: any) => stream.getTracks().map((track: any) => track.kind);
+
+        it("doesn't emit a stream the app hasn't accepted", async () => {
+            await addTrack("client-a", "video");
+            await addTrack("client-a", "audio");
+
+            expect(streamAddedEvents()).toEqual([]);
+        });
+
+        it("emits the webcam stream with all its tracks once the app accepts it", async () => {
+            await addTrack("client-a", "video");
+            await addTrack("client-a", "audio");
+
+            accept("client-a");
+
+            const events = streamAddedEvents();
+            expect(events).toEqual([
+                {
+                    clientId: "client-a",
+                    stream: expect.anything(),
+                    streamId: webcamStreamId("client-a"),
+                    streamType: "webcam",
+                },
+            ]);
+            expect(trackKinds(events[0].stream)).toEqual(["video", "audio"]);
+        });
+
+        it("emits the stream when its first track arrives after the app accepted it", async () => {
+            accept("client-a");
+            expect(streamAddedEvents()).toEqual([]);
+
+            await addTrack("client-a", "video");
+
+            const events = streamAddedEvents();
+            expect(events).toEqual([expect.objectContaining({ clientId: "client-a" })]);
+            expect(trackKinds(events[0].stream)).toEqual(["video"]);
+        });
+
+        it("emits the same stream again when it gains a track, e.g. a mic picked after joining", async () => {
+            await addTrack("client-a", "video");
+            accept("client-a");
+
+            await addTrack("client-a", "audio");
+
+            const events = streamAddedEvents();
+            expect(events).toHaveLength(2);
+            expect(events[1].stream).toBe(events[0].stream);
+            expect(trackKinds(events[1].stream)).toEqual(["video", "audio"]);
+        });
+
+        it("resumes a track's consumer that arrives after the app accepted the stream", async () => {
+            await addTrack("client-a", "video");
+            accept("client-a");
+            message.mockClear();
+
+            const audio = await addTrack("client-a", "audio");
+
+            expect(audio.resume).toHaveBeenCalledTimes(1);
+            expect(message).toHaveBeenCalledWith("resumeConsumers", { consumerIds: [audio.id] });
+        });
+
+        it("doesn't emit when one of the stream's tracks closes", async () => {
+            await addTrack("client-a", "video");
+            const audio = await addTrack("client-a", "audio");
+            accept("client-a");
+            emitter.emit.mockClear();
+
+            audio.close();
+            // and the stream still counts as emitted, so a later sync doesn't emit it either
+            await addMicScoreDataConsumer("client-a");
+
+            expect(streamAddedEvents()).toEqual([]);
+            expect(trackKinds(rtcManager._getOrCreateClientState("client-a").webcamStream)).toEqual(["video"]);
+        });
+
+        it("emits the same stream again when the app accepts it again, e.g. after a signal reconnect", async () => {
+            await addTrack("client-a", "video");
+            accept("client-a");
+
+            accept("client-a");
+
+            const events = streamAddedEvents();
+            expect(events).toHaveLength(2);
+            expect(events[1].stream).toBe(events[0].stream);
+        });
+
+        it("emits a screenshare as a stream of its own", async () => {
+            await addTrack("client-a", "video", { screenShare: true });
+
+            accept("client-a", { screenShare: true });
+
+            expect(streamAddedEvents()).toEqual([
+                {
+                    clientId: "client-a",
+                    stream: expect.anything(),
+                    streamId: screenshareStreamId("client-a"),
+                    streamType: "screenshare",
+                },
+            ]);
+        });
+
+        it("only emits the stream that changed when a client has both a webcam and a screenshare", async () => {
+            await addTrack("client-a", "video");
+            await addTrack("client-a", "video", { screenShare: true });
+            accept("client-a");
+            accept("client-a", { screenShare: true });
+            emitter.emit.mockClear();
+
+            await addTrack("client-a", "audio");
+            expect(streamAddedEvents()).toEqual([expect.objectContaining({ streamType: "webcam" })]);
+            emitter.emit.mockClear();
+
+            accept("client-a", { screenShare: true });
+            expect(streamAddedEvents()).toEqual([expect.objectContaining({ streamType: "screenshare" })]);
+        });
+
+        it("only emits the streams of the client whose stream changed", async () => {
+            await addTrack("client-a", "video");
+            await addTrack("client-b", "video");
+            accept("client-a");
+            accept("client-b");
+            emitter.emit.mockClear();
+
+            await addTrack("client-a", "audio");
+
+            expect(streamAddedEvents()).toEqual([expect.objectContaining({ clientId: "client-a" })]);
+        });
+
+        it("resumes a stream's consumers when the app accepts it, and pauses them when the client disconnects", async () => {
+            const video = await addTrack("client-a", "video");
+            // a new consumer starts paused
+            expect(video.pause).toHaveBeenCalledTimes(1);
+            expect(video.resume).not.toHaveBeenCalled();
+
+            accept("client-a");
+            expect(video.resume).toHaveBeenCalledTimes(1);
+            expect(message).toHaveBeenCalledWith("resumeConsumers", { consumerIds: [video.id] });
+
+            rtcManager.disconnect("client-a");
+            expect(video.pause).toHaveBeenCalledTimes(2);
+            expect(message).toHaveBeenCalledWith("pauseConsumers", { consumerIds: [video.id] });
+        });
+
+        it("doesn't resume a consumer the SFU has paused when the app accepts it, but resumes it once the SFU does", async () => {
+            const video = await addTrack("client-a", "video");
+            rtcManager._onConsumerPaused({ consumerId: video.id });
+
+            accept("client-a");
+            expect(video.resume).not.toHaveBeenCalled();
+            // the SFU is still told the app wants it
+            expect(message).toHaveBeenCalledWith("resumeConsumers", { consumerIds: [video.id] });
+
+            rtcManager._onConsumerResumed({ consumerId: video.id });
+            expect(video.resume).toHaveBeenCalledTimes(1);
+        });
+
+        it("doesn't emit when the client disconnects, nor for its tracks that arrive after", async () => {
+            await addTrack("client-a", "video");
+            accept("client-a");
+            emitter.emit.mockClear();
+
+            rtcManager.disconnect("client-a");
+            await addTrack("client-a", "audio");
+
+            expect(streamAddedEvents()).toEqual([]);
+        });
+
+        it("keeps a track's consumer that arrives after the client disconnects paused", async () => {
+            await addTrack("client-a", "video");
+            accept("client-a");
+            rtcManager.disconnect("client-a");
+            message.mockClear();
+
+            const audio = await addTrack("client-a", "audio");
+
+            expect(audio.resume).not.toHaveBeenCalled();
+            expect(message).not.toHaveBeenCalledWith("resumeConsumers", expect.anything());
+        });
+
+        it("emits the stream and resumes its consumers when the app accepts it again after the client disconnected, e.g. back in the same breakout group", async () => {
+            const video = await addTrack("client-a", "video");
+            accept("client-a");
+            rtcManager.disconnect("client-a");
+            emitter.emit.mockClear();
+            message.mockClear();
+
+            accept("client-a");
+
+            expect(streamAddedEvents()).toEqual([expect.objectContaining({ clientId: "client-a" })]);
+            expect(video.resume).toHaveBeenCalledTimes(2);
+            expect(message).toHaveBeenCalledWith("resumeConsumers", { consumerIds: [video.id] });
+        });
+
+        it("emits a new webcam stream when the stream id changes", async () => {
+            await addTrack("client-a", "video");
+            accept("client-a");
+
+            await addTrack("client-a", "video", { streamId: "client-a-new" });
+
+            const events = streamAddedEvents();
+            expect(events).toHaveLength(2);
+            expect(events[1].stream).not.toBe(events[0].stream);
+            expect(events[1].streamId).toBe("client-a-new");
+        });
+
+        it("keeps the webcam stream once all its tracks are gone, and emits it again when tracks return", async () => {
+            const video = await addTrack("client-a", "video");
+            accept("client-a");
+
+            video.close();
+            expect(streamAddedEvents()).toHaveLength(1);
+
+            await addTrack("client-a", "video");
+
+            const events = streamAddedEvents();
+            expect(events).toHaveLength(2);
+            expect(events[1].stream).toBe(events[0].stream);
+            expect(trackKinds(events[1].stream)).toEqual(["video"]);
+        });
+
+        // current behaviour, not necessarily wanted: the webcam stream left without tracks counts as not emitted, so the
+        // screenshare's first track emits it too
+        it("emits the webcam stream left without tracks when the client's screenshare changes", async () => {
+            const video = await addTrack("client-a", "video");
+            accept("client-a");
+            video.close();
+            emitter.emit.mockClear();
+
+            await addTrack("client-a", "video", { screenShare: true });
+            accept("client-a", { screenShare: true });
+
+            const events = streamAddedEvents();
+            expect(events).toEqual([
+                expect.objectContaining({ streamType: "webcam" }),
+                expect.objectContaining({ streamType: "screenshare" }),
+            ]);
+            expect(events[0].stream.getTracks()).toEqual([]);
+        });
+
+        it("emits a new screenshare stream once the previous one's tracks are gone", async () => {
+            const video = await addTrack("client-a", "video", { screenShare: true });
+            accept("client-a", { screenShare: true });
+
+            video.close();
+            await addTrack("client-a", "video", { screenShare: true });
+
+            const events = streamAddedEvents();
+            expect(events).toHaveLength(2);
+            expect(events[1].stream).not.toBe(events[0].stream);
+        });
+
+        // current behaviour, not necessarily wanted: the webcam stream is kept without tracks, so accepting it again
+        // emits it, without a stream id
+        it("emits the webcam stream left without tracks when the app accepts it again", async () => {
+            const video = await addTrack("client-a", "video");
+            accept("client-a");
+            video.close();
+            emitter.emit.mockClear();
+
+            accept("client-a");
+
+            const events = streamAddedEvents();
+            expect(events).toEqual([
+                { clientId: "client-a", stream: expect.anything(), streamId: undefined, streamType: "webcam" },
+            ]);
+            expect(events[0].stream.getTracks()).toEqual([]);
+        });
+
+        it("resumes a stream's consumers before emitting it, so the app gets a playing stream", async () => {
+            const allResumedAtEachEmit: boolean[] = [];
+            emitter.emit.mockImplementation((eventName: string) => {
+                if (eventName !== CONNECTION_STATUS.EVENTS.STREAM_ADDED) return;
+                allResumedAtEachEmit.push(
+                    Object.values(consumers).every((consumer) => consumer.resume.mock.calls.length),
+                );
+            });
+
+            await addTrack("client-a", "video");
+            // when the app accepts the stream
+            accept("client-a");
+            // and when a track arrives after
+            await addTrack("client-a", "audio");
+
+            expect(allResumedAtEachEmit).toEqual([true, true]);
+        });
+
+        describe("counting the screenshares already presented", () => {
+            const addScreenshares = async (clientIds: string[]) => {
+                for (const clientId of clientIds) {
+                    await addTrack(clientId, "video", { screenShare: true });
+                    accept(clientId, { screenShare: true });
+                }
+            };
+
+            it("allows up to 2 screenshares", async () => {
+                await addScreenshares(["client-a", "client-b"]);
+
+                expect(rtcManager._getAreTooManyAlreadyPresenting()).toBe(false);
+            });
+
+            it("considers 3 screenshares too many", async () => {
+                await addScreenshares(["client-a", "client-b", "client-c"]);
+
+                expect(rtcManager._getAreTooManyAlreadyPresenting()).toBe(true);
+            });
+
+            it("doesn't count a screenshare the app hasn't accepted", async () => {
+                await addScreenshares(["client-a", "client-b"]);
+                await addTrack("client-c", "video", { screenShare: true });
+
+                expect(rtcManager._getAreTooManyAlreadyPresenting()).toBe(false);
+            });
+
+            it("doesn't count a screenshare whose tracks are gone", async () => {
+                await addScreenshares(["client-a", "client-b"]);
+                const video = await addTrack("client-c", "video", { screenShare: true });
+                accept("client-c", { screenShare: true });
+
+                video.close();
+
+                expect(rtcManager._getAreTooManyAlreadyPresenting()).toBe(false);
+            });
+        });
+
+        describe("when a data consumer arrives", () => {
+            it("doesn't emit the client's streams again", async () => {
+                await addTrack("client-a", "video");
+                await addTrack("client-a", "video", { screenShare: true });
+                accept("client-a");
+                accept("client-a", { screenShare: true });
+                emitter.emit.mockClear();
+
+                await addMicScoreDataConsumer("client-a");
+
+                expect(streamAddedEvents()).toEqual([]);
+            });
+
+            // current behaviour, not necessarily wanted: closing the last consumer leaves the webcam stream empty and
+            // un-emitted, and the data consumer's sync emits it
+            it("emits the webcam stream left without tracks", async () => {
+                const video = await addTrack("client-a", "video");
+                accept("client-a");
+                video.close();
+                emitter.emit.mockClear();
+
+                await addMicScoreDataConsumer("client-a");
+
+                const events = streamAddedEvents();
+                expect(events).toEqual([expect.objectContaining({ clientId: "client-a", streamType: "webcam" })]);
+                expect(events[0].stream.getTracks()).toEqual([]);
             });
         });
     });
