@@ -1523,7 +1523,7 @@ export default class VegaRtcManager implements RtcManager {
 
     _getAreTooManyAlreadyPresenting() {
         return (
-            [...this._clientStates.values()].filter((state) => state.hasAcceptedScreenStream && state.screenStream)
+            [...this._clientStates.values()].filter(({ screenshare }) => screenshare.accepted && screenshare.stream)
                 .length >= 3
         );
     }
@@ -1615,13 +1615,12 @@ export default class VegaRtcManager implements RtcManager {
 
         const clientState = this._clientStates.get(clientId);
         if (clientState) {
-            clientState.hasAcceptedWebcamStream = false;
-            clientState.hasAcceptedScreenStream = false;
-            // the client left, so its streams' requested resolutions aren't needed anymore
-            [clientState.webcamStream, clientState.screenStream].forEach(
-                (stream) => stream && this._streamIdToVideoResolution.delete(stream.id),
-            );
-            this._syncIncomingStreamsWithPWA(clientId);
+            [clientState.webcam, clientState.screenshare].forEach((incomingStream) => {
+                incomingStream.accepted = false;
+                // the client left, so its streams' requested resolutions aren't needed anymore
+                if (incomingStream.stream) this._streamIdToVideoResolution.delete(incomingStream.stream.id);
+            });
+            this._pauseOrResumeConsumersAsAccepted(clientId);
         }
 
         if (eventClaim) {
@@ -1817,18 +1816,13 @@ export default class VegaRtcManager implements RtcManager {
     acceptNewStream({ streamId, clientId }: { streamId: string; clientId: string }) {
         logger.info("acceptNewStream()", { streamId, clientId });
 
-        const clientState = this._getOrCreateClientState(clientId);
         const isScreenShare = streamId !== clientId;
 
-        if (isScreenShare) {
-            clientState.hasAcceptedScreenStream = true;
-            clientState.hasEmittedScreenStream = false; // re-emit stream if re-accepted
-        } else {
-            clientState.hasAcceptedWebcamStream = true;
-            clientState.hasEmittedWebcamStream = false; // re-emit stream if re-accepted
-        }
+        this._getIncomingStreamState(clientId, isScreenShare).accepted = true;
 
-        this._syncIncomingStreamsWithPWA(clientId);
+        this._pauseOrResumeConsumersAsAccepted(clientId);
+        // also when accepted again, e.g. after a signal reconnect, as the app may have dropped it
+        this._emitIncomingStreamIfAccepted(clientId, isScreenShare);
     }
 
     /**
@@ -2292,23 +2286,17 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         const { sourceClientId: clientId, screenShare, streamId } = consumer.appData;
-        const clientState = this._getOrCreateClientState(clientId);
+        const incomingStream = this._getIncomingStreamState(clientId, screenShare);
 
-        if (screenShare) {
-            clientState.hasEmittedScreenStream = false; // re-emit stream if updated
-            clientState.screenShareStreamId = streamId;
-        } else {
-            clientState.hasEmittedWebcamStream = false; // re-emit stream if updated
-            clientState.camStreamId = streamId;
-        }
+        incomingStream.streamId = streamId;
 
-        let stream = screenShare ? clientState.screenStream : clientState.webcamStream;
+        let stream = incomingStream.stream;
 
         if (!stream || stream.inboundId !== streamId) {
             stream = new MediaStream();
 
             stream.inboundId = streamId;
-            screenShare ? (clientState.screenStream = stream) : (clientState.webcamStream = stream);
+            incomingStream.stream = stream;
         }
 
         if (consumer.kind === "video") {
@@ -2316,7 +2304,9 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         stream.addTrack(consumer.track);
-        this._syncIncomingStreamsWithPWA(clientId);
+        this._pauseOrResumeConsumersAsAccepted(clientId);
+        // the stream stays the same object, so emit it again for the app to see the new track
+        this._emitIncomingStreamIfAccepted(clientId, screenShare);
 
         // includes this consumer's own stream, e.g. while the consumers are recreated after an SFU reconnect
         this._reapplyStreamResolutions();
@@ -2533,8 +2523,8 @@ export default class VegaRtcManager implements RtcManager {
 
     _consumerClosedCleanup(consumer: Consumer<ConsumerAppData>) {
         const { sourceClientId: clientId, screenShare } = consumer.appData;
-        const clientState = this._getOrCreateClientState(clientId);
-        const stream = screenShare ? clientState.screenStream : clientState.webcamStream;
+        const incomingStream = this._getIncomingStreamState(clientId, screenShare);
+        const { stream } = incomingStream;
 
         if (!stream) return;
 
@@ -2545,43 +2535,27 @@ export default class VegaRtcManager implements RtcManager {
 
             // We need to clean up our clientState
             // TODO: @geirbakke investigate missing mic audio if screenshare starts during reconnect
+            incomingStream.streamId = undefined;
+
+            // only a screenshare's stream is dropped, the webcam keeps its stream for when its tracks return
             if (screenShare) {
                 // a new screenshare gets a new stream, so its resolution won't be needed again
                 this._streamIdToVideoResolution.delete(stream.id);
-                clientState.screenStream = undefined;
-                clientState.hasEmittedScreenStream = false;
-                clientState.screenShareStreamId = undefined;
-            } else {
-                // We never reset the webcam stream
-                clientState.hasEmittedWebcamStream = false;
-                clientState.camStreamId = undefined;
+                incomingStream.stream = undefined;
             }
         }
     }
 
-    _syncIncomingStreamsWithPWA(clientId: string) {
-        const clientState = this._getOrCreateClientState(clientId);
-
-        const {
-            webcamStream,
-            screenStream,
-            hasEmittedWebcamStream,
-            hasEmittedScreenStream,
-            hasAcceptedWebcamStream,
-            hasAcceptedScreenStream,
-            screenShareStreamId,
-            camStreamId,
-        } = clientState;
-
-        // Need to pause/resume any consumers that are part of a stream that has been
-        // accepted or disconnected by the PWA
+    // Need to pause/resume any consumers that are part of a stream that has been
+    // accepted or disconnected by the PWA
+    _pauseOrResumeConsumersAsAccepted(clientId: string) {
         const toPauseConsumers: any[] = [];
         const toResumeConsumers: any[] = [];
 
         this._consumers.forEach((consumer: any) => {
             if (consumer.appData.sourceClientId !== clientId) return;
 
-            const hasAccepted = consumer.appData.screenShare ? hasAcceptedScreenStream : hasAcceptedWebcamStream;
+            const hasAccepted = this._getIncomingStreamState(clientId, consumer.appData.screenShare).accepted;
 
             if (!consumer.appData.localPaused !== hasAccepted) {
                 if (hasAccepted) {
@@ -2611,30 +2585,19 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         if (toPauseConsumers.length > 0 || toResumeConsumers.length > 0) this._reapplyStreamResolutions();
+    }
 
-        // If the webcam stream has not been emitted, we emit it.
-        if (webcamStream && !hasEmittedWebcamStream && hasAcceptedWebcamStream) {
-            this._emitToPWA(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
-                clientId,
-                stream: webcamStream,
-                streamId: camStreamId,
-                streamType: STREAM_TYPES.webcam,
-            });
+    _emitIncomingStreamIfAccepted(clientId: string, screenShare: boolean) {
+        const { accepted, stream, streamId } = this._getIncomingStreamState(clientId, screenShare);
 
-            clientState.hasEmittedWebcamStream = true;
-        }
+        if (!accepted || !stream) return;
 
-        // If the screen stream has not been emitted, we emit it.
-        if (screenStream && !hasEmittedScreenStream && hasAcceptedScreenStream) {
-            this._emitToPWA(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
-                clientId,
-                stream: screenStream,
-                streamId: screenShareStreamId,
-                streamType: STREAM_TYPES.screenshare,
-            });
-
-            clientState.hasEmittedScreenStream = true;
-        }
+        this._emitToPWA(CONNECTION_STATUS.EVENTS.STREAM_ADDED, {
+            clientId,
+            stream,
+            streamId,
+            streamType: screenShare ? STREAM_TYPES.screenshare : STREAM_TYPES.webcam,
+        });
     }
 
     _getOrCreateClientState(clientId: string) {
@@ -2642,16 +2605,20 @@ export default class VegaRtcManager implements RtcManager {
 
         if (!clientState) {
             clientState = {
-                hasAcceptedWebcamStream: false,
-                hasAcceptedScreenStream: false,
-                hasEmittedWebcamStream: false,
-                hasEmittedScreenStream: false,
+                webcam: { accepted: false },
+                screenshare: { accepted: false },
             };
 
             this._clientStates.set(clientId, clientState);
         }
 
         return clientState;
+    }
+
+    _getIncomingStreamState(clientId: string, screenShare: boolean) {
+        const clientState = this._getOrCreateClientState(clientId);
+
+        return screenShare ? clientState.screenshare : clientState.webcam;
     }
 
     _emitToPWA(eventName: string, data?: any) {

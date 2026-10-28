@@ -121,13 +121,15 @@ export type VegaIncrementAnalyticMetric = (metric: VegaAnalyticMetric) => void;
 
 type MediaStreamWhichMayHaveInboundId = MediaStream & { inboundId?: string };
 
+// a remote client's webcam or screenshare, put together from its consumers' tracks
+type IncomingStreamState = {
+    // whether the app wants it, so its consumers are resumed and it's emitted
+    accepted: boolean;
+    stream?: MediaStreamWhichMayHaveInboundId;
+    streamId?: string;
+};
+
 type ClientState = {
-    hasAcceptedWebcamStream: Boolean;
-    hasAcceptedScreenStream: Boolean;
-    hasEmittedWebcamStream: Boolean;
-    hasEmittedScreenStream: Boolean;
-    webcamStream?: MediaStreamWhichMayHaveInboundId;
-    screenStream?: MediaStreamWhichMayHaveInboundId;
-    screenShareStreamId?: string;
-    camStreamId?: string;
+    webcam: IncomingStreamState;
+    screenshare: IncomingStreamState;
 };

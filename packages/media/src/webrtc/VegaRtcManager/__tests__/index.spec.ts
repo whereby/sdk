@@ -1104,7 +1104,7 @@ describe("VegaRtcManager", () => {
             rtcManager._receiveTransport = createReceiveTransport() as any;
 
             await rtcManager._onConsumerReady(consumerOptions("consumer-before"));
-            const { webcamStream } = rtcManager._getOrCreateClientState("remote-client");
+            const { stream: webcamStream } = rtcManager._getOrCreateClientState("remote-client").webcam;
             rtcManager.updateStreamResolution(webcamStream!.id, null, { width: 1280, height: 720 });
 
             // the connection to the SFU drops, and the layout, so the requested resolution, stays the same
@@ -1116,7 +1116,7 @@ describe("VegaRtcManager", () => {
 
             await rtcManager._onConsumerReady(consumerOptions("consumer-after"));
 
-            expect(rtcManager._getOrCreateClientState("remote-client").webcamStream!.id).toBe(webcamStream!.id);
+            expect(rtcManager._getOrCreateClientState("remote-client").webcam.stream!.id).toBe(webcamStream!.id);
             expect(message).toHaveBeenCalledWith(
                 "setConsumersPreferredLayers",
                 expect.objectContaining({ consumerIds: ["consumer-after"] }),
@@ -1131,7 +1131,7 @@ describe("VegaRtcManager", () => {
 
             // a small tile, but the only video: uncapped
             await rtcManager._onConsumerReady(consumerOptions("consumer-a", "client-a"));
-            const { webcamStream } = rtcManager._getOrCreateClientState("client-a");
+            const { stream: webcamStream } = rtcManager._getOrCreateClientState("client-a").webcam;
             rtcManager.updateStreamResolution(webcamStream!.id, null, { width: 200, height: 200 });
             expect(message).toHaveBeenLastCalledWith(
                 "setConsumersPreferredLayers",
@@ -1161,8 +1161,8 @@ describe("VegaRtcManager", () => {
 
             await rtcManager._onConsumerReady(consumerOptions("consumer-a", "client-a"));
             await rtcManager._onConsumerReady(consumerOptions("consumer-b", "client-b"));
-            const streamA = rtcManager._getOrCreateClientState("client-a").webcamStream!;
-            const streamB = rtcManager._getOrCreateClientState("client-b").webcamStream!;
+            const streamA = rtcManager._getOrCreateClientState("client-a").webcam.stream!;
+            const streamB = rtcManager._getOrCreateClientState("client-b").webcam.stream!;
             rtcManager.updateStreamResolution(streamA.id, null, { width: 1280, height: 720 });
             rtcManager.updateStreamResolution(streamB.id, null, { width: 640, height: 360 });
 
@@ -1229,7 +1229,7 @@ describe("VegaRtcManager", () => {
 
                 // a small tile, but the only video: uncapped
                 await addVideo("client-a");
-                const { webcamStream } = rtcManager._getOrCreateClientState("client-a");
+                const { stream: webcamStream } = rtcManager._getOrCreateClientState("client-a").webcam;
                 rtcManager.updateStreamResolution(webcamStream!.id, null, { width: 200, height: 200 });
                 expect(lastLayerOf("consumer-client-a")).toBe(2);
             });
@@ -2121,11 +2121,9 @@ describe("VegaRtcManager", () => {
             emitter.emit.mockClear();
 
             audio.close();
-            // and the stream still counts as emitted, so a later sync for the client doesn't emit it either
-            accept("client-a", { screenShare: true });
 
             expect(streamAddedEvents()).toEqual([]);
-            expect(trackKinds(rtcManager._getOrCreateClientState("client-a").webcamStream)).toEqual(["video"]);
+            expect(trackKinds(rtcManager._getOrCreateClientState("client-a").webcam.stream)).toEqual(["video"]);
         });
 
         it("emits the same stream again when the app accepts it again, e.g. after a signal reconnect", async () => {
@@ -2273,9 +2271,7 @@ describe("VegaRtcManager", () => {
             expect(trackKinds(events[1].stream)).toEqual(["video"]);
         });
 
-        // current behaviour, not necessarily wanted: the webcam stream left without tracks counts as not emitted, so the
-        // screenshare's first track emits it too
-        it("emits the webcam stream left without tracks when the client's screenshare changes", async () => {
+        it("doesn't emit the webcam stream left without tracks when the client's screenshare changes", async () => {
             const video = await addTrack("client-a", "video");
             accept("client-a");
             video.close();
@@ -2284,12 +2280,7 @@ describe("VegaRtcManager", () => {
             await addTrack("client-a", "video", { screenShare: true });
             accept("client-a", { screenShare: true });
 
-            const events = streamAddedEvents();
-            expect(events).toEqual([
-                expect.objectContaining({ streamType: "webcam" }),
-                expect.objectContaining({ streamType: "screenshare" }),
-            ]);
-            expect(events[0].stream.getTracks()).toEqual([]);
+            expect(streamAddedEvents()).toEqual([expect.objectContaining({ streamType: "screenshare" })]);
         });
 
         it("emits a new screenshare stream once the previous one's tracks are gone", async () => {
