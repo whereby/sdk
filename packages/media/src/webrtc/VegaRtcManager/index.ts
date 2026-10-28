@@ -21,7 +21,11 @@ import {
     INITIAL_CONSUMER_SPATIAL_LAYER,
     MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES,
     MEDIA_JITTER_BUFFER_TARGET,
+    PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
+    PREFERRED_LAYER_SWITCH_MAX_POLL_GAP_MS,
+    PREFERRED_LAYER_SWITCH_MIN_AREA_RATIO,
     PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS,
+    PREFERRED_LAYER_SWITCH_SETTLE_MS,
     PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS,
 } from "../constants";
 
@@ -42,6 +46,7 @@ import {
     getPacketWeightedFractionLost,
     getReducedSvcEncodingParams,
     getTopSpatialLayer,
+    isDocumentHidden,
     MetricStats,
     recordMetricSample,
 } from "./utils";
@@ -1902,22 +1907,40 @@ export default class VegaRtcManager implements RtcManager {
                 const fromLayer = Math.min(previousSpatialLayer, topSpatialLayer);
                 const toLayer = Math.min(spatialLayer, topSpatialLayer);
                 if (fromLayer !== toLayer) {
-                    this._watchForPreferredLayerSwitch(consumerId, consumer, { toHigherLayer: toLayer > fromLayer });
+                    const frameSizeSettled = performance.now() >= (consumer.appData.frameSizeSettlesAt ?? 0);
+                    this._markFrameSizeUnsettled(
+                        consumerId,
+                        consumer,
+                        toLayer > fromLayer
+                            ? PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS
+                            : PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
+                    );
+                    if (frameSizeSettled && !consumer.paused && !isDocumentHidden()) {
+                        this._watchForPreferredLayerSwitch(consumerId, consumer, {
+                            toHigherLayer: toLayer > fromLayer,
+                            layerSteps: Math.abs(toLayer - fromLayer),
+                        });
+                    }
                 }
             }
         }
     }
 
-    _watchForPreferredLayerSwitch(consumerId: string, consumer: any, { toHigherLayer }: { toHigherLayer: boolean }) {
-        // a newer switch of an already watched consumer replaces its watch, even at the limit
-        const previousWatch = this._preferredLayerSwitchWatches.get(consumerId);
-        if (!previousWatch && this._preferredLayerSwitchWatches.size >= MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES) {
-            return;
-        }
-        previousWatch?.stop();
+    _watchForPreferredLayerSwitch(
+        consumerId: string,
+        consumer: any,
+        { toHigherLayer, layerSteps }: { toHigherLayer: boolean; layerSteps: number },
+    ) {
+        if (this._preferredLayerSwitchWatches.size >= MAX_CONCURRENT_PREFERRED_LAYER_SWITCH_WATCHES) return;
+
+        const canMeasure = () => !consumer.closed && !consumer.paused && !isDocumentHidden();
 
         let stopped = false;
         let intervalId: ReturnType<typeof setInterval> | undefined;
+        let lastTickAt = 0;
+        let lastPollDoneAt = 0;
+        let latencyUnreliable = false;
+        const sentAt = performance.now();
 
         const stop = () => {
             if (stopped) return;
@@ -1929,26 +1952,40 @@ export default class VegaRtcManager implements RtcManager {
 
         this._preferredLayerSwitchWatches.set(consumerId, { stop });
         // started before the first getStats(), so a call that never settles can't keep the watch forever
-        const timeoutId = setTimeout(() => {
-            if (!stopped && intervalId !== undefined && !consumer.closed) {
-                this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
-            }
-            stop();
-        }, PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS);
+        const timeoutId = setTimeout(
+            () => {
+                const checkedNearTheEnd =
+                    lastPollDoneAt - sentAt >=
+                    PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS - 2 * PREFERRED_LAYER_SWITCH_MAX_POLL_GAP_MS;
+                if (toHigherLayer && !stopped && intervalId !== undefined && checkedNearTheEnd && canMeasure()) {
+                    this.analytics.numCamPreferredSpatialLayerSwitchTimeouts++;
+                }
+                stop();
+            },
+            toHigherLayer ? PREFERRED_LAYER_SWITCH_WATCH_TIMEOUT_MS : PREFERRED_LAYER_SWITCH_DOWN_WATCH_TIMEOUT_MS,
+        );
 
         (async () => {
-            const sentAt = Date.now();
             const baseline = await this._getConsumerFrameSize(consumer);
 
             // without a decoded frame there's no size to compare against: the first frame would look like the switch
-            if (stopped || !baseline?.width || !baseline?.height) {
+            if (
+                stopped ||
+                !baseline?.width ||
+                !baseline?.height ||
+                performance.now() - sentAt > PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS
+            ) {
                 stop();
                 return;
             }
 
             let polling = false;
+            lastTickAt = performance.now();
             intervalId = setInterval(async () => {
-                if (stopped || consumer.closed) {
+                const tickAt = performance.now();
+                if (tickAt - lastTickAt > PREFERRED_LAYER_SWITCH_MAX_POLL_GAP_MS) latencyUnreliable = true;
+                lastTickAt = tickAt;
+                if (stopped || !canMeasure()) {
                     stop();
                     return;
                 }
@@ -1956,20 +1993,33 @@ export default class VegaRtcManager implements RtcManager {
                 if (polling) return;
 
                 polling = true;
+                const polledAt = performance.now();
                 const current = await this._getConsumerFrameSize(consumer);
                 polling = false;
                 if (stopped) return;
-                // only a change in the requested direction counts, so an earlier switch that is still landing
-                // (e.g. a quick 2->0->2) isn't mistaken for this one
+                lastPollDoneAt = performance.now();
+                if (performance.now() - polledAt > PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS) latencyUnreliable = true;
+                const areaRatio = getFrameArea(current) / getFrameArea(baseline);
                 const switched = toHigherLayer
-                    ? getFrameArea(current) > getFrameArea(baseline)
-                    : getFrameArea(current) < getFrameArea(baseline);
-                if (current && switched) {
-                    this._recordPreferredLayerSwitchLatency(Date.now() - sentAt);
+                    ? areaRatio >= PREFERRED_LAYER_SWITCH_MIN_AREA_RATIO ** layerSteps
+                    : areaRatio > 0 && areaRatio <= 1 / PREFERRED_LAYER_SWITCH_MIN_AREA_RATIO;
+                if (switched && canMeasure()) {
+                    if (!latencyUnreliable) this._recordPreferredLayerSwitchLatency(performance.now() - sentAt);
+                    if (toHigherLayer) {
+                        consumer.appData.frameSizeSettlesAt = sentAt + PREFERRED_LAYER_SWITCH_SETTLE_MS;
+                    }
                     stop();
                 }
             }, PREFERRED_LAYER_SWITCH_POLL_INTERVAL_MS);
         })();
+    }
+
+    _markFrameSizeUnsettled(consumerId: string, consumer: any, settleMs = PREFERRED_LAYER_SWITCH_SETTLE_MS) {
+        this._preferredLayerSwitchWatches.get(consumerId)?.stop();
+        consumer.appData.frameSizeSettlesAt = Math.max(
+            consumer.appData.frameSizeSettlesAt ?? 0,
+            performance.now() + settleMs,
+        );
     }
 
     async _getConsumerFrameSize(consumer: any): Promise<{ width?: number; height?: number } | undefined> {
@@ -2343,6 +2393,7 @@ export default class VegaRtcManager implements RtcManager {
 
         consumer.appData.remotePaused = true;
         consumer.pause();
+        this._preferredLayerSwitchWatches.get(consumerId)?.stop();
 
         if (consumer.kind === "video") this._reapplyStreamResolutions();
     }
@@ -2358,6 +2409,7 @@ export default class VegaRtcManager implements RtcManager {
 
         if (!consumer.appData.localPaused) {
             consumer.resume();
+            this._markFrameSizeUnsettled(consumerId, consumer);
         }
 
         if (consumer.kind === "video") this._reapplyStreamResolutions();
@@ -2591,11 +2643,13 @@ export default class VegaRtcManager implements RtcManager {
                 if (hasAccepted) {
                     if (!consumer.appData.remotePaused) {
                         consumer.resume();
+                        this._markFrameSizeUnsettled(consumer.id, consumer);
                     }
                     consumer.appData.localPaused = false;
                     toResumeConsumers.push(consumer.id);
                 } else {
                     consumer.pause();
+                    this._preferredLayerSwitchWatches.get(consumer.id)?.stop();
                     consumer.appData.localPaused = true;
                     toPauseConsumers.push(consumer.id);
                 }
