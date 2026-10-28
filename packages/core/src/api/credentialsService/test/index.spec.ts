@@ -75,6 +75,91 @@ describe("CredentialsService", () => {
             });
         });
 
+        describe("when fetching from the API fails", () => {
+            let apiCredentials;
+            beforeEach(() => {
+                jest.useFakeTimers();
+                apiCredentials = new Credentials("test-fetched-uuid", "test-fetched-hmac");
+                credentialsStore.loadOrDefault.mockResolvedValue(null);
+                credentialsStore.save.mockResolvedValue();
+            });
+
+            afterEach(() => {
+                jest.useRealTimers();
+            });
+
+            it("retries with backoff and resolves when a retry succeeds", async () => {
+                deviceService.getCredentials
+                    .mockRejectedValueOnce(new Error("Network error"))
+                    .mockRejectedValueOnce(new Error("Network error"))
+                    .mockResolvedValueOnce(apiCredentials);
+
+                const promise = credentialsService.getCredentials();
+
+                await jest.advanceTimersByTimeAsync(999);
+                expect(deviceService.getCredentials).toBeCalledTimes(1);
+                await jest.advanceTimersByTimeAsync(1);
+                expect(deviceService.getCredentials).toBeCalledTimes(2);
+                await jest.advanceTimersByTimeAsync(1999);
+                expect(deviceService.getCredentials).toBeCalledTimes(2);
+                await jest.advanceTimersByTimeAsync(1);
+                expect(deviceService.getCredentials).toBeCalledTimes(3);
+
+                await expect(promise).resolves.toEqual(apiCredentials);
+            });
+
+            it("rejects after three failed attempts", async () => {
+                const error = new Error("Network error");
+                deviceService.getCredentials.mockRejectedValue(error);
+
+                const promise = credentialsService.getCredentials();
+                const assertion = expect(promise).rejects.toBe(error);
+                await jest.advanceTimersByTimeAsync(10000);
+
+                await assertion;
+                expect(deviceService.getCredentials).toBeCalledTimes(3);
+            });
+
+            it("treats a response without credentials as a failure", async () => {
+                deviceService.getCredentials.mockResolvedValue(null);
+
+                const promise = credentialsService.getCredentials();
+                const assertion = expect(promise).rejects.toThrow();
+                await jest.advanceTimersByTimeAsync(10000);
+
+                await assertion;
+                expect(deviceService.getCredentials).toBeCalledTimes(3);
+                expect(credentialsStore.save).not.toBeCalled();
+            });
+
+            it("fetches again on the next call after a failure", async () => {
+                deviceService.getCredentials.mockRejectedValue(new Error("Network error"));
+                const failed = credentialsService.getCredentials();
+                const assertion = expect(failed).rejects.toThrow();
+                await jest.advanceTimersByTimeAsync(10000);
+                await assertion;
+
+                deviceService.getCredentials.mockResolvedValue(apiCredentials);
+
+                await expect(credentialsService.getCredentials()).resolves.toEqual(apiCredentials);
+                expect(deviceService.getCredentials).toBeCalledTimes(4);
+            });
+        });
+
+        describe("when the fetched credentials can't be stored", () => {
+            it("resolves with the credentials without fetching again", async () => {
+                const apiCredentials = new Credentials("test-fetched-uuid", "test-fetched-hmac");
+                credentialsStore.loadOrDefault.mockResolvedValue(null);
+                credentialsStore.save.mockRejectedValue(new Error("Storage is blocked"));
+                deviceService.getCredentials.mockResolvedValue(apiCredentials);
+
+                const result = await credentialsService.getCredentials();
+
+                expect(result).toEqual(apiCredentials);
+                expect(deviceService.getCredentials).toBeCalledTimes(1);
+            });
+        });
+
         describe("when credentials are available in localStorage", () => {
             beforeEach(() => {
                 credentialsStore.loadOrDefault.mockResolvedValue(storedCredentials);

@@ -6,7 +6,6 @@ import {
     doAcceptWaitingParticipant,
     doAppStart,
     doAppStop,
-    doOrganizationFetch,
     doCancelKnock,
     doBreakoutJoin,
     doStartBreakoutSession,
@@ -61,7 +60,9 @@ import {
     toggleMicrophoneEnabled,
     AppConfig,
     ToggleAudioOnlyModeOptions,
+    selectRoomConnectionError,
 } from "../../redux";
+import { addAppListener } from "../../redux/listenerMiddleware";
 import type { Store as AppStore } from "../../redux/store";
 import type {
     BreakoutState,
@@ -493,6 +494,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             isNodeSdk: this.options.isNodeSdk || false,
             isAudioRecorder: this.options.isAudioRecorder ?? false,
             isDialIn: this.options.isDialIn ?? false,
+            joinRoomTimeout: this.options.joinRoomTimeout,
         };
 
         this.store.dispatch(doAppStart(roomConfig));
@@ -509,7 +511,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
                 actionCreator: signalEvents.roomJoined,
                 effect: ({ payload }) => {
                     unsubscribeRoomJoined();
-                    unsubscribeOrganizationFetchFailed();
+                    unsubscribeJoinFailed();
 
                     if ("error" in payload) {
                         reject?.(payload.error);
@@ -521,15 +523,15 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             }),
         );
 
-        // Without the organization the room is never joined, so roomJoined would never arrive.
-        const unsubscribeOrganizationFetchFailed = this.store.dispatch(
-            addListener({
-                actionCreator: doOrganizationFetch.rejected,
-                effect: () => {
+        // Failures before join_room (credentials, organization, join timeout) never produce roomJoined.
+        const unsubscribeJoinFailed = this.store.dispatch(
+            addAppListener({
+                predicate: (_action, currentState) => !!selectRoomConnectionError(currentState),
+                effect: (_action, { getState }) => {
                     unsubscribeRoomJoined();
-                    unsubscribeOrganizationFetchFailed();
+                    unsubscribeJoinFailed();
 
-                    reject?.("organization_fetch_failed");
+                    reject?.(selectRoomConnectionError(getState()));
                 },
             }),
         );

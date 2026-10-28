@@ -5,6 +5,7 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRoomConnectionError, selectRoomConnectionIsRejoining, selectRoomConnectionStatus } from "./selectors";
 import { createAppThunk } from "../../thunk";
 import {
+    doAppStart,
     doAppStop,
     selectAppDisplayName,
     selectAppRoomName,
@@ -16,12 +17,14 @@ import {
 } from "../app";
 import { selectAssistantKey, selectRoomKey, setRoomKey } from "../authorization";
 
+import { doGetDeviceCredentials, selectHasFetchedDeviceCredentials } from "../deviceCredentials";
 import { doOrganizationFetch, selectOrganizationId } from "../organization";
 import { signalEvents } from "../signalConnection/actions";
 import {
     doSignalDisconnect,
     selectSignalConnectionDeviceIdentified,
     selectSignalConnectionRaw,
+    selectSignalStatus,
 } from "../signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "../localMedia";
 import { selectSelfId, selectLocalParticipantClientClaim } from "../localParticipant/selectors";
@@ -39,6 +42,28 @@ export type ConnectionStatus =
     | "left"
     | "disconnected"
     | "reconnecting";
+
+/**
+ * The step of joining a room that hasn't finished yet, in the order they complete.
+ */
+export type JoinRoomStage =
+    | "credentials"
+    | "organization"
+    | "local_media"
+    | "signal_connect"
+    | "identify_device"
+    | "room_joined";
+
+/**
+ * Errors the SDK reports in `connectionError` and rejects `joinRoom()` with, besides the errors the server sends for
+ * join_room (such as `"room_full"`).
+ */
+export type JoinRoomError =
+    | "device_credentials_fetch_failed"
+    | "organization_fetch_failed"
+    | `join_timeout_${JoinRoomStage}`;
+
+export const DEFAULT_JOIN_ROOM_TIMEOUT = 60000;
 
 /**
  * Reducer
@@ -86,6 +111,13 @@ export const roomConnectionSlice = createSlice({
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         roomRejoined: (state, action: PayloadAction<RoomRejoinedPayload>) => {
             return state;
+        },
+        joinRoomTimedOut: (state, action: PayloadAction<JoinRoomStage>) => {
+            return {
+                ...state,
+                status: "disconnected",
+                error: `join_timeout_${action.payload}` satisfies JoinRoomError,
+            };
         },
     },
     extraReducers: (builder) => {
@@ -157,11 +189,19 @@ export const roomConnectionSlice = createSlice({
                 status: "left",
             };
         });
+        builder.addCase(doGetDeviceCredentials.rejected, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+                error: "device_credentials_fetch_failed",
+            };
+        });
         builder.addCase(doOrganizationFetch.rejected, (state) => {
             return {
                 ...state,
                 status: "disconnected",
-                error: "organization_fetch_failed",
+                // Failed credentials also fail this request. Keep the error that came first.
+                error: state.error ?? "organization_fetch_failed",
             };
         });
     },
@@ -171,7 +211,7 @@ export const roomConnectionSlice = createSlice({
  * Action creators
  */
 
-const { connectionStatusChanged, knockResponseReceived } = roomConnectionSlice.actions;
+const { connectionStatusChanged, knockResponseReceived, joinRoomTimedOut } = roomConnectionSlice.actions;
 
 export const { roomRejoined } = roomConnectionSlice.actions;
 
@@ -274,6 +314,28 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
 });
 
 /**
+ * Selectors
+ */
+
+export const selectJoinRoomStage = createSelector(
+    [
+        selectHasFetchedDeviceCredentials,
+        selectOrganizationId,
+        selectLocalMediaStatus,
+        selectSignalStatus,
+        selectSignalConnectionDeviceIdentified,
+    ],
+    (hasDeviceCredentials, organizationId, localMediaStatus, signalStatus, deviceIdentified): JoinRoomStage => {
+        if (!hasDeviceCredentials) return "credentials";
+        if (!organizationId) return "organization";
+        if (localMediaStatus !== "started") return "local_media";
+        if (signalStatus !== "connected") return "signal_connect";
+        if (!deviceIdentified) return "identify_device";
+        return "room_joined";
+    },
+);
+
+/**
  * Reactors
  */
 
@@ -328,6 +390,35 @@ startAppListening({
         }
 
         dispatch(roomRejoined({ selfId: payload.selfId, previousSelfId: selectSelfId(originalState) }));
+    },
+});
+
+startAppListening({
+    actionCreator: doAppStart,
+    effect: async ({ payload }, { cancelActiveListeners, condition, dispatch, getState }) => {
+        cancelActiveListeners();
+
+        const timeout = payload.joinRoomTimeout ?? DEFAULT_JOIN_ROOM_TIMEOUT;
+        if (!timeout) {
+            return;
+        }
+
+        const hasSettled = await condition((_action, state) => {
+            const status = selectRoomConnectionStatus(state);
+
+            return (
+                !selectAppIsActive(state) ||
+                !!selectRoomConnectionError(state) ||
+                status === "connected" ||
+                status === "room_locked"
+            );
+        }, timeout);
+
+        if (hasSettled) {
+            return;
+        }
+
+        dispatch(joinRoomTimedOut(selectJoinRoomStage(getState())));
     },
 });
 

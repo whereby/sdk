@@ -34,6 +34,7 @@ describe("deviceService", () => {
 
             expect(apiClient.request).toBeCalledWith(url, {
                 method,
+                timeout: 10000,
             });
         });
 

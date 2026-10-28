@@ -24,6 +24,12 @@ export interface RoomConnectionOptions {
     roomKey?: string;
     localMedia?: UseLocalMediaResult;
     externalId?: string;
+    /**
+     * How long in milliseconds `joinRoom()` waits for the room to be joined before it gives up. It then rejects with
+     * `join_timeout_<stage>` naming the step that didn't finish, and `connectionError` is set to the same value.
+     * Defaults to 60000. `0` turns the timeout off.
+     */
+    joinRoomTimeout?: number;
 }
 
 export interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMedia"> {
