@@ -14,6 +14,11 @@ const DEFAULT_SOCKET_PATH = "/protocol/socket.io/v4";
 const NOOP_KEEPALIVE_INTERVAL = 2000;
 const DISCONNECT_DURATION_LIMIT_MS = 60000;
 
+export interface ServerSocketFeatures {
+    glitchFreeOn?: boolean;
+    serverSideDisconnectDurationLimitOn?: boolean;
+}
+
 /**
  * Wrapper class that extends the Socket.IO client library.
  */
@@ -27,7 +32,6 @@ export class ServerSocket {
     _disconnectDurationLimitExceeded: boolean;
     joinRoomFinished: boolean;
     _serverSideDisconnectDurationLimitOn: boolean;
-    _disconnectDurationLimitOn: boolean;
     _disconnectDurationLimitEnabled: boolean;
     _disconnectDurationLimitInMs: number | undefined;
     _disconnectDurationLimitLatestTimestamp: number | undefined;
@@ -35,12 +39,9 @@ export class ServerSocket {
     constructor(
         hostName: string,
         optionsOverrides?: any,
-        glitchFree = false,
-        disconnectDurationLimitOn = false,
-        serverSideDisconnectDurationLimitOn = false,
+        { glitchFreeOn = false, serverSideDisconnectDurationLimitOn = false }: ServerSocketFeatures = {},
     ) {
         this._wasConnectedUsingWebsocket = false;
-        this._disconnectDurationLimitOn = disconnectDurationLimitOn && !serverSideDisconnectDurationLimitOn;
         this._serverSideDisconnectDurationLimitOn = serverSideDisconnectDurationLimitOn;
         this._disconnectDurationLimitExceeded = false;
         this._reconnectManager = null;
@@ -57,20 +58,14 @@ export class ServerSocket {
         this._disconnectDurationLimitEnabled = false;
         this.joinRoomFinished = false;
         this._socket.io.on("reconnect", () => {
-            if (
-                this._disconnectDurationLimitOn &&
-                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
-            ) {
+            if (this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)) {
                 this._socket.close();
                 this._disconnectDurationLimitExceeded = true;
             }
             this._socket.sendBuffer = [];
         });
         this._socket.io.on("reconnect_attempt", () => {
-            if (
-                this._disconnectDurationLimitOn &&
-                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
-            ) {
+            if (this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)) {
                 this._socket.close();
                 this._disconnectDurationLimitExceeded = true;
             }
@@ -88,7 +83,7 @@ export class ServerSocket {
             }
         });
 
-        if (glitchFree) this._reconnectManager = new ReconnectManager(this._socket);
+        if (glitchFreeOn) this._reconnectManager = new ReconnectManager(this._socket);
         if (this._serverSideDisconnectDurationLimitOn) this._keepAliveManager = new KeepAliveManager(this);
 
         this._socket.on("room_joined", (payload: RoomJoinedEvent) => {
@@ -113,7 +108,6 @@ export class ServerSocket {
                             // send a noop message if it thinks it is connected (might not be)
                             if (this._socket.connected) {
                                 if (
-                                    this._disconnectDurationLimitOn &&
                                     !this._didExceedDisconnectDurationLimit(disconnectDurationLimitTimestampCandidate)
                                 ) {
                                     this._disconnectDurationLimitLatestTimestamp =
@@ -134,10 +128,7 @@ export class ServerSocket {
 
             if (this._serverSideDisconnectDurationLimitOn) return;
 
-            if (
-                this._disconnectDurationLimitOn &&
-                this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)
-            ) {
+            if (this._didExceedDisconnectDurationLimit(this._disconnectDurationLimitLatestTimestamp)) {
                 this._socket.close();
                 this._disconnectDurationLimitExceeded = true;
             }
@@ -150,7 +141,7 @@ export class ServerSocket {
     }
 
     _didExceedDisconnectDurationLimit(timestamp: number | undefined) {
-        if (!timestamp || !this._disconnectDurationLimitOn || !this._disconnectDurationLimitEnabled) return false;
+        if (!timestamp || !this._disconnectDurationLimitEnabled) return false;
 
         const disconnectedDuration = Date.now() - timestamp;
         if (disconnectedDuration > DISCONNECT_DURATION_LIMIT_MS) {
@@ -162,16 +153,14 @@ export class ServerSocket {
     get disconnectDurationLimitExceeded(): boolean {
         if (this._serverSideDisconnectDurationLimitOn) {
             return this._keepAliveManager?.disconnectDurationLimitExceeded ?? false;
-        } else if (this._disconnectDurationLimitOn) {
-            return this._disconnectDurationLimitExceeded;
         }
-        return false;
+        return this._disconnectDurationLimitExceeded;
     }
 
     enableDisconnectDurationLimit() {
         if (this._serverSideDisconnectDurationLimitOn) {
             this._keepAliveManager?.enableDisconnectDurationLimit();
-        } else if (this._disconnectDurationLimitOn) {
+        } else {
             this._disconnectDurationLimitEnabled = true;
         }
     }
