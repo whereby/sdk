@@ -2121,8 +2121,8 @@ describe("VegaRtcManager", () => {
             emitter.emit.mockClear();
 
             audio.close();
-            // and the stream still counts as emitted, so a later sync doesn't emit it either
-            await addMicScoreDataConsumer("client-a");
+            // and the stream still counts as emitted, so a later sync for the client doesn't emit it either
+            accept("client-a", { screenShare: true });
 
             expect(streamAddedEvents()).toEqual([]);
             expect(trackKinds(rtcManager._getOrCreateClientState("client-a").webcamStream)).toEqual(["video"]);
@@ -2390,9 +2390,7 @@ describe("VegaRtcManager", () => {
                 expect(streamAddedEvents()).toEqual([]);
             });
 
-            // current behaviour, not necessarily wanted: closing the last consumer leaves the webcam stream empty and
-            // un-emitted, and the data consumer's sync emits it
-            it("emits the webcam stream left without tracks", async () => {
+            it("doesn't emit the webcam stream left without tracks", async () => {
                 const video = await addTrack("client-a", "video");
                 accept("client-a");
                 video.close();
@@ -2400,9 +2398,7 @@ describe("VegaRtcManager", () => {
 
                 await addMicScoreDataConsumer("client-a");
 
-                const events = streamAddedEvents();
-                expect(events).toEqual([expect.objectContaining({ clientId: "client-a", streamType: "webcam" })]);
-                expect(events[0].stream.getTracks()).toEqual([]);
+                expect(streamAddedEvents()).toEqual([]);
             });
         });
     });

@@ -2502,8 +2502,6 @@ export default class VegaRtcManager implements RtcManager {
             this._dataConsumers.delete(consumer.id);
         });
 
-        const { clientId } = consumer.appData;
-
         consumer.on("message", (message: string) => {
             // for now we only use this for score, so ignore messages when no debugger is attached
             if (!this._micAnalyserDebugger) return;
@@ -2515,8 +2513,6 @@ export default class VegaRtcManager implements RtcManager {
                 this._micAnalyserDebugger?.onConsumerScore(consumer.appData.clientId, score);
             }
         });
-
-        this._syncIncomingStreamsWithPWA(clientId);
     }
 
     async _onDataConsumerClosed({ dataConsumerId, reason }: { dataConsumerId: string; reason: string }) {
