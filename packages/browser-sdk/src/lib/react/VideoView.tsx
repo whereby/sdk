@@ -25,6 +25,8 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
 
         const videoEl = React.useRef<WherebyVideoElement>(null);
         const audioEl = useAudioElement({ muted, stream });
+        const onVideoResizeRef = React.useRef(onVideoResize);
+        onVideoResizeRef.current = onVideoResize;
 
         React.useImperativeHandle(ref, () => {
             return Object.assign(videoEl.current!, {
@@ -58,13 +60,11 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
 
                             client?.reportStreamResolution(stream.id, width, height);
 
-                            if (onVideoResize) {
-                                onVideoResize({
-                                    width,
-                                    height,
-                                    stream,
-                                });
-                            }
+                            onVideoResizeRef.current?.({
+                                width,
+                                height,
+                                stream,
+                            });
                         }
                     },
                     { delay: 1000, edges: true },
@@ -75,6 +75,29 @@ export const VideoView = React.forwardRef<WherebyVideoElement, VideoViewProps>(
 
             return () => {
                 resizeObserver.disconnect();
+            };
+        }, [stream]);
+
+        React.useEffect(() => {
+            const video = videoEl.current;
+            if (!video) {
+                return;
+            }
+
+            const handleSourceResize = () => {
+                if (stream?.id) {
+                    onVideoResizeRef.current?.({
+                        width: video.clientWidth,
+                        height: video.clientHeight,
+                        stream,
+                    });
+                }
+            };
+
+            video.addEventListener("resize", handleSourceResize);
+
+            return () => {
+                video.removeEventListener("resize", handleSourceResize);
             };
         }, [stream]);
 
