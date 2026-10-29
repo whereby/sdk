@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { RemoteParticipantQualityReport, ClientView } from "@whereby.com/core";
+import { LocalParticipantQualityReport, RemoteParticipantQualityReport, ClientView } from "@whereby.com/core";
 import { WherebyContext } from "../../lib/react/Provider";
 import { GridVideoView, useGridCell } from "../../lib/react/Grid";
 import { DefaultParticipantMenu } from "../../lib/react/Grid/DefaultParticipantMenu";
@@ -44,19 +44,43 @@ function useRemoteParticipantQualityReport(): RemoteParticipantQualityReport {
 }
 
 /**
+ * Subscribes to the local participant quality report on the room connection directly, for the same reason as
+ * useRemoteParticipantQualityReport.
+ */
+function useLocalParticipantQualityReport(): LocalParticipantQualityReport {
+    const client = React.useContext(WherebyContext);
+    const roomConnection = React.useMemo(() => client?.getRoomConnection(), [client]);
+    const [report, setReport] = React.useState<LocalParticipantQualityReport>(
+        () => roomConnection?.getState().localParticipantQualityReport ?? {},
+    );
+
+    React.useEffect(() => {
+        if (!roomConnection) return;
+
+        setReport(roomConnection.getState().localParticipantQualityReport);
+        return roomConnection.subscribeToLocalParticipantQualityReport(setReport);
+    }, [roomConnection]);
+
+    return report;
+}
+
+/**
  * A small dot showing a participant's call quality: yellow when it is "warning", red when it is
  * "critical", and nothing when it is "ok". It is absolutely positioned, so place it inside the
  * participant's (positioned) view.
  */
 export function CallQualityIndicator({
     clientId,
+    isLocalClient = false,
     placement = "bottom-right",
 }: {
     clientId?: string;
+    isLocalClient?: boolean;
     placement?: Placement;
 }) {
-    const report = useRemoteParticipantQualityReport();
-    const quality = clientId ? report[clientId]?.quality : undefined;
+    const remoteReport = useRemoteParticipantQualityReport();
+    const localReport = useLocalParticipantQualityReport();
+    const quality = isLocalClient ? localReport.quality : clientId ? remoteReport[clientId]?.quality : undefined;
 
     if (quality !== "warning" && quality !== "critical") {
         return null;
@@ -81,17 +105,17 @@ export function CallQualityIndicator({
 }
 
 /**
- * The call quality indicator for a VideoGrid cell, in the cell's bottom right. Only shown for remote
- * participants, as the quality report has no entry for the local client.
+ * The call quality indicator for a VideoGrid cell, in the cell's bottom right. Reads the local participant
+ * quality report for the local client and the remote participant quality report for everyone else.
  */
 export function GridCallQualityIndicator() {
     const { participant } = useGridCell();
 
-    if (!participant || participant.isLocalClient) {
+    if (!participant) {
         return null;
     }
 
-    return <CallQualityIndicator clientId={participant.clientId} />;
+    return <CallQualityIndicator clientId={participant.clientId} isLocalClient={participant.isLocalClient} />;
 }
 
 /**

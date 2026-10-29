@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import {
+    LocalParticipantQualityReport,
     RemoteParticipantQualityReport,
     ClientView,
     GridState,
@@ -15,6 +16,9 @@ const FAKE_REMOTE_PARTICIPANT_QUALITY_REPORT: RemoteParticipantQualityReport = {
     "fake-1": { quality: "warning" },
     "fake-2": { quality: "critical" },
 };
+
+// The local participant ("fake-0") with poor call quality too
+const FAKE_LOCAL_PARTICIPANT_QUALITY_REPORT: LocalParticipantQualityReport = { quality: "warning", cpu: "ok" };
 
 const COLORS = ["#4a90d9", "#d94a6a", "#4ad98f", "#d9b34a", "#8f4ad9", "#4ad9d9", "#d97a4a", "#7ad94a"];
 
@@ -207,8 +211,12 @@ export function FakeParticipantsProvider({
                 // The call quality indicator reads a fixed report.
                 getRoomConnection: () => ({
                     reportStreamResolution: () => {},
-                    getState: () => ({ remoteParticipantQualityReport: FAKE_REMOTE_PARTICIPANT_QUALITY_REPORT }),
+                    getState: () => ({
+                        remoteParticipantQualityReport: FAKE_REMOTE_PARTICIPANT_QUALITY_REPORT,
+                        localParticipantQualityReport: FAKE_LOCAL_PARTICIPANT_QUALITY_REPORT,
+                    }),
                     subscribeToRemoteParticipantQualityReport: () => () => {},
+                    subscribeToLocalParticipantQualityReport: () => () => {},
                 }),
                 // useAudioElement tracks the current speaker device — static stub
                 getLocalMedia: () => ({
