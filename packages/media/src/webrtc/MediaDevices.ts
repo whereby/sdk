@@ -446,11 +446,15 @@ export async function getStream(
 }
 
 export function hasGetDisplayMedia() {
-    // Nothing on Android actually has getDisplayMedia yet
-    if (global.navigator.userAgent.includes("Android")) {
+    // navigator is missing in some non-browser environments (e.g. older Node.js)
+    if (typeof navigator === "undefined") {
         return false;
     }
-    return !!(global.navigator.mediaDevices || {}).getDisplayMedia;
+    // Nothing on Android actually has getDisplayMedia yet
+    if (navigator.userAgent?.includes("Android")) {
+        return false;
+    }
+    return typeof navigator.mediaDevices?.getDisplayMedia === "function";
 }
 
 const defaultDisplayMediaConstraints = {

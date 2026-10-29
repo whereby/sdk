@@ -1,5 +1,5 @@
 import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
-import { KnockResponse } from "@whereby.com/media";
+import { KnockResponse, hasGetDisplayMedia } from "@whereby.com/media";
 
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRoomConnectionError, selectRoomConnectionIsRejoining, selectRoomConnectionStatus } from "./selectors";
@@ -193,7 +193,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
             isAudioEnabled: true,
             isVideoEnabled: true,
         },
-        deviceCapabilities: { canScreenshare: true },
+        deviceCapabilities: { canScreenshare: hasGetDisplayMedia() },
         displayName,
         isCoLocated: false,
         isDialIn,
@@ -247,7 +247,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
             isAudioEnabled: isMicrophoneEnabled,
             isVideoEnabled: isCameraEnabled,
         },
-        deviceCapabilities: { canScreenshare: true },
+        deviceCapabilities: { canScreenshare: hasGetDisplayMedia() },
         displayName,
         isCoLocated: false,
         isDialIn,

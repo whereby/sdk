@@ -6,6 +6,14 @@ import { signalEvents } from "../../slices/signalConnection/actions";
 import { addAppListener } from "../../listenerMiddleware";
 import { diff } from "deep-object-diff";
 import { randomSignalClient } from "../../../__mocks__/appMocks";
+import { hasGetDisplayMedia } from "@whereby.com/media";
+
+jest.mock("@whereby.com/media", () => ({
+    ...jest.requireActual("@whereby.com/media"),
+    hasGetDisplayMedia: jest.fn(),
+}));
+
+const mockHasGetDisplayMedia = hasGetDisplayMedia as jest.MockedFunction<typeof hasGetDisplayMedia>;
 
 describe("actions", () => {
     describe("doKnockRoom", () => {
@@ -33,6 +41,29 @@ describe("actions", () => {
             expect(diff(before, after)).toEqual({
                 status: "knocking",
             });
+        });
+
+        it.each([true, false])("should report canScreenshare: %s from device support", (canScreenshare) => {
+            mockHasGetDisplayMedia.mockReturnValue(canScreenshare);
+            const store = createStore({
+                withSignalConnection: true,
+                initialState: {
+                    roomConnection: {
+                        status: "room_locked",
+                        session: null,
+                        error: null,
+                        knockResponse: null,
+                        isRejoining: false,
+                    },
+                },
+            });
+
+            store.dispatch(doKnockRoom());
+
+            expect(mockSignalEmit).toHaveBeenCalledWith(
+                "knock_room",
+                expect.objectContaining({ deviceCapabilities: { canScreenshare } }),
+            );
         });
 
         it("should abort knocking if room is not locked", async () => {
@@ -183,5 +214,17 @@ describe("actions", () => {
         expect(diff(before, after)).toEqual({
             status: "connecting",
         });
+    });
+
+    it.each([true, false])("doConnectRoom should report canScreenshare: %s from device support", (canScreenshare) => {
+        mockHasGetDisplayMedia.mockReturnValue(canScreenshare);
+        const store = createStore({ withSignalConnection: true });
+
+        store.dispatch(doConnectRoom());
+
+        expect(mockSignalEmit).toHaveBeenCalledWith(
+            "join_room",
+            expect.objectContaining({ deviceCapabilities: { canScreenshare } }),
+        );
     });
 });
