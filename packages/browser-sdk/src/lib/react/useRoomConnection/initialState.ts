@@ -39,6 +39,7 @@ export const initialState: RoomConnectionState = {
         enabled: [],
         running: [],
     },
+    roomSessionId: null,
     screenshares: [],
     connectionStatus: "ready",
     connectionError: null,
