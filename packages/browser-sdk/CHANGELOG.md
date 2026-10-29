@@ -1,5 +1,13 @@
 # @whereby.com/browser-sdk
 
+## 3.36.2
+
+### Patch Changes
+
+- 2ed448e: `VideoGrid` tiles now follow a participant's video aspect ratio when it changes, for example when they rotate their phone, and pick up the right ratio as soon as the first frame arrives
+- Updated dependencies [eb6224f]
+    - @whereby.com/core@1.26.2
+
 ## 3.36.1
 
 ### Patch Changes
