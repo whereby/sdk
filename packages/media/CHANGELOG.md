@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.3.2
+
+### Patch Changes
+
+- bee395d: Make `hasGetDisplayMedia` safe to call where `navigator` or `navigator.mediaDevices` is missing, such as Node.js
+
 ## 11.3.1
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 1.26.1
+
+### Patch Changes
+
+- 93c88ad: Report the device's real screen sharing support as `canScreenshare` when joining or knocking on a room, instead of always `true`
+- Updated dependencies [bee395d]
+    - @whereby.com/media@11.3.2
+    - @whereby.com/audio-denoiser@1.0.30
+
 ## 1.26.0
 
 ### Minor Changes
