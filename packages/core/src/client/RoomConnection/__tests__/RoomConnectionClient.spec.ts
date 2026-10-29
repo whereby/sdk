@@ -1,5 +1,10 @@
 import { RoomConnectionClient } from "../";
-import { AUDIO_ONLY_MODE_CHANGED, ROOM_REJOINED, REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED } from "../events";
+import {
+    AUDIO_ONLY_MODE_CHANGED,
+    ROOM_REJOINED,
+    REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
+    LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED,
+} from "../events";
 import { doAppStart, roomRejoined, Store, RootState } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
 
@@ -257,6 +262,47 @@ describe("RoomConnectionClient", () => {
 
         it("reports an empty report while there are no scores", () => {
             expect(client.getState().remoteParticipantQualityReport).toEqual({});
+        });
+    });
+
+    describe("subscribeToLocalParticipantQualityReport", () => {
+        const localQualityScore = { total: "warning", video: "warning", audio: "ok", cpu: "critical" } as const;
+        const report = { quality: "warning", cpu: "critical" };
+
+        const withLocalQualityScore = (score?: typeof localQualityScore): RootState => ({
+            ...initialState,
+            connectionMonitor: { ...initialState.connectionMonitor, localQualityScore: score },
+        });
+
+        it("triggers the local participant quality report listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToLocalParticipantQualityReport(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue(withLocalQualityScore(localQualityScore));
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(report);
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue(withLocalQualityScore(undefined));
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it("emits the local participant quality report changed event", () => {
+            const listener = jest.fn();
+            client.on(LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED, listener);
+
+            (mockStore.getState as jest.Mock).mockReturnValue(withLocalQualityScore(localQualityScore));
+            storeSubscriber();
+
+            expect(listener).toHaveBeenCalledWith(report);
+        });
+
+        it("reports an empty report while there is no score", () => {
+            expect(client.getState().localParticipantQualityReport).toEqual({});
         });
     });
 

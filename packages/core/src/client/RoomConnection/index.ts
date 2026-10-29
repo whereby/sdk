@@ -65,6 +65,7 @@ import type { Store as AppStore } from "../../redux/store";
 import type {
     BreakoutState,
     RemoteParticipantQualityReport,
+    LocalParticipantQualityReport,
     ChatFileShare,
     ChatMessage,
     CloudRecordingState,
@@ -91,6 +92,7 @@ import {
     CONNECTION_ERROR_CHANGED,
     AUDIO_ONLY_MODE_CHANGED,
     REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
+    LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED,
     CONNECTION_STATUS_CHANGED,
     LIVE_CAPTIONS_STATUS_CHANGED,
     LIVE_TRANSCRIPTION_STATUS_CHANGED,
@@ -129,6 +131,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private connectionErrorSubscribers = new Set<(status: string | null) => void>();
     private audioOnlyModeSubscribers = new Set<(isEnabled: boolean) => void>();
     private remoteParticipantQualityReportSubscribers = new Set<(report: RemoteParticipantQualityReport) => void>();
+    private localParticipantQualityReportSubscribers = new Set<(report: LocalParticipantQualityReport) => void>();
     private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
     private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
     private liveCaptionsSubscribers = new Set<(status: LiveCaptionsState | undefined) => void>();
@@ -195,6 +198,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.remoteParticipantQualityReport !== previousState.remoteParticipantQualityReport) {
             this.remoteParticipantQualityReportSubscribers.forEach((cb) => cb(state.remoteParticipantQualityReport));
             this.emit(REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED, state.remoteParticipantQualityReport);
+        }
+
+        if (state.localParticipantQualityReport !== previousState.localParticipantQualityReport) {
+            this.localParticipantQualityReportSubscribers.forEach((cb) => cb(state.localParticipantQualityReport));
+            this.emit(LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED, state.localParticipantQualityReport);
         }
 
         if (state.isCameraEnabled !== previousState.isCameraEnabled) {
@@ -390,6 +398,25 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     ): () => void {
         this.remoteParticipantQualityReportSubscribers.add(callback);
         return () => this.remoteParticipantQualityReportSubscribers.delete(callback);
+    }
+
+    /**
+     * Subscribe to local participant quality report changes.
+     *
+     * The report has a `quality` level (`"ok"`, `"warning"` or `"critical"`), which is the worst of the
+     * local client's video and audio quality, and a `cpu` level (`"ok"`, `"warning"` or `"critical"`) for
+     * the local device's CPU pressure. `cpu` is left out when the browser can't measure CPU pressure (it
+     * needs the Compute Pressure API). The report is empty until the call quality monitor starts after
+     * joining a room, and is reset to empty after leaving.
+     *
+     * @param callback - Called with the latest report whenever it changes.
+     * @returns A function that removes the subscription.
+     */
+    public subscribeToLocalParticipantQualityReport(
+        callback: (report: LocalParticipantQualityReport) => void,
+    ): () => void {
+        this.localParticipantQualityReportSubscribers.add(callback);
+        return () => this.localParticipantQualityReportSubscribers.delete(callback);
     }
 
     public subscribeToLiveStream(callback: (status: { status: "streaming" } | undefined) => void): () => void {
@@ -1078,6 +1105,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.connectionErrorSubscribers.clear();
         this.audioOnlyModeSubscribers.clear();
         this.remoteParticipantQualityReportSubscribers.clear();
+        this.localParticipantQualityReportSubscribers.clear();
         this.connectionStatusSubscribers.clear();
         this.liveStreamSubscribers.clear();
         this.localParticipantSubscribers.clear();

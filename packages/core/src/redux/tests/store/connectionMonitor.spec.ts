@@ -10,6 +10,7 @@ import {
     doStopConnectionMonitor,
     doUpdateConnectionMonitorReport,
     selectRemoteParticipantQualityReport,
+    selectLocalParticipantQualityReport,
     selectRemoteCallQualityScores,
     selectConnectionMonitorIssuesReport,
     selectLocalCallQualityScore,
@@ -325,6 +326,8 @@ describe("connectionMonitorSlice", () => {
                     video: "ok",
                     audio: "critical",
                 });
+                // No cpu level, as jsdom has no Compute Pressure API
+                expect(selectLocalParticipantQualityReport(store.getState())).toEqual({ quality: "critical" });
                 expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("callQualityScoreTotalChanged", {
                     total: "critical",
                     _time: expect.any(Number),
@@ -373,6 +376,51 @@ describe("connectionMonitorSlice", () => {
                 expect(selectRemoteCallQualityScores(store.getState())).toEqual({
                     [REMOTE_ID]: { total: "critical", video: "critical", audio: "warning" },
                 });
+            });
+        });
+
+        describe("when CPU pressure can be measured", () => {
+            beforeEach(() => {
+                Object.defineProperty(window, "PressureObserver", { value: jest.fn(), configurable: true });
+            });
+
+            afterEach(() => {
+                delete (window as { PressureObserver?: unknown }).PressureObserver;
+            });
+
+            it("reports the local cpu level separately from the quality", () => {
+                const store = createConnectedStore("normal");
+                store.dispatch(doStartConnectionMonitor());
+
+                const { onUpdatedIssues } = (subscribeIssues as jest.Mock).mock.calls[0][0];
+                const updateLocalIssues = (issues: Record<string, typeof activeIssue>) =>
+                    onUpdatedIssues(
+                        {
+                            [LOCAL_ID]: { issues },
+                            [REMOTE_ID]: { issues: {} },
+                            aggregated: { metrics: {} },
+                        },
+                        undefined,
+                        [
+                            { clientId: LOCAL_ID, isLocalClient: true },
+                            { clientId: REMOTE_ID, isLocalClient: false },
+                        ],
+                    );
+
+                updateLocalIssues({});
+                expect(selectLocalParticipantQualityReport(store.getState())).toEqual({ quality: "ok", cpu: "ok" });
+                (mockRtcManager.sendStatsCustomEvent as jest.Mock).mockClear();
+
+                updateLocalIssues({ "global-cpu-pressure-critical": activeIssue });
+
+                expect(selectLocalParticipantQualityReport(store.getState())).toEqual({
+                    quality: "ok",
+                    cpu: "critical",
+                });
+                expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith(
+                    "callQualityScoreTotalChanged",
+                    expect.anything(),
+                );
             });
         });
 
