@@ -130,9 +130,16 @@ export const roomConnectionSlice = createSlice({
             };
         });
         builder.addCase(signalEvents.newClient, (state, action) => {
+            const { room } = action.payload;
+
+            // A new_client without room info says nothing about the session, so keep the one we know.
+            if (!room) {
+                return state;
+            }
+
             return {
                 ...state,
-                session: action.payload.room?.session ?? null,
+                session: room.session ?? null,
             };
         });
         builder.addCase(signalEvents.roomSessionEnded, (state, action) => {

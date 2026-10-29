@@ -46,6 +46,7 @@ import {
     selectRunningRoomIntegrations,
     selectRemoteParticipantQualityReport,
     RemoteParticipantQualityReport,
+    selectRoomConnectionSessionId,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
@@ -98,6 +99,7 @@ export const selectRoomConnectionState = createSelector(
     selectRunningRoomIntegrations,
     selectIsAudioOnlyModeEnabled,
     selectRemoteParticipantQualityReport,
+    selectRoomConnectionSessionId,
     (
         chatMessages,
         fileUploads,
@@ -144,6 +146,7 @@ export const selectRoomConnectionState = createSelector(
         runningRoomIntegrations,
         isAudioOnlyModeEnabled,
         remoteParticipantQualityReport,
+        roomSessionId,
     ) => {
         // Main-room participants that are spotlighted broadcast their audio/video into every group.
         // Only relevant for participants who are currently inside a group.
@@ -244,6 +247,7 @@ export const selectRoomConnectionState = createSelector(
                 enabled: enabledRoomIntegrations,
                 running: runningRoomIntegrations,
             },
+            roomSessionId: roomSessionId ?? null,
             screenshares,
             waitingParticipants,
             spotlightedParticipants: spotlightedClientViews,

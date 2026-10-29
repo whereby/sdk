@@ -1,4 +1,4 @@
-import { oneOf } from "../../../__mocks__/appMocks";
+import { oneOf, randomSignalClient } from "../../../__mocks__/appMocks";
 import { roomConnectionSlice, roomConnectionSliceInitialState, selectShouldConnectRoom } from "../roomConnection";
 import { signalEvents } from "../signalConnection/actions";
 
@@ -211,6 +211,85 @@ describe("roomConnectionSlice", () => {
                 expect(result.status).toEqual("disconnected");
                 expect(result.error).toEqual("room_full");
                 expect(result.isRejoining).toEqual(false);
+            });
+        });
+
+        describe("room session", () => {
+            const session = { id: "session-1", createdAt: "2026-10-27T12:00:00.000Z" };
+            const roomJoinedWithSession = (roomSession: typeof session | null) =>
+                signalEvents.roomJoined({
+                    selfId: "selfId",
+                    breakoutGroup: "",
+                    clientClaim: "clientClaim",
+                    eventClaim: "",
+                    room: {
+                        mode: "group",
+                        clients: [],
+                        knockers: [],
+                        spotlights: [],
+                        session: roomSession,
+                        isClaimed: true,
+                        isLocked: false,
+                        iceServers: {
+                            iceServers: [],
+                        },
+                        mediaserverConfigTtlSeconds: 0,
+                        name: "",
+                        organizationId: "",
+                        turnServers: [],
+                    },
+                });
+
+            it("should set the session when a client joins a room that was empty", () => {
+                const joined = roomConnectionSlice.reducer(undefined, roomJoinedWithSession(null));
+                const result = roomConnectionSlice.reducer(
+                    joined,
+                    signalEvents.newClient({ client: randomSignalClient(), room: { session } }),
+                );
+
+                expect(result.session).toEqual(session);
+            });
+
+            it("should set the session when a knocker is admitted", () => {
+                const locked = roomConnectionSlice.reducer(
+                    undefined,
+                    signalEvents.roomJoined({
+                        error: "room_locked",
+                        selfId: "selfId",
+                        isClaimed: true,
+                        isLocked: true,
+                    }),
+                );
+                const result = roomConnectionSlice.reducer(locked, roomJoinedWithSession(session));
+
+                expect(result.session).toEqual(session);
+            });
+
+            it("should keep the session when new_client has no room", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, session },
+                    signalEvents.newClient({ client: randomSignalClient() }),
+                );
+
+                expect(result.session).toEqual(session);
+            });
+
+            it("should keep the session when a different session ends", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, session },
+                    signalEvents.roomSessionEnded({ roomSessionId: "session-0" }),
+                );
+
+                expect(result.session).toEqual(session);
+            });
+
+            it("should clear the session when it ends", () => {
+                const result = roomConnectionSlice.reducer(
+                    { ...roomConnectionSliceInitialState, session },
+                    signalEvents.roomSessionEnded({ roomSessionId: session.id }),
+                );
+
+                expect(result.session).toEqual(null);
             });
         });
     });

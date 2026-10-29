@@ -1,5 +1,10 @@
 import { RoomConnectionClient } from "../";
-import { AUDIO_ONLY_MODE_CHANGED, ROOM_REJOINED, REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED } from "../events";
+import {
+    AUDIO_ONLY_MODE_CHANGED,
+    ROOM_REJOINED,
+    REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
+    ROOM_SESSION_ID_CHANGED,
+} from "../events";
 import { doAppStart, roomRejoined, Store, RootState } from "../../../redux";
 import { createStore } from "../../../redux/tests/store.setup";
 
@@ -161,6 +166,44 @@ describe("RoomConnectionClient", () => {
             });
             storeSubscriber();
             expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("subscribeToRoomSessionId", () => {
+        it("triggers the room session id listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToRoomSessionId(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                roomConnection: { ...initialState.roomConnection, session: { id: "session-1", createdAt: "" } },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith("session-1");
+            expect(client.getState().roomSessionId).toEqual("session-1");
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                roomConnection: { ...initialState.roomConnection, session: null },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it("emits room-session-id:changed", () => {
+            const callback = jest.fn();
+            client.on(ROOM_SESSION_ID_CHANGED, callback);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                roomConnection: { ...initialState.roomConnection, session: { id: "session-1", createdAt: "" } },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith("session-1");
         });
     });
 

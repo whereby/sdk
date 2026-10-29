@@ -38,6 +38,8 @@ export const LOCAL_SCREENSHARE_STATUS_CHANGED = "local-screenshare:status-change
 export const LOCAL_SCREENSHARE_CHANGED = "local-screenshare:state-changed";
 /* Remote participant events */
 export const REMOTE_PARTICIPANTS_CHANGED = "remote-participants:changed";
+/* Room session events */
+export const ROOM_SESSION_ID_CHANGED = "room-session-id:changed";
 /* Screen share events */
 export const SCREENSHARE_STARTED = "screenshare:started";
 export const SCREENSHARE_STOPPED = "screenshare:stopped";
@@ -96,6 +98,7 @@ export type RoomConnectionEvents = {
     [ROOM_JOINED]: [room: RoomJoinedEvent];
     [ROOM_JOINED_ERROR]: [error: RoomJoinedErrors | string];
     [ROOM_REJOINED]: [room: RoomRejoinedEvent];
+    [ROOM_SESSION_ID_CHANGED]: [roomSessionId: string | null];
     [WAITING_PARTICIPANT_JOINED]: [participant: WaitingParticipant];
     [WAITING_PARTICIPANT_LEFT]: [participantId: string];
     [SPOTLIGHT_PARTICIPANT_ADDED]: [participant: ClientView];
