@@ -102,6 +102,7 @@ import {
     ROOM_JOINED,
     ROOM_JOINED_ERROR,
     ROOM_REJOINED,
+    ROOM_SESSION_ID_CHANGED,
     SCREENSHARE_STARTED,
     SCREENSHARE_STOPPED,
     SPOTLIGHT_PARTICIPANT_ADDED,
@@ -138,6 +139,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private localScreenshareSubscribers = new Set<(status: LocalScreenshareState | undefined) => void>();
     private microphoneStateSubscribers = new Set<(isMicrophoneEnabled: boolean) => void>();
     private remoteParticipantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
+    private roomSessionIdSubscribers = new Set<(roomSessionId: string | null) => void>();
     private screenshareSubscribers = new Set<(screenshares: ScreenshareState[]) => void>();
     private spotlightedParticipantsSubscribers = new Set<(participants: ClientView[]) => void>();
     private waitingParticipantsSubscribers = new Set<(participants: WaitingParticipantState[]) => void>();
@@ -185,6 +187,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.connectionError !== previousState.connectionError) {
             this.connectionErrorSubscribers.forEach((cb) => cb(state.connectionError));
             this.emit(CONNECTION_ERROR_CHANGED, state.connectionError);
+        }
+
+        if (state.roomSessionId !== previousState.roomSessionId) {
+            this.roomSessionIdSubscribers.forEach((cb) => cb(state.roomSessionId));
+            this.emit(ROOM_SESSION_ID_CHANGED, state.roomSessionId);
         }
 
         if (state.isAudioOnlyModeEnabled !== previousState.isAudioOnlyModeEnabled) {
@@ -367,6 +374,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToConnectionError(callback: (error: string | null) => void): () => void {
         this.connectionErrorSubscribers.add(callback);
         return () => this.connectionErrorSubscribers.delete(callback);
+    }
+
+    public subscribeToRoomSessionId(callback: (roomSessionId: string | null) => void): () => void {
+        this.roomSessionIdSubscribers.add(callback);
+        return () => this.roomSessionIdSubscribers.delete(callback);
     }
 
     public subscribeToAudioOnlyMode(callback: (isEnabled: boolean) => void): () => void {
@@ -1085,6 +1097,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.localScreenshareSubscribers.clear();
         this.microphoneStateSubscribers.clear();
         this.remoteParticipantsSubscribers.clear();
+        this.roomSessionIdSubscribers.clear();
         this.screenshareSubscribers.clear();
         this.spotlightedParticipantsSubscribers.clear();
         this.waitingParticipantsSubscribers.clear();

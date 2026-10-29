@@ -172,6 +172,7 @@ export interface RoomConnectionState {
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
     roomIntegrations: RoomIntegrationsState;
+    roomSessionId: string | null;
     screenshares: Screenshare[];
     waitingParticipants: WaitingParticipantState[];
     spotlightedParticipants: ClientView[];
