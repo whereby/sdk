@@ -6,6 +6,7 @@ import {
     selectCalculatedRemoteCallQualityScores,
     selectCalculatedLocalCallQualityScore,
     selectRemoteParticipantQualityReport,
+    selectLocalParticipantQualityReport,
     selectShouldStartConnectionMonitor,
     selectShouldStopConnectionMonitor,
     connectionMonitorStarted,
@@ -145,6 +146,29 @@ describe("connectionMonitorSlice", () => {
                     "remote-2": { quality: "critical" },
                     "remote-3": { quality: "warning" },
                 });
+            });
+        });
+
+        describe("selectLocalParticipantQualityReport", () => {
+            it("should return undefined when there is no score", () => {
+                expect(selectLocalParticipantQualityReport.resultFunc(undefined)).toBeUndefined();
+            });
+
+            it("should report the total as the quality", () => {
+                expect(
+                    selectLocalParticipantQualityReport.resultFunc({ total: "warning", video: "warning", audio: "ok" }),
+                ).toEqual({ quality: "warning" });
+            });
+
+            it("should pass the cpu level through", () => {
+                expect(
+                    selectLocalParticipantQualityReport.resultFunc({
+                        total: "ok",
+                        video: "ok",
+                        audio: "ok",
+                        cpu: "critical",
+                    }),
+                ).toEqual({ quality: "ok", cpu: "critical" });
             });
         });
 
@@ -292,6 +316,65 @@ describe("connectionMonitorSlice", () => {
                         undefined,
                     ),
                 ).toEqual({ total: "critical", video: "critical", audio: "ok" });
+            });
+
+            it("should leave out the cpu level when CPU pressure can't be measured", () => {
+                expect(
+                    selectCalculatedLocalCallQualityScore.resultFunc(
+                        "connected",
+                        "normal",
+                        localParticipantView,
+                        undefined,
+                        { critical: { "local-1": { cpu: ["global-cpu-pressure-critical"] } }, warning: {} },
+                    ),
+                ).not.toHaveProperty("cpu");
+            });
+
+            describe("when CPU pressure can be measured", () => {
+                beforeEach(() => {
+                    Object.defineProperty(window, "PressureObserver", { value: jest.fn(), configurable: true });
+                });
+
+                afterEach(() => {
+                    delete (window as { PressureObserver?: unknown }).PressureObserver;
+                });
+
+                const calculateCpu = (roomMode: RoomMode, issuesReport?: ConnectionMonitorReport) =>
+                    selectCalculatedLocalCallQualityScore.resultFunc(
+                        "connected",
+                        roomMode,
+                        localParticipantView,
+                        undefined,
+                        issuesReport,
+                    )?.cpu;
+
+                it.each<RoomMode>(["normal", "group"])("should score the cpu level in a %s room", (roomMode) => {
+                    expect(calculateCpu(roomMode, undefined)).toBe("ok");
+                    expect(
+                        calculateCpu(roomMode, {
+                            critical: {},
+                            warning: { "local-1": { cpu: ["global-cpu-pressure-serious"] } },
+                        }),
+                    ).toBe("warning");
+                    expect(
+                        calculateCpu(roomMode, {
+                            critical: { "local-1": { cpu: ["global-cpu-pressure-critical"] } },
+                            warning: { "local-1": { cpu: ["global-cpu-pressure-serious"] } },
+                        }),
+                    ).toBe("critical");
+                });
+
+                it("should not include the cpu level in the total", () => {
+                    expect(
+                        selectCalculatedLocalCallQualityScore.resultFunc(
+                            "connected",
+                            "normal",
+                            localParticipantView,
+                            undefined,
+                            { critical: { "local-1": { cpu: ["global-cpu-pressure-critical"] } }, warning: {} },
+                        ),
+                    ).toEqual({ total: "ok", video: "ok", audio: "ok", cpu: "critical" });
+                });
             });
         });
     });
