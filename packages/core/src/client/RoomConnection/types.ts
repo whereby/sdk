@@ -2,6 +2,7 @@ import { RoleName, ChatFileShare, ChatMessage as SignalChatMessage, KnockRespons
 import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
 import {
     RemoteParticipantQualityReport,
+    LocalParticipantQualityReport,
     ClientView,
     ConnectionStatus,
     FileUpload,
@@ -22,7 +23,9 @@ export type {
 } from "@whereby.com/media";
 export type {
     CallQualityLevel,
+    CPUQualityLevel,
     RemoteParticipantQualityReport,
+    LocalParticipantQualityReport,
     FileUpload,
     FileShareError,
     SendFilesOptions,
@@ -160,6 +163,7 @@ export interface RoomConnectionState {
     cloudRecording?: CloudRecordingState;
     breakout: BreakoutState;
     remoteParticipantQualityReport: RemoteParticipantQualityReport;
+    localParticipantQualityReport: LocalParticipantQualityReport;
     events?: NotificationsEventEmitter;
     isAudioOnlyModeEnabled: boolean;
     isCameraEnabled: boolean;

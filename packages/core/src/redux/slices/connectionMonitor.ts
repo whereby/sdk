@@ -8,17 +8,22 @@ import { rtcEvents, selectRtcManager } from "./rtcConnection";
 import { selectAllClientViews, selectRemoteClientViews, selectRoomMode } from "./room";
 import { selectLocalParticipantView, selectSelfId } from "./localParticipant/selectors";
 
-export const CALL_QUALITY_LEVELS = {
+export const IN_CALL_QUALITY_LEVELS = {
     CRITICAL: "critical",
     WARNING: "warning",
     OK: "ok",
 } as const;
 
-export type CallQualityLevel = (typeof CALL_QUALITY_LEVELS)[keyof typeof CALL_QUALITY_LEVELS];
+/** @deprecated Use IN_CALL_QUALITY_LEVELS instead. */
+export const CALL_QUALITY_LEVELS = IN_CALL_QUALITY_LEVELS;
+
+export type CallQualityLevel = (typeof IN_CALL_QUALITY_LEVELS)[keyof typeof IN_CALL_QUALITY_LEVELS];
+
+export type CPUQualityLevel = (typeof IN_CALL_QUALITY_LEVELS)[keyof typeof IN_CALL_QUALITY_LEVELS];
 
 export type ConnectionMonitorReport = {
-    critical: Record<string, { video?: Array<string>; audio?: Array<string> }>;
-    warning: Record<string, { video?: Array<string>; audio?: Array<string> }>;
+    critical: Record<string, { video?: Array<string>; audio?: Array<string>; cpu?: Array<string> }>;
+    warning: Record<string, { video?: Array<string>; audio?: Array<string>; cpu?: Array<string> }>;
 };
 
 export type CallQualityScore = {
@@ -27,18 +32,22 @@ export type CallQualityScore = {
     audio: CallQualityLevel;
 };
 
+export type LocalCallQualityScore = CallQualityScore & { cpu?: CPUQualityLevel };
+
 export type RemoteCallQualityScores = Record<string, CallQualityScore>;
 
 export type RemoteParticipantQualityReport = Record<string, { quality: CallQualityLevel }>;
 
+export type LocalParticipantQualityReport = { quality?: CallQualityLevel; cpu?: CPUQualityLevel };
+
 export type MediaQualityScores = Record<string, { video?: CallQualityLevel; audio?: CallQualityLevel }>;
 
-const CALL_QUALITY_LEVEL_ORDER: Array<CallQualityLevel> = Object.values(CALL_QUALITY_LEVELS);
+const CALL_QUALITY_LEVEL_ORDER: Array<CallQualityLevel> = Object.values(IN_CALL_QUALITY_LEVELS);
 
 function convertQualityScoreToNumber(score: CallQualityLevel) {
     return score !== undefined && score !== null
         ? CALL_QUALITY_LEVEL_ORDER.indexOf(score)
-        : CALL_QUALITY_LEVEL_ORDER.indexOf(CALL_QUALITY_LEVELS.OK);
+        : CALL_QUALITY_LEVEL_ORDER.indexOf(IN_CALL_QUALITY_LEVELS.OK);
 }
 
 const getActiveIssues = (
@@ -76,17 +85,17 @@ function calculateCallQualityScore(
                   convertQualityScoreToNumber(
                       connectionMonitorIssuesReport?.critical?.[clientId]?.video?.length !== undefined &&
                           connectionMonitorIssuesReport?.critical?.[clientId]?.video?.length > 0
-                          ? CALL_QUALITY_LEVELS.CRITICAL
-                          : CALL_QUALITY_LEVELS.OK,
+                          ? IN_CALL_QUALITY_LEVELS.CRITICAL
+                          : IN_CALL_QUALITY_LEVELS.OK,
                   ),
                   convertQualityScoreToNumber(
                       connectionMonitorIssuesReport?.warning?.[clientId]?.video?.length !== undefined &&
                           connectionMonitorIssuesReport?.warning?.[clientId]?.video?.length > 0
-                          ? CALL_QUALITY_LEVELS.WARNING
-                          : CALL_QUALITY_LEVELS.OK,
+                          ? IN_CALL_QUALITY_LEVELS.WARNING
+                          : IN_CALL_QUALITY_LEVELS.OK,
                   ),
               ]
-            : [convertQualityScoreToNumber(mediaQualityScores?.[clientId]?.video ?? CALL_QUALITY_LEVELS.OK)]),
+            : [convertQualityScoreToNumber(mediaQualityScores?.[clientId]?.video ?? IN_CALL_QUALITY_LEVELS.OK)]),
     );
 
     const audioScoreValue = Math.min(
@@ -95,17 +104,17 @@ function calculateCallQualityScore(
                   convertQualityScoreToNumber(
                       connectionMonitorIssuesReport?.critical?.[clientId]?.audio?.length !== undefined &&
                           connectionMonitorIssuesReport?.critical?.[clientId]?.audio?.length > 0
-                          ? CALL_QUALITY_LEVELS.CRITICAL
-                          : CALL_QUALITY_LEVELS.OK,
+                          ? IN_CALL_QUALITY_LEVELS.CRITICAL
+                          : IN_CALL_QUALITY_LEVELS.OK,
                   ),
                   convertQualityScoreToNumber(
                       connectionMonitorIssuesReport?.warning?.[clientId]?.audio?.length !== undefined &&
                           connectionMonitorIssuesReport?.warning?.[clientId]?.audio?.length > 0
-                          ? CALL_QUALITY_LEVELS.WARNING
-                          : CALL_QUALITY_LEVELS.OK,
+                          ? IN_CALL_QUALITY_LEVELS.WARNING
+                          : IN_CALL_QUALITY_LEVELS.OK,
                   ),
               ]
-            : [convertQualityScoreToNumber(mediaQualityScores?.[clientId]?.audio ?? CALL_QUALITY_LEVELS.OK)]),
+            : [convertQualityScoreToNumber(mediaQualityScores?.[clientId]?.audio ?? IN_CALL_QUALITY_LEVELS.OK)]),
     );
 
     const overallScoreValue = Math.min(videoScoreValue, audioScoreValue);
@@ -115,6 +124,23 @@ function calculateCallQualityScore(
         video: CALL_QUALITY_LEVEL_ORDER[videoScoreValue],
         audio: CALL_QUALITY_LEVEL_ORDER[audioScoreValue],
     };
+}
+
+const isCpuPressureSupported = () => typeof window !== "undefined" && "PressureObserver" in window;
+
+function calculateCpuQualityLevel(
+    clientId: string,
+    connectionMonitorIssuesReport: ConnectionMonitorReport | undefined,
+): CPUQualityLevel {
+    if (connectionMonitorIssuesReport?.critical?.[clientId]?.cpu?.length) {
+        return IN_CALL_QUALITY_LEVELS.CRITICAL;
+    }
+
+    if (connectionMonitorIssuesReport?.warning?.[clientId]?.cpu?.length) {
+        return IN_CALL_QUALITY_LEVELS.WARNING;
+    }
+
+    return IN_CALL_QUALITY_LEVELS.OK;
 }
 
 /**
@@ -129,7 +155,7 @@ export interface ConnectionMonitorState {
     running: boolean;
     issuesReport?: ConnectionMonitorReport;
     remoteQualityScores?: RemoteCallQualityScores;
-    localQualityScore?: CallQualityScore;
+    localQualityScore?: LocalCallQualityScore;
     mediaScores?: MediaQualityScores;
     stopCallbackFunction?: () => void;
 }
@@ -165,7 +191,7 @@ export const connectionMonitorSlice = createSlice({
                 remoteQualityScores: action.payload,
             };
         },
-        updateLocalCallQualityScore: (state, action: PayloadAction<CallQualityScore>) => {
+        updateLocalCallQualityScore: (state, action: PayloadAction<LocalCallQualityScore>) => {
             return {
                 ...state,
                 localQualityScore: action.payload,
@@ -441,11 +467,11 @@ export const doSetRemoteCallQualityScores = createAppThunk(
 
         // Determine total across all remote participants
         const scoreValues = Object.values(scores);
-        const total = scoreValues.some(({ total }) => total === CALL_QUALITY_LEVELS.CRITICAL)
-            ? CALL_QUALITY_LEVELS.CRITICAL
-            : scoreValues.some(({ total }) => total === CALL_QUALITY_LEVELS.WARNING)
-              ? CALL_QUALITY_LEVELS.WARNING
-              : CALL_QUALITY_LEVELS.OK;
+        const total = scoreValues.some(({ total }) => total === IN_CALL_QUALITY_LEVELS.CRITICAL)
+            ? IN_CALL_QUALITY_LEVELS.CRITICAL
+            : scoreValues.some(({ total }) => total === IN_CALL_QUALITY_LEVELS.WARNING)
+              ? IN_CALL_QUALITY_LEVELS.WARNING
+              : IN_CALL_QUALITY_LEVELS.OK;
 
         rtcManager.sendStatsCustomEvent("remoteCallQualityScores", {
             total,
@@ -456,7 +482,7 @@ export const doSetRemoteCallQualityScores = createAppThunk(
     },
 );
 
-export const doSetLocalCallQualityScore = createAppThunk((score: CallQualityScore) => (dispatch, getState) => {
+export const doSetLocalCallQualityScore = createAppThunk((score: LocalCallQualityScore) => (dispatch, getState) => {
     const state = getState();
     const rtcManager = selectRtcManager(state);
 
@@ -506,6 +532,19 @@ export const selectRemoteParticipantQualityReport = createSelector(
         return Object.fromEntries(
             Object.entries(remoteCallQualityScores).map(([clientId, { total }]) => [clientId, { quality: total }]),
         );
+    },
+);
+
+export const selectLocalParticipantQualityReport = createSelector(
+    selectLocalCallQualityScore,
+    (localCallQualityScore): LocalParticipantQualityReport | undefined => {
+        if (!localCallQualityScore) {
+            return undefined;
+        }
+
+        const { total, cpu } = localCallQualityScore;
+
+        return { quality: total, ...(cpu && { cpu }) };
     },
 );
 
@@ -562,7 +601,6 @@ export const selectCalculatedRemoteCallQualityScores = createSelector(
     },
 );
 
-// Only reported to rtcstats, not exposed in the call quality report
 export const selectCalculatedLocalCallQualityScore = createSelector(
     selectRoomConnectionStatus,
     selectRoomMode,
@@ -575,17 +613,19 @@ export const selectCalculatedLocalCallQualityScore = createSelector(
         localParticipantView,
         mediaQualityScores,
         connectionMonitorIssuesReport,
-    ): CallQualityScore | undefined => {
+    ): LocalCallQualityScore | undefined => {
         if (roomConnectionStatus !== "connected" || !localParticipantView) {
             return undefined;
         }
 
-        return calculateCallQualityScore(
-            localParticipantView.clientId,
-            roomMode,
-            mediaQualityScores,
-            connectionMonitorIssuesReport,
-        );
+        const { clientId } = localParticipantView;
+        const score = calculateCallQualityScore(clientId, roomMode, mediaQualityScores, connectionMonitorIssuesReport);
+
+        if (!isCpuPressureSupported()) {
+            return score;
+        }
+
+        return { ...score, cpu: calculateCpuQualityLevel(clientId, connectionMonitorIssuesReport) };
     },
 );
 
