@@ -34,7 +34,6 @@ export const organizationSlice = createSlice({
             };
         });
         builder.addCase(doOrganizationFetch.fulfilled, (state, action) => {
-            if (!action.payload) return { ...state, isFetching: true };
             return {
                 ...state,
                 isFetching: false,
@@ -58,19 +57,15 @@ export const organizationSlice = createSlice({
 export const doOrganizationFetch = createAppAsyncThunk(
     "organization/doOrganizationFetch",
     async (_, { extra, getState }) => {
-        try {
-            const roomUrl = selectAppRoomUrl(getState());
+        const roomUrl = selectAppRoomUrl(getState());
 
-            const organization = await extra.services.fetchOrganizationFromRoomUrl(roomUrl || "");
+        const organization = await extra.services.fetchOrganizationFromRoomUrl(roomUrl || "");
 
-            if (!organization) {
-                throw new Error("Invalid room url");
-            }
-
-            return organization;
-        } catch (error) {
-            console.error(error);
+        if (!organization) {
+            throw new Error("Invalid room url");
         }
+
+        return organization;
     },
 );
 

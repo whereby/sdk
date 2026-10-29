@@ -1,7 +1,7 @@
 import { RoomConnectionClient } from "../";
 import { AUDIO_ONLY_MODE_CHANGED, ROOM_REJOINED, REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED } from "../events";
 import { doAppStart, roomRejoined, Store, RootState } from "../../../redux";
-import { createStore } from "../../../redux/tests/store.setup";
+import { createStore, mockServices } from "../../../redux/tests/store.setup";
 
 describe("RoomConnectionClient", () => {
     let client: RoomConnectionClient;
@@ -544,6 +544,22 @@ describe("RoomConnectionClient", () => {
                         localMediaOptions: { audio: true, video: true },
                         initialMuteStates: { camera: true, microphone: true },
                     }),
+                }),
+            );
+        });
+
+        it("rejects when the organization can't be fetched", async () => {
+            console.error = jest.fn();
+            mockServices.credentialsService.getCredentials.mockResolvedValue({ credentials: { uuid: "deviceId" } });
+            mockServices.fetchOrganizationFromRoomUrl.mockRejectedValueOnce(new Error("Network error"));
+
+            client.initialize({ roomUrl: "https://example.whereby.com/test" });
+
+            await expect(client.joinRoom()).rejects.toEqual("organization_fetch_failed");
+            expect(mockStore.getState().roomConnection).toEqual(
+                expect.objectContaining({
+                    status: "disconnected",
+                    error: "organization_fetch_failed",
                 }),
             );
         });

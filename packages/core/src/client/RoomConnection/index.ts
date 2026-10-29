@@ -6,6 +6,7 @@ import {
     doAcceptWaitingParticipant,
     doAppStart,
     doAppStop,
+    doOrganizationFetch,
     doCancelKnock,
     doBreakoutJoin,
     doStartBreakoutSession,
@@ -508,6 +509,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
                 actionCreator: signalEvents.roomJoined,
                 effect: ({ payload }) => {
                     unsubscribeRoomJoined();
+                    unsubscribeOrganizationFetchFailed();
 
                     if ("error" in payload) {
                         reject?.(payload.error);
@@ -515,6 +517,19 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
                     }
 
                     resolve?.(payload);
+                },
+            }),
+        );
+
+        // Without the organization the room is never joined, so roomJoined would never arrive.
+        const unsubscribeOrganizationFetchFailed = this.store.dispatch(
+            addListener({
+                actionCreator: doOrganizationFetch.rejected,
+                effect: () => {
+                    unsubscribeRoomJoined();
+                    unsubscribeOrganizationFetchFailed();
+
+                    reject?.("organization_fetch_failed");
                 },
             }),
         );

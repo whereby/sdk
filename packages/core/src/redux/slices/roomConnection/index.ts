@@ -16,7 +16,7 @@ import {
 } from "../app";
 import { selectAssistantKey, selectRoomKey, setRoomKey } from "../authorization";
 
-import { selectOrganizationId } from "../organization";
+import { doOrganizationFetch, selectOrganizationId } from "../organization";
 import { signalEvents } from "../signalConnection/actions";
 import {
     doSignalDisconnect,
@@ -155,6 +155,13 @@ export const roomConnectionSlice = createSlice({
             return {
                 ...state,
                 status: "left",
+            };
+        });
+        builder.addCase(doOrganizationFetch.rejected, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+                error: "organization_fetch_failed",
             };
         });
     },
