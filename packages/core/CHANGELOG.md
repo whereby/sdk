@@ -1,5 +1,15 @@
 # @whereby.com/core
 
+## 1.27.0
+
+### Minor Changes
+
+- 4262db6: Add localParticipantQualityReport state (call quality and CPU level) and subscribeToLocalParticipantQualityReport API to RoomConnectionClient
+
+    Rename CALL_QUALITY_LEVELS to IN_CALL_QUALITY_LEVELS (CALL_QUALITY_LEVELS is kept as a deprecated alias)
+
+- 6d4337f: Add roomSessionId to roomConnection
+
 ## 1.26.2
 
 ### Patch Changes
