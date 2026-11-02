@@ -1,5 +1,18 @@
 # @whereby.com/browser-sdk
 
+## 3.37.0
+
+### Minor Changes
+
+- 7f22c96: Add localParticipantQualityReport to useRoomConnection state
+- 6d4337f: Add roomSessionId to roomConnection
+
+### Patch Changes
+
+- Updated dependencies [4262db6]
+- Updated dependencies [6d4337f]
+    - @whereby.com/core@1.27.0
+
 ## 3.36.2
 
 ### Patch Changes
