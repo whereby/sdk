@@ -46,12 +46,15 @@ import {
     selectRunningRoomIntegrations,
     selectRemoteParticipantQualityReport,
     RemoteParticipantQualityReport,
+    selectLocalParticipantQualityReport,
+    LocalParticipantQualityReport,
     selectRoomConnectionSessionId,
 } from "../../redux";
 
 import { RoomConnectionState } from "./types";
 
 const EMPTY_REMOTE_PARTICIPANT_QUALITY_REPORT: RemoteParticipantQualityReport = Object.freeze({});
+const EMPTY_LOCAL_PARTICIPANT_QUALITY_REPORT: LocalParticipantQualityReport = Object.freeze({});
 
 export const selectRoomConnectionState = createSelector(
     selectChatMessages,
@@ -99,6 +102,7 @@ export const selectRoomConnectionState = createSelector(
     selectRunningRoomIntegrations,
     selectIsAudioOnlyModeEnabled,
     selectRemoteParticipantQualityReport,
+    selectLocalParticipantQualityReport,
     selectRoomConnectionSessionId,
     (
         chatMessages,
@@ -146,6 +150,7 @@ export const selectRoomConnectionState = createSelector(
         runningRoomIntegrations,
         isAudioOnlyModeEnabled,
         remoteParticipantQualityReport,
+        localParticipantQualityReport,
         roomSessionId,
     ) => {
         // Main-room participants that are spotlighted broadcast their audio/video into every group.
@@ -187,6 +192,7 @@ export const selectRoomConnectionState = createSelector(
                 broadcastingParticipants,
             },
             remoteParticipantQualityReport: remoteParticipantQualityReport ?? EMPTY_REMOTE_PARTICIPANT_QUALITY_REPORT,
+            localParticipantQualityReport: localParticipantQualityReport ?? EMPTY_LOCAL_PARTICIPANT_QUALITY_REPORT,
             connectionStatus,
             connectionError,
             knockResponse,

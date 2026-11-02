@@ -26,6 +26,7 @@ export const initialState: RoomConnectionState = {
         broadcastingParticipants: [],
     },
     remoteParticipantQualityReport: {},
+    localParticipantQualityReport: {},
     isAudioOnlyModeEnabled: false,
     isCameraEnabled: false,
     isMicrophoneEnabled: false,
