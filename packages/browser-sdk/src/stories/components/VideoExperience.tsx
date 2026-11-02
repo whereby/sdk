@@ -101,6 +101,7 @@ export default function VideoExperience({
         isAudioOnlyModeEnabled,
         isCameraEnabled,
         isMicrophoneEnabled,
+        roomSessionId,
     } = state;
     const {
         knock,
@@ -454,6 +455,7 @@ export default function VideoExperience({
     return (
         <div>
             <div>Room connection status: {connectionStatus}</div>
+            <div>Room session id: {roomSessionId ?? "none"}</div>
             <hr />
             {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
             {connectionStatus === "connecting" && <span>Connecting...</span>}
