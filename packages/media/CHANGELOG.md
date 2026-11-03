@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.3.3
+
+### Patch Changes
+
+- 4178701: media: Fixes rtcstats events initial ordering/duplicates
+
 ## 11.3.2
 
 ### Patch Changes

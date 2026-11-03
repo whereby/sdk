@@ -1,5 +1,19 @@
 # @whereby.com/browser-sdk
 
+## 3.38.0
+
+### Minor Changes
+
+- f525701: browser-sdk: Let `WherebyProvider` accept an external `WherebyClient` through an optional `client` prop. The provider
+  uses that client and doesn't destroy it on unmount, since the caller owns it. Without the prop, the provider creates
+  and destroys its own client as before. `WherebyClient` is now exported from `@whereby.com/browser-sdk/react`.
+
+### Patch Changes
+
+- Updated dependencies [4178701]
+    - @whereby.com/media@11.3.3
+    - @whereby.com/core@1.27.1
+
 ## 3.37.0
 
 ### Minor Changes
