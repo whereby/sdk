@@ -1,4 +1,5 @@
 export { Provider as WherebyProvider } from "./Provider";
+export { WherebyClient } from "@whereby.com/core";
 export { VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { useLocalMedia } from "./useLocalMedia";

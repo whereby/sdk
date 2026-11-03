@@ -28,6 +28,47 @@ pnpm add @whereby.com/browser-sdk
 
 ### React hooks
 
+#### WherebyProvider
+
+Render `WherebyProvider` above every component that uses the hooks. By default it
+creates its own `WherebyClient` and destroys it when the provider unmounts.
+
+```js
+import { WherebyProvider } from "@whereby.com/browser-sdk/react";
+
+function App() {
+    return (
+        <WherebyProvider>
+            <MyCallUX />
+        </WherebyProvider>
+    );
+}
+```
+
+If your app keeps logic outside React, for example in a Redux store, create the
+client yourself and pass it in with the `client` prop. Code outside React can
+then call the client and subscribe to its events, while the hooks inside the
+provider use the same client.
+
+```js
+import { WherebyClient, WherebyProvider } from "@whereby.com/browser-sdk/react";
+
+const client = new WherebyClient();
+const store = createAppStore({ client }); // your own state layer
+
+function App() {
+    return (
+        <WherebyProvider client={client}>
+            <MyCallUX />
+        </WherebyProvider>
+    );
+}
+```
+
+You own a client you pass in: the provider never calls `destroy()` on it, so it
+survives the provider unmounting and remounting. Call `client.destroy()`
+yourself when you no longer need it.
+
 #### useLocalMedia
 
 The `useLocalMedia` hook enables preview and selection of local devices (camera
