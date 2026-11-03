@@ -135,37 +135,40 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 ws.send(JSON.stringify(["clientInfo", null, clientInfo]));
                 ws.send(JSON.stringify(["webrtcapihealth", null, getWebRtcApiHealth()]));
 
-                if (organizationId) {
-                    ws.send(JSON.stringify(organizationId));
+                // only send the last values on reconnects (on connectionNumber 2 and up)
+                // as they are buffered and sent anyway
+                if (clientInfo.connectionNumber > 1) {
+                    if (organizationId) {
+                        ws.send(JSON.stringify(organizationId));
+                    }
+                    if (clientId) {
+                        ws.send(JSON.stringify(clientId));
+                    }
+                    if (roomSessionId) {
+                        ws.send(JSON.stringify(roomSessionId));
+                    }
+                    if (displayName) {
+                        ws.send(JSON.stringify(displayName));
+                    }
+                    if (userRole) {
+                        ws.send(JSON.stringify(userRole));
+                    }
+                    if (deviceId) {
+                        ws.send(JSON.stringify(deviceId));
+                    }
+                    if (roomMode) {
+                        ws.send(JSON.stringify(roomMode));
+                    }
+                    if (roomProduct) {
+                        ws.send(JSON.stringify(roomProduct));
+                    }
+                    if (sfuServer) {
+                        ws.send(JSON.stringify(sfuServer));
+                    }
+                    if (featureFlags) {
+                        ws.send(JSON.stringify(featureFlags));
+                    }
                 }
-                if (clientId) {
-                    ws.send(JSON.stringify(clientId));
-                }
-                if (roomSessionId) {
-                    ws.send(JSON.stringify(roomSessionId));
-                }
-                if (displayName) {
-                    ws.send(JSON.stringify(displayName));
-                }
-                if (userRole) {
-                    ws.send(JSON.stringify(userRole));
-                }
-                if (deviceId) {
-                    ws.send(JSON.stringify(deviceId));
-                }
-                if (roomMode) {
-                    ws.send(JSON.stringify(roomMode));
-                }
-                if (roomProduct) {
-                    ws.send(JSON.stringify(roomProduct));
-                }
-                if (sfuServer) {
-                    ws.send(JSON.stringify(sfuServer));
-                }
-                if (featureFlags) {
-                    ws.send(JSON.stringify(featureFlags));
-                }
-
                 // send buffered events
                 while (buffer.length) {
                     ws.send(JSON.stringify(buffer.shift()));
