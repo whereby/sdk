@@ -152,10 +152,8 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("breakout_timer_extended", () => dispatch(signalEvents.breakoutTimerExtended()));
 }
 
-const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL;
-
-function createSocket() {
-    const parsedUrl = new URL(SIGNAL_BASE_URL || "wss://signal.appearin.net");
+function createSocket(signalBaseUrl: string) {
+    const parsedUrl = new URL(signalBaseUrl);
     const socketHost = parsedUrl.origin;
 
     const socketOverrides = {
@@ -251,14 +249,14 @@ export const {
  * Action creators
  */
 export const doSignalConnect = createAppThunk(() => {
-    return (dispatch, getState) => {
+    return (dispatch, getState, { services }) => {
         if (selectSignalConnectionSocket(getState())) {
             return;
         }
 
         dispatch(socketConnecting());
 
-        const socket = createSocket();
+        const socket = createSocket(services.signalBaseUrl);
 
         socket.on("connect", () => dispatch(socketConnected(socket)));
         socket.on("device_identified", () => dispatch(deviceIdentified()));

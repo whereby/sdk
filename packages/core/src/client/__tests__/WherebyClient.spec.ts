@@ -1,3 +1,4 @@
+import axios from "axios";
 import Credentials from "../../api/Credentials";
 import DeviceService from "../../api/deviceService";
 import { WherebyClient } from "../WherebyClient";
@@ -69,6 +70,38 @@ describe("WherebyClient", () => {
             const result = await client.getDeviceCredentials();
 
             expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+        });
+    });
+
+    describe("base URLs", () => {
+        let request: jest.SpyInstance;
+
+        beforeEach(() => {
+            createDevice.mockRestore();
+            request = jest.spyOn(axios, "request").mockResolvedValue({
+                status: 200,
+                data: { credentials: { uuid: "device-id" }, hmac: "hmac" },
+                headers: {},
+            });
+        });
+
+        afterEach(() => {
+            request.mockRestore();
+        });
+
+        it("calls the API at the given base URL", async () => {
+            const customClient = new WherebyClient({ apiBaseUrl: "https://api.example.test" });
+
+            await customClient.getDeviceCredentials();
+            customClient.destroy();
+
+            expect(request).toHaveBeenCalledWith(expect.objectContaining({ baseURL: "https://api.example.test" }));
+        });
+
+        it("calls the production API by default", async () => {
+            await client.getDeviceCredentials();
+
+            expect(request).toHaveBeenCalledWith(expect.objectContaining({ baseURL: "https://api.whereby.dev" }));
         });
     });
 });

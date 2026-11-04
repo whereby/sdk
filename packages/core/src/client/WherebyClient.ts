@@ -1,5 +1,5 @@
 import { createStore, type Store as AppStore } from "../redux/store";
-import { createServices } from "../services";
+import { createServices, type ServicesOptions } from "../services";
 import { GridClient } from "./Grid";
 import { LocalMediaClient } from "./LocalMedia";
 import { RoomConnectionClient } from "./RoomConnection";
@@ -19,8 +19,11 @@ export class WherebyClient {
     protected roomConnectionClient: RoomConnectionClient;
     private gridClient: GridClient;
 
-    constructor() {
-        this.services = createServices();
+    /**
+     * @param options - @internal Base URL overrides for Whereby's own development. They may change without notice.
+     */
+    constructor(options: ServicesOptions = {}) {
+        this.services = createServices(options);
         this.store = createStore({ injectServices: this.services });
 
         this.localMediaClient = new LocalMediaClient(this.store);

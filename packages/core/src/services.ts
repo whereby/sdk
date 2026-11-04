@@ -8,14 +8,28 @@ import {
 } from "./api";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL;
 
-export function createServices() {
+/**
+ * Base URL overrides for `WherebyClient` and `createServices`.
+ *
+ * @internal For Whereby's own development. May change without notice.
+ */
+export interface ServicesOptions {
+    /** Base URL of the Whereby API. Defaults to the URL the SDK was built with. */
+    apiBaseUrl?: string;
+    /** Base URL of the signal server. Defaults to the URL the SDK was built with. */
+    signalBaseUrl?: string;
+}
+
+export function createServices({ apiBaseUrl, signalBaseUrl }: ServicesOptions = {}) {
+    const resolvedApiBaseUrl = apiBaseUrl || API_BASE_URL;
     const credentialsService = CredentialsService.create({
-        baseUrl: API_BASE_URL || "https://api.whereby.dev",
+        baseUrl: resolvedApiBaseUrl || "https://api.whereby.dev",
     });
     const apiClient = new ApiClient({
         fetchDeviceCredentials: credentialsService.getCredentials.bind(credentialsService),
-        baseUrl: API_BASE_URL,
+        baseUrl: resolvedApiBaseUrl,
     });
     const organizationService = new OrganizationService({ apiClient });
     const roomIntegrationService = new RoomIntegrationService({ apiClient });
@@ -38,5 +52,6 @@ export function createServices() {
         organizationService,
         roomIntegrationService,
         fetchOrganizationFromRoomUrl,
+        signalBaseUrl: signalBaseUrl || SIGNAL_BASE_URL || "wss://signal.appearin.net",
     };
 }

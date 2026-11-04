@@ -21,6 +21,7 @@ describe("signalConnectionSlice", () => {
             store.dispatch(doSignalConnect());
 
             expect(ServerSocket).toHaveBeenCalledTimes(1);
+            expect(ServerSocket).toHaveBeenCalledWith("wss://signal.example.test", { autoConnect: false });
             expect(mockServerSocket.connect).toHaveBeenCalledTimes(1);
         });
 

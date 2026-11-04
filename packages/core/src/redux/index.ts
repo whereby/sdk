@@ -29,4 +29,4 @@ export * from "./slices/spotlights";
 export * from "./slices/streaming";
 export * from "./slices/waitingParticipants";
 export * from "./types";
-export { createServices } from "../services";
+export { createServices, type ServicesOptions } from "../services";
