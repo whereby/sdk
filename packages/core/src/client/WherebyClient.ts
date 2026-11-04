@@ -4,6 +4,14 @@ import { GridClient } from "./Grid";
 import { LocalMediaClient } from "./LocalMedia";
 import { RoomConnectionClient } from "./RoomConnection";
 
+/**
+ * The credentials of the device the SDK uses to call the Whereby API.
+ */
+export interface DeviceCredentials {
+    deviceId: string;
+    hmac: string;
+}
+
 export class WherebyClient {
     protected store: AppStore;
     private services: ReturnType<typeof createServices>;
@@ -30,6 +38,25 @@ export class WherebyClient {
 
     public getGrid(): GridClient {
         return this.gridClient;
+    }
+
+    /**
+     * Gets the credentials of the device this client uses for the Whereby API, for apps that call the Whereby API
+     * as the same device as the SDK. Build the header as `Authorization: Basic base64(deviceId:hmac)`.
+     *
+     * Returns the stored credentials if there are any. Otherwise it registers a new device, as joining a room does,
+     * and stores its credentials. Concurrent calls share one request.
+     *
+     * @returns The device credentials, or null if the API returned none.
+     */
+    public async getDeviceCredentials(): Promise<DeviceCredentials | null> {
+        const credentials = await this.services.credentialsService.getCredentials();
+
+        if (!credentials) {
+            return null;
+        }
+
+        return { deviceId: credentials.credentials.uuid, hmac: credentials.hmac };
     }
 
     public getStore(): AppStore {
