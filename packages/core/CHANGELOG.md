@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 1.28.0
+
+### Minor Changes
+
+- c5d5528: core: Add `WherebyClient.getDeviceCredentials()`, for apps that call the Whereby API as the same device as the SDK. It
+  returns the device's `{ deviceId, hmac }` as a plain object, or `null`, and registers the device on its first call, as
+  joining a room does. The app builds the `Authorization: Basic base64(deviceId:hmac)` header itself. The
+  `DeviceCredentials` type is exported from `@whereby.com/core` and `@whereby.com/browser-sdk/react`.
+
 ## 1.27.1
 
 ### Patch Changes
