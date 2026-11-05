@@ -1,5 +1,13 @@
 # @whereby.com/core
 
+## 1.29.0
+
+### Minor Changes
+
+- c2d819e: core: `WherebyClient` takes optional `apiBaseUrl` and `signalBaseUrl` options. A client created with them sends its API
+  requests and signal connection to those URLs. Without them nothing changes. The options are internal and may change
+  without notice.
+
 ## 1.28.0
 
 ### Minor Changes
