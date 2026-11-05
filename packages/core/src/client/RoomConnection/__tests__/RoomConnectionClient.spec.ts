@@ -616,6 +616,7 @@ describe("RoomConnectionClient", () => {
                 displayName: "Test",
                 localMediaOptions: { audio: true, video: true },
                 initialMuteStates: { camera: true, microphone: true },
+                joinRoomTimeout: 5000,
             });
 
             client.joinRoom();
@@ -628,6 +629,7 @@ describe("RoomConnectionClient", () => {
                         displayName: "Test",
                         localMediaOptions: { audio: true, video: true },
                         initialMuteStates: { camera: true, microphone: true },
+                        joinRoomTimeout: 5000,
                     }),
                 }),
             );
@@ -645,6 +647,38 @@ describe("RoomConnectionClient", () => {
                 expect.objectContaining({
                     status: "disconnected",
                     error: "organization_fetch_failed",
+                }),
+            );
+        });
+
+        it("rejects with the stage that stalled when the join times out", async () => {
+            mockServices.credentialsService.getCredentials.mockReturnValue(new Promise(() => {}));
+            mockServices.fetchOrganizationFromRoomUrl.mockReturnValue(new Promise(() => {}));
+
+            client.initialize({ roomUrl: "https://example.whereby.com/test" });
+
+            const promise = client.joinRoom();
+            const assertion = expect(promise).rejects.toEqual("join_timeout_credentials");
+            await jest.advanceTimersByTimeAsync(60000);
+
+            await assertion;
+        });
+
+        it("rejects when the device credentials can't be fetched", async () => {
+            console.error = jest.fn();
+            mockServices.credentialsService.getCredentials.mockRejectedValue(new Error("Network error"));
+            // The organization request waits on the credentials, so it fails with them.
+            mockServices.fetchOrganizationFromRoomUrl.mockImplementation(async () => {
+                await mockServices.credentialsService.getCredentials();
+            });
+
+            client.initialize({ roomUrl: "https://example.whereby.com/test" });
+
+            await expect(client.joinRoom()).rejects.toEqual("device_credentials_fetch_failed");
+            expect(mockStore.getState().roomConnection).toEqual(
+                expect.objectContaining({
+                    status: "disconnected",
+                    error: "device_credentials_fetch_failed",
                 }),
             );
         });
