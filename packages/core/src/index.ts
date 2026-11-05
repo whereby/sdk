@@ -2,7 +2,7 @@ export * from "./api";
 export * from "./effects";
 export * from "./roomIntegrationContent";
 export * from "./RoomParticipant";
-export { createServices } from "./services";
+export { createServices, type ServicesOptions } from "./services";
 export * from "./utils";
 export * from "./client/WherebyClient";
 export * from "./client/LocalMedia";

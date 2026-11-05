@@ -77,6 +77,7 @@ export const mockServices = {
         fetchOrganization: jest.fn(),
     },
     fetchOrganizationFromRoomUrl: jest.fn(),
+    signalBaseUrl: "wss://signal.example.test",
 };
 
 export function createStore({ initialState, withSignalConnection, withRtcManager, connectToRoom }: StoreOptions = {}) {
