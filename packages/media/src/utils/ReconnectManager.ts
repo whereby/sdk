@@ -160,9 +160,6 @@ export class ReconnectManager extends EventEmitter {
             delete this._clients[clientId];
         }
 
-        // TODO: Remove this code and disconnect clients from consuming app.
-        this.rtcManager?.disconnect(clientId, payload.eventClaim);
-
         this.emit(PROTOCOL_RESPONSES.CLIENT_LEFT, payload);
     }
 
