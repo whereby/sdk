@@ -748,15 +748,12 @@ importers:
       '@whereby.com/webrtcapihealthcheck':
         specifier: 1.0.1
         version: 1.0.1
-      check-ip:
-        specifier: ^1.1.1
-        version: 1.1.1
       events:
         specifier: ^3.3.0
         version: 3.3.0
       ip-address:
-        specifier: ^10.1.1
-        version: 10.2.0
+        specifier: ^10.7.3
+        version: 10.7.3
       mediasoup-client:
         specifier: 3.19.0
         version: 3.19.0
@@ -770,8 +767,8 @@ importers:
         specifier: 4.7.2
         version: 4.7.2
       uuid:
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^11.1.1
+        version: 11.1.1
       uuid-validate:
         specifier: ^0.0.3
         version: 0.0.3
@@ -788,9 +785,6 @@ importers:
       '@types/sdp-transform':
         specifier: ^2.4.9
         version: 2.4.10
-      '@types/uuid':
-        specifier: ^9.0.1
-        version: 9.0.8
       '@types/uuid-validate':
         specifier: ^0.0.3
         version: 0.0.3
@@ -3895,9 +3889,6 @@ packages:
   '@types/uuid-validate@0.0.3':
     resolution: {integrity: sha512-htkuv1+RZjjHkSrXets3a6kqDeqgYutBtdER3U6I1mWV58AIsDFWoUuN0cB6DMOWiqTHK0XqH3pXeqIVfJIrog==}
 
-  '@types/uuid@9.0.8':
-    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
-
   '@types/web@0.0.267':
     resolution: {integrity: sha512-BoXcBEr/fnGEl5wRmtbBg2zOAKiQszHPc1gxBMstiUBosGV8t5xZflmbgQV+y1I4x+lBo7Kb1HLItt2h+TdQBw==}
 
@@ -4740,9 +4731,6 @@ packages:
   check-error@2.1.1:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
-
-  check-ip@1.1.1:
-    resolution: {integrity: sha512-LuLBA6r4aS/4B7pvOqmT4Bi+GKnNNC/V18K0zDTRFjAxNeUzGsr0wmsOfFhFH7fGjwdx6GX6wyIQBkUhFox2Pw==}
 
   chokidar@3.6.0:
     resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
@@ -6285,13 +6273,9 @@ packages:
   invariant@2.2.4:
     resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
 
-  ip-address@10.2.0:
-    resolution: {integrity: sha512-/+S6j4E9AHvW9SWMSEY9Xfy66O5PWvVEJ08O0y5JGyEKQpojb0K0GKpz/v5HJ/G0vi3D2sjGK78119oXZeE0qA==}
+  ip-address@10.7.3:
+    resolution: {integrity: sha512-A1kdq/tSb5QjvKvAMgIoEvDBIgL7qaqVP/jkvSwYYRZ9iEzvPpopxp2wQfu3SuZRHtpHNxMn8Fs0bS+gf5Xmwg==}
     engines: {node: '>= 12'}
-
-  ip-range-check@0.0.2:
-    resolution: {integrity: sha512-sHbyog8viObPK2vZFNYpBM/d2mqs51uuxOhB+0EIMSWmmrflAWne7CeXOWunb5R6bWQVOijbLx7bEY0sE05bug==}
-    deprecated: Contains an SSRF filter-bypass vulnerability, upgrade to 0.2.1+ — see GHSA advisory
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -9257,6 +9241,10 @@ packages:
 
   uuid@11.1.0:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
     hasBin: true
 
   uuid@7.0.3:
@@ -13133,8 +13121,6 @@ snapshots:
 
   '@types/uuid-validate@0.0.3': {}
 
-  '@types/uuid@9.0.8': {}
-
   '@types/web@0.0.267': {}
 
   '@types/yargs-parser@21.0.3': {}
@@ -14140,10 +14126,6 @@ snapshots:
   chardet@0.7.0: {}
 
   check-error@2.1.1: {}
-
-  check-ip@1.1.1:
-    dependencies:
-      ip-range-check: 0.0.2
 
   chokidar@3.6.0:
     dependencies:
@@ -15978,11 +15960,7 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  ip-address@10.2.0: {}
-
-  ip-range-check@0.0.2:
-    dependencies:
-      ipaddr.js: 1.9.1
+  ip-address@10.7.3: {}
 
   ipaddr.js@1.9.1: {}
 
@@ -19884,6 +19862,8 @@ snapshots:
   uuid-validate@0.0.3: {}
 
   uuid@11.1.0: {}
+
+  uuid@11.1.1: {}
 
   uuid@7.0.3: {}
 
