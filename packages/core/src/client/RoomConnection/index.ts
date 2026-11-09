@@ -3,6 +3,7 @@ import { addListener } from "@reduxjs/toolkit";
 import {
     ClientView,
     ConnectionStatus,
+    JoinRoomErrorNames,
     JoinRoomStage,
     doAcceptWaitingParticipant,
     doAppStart,
@@ -525,13 +526,14 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
 
     /**
      * Join a Whereby room.
-     * This method will throw an error if the room URL is not provided.
+     * The promise rejects if the room URL is not provided, if the room can't be joined, and with `"join_cancelled"`
+     * when the room is left or joined again before this join has finished.
      */
-    public async joinRoom() {
+    public joinRoom(): Promise<RoomJoinedSuccess> {
         const { roomUrl } = this.options;
 
         if (!roomUrl) {
-            throw new Error("Room URL is required to join a room.");
+            return Promise.reject(new Error("Room URL is required to join a room."));
         }
 
         const roomConfig: AppConfig = {
@@ -560,8 +562,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             addListener({
                 actionCreator: signalEvents.roomJoined,
                 effect: ({ payload }) => {
-                    unsubscribeRoomJoined();
-                    unsubscribeOrganizationFetchFailed();
+                    stopListening();
 
                     if ("error" in payload) {
                         reject?.(payload.error);
@@ -578,13 +579,30 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
             addListener({
                 actionCreator: doOrganizationFetch.rejected,
                 effect: () => {
-                    unsubscribeRoomJoined();
-                    unsubscribeOrganizationFetchFailed();
+                    stopListening();
 
-                    reject?.("organization_fetch_failed");
+                    reject?.("organization_fetch_failed" satisfies JoinRoomErrorNames);
                 },
             }),
         );
+
+        const unsubscribeJoinCancelled = this.store.dispatch(
+            addListener({
+                predicate: (action) => doAppStop.match(action) || doAppStart.match(action),
+                effect: () => {
+                    stopListening();
+
+                    promise.catch(() => undefined);
+                    reject?.("join_cancelled" satisfies JoinRoomErrorNames);
+                },
+            }),
+        );
+
+        const stopListening = () => {
+            unsubscribeRoomJoined();
+            unsubscribeOrganizationFetchFailed();
+            unsubscribeJoinCancelled();
+        };
 
         return promise;
     }

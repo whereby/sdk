@@ -670,6 +670,42 @@ describe("RoomConnectionClient", () => {
             );
         });
 
+        describe("when the join is given up before the room is joined", () => {
+            beforeEach(() => {
+                mockServices.credentialsService.getCredentials.mockReturnValue(new Promise(() => {}));
+                client.initialize({ roomUrl: "https://example.whereby.com/test" });
+            });
+
+            it("rejects with join_cancelled when the room is left", async () => {
+                const join = client.joinRoom();
+
+                client.leaveRoom();
+
+                await expect(join).rejects.toEqual("join_cancelled");
+            });
+
+            it("rejects the earlier join with join_cancelled when joining again", async () => {
+                const firstJoin = client.joinRoom();
+
+                client.joinRoom();
+
+                await expect(firstJoin).rejects.toEqual("join_cancelled");
+            });
+
+            it("doesn't report the cancellation as an unhandled rejection", async () => {
+                const onUnhandledRejection = jest.fn();
+                process.on("unhandledRejection", onUnhandledRejection);
+                jest.useRealTimers();
+
+                client.joinRoom();
+                client.leaveRoom();
+                await new Promise((resolve) => setTimeout(resolve, 10));
+
+                process.off("unhandledRejection", onUnhandledRejection);
+                expect(onUnhandledRejection).not.toHaveBeenCalled();
+            });
+        });
+
         it("rejects when the organization can't be fetched", async () => {
             console.error = jest.fn();
             mockServices.credentialsService.getCredentials.mockResolvedValue({ credentials: { uuid: "deviceId" } });

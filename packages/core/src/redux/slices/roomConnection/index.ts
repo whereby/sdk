@@ -50,6 +50,8 @@ export type JoinRoomStage =
     | "identify_device"
     | "join_room";
 
+export type JoinRoomErrorNames = "organization_fetch_failed" | "join_cancelled";
+
 /**
  * Reducer
  */
