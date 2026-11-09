@@ -58,7 +58,7 @@ describe("ServerSocket", () => {
         });
 
         it("should accept an rtcManager with glitchfree on", () => {
-            const serverSocket = new ServerSocket("https://localhost", null, true);
+            const serverSocket = new ServerSocket("https://localhost", null, { glitchFreeOn: true });
             const mockManager = jest.fn() as any;
 
             serverSocket.setRtcManager(mockManager);
@@ -67,7 +67,7 @@ describe("ServerSocket", () => {
         });
 
         it("should not throw with glitchFree on and missing ReconnectManger", () => {
-            const serverSocket = new ServerSocket("https://localhost", null, true);
+            const serverSocket = new ServerSocket("https://localhost", null, { glitchFreeOn: true });
 
             delete serverSocket._reconnectManager;
 
@@ -77,14 +77,14 @@ describe("ServerSocket", () => {
 
     describe("glitchFree", () => {
         it("should have a ReconnectManager", () => {
-            const serverSocket = new ServerSocket("https://localhost", null, true);
+            const serverSocket = new ServerSocket("https://localhost", null, { glitchFreeOn: true });
 
             expect(serverSocket._reconnectManager).toBeDefined();
             expect(serverSocket._reconnectManager).toBeInstanceOf(ReconnectManager);
         });
 
         it("should intercept correct events from socket", () => {
-            const serverSocket = new ServerSocket("https://localhost", null, true);
+            const serverSocket = new ServerSocket("https://localhost", null, { glitchFreeOn: true });
 
             serverSocket.on(PROTOCOL_RESPONSES.CLIENT_LEFT, jest.fn());
             serverSocket.on(PROTOCOL_RESPONSES.ROOM_JOINED, jest.fn());
@@ -95,7 +95,7 @@ describe("ServerSocket", () => {
         });
 
         it("should not throw when intercepting events on missing reconnect manager", () => {
-            const serverSocket = new ServerSocket("https://localhost", null, true);
+            const serverSocket = new ServerSocket("https://localhost", null, { glitchFreeOn: true });
 
             delete serverSocket._reconnectManager;
 
@@ -106,7 +106,7 @@ describe("ServerSocket", () => {
         });
 
         it("should return a deregestering function", () => {
-            const serverSocket = new ServerSocket("https://localhost", null, true);
+            const serverSocket = new ServerSocket("https://localhost", null, { glitchFreeOn: true });
             const deregisterHandler = serverSocket.on(PROTOCOL_RESPONSES.CLIENT_LEFT, jest.fn());
 
             deregisterHandler();
