@@ -148,7 +148,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         actions: null,
         rtcEventName: "userRole",
         getValue: (state: RootState) => selectAuthorizationRoleName(state),
-        getOutput: (value) => ({ userRole: value }),
+        getOutput: (value) => ({ role: value }),
     }),
     roomMode: createRtcAnalyticsCustomEvent({
         actions: null,
