@@ -81,6 +81,12 @@ describe("roomSlice", () => {
                         expect(roomJoined({ mode: "normal" }).mode).toEqual("normal");
                     });
 
+                    it("should keep the sfu server", () => {
+                        const sfuServer = { url: "sfu.example.com:443" };
+                        expect(roomJoined({ sfuServer }).sfuServer).toEqual(sfuServer);
+                        expect(roomJoined({}).sfuServer).toEqual(null);
+                    });
+
                     it("should fall back to the presence of an sfu server", () => {
                         expect(
                             roomJoined({
