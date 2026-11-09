@@ -206,9 +206,9 @@ const sendIfChanged = (
     state: RootState,
     dispatch: (action: ReturnType<typeof updateReportedValues>) => void,
 ) => {
-    const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+    const { rtcManager, rtcManagerInitialized } = selectRtcConnectionRaw(state);
     // not marked as sent, so doRtcAnalyticsCustomEventsInitialize sends it when the RtcManager is initialized
-    if (!rtcManager) return;
+    if (!rtcManager || !rtcManagerInitialized) return;
 
     const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
 
@@ -224,9 +224,9 @@ const sendIfChanged = (
 
 export const doRtcAnalyticsCustomEventsInitialize = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
-    const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+    const { rtcManager, rtcManagerInitialized } = selectRtcConnectionRaw(state);
 
-    if (!rtcManager) return;
+    if (!rtcManager || !rtcManagerInitialized) return;
 
     // RTC stats require a `insightsStats` event to be sent to set the timestamp.
     // This is a temporary workaround, we just send one dummy event on initialization.
@@ -263,3 +263,12 @@ createReactor([selectRtcManagerInitialized], ({ dispatch }, selectRtcManagerInit
         dispatch(doRtcAnalyticsCustomEventsInitialize());
     }
 });
+
+// events without actions are sent whenever their value changes while there is an RtcManager
+Object.values(rtcAnalyticsCustomEvents)
+    .filter(({ actions }) => actions === null)
+    .forEach((rtcCustomEvent) => {
+        createReactor([rtcCustomEvent.getValue], ({ dispatch, getState }) => {
+            sendIfChanged(rtcCustomEvent, getState(), dispatch);
+        });
+    });
