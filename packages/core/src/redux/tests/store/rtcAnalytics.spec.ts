@@ -54,6 +54,24 @@ describe("actions", () => {
     });
 });
 
+describe("userRole", () => {
+    it("sends the role name as role", () => {
+        const store = createStore({
+            withRtcManager: true,
+            initialState: {
+                authorization: { roomKey: null, assistantKey: null, roleName: "host" },
+            },
+        });
+
+        store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+
+        expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+            "userRole",
+            expect.objectContaining({ role: "host" }),
+        );
+    });
+});
+
 describe("middleware", () => {
     describe("displayName", () => {
         it("tracks display name changes", () => {
