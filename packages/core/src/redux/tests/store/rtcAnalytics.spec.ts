@@ -3,6 +3,9 @@ import { doRtcAnalyticsCustomEventsInitialize, rtcAnalyticsState } from "../../s
 import { diff } from "deep-object-diff";
 import { randomOrganization } from "../../../__mocks__/appMocks";
 import { setDisplayName } from "../../slices/localParticipant";
+import { socketDisconnected, socketReconnecting } from "../../slices/signalConnection";
+import { rtcManagerInitialized } from "../../slices/rtcConnection";
+import { RootState } from "../../store";
 
 describe("actions", () => {
     it("doRtcAnalyticsCustomEventsInitialize", async () => {
@@ -83,6 +86,63 @@ describe("middleware", () => {
             expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
                 "displayName",
                 expect.objectContaining({ displayName: "[[redacted]]" }),
+            );
+        });
+    });
+    describe("values without actions", () => {
+        it("sends signalConnectionStatus on every change after initialization", () => {
+            const store = createStore({ withRtcManager: true, withSignalConnection: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(socketReconnecting());
+            store.dispatch(socketDisconnected());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "disconnected" }),
+            );
+        });
+
+        it("sends rtcConnectionStatus when it changes", () => {
+            const store = createStore({ withRtcManager: true, withSignalConnection: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(socketReconnecting());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "rtcConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+        });
+    });
+
+    describe("before the RtcManager is initialized", () => {
+        it("doesn't send changes until initialization, which sends insightsStats first", () => {
+            const store = createStore({
+                withRtcManager: true,
+                withSignalConnection: true,
+                initialState: {
+                    rtcConnection: { rtcManagerInitialized: false } as RootState["rtcConnection"],
+                },
+            });
+
+            store.dispatch(socketReconnecting());
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalled();
+
+            store.dispatch(rtcManagerInitialized());
+
+            const sentEvents = mockRtcManager.sendStatsCustomEvent.mock.calls.map(([type]) => type);
+            expect(sentEvents[0]).toBe("insightsStats");
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
             );
         });
     });
