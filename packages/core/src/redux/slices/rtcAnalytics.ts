@@ -25,6 +25,7 @@ import { selectDeviceId } from "./deviceCredentials";
 import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
 import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "./localScreenshare";
 import { selectRoomConnectionSessionId } from "./roomConnection/selectors";
+import { selectRoomMode } from "./room";
 import { signalEvents } from "./signalConnection/actions";
 import { selectCloudRecordingIsInitiator, selectIsCloudRecording } from "./cloudRecording";
 import { selectLiveTranscriptionIsInitiator, selectIsLiveTranscription } from "./liveTranscription";
@@ -162,6 +163,12 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         rtcEventName: "userRole",
         getValue: (state: RootState) => selectAuthorizationRoleName(state),
         getOutput: (value) => ({ userRole: value }),
+    }),
+    roomMode: createRtcAnalyticsCustomEvent({
+        actions: null,
+        rtcEventName: "roomMode",
+        getValue: (state: RootState) => selectRoomMode(state),
+        getOutput: (value) => ({ roomMode: value }),
     }),
 };
 
