@@ -54,19 +54,14 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => ({ stream: value }),
     }),
     localScreenshareStream: createRtcAnalyticsCustomEvent({
-        actions: [doStartScreenshare.fulfilled],
+        // after stopScreenshare there is no stream, so it's sent without tracks
+        actions: [doStartScreenshare.fulfilled, stopScreenshare],
         rtcEventName: "localScreenshareStream",
         getValue: (state: RootState) =>
             selectLocalScreenshareStream(state)
                 ?.getTracks()
                 .map((track) => ({ id: track.id, kind: track.kind, label: track.label })),
         getOutput: (value) => ({ tracks: value }),
-    }),
-    localScreenshareStreamStopped: createRtcAnalyticsCustomEvent({
-        actions: [stopScreenshare],
-        rtcEventName: "localScreenshareStream",
-        getValue: () => () => null,
-        getOutput: () => ({}),
     }),
     displayName: createRtcAnalyticsCustomEvent({
         actions: [setDisplayName],

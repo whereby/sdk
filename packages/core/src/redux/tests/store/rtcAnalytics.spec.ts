@@ -7,6 +7,8 @@ import { socketDisconnected, socketReconnecting } from "../../slices/signalConne
 import { signalEvents } from "../../slices/signalConnection/actions";
 import { rtcManagerInitialized } from "../../slices/rtcConnection";
 import { RootState } from "../../store";
+import { stopScreenshare } from "../../slices/localScreenshare";
+import MockMediaStream from "../../../__mocks__/MediaStream";
 
 describe("actions", () => {
     it("doRtcAnalyticsCustomEventsInitialize", async () => {
@@ -24,7 +26,6 @@ describe("actions", () => {
             expect.arrayContaining([
                 "audioEnabled",
                 "videoEnabled",
-                "localScreenshareStream",
                 "displayName",
                 "clientId",
                 "externalId",
@@ -237,6 +238,53 @@ describe("middleware", () => {
                 "signalConnectionStatus",
                 expect.objectContaining({ status: "reconnecting" }),
             );
+        });
+    });
+
+    describe("localScreenshareStream", () => {
+        const screenshareStream = () => {
+            const stream = new MockMediaStream();
+            stream.addTrack({ id: "screen-track", kind: "video", label: "Screen" } as MediaStreamTrack);
+            return stream;
+        };
+        const screenshareEvents = () =>
+            mockRtcManager.sendStatsCustomEvent.mock.calls.filter(([type]) => type === "localScreenshareStream");
+
+        it("sends only the tracks on initialization while screensharing", () => {
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    localScreenshare: { status: "active", stream: screenshareStream() },
+                },
+            });
+
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+
+            expect(screenshareEvents()).toEqual([
+                [
+                    "localScreenshareStream",
+                    expect.objectContaining({ tracks: [{ id: "screen-track", kind: "video", label: "Screen" }] }),
+                ],
+            ]);
+        });
+
+        it("sends no tracks when the screenshare stops", () => {
+            const stream = screenshareStream();
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    localScreenshare: { status: "active", stream },
+                },
+            });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(stopScreenshare({ stream }));
+
+            expect(screenshareEvents()).toEqual([
+                ["localScreenshareStream", expect.objectContaining({ tracks: undefined })],
+            ]);
+            expect(store.getState().rtcAnalytics.reportedValues.localScreenshareStream).toBeUndefined();
         });
     });
 
