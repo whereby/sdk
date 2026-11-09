@@ -195,6 +195,33 @@ export const rtcAnalyticsSlice = createSlice({
     },
 });
 
+/**
+ * Action creators
+ */
+export const { updateReportedValues } = rtcAnalyticsSlice.actions;
+
+// sends the event if its value changed since it was last sent
+const sendIfChanged = (
+    rtcCustomEvent: RtcAnalyticsCustomEvent,
+    state: RootState,
+    dispatch: (action: ReturnType<typeof updateReportedValues>) => void,
+) => {
+    const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+    // not marked as sent, so doRtcAnalyticsCustomEventsInitialize sends it when the RtcManager is initialized
+    if (!rtcManager) return;
+
+    const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
+
+    const value = getValue(state);
+    const comparableValue = makeComparable(value);
+
+    if (state.rtcAnalytics.reportedValues?.[rtcEventName] !== comparableValue) {
+        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
+        rtcManager.sendStatsCustomEvent(rtcEventName, output);
+        dispatch(updateReportedValues({ rtcEventName, value }));
+    }
+};
+
 export const doRtcAnalyticsCustomEventsInitialize = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
@@ -212,47 +239,18 @@ export const doRtcAnalyticsCustomEventsInitialize = createAppThunk(() => (dispat
         cpu: 0,
     });
 
-    Object.values(rtcAnalyticsCustomEvents).forEach(({ rtcEventName, getValue, getOutput }) => {
-        const value = getValue(state);
-        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
-
-        const comparableValue = makeComparable(value);
-
-        if (state.rtcAnalytics.reportedValues?.[rtcEventName] !== comparableValue) {
-            rtcManager.sendStatsCustomEvent(rtcEventName, output);
-            dispatch(updateReportedValues({ rtcEventName, value }));
-        }
-    });
+    Object.values(rtcAnalyticsCustomEvents).forEach((rtcCustomEvent) => sendIfChanged(rtcCustomEvent, state, dispatch));
 });
-
-/**
- * Action creators
- */
-export const { updateReportedValues } = rtcAnalyticsSlice.actions;
 
 startAppListening({
     matcher: isAnyOf(...rtcCustomEventActions),
     effect: ({ type }, { getState, dispatch }) => {
-        const state: RootState = getState();
-
-        const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        if (!rtcManager) return;
-
         const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actions }) =>
             actions?.map((a) => a.type).includes(type),
         );
         if (!rtcCustomEvent) return;
 
-        const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
-
-        const value = getValue(state);
-        const comparableValue = makeComparable(value);
-        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
-
-        if (state.rtcAnalytics.reportedValues?.[rtcEventName] !== comparableValue) {
-            rtcManager.sendStatsCustomEvent(rtcEventName, output);
-            dispatch(updateReportedValues({ rtcEventName, value }));
-        }
+        sendIfChanged(rtcCustomEvent, getState(), dispatch);
     },
 });
 
