@@ -1,7 +1,7 @@
 import { createSlice, ThunkDispatch, PayloadAction, createSelector, UnknownAction } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
-import { createReactor, startAppListening } from "../../listenerMiddleware";
+import { addAppListener, createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
 
 import {
@@ -47,7 +47,8 @@ import {
     LiveCaptionsStoppedEvent,
 } from "@whereby.com/media";
 import { Credentials } from "../../../api";
-import { selectAppIsActive } from "../app";
+import { doAppStart, selectAppIsActive } from "../app";
+import { selectRoomConnectionError } from "../roomConnection/selectors";
 import { createSignalDisconnectEvent, signalEvents } from "./actions";
 export { signalEvents } from "./actions";
 
@@ -262,6 +263,28 @@ export const doSignalConnect = createAppThunk(() => {
         socket.on("device_identified", () => dispatch(deviceIdentified()));
         socket.getManager().on("reconnect", () => dispatch(socketReconnecting()));
         forwardSocketEvents(socket, dispatch);
+
+        const unsubscribeJoinEnded = dispatch(
+            addAppListener({
+                predicate: (_, state) =>
+                    !!selectRoomConnectionError(state) || (!selectAppIsActive(state) && !socket.isConnected()),
+                effect: (_, { getState }) => {
+                    stopListening();
+                    socket.disconnect();
+
+                    if (selectSignalStatus(getState()) !== "disconnected") {
+                        dispatch(socketDisconnected());
+                    }
+                },
+            }),
+        );
+        const unsubscribeNextJoin = dispatch(
+            addAppListener({ actionCreator: doAppStart, effect: () => stopListening() }),
+        );
+        const stopListening = () => {
+            unsubscribeJoinEnded();
+            unsubscribeNextJoin();
+        };
 
         socket.connect();
     };
