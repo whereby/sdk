@@ -1,4 +1,5 @@
 import { createStore, mockRtcManager } from "../store.setup";
+import { rtcStats } from "@whereby.com/media";
 import { doRtcAnalyticsCustomEventsInitialize, rtcAnalyticsState } from "../../slices/rtcAnalytics";
 import { diff } from "deep-object-diff";
 import { randomOrganization, randomSignalClient } from "../../../__mocks__/appMocks";
@@ -129,6 +130,45 @@ describe("middleware", () => {
                 "roomSessionId",
                 expect.objectContaining({ roomSessionId: "new-session-id" }),
             );
+        });
+
+        it("sends sfuServer on roomJoined, even without an RtcManager, but not again for the same server", () => {
+            const sendEvent = jest.spyOn(rtcStats, "sendEvent").mockImplementation(() => undefined);
+            const store = createStore();
+
+            const roomJoinedEvent = () =>
+                signalEvents.roomJoined({
+                    selfId: "selfId",
+                    clientClaim: "client-claim",
+                    eventClaim: "",
+                    room: {
+                        mode: "group",
+                        sfuServer: { url: "sfu.example.com:443" },
+                        clients: [],
+                        knockers: [],
+                        spotlights: [],
+                        session: null,
+                        isClaimed: true,
+                        isLocked: false,
+                        iceServers: { iceServers: [] },
+                        mediaserverConfigTtlSeconds: 0,
+                        name: "",
+                        organizationId: "",
+                        turnServers: [],
+                    },
+                });
+            store.dispatch(roomJoinedEvent());
+
+            expect(sendEvent).toHaveBeenCalledWith(
+                "sfuServer",
+                expect.objectContaining({ sfuServer: { url: "sfu.example.com:443" } }),
+            );
+
+            sendEvent.mockClear();
+            store.dispatch(roomJoinedEvent());
+
+            expect(sendEvent).not.toHaveBeenCalled();
+            sendEvent.mockRestore();
         });
     });
     describe("connection statuses", () => {

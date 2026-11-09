@@ -1,4 +1,5 @@
 import { AsyncThunk, ActionCreatorWithPayload, PayloadAction, createSlice, isAnyOf } from "@reduxjs/toolkit";
+import { rtcStats } from "@whereby.com/media";
 import { RootState } from "../store";
 import { ThunkConfig, createAppThunk } from "../thunk";
 import { createReactor, startAppListening } from "../listenerMiddleware";
@@ -263,6 +264,21 @@ startAppListening({
         Object.values(rtcAnalyticsCustomEvents)
             .filter(({ actions }) => actions?.map((a) => a.type).includes(type))
             .forEach((rtcCustomEvent) => sendIfChanged(rtcCustomEvent, getState(), dispatch));
+    },
+});
+
+// not kept in state, so sent from roomJoined
+startAppListening({
+    actionCreator: signalEvents.roomJoined,
+    effect: ({ payload }, { getState, dispatch }) => {
+        if ("error" in payload) return;
+
+        const sfuServer = payload.room.sfuServer ?? null;
+        const comparableValue = makeComparable(sfuServer);
+        if (getState().rtcAnalytics.reportedValues?.sfuServer === comparableValue) return;
+
+        rtcStats.sendEvent("sfuServer", { sfuServer, _time: Date.now() });
+        dispatch(updateReportedValues({ rtcEventName: "sfuServer", value: comparableValue }));
     },
 });
 
