@@ -28,6 +28,26 @@ function renderUseRoomConnection(options: UseRoomConnectionOptions) {
 }
 
 describe("useRoomConnection", () => {
+    describe("joinRoom", () => {
+        it("joins with the options from the latest render", () => {
+            const { result, rerender, roomConnection } = renderUseRoomConnection({ displayName: "First" });
+
+            rerender({ displayName: "Second" });
+            result.current.actions.joinRoom();
+
+            expect(roomConnection.initialize).toHaveBeenCalledWith(expect.objectContaining({ displayName: "Second" }));
+        });
+
+        it("stays the same function when the options change", () => {
+            const { result, rerender } = renderUseRoomConnection({ displayName: "First" });
+            const { joinRoom } = result.current.actions;
+
+            rerender({ displayName: "Second" });
+
+            expect(result.current.actions.joinRoom).toBe(joinRoom);
+        });
+    });
+
     describe("joinStage", () => {
         it("is null before a join, then follows the client", () => {
             const { result, roomConnection } = renderUseRoomConnection({});
