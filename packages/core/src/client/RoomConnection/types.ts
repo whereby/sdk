@@ -6,6 +6,7 @@ import {
     ClientView,
     ConnectionStatus,
     FileUpload,
+    JoinRoomStage,
     InitialMuteStates,
     NotificationsEventEmitter,
     RoomIntegration,
@@ -157,6 +158,7 @@ export type RoomIntegrationsState = {
 export interface RoomConnectionState {
     connectionStatus: ConnectionStatus;
     connectionError: string | null;
+    joinStage: JoinRoomStage | null;
     knockResponse: KnockResponse | null;
     chatMessages: ChatMessage[];
     fileUploads: FileUpload[];

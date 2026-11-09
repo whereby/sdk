@@ -5,6 +5,7 @@ import {
     ChatMessage,
     ClientView,
     ConnectionStatus,
+    JoinRoomStage,
 } from "../../redux";
 import { Screenshare, WaitingParticipant } from "../../RoomParticipant";
 import {
@@ -33,6 +34,7 @@ export const LIVE_CAPTIONS_STATUS_CHANGED = "live-captions:status-changed";
 export const LIVE_TRANSCRIPTION_STATUS_CHANGED = "live-transcription:status-changed";
 /* Connection Error Events */
 export const CONNECTION_ERROR_CHANGED = "connection:error-changed";
+export const CONNECTION_JOIN_STAGE_CHANGED = "connection:join-stage-changed";
 /* Audio-only Mode Events */
 export const AUDIO_ONLY_MODE_CHANGED = "audio-only-mode:changed";
 /* Call Quality Events */
@@ -93,6 +95,7 @@ export type RoomConnectionEvents = {
     [LIVE_CAPTIONS_STATUS_CHANGED]: [status: LiveCaptionsState | undefined];
     [LIVE_TRANSCRIPTION_STATUS_CHANGED]: [status: LiveTranscriptionState | undefined];
     [CONNECTION_ERROR_CHANGED]: [error: string | null];
+    [CONNECTION_JOIN_STAGE_CHANGED]: [joinStage: JoinRoomStage | null];
     [AUDIO_ONLY_MODE_CHANGED]: [isEnabled: boolean];
     [REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED]: [report: RemoteParticipantQualityReport];
     [LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED]: [report: LocalParticipantQualityReport];

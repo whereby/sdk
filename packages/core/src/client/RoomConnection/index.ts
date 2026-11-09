@@ -3,6 +3,7 @@ import { addListener } from "@reduxjs/toolkit";
 import {
     ClientView,
     ConnectionStatus,
+    JoinRoomStage,
     doAcceptWaitingParticipant,
     doAppStart,
     doAppStop,
@@ -91,6 +92,7 @@ import {
     CHAT_NEW_MESSAGE,
     CLOUD_RECORDING_STATUS_CHANGED,
     CONNECTION_ERROR_CHANGED,
+    CONNECTION_JOIN_STAGE_CHANGED,
     AUDIO_ONLY_MODE_CHANGED,
     REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
     LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED,
@@ -131,6 +133,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private fileUploadsSubscribers = new Set<(uploads: FileUpload[]) => void>();
     private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined | undefined) => void>();
     private connectionErrorSubscribers = new Set<(status: string | null) => void>();
+    private joinStageSubscribers = new Set<(joinStage: JoinRoomStage | null) => void>();
     private audioOnlyModeSubscribers = new Set<(isEnabled: boolean) => void>();
     private remoteParticipantQualityReportSubscribers = new Set<(report: RemoteParticipantQualityReport) => void>();
     private localParticipantQualityReportSubscribers = new Set<(report: LocalParticipantQualityReport) => void>();
@@ -191,6 +194,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.connectionError !== previousState.connectionError) {
             this.connectionErrorSubscribers.forEach((cb) => cb(state.connectionError));
             this.emit(CONNECTION_ERROR_CHANGED, state.connectionError);
+        }
+
+        if (state.joinStage !== previousState.joinStage) {
+            this.joinStageSubscribers.forEach((cb) => cb(state.joinStage));
+            this.emit(CONNECTION_JOIN_STAGE_CHANGED, state.joinStage);
         }
 
         if (state.roomSessionId !== previousState.roomSessionId) {
@@ -383,6 +391,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToConnectionError(callback: (error: string | null) => void): () => void {
         this.connectionErrorSubscribers.add(callback);
         return () => this.connectionErrorSubscribers.delete(callback);
+    }
+
+    public subscribeToJoinStage(callback: (joinStage: JoinRoomStage | null) => void): () => void {
+        this.joinStageSubscribers.add(callback);
+        return () => this.joinStageSubscribers.delete(callback);
     }
 
     public subscribeToRoomSessionId(callback: (roomSessionId: string | null) => void): () => void {
@@ -1130,6 +1143,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.fileUploadsSubscribers.clear();
         this.cloudRecordingSubscribers.clear();
         this.connectionErrorSubscribers.clear();
+        this.joinStageSubscribers.clear();
         this.audioOnlyModeSubscribers.clear();
         this.remoteParticipantQualityReportSubscribers.clear();
         this.localParticipantQualityReportSubscribers.clear();

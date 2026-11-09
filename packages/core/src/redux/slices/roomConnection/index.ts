@@ -16,12 +16,14 @@ import {
 } from "../app";
 import { selectAssistantKey, selectRoomKey, setRoomKey } from "../authorization";
 
+import { selectHasFetchedDeviceCredentials } from "../deviceCredentials";
 import { doOrganizationFetch, selectOrganizationId } from "../organization";
 import { signalEvents } from "../signalConnection/actions";
 import {
     doSignalDisconnect,
     selectSignalConnectionDeviceIdentified,
     selectSignalConnectionRaw,
+    selectSignalStatus,
 } from "../signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "../localMedia";
 import { selectSelfId, selectLocalParticipantClientClaim } from "../localParticipant/selectors";
@@ -39,6 +41,14 @@ export type ConnectionStatus =
     | "left"
     | "disconnected"
     | "reconnecting";
+
+export type JoinRoomStage =
+    | "credentials"
+    | "organization"
+    | "local_media"
+    | "signal_connect"
+    | "identify_device"
+    | "join_room";
 
 /**
  * Reducer
@@ -279,6 +289,45 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
 
     dispatch(connectionStatusChanged("connecting"));
 });
+
+/**
+ * Selectors
+ */
+
+export const selectJoinRoomStage = createSelector(
+    [
+        selectAppIsActive,
+        selectRoomConnectionStatus,
+        selectRoomConnectionError,
+        selectRoomConnectionIsRejoining,
+        selectHasFetchedDeviceCredentials,
+        selectOrganizationId,
+        selectLocalMediaStatus,
+        selectSignalStatus,
+        selectSignalConnectionDeviceIdentified,
+    ],
+    (
+        appIsActive,
+        status,
+        error,
+        isRejoining,
+        hasDeviceCredentials,
+        organizationId,
+        localMediaStatus,
+        signalStatus,
+        deviceIdentified,
+    ): JoinRoomStage | null => {
+        const isJoining = status === "ready" || status === "connecting" || (status === "reconnecting" && !isRejoining);
+
+        if (!appIsActive || error || !isJoining) return null;
+        if (!hasDeviceCredentials) return "credentials";
+        if (!organizationId) return "organization";
+        if (localMediaStatus !== "started") return "local_media";
+        if (signalStatus !== "connected") return "signal_connect";
+        if (!deviceIdentified) return "identify_device";
+        return "join_room";
+    },
+);
 
 /**
  * Reactors
