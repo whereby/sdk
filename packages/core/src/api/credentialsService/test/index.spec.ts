@@ -75,6 +75,20 @@ describe("CredentialsService", () => {
             });
         });
 
+        describe("when the fetched credentials can't be stored", () => {
+            it("resolves with the credentials without fetching again", async () => {
+                const apiCredentials = new Credentials("test-fetched-uuid", "test-fetched-hmac");
+                credentialsStore.loadOrDefault.mockResolvedValue(null);
+                credentialsStore.save.mockRejectedValue(new Error("Storage is blocked"));
+                deviceService.getCredentials.mockResolvedValue(apiCredentials);
+
+                const result = await credentialsService.getCredentials();
+
+                expect(result).toEqual(apiCredentials);
+                expect(deviceService.getCredentials).toBeCalledTimes(1);
+            });
+        });
+
         describe("when credentials are available in localStorage", () => {
             beforeEach(() => {
                 credentialsStore.loadOrDefault.mockResolvedValue(storedCredentials);
