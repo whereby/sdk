@@ -225,7 +225,7 @@ const sendIfChanged = (
     if (state.rtcAnalytics.reportedValues?.[rtcEventName] !== comparableValue) {
         const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
         rtcManager.sendStatsCustomEvent(rtcEventName, output);
-        dispatch(updateReportedValues({ rtcEventName, value }));
+        dispatch(updateReportedValues({ rtcEventName, value: comparableValue }));
     }
 };
 
