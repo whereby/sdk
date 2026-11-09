@@ -1,7 +1,7 @@
 import { createStore, mockRtcManager } from "../store.setup";
 import { doRtcAnalyticsCustomEventsInitialize, rtcAnalyticsState } from "../../slices/rtcAnalytics";
 import { diff } from "deep-object-diff";
-import { randomOrganization } from "../../../__mocks__/appMocks";
+import { randomOrganization, randomSignalClient } from "../../../__mocks__/appMocks";
 import { setDisplayName } from "../../slices/localParticipant";
 import { socketDisconnected, socketReconnecting } from "../../slices/signalConnection";
 import { signalEvents } from "../../slices/signalConnection/actions";
@@ -197,6 +197,19 @@ describe("middleware", () => {
                 "signalConnectionStatus",
                 expect.objectContaining({ status: "reconnecting" }),
             );
+        });
+    });
+
+    describe("values with actions", () => {
+        it("doesn't send an object value again when it hasn't changed", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.newClient({ client: randomSignalClient() }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("transcribing", expect.anything());
         });
     });
 });
