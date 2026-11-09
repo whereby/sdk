@@ -106,4 +106,17 @@ describe("middleware", () => {
             );
         });
     });
+
+    describe("values with actions", () => {
+        it("doesn't send an object value again when it hasn't changed", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.newClient({ client: randomSignalClient() }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("transcribing", expect.anything());
+        });
+    });
 });
