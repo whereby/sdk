@@ -32,6 +32,7 @@ describe("actions", () => {
                 "rtcConnectionStatus",
                 "userRole",
                 "roomMode",
+                "sfuServer",
             ]),
         );
         expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("insightsStats", expect.any(Object));
@@ -172,6 +173,45 @@ describe("middleware", () => {
                 "roomMode",
                 expect.objectContaining({ roomMode: "group" }),
             );
+        });
+
+        it("sends sfuServer when the room is joined, but not again for the same server", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            const roomJoinedEvent = () =>
+                signalEvents.roomJoined({
+                    selfId: "selfId",
+                    clientClaim: "client-claim",
+                    eventClaim: "",
+                    room: {
+                        mode: "group",
+                        sfuServer: { url: "sfu.example.com:443" },
+                        clients: [],
+                        knockers: [],
+                        spotlights: [],
+                        session: null,
+                        isClaimed: true,
+                        isLocked: false,
+                        iceServers: { iceServers: [] },
+                        mediaserverConfigTtlSeconds: 0,
+                        name: "",
+                        organizationId: "",
+                        turnServers: [],
+                    },
+                });
+            store.dispatch(roomJoinedEvent());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "sfuServer",
+                expect.objectContaining({ sfuServer: { url: "sfu.example.com:443" } }),
+            );
+
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+            store.dispatch(roomJoinedEvent());
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("sfuServer", expect.anything());
         });
     });
 

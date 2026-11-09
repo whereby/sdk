@@ -13,7 +13,7 @@ import { selectDeviceId } from "./deviceCredentials";
 import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
 import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "./localScreenshare";
 import { selectRoomConnectionSessionId } from "./roomConnection/selectors";
-import { selectRoomMode } from "./room";
+import { selectRoomMode, selectRoomSfuServer } from "./room";
 import { signalEvents } from "./signalConnection/actions";
 import { selectCloudRecordingIsInitiator, selectIsCloudRecording } from "./cloudRecording";
 import { selectLiveTranscriptionIsInitiator, selectIsLiveTranscription } from "./liveTranscription";
@@ -155,6 +155,13 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         rtcEventName: "roomMode",
         getValue: (state: RootState) => selectRoomMode(state),
         getOutput: (value) => ({ roomMode: value }),
+    }),
+    sfuServer: createRtcAnalyticsCustomEvent({
+        actions: null,
+        rtcEventName: "sfuServer",
+        // the reducer only replaces this object on roomJoined (or a store reset), so the reactor runs only then
+        getValue: (state: RootState) => selectRoomSfuServer(state),
+        getOutput: (value) => ({ sfuServer: value }),
     }),
 };
 
