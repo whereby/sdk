@@ -4,6 +4,7 @@ import { diff } from "deep-object-diff";
 import { randomOrganization } from "../../../__mocks__/appMocks";
 import { setDisplayName } from "../../slices/localParticipant";
 import { socketDisconnected, socketReconnecting } from "../../slices/signalConnection";
+import { signalEvents } from "../../slices/signalConnection/actions";
 import { rtcManagerInitialized } from "../../slices/rtcConnection";
 import { RootState } from "../../store";
 
@@ -30,6 +31,7 @@ describe("actions", () => {
                 "signalConnectionStatus",
                 "rtcConnectionStatus",
                 "userRole",
+                "roomMode",
             ]),
         );
         expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("insightsStats", expect.any(Object));
@@ -118,6 +120,39 @@ describe("middleware", () => {
             expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
                 "rtcConnectionStatus",
                 expect.objectContaining({ status: "reconnecting" }),
+            );
+        });
+
+        it("sends roomMode when the room switches mode", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.roomJoined({
+                    selfId: "selfId",
+                    clientClaim: "client-claim",
+                    eventClaim: "",
+                    room: {
+                        mode: "group",
+                        clients: [],
+                        knockers: [],
+                        spotlights: [],
+                        session: null,
+                        isClaimed: true,
+                        isLocked: false,
+                        iceServers: { iceServers: [] },
+                        mediaserverConfigTtlSeconds: 0,
+                        name: "",
+                        organizationId: "",
+                        turnServers: [],
+                    },
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "roomMode",
+                expect.objectContaining({ roomMode: "group" }),
             );
         });
     });
