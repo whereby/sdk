@@ -22,6 +22,16 @@ const clientInfo = {
 const noop = () => {};
 let resetDelta = noop;
 
+// the server uses the path as the room name, and roomOrigin instead of the Origin header (the page's origin)
+let roomUrl: URL | null = null;
+
+function getConnectionPath() {
+    if (!roomUrl) {
+        return window.location.pathname;
+    }
+    return `${roomUrl.pathname}?roomOrigin=${encodeURIComponent(roomUrl.origin)}`;
+}
+
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
 function rtcStatsConnection(wsURL: string, logger: any = console) {
     const buffer: any = [];
@@ -118,7 +128,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             ws?.close();
             connection.connected = true;
             connection.attemptedConnectedAtLeastOnce = true;
-            ws = new WebSocket(wsURL + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
+            ws = new WebSocket(wsURL + getConnectionPath(), RTCSTATS_PROTOCOL_VERSION);
 
             ws.onerror = (e: Event) => {
                 connection.connected = false;
@@ -212,5 +222,9 @@ const rtcStats = {
         });
     },
     server,
+    // for pages that aren't the room's page; used from the next connection
+    setRoomUrl: (url: string | null) => {
+        roomUrl = url ? new URL(url) : null;
+    },
 };
 export default rtcStats;
