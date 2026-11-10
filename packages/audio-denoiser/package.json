@@ -2,6 +2,11 @@
     "name": "@whereby.com/audio-denoiser",
     "version": "1.0.31",
     "description": "Audio denoiser (noise suppression) for microphone streams",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/whereby/sdk.git",
+        "directory": "packages/audio-denoiser"
+    },
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",

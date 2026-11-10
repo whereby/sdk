@@ -4,6 +4,11 @@
     "author": "Whereby AS",
     "version": "1.29.0",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/whereby/sdk.git",
+        "directory": "packages/core"
+    },
     "scripts": {
         "clean": "rimraf dist node_modules .turbo",
         "build": "rimraf dist && node --max-old-space-size=8192 ../../node_modules/rollup/dist/bin/rollup -c rollup.config.js",

@@ -4,6 +4,11 @@
     "author": "Whereby AS",
     "version": "1.2.129",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/whereby/sdk.git",
+        "directory": "packages/assistant-sdk"
+    },
     "scripts": {
         "clean": "rimraf dist node_modules .turbo",
         "build": "rimraf dist && rollup -c rollup.config.js",
