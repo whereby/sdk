@@ -22,6 +22,16 @@ const clientInfo = {
 const noop = () => {};
 let resetDelta = noop;
 
+let roomUrl: string | null = null;
+
+function getConnectionPath() {
+    return roomUrl ? "/" : window.location.pathname;
+}
+
+function getConnectionQuery() {
+    return roomUrl ? `?roomUrl=${encodeURIComponent(roomUrl)}` : "";
+}
+
 // Inlined version of rtcstats/trace-ws with improved disconnect handling.
 function rtcStatsConnection(wsURL: string, logger: any = console) {
     const buffer: any = [];
@@ -118,7 +128,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             ws?.close();
             connection.connected = true;
             connection.attemptedConnectedAtLeastOnce = true;
-            ws = new WebSocket(wsURL + window.location.pathname, RTCSTATS_PROTOCOL_VERSION);
+            ws = new WebSocket(wsURL + getConnectionPath() + getConnectionQuery(), RTCSTATS_PROTOCOL_VERSION);
 
             ws.onerror = (e: Event) => {
                 connection.connected = false;
@@ -212,5 +222,8 @@ const rtcStats = {
         });
     },
     server,
+    setRoomUrl: (url: string | null) => {
+        roomUrl = url;
+    },
 };
 export default rtcStats;
