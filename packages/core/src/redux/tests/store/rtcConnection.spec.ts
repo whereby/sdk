@@ -22,7 +22,7 @@ import { initialLocalMediaState, toggleCameraEnabled } from "../../slices/localM
 import { localScreenshareSliceInitialState } from "../../slices/localScreenshare";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
-import { doAppStart, doAppStop } from "../../slices/app";
+import { doAppStart, doAppStop, initialState as appInitialState } from "../../slices/app";
 import { signalEvents } from "../../slices/signalConnection";
 import { rtcEvents } from "../../slices/rtcConnection/actions";
 
@@ -583,15 +583,29 @@ describe("middleware", () => {
     });
 
     describe("doAppStop", () => {
-        it("closes the rtcstats connection", () => {
+        it("closes the rtcstats connection after the RTC teardown", () => {
             const store = createStore({
                 withRtcManager: true,
+                initialState: { app: { ...appInitialState, isActive: true } },
             });
-            const rtcManager = selectRtcManager(store.getState());
 
             store.dispatch(doAppStop());
 
-            expect(rtcManager?.rtcStatsDisconnect).toHaveBeenCalled();
+            expect(mockRtcManager.disconnectAll).toHaveBeenCalled();
+            expect(mockRtcManager.rtcStatsDisconnect).toHaveBeenCalledTimes(1);
+            expect(mockRtcManager.rtcStatsDisconnect.mock.invocationCallOrder[0]).toBeGreaterThan(
+                mockRtcManager.disconnectAll.mock.invocationCallOrder[0],
+            );
+        });
+
+        it("closes the rtcstats connection even if the RTC teardown throws", () => {
+            const store = createStore({ withRtcManager: true });
+            mockRtcManager.disconnectAll.mockImplementationOnce(() => {
+                throw new Error("teardown failed");
+            });
+
+            expect(() => store.dispatch(doDisconnectRtc())).toThrow("teardown failed");
+            expect(mockRtcManager.rtcStatsDisconnect).toHaveBeenCalledTimes(1);
         });
 
         it("clears the room's URL for rtcstats", () => {
