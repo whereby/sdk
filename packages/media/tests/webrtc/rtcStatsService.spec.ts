@@ -1,6 +1,7 @@
+const mockResetDelta = jest.fn();
 jest.mock("@whereby.com/rtcstats", () => ({
     __esModule: true,
-    default: jest.fn(() => ({ resetDelta: jest.fn() })),
+    default: jest.fn(() => ({ resetDelta: mockResetDelta })),
 }));
 jest.mock("@whereby.com/webrtcapihealthcheck", () => ({
     getWebRtcApiHealth: jest.fn(() => ({})),
@@ -15,6 +16,7 @@ class MockWebSocket {
     static CLOSED = 3;
     readyState = 0;
     onclose: ((e: { code: number }) => void) | null = null;
+    onopen: (() => void) | null = null;
     constructor(url: string, protocol: string) {
         mockWebSocketConstructor(url, protocol);
         mockWebSockets.push(this);
@@ -23,6 +25,17 @@ class MockWebSocket {
     close = jest.fn();
 }
 
+const openSocket = (socket: MockWebSocket) => {
+    socket.readyState = MockWebSocket.OPEN;
+    socket.onopen?.();
+};
+
+const sentCustomEvents = (socket: MockWebSocket) =>
+    socket.send.mock.calls
+        .map(([data]) => JSON.parse(data))
+        .filter(([type]) => type === "customEvent")
+        .map(([, , { type }]) => type);
+
 describe("rtcStatsService", () => {
     const originalWebSocket = global.WebSocket;
     let rtcStats: typeof import("../../src/webrtc/rtcStatsService").default;
@@ -30,6 +43,7 @@ describe("rtcStatsService", () => {
     beforeEach(() => {
         global.WebSocket = MockWebSocket as any;
         mockWebSocketConstructor.mockClear();
+        mockResetDelta.mockClear();
         mockWebSockets.length = 0;
         jest.isolateModules(() => {
             rtcStats = require("../../src/webrtc/rtcStatsService").default;
@@ -93,5 +107,56 @@ describe("rtcStatsService", () => {
         mockWebSockets[0].onclose?.({ code: 1000 });
 
         expect(rtcStats.server.connected).toBe(true);
+    });
+
+    describe("events from before a reconnect", () => {
+        const joinRoom = (roomUrl: string) => {
+            rtcStats.setRoomUrl(roomUrl);
+            rtcStats.server.connect();
+            openSocket(mockWebSockets[mockWebSockets.length - 1]);
+            rtcStats.sendEvent("organizationId", { organizationId: "org" });
+            rtcStats.sendEvent("roomSessionId", { roomSessionId: roomUrl });
+        };
+
+        it("sends them again when reconnecting in the same room", () => {
+            joinRoom("https://acme.whereby.com/a");
+            rtcStats.server.close();
+
+            rtcStats.server.connect();
+            openSocket(mockWebSockets[1]);
+
+            expect(sentCustomEvents(mockWebSockets[1])).toEqual(["organizationId", "roomSessionId"]);
+        });
+
+        it("doesn't send the previous room's events after the room's URL is replaced", () => {
+            joinRoom("https://acme.whereby.com/a");
+            rtcStats.server.close();
+            rtcStats.setRoomUrl(null);
+
+            rtcStats.setRoomUrl("https://acme.whereby.com/b");
+            rtcStats.server.connect();
+            openSocket(mockWebSockets[1]);
+
+            expect(sentCustomEvents(mockWebSockets[1])).toEqual([]);
+        });
+
+        it("sends full getstats reports again after the room's URL is replaced", () => {
+            rtcStats.setRoomUrl("https://acme.whereby.com/a");
+            expect(mockResetDelta).not.toHaveBeenCalled();
+
+            rtcStats.setRoomUrl(null);
+
+            expect(mockResetDelta).toHaveBeenCalledTimes(1);
+        });
+
+        it("keeps events from before the first room's URL is set", () => {
+            rtcStats.sendEvent("deviceId", { deviceId: "device" });
+
+            rtcStats.setRoomUrl("https://acme.whereby.com/a");
+            rtcStats.server.connect();
+            openSocket(mockWebSockets[0]);
+
+            expect(sentCustomEvents(mockWebSockets[0])).toEqual(["deviceId"]);
+        });
     });
 });

@@ -36,20 +36,21 @@ function getConnectionPath() {
 function rtcStatsConnection(wsURL: string, logger: any = console) {
     const buffer: any = [];
     let ws: WebSocket;
-    let organizationId: number;
-    let clientId: string;
-    let displayName: string;
-    let userRole: string;
+    // the last of these events, sent again after a reconnect
+    let organizationId: number | undefined;
+    let clientId: string | undefined;
+    let displayName: string | undefined;
+    let userRole: string | undefined;
     let roomSessionId: any;
     let connectionShouldBeOpen: any;
     let connectionAttempt = 0;
     let hasPassedOnRoomSessionId = false;
     let getStatsBufferUsed = 0;
-    let deviceId: string;
-    let roomProduct: string;
-    let roomMode: string;
-    let sfuServer: string;
-    let featureFlags: string;
+    let deviceId: string | undefined;
+    let roomProduct: string | undefined;
+    let roomMode: string | undefined;
+    let sfuServer: string | undefined;
+    let featureFlags: string | undefined;
 
     const connection = {
         connected: false,
@@ -117,6 +118,16 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                     }
                 }, 1000 * connectionAttempt);
             }
+        },
+        // forgets the previous room's events, so a connection for another room doesn't start with them
+        clearRoomEvents: () => {
+            organizationId = clientId = displayName = userRole = roomSessionId = undefined;
+            deviceId = roomProduct = roomMode = sfuServer = featureFlags = undefined;
+            hasPassedOnRoomSessionId = false;
+            buffer.length = 0;
+            getStatsBufferUsed = 0;
+            // the dropped getstats may hold the full reports that later deltas are based on
+            resetDelta();
         },
         close: () => {
             connectionShouldBeOpen = false;
@@ -205,6 +216,7 @@ const noopServer = {
     connected: false,
     attemptedConnectedAtLeastOnce: false,
     trace: noop,
+    clearRoomEvents: noop,
     close: noop,
     connect: noop,
 };
@@ -232,7 +244,11 @@ const rtcStats = {
     server,
     // for pages that aren't the room's page; used from the next connection
     setRoomUrl: (url: string | null) => {
-        roomUrl = url ? new URL(url) : null;
+        const newRoomUrl = url ? new URL(url) : null;
+        if (roomUrl && roomUrl.href !== newRoomUrl?.href) {
+            server.clearRoomEvents();
+        }
+        roomUrl = newRoomUrl;
     },
 };
 export default rtcStats;
