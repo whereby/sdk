@@ -120,6 +120,8 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
         },
         close: () => {
             connectionShouldBeOpen = false;
+            // not left to onclose, so a connect() right after it opens a new connection
+            connection.connected = false;
             ws?.close();
         },
         connect: () => {
@@ -128,14 +130,20 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             ws?.close();
             connection.connected = true;
             connection.attemptedConnectedAtLeastOnce = true;
-            ws = new WebSocket(wsURL + getConnectionPath(), RTCSTATS_PROTOCOL_VERSION);
+            const socket = new WebSocket(wsURL + getConnectionPath(), RTCSTATS_PROTOCOL_VERSION);
+            ws = socket;
 
+            // a replaced socket's events don't change the state of the current one
             ws.onerror = (e: Event) => {
-                connection.connected = false;
+                if (ws === socket) {
+                    connection.connected = false;
+                }
                 logger.warn(`[RTCSTATS] WebSocket error`, e);
             };
             ws.onclose = (e: CloseEvent) => {
-                connection.connected = false;
+                if (ws === socket) {
+                    connection.connected = false;
+                }
                 logger.info(`[RTCSTATS] Closed ${e.code}`);
                 resetDelta();
             };
