@@ -14,3 +14,7 @@ configured to read `.nvmrc` like so:
         cache-dependency-path: |
             pnpm-lock.yaml
 ```
+
+The exceptions are the jobs that publish to npm (`publish` in `build-test-release.yml` and the job in
+`canary-release.yml`): they set no `cache` and no `registry-url`, because they hold the OIDC token for npm trusted
+publishing. See [docs/agents/ci.md](../../docs/agents/ci.md).

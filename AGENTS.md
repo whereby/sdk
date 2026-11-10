@@ -95,7 +95,7 @@ output from some existing tests. That doesn't fail the run.
   support`, `browser-sdk: Render room integrations in VideoGrid by default`. Use `common:` for changes across
   packages, and `storybook:`, `e2e:` or the app name for those areas (README, PR template).
 - One commit per package where you can, each with its own changeset.
-- Branches: `<user>/<ticket>-<slug>`. PRs target `main`. Beta work targets `development`.
+- Branches: `<user>/<ticket>-<slug>`. PRs target `main`.
 - PR title has the same prefix. The body follows `.github/PULL_REQUEST_TEMPLATE.md`: **Description** (summary, related
   issue), **Testing**, **Screenshots/GIFs**, **Checklist**, **Additional Information**.
 

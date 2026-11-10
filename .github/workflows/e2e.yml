@@ -1,7 +1,7 @@
 name: End-to-end Tests
 on:
     pull_request:
-        branches: [main, development]
+        branches: [main]
     schedule:
         - cron: "0 12 * * *"
 jobs:

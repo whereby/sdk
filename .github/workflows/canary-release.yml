@@ -4,6 +4,8 @@ on:
     issue_comment:
         types: [created]
 
+permissions: {}
+
 concurrency: ${{ github.workflow }}-${{ github.ref}}
 
 jobs:
@@ -13,6 +15,11 @@ jobs:
             github.event.issue.pull_request != null &&
             (github.event.comment.body == '/canary' || github.event.comment.body == '/canary-release')
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            issues: write
+            pull-requests: write
+            id-token: write
         steps:
             - name: Enforce permission requirement
               uses: prince-chrismc/check-actor-permissions-action@v3
@@ -46,20 +53,16 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version-file: .nvmrc
-                  cache: "pnpm"
-                  cache-dependency-path: |
-                      pnpm-lock.yaml
+
+            - name: Ensure npm supports trusted publishing
+              run: |
+                  if ! node -e 'const [a, b, c] = process.argv[1].split(".").map(Number); process.exit(a > 11 || (a === 11 && (b > 5 || (b === 5 && c >= 1))) ? 0 : 1)' "$(npm --version)"; then
+                      npm install --global npm@^11.5.1
+                  fi
+                  npm --version
 
             - name: Install Dependencies
               run: pnpm install --frozen-lockfile
-
-            - name: Create an .npmrc
-              env:
-                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-              run: |
-                  cat << EOF > "$HOME/.npmrc"
-                    //registry.npmjs.org/:_authToken=$NPM_TOKEN
-                  EOF
 
             - name: Create and publish canary release
               uses: actions/github-script@v7
@@ -67,18 +70,18 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   script: |
-                      const execa = require('execa')
+                      const fs = require('fs')
+                      const path = require('path')
 
-                      await execa.command('pnpm changeset version --snapshot canary', { stdio: 'inherit' })
+                      await exec.exec('pnpm', ['changeset', 'version', '--snapshot', 'canary'])
+                      await exec.exec('pnpm', ['run', 'release', '--tag', 'canary', '--no-git-tag'])
 
-                      const releaseProcess = execa.command('pnpm release --no-git-tags --snapshot --tag canary')
-                      releaseProcess.stdout.pipe(process.stdout)
-
-                      const {stdout} = await releaseProcess
-
-                      const newTags = Array
-                        .from(stdout.matchAll(/New tag:\s+([^\s\n]+)/g))
-                        .map(([_, tag]) => tag)
+                      const newTags = fs.readdirSync('packages')
+                        .map(dir => path.join('packages', dir, 'package.json'))
+                        .filter(file => fs.existsSync(file))
+                        .map(file => JSON.parse(fs.readFileSync(file, 'utf8')))
+                        .filter(pkg => !pkg.private && pkg.version.includes('-canary-'))
+                        .map(pkg => `${pkg.name}@${pkg.version}`)
 
                       if (newTags.length) {
                         const multiple = newTags.length > 1
