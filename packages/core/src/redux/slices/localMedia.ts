@@ -442,6 +442,8 @@ export const doUpdateDeviceList = createAppAsyncThunk(
             const { changedDevices, addedDevices } = getUpdatedDevices({
                 oldDevices,
                 newDevices,
+                currentAudioId: selectCurrentMicrophoneDeviceId(state),
+                currentVideoId: selectCurrentCameraDeviceId(state),
             });
 
             let autoSwitchAudioId = changedDevices.audioinput?.deviceId;
@@ -453,6 +455,13 @@ export const doUpdateDeviceList = createAppAsyncThunk(
             }
             if (autoSwitchVideoId === undefined) {
                 autoSwitchVideoId = addedDevices.videoinput?.deviceId;
+            }
+
+            if (!selectIsMicrophoneEnabled(getState())) {
+                autoSwitchAudioId = undefined;
+            }
+            if (!selectIsCameraEnabled(getState())) {
+                autoSwitchVideoId = undefined;
             }
 
             if (autoSwitchAudioId !== undefined || autoSwitchVideoId !== undefined) {
