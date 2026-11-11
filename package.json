@@ -29,9 +29,9 @@
         "tooling/*"
     ],
     "devDependencies": {
-        "@whereby.com/prettier-config": "workspace:*",
         "@arethetypeswrong/cli": "^0.15.3",
-        "@changesets/cli": "^2.27.1",
+        "@changesets/cli": "^3.0.3",
+        "@whereby.com/prettier-config": "workspace:*",
         "prettier": "catalog:",
         "rimraf": "^5.0.5",
         "turbo": "^2.5.4",

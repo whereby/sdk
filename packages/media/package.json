@@ -6,7 +6,8 @@
     "homepage": "https://github.com/whereby/sdk",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/whereby/sdk.git"
+        "url": "git+https://github.com/whereby/sdk.git",
+        "directory": "packages/media"
     },
     "bugs": {
         "url": "https://github.com/whereby/sdk/issues"

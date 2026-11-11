@@ -80,4 +80,4 @@ Most logic lives in core's redux slices, and that's where most tests go.
   run against a local backend, also set `REACT_APP_API_BASE_URL` and `REACT_APP_SIGNAL_BASE_URL`.
 - `apps/sample-app/test/README.md` still says `yarn` and `playwright.yml`. Use `pnpm`, and the workflow is
   `.github/workflows/e2e.yml`.
-- CI runs it on every PR to `main`/`development` and daily. See [ci.md](ci.md).
+- CI runs it on every PR to `main` and daily. See [ci.md](ci.md).

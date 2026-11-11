@@ -52,12 +52,13 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/whereby/sdk.git.git"
+        "url": "git+https://github.com/whereby/sdk.git",
+        "directory": "packages/react-native-sdk"
     },
     "author": "Whereby AS",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/whereby/sdk.git/issues"
+        "url": "https://github.com/whereby/sdk/issues"
     },
     "publishConfig": {
         "access": "public"
