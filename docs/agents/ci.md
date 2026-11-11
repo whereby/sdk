@@ -13,7 +13,7 @@ Branch protection on `main` requires PRs to be up to date with `main`. No status
 | `test.yml` (Test) | PRs to `main` | `pnpm test` | `pnpm test` |
 | `e2e.yml` (End-to-end Tests) | PRs to `main`, daily at 12:00 UTC | `pnpm test:e2e` on macOS with Playwright and FFmpeg, report uploaded as `playwright-report` | `pnpm test:e2e` (needs `.env`, see [testing.md](testing.md)) |
 | `build-test-release.yml` | push to `main` | the Version Packages PR, or build, test and publish (below) | none |
-| `canary-release.yml` | PR comment `/canary` or `/canary-release` | snapshot release with tag `canary` | none |
+| `canary-release.yml` | manual (`workflow_dispatch`) with a PR number | snapshot release with tag `canary` | none |
 
 `pnpm test` is `turbo test`. For each package that has them it runs `test:lint`, `test:attw` (which builds the package
 and its dependencies first) and `test` (lint again plus unit tests). It doesn't run e2e.
@@ -88,16 +88,20 @@ What keeps it working:
   in, so keep it on new packages too.
 - The trusted publisher on npm names the workflow file. Renaming either workflow breaks its publishing until
   each package's trusted publisher is updated (`npm trust github <pkg> --file <workflow>.yml --repo whereby/sdk
-  --allow-publish`, by an npm org admin). A trusted publisher that hasn't completed a publish within 2 days of being
+  --allow-publish`, by an npm org admin). A trusted publisher that hasn't completed a publish within 48 hours of being
   added expires.
 - A new package can't be published with OIDC the first time: npm needs the package to exist before it can have a
   trusted publisher. An npm org admin publishes the first version by hand, then adds the trusted publisher.
 
 ## Canaries
 
-Comment `/canary` on a PR (needs write access). `canary-release.yml` runs `changeset version --snapshot canary` and
-`changeset publish --tag canary --no-git-tag`, which publishes every package with a changeset in the PR (and its
-dependents) as `0.0.0-canary-<datetime>`. Then it deploys the camera-effects and audio-denoiser CDN assets and comments
-the install commands on the PR. It publishes with trusted publishing, like the release (above).
+Run the `Canary` workflow from the Actions tab with a PR number, or `gh workflow run canary-release.yml -f
+pr=<number>` (needs write access). `canary-release.yml` checks out the PR and runs `changeset version --snapshot
+canary` and `changeset publish --tag canary --no-git-tag`, which publishes every package with a changeset in the PR
+(and its dependents) as `0.0.0-canary-<datetime>`. Then it deploys the camera-effects and audio-denoiser CDN assets and
+comments the install commands on the PR. It publishes with trusted publishing, like the release (above).
+
+It's a manual run rather than a `/canary` PR comment because npm rejects trusted publishing from `issue_comment` (and
+`pull_request_target`) workflows. Use `push`, `release` or `workflow_dispatch` for anything that publishes.
 
 These publish to npm and the CDN, so only a human starts them.

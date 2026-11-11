@@ -1,49 +1,42 @@
 name: Canary
 
 on:
-    issue_comment:
-        types: [created]
+    workflow_dispatch:
+        inputs:
+            pr:
+                description: "Pull request number"
+                required: true
+                type: number
 
 permissions: {}
 
-concurrency: ${{ github.workflow }}-${{ github.ref}}
+concurrency: ${{ github.workflow }}-${{ inputs.pr }}
 
 jobs:
     canary_release:
         name: Canary Release
-        if: |
-            github.event.issue.pull_request != null &&
-            (github.event.comment.body == '/canary' || github.event.comment.body == '/canary-release')
         runs-on: ubuntu-latest
         permissions:
             contents: read
             issues: write
             pull-requests: write
             id-token: write
+        env:
+            PR: ${{ inputs.pr }}
         steps:
-            - name: Enforce permission requirement
-              uses: prince-chrismc/check-actor-permissions-action@v3
-              with:
-                  permission: write
-
-            - name: Add initial reaction
-              uses: peter-evans/create-or-update-comment@v4
-              with:
-                  comment-id: ${{ github.event.comment.id }}
-                  reactions: eyes
-
             - name: Checkout Repo
               uses: actions/checkout@v6
 
             - name: Checkout PR
-              run: gh pr checkout ${{ github.event.issue.number }}
+              run: gh pr checkout "$PR"
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Reset changeset files on changeset-release/main branch
               run: |
                   if [[ $(git branch --show-current) == "changeset-release/main" ]]; then
-                      git checkout origin/main -- .changeset
+                      git fetch --depth=1 origin main
+                      git checkout FETCH_HEAD -- .changeset
                   fi
 
             - name: Setup pnpm
@@ -96,8 +89,9 @@ jobs:
                             '```'
                           )).join('\n')
                         )
+                        await core.summary.addRaw(body).write()
                         await github.rest.issues.createComment({
-                          issue_number: context.issue.number,
+                          issue_number: Number(process.env.PR),
                           owner: context.repo.owner,
                           repo: context.repo.repo,
                           body,
@@ -119,9 +113,3 @@ jobs:
                   aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   package: "audio-denoiser"
                   dest_dir: "audio-denoiser"
-
-            - name: Add final reaction
-              uses: peter-evans/create-or-update-comment@v4
-              with:
-                  comment-id: ${{ github.event.comment.id }}
-                  reactions: rocket
