@@ -7,6 +7,8 @@ import { signalEvents } from "../../slices/signalConnection/actions";
 import { socketDisconnected, socketReconnecting } from "../../slices/signalConnection";
 import { rtcManagerInitialized } from "../../slices/rtcConnection";
 import { RootState } from "../../store";
+import { transcribingRequestStarted } from "../../slices/liveTranscription";
+import { recordingRequestStarted } from "../../slices/cloudRecording";
 
 describe("actions", () => {
     it("doRtcAnalyticsCustomEventsInitialize", async () => {
@@ -178,6 +180,55 @@ describe("middleware", () => {
 
             expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
             expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("transcribing", expect.anything());
+        });
+
+        it("sends transcribing when live transcription starts and stops", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            store.dispatch(transcribingRequestStarted());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.liveTranscriptionStarted({ transcriptionId: "transcription-id" }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "transcribing",
+                expect.objectContaining({ local: false, cloud: true }),
+            );
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.liveTranscriptionStopped({
+                    transcriptionId: "transcription-id",
+                    endedAt: "2026-11-11T00:00:00Z",
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "transcribing",
+                expect.objectContaining({ local: false, cloud: false }),
+            );
+        });
+
+        it("sends recording when the cloud recording starts and stops", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            store.dispatch(recordingRequestStarted());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.newClient({ client: randomSignalClient({ role: { roleName: "recorder" } }) }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "recording",
+                expect.objectContaining({ local: false, cloud: true }),
+            );
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.cloudRecordingStopped());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "recording",
+                expect.objectContaining({ local: false, cloud: false }),
+            );
         });
     });
 });
