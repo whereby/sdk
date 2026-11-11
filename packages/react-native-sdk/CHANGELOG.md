@@ -1,5 +1,14 @@
 # @whereby.com/react-native-sdk
 
+## 0.9.14
+
+### Patch Changes
+
+- 91e636f: Set the `repository` field in package.json so npm can link each release to its source and build provenance
+- Updated dependencies [548766c]
+- Updated dependencies [91e636f]
+  - @whereby.com/core@1.30.0
+
 ## 0.9.13
 
 ### Patch Changes

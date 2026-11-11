@@ -1,5 +1,19 @@
 # @whereby.com/core
 
+## 1.30.0
+
+### Minor Changes
+
+- 548766c: Switch to another camera or microphone when the one in use is removed, and don't switch a camera or microphone that is turned off
+
+### Patch Changes
+
+- 91e636f: Set the `repository` field in package.json so npm can link each release to its source and build provenance
+- Updated dependencies [91e636f]
+  - @whereby.com/audio-denoiser@1.0.32
+  - @whereby.com/camera-effects@1.1.4
+  - @whereby.com/media@11.3.4
+
 ## 1.29.0
 
 ### Minor Changes
