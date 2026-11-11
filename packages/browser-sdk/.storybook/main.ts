@@ -1,4 +1,5 @@
-import { dirname, join } from "path";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { StorybookConfig } from "@storybook/react-vite";
 import dotenv from "dotenv";
 
@@ -6,8 +7,8 @@ dotenv.config({
     path: "../../.env",
 });
 
-function getAbsolutePath(value) {
-    return dirname(require.resolve(join(value, "package.json")));
+function getAbsolutePath(value: string): string {
+    return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
 
 const config: StorybookConfig = {
@@ -16,10 +17,6 @@ const config: StorybookConfig = {
     addons: [getAbsolutePath("@storybook/addon-links"), getAbsolutePath("@storybook/addon-docs")],
 
     framework: getAbsolutePath("@storybook/react-vite"),
-
-    core: {
-        builder: getAbsolutePath("@storybook/builder-vite"),
-    },
 };
 
 export default config;

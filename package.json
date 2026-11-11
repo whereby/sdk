@@ -34,7 +34,7 @@
         "@whereby.com/prettier-config": "workspace:*",
         "prettier": "catalog:",
         "rimraf": "^5.0.5",
-        "turbo": "^2.5.4",
+        "turbo": "^2.11.10",
         "typescript": "catalog:"
     },
     "engines": {
