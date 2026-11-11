@@ -77,7 +77,8 @@ npmjs.com for each of the two workflow files in the `whereby/sdk` repo. npm also
 What keeps it working:
 
 - Both workflows set `permissions: {}` and grant `id-token: write` only to the job that publishes. Don't add it to
-  other jobs, and don't give the release `publish` job secrets or a dependency cache.
+  other jobs, and don't give the release `publish` job secrets or a dependency cache. It installs with
+  `--ignore-scripts`, so no dependency code runs before the publish.
 - The publishing jobs' `actions/setup-node` has no `registry-url`. With one, setup-node writes an `.npmrc` with a
   placeholder token that npm prefers over OIDC, and the publish fails with a 404 or `ENEEDAUTH`.
 - `pnpm publish` hands the package to the npm CLI, which needs npm 11.5.1 or later for OIDC. Both jobs check the npm

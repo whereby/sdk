@@ -143,7 +143,7 @@ jobs:
                   npm --version
 
             - name: Install Dependencies
-              run: pnpm install --frozen-lockfile
+              run: pnpm install --frozen-lockfile --ignore-scripts
 
             - name: Publish packages
               id: publish
