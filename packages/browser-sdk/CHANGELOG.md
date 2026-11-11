@@ -1,5 +1,15 @@
 # @whereby.com/browser-sdk
 
+## 3.39.2
+
+### Patch Changes
+
+- 91e636f: Set the `repository` field in package.json so npm can link each release to its source and build provenance
+- Updated dependencies [548766c]
+- Updated dependencies [91e636f]
+  - @whereby.com/core@1.30.0
+  - @whereby.com/media@11.3.4
+
 ## 3.39.1
 
 ### Patch Changes

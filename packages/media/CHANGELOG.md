@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.3.4
+
+### Patch Changes
+
+- 91e636f: Set the `repository` field in package.json so npm can link each release to its source and build provenance
+
 ## 11.3.3
 
 ### Patch Changes

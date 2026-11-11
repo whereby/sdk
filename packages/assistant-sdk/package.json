@@ -2,7 +2,7 @@
     "name": "@whereby.com/assistant-sdk",
     "description": "Assistant SDK for whereby.com",
     "author": "Whereby AS",
-    "version": "1.2.129",
+    "version": "1.2.130",
     "license": "MIT",
     "repository": {
         "type": "git",

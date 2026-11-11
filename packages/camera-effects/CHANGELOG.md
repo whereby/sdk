@@ -1,5 +1,11 @@
 # @whereby.com/camera-effects
 
+## 1.1.4
+
+### Patch Changes
+
+- 91e636f: Set the `repository` field in package.json so npm can link each release to its source and build provenance
+
 ## 1.1.3
 
 ### Patch Changes

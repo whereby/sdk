@@ -1,5 +1,13 @@
 # @whereby.com/audio-denoiser
 
+## 1.0.32
+
+### Patch Changes
+
+- 91e636f: Set the `repository` field in package.json so npm can link each release to its source and build provenance
+- Updated dependencies [91e636f]
+  - @whereby.com/media@11.3.4
+
 ## 1.0.31
 
 ### Patch Changes
