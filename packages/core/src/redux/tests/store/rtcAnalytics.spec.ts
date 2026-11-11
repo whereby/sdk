@@ -8,6 +8,7 @@ import { signalEvents } from "../../slices/signalConnection/actions";
 import { rtcManagerInitialized } from "../../slices/rtcConnection";
 import { RootState } from "../../store";
 import { stopScreenshare } from "../../slices/localScreenshare";
+import { transcribingRequestStarted } from "../../slices/liveTranscription";
 import MockMediaStream from "../../../__mocks__/MediaStream";
 
 describe("actions", () => {
@@ -298,6 +299,25 @@ describe("middleware", () => {
 
             expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
             expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("transcribing", expect.anything());
+        });
+
+        it("checks every value that the action triggers", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.newClient({
+                    client: randomSignalClient(),
+                    room: { session: { id: "new-session-id", createdAt: "2026-11-11T00:00:00Z" } },
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "roomSessionId",
+                expect.objectContaining({ roomSessionId: "new-session-id" }),
+            );
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
         });
     });
 });
