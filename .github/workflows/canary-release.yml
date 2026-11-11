@@ -62,7 +62,7 @@ jobs:
                   npm --version
 
             - name: Install Dependencies
-              run: pnpm install --frozen-lockfile
+              run: pnpm install --frozen-lockfile --ignore-scripts
 
             - name: Create and publish canary release
               uses: actions/github-script@v7
