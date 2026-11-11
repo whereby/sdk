@@ -29,8 +29,7 @@ When the pull request is merged, the changeset will be picked up by the `build-t
 Once the pull request is approved and merged, the release will be published to npm, and deployed to the CDN (if applicable), by the `build-test-release` GitHub action. It publishes with [npm trusted publishing](https://docs.npmjs.com/trusted-publishers), so no npm token is involved, and npm attaches provenance to each release.
 
 ### Canary releases
-Canary releases (snapshots) are not done automatically. However, you can create a canary release from a pull request simply
-by adding a comment to the PR with the text `/canary`, or `/canary-release`. This will trigger the `canary-release` GitHub action, which will publish a canary release to npm with the `canary` tag for all the packages that have a changeset in the PR. 
+Canary releases (snapshots) are not done automatically. To publish one for a pull request, run the `Canary` workflow from the Actions tab with the pull request number, or run `gh workflow run canary-release.yml -f pr=<number>`. It publishes a canary release to npm with the `canary` tag for all the packages that have a changeset in the PR, and comments the install commands on the PR. Running it needs write access to the repository.
 
 
 ## Contact
