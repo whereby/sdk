@@ -105,7 +105,8 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => ({ status: value }),
     }),
     recording: createRtcAnalyticsCustomEvent({
-        actions: [signalEvents.newClient],
+        // the recording starts when the recorder joins as a client
+        actions: [signalEvents.newClient, signalEvents.cloudRecordingStarted, signalEvents.cloudRecordingStopped],
         rtcEventName: "recording",
         getValue: (state: RootState) => ({
             local: false,
@@ -114,7 +115,8 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => value,
     }),
     transcribing: createRtcAnalyticsCustomEvent({
-        actions: [signalEvents.newClient],
+        // the captioner joins as a client before live transcription has started
+        actions: [signalEvents.liveTranscriptionStarted, signalEvents.liveTranscriptionStopped],
         rtcEventName: "transcribing",
         getValue: (state: RootState) => ({
             local: false,
