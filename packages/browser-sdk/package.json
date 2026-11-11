@@ -76,7 +76,7 @@
         "storybook": "^10.6.7",
         "tslib": "^2.4.1",
         "uuid": "^9.0.1",
-        "vite": "^5.0.13",
+        "vite": "^6.4.6",
         "yalc": "^1.0.0-pre.53",
         "eslint": "catalog:",
         "prettier": "catalog:",
@@ -96,11 +96,6 @@
     "peerDependencies": {
         "react": ">=18.2.0",
         "react-dom": ">=18.2.0"
-    },
-    "resolutions": {
-        "string-width": "^4",
-        "jackspeak": "2.1.1",
-        "wrap-ansi": "7.0.0"
     },
     "publishConfig": {
         "access": "public"

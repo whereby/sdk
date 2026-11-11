@@ -11,7 +11,7 @@
     },
     "dependencies": {
         "@whereby.com/browser-sdk": "workspace:*",
-        "next": "15.3.6",
+        "next": "15.5.29",
         "react": "catalog:react19",
         "react-dom": "catalog:react19"
     },
@@ -21,7 +21,7 @@
         "@types/react-dom": "catalog:react19",
         "@whereby.com/prettier-config": "workspace:*",
         "eslint": "catalog:",
-        "eslint-config-next": "15.3.5",
+        "eslint-config-next": "15.5.29",
         "postcss": "^8",
         "prettier": "catalog:",
         "tailwindcss": "^3.4.1",

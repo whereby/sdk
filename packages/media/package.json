@@ -53,13 +53,13 @@
     "dependencies": {
         "check-ip": "^1.1.1",
         "events": "^3.3.0",
-        "ip-address": "^10.1.1",
+        "ip-address": "^10.7.6",
         "mediasoup-client": "3.19.0",
         "@whereby.com/rtcstats": "5.4.2",
         "@whereby.com/webrtcapihealthcheck": "1.0.1",
         "sdp": "^3.2.0",
         "sdp-transform": "^2.14.2",
-        "socket.io-client": "4.7.2",
+        "socket.io-client": "4.8.4",
         "uuid": "^9.0.1",
         "uuid-validate": "^0.0.3",
         "webrtc-adapter": "9.0.4"
