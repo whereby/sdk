@@ -254,12 +254,9 @@ export const doRtcAnalyticsCustomEventsInitialize = createAppThunk(() => (dispat
 startAppListening({
     matcher: isAnyOf(...rtcCustomEventActions),
     effect: ({ type }, { getState, dispatch }) => {
-        const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actions }) =>
-            actions?.map((a) => a.type).includes(type),
-        );
-        if (!rtcCustomEvent) return;
-
-        sendIfChanged(rtcCustomEvent, getState(), dispatch);
+        Object.values(rtcAnalyticsCustomEvents)
+            .filter(({ actions }) => actions?.map((a) => a.type).includes(type))
+            .forEach((rtcCustomEvent) => sendIfChanged(rtcCustomEvent, getState(), dispatch));
     },
 });
 
