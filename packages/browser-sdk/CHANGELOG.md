@@ -1,5 +1,23 @@
 # @whereby.com/browser-sdk
 
+## 3.40.0
+
+### Minor Changes
+
+- c14b46c: Add `joinStage` to the `useRoomConnection` state: the step `joinRoom()` is waiting on, or `null` when no join is in
+  progress. Export the `JoinRoomErrorNames` and `JoinRoomStage` types.
+
+### Patch Changes
+
+- e56f85e: Join with the latest options passed to `useRoomConnection`. `joinRoom()` used the options from the first render, so
+  an option that changed afterwards, such as a display name loaded later, was ignored.
+- Updated dependencies [1ce00a3]
+- Updated dependencies [e0bad10]
+- Updated dependencies [0e120fe]
+- Updated dependencies [ad482a2]
+- Updated dependencies [4b84e6f]
+  - @whereby.com/core@1.31.0
+
 ## 3.39.2
 
 ### Patch Changes
