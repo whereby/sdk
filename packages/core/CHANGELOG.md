@@ -1,5 +1,27 @@
 # @whereby.com/core
 
+## 1.31.0
+
+### Minor Changes
+
+- ad482a2: Reject `joinRoom()` with `"join_cancelled"` when the room is left, or joined again, before the join has finished.
+  Before, the promise never settled. The rejection isn't reported as unhandled, so apps that leave without awaiting the
+  join (on unmount, for example) see no change. The new `JoinRoomErrorNames` type lists the errors the SDK rejects with.
+- 4b84e6f: Add `joinStage` to the room connection state: the step `joinRoom()` is waiting on (`"credentials"`, `"organization"`,
+  `"local_media"`, `"signal_connect"`, `"identify_device"` or `"join_room"`), or `null` when no join is in progress.
+  Apps can use it to tell users what a slow join is waiting for, or to give up on a join after a time they choose. Read it
+  with `getState()`, `subscribeToJoinStage()` or the `connection:join-stage-changed` event. The `JoinRoomStage` type
+  lists the values.
+
+### Patch Changes
+
+- 1ce00a3: Don't start a second camera or microphone request on a device change while a switch is running
+- e0bad10: Close the signal socket when a join fails, or when `leaveRoom()` is called before the socket has connected. The socket
+  kept reconnecting in the background, so a failed join could later change `connectionStatus` from `"disconnected"` to
+  `"reconnecting"` and stay there.
+- 0e120fe: Use new device credentials even when they can't be saved to storage. Before, a blocked `localStorage` made the SDK
+  request new credentials every 2 seconds and the join never completed.
+
 ## 1.30.0
 
 ### Minor Changes

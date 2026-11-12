@@ -521,7 +521,7 @@ importers:
         specifier: ^1.0.7
         version: 1.1.14(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@whereby.com/core':
-        specifier: 1.30.0
+        specifier: 1.31.0
         version: link:../core
       '@whereby.com/media':
         specifier: 11.3.4
@@ -825,7 +825,7 @@ importers:
   packages/react-native-sdk:
     dependencies:
       '@whereby.com/core':
-        specifier: 1.30.0
+        specifier: 1.31.0
         version: link:../core
       react-native-webview:
         specifier: 13.15.0
@@ -7930,6 +7930,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-emoji@2.2.0:
     resolution: {integrity: sha512-Z3lTE9pLaJF47NyMhd4ww1yFTAP8YhYI8SleJiHzM46Fgpm5cnNzSl9XfzFNqbaz+VlJrIj3fXQ4DeN1Rjm6cw==}
@@ -10381,9 +10382,9 @@ snapshots:
 
   '@babel/helper-wrap-function@7.27.1':
     dependencies:
-      '@babel/template': 7.27.2
+      '@babel/template': 7.29.7
       '@babel/traverse': 7.28.3
-      '@babel/types': 7.28.4
+      '@babel/types': 7.29.11
     transitivePeerDependencies:
       - supports-color
 
@@ -13041,7 +13042,7 @@ snapshots:
       semver: 7.8.6
       strip-ansi: 5.2.0
       wcwidth: 1.0.1
-      yaml: 2.8.0
+      yaml: 2.9.1
     transitivePeerDependencies:
       - encoding
     optional: true
@@ -13116,7 +13117,7 @@ snapshots:
       open: 6.4.0
       ora: 5.4.1
       semver: 7.8.6
-      shell-quote: 1.8.3
+      shell-quote: 1.12.0
       sudo-prompt: 9.2.1
     transitivePeerDependencies:
       - encoding
@@ -18377,8 +18378,8 @@ snapshots:
   metro-transform-plugins@0.82.5:
     dependencies:
       '@babel/core': 7.27.7
-      '@babel/generator': 7.28.3
-      '@babel/template': 7.27.2
+      '@babel/generator': 7.29.13
+      '@babel/template': 7.29.7
       '@babel/traverse': 7.28.3
       flow-enums-runtime: 0.0.6
       nullthrows: 1.1.1
@@ -18430,9 +18431,9 @@ snapshots:
   metro-transform-worker@0.82.5:
     dependencies:
       '@babel/core': 7.27.7
-      '@babel/generator': 7.28.3
-      '@babel/parser': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/generator': 7.29.13
+      '@babel/parser': 7.29.13
+      '@babel/types': 7.29.11
       flow-enums-runtime: 0.0.6
       metro: 0.82.5
       metro-babel-transformer: 0.82.5
