@@ -1,5 +1,10 @@
 import { oneOf, randomSignalClient } from "../../../__mocks__/appMocks";
-import { roomConnectionSlice, roomConnectionSliceInitialState, selectShouldConnectRoom } from "../roomConnection";
+import {
+    roomConnectionSlice,
+    roomConnectionSliceInitialState,
+    selectJoinRoomStage,
+    selectShouldConnectRoom,
+} from "../roomConnection";
 import { signalEvents } from "../signalConnection/actions";
 
 describe("roomConnectionSlice", () => {
@@ -330,5 +335,66 @@ describe("roomConnectionSlice", () => {
                 },
             );
         });
+    });
+
+    describe("selectJoinRoomStage", () => {
+        const joining = [true, "connecting", null, false] as const;
+
+        it.each`
+            hasCredentials | organizationId | localMediaStatus | signalStatus    | deviceIdentified | expected
+            ${false}       | ${undefined}   | ${"inactive"}    | ${"ready"}      | ${false}         | ${"credentials"}
+            ${false}       | ${"orgId"}     | ${"started"}     | ${"connected"}  | ${false}         | ${"credentials"}
+            ${true}        | ${undefined}   | ${"started"}     | ${"connected"}  | ${true}          | ${"organization"}
+            ${true}        | ${"orgId"}     | ${"starting"}    | ${"connected"}  | ${true}          | ${"local_media"}
+            ${true}        | ${"orgId"}     | ${"error"}       | ${"connected"}  | ${true}          | ${"local_media"}
+            ${true}        | ${"orgId"}     | ${"started"}     | ${"connecting"} | ${false}         | ${"signal_connect"}
+            ${true}        | ${"orgId"}     | ${"started"}     | ${"connected"}  | ${false}         | ${"identify_device"}
+            ${true}        | ${"orgId"}     | ${"started"}     | ${"connected"}  | ${true}          | ${"join_room"}
+        `(
+            "returns $expected when hasCredentials=$hasCredentials, organizationId=$organizationId, localMediaStatus=$localMediaStatus, signalStatus=$signalStatus, deviceIdentified=$deviceIdentified",
+            ({ hasCredentials, organizationId, localMediaStatus, signalStatus, deviceIdentified, expected }) => {
+                expect(
+                    selectJoinRoomStage.resultFunc(
+                        ...joining,
+                        hasCredentials,
+                        organizationId,
+                        localMediaStatus,
+                        signalStatus,
+                        deviceIdentified,
+                    ),
+                ).toEqual(expected);
+            },
+        );
+
+        it.each`
+            appIsActive | status            | error          | isRejoining | expected
+            ${false}    | ${"ready"}        | ${null}        | ${false}    | ${null}
+            ${true}     | ${"ready"}        | ${null}        | ${false}    | ${"signal_connect"}
+            ${true}     | ${"connecting"}   | ${null}        | ${false}    | ${"signal_connect"}
+            ${true}     | ${"reconnecting"} | ${null}        | ${false}    | ${"signal_connect"}
+            ${true}     | ${"reconnecting"} | ${null}        | ${true}     | ${null}
+            ${true}     | ${"connected"}    | ${null}        | ${false}    | ${null}
+            ${true}     | ${"room_locked"}  | ${null}        | ${false}    | ${null}
+            ${true}     | ${"knocking"}     | ${null}        | ${false}    | ${null}
+            ${true}     | ${"disconnected"} | ${"room_full"} | ${false}    | ${null}
+            ${true}     | ${"ready"}        | ${"room_full"} | ${false}    | ${null}
+        `(
+            "returns $expected when appIsActive=$appIsActive, status=$status, error=$error, isRejoining=$isRejoining",
+            ({ appIsActive, status, error, isRejoining, expected }) => {
+                expect(
+                    selectJoinRoomStage.resultFunc(
+                        appIsActive,
+                        status,
+                        error,
+                        isRejoining,
+                        true,
+                        "orgId",
+                        "started",
+                        "connecting",
+                        false,
+                    ),
+                ).toEqual(expected);
+            },
+        );
     });
 });

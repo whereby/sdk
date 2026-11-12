@@ -80,6 +80,7 @@ export default class CredentialsService extends EventEmitter {
                     .then((credentials) => {
                         return credentialsStore
                             .save(credentials ? credentials.toJson() : null)
+                            .catch(() => undefined)
                             .then(() => resolve(credentials));
                     })
                     .catch(() => {

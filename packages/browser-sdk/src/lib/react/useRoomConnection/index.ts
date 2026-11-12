@@ -75,8 +75,11 @@ export function useRoomConnection(
         };
     }, []);
 
+    const roomConfigRef = React.useRef(roomConfig);
+    roomConfigRef.current = roomConfig;
+
     const joinRoom = React.useCallback(() => {
-        client.initialize(roomConfig);
+        client.initialize(roomConfigRef.current);
         return client.joinRoom();
     }, [client]);
     const sendChatMessage = React.useCallback(

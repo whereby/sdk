@@ -45,6 +45,8 @@ export type {
     ChatFileShare,
     FileUpload,
     FileShareError,
+    JoinRoomErrorNames,
+    JoinRoomStage,
     SendFilesOptions,
     ToggleAudioOnlyModeOptions,
     CloudRecordingState as CloudRecording,

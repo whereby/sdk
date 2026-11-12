@@ -5,6 +5,7 @@ import {
     REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
     LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED,
     ROOM_SESSION_ID_CHANGED,
+    CONNECTION_JOIN_STAGE_CHANGED,
 } from "../events";
 import { doAppStart, roomRejoined, Store, RootState } from "../../../redux";
 import { createStore, mockServices } from "../../../redux/tests/store.setup";
@@ -205,6 +206,42 @@ describe("RoomConnectionClient", () => {
             });
             storeSubscriber();
             expect(callback).toHaveBeenCalledWith("session-1");
+        });
+    });
+
+    describe("subscribeToJoinStage", () => {
+        it("triggers the join stage listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToJoinStage(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+            expect(client.getState().joinStage).toEqual(null);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                app: { ...initialState.app, isActive: true },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith("credentials");
+            expect(client.getState().joinStage).toEqual("credentials");
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue(initialState);
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it("emits connection:join-stage-changed", () => {
+            const callback = jest.fn();
+            client.on(CONNECTION_JOIN_STAGE_CHANGED, callback);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                app: { ...initialState.app, isActive: true },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith("credentials");
         });
     });
 
@@ -631,6 +668,42 @@ describe("RoomConnectionClient", () => {
                     }),
                 }),
             );
+        });
+
+        describe("when the join is given up before the room is joined", () => {
+            beforeEach(() => {
+                mockServices.credentialsService.getCredentials.mockReturnValue(new Promise(() => {}));
+                client.initialize({ roomUrl: "https://example.whereby.com/test" });
+            });
+
+            it("rejects with join_cancelled when the room is left", async () => {
+                const join = client.joinRoom();
+
+                client.leaveRoom();
+
+                await expect(join).rejects.toEqual("join_cancelled");
+            });
+
+            it("rejects the earlier join with join_cancelled when joining again", async () => {
+                const firstJoin = client.joinRoom();
+
+                client.joinRoom();
+
+                await expect(firstJoin).rejects.toEqual("join_cancelled");
+            });
+
+            it("doesn't report the cancellation as an unhandled rejection", async () => {
+                const onUnhandledRejection = jest.fn();
+                process.on("unhandledRejection", onUnhandledRejection);
+                jest.useRealTimers();
+
+                client.joinRoom();
+                client.leaveRoom();
+                await new Promise((resolve) => setTimeout(resolve, 10));
+
+                process.off("unhandledRejection", onUnhandledRejection);
+                expect(onUnhandledRejection).not.toHaveBeenCalled();
+            });
         });
 
         it("rejects when the organization can't be fetched", async () => {
