@@ -10,6 +10,10 @@ import {
     SignalClientEvent,
     LocalParticipantState,
     ConnectionStatus,
+    RoomIntegrationContent,
+    RoomIntegrationProps,
+    RoomIntegrationsState,
+    roomIntegrationContent,
 } from "@whereby.com/core";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -172,6 +176,150 @@ function RoomControls({
     );
 }
 
+const YOUTUBE_VIDEO = "dQw4w9WgXcQ";
+const SEEK_TO_SECONDS = 42;
+const MIRO_ACCESS_LINK = "https://miro.com/app/live-embed/uXjVSdkE2eTest=/";
+
+const STARTERS: Record<string, { label: string; testId: string; build: () => RoomIntegrationContent | null }> = {
+    youtube: {
+        label: "Share YouTube video",
+        testId: "startYoutubeIntegrationBtn",
+        build: () => roomIntegrationContent.youtube({ url: YOUTUBE_VIDEO }),
+    },
+    miro: {
+        label: "Share Miro board",
+        testId: "startMiroIntegrationBtn",
+        build: () => roomIntegrationContent.miro({ accessLink: MIRO_ACCESS_LINK }),
+    },
+};
+
+function RoomIntegrations({
+    roomIntegrations,
+    startRoomIntegration,
+    stopRoomIntegration,
+    updateRoomIntegrationProps,
+}: {
+    roomIntegrations: RoomIntegrationsState;
+    startRoomIntegration: (options: {
+        roomIntegrationId: string;
+        tagName: string;
+        shareUrl: string;
+        props?: RoomIntegrationProps;
+    }) => void;
+    stopRoomIntegration: (options: { roomIntegrationSessionId: string }) => void;
+    updateRoomIntegrationProps: (options: { roomIntegrationSessionId: string; props: RoomIntegrationProps }) => void;
+}) {
+    const { hasFetched, enabled, embeddable, running, error } = roomIntegrations;
+
+    return (
+        <div>
+            <h3>Room integrations</h3>
+            <dl>
+                <dt>Enabled</dt>
+                <dd data-testid="enabledRoomIntegrations">
+                    {hasFetched ? enabled.map((integration) => integration.name).join(", ") || "none" : "fetching"}
+                </dd>
+                <dt>Error</dt>
+                <dd data-testid="roomIntegrationsError">{error?.code || "N/A"}</dd>
+            </dl>
+            {Object.entries(STARTERS).map(([name, { label, testId, build }]) => {
+                const integration = embeddable.find((entry) => entry.name === name);
+                return (
+                    <button
+                        key={name}
+                        data-testid={testId}
+                        disabled={!integration}
+                        onClick={() => {
+                            const content = build();
+                            if (integration && content) {
+                                startRoomIntegration({ roomIntegrationId: integration.roomIntegrationId, ...content });
+                            }
+                        }}
+                    >
+                        {label}
+                    </button>
+                );
+            })}
+            {running.map((session) => {
+                const { roomIntegrationSessionId, props } = session;
+                const update = (next: RoomIntegrationProps) =>
+                    updateRoomIntegrationProps({ roomIntegrationSessionId, props: next });
+
+                return (
+                    <div
+                        key={roomIntegrationSessionId}
+                        data-testid="runningRoomIntegration"
+                        data-integration={session.integration.name}
+                    >
+                        <dl>
+                            <dt>Integration</dt>
+                            <dd data-testid="roomIntegrationName">{session.integration.name}</dd>
+                            <dt>Presenter</dt>
+                            <dd data-testid="roomIntegrationPresenter">
+                                {session.isPresenter ? "you" : session.presenterDisplayName}
+                            </dd>
+                            <dt>Share URL</dt>
+                            <dd data-testid="roomIntegrationShareUrl">{session.shareUrl}</dd>
+                            {session.integration.name === "youtube" && (
+                                <>
+                                    <dt>Player state</dt>
+                                    <dd data-testid="roomIntegrationPlayerState">{String(props.playerstate)}</dd>
+                                    <dt>Paused</dt>
+                                    <dd data-testid="roomIntegrationPaused">{String(props.paused)}</dd>
+                                    <dt>Seek</dt>
+                                    <dd data-testid="roomIntegrationSeek">{String(props.seek)}</dd>
+                                </>
+                            )}
+                            {session.integration.name === "miro" && (
+                                <>
+                                    <dt>Access link</dt>
+                                    <dd data-testid="roomIntegrationAccessLink">{String(props.accesslink)}</dd>
+                                </>
+                            )}
+                        </dl>
+                        {session.integration.name === "youtube" && (
+                            <>
+                                <button
+                                    data-testid="pauseRoomIntegrationBtn"
+                                    onClick={() => update({ paused: true, playerstate: "paused", seek: props.seek })}
+                                >
+                                    Pause
+                                </button>
+                                <button
+                                    data-testid="playRoomIntegrationBtn"
+                                    onClick={() =>
+                                        update({
+                                            paused: false,
+                                            playerstate: "playing",
+                                            seek: props.seek,
+                                            started: Date.now(),
+                                        })
+                                    }
+                                >
+                                    Play
+                                </button>
+                                <button
+                                    data-testid="seekRoomIntegrationBtn"
+                                    onClick={() => update({ seek: SEEK_TO_SECONDS, started: Date.now() })}
+                                >
+                                    Seek to {SEEK_TO_SECONDS}s
+                                </button>
+                            </>
+                        )}
+                        <button
+                            data-testid="stopRoomIntegrationBtn"
+                            disabled={!session.canStop}
+                            onClick={() => stopRoomIntegration({ roomIntegrationSessionId })}
+                        >
+                            Stop
+                        </button>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 type RoomProps = {
     roomUrl: string;
     localMedia: UseLocalMediaResult;
@@ -195,6 +343,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         chatMessages,
         cloudRecording,
         liveStream,
+        roomIntegrations,
         screenshares,
     } = roomConnection.state;
     const {
@@ -214,6 +363,9 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         leaveRoom,
         toggleRaiseHand,
         askToSpeak,
+        startRoomIntegration,
+        stopRoomIntegration,
+        updateRoomIntegrationProps,
     } = roomConnection.actions;
 
     useEffect(() => {
@@ -387,6 +539,14 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 }}
                 toggleRaiseHand={toggleRaiseHand}
                 leaveRoom={leaveRoom}
+            />
+            {/* Kept above the participant videos: they resize as streams load, and a button that moves
+                between mousedown and mouseup never receives the click. */}
+            <RoomIntegrations
+                roomIntegrations={roomIntegrations}
+                startRoomIntegration={startRoomIntegration}
+                stopRoomIntegration={stopRoomIntegration}
+                updateRoomIntegrationProps={updateRoomIntegrationProps}
             />
             {isHost && waitingParticipants.length > 0 && (
                 <div>
