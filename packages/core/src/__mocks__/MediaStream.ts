@@ -1,39 +1,39 @@
 export default class MockMediaStream implements MediaStream {
-    private _tracks: MediaStreamTrack[];
+    #tracks: MediaStreamTrack[];
 
     active = false;
     id = "";
 
     constructor(streamOrTracks?: MediaStreamTrack[] | MediaStream) {
         if (Array.isArray(streamOrTracks) && streamOrTracks.every((t) => t instanceof MediaStreamTrack)) {
-            this._tracks = streamOrTracks;
+            this.#tracks = streamOrTracks;
         } else {
-            this._tracks = [];
+            this.#tracks = [];
         }
     }
 
     onaddtrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => void) | null = null;
     onremovetrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => void) | null = null;
     addTrack(track: MediaStreamTrack): void {
-        this._tracks.push(track);
+        this.#tracks.push(track);
     }
     clone(): MediaStream {
         throw new Error("Method not implemented.");
     }
     getAudioTracks(): MediaStreamTrack[] {
-        return this._tracks.filter((t) => t.kind === "audio");
+        return this.#tracks.filter((t) => t.kind === "audio");
     }
     getTrackById(trackId: string): MediaStreamTrack | null {
         throw new Error(`Method not implemented: ${trackId}`);
     }
     getTracks(): MediaStreamTrack[] {
-        return this._tracks;
+        return this.#tracks;
     }
     getVideoTracks(): MediaStreamTrack[] {
-        return this._tracks.filter((t) => t.kind === "video");
+        return this.#tracks.filter((t) => t.kind === "video");
     }
     removeTrack(track: MediaStreamTrack): void {
-        this._tracks = this._tracks.filter((t) => t !== track);
+        this.#tracks = this.#tracks.filter((t) => t !== track);
     }
     addEventListener<K extends keyof MediaStreamEventMap>(
         type: K,
