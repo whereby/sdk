@@ -571,10 +571,49 @@ describe("actions", () => {
                 },
             });
             mockedGetUserMedia.mockReturnValueOnce(new Promise<MediaStream>(() => {}));
-            store.dispatch(localMediaSlice.toggleHdModeEnabled({ enabled: false }));
+            store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: videoDevice.deviceId }));
             mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, videoDevice]);
 
             await store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+        });
+
+        it("should not start a second getUserMedia when a switch starts while devices are read", async () => {
+            const otherCamera = { ...videoDevice, deviceId: "otherVideoDeviceId", label: "Other camera" };
+            const store = createStore({
+                initialState: {
+                    localMedia: {
+                        busyDeviceIds: [],
+                        currentCameraDeviceId: otherCamera.deviceId,
+                        currentMicrophoneDeviceId: audioDevice.deviceId,
+                        cameraEnabled: true,
+                        devices: [audioDevice, videoDevice, otherCamera],
+                        hdMode: true,
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isSettingSpeakerDevice: false,
+                        isSwitchingStream: false,
+                        isTogglingCamera: false,
+                        lowDataMode: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: new MockMediaStream([
+                            createLiveTrack("audio", audioDevice.deviceId),
+                            createLiveTrack("video", otherCamera.deviceId),
+                        ]),
+                        widescreenMode: true,
+                    },
+                },
+            });
+            let resolveDevices: (devices: MediaDeviceInfo[]) => void = () => {};
+            mockedEnumerateDevices.mockReturnValueOnce(new Promise((resolve) => (resolveDevices = resolve)));
+            mockedGetUserMedia.mockReturnValueOnce(new Promise<MediaStream>(() => {}));
+            const updatingDeviceList = store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: videoDevice.deviceId }));
+            resolveDevices([audioDevice, videoDevice]);
+            await updatingDeviceList;
 
             expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
         });

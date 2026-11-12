@@ -430,7 +430,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 
             const shouldHandleDeviceUpdate =
                 stream &&
-                !selectLocalMediaIsSwitchingStream(state) &&
+                !selectLocalMediaIsSwitchingStream(getState()) &&
                 newDevices &&
                 oldDevices &&
                 oldDevices.find((d) => d.deviceId);
