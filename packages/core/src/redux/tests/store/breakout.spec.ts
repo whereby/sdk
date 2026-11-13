@@ -35,7 +35,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: {
                         authorization: { roomKey: null, roleName: "host" },
-                        room: { isLocked: false, mode: "group" },
+                        room: { isLocked: false, mode: "group", sfuServer: null },
                     },
                     withSignalConnection: true,
                 });
@@ -57,7 +57,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: {
                         authorization: { roomKey: null, roleName: "host" },
-                        room: { isLocked: false, mode: "group" },
+                        room: { isLocked: false, mode: "group", sfuServer: null },
                     },
                     withSignalConnection: true,
                 });
@@ -80,7 +80,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: {
                         authorization: { roomKey: null, roleName: "host" },
-                        room: { isLocked: false, mode: "normal" },
+                        room: { isLocked: false, mode: "normal", sfuServer: null },
                     },
                     withSignalConnection: true,
                 });
