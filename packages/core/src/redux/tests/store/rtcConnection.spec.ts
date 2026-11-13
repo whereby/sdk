@@ -17,12 +17,12 @@ import {
 } from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
-import { CAMERA_STREAM_ID, RtcManagerDispatcher } from "@whereby.com/media";
+import { CAMERA_STREAM_ID, RtcManagerDispatcher, rtcStats } from "@whereby.com/media";
 import { initialLocalMediaState, toggleCameraEnabled } from "../../slices/localMedia";
 import { localScreenshareSliceInitialState } from "../../slices/localScreenshare";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
-import { doAppStop } from "../../slices/app";
+import { doAppStart, doAppStop } from "../../slices/app";
 import { signalEvents } from "../../slices/signalConnection";
 import { rtcEvents } from "../../slices/rtcConnection/actions";
 
@@ -562,6 +562,26 @@ describe("middleware", () => {
         });
     });
 
+    describe("doAppStart", () => {
+        it("gives rtcstats only the room's origin and path", () => {
+            const store = createStore();
+
+            store.dispatch(
+                doAppStart({
+                    displayName: "Test",
+                    externalId: null,
+                    roomKey: null,
+                    roomUrl: "https://acme.whereby.com:8443/team-standup?roomKey=secret",
+                }),
+            );
+
+            expect(rtcStats.requireRoomUrl).toHaveBeenCalled();
+            expect(rtcStats.setRoomUrl).toHaveBeenCalledWith("https://acme.whereby.com:8443/team-standup");
+
+            store.dispatch(doAppStop());
+        });
+    });
+
     describe("doAppStop", () => {
         it("closes the rtcstats connection", () => {
             const store = createStore({
@@ -572,6 +592,14 @@ describe("middleware", () => {
             store.dispatch(doAppStop());
 
             expect(rtcManager?.rtcStatsDisconnect).toHaveBeenCalled();
+        });
+
+        it("clears the room's URL for rtcstats", () => {
+            const store = createStore();
+
+            store.dispatch(doAppStop());
+
+            expect(rtcStats.setRoomUrl).toHaveBeenCalledWith(null);
         });
     });
 
