@@ -43,11 +43,12 @@ const videoDevice = {
     toJSON: () => ({}),
 };
 
-const createLiveTrack = (kind: "audio" | "video", deviceId: string) =>
-    Object.assign(new MockMediaStreamTrack(kind), {
-        readyState: "live",
-        getSettings: () => ({ deviceId }),
-    });
+const createLiveTrack = (kind: "audio" | "video", deviceId: string) => {
+    const track: MediaStreamTrack & { readyState: MediaStreamTrackState } = new MockMediaStreamTrack(kind);
+    track.readyState = "live";
+    track.getSettings = () => ({ deviceId });
+    return track;
+};
 
 const waitForSwitch = (store: ReturnType<typeof createStore>) =>
     new Promise<void>((resolve) => {
@@ -61,6 +62,53 @@ const waitForSwitch = (store: ReturnType<typeof createStore>) =>
             }
         });
     });
+
+const isSettingDevice = (store: ReturnType<typeof createStore>) => {
+    const { isSettingCameraDevice, isSettingMicrophoneDevice } = store.getState().localMedia;
+    return isSettingCameraDevice || isSettingMicrophoneDevice;
+};
+
+const waitForSetDevice = (store: ReturnType<typeof createStore>) =>
+    new Promise<void>((resolve) => {
+        if (!isSettingDevice(store)) {
+            return resolve();
+        }
+        const unsubscribe = store.subscribe(() => {
+            if (!isSettingDevice(store)) {
+                unsubscribe();
+                resolve();
+            }
+        });
+    });
+
+const startedLocalMedia = ({
+    stream,
+    devices,
+    ...overrides
+}: {
+    stream: MediaStream;
+    devices: MediaDeviceInfo[];
+} & Partial<RootState["localMedia"]>): Partial<RootState> => ({
+    localMedia: {
+        busyDeviceIds: [],
+        currentCameraDeviceId: videoDevice.deviceId,
+        currentMicrophoneDeviceId: audioDevice.deviceId,
+        cameraEnabled: true,
+        devices,
+        hdMode: true,
+        isSettingCameraDevice: false,
+        isSettingMicrophoneDevice: false,
+        isSettingSpeakerDevice: false,
+        isSwitchingStream: false,
+        isTogglingCamera: false,
+        lowDataMode: false,
+        microphoneEnabled: true,
+        status: "started",
+        stream,
+        widescreenMode: true,
+        ...overrides,
+    },
+});
 
 describe("actions", () => {
     describe("doStartLocalMedia", () => {
@@ -120,6 +168,18 @@ describe("actions", () => {
                     audio: expect.any(Object),
                     video: expect.any(Object),
                 });
+            });
+
+            it("should NOT call getUserMedia for audio when started without audio", async () => {
+                mockedGetUserMedia.mockResolvedValueOnce(
+                    new MockMediaStream([createLiveTrack("video", videoDevice.deviceId)]),
+                );
+                const store = createStore();
+
+                await store.dispatch(localMediaSlice.doStartLocalMedia({ audio: false, video: true }));
+
+                expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+                expect(mockedGetUserMedia).toHaveBeenCalledWith({ video: expect.any(Object) });
             });
 
             describe("when getUserMedia succeeds", () => {
@@ -616,6 +676,147 @@ describe("actions", () => {
             await updatingDeviceList;
 
             expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+        });
+
+        it("should not start getUserMedia when the mic track has ended", async () => {
+            const endedMic = createLiveTrack("audio", audioDevice.deviceId);
+            endedMic.readyState = "ended";
+            const stream = new MockMediaStream([endedMic, createLiveTrack("video", videoDevice.deviceId)]);
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, videoDevice] }),
+            });
+            mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, videoDevice]);
+
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            expect(mockedGetUserMedia).not.toHaveBeenCalled();
+        });
+
+        it("should not ask for a microphone when the muted one is unplugged", async () => {
+            const otherMic = { ...audioDevice, deviceId: "otherAudioDeviceId", label: "Other microphone" };
+            const endedMic = createLiveTrack("audio", audioDevice.deviceId);
+            endedMic.readyState = "ended";
+            const stream = new MockMediaStream([endedMic, createLiveTrack("video", videoDevice.deviceId)]);
+            const store = createStore({
+                initialState: startedLocalMedia({
+                    stream,
+                    devices: [audioDevice, otherMic, videoDevice],
+                    microphoneEnabled: false,
+                }),
+            });
+            mockedEnumerateDevices.mockResolvedValueOnce([otherMic, videoDevice]);
+
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            expect(mockedGetUserMedia).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("device picks", () => {
+        it("should get the picked camera", async () => {
+            const otherCamera = { ...videoDevice, deviceId: "otherVideoDeviceId", label: "Other camera" };
+            const pickedTrack = createLiveTrack("video", otherCamera.deviceId);
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", videoDevice.deviceId),
+            ]);
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, videoDevice, otherCamera] }),
+            });
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([pickedTrack]));
+
+            store.dispatch(localMediaSlice.setCurrentCameraDeviceId({ deviceId: otherCamera.deviceId }));
+            await waitForSetDevice(store);
+
+            const constraints = mockedGetUserMedia.mock.calls[0][0];
+            expect(constraints).not.toHaveProperty("audio");
+            expect(constraints?.video).toEqual(expect.objectContaining({ deviceId: { exact: otherCamera.deviceId } }));
+            expect(stream.getVideoTracks()).toEqual([pickedTrack]);
+            expect(store.getState().localMedia.currentCameraDeviceId).toBe(otherCamera.deviceId);
+        });
+
+        it("should get the picked microphone", async () => {
+            const otherMic = { ...audioDevice, deviceId: "otherAudioDeviceId", label: "Other microphone" };
+            const pickedTrack = createLiveTrack("audio", otherMic.deviceId);
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", videoDevice.deviceId),
+            ]);
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, otherMic, videoDevice] }),
+            });
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([pickedTrack]));
+
+            store.dispatch(localMediaSlice.setCurrentMicrophoneDeviceId({ deviceId: otherMic.deviceId }));
+            await waitForSetDevice(store);
+
+            const constraints = mockedGetUserMedia.mock.calls[0][0];
+            expect(constraints).not.toHaveProperty("video");
+            expect(constraints?.audio).toEqual(expect.objectContaining({ deviceId: { exact: otherMic.deviceId } }));
+            expect(stream.getAudioTracks()).toEqual([pickedTrack]);
+            expect(store.getState().localMedia.currentMicrophoneDeviceId).toBe(otherMic.deviceId);
+        });
+
+        it("should show the camera we got when the pick lands on another one", async () => {
+            const otherCamera = { ...videoDevice, deviceId: "otherVideoDeviceId", label: "Other camera" };
+            const thirdCamera = { ...videoDevice, deviceId: "thirdVideoDeviceId", label: "Third camera" };
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", videoDevice.deviceId),
+            ]);
+            const store = createStore({
+                initialState: startedLocalMedia({
+                    stream,
+                    devices: [audioDevice, videoDevice, otherCamera, thirdCamera],
+                }),
+            });
+            mockedGetUserMedia.mockResolvedValueOnce(
+                new MockMediaStream([createLiveTrack("video", thirdCamera.deviceId)]),
+            );
+
+            store.dispatch(localMediaSlice.setCurrentCameraDeviceId({ deviceId: otherCamera.deviceId }));
+            await waitForSetDevice(store);
+
+            expect(store.getState().localMedia.currentCameraDeviceId).toBe(thirdCamera.deviceId);
+        });
+
+        it("should get a picked microphone when started without one", async () => {
+            const pickedTrack = createLiveTrack("audio", audioDevice.deviceId);
+            const stream = new MockMediaStream([createLiveTrack("video", videoDevice.deviceId)]);
+            const store = createStore({
+                initialState: startedLocalMedia({
+                    stream,
+                    devices: [audioDevice, videoDevice],
+                    currentMicrophoneDeviceId: undefined,
+                    microphoneEnabled: false,
+                }),
+            });
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([pickedTrack]));
+
+            store.dispatch(localMediaSlice.setCurrentMicrophoneDeviceId({ deviceId: audioDevice.deviceId }));
+            await waitForSetDevice(store);
+
+            const constraints = mockedGetUserMedia.mock.calls[0][0];
+            expect(constraints?.audio).toEqual(expect.objectContaining({ deviceId: { exact: audioDevice.deviceId } }));
+            expect(stream.getAudioTracks()).toEqual([pickedTrack]);
+        });
+
+        it("should show the camera we hold after a failed pick", async () => {
+            const otherCamera = { ...videoDevice, deviceId: "otherVideoDeviceId", label: "Other camera" };
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", videoDevice.deviceId),
+            ]);
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, videoDevice, otherCamera] }),
+            });
+            mockedGetUserMedia.mockRejectedValueOnce(new DOMException("Requested device not found", "NotFoundError"));
+
+            store.dispatch(localMediaSlice.setCurrentCameraDeviceId({ deviceId: otherCamera.deviceId }));
+            await waitForSetDevice(store);
+
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+            expect(store.getState().localMedia.currentCameraDeviceId).toBe(videoDevice.deviceId);
         });
     });
 

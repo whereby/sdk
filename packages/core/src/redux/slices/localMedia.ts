@@ -839,7 +839,8 @@ startAppListening({
 });
 
 startAppListening({
-    predicate: (_action, currentState, previousState) => {
+    predicate: (action, currentState, previousState) => {
+        if (!setCurrentCameraDeviceId.match(action)) return false;
         const oldValue = selectCurrentCameraDeviceId(previousState);
         const newValue = selectCurrentCameraDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
@@ -851,7 +852,8 @@ startAppListening({
 });
 
 startAppListening({
-    predicate: (_action, currentState, previousState) => {
+    predicate: (action, currentState, previousState) => {
+        if (!setCurrentMicrophoneDeviceId.match(action)) return false;
         const oldValue = selectCurrentMicrophoneDeviceId(previousState);
         const newValue = selectCurrentMicrophoneDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
@@ -866,6 +868,8 @@ startAppListening({
     matcher: isAnyOf(
         doStartLocalMedia.fulfilled,
         doUpdateDeviceList.fulfilled,
+        doSetDevice.fulfilled,
+        doSetDevice.rejected,
         doSwitchLocalStream.fulfilled,
         doSwitchLocalStream.rejected,
         doLocalStreamEffect.fulfilled,
