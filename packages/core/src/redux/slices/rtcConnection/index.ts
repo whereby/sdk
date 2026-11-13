@@ -10,12 +10,13 @@ import {
     RtcClientConnectionStatusChangedPayload,
     CAMERA_STREAM_ID,
     RtcMediaQualityChangedPayload,
+    rtcStats,
 } from "@whereby.com/media";
 import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteClients, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../RoomParticipant";
-import { selectAppIsNodeSdk, selectAppIsActive, doAppStop, selectAppIgnoreBreakoutGroups } from "../app";
+import { selectAppIsNodeSdk, selectAppIsActive, doAppStart, doAppStop, selectAppIgnoreBreakoutGroups } from "../app";
 
 import {
     selectIsCameraEnabled,
@@ -243,7 +244,12 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
 export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
     const { rtcManager } = selectRtcConnectionRaw(getState());
     if (rtcManager) {
-        rtcManager.disconnectAll();
+        try {
+            rtcManager.disconnectAll();
+        } finally {
+            // after the teardown, so its events still go to this room's rtcstats session
+            rtcManager.rtcStatsDisconnect();
+        }
     }
     dispatch(rtcDisconnected());
 });
@@ -398,12 +404,20 @@ startAppListening({
     },
 });
 
+// core doesn't run on the room's page, so give rtcstats the room's origin and path; its query can hold a room key
+startAppListening({
+    actionCreator: doAppStart,
+    effect: ({ payload }) => {
+        const roomUrl = new URL(payload.roomUrl);
+        rtcStats.requireRoomUrl();
+        rtcStats.setRoomUrl(roomUrl.origin + roomUrl.pathname);
+    },
+});
+
 startAppListening({
     actionCreator: doAppStop,
-    effect: (_, { getState }) => {
-        const rtcManager = selectRtcManager(getState());
-
-        rtcManager?.rtcStatsDisconnect();
+    effect: () => {
+        rtcStats.setRoomUrl(null);
     },
 });
 
