@@ -375,8 +375,11 @@ export const doTriggerLocalStreamRefresh = createAppThunk(() => (dispatch, getSt
         return;
     }
 
-    const videoId = selectCurrentCameraDeviceId(state);
+    const videoId = selectIsCameraEnabled(state) ? selectCurrentCameraDeviceId(state) : undefined;
     const audioId = selectCurrentMicrophoneDeviceId(state);
+    if (audioId === undefined && videoId === undefined) {
+        return;
+    }
 
     dispatch(doSwitchLocalStream({ audioId, videoId }));
 });
@@ -844,7 +847,7 @@ startAppListening({
         const oldValue = selectCurrentCameraDeviceId(previousState);
         const newValue = selectCurrentCameraDeviceId(currentState);
         const isReady = selectLocalMediaStatus(previousState) === "started";
-        return isReady && !!oldValue && !!newValue && oldValue !== newValue;
+        return isReady && selectIsCameraEnabled(currentState) && oldValue !== newValue;
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: false, video: true }));
@@ -873,6 +876,7 @@ startAppListening({
         doSwitchLocalStream.fulfilled,
         doSwitchLocalStream.rejected,
         doLocalStreamEffect.fulfilled,
+        doToggleCamera.fulfilled,
     ),
     effect: (_action, { dispatch, getState }) => {
         const state = getState();
@@ -886,6 +890,7 @@ startAppListening({
             audioTrack: beforeEffectTracks?.audio || stream.getAudioTracks()[0],
             videoTrack: beforeEffectTracks?.video || stream.getVideoTracks()[0],
             devices,
+            lastVideoId: selectIsCameraEnabled(state) ? undefined : selectCurrentCameraDeviceId(state),
         });
 
         dispatch(localStreamMetadataUpdated(deviceData));

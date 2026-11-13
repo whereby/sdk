@@ -81,6 +81,19 @@ const waitForSetDevice = (store: ReturnType<typeof createStore>) =>
         });
     });
 
+const waitForToggleCamera = (store: ReturnType<typeof createStore>) =>
+    new Promise<void>((resolve) => {
+        if (!store.getState().localMedia.isTogglingCamera) {
+            return resolve();
+        }
+        const unsubscribe = store.subscribe(() => {
+            if (!store.getState().localMedia.isTogglingCamera) {
+                unsubscribe();
+                resolve();
+            }
+        });
+    });
+
 const startedLocalMedia = ({
     stream,
     devices,
@@ -817,6 +830,102 @@ describe("actions", () => {
 
             expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
             expect(store.getState().localMedia.currentCameraDeviceId).toBe(videoDevice.deviceId);
+        });
+    });
+
+    describe("camera off", () => {
+        const ourCamera = { ...videoDevice, deviceId: "ourVideoDeviceId", label: "Our camera" };
+        const otherMic = { ...audioDevice, deviceId: "otherAudioDeviceId", label: "Other microphone" };
+        const devices = [audioDevice, otherMic, videoDevice, ourCamera];
+
+        const createStoreWithCameraOff = async () => {
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", ourCamera.deviceId),
+            ]);
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices, currentCameraDeviceId: ourCamera.deviceId }),
+            });
+            store.dispatch(localMediaSlice.toggleCameraEnabled({ enabled: false }));
+            await waitForToggleCamera(store);
+            return store;
+        };
+
+        const turnCameraOn = async (store: ReturnType<typeof createStore>, deviceId: string) => {
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([createLiveTrack("video", deviceId)]));
+            store.dispatch(localMediaSlice.toggleCameraEnabled({ enabled: true }));
+            await waitForToggleCamera(store);
+        };
+
+        it.each<[string, (store: ReturnType<typeof createStore>) => Promise<void>]>([
+            [
+                "a camera is plugged in",
+                async (store) => {
+                    const pluggedInCamera = { ...videoDevice, deviceId: "pluggedInVideoDeviceId", label: "New camera" };
+                    mockedEnumerateDevices.mockResolvedValueOnce([...devices, pluggedInCamera]);
+                    await store.dispatch(localMediaSlice.doUpdateDeviceList());
+                },
+            ],
+            [
+                "constraint options change",
+                async (store) => {
+                    mockedGetUserMedia.mockResolvedValueOnce(
+                        new MockMediaStream([createLiveTrack("audio", audioDevice.deviceId)]),
+                    );
+                    store.dispatch(localMediaSlice.doTriggerLocalStreamRefresh());
+                    await waitForSwitch(store);
+                },
+            ],
+            [
+                "a microphone is picked",
+                async (store) => {
+                    mockedGetUserMedia.mockResolvedValueOnce(
+                        new MockMediaStream([createLiveTrack("audio", otherMic.deviceId)]),
+                    );
+                    store.dispatch(localMediaSlice.setCurrentMicrophoneDeviceId({ deviceId: otherMic.deviceId }));
+                    await waitForSetDevice(store);
+                },
+            ],
+        ])("should remember the camera when %s while off", async (_name, trigger) => {
+            const store = await createStoreWithCameraOff();
+            await trigger(store);
+            const cameraWhileOff = store.getState().localMedia.currentCameraDeviceId;
+            mockedGetUserMedia.mockClear();
+
+            await turnCameraOn(store, ourCamera.deviceId);
+
+            const constraints = mockedGetUserMedia.mock.calls[0]?.[0];
+            expect(cameraWhileOff).toBe(ourCamera.deviceId);
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+            expect(constraints?.video).toEqual(expect.objectContaining({ deviceId: { exact: ourCamera.deviceId } }));
+        });
+
+        it("should remember a camera picked while off", async () => {
+            const store = await createStoreWithCameraOff();
+            store.dispatch(localMediaSlice.setCurrentCameraDeviceId({ deviceId: videoDevice.deviceId }));
+            await waitForSetDevice(store);
+            mockedGetUserMedia.mockClear();
+
+            await turnCameraOn(store, videoDevice.deviceId);
+
+            const constraints = mockedGetUserMedia.mock.calls[0]?.[0];
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+            expect(constraints?.video).toEqual(expect.objectContaining({ deviceId: { exact: videoDevice.deviceId } }));
+        });
+
+        it("should forget the camera when it's unplugged while off", async () => {
+            const store = await createStoreWithCameraOff();
+            mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, otherMic, videoDevice]);
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+            const cameraWhileOff = store.getState().localMedia.currentCameraDeviceId;
+            mockedGetUserMedia.mockClear();
+
+            await turnCameraOn(store, videoDevice.deviceId);
+
+            const constraints = mockedGetUserMedia.mock.calls[0]?.[0];
+            expect(cameraWhileOff).not.toBe(ourCamera.deviceId);
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+            expect(constraints?.video).not.toHaveProperty("deviceId");
         });
     });
 
