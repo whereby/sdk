@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.31.1
+
+### Patch Changes
+
+- 973932c: Don't ask for a microphone when started without audio, and show the device in use after picking a camera or microphone
+
 ## 1.31.0
 
 ### Minor Changes

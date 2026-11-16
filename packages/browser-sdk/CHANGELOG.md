@@ -1,5 +1,12 @@
 # @whereby.com/browser-sdk
 
+## 3.40.1
+
+### Patch Changes
+
+- Updated dependencies [973932c]
+  - @whereby.com/core@1.31.1
+
 ## 3.40.0
 
 ### Minor Changes
