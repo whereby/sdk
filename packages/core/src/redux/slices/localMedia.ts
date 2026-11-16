@@ -205,6 +205,12 @@ export const localMediaSlice = createSlice({
                 isTogglingCamera: false,
             };
         });
+        builder.addCase(doToggleCamera.rejected, (state) => {
+            return {
+                ...state,
+                isTogglingCamera: false,
+            };
+        });
         builder.addCase(doUpdateDeviceList.fulfilled, (state, action) => {
             return {
                 ...state,
