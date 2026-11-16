@@ -5,4 +5,5 @@ export interface GridState {
     spotlightedParticipants: ClientView[];
     numParticipants: number;
     runningRoomIntegrations: RoomIntegrationSessionView[];
+    canSpotlight: boolean;
 }

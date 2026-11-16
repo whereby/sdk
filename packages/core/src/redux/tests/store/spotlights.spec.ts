@@ -1,7 +1,7 @@
 import { createStore, mockSignalEmit } from "../store.setup";
-import { doRemoveSpotlight, doSpotlightParticipant } from "../../slices/spotlights";
-import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
-import { CAMERA_STREAM_ID } from "@whereby.com/media";
+import { doRemoveSpotlight, doSpotlightParticipant, doSwapSpotlightOrder } from "../../slices/spotlights";
+import { randomMediaStream, randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
+import { CAMERA_STREAM_ID, type RoleName } from "@whereby.com/media";
 
 describe("actions", () => {
     describe("doSpotlightParticipant", () => {
@@ -75,6 +75,63 @@ describe("actions", () => {
 
                 expect(() => store.dispatch(doRemoveSpotlight({ id: participantId }))).toThrow(
                     `Not authorized to perform this action`,
+                );
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe("doSwapSpotlightOrder", () => {
+        const presentationStream = Object.assign(randomMediaStream(), { id: "pres-stream", active: true });
+        const setup = (roleName: RoleName) => {
+            const a = randomRemoteParticipant({ id: "a" });
+            const b = randomRemoteParticipant({ id: "b", presentationStream });
+            const c = randomRemoteParticipant({ id: "c" });
+            return createStore({
+                initialState: {
+                    authorization: { roomKey: null, roleName },
+                    remoteParticipants: { remoteParticipants: [a, b, c] },
+                    spotlights: {
+                        sorted: [
+                            { clientId: "a", streamId: CAMERA_STREAM_ID },
+                            { clientId: "b", streamId: "pres-stream" },
+                        ],
+                    },
+                },
+                withSignalConnection: true,
+            });
+        };
+
+        describe("when authorized", () => {
+            it("should ask the server to swap two spotlights, by client view id", () => {
+                const store = setup("host");
+
+                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "pres-b" }));
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("swap_spotlight_order", {
+                    source: { clientId: "a", streamId: CAMERA_STREAM_ID },
+                    target: { clientId: "b", streamId: "pres-stream" },
+                });
+            });
+
+            it("should not send anything when a client view isn't spotlighted", () => {
+                const store = setup("host");
+
+                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "c" }));
+                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "gone" }));
+                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "a" }));
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("when not authorized", () => {
+            it("should not swap", () => {
+                const store = setup("visitor");
+
+                expect(() => store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "pres-b" }))).toThrow(
+                    "Not authorized to perform this action",
                 );
 
                 expect(mockSignalEmit).not.toHaveBeenCalled();

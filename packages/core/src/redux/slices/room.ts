@@ -21,6 +21,7 @@ import {
     selectBreakoutCurrentId,
     selectBreakoutGroups,
 } from "./breakout";
+import { selectSortedClientIds, sortClientViews } from "./roomLayout/selectors";
 
 function isStreamerClient(client: RemoteParticipant) {
     return client.roleName === "streamer";
@@ -247,8 +248,12 @@ export const selectRemoteClientViews = createSelector(
 export const selectAllClientViews = createSelector(
     selectLocalParticipantView,
     selectRemoteClientViews,
-    (localParticipant, remoteParticipants) => {
-        return [...(localParticipant ? [localParticipant] : []), ...remoteParticipants];
+    selectSortedClientIds,
+    (localParticipant, remoteParticipants, sortedClientIds) => {
+        return sortClientViews({
+            sortedClientIds,
+            clientViews: [...(localParticipant ? [localParticipant] : []), ...remoteParticipants],
+        });
     },
 );
 

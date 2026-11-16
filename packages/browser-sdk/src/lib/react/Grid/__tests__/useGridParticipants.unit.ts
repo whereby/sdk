@@ -19,6 +19,7 @@ function makeFakeGridClient(clientViews: ClientView[], extra: FakeGridState = {}
             spotlightedParticipants: extra.spotlightedParticipants || [],
             runningRoomIntegrations: extra.runningRoomIntegrations || [],
             numParticipants: clientViews.length,
+            canSpotlight: false,
         }),
         subscribeClientViews: (cb: (views: ClientView[]) => void) => {
             const notify = () => cb(clientViews);
