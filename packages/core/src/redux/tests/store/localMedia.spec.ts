@@ -917,6 +917,21 @@ describe("actions", () => {
             expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
             expect(constraints?.video).not.toHaveProperty("deviceId");
         });
+
+        it("should get a camera on the next toggle after turning it on fails", async () => {
+            const store = await createStoreWithCameraOff();
+            mockedGetUserMedia.mockRejectedValue(new DOMException("Permission denied", "NotAllowedError"));
+            store.dispatch(localMediaSlice.toggleCameraEnabled({ enabled: true }));
+            await waitForToggleCamera(store);
+            mockedGetUserMedia.mockResolvedValue(new MockMediaStream());
+            store.dispatch(localMediaSlice.toggleCameraEnabled({ enabled: false }));
+            await waitForToggleCamera(store);
+            mockedGetUserMedia.mockClear();
+
+            await turnCameraOn(store, ourCamera.deviceId);
+
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe("doLocalStreamEffect", () => {
