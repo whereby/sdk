@@ -36,7 +36,7 @@ describe("GridClient", () => {
             client.subscribeClientViews(subscriber);
             client.on(CLIENT_VIEW_CHANGED, listener);
 
-            client.reorderClientViews({ id: "local", withId: "r2" });
+            client.reorderClientViews({ id: "local", targetId: "r2" });
 
             expect(order()).toEqual(["r2", "r1", "local"]);
             expect(subscriber).toHaveBeenCalledWith(client.getState().allClientViews);
@@ -46,7 +46,7 @@ describe("GridClient", () => {
         it("throws on ids that aren't strings", () => {
             const { client } = setup();
 
-            expect(() => client.reorderClientViews({ id: "local" } as { id: string; withId: string })).toThrow(
+            expect(() => client.reorderClientViews({ id: "local" } as { id: string; targetId: string })).toThrow(
                 TypeError,
             );
         });
@@ -73,7 +73,7 @@ describe("GridClient", () => {
         it("sends swap_spotlight_order", () => {
             const { client } = setup({ roleName: "host" });
 
-            client.swapSpotlightOrder({ id: "r1", withId: "r2" });
+            client.swapSpotlightOrder({ id: "r1", targetId: "r2" });
 
             expect(mockSignalEmit).toHaveBeenCalledWith("swap_spotlight_order", {
                 source: { clientId: "r1", streamId: CAMERA_STREAM_ID },

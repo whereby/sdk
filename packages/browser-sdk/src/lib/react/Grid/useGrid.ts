@@ -164,8 +164,8 @@ function useGrid({
     ]);
 
     const moveCell = React.useCallback(
-        (id: string, withId: string) => {
-            if (!gridClient || id === withId) {
+        (id: string, targetId: string) => {
+            if (!gridClient || id === targetId) {
                 return;
             }
 
@@ -182,10 +182,10 @@ function useGrid({
                 allCells.some((cell) => cell.type === "integration" && cell.cellId === cellId);
             const stagedIntegration = cellViewsInPresentationGrid.find((cell) => cell.type === "integration");
 
-            if (isIntegrationCell(id) || isIntegrationCell(withId)) {
-                if (id === stagedIntegration?.cellId && isVideoCell(withId)) {
-                    setMaximizedCellId(withId);
-                } else if (withId === stagedIntegration?.cellId && isVideoCell(id)) {
+            if (isIntegrationCell(id) || isIntegrationCell(targetId)) {
+                if (id === stagedIntegration?.cellId && isVideoCell(targetId)) {
+                    setMaximizedCellId(targetId);
+                } else if (targetId === stagedIntegration?.cellId && isVideoCell(id)) {
                     setMaximizedCellId(id);
                 }
                 return;
@@ -196,21 +196,21 @@ function useGrid({
                     cellViewsInPresentationGrid.some((cell) => cell.type === "video" && cell.cellId === cellId);
 
                 // No drop between stage and grid.
-                if (isOnStage(id) || isOnStage(withId)) {
-                    if (isOnStage(id) && isOnStage(withId) && gridClient.getState().canSpotlight) {
-                        gridClient.swapSpotlightOrder({ id, withId });
+                if (isOnStage(id) || isOnStage(targetId)) {
+                    if (isOnStage(id) && isOnStage(targetId) && gridClient.getState().canSpotlight) {
+                        gridClient.swapSpotlightOrder({ id, targetId });
                     }
                     return;
                 }
             }
 
-            if (maximizedClientView?.id === id && isVideoCell(withId)) {
-                setMaximizedCellId(withId);
-            } else if (maximizedClientView?.id === withId && isVideoCell(id)) {
+            if (maximizedClientView?.id === id && isVideoCell(targetId)) {
+                setMaximizedCellId(targetId);
+            } else if (maximizedClientView?.id === targetId && isVideoCell(id)) {
                 setMaximizedCellId(id);
             }
 
-            gridClient.reorderClientViews({ id, withId });
+            gridClient.reorderClientViews({ id, targetId });
         },
         [
             gridClient,

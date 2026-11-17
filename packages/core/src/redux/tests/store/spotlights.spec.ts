@@ -107,7 +107,7 @@ describe("actions", () => {
             it("should ask the server to swap two spotlights, by client view id", () => {
                 const store = setup("host");
 
-                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "pres-b" }));
+                store.dispatch(doSwapSpotlightOrder({ id: "a", targetId: "pres-b" }));
 
                 expect(mockSignalEmit).toHaveBeenCalledWith("swap_spotlight_order", {
                     source: { clientId: "a", streamId: CAMERA_STREAM_ID },
@@ -118,9 +118,9 @@ describe("actions", () => {
             it("should not send anything when a client view isn't spotlighted", () => {
                 const store = setup("host");
 
-                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "c" }));
-                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "gone" }));
-                store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "a" }));
+                store.dispatch(doSwapSpotlightOrder({ id: "a", targetId: "c" }));
+                store.dispatch(doSwapSpotlightOrder({ id: "a", targetId: "gone" }));
+                store.dispatch(doSwapSpotlightOrder({ id: "a", targetId: "a" }));
 
                 expect(mockSignalEmit).not.toHaveBeenCalled();
             });
@@ -130,7 +130,7 @@ describe("actions", () => {
             it("should not swap", () => {
                 const store = setup("visitor");
 
-                expect(() => store.dispatch(doSwapSpotlightOrder({ id: "a", withId: "pres-b" }))).toThrow(
+                expect(() => store.dispatch(doSwapSpotlightOrder({ id: "a", targetId: "pres-b" }))).toThrow(
                     "Not authorized to perform this action",
                 );
 

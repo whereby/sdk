@@ -46,7 +46,7 @@ describe("roomLayout", () => {
         it("should swap two client views", () => {
             const { store, order } = setup();
 
-            store.dispatch(doReorderClientViews({ id: "local", withId: "r2" }));
+            store.dispatch(doReorderClientViews({ id: "local", targetId: "r2" }));
 
             expect(order()).toEqual(["r2", "r1", "local", "r3"]);
         });
@@ -54,7 +54,7 @@ describe("roomLayout", () => {
         it("should swap from the current order", () => {
             const { store, order } = setup(["r3", "r2", "r1", "local"]);
 
-            store.dispatch(doReorderClientViews({ id: "r3", withId: "local" }));
+            store.dispatch(doReorderClientViews({ id: "r3", targetId: "local" }));
 
             expect(order()).toEqual(["local", "r2", "r1", "r3"]);
         });
@@ -63,7 +63,7 @@ describe("roomLayout", () => {
             const { store } = setup();
             const before = selectAllClientViews(store.getState());
 
-            store.dispatch(doReorderClientViews({ id: "r1", withId: "r3" }));
+            store.dispatch(doReorderClientViews({ id: "r1", targetId: "r3" }));
 
             const after = selectAllClientViews(store.getState());
             expect(after).not.toBe(before);
@@ -75,7 +75,7 @@ describe("roomLayout", () => {
             const { store, order } = setup();
             const before = store.getState().roomLayout;
 
-            store.dispatch(doReorderClientViews({ id: "r1", withId: "gone" }));
+            store.dispatch(doReorderClientViews({ id: "r1", targetId: "gone" }));
 
             expect(store.getState().roomLayout).toBe(before);
             expect(order()).toEqual(["local", "r1", "r2", "r3"]);

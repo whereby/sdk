@@ -34,17 +34,17 @@ export const roomLayoutSlice = createSlice({
 export const { setSortedClientIds } = roomLayoutSlice.actions;
 
 export const doReorderClientViews = createAppThunk(
-    ({ id, withId }: { id: string; withId: string }) =>
+    ({ id, targetId }: { id: string; targetId: string }) =>
         (dispatch, getState) => {
             const clientIds = selectAllClientViews(getState()).map((c) => c.id);
             const index = clientIds.indexOf(id);
-            const withIndex = clientIds.indexOf(withId);
+            const targetIndex = clientIds.indexOf(targetId);
 
-            if (index < 0 || withIndex < 0 || index === withIndex) {
+            if (index < 0 || targetIndex < 0 || index === targetIndex) {
                 return;
             }
 
-            [clientIds[index], clientIds[withIndex]] = [clientIds[withIndex], clientIds[index]];
+            [clientIds[index], clientIds[targetIndex]] = [clientIds[targetIndex], clientIds[index]];
 
             dispatch(setSortedClientIds(clientIds));
         },

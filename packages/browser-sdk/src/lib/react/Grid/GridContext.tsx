@@ -16,7 +16,7 @@ type GridContextValue = {
     setFloatingCellId: React.Dispatch<React.SetStateAction<string | null>>;
     floatingParticipant: ClientView | null;
     isConstrained?: boolean;
-    moveCell: (id: string, withId: string) => void;
+    moveCell: (id: string, targetId: string) => void;
 };
 
 const GridContext = React.createContext<GridContextValue>({} as GridContextValue);

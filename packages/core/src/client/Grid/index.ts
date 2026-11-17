@@ -82,11 +82,11 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
     }
 
     /** Only for this participant. */
-    public reorderClientViews({ id, withId }: { id: string; withId: string }) {
-        if (typeof id !== "string" || typeof withId !== "string") {
-            throw new TypeError("reorderClientViews expects { id, withId } with string client view ids");
+    public reorderClientViews({ id, targetId }: { id: string; targetId: string }) {
+        if (typeof id !== "string" || typeof targetId !== "string") {
+            throw new TypeError("reorderClientViews expects { id, targetId } with string client view ids");
         }
-        this.store.dispatch(doReorderClientViews({ id, withId }));
+        this.store.dispatch(doReorderClientViews({ id, targetId }));
     }
 
     /** Only for this participant. Unlisted client views follow in their current order. */
@@ -98,11 +98,11 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
     }
 
     /** For everyone in the room. Needs `canSpotlight`. */
-    public swapSpotlightOrder({ id, withId }: { id: string; withId: string }) {
-        if (typeof id !== "string" || typeof withId !== "string") {
-            throw new TypeError("swapSpotlightOrder expects { id, withId } with string client view ids");
+    public swapSpotlightOrder({ id, targetId }: { id: string; targetId: string }) {
+        if (typeof id !== "string" || typeof targetId !== "string") {
+            throw new TypeError("swapSpotlightOrder expects { id, targetId } with string client view ids");
         }
-        this.store.dispatch(doSwapSpotlightOrder({ id, withId }));
+        this.store.dispatch(doSwapSpotlightOrder({ id, targetId }));
     }
 
     public destroy() {

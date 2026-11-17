@@ -200,14 +200,14 @@ export class FakeGridClient {
         this.emit();
     }
 
-    public reorderClientViews({ id, withId }: { id: string; withId: string }) {
+    public reorderClientViews({ id, targetId }: { id: string; targetId: string }) {
         const ids = this.clientViews.map((c) => c.id);
         const index = ids.indexOf(id);
-        const withIndex = ids.indexOf(withId);
-        if (index < 0 || withIndex < 0) {
+        const targetIndex = ids.indexOf(targetId);
+        if (index < 0 || targetIndex < 0) {
             return;
         }
-        [ids[index], ids[withIndex]] = [ids[withIndex], ids[index]];
+        [ids[index], ids[targetIndex]] = [ids[targetIndex], ids[index]];
         this.setClientViewOrder(ids);
     }
 
@@ -218,14 +218,14 @@ export class FakeGridClient {
     }
 
     // No room to broadcast the swap, so apply it directly
-    public swapSpotlightOrder({ id, withId }: { id: string; withId: string }) {
+    public swapSpotlightOrder({ id, targetId }: { id: string; targetId: string }) {
         const index = this.spotlighted.findIndex((c) => c.id === id);
-        const withIndex = this.spotlighted.findIndex((c) => c.id === withId);
-        if (index < 0 || withIndex < 0) {
+        const targetIndex = this.spotlighted.findIndex((c) => c.id === targetId);
+        if (index < 0 || targetIndex < 0) {
             return;
         }
         const spotlighted = [...this.spotlighted];
-        [spotlighted[index], spotlighted[withIndex]] = [spotlighted[withIndex], spotlighted[index]];
+        [spotlighted[index], spotlighted[targetIndex]] = [spotlighted[targetIndex], spotlighted[index]];
         this.spotlighted = spotlighted;
         this.emit();
     }

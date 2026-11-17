@@ -112,7 +112,7 @@ describe("moveCell", () => {
 
         act(() => result.current.moveCell("a", "c"));
 
-        expect(reorder).toHaveBeenCalledWith({ id: "a", withId: "c" });
+        expect(reorder).toHaveBeenCalledWith({ id: "a", targetId: "c" });
         expect(swapSpotlights).not.toHaveBeenCalled();
         expect(gridIds(result.current.cellViewsVideoGrid)).toEqual(["c", "b", "a", "d"]);
         expect(result.current.maximizedCellId).toBeNull();
@@ -134,7 +134,7 @@ describe("moveCell", () => {
             act(() => result.current.moveCell("a", "c"));
 
             expect(result.current.maximizedCellId).toBe("c");
-            expect(reorder).toHaveBeenCalledWith({ id: "a", withId: "c" });
+            expect(reorder).toHaveBeenCalledWith({ id: "a", targetId: "c" });
             expect(gridIds(result.current.cellViewsInPresentationGrid)).toEqual(["c"]);
             // The rest keep the swapped order (a zero-size container lays them out in the subgrid)
             expect(gridIds([...result.current.cellViewsVideoGrid, ...result.current.cellViewsInSubgrid])).toEqual([
@@ -151,7 +151,7 @@ describe("moveCell", () => {
             act(() => result.current.moveCell("d", "a"));
 
             expect(result.current.maximizedCellId).toBe("d");
-            expect(reorder).toHaveBeenCalledWith({ id: "d", withId: "a" });
+            expect(reorder).toHaveBeenCalledWith({ id: "d", targetId: "a" });
         });
 
         it("keeps the maximize when two other cells swap", () => {
@@ -161,7 +161,7 @@ describe("moveCell", () => {
             act(() => result.current.moveCell("b", "c"));
 
             expect(result.current.maximizedCellId).toBe("a");
-            expect(reorder).toHaveBeenCalledWith({ id: "b", withId: "c" });
+            expect(reorder).toHaveBeenCalledWith({ id: "b", targetId: "c" });
         });
 
         it("swaps a spotlighted cell locally, as the stage only shows the maximized cell", () => {
@@ -171,7 +171,7 @@ describe("moveCell", () => {
             act(() => result.current.moveCell("a", "c"));
 
             expect(swapSpotlights).not.toHaveBeenCalled();
-            expect(reorder).toHaveBeenCalledWith({ id: "a", withId: "c" });
+            expect(reorder).toHaveBeenCalledWith({ id: "a", targetId: "c" });
             expect(result.current.maximizedCellId).toBe("a");
         });
     });
@@ -183,7 +183,7 @@ describe("moveCell", () => {
 
             act(() => result.current.moveCell("a", "b"));
 
-            expect(swapSpotlights).toHaveBeenCalledWith({ id: "a", withId: "b" });
+            expect(swapSpotlights).toHaveBeenCalledWith({ id: "a", targetId: "b" });
             expect(reorder).not.toHaveBeenCalled();
             expect(gridIds(result.current.cellViewsInPresentationGrid)).toEqual(["b", "a"]);
         });
@@ -213,7 +213,7 @@ describe("moveCell", () => {
 
             act(() => result.current.moveCell("c", "d"));
 
-            expect(reorder).toHaveBeenCalledWith({ id: "c", withId: "d" });
+            expect(reorder).toHaveBeenCalledWith({ id: "c", targetId: "d" });
         });
     });
 

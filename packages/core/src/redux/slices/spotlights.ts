@@ -54,13 +54,13 @@ const isSameSpotlight = (a: Spotlight, b: Spotlight) => a.clientId === b.clientI
 
 function swapSpotlights(spotlights: Spotlight[], source: Spotlight, target: Spotlight) {
     const index = spotlights.findIndex((s) => isSameSpotlight(s, source));
-    const withIndex = spotlights.findIndex((s) => isSameSpotlight(s, target));
-    if (index < 0 || withIndex < 0 || index === withIndex) {
+    const targetIndex = spotlights.findIndex((s) => isSameSpotlight(s, target));
+    if (index < 0 || targetIndex < 0 || index === targetIndex) {
         return spotlights;
     }
 
     const swapped = [...spotlights];
-    [swapped[index], swapped[withIndex]] = [swapped[withIndex], swapped[index]];
+    [swapped[index], swapped[targetIndex]] = [swapped[targetIndex], swapped[index]];
     return swapped;
 }
 
@@ -201,7 +201,7 @@ export const doRemoveSpotlight = createAppAuthorizedThunk(
 // The order changes when the server broadcasts spotlight_order_swapped
 export const doSwapSpotlightOrder = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToSpotlight(state),
-    ({ id, withId }: { id: string; withId: string }) =>
+    ({ id, targetId }: { id: string; targetId: string }) =>
         (_, getState) => {
             const state = getState();
             const clientViews = selectAllClientViews(state);
@@ -219,7 +219,7 @@ export const doSwapSpotlightOrder = createAppAuthorizedThunk(
             };
 
             const source = toSpotlight(id);
-            const target = toSpotlight(withId);
+            const target = toSpotlight(targetId);
 
             if (!source || !target || isSameSpotlight(source, target)) {
                 return;
