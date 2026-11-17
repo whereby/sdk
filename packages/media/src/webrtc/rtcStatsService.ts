@@ -10,6 +10,8 @@ const adapter = adapterRaw.default ?? adapterRaw;
 
 const RTCSTATS_PROTOCOL_VERSION = "1.0";
 
+const POLICY_VIOLATION = 1008;
+
 // when not connected we need to buffer at least a few getstats reports
 // as they are delta compressed and we need the initial properties
 const GETSTATS_BUFFER_SIZE = 20;
@@ -43,6 +45,7 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     let roomSessionId: any;
     let connectionShouldBeOpen: any;
     let connectionAttempt = 0;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | undefined;
     let hasPassedOnRoomSessionId = false;
     let getStatsBufferUsed = 0;
     let deviceId: string;
@@ -110,8 +113,9 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             }
 
             // reconnect when closed by anything else than client
-            if (ws?.readyState === WebSocket.CLOSED && connectionShouldBeOpen) {
-                setTimeout(() => {
+            if (ws?.readyState === WebSocket.CLOSED && connectionShouldBeOpen && !reconnectTimeout) {
+                reconnectTimeout = setTimeout(() => {
+                    reconnectTimeout = undefined;
                     if (ws.readyState === WebSocket.CLOSED && connectionShouldBeOpen) {
                         connection.connect();
                     }
@@ -120,15 +124,20 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
         },
         close: () => {
             connectionShouldBeOpen = false;
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = undefined;
             ws?.close();
         },
         connect: () => {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = undefined;
             connectionShouldBeOpen = true;
             connectionAttempt += 1;
             ws?.close();
             connection.connected = true;
             connection.attemptedConnectedAtLeastOnce = true;
-            ws = new WebSocket(wsURL + getConnectionPath() + getConnectionQuery(), RTCSTATS_PROTOCOL_VERSION);
+            const socket = new WebSocket(wsURL + getConnectionPath() + getConnectionQuery(), RTCSTATS_PROTOCOL_VERSION);
+            ws = socket;
 
             ws.onerror = (e: Event) => {
                 connection.connected = false;
@@ -136,7 +145,12 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
             };
             ws.onclose = (e: CloseEvent) => {
                 connection.connected = false;
-                logger.info(`[RTCSTATS] Closed ${e.code}`);
+                if (e.code === POLICY_VIOLATION && ws === socket) {
+                    connectionShouldBeOpen = false;
+                    logger.warn(`[RTCSTATS] Rejected by the server: ${e.reason}`);
+                } else {
+                    logger.info(`[RTCSTATS] Closed ${e.code}`);
+                }
                 resetDelta();
             };
             ws.onopen = () => {
