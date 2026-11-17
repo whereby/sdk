@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 1.31.2
+
+### Patch Changes
+
+- 55ed41d: Allow toggling the camera again after turning it on fails
+- 3a1f4a4: Keep the picked camera while the camera is off
+
 ## 1.31.1
 
 ### Patch Changes
