@@ -520,6 +520,25 @@ describe("RoomConnectionClient", () => {
             storeSubscriber();
             expect(callback).toHaveBeenCalledTimes(1);
         });
+
+        it("does not trigger the remote participants listener for unrelated state changes", () => {
+            const callback = jest.fn();
+            const remoteParticipantsState = { remoteParticipants: [{ id: "1" }] };
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                remoteParticipants: remoteParticipantsState,
+            });
+            storeSubscriber();
+            client.subscribeToRemoteParticipants(callback);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                remoteParticipants: remoteParticipantsState,
+                chat: { chatMessages: [{ text: "Some message" }] },
+            });
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+        });
     });
 
     describe("subscribeToScreenshares", () => {

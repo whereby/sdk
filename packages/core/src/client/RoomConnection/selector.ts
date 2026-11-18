@@ -57,6 +57,18 @@ import { RoomConnectionState } from "./types";
 const EMPTY_REMOTE_PARTICIPANT_QUALITY_REPORT: RemoteParticipantQualityReport = Object.freeze({});
 const EMPTY_LOCAL_PARTICIPANT_QUALITY_REPORT: LocalParticipantQualityReport = Object.freeze({});
 
+// Kept separate so the mapped array only changes when the participants or assignments do,
+// not on every change to the room connection state.
+const selectRemoteParticipantsWithBreakoutAssignments = createSelector(
+    selectRemoteParticipants,
+    selectBreakoutAssignments,
+    (remoteParticipants, breakoutAssignments) =>
+        remoteParticipants.map((participant) => ({
+            ...participant,
+            breakoutGroupAssigned: breakoutAssignments?.[participant.deviceId] || "",
+        })),
+);
+
 export const selectRoomConnectionState = createSelector(
     selectChatMessages,
     selectFileUploads,
@@ -66,7 +78,6 @@ export const selectRoomConnectionState = createSelector(
     selectBreakoutActive,
     selectBreakoutGroupedParticipants,
     selectBreakoutGroups,
-    selectBreakoutAssignments,
     selectBreakoutEnforceAssignment,
     selectBreakoutTimerSetting,
     selectBreakoutTimerDuration,
@@ -86,7 +97,7 @@ export const selectRoomConnectionState = createSelector(
     selectLocalParticipantRaw,
     selectLocalMediaStream,
     selectLocalScreenshareRaw,
-    selectRemoteParticipants,
+    selectRemoteParticipantsWithBreakoutAssignments,
     selectScreenshares,
     selectRoomConnectionStatus,
     selectRoomConnectionError,
@@ -115,7 +126,6 @@ export const selectRoomConnectionState = createSelector(
         breakoutActive,
         breakoutGroupedParticipants,
         breakoutGroups,
-        breakoutAssignments,
         breakoutEnforceAssignment,
         breakoutTimerSetting,
         breakoutTimerDuration,
@@ -245,10 +255,7 @@ export const selectRoomConnectionState = createSelector(
                 isScreenSharing: localScreenshare.status === "active",
                 stream: localMediaStream,
             },
-            remoteParticipants: remoteParticipants.map((participant) => ({
-                ...participant,
-                breakoutGroupAssigned: breakoutAssignments?.[participant.deviceId] || "",
-            })),
+            remoteParticipants,
             roomIntegrations: {
                 hasFetched: roomIntegrationsRaw.hasFetched,
                 isFetching: roomIntegrationsRaw.isFetching,
