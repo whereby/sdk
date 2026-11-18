@@ -804,7 +804,7 @@ startAppListening({
     predicate: (_action, currentState, previousState) => {
         const isReady = selectLocalMediaStatus(previousState) === "started";
 
-        if (!isReady) {
+        if (!isReady || !selectIsCameraEnabled(currentState)) {
             return false;
         }
 
@@ -823,8 +823,8 @@ startAppListening({
 
         return hasLowDataModeChanged || hasHDModeChanged || hasWidescreenModeChanged;
     },
-    effect: (_action, { dispatch }) => {
-        dispatch(doTriggerLocalStreamRefresh());
+    effect: (_action, { dispatch, getState }) => {
+        dispatch(doSwitchLocalStream({ videoId: selectCurrentCameraDeviceId(getState()) }));
     },
 });
 
