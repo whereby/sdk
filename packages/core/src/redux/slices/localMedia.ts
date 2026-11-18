@@ -374,6 +374,7 @@ const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", 
 
     audioTrack.enabled = enabled;
 });
+/** @deprecated */
 export const doTriggerLocalStreamRefresh = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const stream = selectLocalMediaStream(state);
