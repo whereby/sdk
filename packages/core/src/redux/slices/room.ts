@@ -13,6 +13,7 @@ import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRemoteClients, selectRemoteParticipants } from "./remoteParticipants";
 import { selectLocalScreenshareStream } from "./localScreenshare";
 import { Screenshare, RemoteParticipant } from "../../RoomParticipant";
+import haveShallowEqualItems from "../../utils/haveShallowEqualItems";
 import { selectLocalParticipantView, selectLocalParticipantRaw } from "./localParticipant/selectors";
 import { ClientView } from "../types";
 import {
@@ -165,6 +166,12 @@ export const selectScreenshares = createSelector(
         }
 
         return screenshares;
+    },
+    {
+        memoizeOptions: {
+            // Only produce a new array when its contents change, not whenever a participant changes
+            resultEqualityCheck: haveShallowEqualItems,
+        },
     },
 );
 

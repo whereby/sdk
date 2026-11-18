@@ -52,6 +52,7 @@ import {
     selectRoomConnectionSessionId,
     type RootState,
 } from "../../redux";
+import haveShallowEqualItems from "../../utils/haveShallowEqualItems";
 import type { StateDefinition } from "../BaseClient";
 import {
     AUDIO_ONLY_MODE_CHANGED,
@@ -125,11 +126,28 @@ const selectCloudRecordingState = createSelector(
             : undefined,
 );
 
+// Main-room participants that are spotlighted broadcast their audio/video into every group.
+// Only relevant for participants who are currently inside a group.
+const selectBreakoutBroadcastingParticipants = createSelector(
+    selectBreakoutActive,
+    selectBreakoutCurrentId,
+    selectSpotlightedClientViews,
+    (breakoutActive, breakoutCurrentId, spotlightedClientViews) =>
+        breakoutActive && breakoutCurrentId
+            ? spotlightedClientViews.filter((c) => !c.breakoutGroup && c.isAudioEnabled && !c.isPresentation)
+            : [],
+    {
+        memoizeOptions: {
+            // Only produce a new array when its contents change, not whenever the spotlights change
+            resultEqualityCheck: haveShallowEqualItems,
+        },
+    },
+);
+
 const selectBreakoutState = createSelector(
     selectBreakoutIsAvailable,
     selectBreakoutError,
     selectBreakoutActive,
-    selectBreakoutCurrentId,
     selectBreakoutCurrentGroup,
     selectBreakoutGroups,
     selectBreakoutEnforceAssignment,
@@ -145,12 +163,11 @@ const selectBreakoutState = createSelector(
     selectBreakoutMoveToMainAt,
     selectBreakoutGroupedParticipants,
     selectAllClientViewsInCurrentGroup,
-    selectSpotlightedClientViews,
+    selectBreakoutBroadcastingParticipants,
     (
         breakoutIsAvailable,
         breakoutError,
         breakoutActive,
-        breakoutCurrentId,
         breakoutCurrentGroup,
         breakoutGroups,
         breakoutEnforceAssignment,
@@ -166,15 +183,8 @@ const selectBreakoutState = createSelector(
         breakoutMoveToMainAt,
         breakoutGroupedParticipants,
         clientViewsInCurrentGroup,
-        spotlightedClientViews,
+        broadcastingParticipants,
     ): BreakoutState => {
-        // Main-room participants that are spotlighted broadcast their audio/video into every group.
-        // Only relevant for participants who are currently inside a group.
-        const broadcastingParticipants =
-            breakoutActive && breakoutCurrentId
-                ? spotlightedClientViews.filter((c) => !c.breakoutGroup && c.isAudioEnabled && !c.isPresentation)
-                : [];
-
         return {
             isAvailable: breakoutIsAvailable,
             error: breakoutError,

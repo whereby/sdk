@@ -8,6 +8,7 @@ import { createAppAuthorizedThunk } from "../thunk";
 import { selectIsAuthorizedToSpotlight } from "./authorization";
 import { selectAllClientViews } from "./room";
 import { doStartScreenshare, stopScreenshare } from "./localScreenshare";
+import haveShallowEqualItems from "../../utils/haveShallowEqualItems";
 import { startAppListening } from "../listenerMiddleware";
 
 /**
@@ -16,7 +17,7 @@ import { startAppListening } from "../listenerMiddleware";
 
 export function streamIdForClient({ isPresentation, stream }: Pick<ClientView, "isPresentation" | "stream">) {
     // outboundId and inboundId are the streamId's used by SFU V2
-    return isPresentation ? stream?.outboundId ?? stream?.inboundId ?? stream?.id : CAMERA_STREAM_ID;
+    return isPresentation ? (stream?.outboundId ?? stream?.inboundId ?? stream?.id) : CAMERA_STREAM_ID;
 }
 
 export function isClientSpotlighted({
@@ -187,6 +188,12 @@ export const selectSpotlightedClientViews = createSelector(
     selectSpotlights,
     (clientViews, spotlights) => {
         return mapSpotlightsToClientViews(spotlights, clientViews);
+    },
+    {
+        memoizeOptions: {
+            // Only produce a new array when its contents change, not whenever a participant changes
+            resultEqualityCheck: haveShallowEqualItems,
+        },
     },
 );
 
