@@ -520,25 +520,6 @@ describe("RoomConnectionClient", () => {
             storeSubscriber();
             expect(callback).toHaveBeenCalledTimes(1);
         });
-
-        it("does not trigger the remote participants listener for unrelated state changes", () => {
-            const callback = jest.fn();
-            const remoteParticipantsState = { remoteParticipants: [{ id: "1" }] };
-            (mockStore.getState as jest.Mock).mockReturnValue({
-                ...initialState,
-                remoteParticipants: remoteParticipantsState,
-            });
-            storeSubscriber();
-            client.subscribeToRemoteParticipants(callback);
-
-            (mockStore.getState as jest.Mock).mockReturnValue({
-                ...initialState,
-                remoteParticipants: remoteParticipantsState,
-                chat: { chatMessages: [{ text: "Some message" }] },
-            });
-            storeSubscriber();
-            expect(callback).not.toHaveBeenCalled();
-        });
     });
 
     describe("subscribeToScreenshares", () => {
@@ -739,6 +720,43 @@ describe("RoomConnectionClient", () => {
                     error: "organization_fetch_failed",
                 }),
             );
+        });
+    });
+
+    describe("unrelated state changes", () => {
+        const subscribers = [
+            "subscribeToBreakoutConfig",
+            "subscribeToCloudRecording",
+            "subscribeToLiveCaptions",
+            "subscribeToLiveStream",
+            "subscribeToLiveTranscription",
+            "subscribeToLocalParticipant",
+            "subscribeToLocalScreenshare",
+            "subscribeToRemoteParticipants",
+        ] as const;
+
+        it.each(subscribers)("do not trigger %s", (subscriber) => {
+            const activeState = {
+                ...initialState,
+                cloudRecording: { ...initialState.cloudRecording, status: "recording", startedAt: 1 },
+                liveCaptions: { ...initialState.liveCaptions, status: "captioning", startedAt: 1 },
+                liveTranscription: { ...initialState.liveTranscription, status: "transcribing", startedAt: 1 },
+                localScreenshare: { ...initialState.localScreenshare, status: "active", startedAt: 1 },
+                remoteParticipants: { remoteParticipants: [{ id: "1" }] },
+                streaming: { ...initialState.streaming, isStreaming: true, startedAt: 1 },
+            };
+            (mockStore.getState as jest.Mock).mockReturnValue(activeState);
+            storeSubscriber();
+            const callback = jest.fn();
+            client[subscriber](callback);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...activeState,
+                chat: { chatMessages: [{ text: "Some message" }] },
+            });
+            storeSubscriber();
+
+            expect(callback).not.toHaveBeenCalled();
         });
     });
 });
