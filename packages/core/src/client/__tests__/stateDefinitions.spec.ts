@@ -1,5 +1,6 @@
 import { randomMediaStream, randomRemoteParticipant } from "../../__mocks__/appMocks";
 import { RootState } from "../../redux";
+import { RemoteParticipant } from "../../RoomParticipant";
 import { createStore } from "../../redux/tests/store.setup";
 import { StateDefinition } from "../BaseClient";
 import { gridStateDefinition } from "../Grid/state";
@@ -52,5 +53,216 @@ describe("state definitions", () => {
                 : { chat: { ...state.chat, chatMessages: [] } };
 
         expect(selector({ ...state, ...unrelatedChange })).toBe(value);
+    });
+
+    describe("when the room changes", () => {
+        const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+            value !== null &&
+            typeof value === "object" &&
+            [Object.prototype, null].includes(Object.getPrototypeOf(value));
+
+        // Compares plain objects and arrays by their contents, and anything else (streams, class instances) by identity
+        const hasEqualContents = (a: unknown, b: unknown): boolean => {
+            if (a === b) {
+                return true;
+            }
+            if (Array.isArray(a) && Array.isArray(b)) {
+                return a.length === b.length && a.every((item, i) => hasEqualContents(item, b[i]));
+            }
+            if (isPlainObject(a) && isPlainObject(b)) {
+                const keys = Object.keys(a);
+                return keys.length === Object.keys(b).length && keys.every((key) => hasEqualContents(a[key], b[key]));
+            }
+            return false;
+        };
+
+        const presenter = randomRemoteParticipant({
+            id: "presenter",
+            stream: randomMediaStream(),
+            presentationStream: randomMediaStream(),
+        });
+        const participant = randomRemoteParticipant({ id: "participant", stream: randomMediaStream() });
+
+        const scenarios: Record<string, (state: RootState) => RootState> = {
+            "without breakout groups": (state) => state,
+            "in the main room of a breakout session": (state) => ({
+                ...state,
+                breakout: { ...state.breakout, startedAt: new Date(1), groups: { group: "Group" } },
+                remoteParticipants: {
+                    ...state.remoteParticipants,
+                    remoteParticipants: [presenter, { ...participant, breakoutGroup: "group" }],
+                },
+            }),
+            "in a breakout group": (state) => ({
+                ...state,
+                breakout: { ...state.breakout, startedAt: new Date(1), groups: { group: "Group" } },
+                localParticipant: { ...state.localParticipant, breakoutGroup: "group" },
+                remoteParticipants: {
+                    ...state.remoteParticipants,
+                    remoteParticipants: [presenter, { ...participant, breakoutGroup: "group" }],
+                },
+            }),
+        };
+
+        const updateParticipant = (state: RootState, update: Partial<RemoteParticipant>) => ({
+            ...state,
+            remoteParticipants: {
+                ...state.remoteParticipants,
+                remoteParticipants: state.remoteParticipants.remoteParticipants.map((p) =>
+                    p.id === participant.id ? { ...p, ...update } : p,
+                ),
+            },
+        });
+
+        // Each change, and the keys it must give a new value
+        const changes: Record<string, { makeChange: (state: RootState) => RootState; changedKeys: string[] }> = {
+            "a remote participant mutes": {
+                makeChange: (state) => updateParticipant(state, { isAudioEnabled: false }),
+                changedKeys: ["roomConnection.remoteParticipants", "grid.allClientViews"],
+            },
+            "a remote participant changes their name": {
+                makeChange: (state) => updateParticipant(state, { displayName: "Renamed" }),
+                changedKeys: ["roomConnection.remoteParticipants", "grid.allClientViews"],
+            },
+            "a remote participant joins": {
+                makeChange: (state) => ({
+                    ...state,
+                    remoteParticipants: {
+                        ...state.remoteParticipants,
+                        remoteParticipants: [
+                            ...state.remoteParticipants.remoteParticipants,
+                            randomRemoteParticipant({ stream: randomMediaStream() }),
+                        ],
+                    },
+                }),
+                changedKeys: ["roomConnection.remoteParticipants", "grid.allClientViews", "grid.numParticipants"],
+            },
+            "the local participant mutes": {
+                makeChange: (state) => ({
+                    ...state,
+                    localParticipant: { ...state.localParticipant, isAudioEnabled: false },
+                }),
+                changedKeys: ["roomConnection.localParticipant", "grid.allClientViews"],
+            },
+            "the local participant changes their name": {
+                makeChange: (state) => ({
+                    ...state,
+                    localParticipant: { ...state.localParticipant, displayName: "Renamed" },
+                }),
+                changedKeys: ["roomConnection.localParticipant", "grid.allClientViews"],
+            },
+            "a participant is spotlighted": {
+                makeChange: (state) => ({
+                    ...state,
+                    spotlights: { ...state.spotlights, sorted: [{ clientId: participant.id, streamId: "0" }] },
+                }),
+                changedKeys: ["roomConnection.spotlightedParticipants", "grid.spotlightedParticipants"],
+            },
+            "a chat message is sent": {
+                makeChange: (state) => ({
+                    ...state,
+                    chat: {
+                        ...state.chat,
+                        chatMessages: [
+                            ...state.chat.chatMessages,
+                            { id: "1", senderId: participant.id, timestamp: "", text: "Hello", removed: false },
+                        ],
+                    },
+                }),
+                changedKeys: ["roomConnection.chatMessages"],
+            },
+        };
+
+        // Keys that are rebuilt with their inputs even when the result has equal contents
+        const keysRebuiltWithEqualContents: Record<string, string> = {
+            "roomConnection.screenshares":
+                "its items read the tracks of the participants' streams, which can change without a state change",
+            "roomConnection.spotlightedParticipants": "its items must be the same objects as the client views",
+            "grid.spotlightedParticipants": "its items must be the same objects as the client views",
+            "roomConnection.breakout": "its broadcasting participants are spotlighted client views",
+        };
+
+        const cases = Object.entries(scenarios).flatMap(([scenario, setUpScenario]) =>
+            Object.entries(changes).map(([change, { makeChange, changedKeys }]) => ({
+                scenario,
+                setUpScenario,
+                change,
+                makeChange,
+                changedKeys,
+            })),
+        );
+
+        const setUp = (setUpScenario: (state: RootState) => RootState) =>
+            setUpScenario({
+                ...state,
+                localParticipant: { ...state.localParticipant, id: "self", displayName: "Me" },
+                remoteParticipants: { ...state.remoteParticipants, remoteParticipants: [presenter, participant] },
+            });
+
+        const selectorFor = (name: string) => {
+            const key = keys.find((entry) => entry.name === name);
+            if (!key) {
+                throw new Error(`No key ${name}`);
+            }
+            return key.selector;
+        };
+
+        it.each(cases)(
+            "$scenario, when $change, only gives new values to keys whose contents changed",
+            ({ setUpScenario, makeChange }) => {
+                const before = setUp(setUpScenario);
+                const after = makeChange(before);
+
+                const keysWithNewEqualValues = keys
+                    .filter(({ name }) => !(name in keysRebuiltWithEqualContents))
+                    .filter(({ selector }) => {
+                        const value = selector(before);
+                        const newValue = selector(after);
+                        return value !== newValue && hasEqualContents(value, newValue);
+                    })
+                    .map(({ name }) => name);
+
+                expect(keysWithNewEqualValues).toEqual([]);
+            },
+        );
+
+        it.each(cases)(
+            "$scenario, when $change, gives new values to the keys it changes",
+            ({ setUpScenario, makeChange, changedKeys }) => {
+                const before = setUp(setUpScenario);
+                const after = makeChange(before);
+
+                const keysWithoutNewValues = changedKeys.filter((name) => {
+                    const selector = selectorFor(name);
+                    return selector(before) === selector(after);
+                });
+
+                expect(keysWithoutNewValues).toEqual([]);
+            },
+        );
+
+        it.each(cases)(
+            "$scenario, when $change, keeps the spotlighted participants the same objects as the client views",
+            ({ setUpScenario, makeChange }) => {
+                const before = setUp(setUpScenario);
+                const spotlighted = {
+                    ...before,
+                    spotlights: { ...before.spotlights, sorted: [{ clientId: presenter.id, streamId: "0" }] },
+                };
+                // Selects the state before the change first, as a client would have
+                selectorFor("roomConnection.spotlightedParticipants")(spotlighted);
+                selectorFor("grid.spotlightedParticipants")(spotlighted);
+                const after = makeChange(spotlighted);
+
+                const clientViews = selectorFor("grid.allClientViews")(after) as unknown[];
+                const spotlightedViews = [
+                    ...(selectorFor("roomConnection.spotlightedParticipants")(after) as unknown[]),
+                    ...(selectorFor("grid.spotlightedParticipants")(after) as unknown[]),
+                ];
+
+                expect(spotlightedViews.length).toBeGreaterThan(0);
+                spotlightedViews.forEach((view) => expect(clientViews).toContain(view));
+            },
+        );
     });
 });

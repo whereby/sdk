@@ -16,6 +16,7 @@ import { signalEvents } from "./signalConnection/actions";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectBreakoutActive, selectBreakoutCurrentId } from "./breakout";
 import { selectIsAuthorizedToManageRoomIntegration } from "./authorization";
+import haveShallowEqualItems from "../../utils/haveShallowEqualItems";
 import { selectOrganizationId } from "./organization";
 import { selectAppRoomName, selectAppIsActive } from "./app";
 import { selectSelfId } from "./localParticipant/selectors";
@@ -606,6 +607,12 @@ export const selectRunningRoomIntegrations = createSelector(
             });
             return acc;
         }, []);
+    },
+    {
+        memoizeOptions: {
+            // Only produce a new array when its contents change, not whenever a participant changes
+            resultEqualityCheck: haveShallowEqualItems,
+        },
     },
 );
 export const selectIsRoomIntegrationRunning = createSelector(
