@@ -1,6 +1,6 @@
 import { diff } from "deep-object-diff";
 import { doStartScreenshare, doStopScreenshare } from "../../slices/localScreenshare";
-import { selectRoomConnectionState } from "../../../client/RoomConnection/selector";
+import { RoomConnectionClient } from "../../../client/RoomConnection";
 import { createStore, mockRtcManager } from "../store.setup";
 
 import MockMediaStream from "../../../__mocks__/MediaStream";
@@ -78,8 +78,9 @@ describe("room connection state", () => {
             withRtcManager: true,
             connectToRoom: true,
         });
+        const roomConnection = new RoomConnectionClient(store);
 
-        expect(selectRoomConnectionState(store.getState())).toMatchObject({
+        expect(roomConnection.getState()).toMatchObject({
             localScreenshareStatus: undefined,
             localScreenshare: undefined,
             localParticipant: { isScreenSharing: false },
@@ -87,7 +88,7 @@ describe("room connection state", () => {
 
         await store.dispatch(doStartScreenshare());
 
-        expect(selectRoomConnectionState(store.getState())).toMatchObject({
+        expect(roomConnection.getState()).toMatchObject({
             localScreenshareStatus: "active",
             localScreenshare: {
                 status: "screensharing",
@@ -99,7 +100,7 @@ describe("room connection state", () => {
 
         store.dispatch(doStopScreenshare());
 
-        expect(selectRoomConnectionState(store.getState())).toMatchObject({
+        expect(roomConnection.getState()).toMatchObject({
             localScreenshareStatus: undefined,
             localScreenshare: undefined,
             localParticipant: { isScreenSharing: false },

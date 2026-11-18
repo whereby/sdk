@@ -1,6 +1,10 @@
 import { RoomConnectionClient } from "../";
 import {
     AUDIO_ONLY_MODE_CHANGED,
+    CHAT_MESSAGES_CHANGED,
+    CONNECTION_KNOCK_RESPONSE_CHANGED,
+    FILE_UPLOADS_CHANGED,
+    ROOM_INTEGRATIONS_CHANGED,
     ROOM_REJOINED,
     REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
     LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED,
@@ -720,6 +724,127 @@ describe("RoomConnectionClient", () => {
                     error: "organization_fetch_failed",
                 }),
             );
+        });
+    });
+
+    describe("subscribeToKnockResponse", () => {
+        it("triggers the knock response listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToKnockResponse(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            const knockResponse = { clientId: "1", resolution: "rejected", metaData: { message: "Not now" } };
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                roomConnection: { ...initialState.roomConnection, knockResponse },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(knockResponse);
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue(initialState);
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("subscribeToRoomIntegrations", () => {
+        it("triggers the room integrations listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToRoomIntegrations(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                roomIntegrations: { ...initialState.roomIntegrations, isFetching: true },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(expect.objectContaining({ isFetching: true }));
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue(initialState);
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("events", () => {
+        it.each([
+            {
+                event: CHAT_MESSAGES_CHANGED,
+                change: { chat: { chatMessages: [{ text: "Some message" }] } },
+                args: [[{ text: "Some message" }]],
+            },
+            {
+                event: FILE_UPLOADS_CHANGED,
+                change: { fileShare: { uploads: [{ id: "1" }] } },
+                args: [[{ id: "1" }]],
+            },
+            {
+                event: CONNECTION_KNOCK_RESPONSE_CHANGED,
+                change: { roomConnection: { knockResponse: { clientId: "1", resolution: "accepted" } } },
+                args: [{ clientId: "1", resolution: "accepted" }],
+            },
+            {
+                event: ROOM_INTEGRATIONS_CHANGED,
+                change: { roomIntegrations: { hasFetched: true } },
+                args: [expect.objectContaining({ hasFetched: true })],
+            },
+        ])("emits $event when it changes", ({ event, change, args }) => {
+            const emit = jest.spyOn(client, "emit");
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                ...Object.fromEntries(
+                    Object.entries(change).map(([slice, value]) => [
+                        slice,
+                        { ...initialState[slice as keyof RootState], ...value },
+                    ]),
+                ),
+            });
+            storeSubscriber();
+
+            expect(emit).toHaveBeenCalledWith(event, ...args);
+        });
+    });
+
+    describe("getState", () => {
+        it("returns the same state until a value in it changes", () => {
+            const state = client.getState();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({ ...initialState });
+            expect(client.getState()).toBe(state);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                chat: { chatMessages: [{ text: "Some message" }] },
+            });
+            const changedState = client.getState();
+            expect(changedState).not.toBe(state);
+            expect(changedState.chatMessages).toEqual([{ text: "Some message" }]);
+            expect(changedState.connectionStatus).toBe(state.connectionStatus);
+        });
+    });
+
+    describe("destroy", () => {
+        it("removes every subscriber", () => {
+            const callback = jest.fn();
+            client.subscribeToLiveCaptions(callback);
+            client.subscribeToLiveTranscription(callback);
+
+            client.destroy();
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                liveCaptions: { ...initialState.liveCaptions, status: "captioning" },
+                liveTranscription: { ...initialState.liveTranscription, status: "transcribing" },
+            });
+            storeSubscriber();
+
+            expect(callback).not.toHaveBeenCalled();
         });
     });
 });
