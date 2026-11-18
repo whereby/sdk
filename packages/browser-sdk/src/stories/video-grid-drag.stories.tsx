@@ -89,6 +89,9 @@ function DraggableTile({ isSubgrid = false }: { isSubgrid?: boolean }) {
                         <ParticipantMenuItem className="participantMenuItem" participantAction="spotlight">
                             Spotlight
                         </ParticipantMenuItem>
+                        <ParticipantMenuItem className="participantMenuItem" participantAction="float">
+                            Float
+                        </ParticipantMenuItem>
                     </ParticipantMenuContent>
                 </ParticipantMenu>
             )}
@@ -102,6 +105,7 @@ function DraggableGrid() {
             <VideoGrid
                 renderParticipant={() => <DraggableTile />}
                 renderSubgridParticipant={() => <DraggableTile isSubgrid />}
+                renderFloatingParticipant={() => <DraggableTile />}
             />
         </div>
     );

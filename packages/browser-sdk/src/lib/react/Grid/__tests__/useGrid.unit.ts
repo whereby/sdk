@@ -89,13 +89,14 @@ describe("moveCell", () => {
         isVideoEnabled: true,
         stream: null,
     });
-    const views = [video("a"), video("b"), video("c"), video("d")];
+    const views = [video("a"), video("b"), video("c"), video("d"), { ...video("e"), isVideoEnabled: false }];
     const gridIds = (cells: { cellId: string }[]) => cells.map((cell) => cell.cellId);
 
     function setup({ spotlight = [] as string[], integrations = 0 } = {}) {
         const rendered = renderUseGrid(views, { includeIntegrations: integrations > 0 });
         const { fakeGrid } = rendered;
         act(() => {
+            rendered.result.current.setContainerBounds({ width: 1000, height: 800 });
             spotlight.forEach((id) => fakeGrid.spotlightParticipant(id));
             fakeGrid.setRunningRoomIntegrations(
                 Array.from({ length: integrations }, (_, i) => makeFakeRoomIntegrationSession(i)),
@@ -126,6 +127,40 @@ describe("moveCell", () => {
         expect(reorder).not.toHaveBeenCalled();
     });
 
+    it("does nothing when a cell moves to or from the subgrid", () => {
+        const { result, reorder } = setup();
+        expect(gridIds(result.current.cellViewsInSubgrid)).toEqual(["e"]);
+
+        act(() => result.current.moveCell("a", "e"));
+        act(() => result.current.moveCell("e", "a"));
+
+        expect(reorder).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when a cell moves to or from the floating cell", () => {
+        const { result, reorder } = setup();
+        act(() => result.current.setFloatingCellId("a"));
+
+        act(() => result.current.moveCell("a", "b"));
+        act(() => result.current.moveCell("b", "a"));
+
+        expect(reorder).not.toHaveBeenCalled();
+    });
+
+    it("keeps the floating cell when the maximized cell is dropped on it", () => {
+        const { result, reorder } = setup();
+        act(() => {
+            result.current.setMaximizedCellId("a");
+            result.current.setFloatingCellId("b");
+        });
+
+        act(() => result.current.moveCell("a", "b"));
+
+        expect(result.current.maximizedCellId).toBe("a");
+        expect(result.current.floatingCellId).toBe("b");
+        expect(reorder).not.toHaveBeenCalled();
+    });
+
     describe("with a cell maximized", () => {
         it("moves the maximize to the target when the maximized cell is dragged", () => {
             const { result, reorder } = setup();
@@ -136,12 +171,7 @@ describe("moveCell", () => {
             expect(result.current.maximizedCellId).toBe("c");
             expect(reorder).toHaveBeenCalledWith({ id: "a", targetId: "c" });
             expect(gridIds(result.current.cellViewsInPresentationGrid)).toEqual(["c"]);
-            // The rest keep the swapped order (a zero-size container lays them out in the subgrid)
-            expect(gridIds([...result.current.cellViewsVideoGrid, ...result.current.cellViewsInSubgrid])).toEqual([
-                "b",
-                "a",
-                "d",
-            ]);
+            expect(gridIds(result.current.cellViewsVideoGrid)).toEqual(["b", "a", "d"]);
         });
 
         it("moves the maximize to the dragged cell when it's dropped on the maximized one", () => {

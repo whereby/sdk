@@ -234,8 +234,8 @@ describe("VideoGrid", () => {
             const { getByTestId, container } = renderGrid({
                 numRunningIntegrations: 0,
                 gridProps: {
+                    enableSubgrid: false,
                     renderParticipant: () => <MoveToFront />,
-                    renderSubgridParticipant: () => <MoveToFront />,
                 },
             });
             const order = () => Array.from(container.querySelectorAll("button")).map((el) => el.textContent);

@@ -169,6 +169,13 @@ function useGrid({
                 return;
             }
 
+            const isFloatingOrInSubgrid = (cellId: string) =>
+                [...cellViewsFloating, ...cellViewsInSubgrid].some((cell) => cell.cellId === cellId);
+
+            if (isFloatingOrInSubgrid(id) || isFloatingOrInSubgrid(targetId)) {
+                return;
+            }
+
             const allCells = [
                 ...cellViewsFloating,
                 ...cellViewsVideoGrid,
