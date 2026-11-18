@@ -757,6 +757,53 @@ describe("actions", () => {
         });
     });
 
+    describe("doSwitchLocalStream", () => {
+        const otherCamera = { ...videoDevice, deviceId: "otherVideoDeviceId", label: "Other camera" };
+
+        const createStoreWithCamera = () =>
+            createStore({
+                initialState: startedLocalMedia({
+                    stream: new MockMediaStream([
+                        createLiveTrack("audio", audioDevice.deviceId),
+                        createLiveTrack("video", videoDevice.deviceId),
+                    ]),
+                    devices: [audioDevice, videoDevice, otherCamera],
+                }),
+            });
+
+        it("should not mark the camera as busy when we get it", async () => {
+            const store = createStoreWithCamera();
+            mockedGetUserMedia.mockResolvedValueOnce(
+                new MockMediaStream([createLiveTrack("video", otherCamera.deviceId)]),
+            );
+
+            await store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: otherCamera.deviceId }));
+
+            expect(store.getState().localMedia.busyDeviceIds).toEqual([]);
+        });
+
+        it("should mark the camera as busy when we can't get it", async () => {
+            const store = createStoreWithCamera();
+            jest.spyOn(console, "error").mockImplementation(() => {});
+            mockedGetUserMedia.mockRejectedValue(new DOMException("Could not start video source", "NotReadableError"));
+
+            await store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: otherCamera.deviceId }));
+
+            expect(store.getState().localMedia.busyDeviceIds).toEqual([otherCamera.deviceId]);
+        });
+
+        it("should mark the camera as busy when we get another camera", async () => {
+            const store = createStoreWithCamera();
+            mockedGetUserMedia
+                .mockRejectedValueOnce(new DOMException("Could not start video source", "NotReadableError"))
+                .mockResolvedValueOnce(new MockMediaStream([createLiveTrack("video", videoDevice.deviceId)]));
+
+            await store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: otherCamera.deviceId }));
+
+            expect(store.getState().localMedia.busyDeviceIds).toEqual([otherCamera.deviceId]);
+        });
+    });
+
     describe("device picks", () => {
         it("should get the picked camera", async () => {
             const otherCamera = { ...videoDevice, deviceId: "otherVideoDeviceId", label: "Other camera" };
