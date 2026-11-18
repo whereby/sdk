@@ -78,8 +78,10 @@ import type {
     LocalParticipantState,
     LocalScreenshareStatus,
     LocalScreenshareState,
+    KnockResponse,
     RemoteParticipantState,
     RoomConnectionState,
+    RoomIntegrationsState,
     RoomIntegrationProps,
     RoomJoinedSuccess,
     SendFilesOptions,
@@ -87,39 +89,8 @@ import type {
     WaitingParticipantState,
     WherebyClientOptions,
 } from "./types";
-import {
-    BREAKOUT_CONFIG_CHANGED,
-    CAMERA_STATE_CHANGED,
-    CHAT_NEW_MESSAGE,
-    CLOUD_RECORDING_STATUS_CHANGED,
-    CONNECTION_ERROR_CHANGED,
-    CONNECTION_JOIN_STAGE_CHANGED,
-    AUDIO_ONLY_MODE_CHANGED,
-    REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
-    LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED,
-    CONNECTION_STATUS_CHANGED,
-    LIVE_CAPTIONS_STATUS_CHANGED,
-    LIVE_TRANSCRIPTION_STATUS_CHANGED,
-    LOCAL_PARTICIPANT_CHANGED,
-    LOCAL_SCREENSHARE_CHANGED,
-    LOCAL_SCREENSHARE_STATUS_CHANGED,
-    MICROPHONE_STATE_CHANGED,
-    REMOTE_PARTICIPANTS_CHANGED,
-    ROOM_JOINED,
-    ROOM_JOINED_ERROR,
-    ROOM_REJOINED,
-    ROOM_SESSION_ID_CHANGED,
-    SCREENSHARE_STARTED,
-    SCREENSHARE_STOPPED,
-    SPOTLIGHT_PARTICIPANT_ADDED,
-    SPOTLIGHT_PARTICIPANT_REMOVED,
-    STREAMING_STARTED,
-    STREAMING_STOPPED,
-    WAITING_PARTICIPANT_JOINED,
-    WAITING_PARTICIPANT_LEFT,
-    type RoomConnectionEvents,
-} from "./events";
-import { selectRoomConnectionState } from "./selector";
+import { CHAT_NEW_MESSAGE, ROOM_JOINED, ROOM_JOINED_ERROR, ROOM_REJOINED, type RoomConnectionEvents } from "./events";
+import { roomConnectionStateDefinition } from "./state";
 import { BaseClient } from "../BaseClient";
 import { doCameraEffectsSwitchPreset } from "../../redux/slices/cameraEffects";
 import { doAudioDenoiserDisable, doAudioDenoiserEnable } from "../../redux/slices/audioDenoiser";
@@ -128,188 +99,10 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     protected options: Partial<AppConfig>;
     private selfId: string | null = null;
 
-    private breakoutSubscribers = new Set<(config: BreakoutState) => void>();
-    private cameraStateSubscribers = new Set<(isCameraEnabled: boolean) => void>();
-    private chatMessageSubscribers = new Set<(messages: ChatMessage[]) => void>();
-    private fileUploadsSubscribers = new Set<(uploads: FileUpload[]) => void>();
-    private cloudRecordingSubscribers = new Set<(status: CloudRecordingState | undefined | undefined) => void>();
-    private connectionErrorSubscribers = new Set<(status: string | null) => void>();
-    private joinStageSubscribers = new Set<(joinStage: JoinRoomStage | null) => void>();
-    private audioOnlyModeSubscribers = new Set<(isEnabled: boolean) => void>();
-    private remoteParticipantQualityReportSubscribers = new Set<(report: RemoteParticipantQualityReport) => void>();
-    private localParticipantQualityReportSubscribers = new Set<(report: LocalParticipantQualityReport) => void>();
-    private connectionStatusSubscribers = new Set<(status: ConnectionStatus) => void>();
-    private liveStreamSubscribers = new Set<(status: { status: "streaming" } | undefined) => void>();
-    private liveCaptionsSubscribers = new Set<(status: LiveCaptionsState | undefined) => void>();
-    private liveTranscriptionSubscribers = new Set<(status: LiveTranscriptionState | undefined) => void>();
-    private localParticipantSubscribers = new Set<(participant?: LocalParticipantState) => void>();
-    private localScreenshareStatusSubscribers = new Set<(status?: LocalScreenshareStatus) => void>();
-    private localScreenshareSubscribers = new Set<(status: LocalScreenshareState | undefined) => void>();
-    private microphoneStateSubscribers = new Set<(isMicrophoneEnabled: boolean) => void>();
-    private remoteParticipantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
-    private roomSessionIdSubscribers = new Set<(roomSessionId: string | null) => void>();
-    private screenshareSubscribers = new Set<(screenshares: ScreenshareState[]) => void>();
-    private spotlightedParticipantsSubscribers = new Set<(participants: ClientView[]) => void>();
-    private waitingParticipantsSubscribers = new Set<(participants: WaitingParticipantState[]) => void>();
-
     constructor(store: AppStore) {
-        super(store);
+        super(store, roomConnectionStateDefinition);
         this.options = {};
         this.registerAppListeners();
-    }
-
-    protected handleStateChanges(state: RoomConnectionState, previousState: RoomConnectionState): void {
-        if (state.chatMessages !== previousState.chatMessages) {
-            this.chatMessageSubscribers.forEach((cb) => cb(state.chatMessages));
-        }
-
-        if (state.fileUploads !== previousState.fileUploads) {
-            this.fileUploadsSubscribers.forEach((cb) => cb(state.fileUploads));
-        }
-
-        if (state.cloudRecording !== previousState.cloudRecording) {
-            this.cloudRecordingSubscribers.forEach((cb) => cb(state.cloudRecording));
-            this.emit(CLOUD_RECORDING_STATUS_CHANGED, state.cloudRecording);
-        }
-
-        if (state.liveCaptions !== previousState.liveCaptions) {
-            this.liveCaptionsSubscribers.forEach((cb) => cb(state.liveCaptions));
-            this.emit(LIVE_CAPTIONS_STATUS_CHANGED, state.liveCaptions);
-        }
-
-        if (state.liveTranscription !== previousState.liveTranscription) {
-            this.liveTranscriptionSubscribers.forEach((cb) => cb(state.liveTranscription));
-            this.emit(LIVE_TRANSCRIPTION_STATUS_CHANGED, state.liveTranscription);
-        }
-
-        if (state.breakout !== previousState.breakout) {
-            this.breakoutSubscribers.forEach((cb) => cb(state.breakout));
-            this.emit(BREAKOUT_CONFIG_CHANGED, state.breakout);
-        }
-
-        if (state.connectionStatus !== previousState.connectionStatus) {
-            this.connectionStatusSubscribers.forEach((cb) => cb(state.connectionStatus));
-            this.emit(CONNECTION_STATUS_CHANGED, state.connectionStatus);
-        }
-
-        if (state.connectionError !== previousState.connectionError) {
-            this.connectionErrorSubscribers.forEach((cb) => cb(state.connectionError));
-            this.emit(CONNECTION_ERROR_CHANGED, state.connectionError);
-        }
-
-        if (state.joinStage !== previousState.joinStage) {
-            this.joinStageSubscribers.forEach((cb) => cb(state.joinStage));
-            this.emit(CONNECTION_JOIN_STAGE_CHANGED, state.joinStage);
-        }
-
-        if (state.roomSessionId !== previousState.roomSessionId) {
-            this.roomSessionIdSubscribers.forEach((cb) => cb(state.roomSessionId));
-            this.emit(ROOM_SESSION_ID_CHANGED, state.roomSessionId);
-        }
-
-        if (state.isAudioOnlyModeEnabled !== previousState.isAudioOnlyModeEnabled) {
-            this.audioOnlyModeSubscribers.forEach((cb) => cb(state.isAudioOnlyModeEnabled));
-            this.emit(AUDIO_ONLY_MODE_CHANGED, state.isAudioOnlyModeEnabled);
-        }
-
-        if (state.remoteParticipantQualityReport !== previousState.remoteParticipantQualityReport) {
-            this.remoteParticipantQualityReportSubscribers.forEach((cb) => cb(state.remoteParticipantQualityReport));
-            this.emit(REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED, state.remoteParticipantQualityReport);
-        }
-
-        if (state.localParticipantQualityReport !== previousState.localParticipantQualityReport) {
-            this.localParticipantQualityReportSubscribers.forEach((cb) => cb(state.localParticipantQualityReport));
-            this.emit(LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED, state.localParticipantQualityReport);
-        }
-
-        if (state.isCameraEnabled !== previousState.isCameraEnabled) {
-            this.cameraStateSubscribers.forEach((cb) => cb(state.isCameraEnabled));
-            this.emit(CAMERA_STATE_CHANGED, state.isCameraEnabled);
-        }
-
-        if (state.isMicrophoneEnabled !== previousState.isMicrophoneEnabled) {
-            this.microphoneStateSubscribers.forEach((cb) => cb(state.isMicrophoneEnabled));
-            this.emit(MICROPHONE_STATE_CHANGED, state.isMicrophoneEnabled);
-        }
-
-        if (state.liveStream !== previousState.liveStream) {
-            this.liveStreamSubscribers.forEach((cb) => cb(state.liveStream));
-            if (state.liveStream?.status === "streaming") {
-                this.emit(STREAMING_STARTED, state.liveStream);
-            } else {
-                this.emit(STREAMING_STOPPED);
-            }
-        }
-
-        if (state.localScreenshareStatus !== previousState.localScreenshareStatus) {
-            this.localScreenshareStatusSubscribers.forEach((cb) => cb(state.localScreenshareStatus));
-            this.emit(LOCAL_SCREENSHARE_STATUS_CHANGED, state.localScreenshareStatus);
-        }
-
-        if (state.localScreenshare !== previousState.localScreenshare) {
-            this.localScreenshareSubscribers.forEach((cb) => cb(state.localScreenshare));
-            this.emit(LOCAL_SCREENSHARE_CHANGED, state.localScreenshare);
-        }
-
-        if (state.localParticipant !== previousState.localParticipant) {
-            this.localParticipantSubscribers.forEach((cb) => cb(state.localParticipant));
-            this.emit(LOCAL_PARTICIPANT_CHANGED, state.localParticipant);
-        }
-
-        if (state.remoteParticipants !== previousState.remoteParticipants) {
-            this.remoteParticipantsSubscribers.forEach((cb) => cb(state.remoteParticipants));
-            this.emit(REMOTE_PARTICIPANTS_CHANGED, state.remoteParticipants);
-        }
-
-        if (state.screenshares !== previousState.screenshares) {
-            this.screenshareSubscribers.forEach((cb) => cb(state.screenshares));
-
-            const added = state.screenshares.filter((c) => !previousState.screenshares.some((p) => p.id === c.id));
-            const removed = previousState.screenshares.filter((p) => !state.screenshares.some((c) => c.id === p.id));
-
-            added.forEach((screenshare) => {
-                this.emit(SCREENSHARE_STARTED, screenshare);
-            });
-            removed.forEach((screenshare) => {
-                this.emit(SCREENSHARE_STOPPED, screenshare.id);
-            });
-        }
-
-        if (state.waitingParticipants !== previousState.waitingParticipants) {
-            this.waitingParticipantsSubscribers.forEach((cb) => cb(state.waitingParticipants));
-
-            const added = state.waitingParticipants.filter(
-                (c) => !previousState.waitingParticipants.some((p) => p.id === c.id),
-            );
-            const removed = previousState.waitingParticipants.filter(
-                (p) => !state.waitingParticipants.some((c) => c.id === p.id),
-            );
-
-            added.forEach((participant) => {
-                this.emit(WAITING_PARTICIPANT_JOINED, participant);
-            });
-            removed.forEach((participant) => {
-                this.emit(WAITING_PARTICIPANT_LEFT, participant.id);
-            });
-        }
-
-        if (state.spotlightedParticipants !== previousState.spotlightedParticipants) {
-            this.spotlightedParticipantsSubscribers.forEach((cb) => cb(state.spotlightedParticipants));
-
-            const added = state.spotlightedParticipants.filter(
-                (c) => !previousState.spotlightedParticipants.some((p) => p.id === c.id),
-            );
-            const removed = previousState.spotlightedParticipants.filter(
-                (p) => !state.spotlightedParticipants.some((c) => c.id === p.id),
-            );
-
-            added.forEach((participant) => {
-                this.emit(SPOTLIGHT_PARTICIPANT_ADDED, participant);
-            });
-            removed.forEach((participant) => {
-                this.emit(SPOTLIGHT_PARTICIPANT_REMOVED, participant.id);
-            });
-        }
     }
 
     private registerAppListeners() {
@@ -355,58 +148,54 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
 
     /* Subscriptions */
     public subscribeToChatMessages(callback: (messages: ChatMessage[]) => void): () => void {
-        this.chatMessageSubscribers.add(callback);
-        return () => this.chatMessageSubscribers.delete(callback);
+        return this.subscribeToStateKey("chatMessages", callback);
     }
 
     public subscribeToFileUploads(callback: (uploads: FileUpload[]) => void): () => void {
-        this.fileUploadsSubscribers.add(callback);
-        return () => this.fileUploadsSubscribers.delete(callback);
+        return this.subscribeToStateKey("fileUploads", callback);
     }
 
     public subscribeToCloudRecording(callback: (status: CloudRecordingState | undefined) => void): () => void {
-        this.cloudRecordingSubscribers.add(callback);
-        return () => this.cloudRecordingSubscribers.delete(callback);
+        return this.subscribeToStateKey("cloudRecording", callback);
     }
 
     public subscribeToLiveCaptions(callback: (status: LiveCaptionsState | undefined) => void): () => void {
-        this.liveCaptionsSubscribers.add(callback);
-        return () => this.liveCaptionsSubscribers.delete(callback);
+        return this.subscribeToStateKey("liveCaptions", callback);
     }
 
     public subscribeToLiveTranscription(callback: (status: LiveTranscriptionState | undefined) => void): () => void {
-        this.liveTranscriptionSubscribers.add(callback);
-        return () => this.liveTranscriptionSubscribers.delete(callback);
+        return this.subscribeToStateKey("liveTranscription", callback);
     }
 
     public subscribeToBreakoutConfig(callback: (config: BreakoutState) => void): () => void {
-        this.breakoutSubscribers.add(callback);
-        return () => this.breakoutSubscribers.delete(callback);
+        return this.subscribeToStateKey("breakout", callback);
     }
 
     public subscribeToConnectionStatus(callback: (status: ConnectionStatus) => void): () => void {
-        this.connectionStatusSubscribers.add(callback);
-        return () => this.connectionStatusSubscribers.delete(callback);
+        return this.subscribeToStateKey("connectionStatus", callback);
     }
 
     public subscribeToConnectionError(callback: (error: string | null) => void): () => void {
-        this.connectionErrorSubscribers.add(callback);
-        return () => this.connectionErrorSubscribers.delete(callback);
+        return this.subscribeToStateKey("connectionError", callback);
     }
 
     public subscribeToJoinStage(callback: (joinStage: JoinRoomStage | null) => void): () => void {
-        this.joinStageSubscribers.add(callback);
-        return () => this.joinStageSubscribers.delete(callback);
+        return this.subscribeToStateKey("joinStage", callback);
+    }
+
+    /**
+     * Subscribe to the host's response to knocking, which is null until there is one.
+     */
+    public subscribeToKnockResponse(callback: (knockResponse: KnockResponse | null) => void): () => void {
+        return this.subscribeToStateKey("knockResponse", callback);
     }
 
     public subscribeToRoomSessionId(callback: (roomSessionId: string | null) => void): () => void {
-        this.roomSessionIdSubscribers.add(callback);
-        return () => this.roomSessionIdSubscribers.delete(callback);
+        return this.subscribeToStateKey("roomSessionId", callback);
     }
 
     public subscribeToAudioOnlyMode(callback: (isEnabled: boolean) => void): () => void {
-        this.audioOnlyModeSubscribers.add(callback);
-        return () => this.audioOnlyModeSubscribers.delete(callback);
+        return this.subscribeToStateKey("isAudioOnlyModeEnabled", callback);
     }
 
     /**
@@ -423,8 +212,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToRemoteParticipantQualityReport(
         callback: (report: RemoteParticipantQualityReport) => void,
     ): () => void {
-        this.remoteParticipantQualityReportSubscribers.add(callback);
-        return () => this.remoteParticipantQualityReportSubscribers.delete(callback);
+        return this.subscribeToStateKey("remoteParticipantQualityReport", callback);
     }
 
     /**
@@ -442,69 +230,54 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     public subscribeToLocalParticipantQualityReport(
         callback: (report: LocalParticipantQualityReport) => void,
     ): () => void {
-        this.localParticipantQualityReportSubscribers.add(callback);
-        return () => this.localParticipantQualityReportSubscribers.delete(callback);
+        return this.subscribeToStateKey("localParticipantQualityReport", callback);
     }
 
     public subscribeToLiveStream(callback: (status: { status: "streaming" } | undefined) => void): () => void {
-        this.liveStreamSubscribers.add(callback);
-        return () => this.liveStreamSubscribers.delete(callback);
+        return this.subscribeToStateKey("liveStream", callback);
     }
 
     /**
      * @deprecated Use 'subscribeToLocalScreenshare' instead
      */
     public subscribeToLocalScreenshareStatus(callback: (status?: LocalScreenshareStatus) => void): () => void {
-        this.localScreenshareStatusSubscribers.add(callback);
-        return () => this.localScreenshareStatusSubscribers.delete(callback);
+        return this.subscribeToStateKey("localScreenshareStatus", callback);
     }
 
     public subscribeToLocalScreenshare(callback: (status: LocalScreenshareState | undefined) => void): () => void {
-        this.localScreenshareSubscribers.add(callback);
-        return () => this.localScreenshareSubscribers.delete(callback);
+        return this.subscribeToStateKey("localScreenshare", callback);
     }
 
     public subscribeToLocalParticipant(callback: (participant?: LocalParticipantState) => void): () => void {
-        this.localParticipantSubscribers.add(callback);
-        return () => this.localParticipantSubscribers.delete(callback);
+        return this.subscribeToStateKey("localParticipant", callback);
     }
 
     public subscribeToRemoteParticipants(callback: (participants: RemoteParticipantState[]) => void): () => void {
-        this.remoteParticipantsSubscribers.add(callback);
-        return () => this.remoteParticipantsSubscribers.delete(callback);
+        return this.subscribeToStateKey("remoteParticipants", callback);
     }
 
     public subscribeToScreenshares(callback: (screenshares: ScreenshareState[]) => void): () => void {
-        this.screenshareSubscribers.add(callback);
-        return () => this.screenshareSubscribers.delete(callback);
+        return this.subscribeToStateKey("screenshares", callback);
     }
 
     public subscribeToWaitingParticipants(callback: (participants: WaitingParticipantState[]) => void): () => void {
-        this.waitingParticipantsSubscribers.add(callback);
-        return () => this.waitingParticipantsSubscribers.delete(callback);
+        return this.subscribeToStateKey("waitingParticipants", callback);
     }
 
     public subscribeToSpotlightedParticipants(callback: (participants: ClientView[]) => void): () => void {
-        this.spotlightedParticipantsSubscribers.add(callback);
-        return () => this.spotlightedParticipantsSubscribers.delete(callback);
+        return this.subscribeToStateKey("spotlightedParticipants", callback);
     }
 
     public subscribeToMicrophoneState(callback: (isMicrophoneEnabled: boolean) => void): () => void {
-        this.microphoneStateSubscribers.add(callback);
-        return () => this.microphoneStateSubscribers.delete(callback);
+        return this.subscribeToStateKey("isMicrophoneEnabled", callback);
     }
 
     public subscribeToCameraState(callback: (isCameraEnabled: boolean) => void): () => void {
-        this.cameraStateSubscribers.add(callback);
-        return () => this.cameraStateSubscribers.delete(callback);
+        return this.subscribeToStateKey("isCameraEnabled", callback);
     }
 
-    /**
-     * Get the current state of the Whereby client.
-     * @return {object} - The current state of the client.
-     */
-    public getState() {
-        return selectRoomConnectionState(this.store.getState());
+    public subscribeToRoomIntegrations(callback: (roomIntegrations: RoomIntegrationsState) => void): () => void {
+        return this.subscribeToStateKey("roomIntegrations", callback);
     }
 
     /**
@@ -1147,34 +920,10 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     }
 
     /**
-     * Destroy the client.
-     * This method will stop the app and reset the client state.
+     * Stops the app and resets the client state when the client is destroyed.
      */
-    public destroy() {
-        super.destroy();
+    protected onDestroy() {
         this.store.dispatch(doAppStop());
-        this.removeAllListeners();
         this.selfId = null;
-        this.breakoutSubscribers.clear();
-        this.cameraStateSubscribers.clear();
-        this.chatMessageSubscribers.clear();
-        this.fileUploadsSubscribers.clear();
-        this.cloudRecordingSubscribers.clear();
-        this.connectionErrorSubscribers.clear();
-        this.joinStageSubscribers.clear();
-        this.audioOnlyModeSubscribers.clear();
-        this.remoteParticipantQualityReportSubscribers.clear();
-        this.localParticipantQualityReportSubscribers.clear();
-        this.connectionStatusSubscribers.clear();
-        this.liveStreamSubscribers.clear();
-        this.localParticipantSubscribers.clear();
-        this.localScreenshareStatusSubscribers.clear();
-        this.localScreenshareSubscribers.clear();
-        this.microphoneStateSubscribers.clear();
-        this.remoteParticipantsSubscribers.clear();
-        this.roomSessionIdSubscribers.clear();
-        this.screenshareSubscribers.clear();
-        this.spotlightedParticipantsSubscribers.clear();
-        this.waitingParticipantsSubscribers.clear();
     }
 }
