@@ -9,7 +9,7 @@ import {
 import { selectGridState } from "./selector";
 import { GridState } from "./types";
 import { doRemoveSpotlight, doSpotlightParticipant, doSwapSpotlightOrder } from "../../redux/slices/spotlights";
-import { doReorderClientViews, doSetClientViewOrder } from "../../redux/slices/roomLayout";
+import { doReorderClientViews, setSortedClientIds } from "../../redux/slices/roomLayout";
 import { BaseClient } from "../BaseClient";
 import { ClientView, RoomIntegrationSessionView } from "../../redux";
 
@@ -94,7 +94,7 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
         if (!Array.isArray(ids) || ids.some((id) => typeof id !== "string")) {
             throw new TypeError("setClientViewOrder expects an array of client view ids");
         }
-        this.store.dispatch(doSetClientViewOrder(ids));
+        this.store.dispatch(setSortedClientIds(ids));
     }
 
     /** For everyone in the room. Needs `canSpotlight`. */

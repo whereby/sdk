@@ -1,5 +1,4 @@
-import { roomLayoutSlice, setSortedClientIds } from "../roomLayout";
-import { sortClientViews } from "../roomLayout/selectors";
+import { roomLayoutSlice, setSortedClientIds, sortClientViews } from "../roomLayout";
 
 const views = (...ids: string[]) => ids.map((id) => ({ id }));
 const ids = (items: { id: string }[]) => items.map((item) => item.id);

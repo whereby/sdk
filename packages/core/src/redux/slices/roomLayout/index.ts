@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import { selectAllClientViews } from "../room";
 
@@ -36,7 +37,7 @@ export const { setSortedClientIds } = roomLayoutSlice.actions;
 export const doReorderClientViews = createAppThunk(
     ({ id, targetId }: { id: string; targetId: string }) =>
         (dispatch, getState) => {
-            const clientIds = selectAllClientViews(getState()).map((c) => c.id);
+            const clientIds = selectSortedClientViews(getState()).map((c) => c.id);
             const index = clientIds.indexOf(id);
             const targetIndex = clientIds.indexOf(targetId);
 
@@ -50,6 +51,39 @@ export const doReorderClientViews = createAppThunk(
         },
 );
 
-export const doSetClientViewOrder = createAppThunk((ids: string[]) => (dispatch) => {
-    dispatch(setSortedClientIds(ids));
-});
+/**
+ * Selectors
+ */
+
+export const selectRoomLayoutRaw = (state: RootState) => state.roomLayout;
+export const selectSortedClientIds = (state: RootState) => state.roomLayout.sortedClientIds;
+
+export const selectSortedClientViews = createSelector(
+    selectAllClientViews,
+    selectSortedClientIds,
+    (clientViews, sortedClientIds) => sortClientViews({ sortedClientIds, clientViews }),
+);
+
+/**
+ * State mapping utils
+ */
+
+export function sortClientViews<T extends { id: string }>({
+    sortedClientIds,
+    clientViews,
+}: {
+    sortedClientIds: string[];
+    clientViews: T[];
+}): T[] {
+    if (!sortedClientIds.length) {
+        return clientViews;
+    }
+
+    const rank = new Map(sortedClientIds.map((id, index) => [id, index]));
+    const unranked = sortedClientIds.length;
+
+    return clientViews
+        .map((clientView, index) => ({ clientView, index, rank: rank.get(clientView.id) ?? unranked }))
+        .sort((a, b) => a.rank - b.rank || a.index - b.index)
+        .map(({ clientView }) => clientView);
+}

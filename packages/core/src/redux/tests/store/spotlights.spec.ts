@@ -24,6 +24,26 @@ describe("actions", () => {
                     streamId: CAMERA_STREAM_ID,
                 });
             });
+
+            it("should spotlight the camera when the screenshare is moved before it", () => {
+                const presentationStream = Object.assign(randomMediaStream(), { id: "pres-stream", active: true });
+                const participant = randomRemoteParticipant({ id: "b", presentationStream });
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        remoteParticipants: { remoteParticipants: [participant] },
+                        roomLayout: { sortedClientIds: ["pres-b", "b"] },
+                    },
+                    withSignalConnection: true,
+                });
+
+                store.dispatch(doSpotlightParticipant({ id: "b" }));
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("add_spotlight", {
+                    clientId: "b",
+                    streamId: CAMERA_STREAM_ID,
+                });
+            });
         });
 
         describe("when not authorized", () => {
