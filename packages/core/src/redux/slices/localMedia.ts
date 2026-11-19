@@ -361,19 +361,17 @@ export const doToggleCamera = createAppAsyncThunk(
     },
 );
 
-const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState }) => {
+export const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState }) => {
     const state = getState();
-    const stream = selectLocalMediaStream(state);
-    if (!stream) {
-        return;
-    }
     const enabled = selectIsMicrophoneEnabled(state);
-    const audioTrack = stream.getAudioTracks()?.[0];
-    if (!audioTrack) {
-        return;
+
+    const stream = selectLocalMediaStream(state);
+    const audioTrack = stream?.getAudioTracks()?.[0];
+    if (audioTrack) {
+        audioTrack.enabled = enabled;
     }
 
-    audioTrack.enabled = enabled;
+    return { enabled };
 });
 /** @deprecated */
 export const doTriggerLocalStreamRefresh = createAppThunk(() => (dispatch, getState) => {

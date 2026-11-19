@@ -18,7 +18,12 @@ import {
 import { randomRemoteParticipant, randomString } from "../../../__mocks__/appMocks";
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import { CAMERA_STREAM_ID, RtcManagerDispatcher, rtcStats } from "@whereby.com/media";
-import { initialLocalMediaState, toggleCameraEnabled } from "../../slices/localMedia";
+import {
+    doToggleMicrophone,
+    initialLocalMediaState,
+    toggleCameraEnabled,
+    toggleMicrophoneEnabled,
+} from "../../slices/localMedia";
 import { localScreenshareSliceInitialState } from "../../slices/localScreenshare";
 import { diff } from "deep-object-diff";
 import { coreVersion } from "../../../version";
@@ -27,6 +32,12 @@ import { signalEvents } from "../../slices/signalConnection";
 import { rtcEvents } from "../../slices/rtcConnection/actions";
 
 jest.mock("@whereby.com/media");
+
+const flushMicrotasks = async () => {
+    for (let i = 0; i < 30; i++) {
+        await Promise.resolve();
+    }
+};
 
 describe("reducers", () => {
     describe("audioOnlyModeToggled", () => {
@@ -534,6 +545,54 @@ describe("middleware", () => {
             store.dispatch(signalEvents.audioEnabled({ clientId: participant.id, isAudioEnabled: false }));
 
             expect(mockRtcManager.setRemoteScreenshareVideoTrackIds).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("doToggleMicrophone", () => {
+        const startedLocalMedia = (microphoneEnabled: boolean) => {
+            const stream = new MockMediaStream();
+            stream.addTrack({ id: "mic", kind: "audio", enabled: microphoneEnabled } as MediaStreamTrack);
+            return { ...initialLocalMediaState, microphoneEnabled, status: "started" as const, stream };
+        };
+
+        it("resumes the microphone on the rtc manager when enabled", async () => {
+            const store = createStore({ withRtcManager: true, initialState: { localMedia: startedLocalMedia(true) } });
+
+            await store.dispatch(doToggleMicrophone());
+
+            expect(mockRtcManager.stopOrResumeAudio).toHaveBeenCalledWith({ enable: true });
+        });
+
+        it("pauses the microphone on the rtc manager when disabled", async () => {
+            const store = createStore({ withRtcManager: true, initialState: { localMedia: startedLocalMedia(false) } });
+
+            await store.dispatch(doToggleMicrophone());
+
+            expect(mockRtcManager.stopOrResumeAudio).toHaveBeenCalledWith({ enable: false });
+        });
+
+        it("does nothing when there is no rtc manager", async () => {
+            const store = createStore({ initialState: { localMedia: startedLocalMedia(true) } });
+
+            await store.dispatch(doToggleMicrophone());
+
+            expect(mockRtcManager.stopOrResumeAudio).not.toHaveBeenCalled();
+        });
+
+        // PAN-3066: joining with the microphone off paused the SFU mic producer, and unmuting never resumed it
+        it("resumes the microphone when unmuted after joining muted", async () => {
+            const store = createStore({ withRtcManager: true, initialState: { localMedia: startedLocalMedia(false) } });
+            store.dispatch(doRtcManagerInitialize());
+            expect(mockRtcManager.addCameraStream).toHaveBeenCalledWith(
+                store.getState().localMedia.stream,
+                expect.objectContaining({ audioPaused: true }),
+            );
+
+            store.dispatch(toggleMicrophoneEnabled({ enabled: true }));
+            await flushMicrotasks();
+
+            expect(mockRtcManager.stopOrResumeAudio).toHaveBeenCalledTimes(1);
+            expect(mockRtcManager.stopOrResumeAudio).toHaveBeenCalledWith({ enable: true });
         });
     });
 

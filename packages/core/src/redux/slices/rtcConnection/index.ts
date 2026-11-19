@@ -29,6 +29,7 @@ import {
     doLocalStreamEffect,
     selectLocalMediaConstraintsOptions,
     toggleCameraEnabled,
+    doToggleMicrophone,
 } from "../localMedia";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
@@ -490,6 +491,14 @@ startAppListening({
         if (stream) {
             rtcManager.addCameraStream(stream, { audioPaused: !isMicrophoneEnabled, videoPaused: !isCameraEnabled });
         }
+    },
+});
+
+startAppListening({
+    actionCreator: doToggleMicrophone.fulfilled,
+    effect: ({ payload }, { getState }) => {
+        const rtcManager = selectRtcManager(getState());
+        rtcManager?.stopOrResumeAudio({ enable: payload.enabled });
     },
 });
 
