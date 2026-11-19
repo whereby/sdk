@@ -6,6 +6,7 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { doAppStart, selectAppInitialMuteStates, selectAppIsActive } from "./app";
 import { debounce } from "../../utils";
 import { signalEvents } from "./signalConnection/actions";
+import { selectRoomConnectionIsRejoining, selectRoomConnectionStatus } from "./roomConnection/selectors";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -424,6 +425,8 @@ export const doSetDevice = createAppAsyncThunk(
     },
 );
 
+const JOINED_ROOM_STATUSES = new Set(["connected", "leaving"]);
+
 export const doUpdateDeviceList = createAppAsyncThunk(
     "localMedia/doUpdateDeviceList",
     async (_, { getState, dispatch, rejectWithValue }) => {
@@ -456,12 +459,17 @@ export const doUpdateDeviceList = createAppAsyncThunk(
             let autoSwitchAudioId = changedDevices.audioinput?.deviceId;
             let autoSwitchVideoId = changedDevices.videoinput?.deviceId;
 
+            const hasJoinedRoom =
+                JOINED_ROOM_STATUSES.has(selectRoomConnectionStatus(state)) || selectRoomConnectionIsRejoining(state);
+
             // Handle added devices
-            if (autoSwitchAudioId === undefined) {
-                autoSwitchAudioId = addedDevices.audioinput?.deviceId;
-            }
-            if (autoSwitchVideoId === undefined) {
-                autoSwitchVideoId = addedDevices.videoinput?.deviceId;
+            if (!hasJoinedRoom) {
+                if (autoSwitchAudioId === undefined) {
+                    autoSwitchAudioId = addedDevices.audioinput?.deviceId;
+                }
+                if (autoSwitchVideoId === undefined) {
+                    autoSwitchVideoId = addedDevices.videoinput?.deviceId;
+                }
             }
 
             if (!selectIsMicrophoneEnabled(getState())) {
