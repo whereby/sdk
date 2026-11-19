@@ -36,8 +36,12 @@ arrow means "depends on":
 
 ## Setup
 
-- Node 24 (`.nvmrc`) and **pnpm 10** (`packageManager` in `package.json`, `pnpm-workspace.yaml`). Don't use npm or
-  yarn. All packages come from public npm, so no token is needed.
+- Node 24 (`.nvmrc`) and **pnpm 12** (`packageManager` in `package.json`). Don't use npm or yarn. All packages come
+  from public npm, so no token is needed. `mise.toml` pins the same versions for mise users; bump it with them.
+- pnpm settings live in `pnpm-workspace.yaml`, not `.npmrc` or a `pnpm` field in `package.json` (pnpm 11+ ignores
+  both). That includes the hoisted linker, `overrides` and the supply-chain rules: versions younger than 7 days are
+  refused (`minimumReleaseAge`, `@whereby.com/*` exempt) and install scripts only run for packages approved in
+  `allowBuilds`. When a new dependency has an install script, decide whether it needs it and list it there.
 - `pnpm install`, then `pnpm build`. Tests and Storybook import other packages from their `dist/` (see Gotchas).
 - Shared versions (TypeScript, ESLint, Prettier, Jest, React) are set once in the `catalog` in `pnpm-workspace.yaml`
   and referenced as `catalog:`. Change them there.
