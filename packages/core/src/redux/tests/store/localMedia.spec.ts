@@ -44,12 +44,21 @@ const videoDevice = {
     toJSON: () => ({}),
 };
 
+const addedCamera = { ...videoDevice, deviceId: "addedVideoDeviceId", label: "Added camera" };
+const addedMic = { ...audioDevice, deviceId: "addedAudioDeviceId", label: "Added microphone" };
+
 const createLiveTrack = (kind: "audio" | "video", deviceId: string) => {
     const track: MediaStreamTrack & { readyState: MediaStreamTrackState } = new MockMediaStreamTrack(kind);
     track.readyState = "live";
     track.getSettings = () => ({ deviceId });
     return track;
 };
+
+const createLiveStream = () =>
+    new MockMediaStream([
+        createLiveTrack("audio", audioDevice.deviceId),
+        createLiveTrack("video", videoDevice.deviceId),
+    ]);
 
 const waitForSwitch = (store: ReturnType<typeof createStore>) =>
     new Promise<void>((resolve) => {
@@ -754,6 +763,68 @@ describe("actions", () => {
             await store.dispatch(localMediaSlice.doUpdateDeviceList());
 
             expect(mockedGetUserMedia).not.toHaveBeenCalled();
+        });
+
+        it("should switch to an added camera before joining", async () => {
+            const newTrack = createLiveTrack("video", addedCamera.deviceId);
+            const stream = createLiveStream();
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, videoDevice] }),
+            });
+            mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, videoDevice, addedCamera]);
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([newTrack]));
+
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+            await waitForSwitch(store);
+
+            expect(stream.getVideoTracks()).toEqual([newTrack]);
+        });
+
+        it("should not switch to an added camera once joined", async () => {
+            const store = createStore({
+                initialState: startedLocalMedia({ stream: createLiveStream(), devices: [audioDevice, videoDevice] }),
+                connectToRoom: true,
+            });
+            mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, videoDevice, addedCamera]);
+
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            expect(mockedGetUserMedia).not.toHaveBeenCalled();
+            expect(store.getState().localMedia.currentCameraDeviceId).toBe(videoDevice.deviceId);
+        });
+
+        it("should not switch to an added microphone once joined", async () => {
+            const store = createStore({
+                initialState: startedLocalMedia({ stream: createLiveStream(), devices: [audioDevice, videoDevice] }),
+                connectToRoom: true,
+            });
+            mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, addedMic, videoDevice]);
+
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            expect(mockedGetUserMedia).not.toHaveBeenCalled();
+            expect(store.getState().localMedia.currentMicrophoneDeviceId).toBe(audioDevice.deviceId);
+        });
+
+        it("should not switch to an added camera while rejoining", async () => {
+            const store = createStore({
+                initialState: {
+                    ...startedLocalMedia({ stream: createLiveStream(), devices: [audioDevice, videoDevice] }),
+                    roomConnection: {
+                        session: null,
+                        status: "reconnecting",
+                        error: null,
+                        knockResponse: null,
+                        isRejoining: true,
+                    },
+                },
+            });
+            mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, videoDevice, addedCamera]);
+
+            await store.dispatch(localMediaSlice.doUpdateDeviceList());
+
+            expect(mockedGetUserMedia).not.toHaveBeenCalled();
+            expect(store.getState().localMedia.currentCameraDeviceId).toBe(videoDevice.deviceId);
         });
     });
 
