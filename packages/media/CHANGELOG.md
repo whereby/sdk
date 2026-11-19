@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.3.5
+
+### Patch Changes
+
+- df99011: Update socket.io-client to 4.8.4 and ip-address to 10.7.6 for security fixes
+
 ## 11.3.4
 
 ### Patch Changes

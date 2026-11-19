@@ -1,5 +1,13 @@
 # @whereby.com/assistant-sdk
 
+## 1.2.134
+
+### Patch Changes
+
+- df99011: Update express to 5.3.0, body-parser to 2.4.0, ws to 8.22 and uuid to 11.1.1 for security fixes
+- Updated dependencies [df99011]
+  - @whereby.com/core@1.31.3
+
 ## 1.2.133
 
 ### Patch Changes
