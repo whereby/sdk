@@ -507,6 +507,11 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             beforeEffectTracks.video = undefined;
         }
 
+        const hasLiveTrackFromDevice = (deviceId: string) =>
+            (audioId ? replaceStream.getAudioTracks() : replaceStream.getVideoTracks()).some(
+                (track) => track.readyState === "live" && track.getSettings().deviceId === deviceId,
+            );
+
         try {
             const { replacedTracks } = await getStream(
                 {
@@ -519,7 +524,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             );
 
             const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId) {
+            if (onlySwitchingOne && deviceId && !hasLiveTrackFromDevice(deviceId)) {
                 dispatch(
                     deviceBusy({
                         deviceId,
@@ -530,7 +535,7 @@ export const doSwitchLocalStream = createAppAsyncThunk(
         } catch (error) {
             console.error(error);
             const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId) {
+            if (onlySwitchingOne && deviceId && !hasLiveTrackFromDevice(deviceId)) {
                 dispatch(
                     deviceBusy({
                         deviceId,
