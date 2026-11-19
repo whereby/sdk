@@ -1,5 +1,15 @@
 # @whereby.com/media
 
+## 11.4.0
+
+### Minor Changes
+
+- 7d32d60: Add `rtcStats.setRoomUrl()` to connect to rtcstats with the room's path and origin instead of the page's
+
+### Patch Changes
+
+- 295015f: Stop reconnecting to rtcstats when the server rejects the connection with 1008, and warn with its reason. Keep at most one pending rtcstats reconnect, instead of one for every event traced while disconnected.
+
 ## 11.3.5
 
 ### Patch Changes
