@@ -45,7 +45,7 @@ Releases are driven by [changesets](https://github.com/changesets/changesets) (`
 - Internal dependencies are pinned to exact versions (`"@whereby.com/core": "1.23.4"` in browser-sdk). With
   `updateInternalDependencies: "patch"`, releasing core bumps the pin in browser-sdk, assistant-sdk and
   react-native-sdk and gives each a patch release. Locally pnpm links the workspace copy anyway
-  (`link-workspace-packages=true` in `.npmrc`).
+  (`linkWorkspacePackages: true` in `pnpm-workspace.yaml`).
 
 ## Release flow
 
