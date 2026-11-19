@@ -374,6 +374,7 @@ const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", 
 
     audioTrack.enabled = enabled;
 });
+/** @deprecated */
 export const doTriggerLocalStreamRefresh = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const stream = selectLocalMediaStream(state);
@@ -804,7 +805,7 @@ startAppListening({
     predicate: (_action, currentState, previousState) => {
         const isReady = selectLocalMediaStatus(previousState) === "started";
 
-        if (!isReady) {
+        if (!isReady || !selectIsCameraEnabled(currentState)) {
             return false;
         }
 
@@ -823,8 +824,8 @@ startAppListening({
 
         return hasLowDataModeChanged || hasHDModeChanged || hasWidescreenModeChanged;
     },
-    effect: (_action, { dispatch }) => {
-        dispatch(doTriggerLocalStreamRefresh());
+    effect: (_action, { dispatch, getState }) => {
+        dispatch(doSwitchLocalStream({ videoId: selectCurrentCameraDeviceId(getState()) }));
     },
 });
 

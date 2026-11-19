@@ -3,6 +3,7 @@ import { doAppStart, doAppStop, initialState as appInitialState, InitialMuteStat
 import { signalEvents } from "../../slices/signalConnection/actions";
 import { createStore, mockSignalEmit } from "../store.setup";
 import { diff } from "deep-object-diff";
+import { PayloadAction } from "@reduxjs/toolkit";
 
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import MockMediaStreamTrack from "../../../__mocks__/MediaStreamTrack";
@@ -93,6 +94,16 @@ const waitForToggleCamera = (store: ReturnType<typeof createStore>) =>
             }
         });
     });
+
+const videoModeChanges: [
+    string,
+    () => PayloadAction<{ enabled?: boolean }>,
+    MediaTrackConstraints,
+][] = [
+    ["HD mode", () => localMediaSlice.toggleHdModeEnabled({ enabled: false }), { height: 360 }],
+    ["low data mode", () => localMediaSlice.toggleLowDataModeEnabled({ enabled: true }), { height: 360 }],
+    ["widescreen mode", () => localMediaSlice.toggleWidescreenModeEnabled({ enabled: false }), { aspectRatio: 4 / 3 }],
+];
 
 const startedLocalMedia = ({
     stream,
@@ -562,6 +573,27 @@ describe("actions", () => {
         });
     });
 
+    describe("video modes", () => {
+        it.each(videoModeChanges)("should not ask for the microphone when %s changes", async (_name, modeChange) => {
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", videoDevice.deviceId),
+            ]);
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, videoDevice] }),
+            });
+            mockedGetUserMedia.mockResolvedValueOnce(
+                new MockMediaStream([createLiveTrack("video", videoDevice.deviceId)]),
+            );
+
+            store.dispatch(modeChange());
+            await waitForSwitch(store);
+
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+            expect(mockedGetUserMedia).toHaveBeenCalledWith({ video: expect.any(Object) });
+        });
+    });
+
     describe("doUpdateDeviceList", () => {
         it("should switch to another camera if the current camera is unplugged", async () => {
             const dev1 = {
@@ -932,6 +964,32 @@ describe("actions", () => {
 
             expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
         });
+
+        it.each(videoModeChanges)("should not ask getUserMedia when %s changes while off", async (_name, modeChange) => {
+            const store = await createStoreWithCameraOff();
+            mockedGetUserMedia.mockClear();
+
+            store.dispatch(modeChange());
+            await waitForSwitch(store);
+
+            expect(mockedGetUserMedia).not.toHaveBeenCalled();
+        });
+
+        it.each(videoModeChanges)(
+            "should get the %s changed while off when turned on",
+            async (_name, modeChange, expectedVideo) => {
+                const store = await createStoreWithCameraOff();
+                store.dispatch(modeChange());
+                await waitForSwitch(store);
+                mockedGetUserMedia.mockClear();
+
+                await turnCameraOn(store, ourCamera.deviceId);
+
+                const constraints = mockedGetUserMedia.mock.calls[0]?.[0];
+                expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+                expect(constraints?.video).toEqual(expect.objectContaining(expectedVideo));
+            },
+        );
     });
 
     describe("doLocalStreamEffect", () => {
