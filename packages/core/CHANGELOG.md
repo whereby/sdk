@@ -1,5 +1,17 @@
 # @whereby.com/core
 
+## 1.31.4
+
+### Patch Changes
+
+- b4aa96a: Deprecate doTriggerLocalStreamRefresh
+- b4aa96a: Don't ask for media when changing a video mode while the camera is off, and don't ask for the microphone when changing a video mode
+- 2df89b2: Connect to rtcstats with the room's path and origin instead of the page's
+- Updated dependencies [7d32d60]
+- Updated dependencies [295015f]
+  - @whereby.com/media@11.4.0
+  - @whereby.com/audio-denoiser@1.0.34
+
 ## 1.31.3
 
 ### Patch Changes

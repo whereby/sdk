@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/audio-denoiser",
-    "version": "1.0.33",
+    "version": "1.0.34",
     "description": "Audio denoiser (noise suppression) for microphone streams",
     "repository": {
         "type": "git",
