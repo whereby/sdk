@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 1.31.3
+
+### Patch Changes
+
+- df99011: Update axios to 1.21 for security fixes
+- Updated dependencies [df99011]
+  - @whereby.com/media@11.3.5
+  - @whereby.com/audio-denoiser@1.0.33
+
 ## 1.31.2
 
 ### Patch Changes

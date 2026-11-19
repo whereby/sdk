@@ -2,7 +2,7 @@
     "name": "@whereby.com/core",
     "description": "Core library for whereby.com sdk",
     "author": "Whereby AS",
-    "version": "1.31.2",
+    "version": "1.31.3",
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -80,8 +80,8 @@
     },
     "dependencies": {
         "@reduxjs/toolkit": "^2.2.3",
-        "@whereby.com/media": "11.3.4",
-        "@whereby.com/audio-denoiser": "1.0.32",
+        "@whereby.com/media": "11.3.5",
+        "@whereby.com/audio-denoiser": "1.0.33",
         "@whereby.com/camera-effects": "1.1.4",
         "axios": "^1.21.1",
         "btoa": "^1.2.1",
