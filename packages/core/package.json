@@ -83,7 +83,7 @@
         "@whereby.com/media": "11.3.4",
         "@whereby.com/audio-denoiser": "1.0.32",
         "@whereby.com/camera-effects": "1.1.4",
-        "axios": "^1.11.0",
+        "axios": "^1.21.1",
         "btoa": "^1.2.1",
         "events": "^3.3.0"
     },
