@@ -1,8 +1,16 @@
 import { createStore, mockRtcManager } from "../store.setup";
 import { doRtcAnalyticsCustomEventsInitialize, rtcAnalyticsState } from "../../slices/rtcAnalytics";
 import { diff } from "deep-object-diff";
-import { randomOrganization } from "../../../__mocks__/appMocks";
+import { randomOrganization, randomSignalClient } from "../../../__mocks__/appMocks";
 import { setDisplayName } from "../../slices/localParticipant";
+import { socketDisconnected, socketReconnecting } from "../../slices/signalConnection";
+import { signalEvents } from "../../slices/signalConnection/actions";
+import { rtcManagerInitialized } from "../../slices/rtcConnection";
+import { RootState } from "../../store";
+import { stopScreenshare } from "../../slices/localScreenshare";
+import { transcribingRequestStarted } from "../../slices/liveTranscription";
+import { recordingRequestStarted } from "../../slices/cloudRecording";
+import MockMediaStream from "../../../__mocks__/MediaStream";
 
 describe("actions", () => {
     it("doRtcAnalyticsCustomEventsInitialize", async () => {
@@ -20,13 +28,14 @@ describe("actions", () => {
             expect.arrayContaining([
                 "audioEnabled",
                 "videoEnabled",
-                "localScreenshareStream",
                 "displayName",
                 "clientId",
                 "externalId",
                 "signalConnectionStatus",
                 "rtcConnectionStatus",
                 "userRole",
+                "roomMode",
+                "sfuServer",
             ]),
         );
         expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("insightsStats", expect.any(Object));
@@ -45,6 +54,24 @@ describe("actions", () => {
         expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
             "displayName",
             expect.objectContaining({ displayName: "[[redacted]]" }),
+        );
+    });
+});
+
+describe("userRole", () => {
+    it("sends the role name as role", () => {
+        const store = createStore({
+            withRtcManager: true,
+            initialState: {
+                authorization: { roomKey: null, assistantKey: null, roleName: "host" },
+            },
+        });
+
+        store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+
+        expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+            "userRole",
+            expect.objectContaining({ role: "host" }),
         );
     });
 });
@@ -83,6 +110,263 @@ describe("middleware", () => {
             expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
                 "displayName",
                 expect.objectContaining({ displayName: "[[redacted]]" }),
+            );
+        });
+    });
+    describe("values without actions", () => {
+        it("sends signalConnectionStatus on every change after initialization", () => {
+            const store = createStore({ withRtcManager: true, withSignalConnection: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(socketReconnecting());
+            store.dispatch(socketDisconnected());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "disconnected" }),
+            );
+        });
+
+        it("sends rtcConnectionStatus when it changes", () => {
+            const store = createStore({ withRtcManager: true, withSignalConnection: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(socketReconnecting());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "rtcConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+        });
+
+        it("sends roomMode when the room switches mode", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.roomJoined({
+                    selfId: "selfId",
+                    clientClaim: "client-claim",
+                    eventClaim: "",
+                    room: {
+                        mode: "group",
+                        clients: [],
+                        knockers: [],
+                        spotlights: [],
+                        session: null,
+                        isClaimed: true,
+                        isLocked: false,
+                        iceServers: { iceServers: [] },
+                        mediaserverConfigTtlSeconds: 0,
+                        name: "",
+                        organizationId: "",
+                        turnServers: [],
+                    },
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "roomMode",
+                expect.objectContaining({ roomMode: "group" }),
+            );
+        });
+
+        it("sends sfuServer when the room is joined, but not again for the same server", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            const roomJoinedEvent = () =>
+                signalEvents.roomJoined({
+                    selfId: "selfId",
+                    clientClaim: "client-claim",
+                    eventClaim: "",
+                    room: {
+                        mode: "group",
+                        sfuServer: { url: "sfu.example.com:443" },
+                        clients: [],
+                        knockers: [],
+                        spotlights: [],
+                        session: null,
+                        isClaimed: true,
+                        isLocked: false,
+                        iceServers: { iceServers: [] },
+                        mediaserverConfigTtlSeconds: 0,
+                        name: "",
+                        organizationId: "",
+                        turnServers: [],
+                    },
+                });
+            store.dispatch(roomJoinedEvent());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "sfuServer",
+                expect.objectContaining({ sfuServer: { url: "sfu.example.com:443" } }),
+            );
+
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+            store.dispatch(roomJoinedEvent());
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("sfuServer", expect.anything());
+        });
+    });
+
+    describe("before the RtcManager is initialized", () => {
+        it("doesn't send changes until initialization, which sends insightsStats first", () => {
+            const store = createStore({
+                withRtcManager: true,
+                withSignalConnection: true,
+                initialState: {
+                    rtcConnection: { rtcManagerInitialized: false } as RootState["rtcConnection"],
+                },
+            });
+
+            store.dispatch(socketReconnecting());
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalled();
+
+            store.dispatch(rtcManagerInitialized());
+
+            const sentEvents = mockRtcManager.sendStatsCustomEvent.mock.calls.map(([type]) => type);
+            expect(sentEvents[0]).toBe("insightsStats");
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+        });
+    });
+
+    describe("localScreenshareStream", () => {
+        const screenshareStream = () => {
+            const stream = new MockMediaStream();
+            stream.addTrack({ id: "screen-track", kind: "video", label: "Screen" } as MediaStreamTrack);
+            return stream;
+        };
+        const screenshareEvents = () =>
+            mockRtcManager.sendStatsCustomEvent.mock.calls.filter(([type]) => type === "localScreenshareStream");
+
+        it("sends only the tracks on initialization while screensharing", () => {
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    localScreenshare: { status: "active", stream: screenshareStream() },
+                },
+            });
+
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+
+            expect(screenshareEvents()).toEqual([
+                [
+                    "localScreenshareStream",
+                    expect.objectContaining({ tracks: [{ id: "screen-track", kind: "video", label: "Screen" }] }),
+                ],
+            ]);
+        });
+
+        it("sends no tracks when the screenshare stops", () => {
+            const stream = screenshareStream();
+            const store = createStore({
+                withRtcManager: true,
+                initialState: {
+                    localScreenshare: { status: "active", stream },
+                },
+            });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(stopScreenshare({ stream }));
+
+            expect(screenshareEvents()).toEqual([
+                ["localScreenshareStream", expect.objectContaining({ tracks: undefined })],
+            ]);
+            expect(store.getState().rtcAnalytics.reportedValues.localScreenshareStream).toBeUndefined();
+        });
+    });
+
+    describe("values with actions", () => {
+        it("doesn't send an object value again when it hasn't changed", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.newClient({ client: randomSignalClient() }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("transcribing", expect.anything());
+        });
+
+        it("checks every value that the action triggers", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.newClient({
+                    client: randomSignalClient(),
+                    room: { session: { id: "new-session-id", createdAt: "2026-11-11T00:00:00Z" } },
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "roomSessionId",
+                expect.objectContaining({ roomSessionId: "new-session-id" }),
+            );
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
+        });
+
+        it("sends transcribing when live transcription starts and stops", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            store.dispatch(transcribingRequestStarted());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.liveTranscriptionStarted({ transcriptionId: "transcription-id" }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "transcribing",
+                expect.objectContaining({ local: false, cloud: true }),
+            );
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.liveTranscriptionStopped({
+                    transcriptionId: "transcription-id",
+                    endedAt: "2026-11-11T00:00:00Z",
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "transcribing",
+                expect.objectContaining({ local: false, cloud: false }),
+            );
+        });
+
+        it("sends recording when the cloud recording starts and stops", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            store.dispatch(recordingRequestStarted());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.newClient({ client: randomSignalClient({ role: { roleName: "recorder" } }) }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "recording",
+                expect.objectContaining({ local: false, cloud: true }),
+            );
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.cloudRecordingStopped());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "recording",
+                expect.objectContaining({ local: false, cloud: false }),
             );
         });
     });
