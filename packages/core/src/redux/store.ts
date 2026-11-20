@@ -82,6 +82,15 @@ export const rootReducer: AppReducer = (state, action) => {
                 ...audioDenoiserSlice.getInitialState(),
                 ...state?.audioDenoiser,
             },
+            // Keep the lock state fetched before joining, so it's there until the signal server confirms it.
+            room: {
+                ...roomSlice.getInitialState(),
+                isLocked: state?.room?.isLocked ?? false,
+                lockStateSource: state?.room?.lockStateSource ?? null,
+                requestedRoomUrl: state?.room?.requestedRoomUrl ?? null,
+                fetchedRoomUrl: state?.room?.fetchedRoomUrl ?? null,
+                roomFetchRequestId: state?.room?.roomFetchRequestId ?? null,
+            },
         };
 
         return appReducer(resetState, action);

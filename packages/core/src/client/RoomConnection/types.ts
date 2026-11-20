@@ -170,6 +170,8 @@ export interface RoomConnectionState {
     isAudioOnlyModeEnabled: boolean;
     isCameraEnabled: boolean;
     isMicrophoneEnabled: boolean;
+    /** Whether the room is locked. Known before joining once the room is fetched, null until then. */
+    isLocked: boolean | null;
     liveStream?: LiveStreamState;
     liveCaptions?: LiveCaptionsState;
     liveTranscription?: LiveTranscriptionState;

@@ -1,4 +1,4 @@
-import { createStore, mockSignalEmit } from "../store.setup";
+import { createStore, mockServices, mockSignalEmit } from "../store.setup";
 import { randomRemoteParticipant } from "../../../__mocks__/appMocks";
 
 jest.mock("../../slices/app", () => ({
@@ -6,10 +6,119 @@ jest.mock("../../slices/app", () => ({
     doAppStop: jest.fn().mockReturnValue({ type: "TEST_ACTION" }),
 }));
 
-import { doAppStop } from "../../slices/app";
-import { doLockRoom, doKickParticipant, doEndMeeting } from "../../slices/room";
+import { appSlice, doAppStart, doAppStop } from "../../slices/app";
+import { rootReducer } from "../../store";
+import { doLockRoom, doKickParticipant, doEndMeeting, doFetchRoom, setRequestedRoomUrl } from "../../slices/room";
+import { signalEvents } from "../../slices/signalConnection/actions";
+
+describe("reactors", () => {
+    describe("fetching the requested room", () => {
+        const roomUrl = "https://example.whereby.com/test";
+
+        beforeEach(() => {
+            mockServices.fetchRoomFromRoomUrl.mockResolvedValue({ isLocked: false });
+        });
+
+        it("fetches the room when a room url is requested", () => {
+            const store = createStore();
+
+            store.dispatch(setRequestedRoomUrl(roomUrl));
+
+            expect(mockServices.fetchRoomFromRoomUrl).toHaveBeenCalledWith(roomUrl);
+            expect(store.getState().room.fetchedRoomUrl).toEqual(roomUrl);
+        });
+
+        it("fetches each room url once", () => {
+            const store = createStore();
+
+            store.dispatch(setRequestedRoomUrl(roomUrl));
+            store.dispatch(setRequestedRoomUrl(roomUrl));
+            expect(mockServices.fetchRoomFromRoomUrl).toHaveBeenCalledTimes(1);
+
+            store.dispatch(setRequestedRoomUrl("https://example.whereby.com/other"));
+            expect(mockServices.fetchRoomFromRoomUrl).toHaveBeenCalledTimes(2);
+        });
+
+        it("doesn't fetch without a room url", () => {
+            const store = createStore();
+
+            store.dispatch(setRequestedRoomUrl(null));
+
+            expect(mockServices.fetchRoomFromRoomUrl).not.toHaveBeenCalled();
+        });
+
+        it("waits until the room is left to fetch a room url requested during a call", () => {
+            const store = createStore({ initialState: { app: { ...appSlice.getInitialState(), isActive: true } } });
+
+            store.dispatch(setRequestedRoomUrl(roomUrl));
+            expect(mockServices.fetchRoomFromRoomUrl).not.toHaveBeenCalled();
+
+            // The real doAppStop: this file mocks the exported one.
+            store.dispatch(appSlice.actions.doAppStop());
+            expect(mockServices.fetchRoomFromRoomUrl).toHaveBeenCalledWith(roomUrl);
+        });
+    });
+});
 
 describe("actions", () => {
+    describe("doFetchRoom", () => {
+        const roomUrl = "https://example.whereby.com/test";
+
+        it("stores whether the fetched room is locked", async () => {
+            mockServices.fetchRoomFromRoomUrl.mockResolvedValueOnce({ isLocked: true });
+            const store = createStore();
+
+            await store.dispatch(doFetchRoom(roomUrl));
+
+            expect(mockServices.fetchRoomFromRoomUrl).toHaveBeenCalledWith(roomUrl);
+            expect(store.getState().room).toEqual(
+                expect.objectContaining({ isLocked: true, lockStateSource: "fetch" }),
+            );
+        });
+
+        it("leaves the lock state unknown when the fetch fails", async () => {
+            mockServices.fetchRoomFromRoomUrl.mockRejectedValueOnce(new Error("Network error"));
+            const store = createStore();
+
+            await store.dispatch(doFetchRoom(roomUrl));
+
+            expect(store.getState().room).toEqual(expect.objectContaining({ isLocked: false, lockStateSource: null }));
+        });
+
+        it("keeps the fetched lock state when the room is joined", async () => {
+            mockServices.fetchRoomFromRoomUrl.mockResolvedValueOnce({ isLocked: true });
+            const store = createStore();
+
+            await store.dispatch(doFetchRoom(roomUrl));
+            // Through the root reducer alone: dispatching doAppStart on the store would start the whole join.
+            const state = rootReducer(
+                store.getState(),
+                doAppStart({ roomUrl, displayName: "Guest", roomKey: null, externalId: null }),
+            );
+
+            expect(state.room).toEqual(expect.objectContaining({ isLocked: true, lockStateSource: "fetch" }));
+        });
+
+        it("keeps the lock state from the signal server when the fetch finishes after it", async () => {
+            let resolveFetch: (room: { isLocked: boolean }) => void = () => undefined;
+            mockServices.fetchRoomFromRoomUrl.mockReturnValueOnce(
+                new Promise((resolve) => {
+                    resolveFetch = resolve;
+                }),
+            );
+            const store = createStore();
+
+            const fetch = store.dispatch(doFetchRoom(roomUrl));
+            store.dispatch(signalEvents.roomLocked({ isLocked: false }));
+            resolveFetch({ isLocked: true });
+            await fetch;
+
+            expect(store.getState().room).toEqual(
+                expect.objectContaining({ isLocked: false, lockStateSource: "signal" }),
+            );
+        });
+    });
+
     describe("doLockRoom", () => {
         describe("when authorized", () => {
             it("should lock room", () => {

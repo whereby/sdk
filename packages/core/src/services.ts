@@ -2,10 +2,13 @@ import { fromLocation } from "@whereby.com/media";
 import {
     ApiClient,
     CredentialsService,
+    OrganizationApiClient,
     OrganizationService,
     OrganizationServiceCache,
     RoomIntegrationService,
+    RoomService,
 } from "./api";
+import decodeRoomName from "./utils/decodeRoomName";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL;
@@ -64,12 +67,31 @@ export function createServices({ apiBaseUrl, signalBaseUrl }: ServicesOptions = 
         );
     };
 
+    const fetchRoomFromRoomUrl = async (roomUrl: string) => {
+        const roomName = decodeRoomName(new URL(roomUrl).pathname);
+        const organization = await fetchOrganizationFromRoomUrl(roomUrl);
+
+        if (!roomName || !organization) {
+            throw new Error("Invalid room url");
+        }
+
+        const roomService = new RoomService({
+            organizationApiClient: new OrganizationApiClient({
+                apiClient,
+                fetchOrganization: () => Promise.resolve(organization),
+            }),
+        });
+
+        return roomService.getRoom({ roomName });
+    };
+
     return {
         credentialsService,
         apiClient,
         organizationService,
         roomIntegrationService,
         fetchOrganizationFromRoomUrl,
+        fetchRoomFromRoomUrl,
         signalBaseUrl: signalBaseUrl || SIGNAL_BASE_URL || "wss://signal.appearin.net",
     };
 }
