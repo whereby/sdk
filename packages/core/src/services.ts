@@ -34,16 +34,32 @@ export function createServices({ apiBaseUrl, signalBaseUrl }: ServicesOptions = 
     const organizationService = new OrganizationService({ apiClient });
     const roomIntegrationService = new RoomIntegrationService({ apiClient });
 
+    const organizationServiceCaches = new Map<string, OrganizationServiceCache>();
+
     const fetchOrganizationFromRoomUrl = (roomUrl: string) => {
         const roomUrlObj = new URL(roomUrl);
-        const urls = fromLocation({ host: roomUrlObj.host });
+        const { subdomain } = fromLocation({ host: roomUrlObj.host });
 
-        const organizationServiceCache = new OrganizationServiceCache({
-            organizationService,
-            subdomain: urls.subdomain,
-        });
+        let organizationServiceCache = organizationServiceCaches.get(subdomain);
 
-        return organizationServiceCache.fetchOrganization();
+        if (!organizationServiceCache) {
+            organizationServiceCache = new OrganizationServiceCache({ organizationService, subdomain });
+            organizationServiceCaches.set(subdomain, organizationServiceCache);
+        }
+
+        return organizationServiceCache.fetchOrganization().then(
+            (organization) => {
+                if (!organization) {
+                    organizationServiceCaches.delete(subdomain);
+                }
+
+                return organization;
+            },
+            (error) => {
+                organizationServiceCaches.delete(subdomain);
+                throw error;
+            },
+        );
     };
 
     return {
