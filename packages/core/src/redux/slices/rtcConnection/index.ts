@@ -1,4 +1,4 @@
-import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import {
@@ -371,23 +371,20 @@ export const selectIsAudioOnlyModeEnabled = (state: RootState) => state.rtcConne
  * Reactors
  */
 
-startAppListening({
-    actionCreator: doSetDevice.fulfilled,
-    effect: ({ payload }, { getState }) => {
-        const { replacedTracks } = payload;
-        const { rtcManager } = selectRtcConnectionRaw(getState());
-        const stream = selectLocalMediaStream(getState());
+const handOverChangedTracks = (
+    { payload }: { payload?: { changedTracks: { track: MediaStreamTrack; oldTrack: MediaStreamTrack | null }[] } },
+    { getState }: { getState: () => RootState },
+) => {
+    const { rtcManager } = selectRtcConnectionRaw(getState());
 
-        const replace = (kind: string, oldTrack: MediaStreamTrack) => {
-            const track = stream?.getTracks().find((t) => t.kind === kind);
-            return track && rtcManager?.replaceTrack(oldTrack, track);
-        };
+    payload?.changedTracks.forEach(({ track, oldTrack }) => {
+        rtcManager?.replaceTrack(oldTrack, track);
+    });
+};
 
-        replacedTracks?.forEach((t) => {
-            replace(t.kind, t);
-        });
-    },
-});
+startAppListening({ actionCreator: doSetDevice.fulfilled, effect: handOverChangedTracks });
+startAppListening({ actionCreator: doSwitchLocalStream.fulfilled, effect: handOverChangedTracks });
+startAppListening({ actionCreator: doLocalStreamEffect.fulfilled, effect: handOverChangedTracks });
 
 startAppListening({
     actionCreator: doStartScreenshare.fulfilled,
@@ -425,26 +422,6 @@ startAppListening({
         const { rtcManager } = selectRtcConnectionRaw(getState());
 
         rtcManager?.removeScreenshareStream(stream);
-    },
-});
-
-startAppListening({
-    matcher: isAnyOf(doSwitchLocalStream.fulfilled, doLocalStreamEffect.fulfilled),
-    effect: ({ payload }, { getState }) => {
-        const stream = selectLocalMediaStream(getState());
-        const { rtcManager } = selectRtcConnectionRaw(getState());
-
-        if (stream && rtcManager) {
-            const replace = (kind: string, oldTrack: MediaStreamTrack) => {
-                const track = stream.getTracks().find((t) => t.kind === kind);
-                return track && rtcManager.replaceTrack(oldTrack, track);
-            };
-
-            // @ts-expect-error - Both actions have replacedTracks in the payload, but the payload is not typed when using isAnyOf
-            payload?.replacedTracks?.forEach((t) => {
-                replace(t.kind, t);
-            });
-        }
     },
 });
 
