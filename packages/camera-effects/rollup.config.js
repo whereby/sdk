@@ -94,6 +94,8 @@ const tsOptions = {
     filter: (id) => !id.includes("rollup-plugin-worker-loader"),
 };
 
+const dtsOptions = { ...tsOptions, compilerOptions: { removeComments: false } };
+
 const url = require("@rollup/plugin-url");
 
 const wasmPlugin = url({
@@ -250,7 +252,7 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.mts", format: "esm" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 
     // Type definitions - ES
@@ -258,7 +260,7 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.ts", format: "es" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 
     // Type definitions - CJS
@@ -266,6 +268,6 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.cts", format: "cjs" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 ];
