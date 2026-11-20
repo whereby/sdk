@@ -22,6 +22,8 @@ const tsOptions = {
     tsconfig: "tsconfig.build.json",
 };
 
+const dtsOptions = { ...tsOptions, compilerOptions: { removeComments: false } };
+
 const plugins = [
     replace(replaceValues),
     nodeResolve({
@@ -114,36 +116,36 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.mts", format: "esm" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
     {
         input: "src/redux/index.ts",
         output: [{ file: "dist/redux/index.d.mts", format: "esm" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
     {
         input: "src/index.ts",
         output: [{ file: "dist/index.d.ts", format: "es" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
     {
         input: "src/redux/index.ts",
         output: [{ file: "dist/redux/index.d.ts", format: "es" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
     {
         input: "src/index.ts",
         output: [{ file: "dist/index.d.cts", format: "cjs" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
     {
         input: "src/redux/index.ts",
         output: [{ file: "dist/redux/index.d.cts", format: "cjs" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 ];
