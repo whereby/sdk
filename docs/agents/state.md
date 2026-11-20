@@ -18,7 +18,8 @@ store  ->  client/*/selector.ts  ->  WherebyClient (RoomConnectionClient, LocalM
   `/** Reactors */`. See `slices/spotlights.ts` for a small complete example.
 - Register a new slice's reducer in `combineReducers` in `redux/store.ts` and export the file from `redux/index.ts`.
 - `doAppStart` resets the whole store (`rootReducer` in `store.ts`) except `app.initialConfig`, `localMedia`,
-  `cameraEffects` and `audioDenoiser`. If new state must survive a rejoin, add it there.
+  `cameraEffects`, `audioDenoiser` and `room.requestedRoomUrl`. The lock state in `room` (fetched before joining) is
+  kept too when the room joined is the room it was fetched for. If new state must survive a rejoin, add it there.
 - Server events arrive as actions. `slices/signalConnection/index.ts` turns every socket event into
   `signalEvents.xxx(payload)` (defined in `slices/signalConnection/actions.ts`), and `rtcConnection/actions.ts` does
   the same for RtcManager events. Slices react to them in `extraReducers` with `builder.addCase(signalEvents.xxx, ...)`.

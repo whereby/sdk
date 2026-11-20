@@ -1,11 +1,21 @@
 import { SignalRoom } from "@whereby.com/media";
-import { roomSlice, roomSliceInitialState, selectRemoteScreenshareVideoTrackIds, selectScreenshares } from "../room";
+import {
+    doFetchRoom,
+    roomSlice,
+    setRequestedRoomUrl,
+    roomSliceInitialState,
+    selectRemoteScreenshareVideoTrackIds,
+    selectScreenshares,
+} from "../room";
+import { appSlice } from "../app";
 import { signalEvents } from "../signalConnection/actions";
 import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
 import { Screenshare } from "../../../RoomParticipant";
 
 describe("roomSlice", () => {
     describe("reducers", () => {
+        const inRoomState = { ...roomSliceInitialState, isInRoom: true };
+
         describe("signalEvents.roomJoined", () => {
             describe("on error", () => {
                 it("should return default state", () => {
@@ -22,7 +32,7 @@ describe("roomSlice", () => {
             describe("on success", () => {
                 it("should update state", () => {
                     const result = roomSlice.reducer(
-                        undefined,
+                        inRoomState,
                         signalEvents.roomJoined({
                             selfId: "selfId",
                             breakoutGroup: "",
@@ -47,6 +57,7 @@ describe("roomSlice", () => {
                         }),
                     );
                     expect(result.isLocked).toEqual(true);
+                    expect(result.lockStateSource).toEqual("signal");
                 });
 
                 describe("room mode", () => {
@@ -96,12 +107,138 @@ describe("roomSlice", () => {
 
         it("signalEvents.roomLocked", () => {
             const result = roomSlice.reducer(
-                undefined,
+                inRoomState,
                 signalEvents.roomLocked({
                     isLocked: true,
                 }),
             );
             expect(result.isLocked).toEqual(true);
+            expect(result.lockStateSource).toEqual("signal");
+        });
+
+        it.each`
+            event            | action
+            ${"room_locked"} | ${signalEvents.roomLocked({ isLocked: true })}
+            ${"room_joined"} | ${signalEvents.roomJoined({ error: "room_locked", isClaimed: true, isLocked: true, selfId: "selfId" })}
+        `("ignores $event outside a room, as it's from one already left", ({ action }) => {
+            expect(roomSlice.reducer(roomSliceInitialState, action)).toBe(roomSliceInitialState);
+        });
+
+        it("tracks whether the app is in a room, from joining until leaving", () => {
+            const started = roomSlice.reducer(
+                roomSliceInitialState,
+                appSlice.actions.doAppStart({
+                    roomUrl: "https://example.whereby.com/test",
+                    displayName: "Guest",
+                    roomKey: null,
+                    externalId: null,
+                }),
+            );
+            const stopped = roomSlice.reducer(started, appSlice.actions.doAppStop());
+
+            expect(started.isInRoom).toEqual(true);
+            expect(stopped.isInRoom).toEqual(false);
+        });
+
+        describe("setRequestedRoomUrl", () => {
+            const roomUrl = "https://example.whereby.com/test";
+
+            it("keeps the same state when the room url hasn't changed", () => {
+                const state = { ...roomSliceInitialState, requestedRoomUrl: roomUrl };
+
+                expect(roomSlice.reducer(state, setRequestedRoomUrl(roomUrl))).toBe(state);
+            });
+
+            it("lets a room whose fetch failed be fetched again", () => {
+                const result = roomSlice.reducer(
+                    { ...roomSliceInitialState, requestedRoomUrl: roomUrl, roomFetchStatus: "failed" },
+                    setRequestedRoomUrl(roomUrl),
+                );
+
+                expect(result.roomFetchStatus).toEqual("idle");
+            });
+        });
+
+        describe("doFetchRoom", () => {
+            const roomUrl = "https://example.whereby.com/test";
+
+            it("forgets any earlier lock state when a fetch starts", () => {
+                const result = roomSlice.reducer(
+                    {
+                        ...roomSliceInitialState,
+                        isLocked: true,
+                        lockStateSource: "signal",
+                        lockStateRoomUrl: "https://example.whereby.com/other",
+                    },
+                    doFetchRoom.pending("requestId", roomUrl),
+                );
+
+                expect(result).toEqual(
+                    expect.objectContaining({
+                        isLocked: false,
+                        lockStateSource: null,
+                        lockStateRoomUrl: roomUrl,
+                        roomFetchStatus: "fetching",
+                    }),
+                );
+            });
+
+            it("stores the fetched lock state", () => {
+                const result = [
+                    doFetchRoom.pending("requestId", roomUrl),
+                    doFetchRoom.fulfilled({ isLocked: true }, "requestId", roomUrl),
+                ].reduce(roomSlice.reducer, roomSliceInitialState);
+
+                expect(result).toEqual(
+                    expect.objectContaining({ isLocked: true, lockStateSource: "fetch", roomFetchStatus: "fetched" }),
+                );
+            });
+
+            it("has no lock state for a room that doesn't exist", () => {
+                const result = [
+                    doFetchRoom.pending("requestId", roomUrl),
+                    doFetchRoom.fulfilled({ isLocked: null }, "requestId", roomUrl),
+                ].reduce(roomSlice.reducer, roomSliceInitialState);
+
+                expect(result).toEqual(expect.objectContaining({ lockStateSource: null, roomFetchStatus: "fetched" }));
+            });
+
+            it("records a failed fetch", () => {
+                const result = [
+                    doFetchRoom.pending("requestId", roomUrl),
+                    doFetchRoom.rejected(new Error("Network error"), "requestId", roomUrl),
+                ].reduce(roomSlice.reducer, roomSliceInitialState);
+
+                expect(result.roomFetchStatus).toEqual("failed");
+            });
+
+            it.each`
+                outcome       | action
+                ${"succeeds"} | ${doFetchRoom.fulfilled({ isLocked: true }, "first", roomUrl)}
+                ${"fails"}    | ${doFetchRoom.rejected(new Error("Network error"), "first", roomUrl)}
+            `("ignores a fetch that $outcome after a newer one started", ({ action }) => {
+                const result = [
+                    doFetchRoom.pending("first", roomUrl),
+                    doFetchRoom.pending("second", "https://example.whereby.com/other"),
+                    action,
+                ].reduce(roomSlice.reducer, roomSliceInitialState);
+
+                expect(result).toEqual(expect.objectContaining({ lockStateSource: null, roomFetchStatus: "fetching" }));
+            });
+
+            it.each`
+                event                         | action
+                ${"room_locked"}              | ${signalEvents.roomLocked({ isLocked: false })}
+                ${"a room_locked join error"} | ${signalEvents.roomJoined({ error: "room_locked", isClaimed: true, isLocked: false, selfId: "selfId" })}
+            `("keeps the lock state from $event when the fetch finishes after it", ({ action }) => {
+                const result = [
+                    doFetchRoom.pending("requestId", roomUrl),
+                    action,
+                    doFetchRoom.fulfilled({ isLocked: true }, "requestId", roomUrl),
+                ].reduce(roomSlice.reducer, inRoomState);
+
+                expect(result).toEqual(expect.objectContaining({ isLocked: false, lockStateSource: "signal" }));
+            });
         });
     });
 

@@ -170,6 +170,12 @@ export interface RoomConnectionState {
     isAudioOnlyModeEnabled: boolean;
     isCameraEnabled: boolean;
     isMicrophoneEnabled: boolean;
+    /**
+     * Whether the room is locked. Known before joining once the room is fetched, and null until then. Also null when
+     * the room doesn't exist or can't be fetched. Assistants and Node.js participants don't fetch the room, so they
+     * only know it after joining.
+     */
+    isLocked: boolean | null;
     liveStream?: LiveStreamState;
     liveCaptions?: LiveCaptionsState;
     liveTranscription?: LiveTranscriptionState;

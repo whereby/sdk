@@ -51,6 +51,7 @@ import {
     doUpdateRoomIntegrationProps,
     selectNotificationsEmitter,
     setDisplayName,
+    setRequestedRoomUrl,
     signalEvents,
     roomRejoined,
     StartBreakoutSessionOptions,
@@ -109,6 +110,7 @@ import {
     ROOM_JOINED_ERROR,
     ROOM_REJOINED,
     ROOM_SESSION_ID_CHANGED,
+    ROOM_LOCK_CHANGED,
     SCREENSHARE_STARTED,
     SCREENSHARE_STOPPED,
     SPOTLIGHT_PARTICIPANT_ADDED,
@@ -148,6 +150,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     private microphoneStateSubscribers = new Set<(isMicrophoneEnabled: boolean) => void>();
     private remoteParticipantsSubscribers = new Set<(participants: RemoteParticipantState[]) => void>();
     private roomSessionIdSubscribers = new Set<(roomSessionId: string | null) => void>();
+    private roomLockSubscribers = new Set<(isLocked: boolean | null) => void>();
     private screenshareSubscribers = new Set<(screenshares: ScreenshareState[]) => void>();
     private spotlightedParticipantsSubscribers = new Set<(participants: ClientView[]) => void>();
     private waitingParticipantsSubscribers = new Set<(participants: WaitingParticipantState[]) => void>();
@@ -205,6 +208,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         if (state.roomSessionId !== previousState.roomSessionId) {
             this.roomSessionIdSubscribers.forEach((cb) => cb(state.roomSessionId));
             this.emit(ROOM_SESSION_ID_CHANGED, state.roomSessionId);
+        }
+
+        if (state.isLocked !== previousState.isLocked) {
+            this.roomLockSubscribers.forEach((cb) => cb(state.isLocked));
+            this.emit(ROOM_LOCK_CHANGED, state.isLocked);
         }
 
         if (state.isAudioOnlyModeEnabled !== previousState.isAudioOnlyModeEnabled) {
@@ -404,6 +412,11 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         return () => this.roomSessionIdSubscribers.delete(callback);
     }
 
+    public subscribeToRoomLock(callback: (isLocked: boolean | null) => void): () => void {
+        this.roomLockSubscribers.add(callback);
+        return () => this.roomLockSubscribers.delete(callback);
+    }
+
     public subscribeToAudioOnlyMode(callback: (isEnabled: boolean) => void): () => void {
         this.audioOnlyModeSubscribers.add(callback);
         return () => this.audioOnlyModeSubscribers.delete(callback);
@@ -518,10 +531,14 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     /**
      * Initialize the client with options.
      * This method can be called multiple times to update options.
+     * A new `roomUrl` fetches the room, so `isLocked` is known before joining.
      * @param options<WherebyClientOptions> - Options for the Whereby client.
      */
     public initialize(options: WherebyClientOptions) {
         this.options = options;
+
+        const needsRoomFetch = !options.assistantKey && !options.isNodeSdk;
+        this.store.dispatch(setRequestedRoomUrl((needsRoomFetch && options.roomUrl) || null));
     }
 
     /**
@@ -1173,6 +1190,7 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
         this.microphoneStateSubscribers.clear();
         this.remoteParticipantsSubscribers.clear();
         this.roomSessionIdSubscribers.clear();
+        this.roomLockSubscribers.clear();
         this.screenshareSubscribers.clear();
         this.spotlightedParticipantsSubscribers.clear();
         this.waitingParticipantsSubscribers.clear();

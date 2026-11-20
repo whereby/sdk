@@ -82,6 +82,14 @@ export const rootReducer: AppReducer = (state, action) => {
                 ...audioDenoiserSlice.getInitialState(),
                 ...state?.audioDenoiser,
             },
+            room:
+                state?.room && action.payload.roomUrl === state.room.lockStateRoomUrl
+                    ? { ...state.room, mode: null }
+                    : {
+                          ...roomSlice.getInitialState(),
+                          lockStateRoomUrl: action.payload.roomUrl,
+                          requestedRoomUrl: state?.room?.requestedRoomUrl ?? null,
+                      },
         };
 
         return appReducer(resetState, action);
