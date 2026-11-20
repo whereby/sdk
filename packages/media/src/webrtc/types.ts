@@ -45,6 +45,8 @@ export interface RtcManager {
     setAudioOnly(audioOnly: boolean): void;
     setRemoteScreenshareVideoTrackIds(remoteScreenshareVideoTrackIds: string[]): void;
     setRemoteClientMediaPrefs(clientId: string, mediaPrefs: MediaPrefs): void;
+    stopOrResumeAudio({ enable }: { enable: boolean }): void;
+    stopOrResumeVideo({ enable }: { enable: boolean }): void;
     removeRemoteClientMediaPrefs(clientId: string): void;
     hasClient(clientId: string): boolean;
 }

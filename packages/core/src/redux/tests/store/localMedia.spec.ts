@@ -450,6 +450,57 @@ describe("actions", () => {
         });
     });
 
+    describe("doToggleMicrophone", () => {
+        const createStoreWithMicrophone = (microphoneEnabled: boolean, stream?: MediaStream) =>
+            createStore({
+                initialState: {
+                    localMedia: {
+                        ...localMediaSlice.initialLocalMediaState,
+                        microphoneEnabled,
+                        status: "started",
+                        stream,
+                    },
+                },
+            });
+
+        it("should enable the audio track when the microphone is enabled", async () => {
+            const audioTrack = new MockMediaStreamTrack("audio");
+            audioTrack.enabled = false;
+            const store = createStoreWithMicrophone(true, new MockMediaStream([audioTrack]));
+
+            const result = await store.dispatch(localMediaSlice.doToggleMicrophone());
+
+            expect(audioTrack.enabled).toBe(true);
+            expect(result.payload).toEqual({ enabled: true });
+        });
+
+        it("should disable the audio track when the microphone is disabled", async () => {
+            const audioTrack = new MockMediaStreamTrack("audio");
+            const store = createStoreWithMicrophone(false, new MockMediaStream([audioTrack]));
+
+            const result = await store.dispatch(localMediaSlice.doToggleMicrophone());
+
+            expect(audioTrack.enabled).toBe(false);
+            expect(result.payload).toEqual({ enabled: false });
+        });
+
+        it("should resolve with the microphone state when the stream has no audio track", async () => {
+            const store = createStoreWithMicrophone(true, new MockMediaStream([new MockMediaStreamTrack("video")]));
+
+            const result = await store.dispatch(localMediaSlice.doToggleMicrophone());
+
+            expect(result.payload).toEqual({ enabled: true });
+        });
+
+        it("should resolve with the microphone state when there is no stream", async () => {
+            const store = createStoreWithMicrophone(true);
+
+            const result = await store.dispatch(localMediaSlice.doToggleMicrophone());
+
+            expect(result.payload).toEqual({ enabled: true });
+        });
+    });
+
     describe("toggleHdModeEnabled", () => {
         describe("when video hd mode is disabled", () => {
             let initialState: Partial<RootState>;
