@@ -238,21 +238,18 @@ startAppListening({
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
         if (!rtcManager) return;
 
-        const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actions }) =>
-            actions?.map((a) => a.type).includes(type),
-        );
-        if (!rtcCustomEvent) return;
+        Object.values(rtcAnalyticsCustomEvents)
+            .filter(({ actions }) => actions?.map((a) => a.type).includes(type))
+            .forEach(({ getValue, getOutput, rtcEventName }) => {
+                const value = getValue(state);
+                const comparableValue = makeComparable(value);
+                const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
 
-        const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
-
-        const value = getValue(state);
-        const comparableValue = makeComparable(value);
-        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
-
-        if (state.rtcAnalytics.reportedValues?.[rtcEventName] !== comparableValue) {
-            rtcManager.sendStatsCustomEvent(rtcEventName, output);
-            dispatch(updateReportedValues({ rtcEventName, value }));
-        }
+                if (state.rtcAnalytics.reportedValues?.[rtcEventName] !== comparableValue) {
+                    rtcManager.sendStatsCustomEvent(rtcEventName, output);
+                    dispatch(updateReportedValues({ rtcEventName, value }));
+                }
+            });
     },
 });
 
