@@ -3,6 +3,35 @@ packages:
     - packages/*
     - tooling/*
 
+nodeLinker: hoisted
+linkWorkspacePackages: true
+
+# Supply chain: refuse versions published less than 7 days ago. Freshly
+# compromised releases are usually caught and pulled within that window.
+# Our own SDK packages are exempt so we always dogfood the latest release.
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+    - "@whereby.com/*"
+
+# Install scripts are blocked unless a package is listed here. Decide per
+# package (`pnpm approve-builds`), and prefer false when the package works
+# without its script.
+allowBuilds:
+    # Its binary comes from an optional platform package; the script only
+    # double-checks it.
+    esbuild: false
+    unrs-resolver: false
+    sharp: false
+
+overrides:
+    rollup-plugin-terser>serialize-javascript: ^7.1.3
+    next>postcss: ^8.5.32
+    "@expo/metro-config>postcss": ^8.5.32
+    "@react-native-community/cli-platform-android>fast-xml-parser": ^5.12.0
+    "@react-native-community/cli-platform-apple>fast-xml-parser": ^5.12.0
+    eslint-plugin-react-hooks>zod: ^4.6.7
+    eslint-plugin-react-hooks>zod-validation-error: ^4.0.2
+
 catalog:
     eslint: ^9.29.0
     prettier: ^3.5.3

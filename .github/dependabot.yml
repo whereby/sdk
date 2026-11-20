@@ -5,3 +5,31 @@ updates:
       schedule:
           interval: weekly
       open-pull-requests-limit: 10
+      cooldown:
+          default-days: 7
+          exclude:
+              - "@whereby.com/*"
+      ignore:
+          # Its major follows the Node version in .nvmrc, so bump them together by hand.
+          - dependency-name: "@types/node"
+            update-types:
+                - version-update:semver-major
+      groups:
+          whereby:
+              patterns:
+                  - "@whereby.com/*"
+          minor-and-patch:
+              patterns:
+                  - "*"
+              update-types:
+                  - minor
+                  - patch
+
+    - package-ecosystem: github-actions
+      directory: "/"
+      schedule:
+          interval: weekly
+      groups:
+          github-actions:
+              patterns:
+                  - "*"
