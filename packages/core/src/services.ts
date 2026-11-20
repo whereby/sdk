@@ -34,16 +34,34 @@ export function createServices({ apiBaseUrl, signalBaseUrl }: ServicesOptions = 
     const organizationService = new OrganizationService({ apiClient });
     const roomIntegrationService = new RoomIntegrationService({ apiClient });
 
+    // One cache per subdomain, so an organization is fetched once and not again on every join.
+    const organizationServiceCaches = new Map<string, OrganizationServiceCache>();
+
     const fetchOrganizationFromRoomUrl = (roomUrl: string) => {
         const roomUrlObj = new URL(roomUrl);
-        const urls = fromLocation({ host: roomUrlObj.host });
+        const { subdomain } = fromLocation({ host: roomUrlObj.host });
 
-        const organizationServiceCache = new OrganizationServiceCache({
-            organizationService,
-            subdomain: urls.subdomain,
-        });
+        let organizationServiceCache = organizationServiceCaches.get(subdomain);
 
-        return organizationServiceCache.fetchOrganization();
+        if (!organizationServiceCache) {
+            organizationServiceCache = new OrganizationServiceCache({ organizationService, subdomain });
+            organizationServiceCaches.set(subdomain, organizationServiceCache);
+        }
+
+        return organizationServiceCache.fetchOrganization().then(
+            (organization) => {
+                if (!organization) {
+                    organizationServiceCaches.delete(subdomain);
+                }
+
+                return organization;
+            },
+            (error) => {
+                // Forget the failure, so the next join tries again.
+                organizationServiceCaches.delete(subdomain);
+                throw error;
+            },
+        );
     };
 
     return {
