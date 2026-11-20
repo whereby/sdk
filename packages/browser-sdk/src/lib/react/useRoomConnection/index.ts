@@ -64,8 +64,11 @@ export function useRoomConnection(
             }));
         });
         const eventEmitter = client.getNotificationsEventEmitter();
+        // The client only reports changes, and the room may have been fetched before this hook mounted.
+        const { isLocked } = client.getState();
         setRoomConnectionState((prev) => ({
             ...prev,
+            isLocked,
             events: eventEmitter,
         }));
 
@@ -77,6 +80,11 @@ export function useRoomConnection(
 
     const roomConfigRef = React.useRef(roomConfig);
     roomConfigRef.current = roomConfig;
+
+    // Not roomConfig: inline options change every render, and each initialize retries a failed room fetch.
+    React.useEffect(() => {
+        client.initialize(roomConfigRef.current);
+    }, [client, roomUrl]);
 
     const joinRoom = React.useCallback(() => {
         client.initialize(roomConfigRef.current);
