@@ -78,6 +78,11 @@ export function useRoomConnection(
     const roomConfigRef = React.useRef(roomConfig);
     roomConfigRef.current = roomConfig;
 
+    // Initialize before joining, so the room is fetched and its lock state is known for the pre-call screen.
+    React.useEffect(() => {
+        client.initialize(roomConfig);
+    }, [client, roomConfig]);
+
     const joinRoom = React.useCallback(() => {
         client.initialize(roomConfigRef.current);
         return client.joinRoom();
