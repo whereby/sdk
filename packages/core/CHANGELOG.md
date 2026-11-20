@@ -1,5 +1,12 @@
 # @whereby.com/core
 
+## 1.31.5
+
+### Patch Changes
+
+- 75ed1a8: Only switch to a newly added camera or microphone before joining the room
+- 3e5f566: Only mark a device as busy when switching to it fails
+
 ## 1.31.4
 
 ### Patch Changes
