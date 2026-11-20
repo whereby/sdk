@@ -1,5 +1,6 @@
 import axios from "axios";
 import Credentials from "../api/Credentials";
+import OrganizationService from "../api/organizationService";
 import { createServices } from "../services";
 
 const STORAGE_KEY = "CredentialsStorage";
@@ -55,6 +56,48 @@ describe("createServices", () => {
 
         it("uses the given signal URL", () => {
             expect(createServices({ apiBaseUrl, signalBaseUrl }).signalBaseUrl).toBe(signalBaseUrl);
+        });
+    });
+
+    describe("fetchOrganizationFromRoomUrl", () => {
+        let getOrganizationBySubdomain: jest.SpyInstance;
+
+        beforeEach(() => {
+            getOrganizationBySubdomain = jest.spyOn(OrganizationService.prototype, "getOrganizationBySubdomain");
+        });
+
+        afterEach(() => {
+            getOrganizationBySubdomain.mockRestore();
+        });
+
+        it("fetches the organization once for each subdomain", async () => {
+            getOrganizationBySubdomain.mockResolvedValue({ organizationId: "org-id" });
+            const services = createServices();
+
+            await services.fetchOrganizationFromRoomUrl("https://acme.whereby.com/room");
+            await services.fetchOrganizationFromRoomUrl("https://acme.whereby.com/other-room");
+            expect(getOrganizationBySubdomain).toHaveBeenCalledTimes(1);
+
+            await services.fetchOrganizationFromRoomUrl("https://other.whereby.com/room");
+            expect(getOrganizationBySubdomain).toHaveBeenCalledTimes(2);
+            expect(getOrganizationBySubdomain).toHaveBeenLastCalledWith("other");
+        });
+
+        it.each`
+            outcome                       | mockFetch
+            ${"the request rejects"}      | ${(spy: jest.SpyInstance) => spy.mockRejectedValueOnce(new Error("Network error"))}
+            ${"no organization is found"} | ${(spy: jest.SpyInstance) => spy.mockResolvedValueOnce(null)}
+        `("fetches again after $outcome", async ({ mockFetch }) => {
+            mockFetch(getOrganizationBySubdomain);
+            getOrganizationBySubdomain.mockResolvedValue({ organizationId: "org-id" });
+            const services = createServices();
+
+            await services.fetchOrganizationFromRoomUrl("https://acme.whereby.com/room").catch(() => null);
+
+            await expect(services.fetchOrganizationFromRoomUrl("https://acme.whereby.com/room")).resolves.toEqual({
+                organizationId: "org-id",
+            });
+            expect(getOrganizationBySubdomain).toHaveBeenCalledTimes(2);
         });
     });
 

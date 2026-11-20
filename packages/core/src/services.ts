@@ -2,10 +2,13 @@ import { fromLocation } from "@whereby.com/media";
 import {
     ApiClient,
     CredentialsService,
+    OrganizationApiClient,
     OrganizationService,
     OrganizationServiceCache,
     RoomIntegrationService,
+    RoomService,
 } from "./api";
+import decodeRoomName from "./utils/decodeRoomName";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL;
@@ -34,16 +37,52 @@ export function createServices({ apiBaseUrl, signalBaseUrl }: ServicesOptions = 
     const organizationService = new OrganizationService({ apiClient });
     const roomIntegrationService = new RoomIntegrationService({ apiClient });
 
+    // One cache per subdomain, so an organization is fetched once and not again on every join.
+    const organizationServiceCaches = new Map<string, OrganizationServiceCache>();
+
     const fetchOrganizationFromRoomUrl = (roomUrl: string) => {
         const roomUrlObj = new URL(roomUrl);
-        const urls = fromLocation({ host: roomUrlObj.host });
+        const { subdomain } = fromLocation({ host: roomUrlObj.host });
 
-        const organizationServiceCache = new OrganizationServiceCache({
-            organizationService,
-            subdomain: urls.subdomain,
+        let organizationServiceCache = organizationServiceCaches.get(subdomain);
+
+        if (!organizationServiceCache) {
+            organizationServiceCache = new OrganizationServiceCache({ organizationService, subdomain });
+            organizationServiceCaches.set(subdomain, organizationServiceCache);
+        }
+
+        return organizationServiceCache.fetchOrganization().then(
+            (organization) => {
+                if (!organization) {
+                    organizationServiceCaches.delete(subdomain);
+                }
+
+                return organization;
+            },
+            (error) => {
+                // Forget the failure, so the next join tries again.
+                organizationServiceCaches.delete(subdomain);
+                throw error;
+            },
+        );
+    };
+
+    const fetchRoomFromRoomUrl = async (roomUrl: string) => {
+        const roomName = decodeRoomName(new URL(roomUrl).pathname);
+        const organization = await fetchOrganizationFromRoomUrl(roomUrl);
+
+        if (!roomName || !organization) {
+            throw new Error("Invalid room url");
+        }
+
+        const roomService = new RoomService({
+            organizationApiClient: new OrganizationApiClient({
+                apiClient,
+                fetchOrganization: () => Promise.resolve(organization),
+            }),
         });
 
-        return organizationServiceCache.fetchOrganization();
+        return roomService.getRoom({ roomName });
     };
 
     return {
@@ -52,6 +91,7 @@ export function createServices({ apiBaseUrl, signalBaseUrl }: ServicesOptions = 
         organizationService,
         roomIntegrationService,
         fetchOrganizationFromRoomUrl,
+        fetchRoomFromRoomUrl,
         signalBaseUrl: signalBaseUrl || SIGNAL_BASE_URL || "wss://signal.appearin.net",
     };
 }

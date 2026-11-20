@@ -1,9 +1,10 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RoomMode } from "@whereby.com/media";
 import { RootState } from "../store";
-import { createAppAuthorizedThunk } from "../thunk";
+import { createAppAsyncThunk, createAppAuthorizedThunk } from "../thunk";
+import { createReactor } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
-import { doAppStop } from "./app";
+import { doAppStop, selectAppIsActive } from "./app";
 import {
     selectIsAuthorizedToLockRoom,
     selectIsAuthorizedToKickClient,
@@ -34,20 +35,41 @@ function isRecorderClient(client: RemoteParticipant) {
  * Reducer
  */
 
+export type RoomLockStateSource = "fetch" | "signal";
+
 export interface RoomState {
     isLocked: boolean;
+    // Where isLocked last came from: the room fetch before joining, or the signal server. Null until either has
+    // answered, so isLocked is only a default.
+    lockStateSource: RoomLockStateSource | null;
+    // The room url the app wants to join, and the one fetched last. A new one is fetched when not in a room.
+    requestedRoomUrl: string | null;
+    fetchedRoomUrl: string | null;
+    // The latest room fetch. An earlier one that finishes after it is for a room we've moved away from.
+    roomFetchRequestId: string | null;
     mode: RoomMode | null;
 }
 
 export const roomSliceInitialState: RoomState = {
     isLocked: false,
+    lockStateSource: null,
+    requestedRoomUrl: null,
+    fetchedRoomUrl: null,
+    roomFetchRequestId: null,
     mode: null,
 };
 
 export const roomSlice = createSlice({
     name: "room",
     initialState: roomSliceInitialState,
-    reducers: {},
+    reducers: {
+        setRequestedRoomUrl: (state, action: PayloadAction<string | null>) => {
+            return {
+                ...state,
+                requestedRoomUrl: action.payload,
+            };
+        },
+    },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
             if ("error" in action.payload) {
@@ -55,6 +77,7 @@ export const roomSlice = createSlice({
                     return {
                         ...state,
                         isLocked: Boolean(action.payload.isLocked),
+                        lockStateSource: "signal",
                     };
                 }
 
@@ -66,6 +89,7 @@ export const roomSlice = createSlice({
             return {
                 ...state,
                 isLocked: Boolean(room.isLocked),
+                lockStateSource: "signal",
                 // Signal re-sends room_joined when the room switches between modes, so this stays
                 // current. Fall back to the presence of an SFU, which is what decides P2P vs SFU.
                 mode: room.mode ?? (room.sfuServer ? "group" : "normal"),
@@ -78,6 +102,35 @@ export const roomSlice = createSlice({
             return {
                 ...state,
                 isLocked: Boolean(isLocked),
+                lockStateSource: "signal",
+            };
+        });
+
+        builder.addCase(doFetchRoom.pending, (state, action) => {
+            // A different room is being fetched, so what we knew no longer applies.
+            return {
+                ...state,
+                isLocked: false,
+                lockStateSource: null,
+                fetchedRoomUrl: action.meta.arg,
+                roomFetchRequestId: action.meta.requestId,
+            };
+        });
+
+        builder.addCase(doFetchRoom.fulfilled, (state, action) => {
+            if (action.meta.requestId !== state.roomFetchRequestId) {
+                return state;
+            }
+
+            // The signal server is more recent than a fetch that was started before joining.
+            if (state.lockStateSource === "signal") {
+                return state;
+            }
+
+            return {
+                ...state,
+                isLocked: action.payload.isLocked,
+                lockStateSource: "fetch",
             };
         });
     },
@@ -86,6 +139,14 @@ export const roomSlice = createSlice({
 /**
  * Action creators
  */
+
+export const { setRequestedRoomUrl } = roomSlice.actions;
+
+export const doFetchRoom = createAppAsyncThunk("room/doFetchRoom", async (roomUrl: string, { extra }) => {
+    const room = await extra.services.fetchRoomFromRoomUrl(roomUrl);
+
+    return { isLocked: Boolean(room.isLocked) };
+});
 
 export const doLockRoom = createAppAuthorizedThunk(
     (state) => selectIsAuthorizedToLockRoom(state),
@@ -131,6 +192,19 @@ export const doEndMeeting = createAppAuthorizedThunk(
  */
 
 export const selectRoomIsLocked = (state: RootState) => state.room.isLocked;
+export const selectRoomLockStateSource = (state: RootState) => state.room.lockStateSource;
+export const selectRoomRequestedUrl = (state: RootState) => state.room.requestedRoomUrl;
+export const selectRoomFetchedUrl = (state: RootState) => state.room.fetchedRoomUrl;
+
+// Not while in a room: the signal server keeps its lock state current, and a fetch for another room would replace
+// it. A room url requested during the call is fetched once the room is left.
+export const selectShouldFetchRoom = createSelector(
+    selectAppIsActive,
+    selectRoomRequestedUrl,
+    selectRoomFetchedUrl,
+    (appIsActive, requestedRoomUrl, fetchedRoomUrl) =>
+        !appIsActive && !!requestedRoomUrl && requestedRoomUrl !== fetchedRoomUrl,
+);
 export const selectRoomMode = (state: RootState) => state.room.mode;
 
 export const selectScreenshares = createSelector(
@@ -292,3 +366,15 @@ export const selectBreakoutGroupedParticipants = createSelector(
         return [mainRoom, ...groups];
     },
 );
+
+/**
+ * Reactors
+ */
+
+createReactor([selectShouldFetchRoom], ({ dispatch, getState }, shouldFetchRoom) => {
+    const roomUrl = selectRoomRequestedUrl(getState());
+
+    if (shouldFetchRoom && roomUrl) {
+        dispatch(doFetchRoom(roomUrl));
+    }
+});

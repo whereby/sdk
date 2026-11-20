@@ -28,6 +28,13 @@ function renderUseRoomConnection(options: UseRoomConnectionOptions) {
 }
 
 describe("useRoomConnection", () => {
+    it("initializes the client before joining, so the room is fetched", () => {
+        const { roomConnection } = renderUseRoomConnection({});
+
+        expect(roomConnection.initialize).toHaveBeenCalledWith(expect.objectContaining({ roomUrl }));
+        expect(roomConnection.joinRoom).not.toHaveBeenCalled();
+    });
+
     describe("joinRoom", () => {
         it("joins with the options from the latest render", () => {
             const { result, rerender, roomConnection } = renderUseRoomConnection({ displayName: "First" });

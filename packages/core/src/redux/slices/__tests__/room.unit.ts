@@ -1,5 +1,11 @@
 import { SignalRoom } from "@whereby.com/media";
-import { roomSlice, roomSliceInitialState, selectRemoteScreenshareVideoTrackIds, selectScreenshares } from "../room";
+import {
+    doFetchRoom,
+    roomSlice,
+    roomSliceInitialState,
+    selectRemoteScreenshareVideoTrackIds,
+    selectScreenshares,
+} from "../room";
 import { signalEvents } from "../signalConnection/actions";
 import { randomRemoteParticipant, randomMediaStream, randomLocalParticipant } from "../../../__mocks__/appMocks";
 import { Screenshare } from "../../../RoomParticipant";
@@ -47,6 +53,7 @@ describe("roomSlice", () => {
                         }),
                     );
                     expect(result.isLocked).toEqual(true);
+                    expect(result.lockStateSource).toEqual("signal");
                 });
 
                 describe("room mode", () => {
@@ -102,6 +109,62 @@ describe("roomSlice", () => {
                 }),
             );
             expect(result.isLocked).toEqual(true);
+            expect(result.lockStateSource).toEqual("signal");
+        });
+
+        describe("doFetchRoom", () => {
+            const roomUrl = "https://example.whereby.com/test";
+
+            it("forgets the lock state of the previous room when a fetch starts", () => {
+                const result = roomSlice.reducer(
+                    { ...roomSliceInitialState, isLocked: true, lockStateSource: "signal" },
+                    doFetchRoom.pending("requestId", roomUrl),
+                );
+
+                expect(result.isLocked).toEqual(false);
+                expect(result.lockStateSource).toEqual(null);
+                expect(result.fetchedRoomUrl).toEqual(roomUrl);
+            });
+
+            it("stores the fetched lock state", () => {
+                const result = roomSlice.reducer(
+                    { ...roomSliceInitialState, roomFetchRequestId: "requestId" },
+                    doFetchRoom.fulfilled({ isLocked: true }, "requestId", roomUrl),
+                );
+
+                expect(result.isLocked).toEqual(true);
+                expect(result.lockStateSource).toEqual("fetch");
+            });
+
+            it("ignores a fetch that finishes after a newer one started", () => {
+                const fetchingTwo = [
+                    doFetchRoom.pending("first", roomUrl),
+                    doFetchRoom.pending("second", "https://example.whereby.com/other"),
+                ].reduce(roomSlice.reducer, roomSliceInitialState);
+
+                const result = roomSlice.reducer(
+                    fetchingTwo,
+                    doFetchRoom.fulfilled({ isLocked: true }, "first", roomUrl),
+                );
+
+                expect(result.isLocked).toEqual(false);
+                expect(result.lockStateSource).toEqual(null);
+            });
+
+            it("keeps the lock state from the signal server when the fetch finishes after it", () => {
+                const result = roomSlice.reducer(
+                    {
+                        ...roomSliceInitialState,
+                        isLocked: true,
+                        lockStateSource: "signal",
+                        roomFetchRequestId: "requestId",
+                    },
+                    doFetchRoom.fulfilled({ isLocked: false }, "requestId", roomUrl),
+                );
+
+                expect(result.isLocked).toEqual(true);
+                expect(result.lockStateSource).toEqual("signal");
+            });
         });
     });
 
