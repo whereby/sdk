@@ -291,6 +291,19 @@ export const localMediaSlice = createSlice({
     },
 });
 
+const snapshotTracks = (stream: MediaStream) => ({
+    audio: stream.getAudioTracks()[0] || null,
+    video: stream.getVideoTracks()[0] || null,
+});
+
+const findChangedTracks = (stream: MediaStream, before: ReturnType<typeof snapshotTracks>) => {
+    const after = snapshotTracks(stream);
+    return (["audio", "video"] as const).flatMap((kind) => {
+        const track = after[kind];
+        return track && track !== before[kind] ? [{ track, oldTrack: before[kind] }] : [];
+    });
+};
+
 /**
  * Action creators
  */
@@ -401,6 +414,7 @@ export const doSetDevice = createAppAsyncThunk(
             const audioId = audio ? selectCurrentMicrophoneDeviceId(state) : false;
             const videoId = video ? selectCurrentCameraDeviceId(state) : false;
             const constraintsOptions = selectLocalMediaConstraintsOptions(state);
+            const before = snapshotTracks(stream);
 
             const { replacedTracks } = await getStream(
                 {
@@ -418,7 +432,11 @@ export const doSetDevice = createAppAsyncThunk(
             const isVideoEnabled = selectIsCameraEnabled(state);
             stream.getVideoTracks().forEach((track) => (track.enabled = isVideoEnabled));
 
-            return { replacedTracks };
+            return {
+                /** @deprecated Use changedTracks */
+                replacedTracks,
+                changedTracks: findChangedTracks(stream, before),
+            };
         } catch (error) {
             return rejectWithValue(error);
         }
@@ -520,6 +538,8 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                 (track) => track.readyState === "live" && track.getSettings().deviceId === deviceId,
             );
 
+        const before = snapshotTracks(replaceStream);
+
         try {
             const { replacedTracks } = await getStream(
                 {
@@ -539,7 +559,12 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                     }),
                 );
             }
-            return { replacedTracks, beforeEffectTracks };
+            return {
+                /** @deprecated Use changedTracks */
+                replacedTracks,
+                beforeEffectTracks,
+                changedTracks: findChangedTracks(replaceStream, before),
+            };
         } catch (error) {
             console.error(error);
             const deviceId = audioId || videoId;
@@ -643,6 +668,7 @@ export const doLocalStreamEffect = createAppAsyncThunk(
             if (!stream) {
                 throw new Error("No local media stream");
             }
+            const before = snapshotTracks(stream);
             if (effectStream) {
                 if (!beforeTrack) {
                     beforeEffectTracks = {
@@ -666,7 +692,13 @@ export const doLocalStreamEffect = createAppAsyncThunk(
                 };
                 beforeTrack.stop();
             }
-            return { effectStream, beforeEffectTracks, replacedTracks };
+            return {
+                effectStream,
+                beforeEffectTracks,
+                /** @deprecated Use changedTracks */
+                replacedTracks,
+                changedTracks: findChangedTracks(stream, before),
+            };
         } catch (error) {
             console.error("Error applying local stream effect", error);
             return;
