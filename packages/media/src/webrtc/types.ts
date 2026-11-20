@@ -36,7 +36,7 @@ export interface RtcManager {
     disconnectAll(): void;
     rtcStatsDisconnect(): void;
     rtcStatsReconnect(): void;
-    replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack): void;
+    replaceTrack(oldTrack: MediaStreamTrack | null, newTrack: MediaStreamTrack): void;
     shouldAcceptStreamsFromBothSides: () => boolean;
     updateStreamResolution(streamId: string, ignored: null, resolution: { width: number; height: number }): void;
     sendStatsCustomEvent(eventName: string, data: unknown): void;
