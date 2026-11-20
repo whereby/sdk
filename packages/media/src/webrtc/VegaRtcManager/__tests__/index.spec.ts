@@ -1339,6 +1339,7 @@ describe("VegaRtcManager", () => {
                     _closed: false,
                     _paused: false,
                     closed: false,
+                    paused: false,
                     _rtpParameters: { encodings: [{ scalabilityMode }] },
                     getStats: jest.fn(async () => {
                         const frameSize = frameSizes[Math.min(callIndex, frameSizes.length - 1)];
@@ -1373,6 +1374,22 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(1);
                 expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("measures a switch with performance.now(), so a change of the system clock doesn't skew it", async () => {
+                const consumer = createConsumerWithFrameSizes([
+                    { width: 960, height: 540 },
+                    { width: 960, height: 540 },
+                    { width: 480, height: 270 },
+                ]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(100);
+                jest.setSystemTime(Date.now() + 60_000);
+                await jest.advanceTimersByTimeAsync(100);
+
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
             });
 
             it("does not start a watch when only the temporal layer changes (spatial layer unchanged)", () => {
@@ -1444,11 +1461,22 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(100);
             });
 
-            it("counts a switch that doesn't land before the watch times out", async () => {
+            it("doesn't count a switch down that doesn't land, as the video is most likely already at or below the layer", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
                 registerConsumer("stream1", "consumer1", consumer);
 
                 rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("counts a switch up that doesn't land before the watch times out", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 await jest.advanceTimersByTimeAsync(9_900);
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
 
@@ -1456,23 +1484,202 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
             });
 
-            it("doesn't count a timeout for a switch whose consumer closed", async () => {
+            it("doesn't record the publisher scaling its own frame down by less than a layer, only the switch down itself", async () => {
+                const consumer = createConsumerWithFrameSizes([
+                    { width: 960, height: 540 },
+                    { width: 720, height: 405 },
+                    { width: 480, height: 270 },
+                ]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
+            });
+
+            it("doesn't take a poll that reports no frame size for a switch down landing", async () => {
                 const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
                 registerConsumer("stream1", "consumer1", consumer);
 
                 rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(0);
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp" } as any]);
+                await jest.advanceTimersByTimeAsync(200);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
+            it("doesn't record a switch up that lands only part of the way", async () => {
+                const consumer = createConsumerWithFrameSizes(
+                    [
+                        { width: 240, height: 135 },
+                        { width: 480, height: 270 },
+                    ],
+                    { spatialLayer: 0 },
+                );
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
+            });
+
+            it("doesn't count a timeout for a switch whose consumer closed", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 consumer.closed = true;
                 await jest.advanceTimersByTimeAsync(10_000);
 
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
             });
 
+            it("doesn't watch a switch of a paused consumer, e.g. one whose camera is off", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                consumer.paused = true;
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(consumer.appData.spatialLayer).toBe(2);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("stops watching a switch whose consumer gets paused, without counting a timeout", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                consumer.paused = true;
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                await jest.advanceTimersByTimeAsync(10_000);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            describe("while the tab is hidden", () => {
+                const setVisibilityState = (visibilityState: DocumentVisibilityState) =>
+                    Object.defineProperty(document, "visibilityState", { configurable: true, value: visibilityState });
+
+                afterEach(() => {
+                    delete (document as any).visibilityState;
+                });
+
+                it("doesn't measure a switch up within 2 s of a switch down that wasn't watched", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                    registerConsumer("stream1", "consumer1", consumer);
+                    setVisibilityState("hidden");
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                    setVisibilityState("visible");
+                    await jest.advanceTimersByTimeAsync(1_500);
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                    expect(consumer.getStats).not.toHaveBeenCalled();
+                });
+
+                it("doesn't measure a switch up within 10 s of a switch up that wasn't watched", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+                    setVisibilityState("hidden");
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 500, height: 500 });
+                    setVisibilityState("visible");
+                    await jest.advanceTimersByTimeAsync(9_900);
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                    expect(consumer.getStats).not.toHaveBeenCalled();
+                });
+
+                it("doesn't watch a switch", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+                    setVisibilityState("hidden");
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(10_000);
+
+                    expect(consumer.appData.spatialLayer).toBe(2);
+                    expect(consumer.getStats).not.toHaveBeenCalled();
+                    expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+                });
+
+                it("stops watching a switch once the tab gets hidden, without counting a timeout", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(100);
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                    setVisibilityState("hidden");
+                    await jest.advanceTimersByTimeAsync(100);
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                    await jest.advanceTimersByTimeAsync(10_000);
+                    expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+                });
+
+                it("doesn't record a landing seen by a poll that was still running when the tab got hidden", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(0);
+                    consumer.getStats.mockImplementationOnce(
+                        () =>
+                            new Promise((resolve) =>
+                                globalThis.setTimeout(
+                                    () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                    50,
+                                ),
+                            ),
+                    );
+                    await jest.advanceTimersByTimeAsync(100);
+
+                    setVisibilityState("hidden");
+                    await jest.advanceTimersByTimeAsync(50);
+
+                    expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                });
+
+                it("doesn't count a timeout when the tab gets hidden just before it", async () => {
+                    const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                    registerConsumer("stream1", "consumer1", consumer);
+
+                    rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                    await jest.advanceTimersByTimeAsync(9_950);
+
+                    setVisibilityState("hidden");
+                    await jest.advanceTimersByTimeAsync(100);
+
+                    expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                    expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+                });
+            });
+
             it("gives up on time even if the first getStats() never settles", async () => {
-                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 consumer.getStats.mockImplementation(() => new Promise(() => {}));
                 registerConsumer("stream1", "consumer1", consumer);
 
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
 
                 await jest.advanceTimersByTimeAsync(10_000);
@@ -1482,10 +1689,10 @@ describe("VegaRtcManager", () => {
             });
 
             it("doesn't start another getStats() while the previous poll is still running", async () => {
-                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
                 registerConsumer("stream1", "consumer1", consumer);
 
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
                 await jest.advanceTimersByTimeAsync(0);
                 expect(consumer.getStats).toHaveBeenCalledTimes(1);
 
@@ -1494,7 +1701,7 @@ describe("VegaRtcManager", () => {
                     () =>
                         new Promise((resolve) =>
                             globalThis.setTimeout(
-                                () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 240, frameHeight: 135 }]),
                                 1150,
                             ),
                         ),
@@ -1505,29 +1712,426 @@ describe("VegaRtcManager", () => {
                 expect(consumer.getStats).toHaveBeenCalledTimes(4);
             });
 
-            it("cancels a stale watch when a newer resize happens for the same consumer", async () => {
+            it("keeps watching after a slow poll, but records no latency for the switch, as it could be late", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                consumer.getStats.mockImplementationOnce(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 240, frameHeight: 135 }]),
+                                150,
+                            ),
+                        ),
+                );
+                await jest.advanceTimersByTimeAsync(300);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(100);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
+            it("doesn't count a timeout when no poll got through for most of the watch, e.g. while the page was suspended", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(1_000);
+
+                consumer.getStats.mockImplementation(() => new Promise(() => {}));
+                await jest.advanceTimersByTimeAsync(9_000);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("still counts a timeout after a slow poll", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                consumer.getStats.mockImplementationOnce(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 240, frameHeight: 135 }]),
+                                150,
+                            ),
+                        ),
+                );
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
+            });
+
+            it("doesn't record a switch whose poll took longer than one, as it would be recorded late", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                consumer.getStats.mockImplementation(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                150,
+                            ),
+                        ),
+                );
+                await jest.advanceTimersByTimeAsync(250);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
+            it("doesn't measure a quick reverse switch, nor the switch it ended the watch of", async () => {
                 const consumer = createConsumerWithFrameSizes([
                     { width: 960, height: 540 },
                     { width: 480, height: 270 },
-                    { width: 480, height: 270 },
-                    { width: 720, height: 405 },
+                    { width: 960, height: 540 },
                 ]);
                 registerConsumer("stream1", "consumer1", consumer);
 
                 rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
-
                 await jest.advanceTimersByTimeAsync(50);
                 rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
 
-                await jest.advanceTimersByTimeAsync(100);
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(consumer.getStats).toHaveBeenCalledTimes(1);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("measures a switch that comes once the previous one's watch has ended", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 480, height: 270 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(2_000);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(0);
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 1920, frameHeight: 1080 }]);
                 await jest.advanceTimersByTimeAsync(100);
 
-                expect(consumer.getStats).toHaveBeenCalledTimes(4);
-                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(1);
-                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(200);
+                expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBe(100);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("doesn't measure a switch up that comes 1.2 s after a switch down, as the switch down may still be landing", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(1_200);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
 
                 await jest.advanceTimersByTimeAsync(10_000);
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("doesn't let a switch up cut short the 2 s after a switch down", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(200);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(1_100);
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("doesn't measure a switch up within 10 s of a switch up that hasn't landed, as it may still be landing", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 500, height: 500 });
+                await jest.advanceTimersByTimeAsync(5_000);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it.each([
+                ["doesn't measure a switch up 900 ms after the previous one, though that one has landed", 900, false],
+                ["measures a switch up 1 s after the previous one, once that one has landed", 1_000, true],
+            ])("%s", async (_, nextSwitchAt, measured) => {
+                const consumer = createConsumerWithFrameSizes(
+                    [
+                        { width: 240, height: 135 },
+                        { width: 480, height: 270 },
+                    ],
+                    { spatialLayer: 0 },
+                );
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 500, height: 500 });
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(1);
+
+                await jest.advanceTimersByTimeAsync(nextSwitchAt - 100);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(measured ? 1 : 0);
+            });
+
+            it.each([
+                ["doesn't let a resume during the 2 s after a switch down cut them short", 500, 1_600],
+                ["keeps the 1 s after a resume that comes near the end of the 2 s after a switch down", 1_800, 2_500],
+            ])("%s", async (_, resumeAt, switchAt) => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 960, height: 540 }]),
+                    pause: jest.fn(),
+                    resume: jest.fn(),
+                };
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(300);
+                rtcManager._onConsumerPaused({ consumerId: "consumer1" });
+                await jest.advanceTimersByTimeAsync(resumeAt - 300);
+                rtcManager._onConsumerResumed({ consumerId: "consumer1" });
+                await jest.advanceTimersByTimeAsync(switchAt - resumeAt);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("doesn't let a switch down shorten the 10 s after a switch up that hasn't landed", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(200);
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(2_800);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("doesn't measure a switch within 1 s of an earlier one that wasn't measured either", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(200);
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(900);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("doesn't measure a switch within 1 s of its consumer resuming, as the last frame is from before the pause", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 960, height: 540 }], { spatialLayer: 1 }),
+                    resume: jest.fn(),
+                };
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager._onConsumerResumed({ consumerId: "consumer1" });
+                await jest.advanceTimersByTimeAsync(900);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(consumer.resume).toHaveBeenCalled();
+                expect(consumer.appData.spatialLayer).toBe(2);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
+            });
+
+            it("gives up on a switch down after 2 s, so a later drop isn't recorded as its latency", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(1_900);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 480, frameHeight: 270 }]);
+                await jest.advanceTimersByTimeAsync(1_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("stops watching a switch as soon as its consumer is paused, so a quick resume can't keep the old starting point", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 }),
+                    pause: jest.fn(),
+                    resume: jest.fn(),
+                };
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                rtcManager._onConsumerPaused({ consumerId: "consumer1" });
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                rtcManager._onConsumerResumed({ consumerId: "consumer1" });
+
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(10_000);
+
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
+            });
+
+            it("stops watching a switch as soon as the app disconnects its stream, which pauses the consumer", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 }),
+                    id: "consumer1",
+                    pause: jest.fn(),
+                };
+                Object.assign(consumer.appData, { sourceClientId: "client-a", localPaused: false });
+                registerConsumer("stream1", "consumer1", consumer);
+                rtcManager._getOrCreateClientState("client-a").hasAcceptedWebcamStream = true;
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(0);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                rtcManager.disconnect("client-a");
+
+                expect(consumer.pause).toHaveBeenCalled();
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+            });
+
+            it("doesn't measure a switch within 1 s of the app accepting its stream, which resumes the consumer", async () => {
+                const consumer = {
+                    ...createConsumerWithFrameSizes([{ width: 960, height: 540 }], { spatialLayer: 1 }),
+                    id: "consumer1",
+                    resume: jest.fn(),
+                };
+                Object.assign(consumer.appData, { sourceClientId: "client-a", localPaused: true });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.acceptNewStream({ streamId: "client-a", clientId: "client-a" });
+                await jest.advanceTimersByTimeAsync(900);
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+
+                expect(consumer.resume).toHaveBeenCalled();
+                expect(consumer.appData.spatialLayer).toBe(2);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).not.toHaveBeenCalled();
+            });
+
+            it.each([
+                ["records the latency of a switch whose polls were 300 ms apart", 200, 1],
+                ["doesn't record the latency of a switch whose polls were 350 ms apart", 250, 0],
+            ])("%s", async (_, delayMs, recorded) => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(100);
+
+                const now = performance.now.bind(performance);
+                const nowSpy = jest.spyOn(performance, "now").mockImplementation(() => now() + delayMs);
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(100);
+                nowSpy.mockRestore();
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(recorded);
+            });
+
+            it("doesn't record a switch once the polls were held up, e.g. while the tab was briefly hidden", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(100);
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(1);
+
+                const now = performance.now.bind(performance);
+                const nowSpy = jest.spyOn(performance, "now").mockImplementation(() => now() + 1_000);
+                consumer.getStats.mockResolvedValue([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]);
+                await jest.advanceTimersByTimeAsync(100);
+                nowSpy.mockRestore();
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
+            });
+
+            it.each([
+                ["doesn't count a timeout whose last poll got through 700 ms before its end", 9_300, 0],
+                ["counts a timeout whose last poll got through 600 ms before its end", 9_400, 1],
+            ])("%s", async (_, lastPollAt, timeouts) => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(lastPollAt);
+
+                consumer.getStats.mockImplementation(() => new Promise(() => {}));
+                await jest.advanceTimersByTimeAsync(10_000 - lastPollAt);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(timeouts);
+            });
+
+            it("still counts a timeout that fires late, as long as a poll got through near the end", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 240, height: 135 }], { spatialLayer: 0 });
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
+                await jest.advanceTimersByTimeAsync(9_900);
+
+                const now = performance.now.bind(performance);
+                const nowSpy = jest.spyOn(performance, "now").mockImplementation(() => now() + 1_000);
+                await jest.advanceTimersByTimeAsync(100);
+                nowSpy.mockRestore();
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(1);
+            });
+
+            it("doesn't measure a switch whose first getStats() took longer than a poll, as the switch may have landed by then", async () => {
+                const consumer = createConsumerWithFrameSizes([{ width: 960, height: 540 }]);
+                consumer.getStats.mockImplementationOnce(
+                    () =>
+                        new Promise((resolve) =>
+                            globalThis.setTimeout(
+                                () => resolve([{ type: "inbound-rtp", frameWidth: 960, frameHeight: 540 }]),
+                                150,
+                            ),
+                        ),
+                );
+                registerConsumer("stream1", "consumer1", consumer);
+
+                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
+                await jest.advanceTimersByTimeAsync(150);
+
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(0);
+                expect(consumer.getStats).toHaveBeenCalledTimes(1);
             });
 
             it("doesn't watch a screenshare's switch", async () => {
@@ -1542,24 +2146,6 @@ describe("VegaRtcManager", () => {
                 expect(consumer.getStats).not.toHaveBeenCalled();
                 expect(rtcManager.analytics.avgCamPreferredSpatialLayerSwitchLatencyMs).toBeUndefined();
                 expect(rtcManager.analytics.numCamPreferredSpatialLayerSwitchTimeouts).toBe(0);
-            });
-
-            it("does not mistake an earlier switch that is still landing for a quick reverse switch", async () => {
-                const consumer = createConsumerWithFrameSizes([
-                    { width: 960, height: 540 }, // 2->0 watch's baseline
-                    { width: 960, height: 540 }, // 0->2 watch's baseline, taken before the 2->0 switch landed
-                    { width: 480, height: 270 }, // the 2->0 switch landing
-                    { width: 960, height: 540 }, // back at layer 2
-                ]);
-                registerConsumer("stream1", "consumer1", consumer);
-
-                rtcManager.updateStreamResolution("stream1", null, { width: 100, height: 100 });
-                rtcManager.updateStreamResolution("stream1", null, { width: 1000, height: 1000 });
-
-                await jest.advanceTimersByTimeAsync(10_000);
-
-                expect(consumer.getStats.mock.calls.length).toBeGreaterThanOrEqual(4);
-                expect(rtcManager._preferredLayerSwitchLatencyStats.count).toBe(0);
             });
 
             it("does not record the time to the first decoded frame as a switch", async () => {
@@ -1586,7 +2172,7 @@ describe("VegaRtcManager", () => {
             it("records a switch to a higher layer once the frame size grows", async () => {
                 const consumer = createConsumerWithFrameSizes(
                     [
-                        { width: 480, height: 270 },
+                        { width: 240, height: 135 },
                         { width: 960, height: 540 },
                     ],
                     { spatialLayer: 0 },
@@ -1618,12 +2204,15 @@ describe("VegaRtcManager", () => {
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(5);
                 expect(consumers.filter((consumer) => consumer.getStats.mock.calls.length > 0)).toHaveLength(5);
 
-                // a newer switch of a watched consumer still replaces its watch
                 rtcManager.updateStreamResolution("stream0", null, { width: 1000, height: 1000 });
                 await jest.advanceTimersByTimeAsync(0);
 
+                expect(rtcManager._preferredLayerSwitchWatches.size).toBe(4);
+                expect(consumers[0].getStats).toHaveBeenCalledTimes(1);
+
+                registerConsumer("stream7", "consumer7", createConsumerWithFrameSizes([{ width: 960, height: 540 }]));
+                rtcManager.updateStreamResolution("stream7", null, { width: 100, height: 100 });
                 expect(rtcManager._preferredLayerSwitchWatches.size).toBe(5);
-                expect(consumers[0].getStats).toHaveBeenCalledTimes(2);
             });
 
             it("stops watching once the consumer closes", async () => {
