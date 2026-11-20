@@ -41,6 +41,8 @@ import {
     ServerSocket,
     SpotlightAddedEvent,
     SpotlightRemovedEvent,
+    SpotlightOrderSwappedEvent,
+    SpotlightOrderSwappedError,
     VideoEnabledEvent,
     VideoEnableRequestedEvent,
     BreakoutSessionUpdatedEvent,
@@ -108,6 +110,9 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("spotlight_added", (payload: SpotlightAddedEvent) => dispatch(signalEvents.spotlightAdded(payload)));
     socket.on("spotlight_removed", (payload: SpotlightRemovedEvent) =>
         dispatch(signalEvents.spotlightRemoved(payload)),
+    );
+    socket.on("spotlight_order_swapped", (payload: SpotlightOrderSwappedEvent | SpotlightOrderSwappedError) =>
+        dispatch(signalEvents.spotlightOrderSwapped(payload)),
     );
     socket.on("live_transcription_started", (payload: LiveTranscriptionStartedEvent) =>
         dispatch(signalEvents.liveTranscriptionStarted(payload)),

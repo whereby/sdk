@@ -37,6 +37,8 @@ import {
     AudioEnableRequestedEvent,
     SpotlightAddedEvent,
     SpotlightRemovedEvent,
+    SpotlightOrderSwappedEvent,
+    SpotlightOrderSwappedError,
     VideoEnableRequestedEvent,
     BreakoutSessionUpdatedEvent,
 } from "@whereby.com/media";
@@ -102,6 +104,9 @@ export const signalEvents = {
     screenshareEnableRequested: createSignalEventAction<ScreenshareEnableRequestedEvent>("screenshareEnableRequested"),
     spotlightAdded: createSignalEventAction<SpotlightAddedEvent>("spotlightAdded"),
     spotlightRemoved: createSignalEventAction<SpotlightRemovedEvent>("spotlightRemoved"),
+    spotlightOrderSwapped: createSignalEventAction<SpotlightOrderSwappedEvent | SpotlightOrderSwappedError>(
+        "spotlightOrderSwapped",
+    ),
     streamingStopped: createSignalEventAction<void>("streamingStopped"),
     videoEnabled: createSignalEventAction<VideoEnabledEvent>("videoEnabled"),
     videoEnableRequested: createSignalEventAction<VideoEnableRequestedEvent>("videoEnableRequested"),

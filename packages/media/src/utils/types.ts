@@ -523,6 +523,16 @@ export interface SpotlightRemovedEvent {
     requestedByClientId: string;
 }
 
+export interface SpotlightOrderSwappedEvent {
+    source: Spotlight;
+    target: Spotlight;
+    requestedByClientId: string;
+}
+
+export interface SpotlightOrderSwappedError {
+    error: string;
+}
+
 export interface LiveCaptionsStartedEvent {
     error?: string;
 }
@@ -583,6 +593,7 @@ export interface SignalEvents {
     screenshare_enable_requested: ScreenshareEnableRequestedEvent;
     spotlight_added: SpotlightAddedEvent;
     spotlight_removed: SpotlightRemovedEvent;
+    spotlight_order_swapped: SpotlightOrderSwappedEvent | SpotlightOrderSwappedError;
     streaming_stopped: void;
     video_enabled: VideoEnabledEvent;
     video_enable_requested: VideoEnableRequestedEvent;
@@ -671,6 +682,11 @@ export interface RemoveSpotlightRequest {
     streamId: string;
 }
 
+export interface SwapSpotlightOrderRequest {
+    source: Spotlight;
+    target: Spotlight;
+}
+
 export interface SignalRequests {
     add_spotlight: AddSpotlightRequest;
     chat_message: ChatMessageRequest;
@@ -699,6 +715,7 @@ export interface SignalRequests {
     start_recording: { recording: string };
     stop_live_transcription: void;
     stop_recording: void;
+    swap_spotlight_order: SwapSpotlightOrderRequest;
 }
 
 export type TurnTransportProtocol = "onlyudp" | "onlytcp" | "onlytls";

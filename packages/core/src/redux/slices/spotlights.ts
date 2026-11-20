@@ -1,7 +1,13 @@
 import { createSelector, createSlice, isAnyOf } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { ClientView } from "../types";
-import { AddSpotlightRequest, CAMERA_STREAM_ID, type RemoveSpotlightRequest, type Spotlight } from "@whereby.com/media";
+import {
+    AddSpotlightRequest,
+    CAMERA_STREAM_ID,
+    type RemoveSpotlightRequest,
+    type Spotlight,
+    type SwapSpotlightOrderRequest,
+} from "@whereby.com/media";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 import { selectLocalParticipantRaw } from "./localParticipant/selectors";
 import { createAppAuthorizedThunk } from "../thunk";
@@ -16,7 +22,7 @@ import { startAppListening } from "../listenerMiddleware";
 
 export function streamIdForClient({ isPresentation, stream }: Pick<ClientView, "isPresentation" | "stream">) {
     // outboundId and inboundId are the streamId's used by SFU V2
-    return isPresentation ? stream?.outboundId ?? stream?.inboundId ?? stream?.id : CAMERA_STREAM_ID;
+    return isPresentation ? (stream?.outboundId ?? stream?.inboundId ?? stream?.id) : CAMERA_STREAM_ID;
 }
 
 export function isClientSpotlighted({
@@ -42,6 +48,20 @@ function mergeSpotlight(spotlights: Spotlight[], spotlight: Spotlight) {
         return spotlights;
     }
     return spotlights.concat(spotlight);
+}
+
+const isSameSpotlight = (a: Spotlight, b: Spotlight) => a.clientId === b.clientId && a.streamId === b.streamId;
+
+function swapSpotlights(spotlights: Spotlight[], source: Spotlight, target: Spotlight) {
+    const index = spotlights.findIndex((s) => isSameSpotlight(s, source));
+    const targetIndex = spotlights.findIndex((s) => isSameSpotlight(s, target));
+    if (index < 0 || targetIndex < 0 || index === targetIndex) {
+        return spotlights;
+    }
+
+    const swapped = [...spotlights];
+    [swapped[index], swapped[targetIndex]] = [swapped[targetIndex], swapped[index]];
+    return swapped;
 }
 
 function mapSpotlightsToClientViews(spotlights: Spotlight[], clientViews: ClientView[]) {
@@ -118,6 +138,15 @@ export const spotlightsSlice = createSlice({
                 sorted: state.sorted.filter((s) => !(s.clientId === clientId && s.streamId === streamId)),
             };
         });
+        builder.addCase(signalEvents.spotlightOrderSwapped, (state, action) => {
+            if ("error" in action.payload) {
+                return state;
+            }
+
+            const { source, target } = action.payload;
+            const sorted = swapSpotlights(state.sorted, source, target);
+            return sorted === state.sorted ? state : { ...state, sorted };
+        });
         builder.addMatcher(isAnyOf(signalEvents.clientKicked, signalEvents.clientLeft), (state, action) => {
             const { clientId } = action.payload;
             return {
@@ -166,6 +195,39 @@ export const doRemoveSpotlight = createAppAuthorizedThunk(
             const payload: RemoveSpotlightRequest = { clientId: clientView.id, streamId: streamId ?? CAMERA_STREAM_ID };
 
             socket?.emit("remove_spotlight", payload);
+        },
+);
+
+// The order changes when the server broadcasts spotlight_order_swapped
+export const doSwapSpotlightOrder = createAppAuthorizedThunk(
+    (state) => selectIsAuthorizedToSpotlight(state),
+    ({ id, targetId }: { id: string; targetId: string }) =>
+        (_, getState) => {
+            const state = getState();
+            const clientViews = selectAllClientViews(state);
+            const spotlights = selectSpotlights(state);
+            const toSpotlight = (clientViewId: string): Spotlight | null => {
+                const clientView = clientViews.find((c) => c.id === clientViewId);
+                if (!clientView) {
+                    return null;
+                }
+                const spotlight = {
+                    clientId: clientView.clientId,
+                    streamId: streamIdForClient(clientView) ?? CAMERA_STREAM_ID,
+                };
+                return spotlights.some((s) => isSameSpotlight(s, spotlight)) ? spotlight : null;
+            };
+
+            const source = toSpotlight(id);
+            const target = toSpotlight(targetId);
+
+            if (!source || !target || isSameSpotlight(source, target)) {
+                return;
+            }
+
+            const { socket } = selectSignalConnectionRaw(state);
+            const payload: SwapSpotlightOrderRequest = { source, target };
+            socket?.emit("swap_spotlight_order", payload);
         },
 );
 

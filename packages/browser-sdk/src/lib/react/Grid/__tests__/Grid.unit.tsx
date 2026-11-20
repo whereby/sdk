@@ -3,7 +3,7 @@ import { act, fireEvent, render } from "@testing-library/react";
 
 import { ClientView, WherebyClient } from "@whereby.com/core";
 import { WherebyContext } from "../../Provider";
-import { Grid, useGridCell } from "..";
+import { Grid, GridCell, useGridCell } from "..";
 import { FakeGridClient, makeFakeRoomIntegrationSession } from "../../../../stories/components/FakeGridClient";
 
 function MaximizeToggle() {
@@ -201,6 +201,49 @@ describe("VideoGrid", () => {
 
             fireEvent.click(getByTestId("toggle-fake-1"));
             expect(getByTestId("toggle-fake-1").textContent).toBe("Maximize");
+        });
+    });
+
+    describe("moving cells", () => {
+        function MoveToFront() {
+            const { participant, moveCell } = useGridCell();
+
+            return (
+                <button data-testid={`move-${participant.id}`} onClick={() => moveCell(participant.id, "fake-0")}>
+                    {participant.id}
+                </button>
+            );
+        }
+
+        it("marks each cell with its cell id, for finding the drop target", () => {
+            const { container } = renderGrid({ numRunningIntegrations: 0 });
+
+            const cellIds = Array.from(container.querySelectorAll("[data-cell-id]")).map((el) =>
+                el.getAttribute("data-cell-id"),
+            );
+            expect(cellIds.sort()).toEqual(["fake-0", "fake-1", "fake-2"]);
+        });
+
+        it("defaults a GridCell's data-cell-id to the participant id", () => {
+            const { container } = render(<GridCell participant={makeParticipant(4)} />);
+
+            expect(container.querySelector("[data-cell-id='fake-4']")).not.toBeNull();
+        });
+
+        it("lets a custom cell swap cells through useGridCell", () => {
+            const { getByTestId, container } = renderGrid({
+                numRunningIntegrations: 0,
+                gridProps: {
+                    enableSubgrid: false,
+                    renderParticipant: () => <MoveToFront />,
+                },
+            });
+            const order = () => Array.from(container.querySelectorAll("button")).map((el) => el.textContent);
+            expect(order()).toEqual(["fake-0", "fake-1", "fake-2"]);
+
+            fireEvent.click(getByTestId("move-fake-2"));
+
+            expect(order()).toEqual(["fake-2", "fake-1", "fake-0"]);
         });
     });
 

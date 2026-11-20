@@ -36,7 +36,7 @@ const GridCell = React.forwardRef<HTMLDivElement, GridCellProps>(
             <GridCellContext.Provider value={{ participant, isHovered, avatarSize }}>
                 <div
                     ref={ref}
-                    data-cell-id={cellId}
+                    data-cell-id={cellId ?? participant.id}
                     className={className}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
@@ -206,6 +206,7 @@ function Grid({
         floatingCellId,
         setFloatingCellId,
         floatingParticipant,
+        moveCell,
     } = useGrid({
         activeVideosSubgridTrigger: 12,
         stageParticipantLimit,
@@ -319,6 +320,7 @@ function Grid({
                 setFloatingCellId,
                 floatingParticipant,
                 isConstrained,
+                moveCell,
             }}
         >
             <div

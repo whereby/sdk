@@ -118,13 +118,15 @@ export class FakeGridClient {
     private clientViews: ClientView[] = [];
     private spotlighted: ClientView[] = [];
     private runningRoomIntegrations: RoomIntegrationSessionView[] = [];
+    private sortedClientIds: string[] = [];
+    public canSpotlight = true;
     private clientViewSubscribers = new Set<(clientViews: ClientView[]) => void>();
     private spotlightedSubscribers = new Set<(spotlighted: ClientView[]) => void>();
     private numberOfClientViewsSubscribers = new Set<(num: number) => void>();
     private runningRoomIntegrationsSubscribers = new Set<(sessions: RoomIntegrationSessionView[]) => void>();
 
     public setClientViews(clientViews: ClientView[]) {
-        this.clientViews = clientViews;
+        this.clientViews = this.sort(clientViews);
         // Re-map spotlights to the new view objects (subgrid calculation relies on identity)
         this.spotlighted = this.spotlighted
             .map((s) => clientViews.find((c) => c.id === s.id))
@@ -135,6 +137,17 @@ export class FakeGridClient {
     public setRunningRoomIntegrations(sessions: RoomIntegrationSessionView[]) {
         this.runningRoomIntegrations = sessions;
         this.emit();
+    }
+
+    private sort(clientViews: ClientView[]) {
+        const rank = (id: string) => {
+            const index = this.sortedClientIds.indexOf(id);
+            return index < 0 ? this.sortedClientIds.length : index;
+        };
+        return clientViews
+            .map((clientView, index) => ({ clientView, index }))
+            .sort((a, b) => rank(a.clientView.id) - rank(b.clientView.id) || a.index - b.index)
+            .map(({ clientView }) => clientView);
     }
 
     private emit() {
@@ -150,6 +163,7 @@ export class FakeGridClient {
             spotlightedParticipants: this.spotlighted,
             runningRoomIntegrations: this.runningRoomIntegrations,
             numParticipants: this.clientViews.length,
+            canSpotlight: this.canSpotlight,
         };
     }
 
@@ -183,6 +197,36 @@ export class FakeGridClient {
 
     public removeSpotlight(id: string) {
         this.spotlighted = this.spotlighted.filter((c) => c.id !== id);
+        this.emit();
+    }
+
+    public reorderClientViews({ id, targetId }: { id: string; targetId: string }) {
+        const ids = this.clientViews.map((c) => c.id);
+        const index = ids.indexOf(id);
+        const targetIndex = ids.indexOf(targetId);
+        if (index < 0 || targetIndex < 0) {
+            return;
+        }
+        [ids[index], ids[targetIndex]] = [ids[targetIndex], ids[index]];
+        this.setClientViewOrder(ids);
+    }
+
+    public setClientViewOrder(ids: string[]) {
+        this.sortedClientIds = ids;
+        this.clientViews = this.sort(this.clientViews);
+        this.emit();
+    }
+
+    // No room to broadcast the swap, so apply it directly
+    public swapSpotlightOrder({ id, targetId }: { id: string; targetId: string }) {
+        const index = this.spotlighted.findIndex((c) => c.id === id);
+        const targetIndex = this.spotlighted.findIndex((c) => c.id === targetId);
+        if (index < 0 || targetIndex < 0) {
+            return;
+        }
+        const spotlighted = [...this.spotlighted];
+        [spotlighted[index], spotlighted[targetIndex]] = [spotlighted[targetIndex], spotlighted[index]];
+        this.spotlighted = spotlighted;
         this.emit();
     }
 }

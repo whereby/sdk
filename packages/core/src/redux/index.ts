@@ -24,6 +24,7 @@ export * from "./slices/room";
 export * from "./slices/roomConnection";
 export * from "./slices/roomConnection/selectors";
 export * from "./slices/roomIntegrations";
+export * from "./slices/roomLayout";
 export * from "./slices/rtcAnalytics";
 export * from "./slices/spotlights";
 export * from "./slices/streaming";
