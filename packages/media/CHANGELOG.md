@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.4.1
+
+### Patch Changes
+
+- 7a5bee1: Allow replaceTrack without an old track in the RtcManager type
+
 ## 11.4.0
 
 ### Minor Changes
