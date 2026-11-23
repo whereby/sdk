@@ -72,7 +72,7 @@
         "dotenv": "^16.4.5",
         "dotenv-run-script": "^0.4.1",
         "tslib": "^2.4.1",
-        "uuid": "^9.0.1",
+        "uuid": "^14.0.3",
         "yalc": "^1.0.0-pre.53",
         "eslint": "catalog:",
         "prettier": "catalog:",
