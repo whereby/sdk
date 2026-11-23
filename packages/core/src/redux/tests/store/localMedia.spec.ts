@@ -370,16 +370,15 @@ describe("actions", () => {
                 expect(localStream.getAudioTracks()).toEqual([audioTrack]);
             });
 
-            it("should dispatch `stopresumevideo` on stream with new video track", async () => {
-                const store = createStore({ initialState });
+            it("should hand the new video track to the rtc manager and resume video", async () => {
+                const store = createStore({ withRtcManager: true, initialState });
                 const videoTrack = new MockMediaStreamTrack("video");
                 mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([videoTrack]));
 
                 await store.dispatch(localMediaSlice.doToggleCamera());
 
-                expect(localStream.dispatchEvent).toHaveBeenCalledWith(
-                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: true } }),
-                );
+                expect(mockRtcManager.replaceTrack).toHaveBeenCalledWith(null, videoTrack);
+                expect(mockRtcManager.stopOrResumeVideo).toHaveBeenCalledWith({ enable: true });
             });
         });
 
@@ -438,14 +437,13 @@ describe("actions", () => {
                 expect(localStream.getVideoTracks()).toHaveLength(0);
             });
 
-            it("should dispatch `stopresumevideo` on stream with stopped video track", () => {
-                const store = createStore({ initialState });
+            it("should pause video in the rtc manager", async () => {
+                const store = createStore({ withRtcManager: true, initialState });
 
-                store.dispatch(localMediaSlice.doToggleCamera());
+                await store.dispatch(localMediaSlice.doToggleCamera());
 
-                expect(localStream.dispatchEvent).toHaveBeenCalledWith(
-                    new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: false } }),
-                );
+                expect(mockRtcManager.replaceTrack).not.toHaveBeenCalled();
+                expect(mockRtcManager.stopOrResumeVideo).toHaveBeenCalledWith({ enable: false });
             });
         });
     });
