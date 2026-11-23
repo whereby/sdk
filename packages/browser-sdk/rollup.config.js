@@ -40,6 +40,7 @@ function makeCdnFilename(package) {
 const tsOptions = {
     tsconfig: "tsconfig.build.json",
 };
+const dtsOptions = { ...tsOptions, compilerOptions: { removeComments: false } };
 const external = [/^@whereby\.com/, ...dependencies, ...peerDependencies];
 
 const plugins = [replace(replaceValues), typescript(tsOptions)];
@@ -135,12 +136,12 @@ module.exports = [
         input: "src/lib/react/index.ts",
         output: [{ file: "dist/react/index.d.ts", format: "es" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
     {
         input: "src/lib/embed/index.ts",
         output: [{ file: "dist/embed/index.d.ts", format: "es" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 ];

@@ -90,6 +90,8 @@ const tsOptions = {
     tsconfig: "tsconfig.build.json",
 };
 
+const dtsOptions = { ...tsOptions, compilerOptions: { removeComments: false } };
+
 const wasmPlugin = url({
     include: ["**/*.wasm"],
     limit: 0,
@@ -222,7 +224,7 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.mts", format: "esm" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 
     // Type definitions - ES
@@ -230,7 +232,7 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.ts", format: "es" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 
     // Type definitions - CJS
@@ -238,6 +240,6 @@ module.exports = [
         input: "src/index.ts",
         output: [{ file: "dist/index.d.cts", format: "cjs" }],
         external,
-        plugins: [dts(tsOptions)],
+        plugins: [dts(dtsOptions)],
     },
 ];
