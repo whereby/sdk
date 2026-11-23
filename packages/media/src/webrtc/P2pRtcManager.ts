@@ -75,10 +75,14 @@ type P2PAnalytics = {
     numPcOnOfferFailure: number;
     numPcSldFailure: number;
     P2PAddIceCandidateFailure: number;
+    P2PCreateOfferFailure: number;
     P2PLocalNetworkFailed: number;
     P2POffendingInitialOffer: number;
+    P2POfferGlare: number;
+    P2POfferWithoutSession: number;
     P2POnTrackNoStream: number;
     P2PRelayedIceCandidate: number;
+    P2PRenegotiationBeforeInitialOffer: number;
     P2PReplaceTrackNewTrackNotInStream: number;
     P2PReplaceTrackNoStream: number;
     P2PStaleAnswerIgnored: number;
@@ -187,10 +191,14 @@ export default class P2pRtcManager implements RtcManager {
             numPcOnOfferFailure: 0,
             numPcSldFailure: 0,
             P2PAddIceCandidateFailure: 0,
+            P2PCreateOfferFailure: 0,
             P2PLocalNetworkFailed: 0,
             P2POffendingInitialOffer: 0,
+            P2POfferGlare: 0,
+            P2POfferWithoutSession: 0,
             P2POnTrackNoStream: 0,
             P2PRelayedIceCandidate: 0,
+            P2PRenegotiationBeforeInitialOffer: 0,
             P2PReplaceTrackNewTrackNotInStream: 0,
             P2PReplaceTrackNoStream: 0,
             P2PStaleAnswerIgnored: 0,
@@ -372,6 +380,8 @@ export default class P2pRtcManager implements RtcManager {
                 const session = this._getSession(data.clientId);
                 if (!session) {
                     logger.warn("No RTCPeerConnection on SDP_OFFER", data);
+                    this.analytics.P2POfferWithoutSession++;
+                    rtcStats.sendEvent("P2POfferWithoutSession", { clientId: data.clientId });
                     return;
                 }
                 const sdp = {
@@ -404,6 +414,7 @@ export default class P2pRtcManager implements RtcManager {
                     .catch?.((e: any) => {
                         logger.error(e);
                         this.analytics.numPcOnOfferFailure++;
+                        rtcStats.sendEvent("numPcOnOfferFailure", { clientId: data.clientId, errorName: e?.name });
                     });
             }),
 
@@ -422,6 +433,7 @@ export default class P2pRtcManager implements RtcManager {
                 session.handleAnswer(sdp)?.catch?.((e: any) => {
                     logger.warn("Could not set remote description from remote answer: ", e);
                     this.analytics.numPcOnAnswerFailure++;
+                    rtcStats.sendEvent("numPcOnAnswerFailure", { clientId: data.clientId, errorName: e?.name });
                 });
             }),
 
@@ -1092,6 +1104,7 @@ export default class P2pRtcManager implements RtcManager {
             return;
         }
         session.isOperationPending = true;
+        session.isLocalOfferPending = true;
 
         const { redOn, rtpAbsCaptureTimeOn, cleanSdpOn } = this._features;
 
@@ -1124,6 +1137,8 @@ export default class P2pRtcManager implements RtcManager {
                         .catch((e: any) => {
                             logger.warn("RTCPeerConnection.setLocalDescription() failed with local offer", e);
                             this.analytics.numPcSldFailure++;
+                            session.isLocalOfferPending = false;
+                            rtcStats.sendEvent("numPcSldFailure", { clientId, errorName: e?.name });
 
                             throw e;
                         })
@@ -1146,12 +1161,19 @@ export default class P2pRtcManager implements RtcManager {
                 })
                 .catch((e: any) => {
                     logger.warn("RTCPeerConnection.createOffer() failed to create local offer", e);
+                    this.analytics.P2PCreateOfferFailure++;
+                    session.isLocalOfferPending = false;
+                    rtcStats.sendEvent("P2PCreateOfferFailure", { clientId, errorName: e?.name });
                 }),
         );
     }
 
     _withForcedRenegotiation(session: Session, action: any) {
         const pc = session.pc;
+        if (session.canModifyPeerConnection() && !pc.remoteDescription) {
+            this.analytics.P2PRenegotiationBeforeInitialOffer++;
+            rtcStats.sendEvent("P2PRenegotiationBeforeInitialOffer", { clientId: session.clientId });
+        }
         const originalOnnegotationneeded = pc.onnegotiationneeded;
         pc.onnegotiationneeded = null;
         action();

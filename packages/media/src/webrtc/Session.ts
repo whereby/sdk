@@ -35,6 +35,7 @@ export default class Session {
     bandwidth: any;
     pending: any[];
     isOperationPending: boolean;
+    isLocalOfferPending: boolean;
     streamIds: string[];
     streams: MediaStream[];
     earlyIceCandidates: any[];
@@ -82,6 +83,7 @@ export default class Session {
             // like doing an ice restart or setting the bandwidth
             if (this.pc.signalingState === "stable") {
                 this.isOperationPending = false;
+                this.isLocalOfferPending = false;
                 const action = this.pending.shift();
                 if (action) {
                     action.apply();
@@ -94,6 +96,7 @@ export default class Session {
         this.bandwidth = bandwidth || 0; // maximum bandwidth in kbps.
         this.pending = [];
         this.isOperationPending = false;
+        this.isLocalOfferPending = false;
         this.streamIds = [];
         this.streams = [];
         this.earlyIceCandidates = [];
@@ -168,6 +171,13 @@ export default class Session {
 
     handleOffer(offer: SignalRTCSessionDescription): Promise<SignalRTCSessionDescription> {
         if (!this.canModifyPeerConnection()) {
+            if (this.isLocalOfferPending) {
+                this._incrementAnalyticMetric("P2POfferGlare");
+                rtcStats.sendEvent("P2POfferGlare", {
+                    clientId: this.clientId,
+                    hasRemoteDescription: !!this.pc.remoteDescription,
+                });
+            }
             return new Promise((resolve) => {
                 this.pending.push(() => this.handleOffer(offer).then(resolve));
             });
@@ -255,7 +265,6 @@ export default class Session {
                 rtcStats.sendEvent("P2PAddIceCandidateFailure", {
                     clientId: this.clientId,
                     errorName: e?.name,
-                    errorMessage: e?.message,
                     signalingState: this.pc.signalingState,
                     iceConnectionState: this.pc.iceConnectionState,
                 });
