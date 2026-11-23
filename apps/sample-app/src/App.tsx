@@ -53,16 +53,20 @@ function RoomStatus({
     cloudRecordingStatus,
     liveStreamStatus,
     connectionStatus,
+    isLocked,
 }: {
     localParticipantId?: string;
     cloudRecordingStatus?: string;
     liveStreamStatus?: string;
     connectionStatus: string;
+    isLocked: boolean | null;
 }) {
     return (
         <dl>
             <dt>Connection Status</dt>
             <dd data-testid="connectionStatus">{connectionStatus}</dd>
+            <dt>Room locked</dt>
+            <dd data-testid="isLocked">{isLocked === null ? "unknown" : String(isLocked)}</dd>
             <dt>Local client ID</dt>
             <dd data-testid="localClientId">{localParticipantId || "N/A"}</dd>
             <dt>Cloud recording status</dt>
@@ -345,6 +349,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         liveStream,
         roomIntegrations,
         screenshares,
+        isLocked,
     } = roomConnection.state;
     const {
         acceptWaitingParticipant,
@@ -515,6 +520,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 connectionStatus={connectionStatus}
                 liveStreamStatus={liveStream?.status}
                 cloudRecordingStatus={cloudRecording?.status}
+                isLocked={isLocked}
             />
             <RoomControls
                 knock={knock}
@@ -658,8 +664,42 @@ const CanvasWrapper = ({ roomUrl, canvasStream }: { roomUrl: string; canvasStrea
     );
 };
 
+function useDebouncedValue<T>(value: T, delayMs: number) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => setDebouncedValue(value), delayMs);
+        return () => clearTimeout(timeout);
+    }, [value, delayMs]);
+
+    return debouncedValue;
+}
+
+function isValidUrl(url: string) {
+    try {
+        new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+const RoomLockState = ({ roomUrl }: { roomUrl: string }) => {
+    const { state } = useRoomConnection(roomUrl);
+
+    return (
+        <p>
+            Room locked:{" "}
+            <span data-testid="roomLockStateBeforeEntering">
+                {state.isLocked === null ? "unknown" : String(state.isLocked)}
+            </span>
+        </p>
+    );
+};
+
 const App = () => {
     const [roomUrlInput, setRoomUrlInput] = useState<string>("");
+    const debouncedRoomUrlInput = useDebouncedValue(roomUrlInput, 500);
     const [roomUrl, setRoomUrl] = useState<string>();
     const [localStream, setLocalStream] = useState<MediaStream>();
     const [canvas, setCanvas] = useState<HTMLCanvasElement>();
@@ -694,6 +734,7 @@ const App = () => {
                     <h1>Enter room URL</h1>
                     <label>Room URL</label>
                     <input type="text" onChange={(e) => setRoomUrlInput(e.target.value)} defaultValue={roomUrlInput} />
+                    {isValidUrl(debouncedRoomUrlInput) && <RoomLockState roomUrl={debouncedRoomUrlInput} />}
                     <br />
                     <button onClick={() => setRoomUrl(roomUrlInput)}>Enter</button>
                 </div>
