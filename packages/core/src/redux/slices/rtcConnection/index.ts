@@ -27,6 +27,7 @@ import {
     doSwitchLocalStream,
     doStartLocalMedia,
     doLocalStreamEffect,
+    doToggleCamera,
     selectLocalMediaConstraintsOptions,
     toggleCameraEnabled,
 } from "../localMedia";
@@ -385,6 +386,16 @@ const handOverChangedTracks = (
 startAppListening({ actionCreator: doSetDevice.fulfilled, effect: handOverChangedTracks });
 startAppListening({ actionCreator: doSwitchLocalStream.fulfilled, effect: handOverChangedTracks });
 startAppListening({ actionCreator: doLocalStreamEffect.fulfilled, effect: handOverChangedTracks });
+
+startAppListening({
+    actionCreator: doToggleCamera.fulfilled,
+    effect: (action, { getState }) => {
+        handOverChangedTracks(action, { getState });
+
+        const { rtcManager } = selectRtcConnectionRaw(getState());
+        rtcManager?.stopOrResumeVideo({ enable: selectIsCameraEnabled(getState()) });
+    },
+});
 
 startAppListening({
     actionCreator: doStartScreenshare.fulfilled,

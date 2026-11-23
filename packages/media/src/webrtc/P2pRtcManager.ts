@@ -98,7 +98,6 @@ export default class P2pRtcManager implements RtcManager {
     _screenshareVideoTrackIds: string[];
     _remoteClientMediaPrefs: Record<string, MediaPrefs> = {};
     _socketListenerDeregisterFunctions: any[];
-    _localStreamDeregisterFunction: any;
     _emitter: any;
     _serverSocket: ServerSocket;
     _webrtcProvider: WebRTCProvider;
@@ -115,7 +114,6 @@ export default class P2pRtcManager implements RtcManager {
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: ClearableTimeout | null;
     _icePublicIPGatheringTimeoutID: ClearableTimeout | null;
-    _stoppedVideoTrack?: MediaStreamTrack;
     _videoTrackBeingMonitored?: MediaStreamTrack;
     _audioTrackBeingMonitored?: MediaStreamTrack;
     _closed: boolean;
@@ -132,7 +130,6 @@ export default class P2pRtcManager implements RtcManager {
         this.peerConnections = {};
         this._screenshareVideoTrackIds = [];
         this._socketListenerDeregisterFunctions = [];
-        this._localStreamDeregisterFunction = null;
         this._emitter = emitter;
         this._serverSocket = serverSocket;
         this._webrtcProvider = webrtcProvider;
@@ -243,31 +240,6 @@ export default class P2pRtcManager implements RtcManager {
                 this._monitorVideoTrack(beforeEffectTrack);
             }
         }
-
-        this._enableStopResumeVideoForBrowserSDK(stream);
-    }
-
-    /**
-     * browser-sdk can dispatch custom `stopresumevideo` event on the localStream.
-     * This function allows it to get the desired side-effects when toggling video,
-     * but without maintaining a direct reference to the rtc manager itself.
-     */
-    _enableStopResumeVideoForBrowserSDK(stream: MediaStream) {
-        // This should not be needed, but checking nonetheless
-        if (this._localStreamDeregisterFunction) {
-            this._localStreamDeregisterFunction();
-            this._localStreamDeregisterFunction = null;
-        }
-
-        const localStreamHandler = (e: any) => {
-            const { enable, track } = e.detail;
-            this._handleStopOrResumeVideo({ enable, track });
-        };
-
-        stream.addEventListener("stopresumevideo", localStreamHandler);
-        this._localStreamDeregisterFunction = () => {
-            stream.removeEventListener("stopresumevideo", localStreamHandler);
-        };
     }
 
     addScreenshareStream(stream: MediaStream) {
@@ -318,11 +290,6 @@ export default class P2pRtcManager implements RtcManager {
             func();
         });
         this._socketListenerDeregisterFunctions = [];
-
-        if (this._localStreamDeregisterFunction) {
-            this._localStreamDeregisterFunction();
-            this._localStreamDeregisterFunction = null;
-        }
 
         this.rtcStatsDisconnect();
     }
@@ -860,14 +827,6 @@ export default class P2pRtcManager implements RtcManager {
             this._setJitterBufferTarget(pc);
         }
 
-        /*
-         * Explicitly add the video track so that stopOrResumeVideo() can
-         * replace it when the video is re-enabled.
-         */
-        if (this._localCameraStream && !this._localCameraStream.getVideoTracks().length && this._stoppedVideoTrack) {
-            pc.addTrack(this._stoppedVideoTrack, this._localCameraStream);
-        }
-
         return session;
     }
 
@@ -892,12 +851,6 @@ export default class P2pRtcManager implements RtcManager {
     _addStreamToPeerConnections(stream: MediaStream) {
         this._forEachPeerConnection((session: Session) => {
             this._withForcedRenegotiation(session, () => session.addStream(stream));
-        });
-    }
-
-    _addTrackToPeerConnections(track: MediaStreamTrack) {
-        this._forEachPeerConnection((session: Session) => {
-            this._withForcedRenegotiation(session, () => session.addTrack(track));
         });
     }
 
@@ -1264,19 +1217,6 @@ export default class P2pRtcManager implements RtcManager {
 
     stopOrResumeAudio(/*{ enable }*/) {
         // Nothing to pause in P2P; consuming app needs to disable the track.
-    }
-
-    _handleStopOrResumeVideo({ enable, track }: { enable: boolean; track: MediaStreamTrack }) {
-        if (!enable) {
-            this._stoppedVideoTrack = track;
-        } else {
-            if (this._stoppedVideoTrack) {
-                this._replaceTrackToPeerConnections(this._stoppedVideoTrack, track);
-                delete this._stoppedVideoTrack;
-            } else {
-                this._addTrackToPeerConnections(track);
-            }
-        }
     }
 
     stopOrResumeVideo(/*{ enable }*/) {

@@ -332,8 +332,9 @@ export const doToggleCamera = createAppAsyncThunk(
         if (!stream) {
             return;
         }
-        let track = stream.getVideoTracks()[0];
+        const track = stream.getVideoTracks()[0];
         const enabled = selectIsCameraEnabled(state);
+        const before = snapshotTracks(stream);
 
         try {
             if (enabled) {
@@ -353,8 +354,6 @@ export const doToggleCamera = createAppAsyncThunk(
                         },
                         { replaceStream: stream },
                     );
-
-                    track = stream.getVideoTracks()[0];
                 }
             } else {
                 if (!track) {
@@ -366,8 +365,7 @@ export const doToggleCamera = createAppAsyncThunk(
                 stream.removeTrack(track);
             }
 
-            // Dispatch event on stream to allow RTC layer effects
-            stream.dispatchEvent(new CustomEvent("stopresumevideo", { detail: { track, enable: enabled } }));
+            return { changedTracks: findChangedTracks(stream, before) };
         } catch (error) {
             return rejectWithValue(error);
         }

@@ -119,7 +119,6 @@ export default class VegaRtcManager implements RtcManager {
     _streamIdToVideoResolution: Map<string, { width: number; height: number }>;
     _consumers: any;
     _dataConsumers: any;
-    _localStreamDeregisterFunction: any;
     _micTrack: any;
     _webcamTrack: any;
     _screenVideoTrack: any;
@@ -214,9 +213,6 @@ export default class VegaRtcManager implements RtcManager {
         // All consumers we have from the SFU
         this._consumers = new Map();
         this._dataConsumers = new Map();
-
-        // Function to clean up event listeners on the local stream
-        this._localStreamDeregisterFunction = null;
 
         this._micTrack = null;
         this._webcamTrack = null;
@@ -1709,36 +1705,6 @@ export default class VegaRtcManager implements RtcManager {
                 this._monitorAudioTrack(beforeEffectTrack);
             }
         }
-
-        this._enableStopResumeVideoForBrowserSDK(stream);
-    }
-
-    /**
-     * browser-sdk can dispatch custom `stopresumevideo` event on the localStream.
-     * This function allows it to get the desired side-effects when toggling video,
-     * but without maintaining a direct reference to the rtc manager itself.
-     */
-    _enableStopResumeVideoForBrowserSDK(stream: MediaStream) {
-        // This should not be needed, but checking nonetheless
-        if (this._localStreamDeregisterFunction) {
-            this._localStreamDeregisterFunction();
-            this._localStreamDeregisterFunction = null;
-        }
-
-        const localStreamHandler = (e: any) => {
-            const { enable, track } = e.detail;
-
-            // This is a hack
-            this._webcamPaused = !enable;
-            this._pauseResumeWebcam();
-
-            this._handleStopOrResumeVideo({ enable, track });
-        };
-
-        stream.addEventListener("stopresumevideo", localStreamHandler);
-        this._localStreamDeregisterFunction = () => {
-            stream.removeEventListener("stopresumevideo", localStreamHandler);
-        };
     }
 
     addScreenshareStream(stream: MediaStream) {
@@ -1779,20 +1745,6 @@ export default class VegaRtcManager implements RtcManager {
         this._pauseResumeMic();
     }
 
-    _handleStopOrResumeVideo({ enable, track }: { enable: boolean; track: MediaStreamTrack }) {
-        if (!enable) {
-            if (this._webcamProducer && !this._webcamProducer.closed && this._webcamProducer.track === track) {
-                this._stopProducer(this._webcamProducer);
-                this._webcamProducer = null;
-                this._webcamProducerOriginalSvcScalabilityMode = undefined;
-                this._webcamProducerOriginalSvcMaxBitrate = undefined;
-                this._webcamProducerHighestPreferredLayer = undefined;
-                this._webcamTrack = null;
-            }
-        } else {
-            this._sendWebcam(track);
-        }
-    }
     /**
      * Only for webcam. The consuming app toggled the webcam. Camera tracks arrive
      * through replaceTrack, whenever the app has one.
@@ -2145,11 +2097,6 @@ export default class VegaRtcManager implements RtcManager {
         this._socketListenerDeregisterFunctions.forEach((func: any) => {
             func();
         });
-
-        if (this._localStreamDeregisterFunction) {
-            this._localStreamDeregisterFunction();
-            this._localStreamDeregisterFunction = null;
-        }
 
         this._socketListenerDeregisterFunctions = [];
 
