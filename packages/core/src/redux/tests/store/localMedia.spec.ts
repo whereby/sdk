@@ -1,7 +1,7 @@
 import * as localMediaSlice from "../../slices/localMedia";
 import { doAppStart, doAppStop, initialState as appInitialState, InitialMuteStates } from "../../slices/app";
 import { signalEvents } from "../../slices/signalConnection/actions";
-import { createStore, mockSignalEmit } from "../store.setup";
+import { createStore, mockRtcManager, mockSignalEmit } from "../store.setup";
 import { diff } from "deep-object-diff";
 import { PayloadAction } from "@reduxjs/toolkit";
 
@@ -915,6 +915,47 @@ describe("actions", () => {
             const constraints = mockedGetUserMedia.mock.calls[0][0];
             expect(constraints?.audio).toEqual(expect.objectContaining({ deviceId: { exact: audioDevice.deviceId } }));
             expect(stream.getAudioTracks()).toEqual([pickedTrack]);
+        });
+
+        it("should hand a picked microphone to the rtc manager when started without one", async () => {
+            const pickedTrack = createLiveTrack("audio", audioDevice.deviceId);
+            const stream = new MockMediaStream([createLiveTrack("video", videoDevice.deviceId)]);
+            const store = createStore({
+                withRtcManager: true,
+                initialState: startedLocalMedia({
+                    stream,
+                    devices: [audioDevice, videoDevice],
+                    currentMicrophoneDeviceId: undefined,
+                    microphoneEnabled: false,
+                }),
+            });
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([pickedTrack]));
+
+            store.dispatch(localMediaSlice.setCurrentMicrophoneDeviceId({ deviceId: audioDevice.deviceId }));
+            await waitForSetDevice(store);
+
+            expect(mockRtcManager.replaceTrack).toHaveBeenCalledTimes(1);
+            expect(mockRtcManager.replaceTrack).toHaveBeenCalledWith(null, pickedTrack);
+        });
+
+        it("should hand a picked camera to the rtc manager when there was no camera track", async () => {
+            const pickedTrack = createLiveTrack("video", videoDevice.deviceId);
+            const stream = new MockMediaStream([createLiveTrack("audio", audioDevice.deviceId)]);
+            const store = createStore({
+                withRtcManager: true,
+                initialState: startedLocalMedia({
+                    stream,
+                    devices: [audioDevice, videoDevice],
+                    currentCameraDeviceId: undefined,
+                }),
+            });
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([pickedTrack]));
+
+            store.dispatch(localMediaSlice.setCurrentCameraDeviceId({ deviceId: videoDevice.deviceId }));
+            await waitForSetDevice(store);
+
+            expect(mockRtcManager.replaceTrack).toHaveBeenCalledTimes(1);
+            expect(mockRtcManager.replaceTrack).toHaveBeenCalledWith(null, pickedTrack);
         });
 
         it("should show the camera we hold after a failed pick", async () => {
