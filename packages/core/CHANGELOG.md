@@ -1,5 +1,16 @@
 # @whereby.com/core
 
+## 1.31.7
+
+### Patch Changes
+
+- 60c43f3: Keep JSDoc comments in the published types
+- 67be846: Pause and resume video in the RtcManager when the camera is toggled, and hand over the new camera track with `replaceTrack`
+- Updated dependencies [45f872c]
+- Updated dependencies [60c43f3]
+  - @whereby.com/media@11.4.2
+  - @whereby.com/audio-denoiser@1.0.36
+
 ## 1.31.6
 
 ### Patch Changes

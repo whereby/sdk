@@ -1,5 +1,16 @@
 # @whereby.com/browser-sdk
 
+## 3.40.7
+
+### Patch Changes
+
+- 60c43f3: Keep JSDoc comments in the published types
+- Updated dependencies [45f872c]
+- Updated dependencies [60c43f3]
+- Updated dependencies [67be846]
+  - @whereby.com/media@11.4.2
+  - @whereby.com/core@1.31.7
+
 ## 3.40.6
 
 ### Patch Changes
