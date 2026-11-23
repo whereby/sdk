@@ -18,12 +18,17 @@ import {
     LocalScreenshareStatus,
     LocalScreenshareState,
     RemoteParticipantState,
+    RoomConnectionState,
+    RoomIntegrationsState,
 } from "./types";
 
 /* Breakout Events */
 export const BREAKOUT_CONFIG_CHANGED = "breakout:config-changed";
 /* Chat Events */
 export const CHAT_NEW_MESSAGE = "chat:new-message";
+export const CHAT_MESSAGES_CHANGED = "chat:messages-changed";
+/* File upload events */
+export const FILE_UPLOADS_CHANGED = "file-uploads:changed";
 /* Cloud Recording Events */
 export const CLOUD_RECORDING_STATUS_CHANGED = "cloud-recording:status-changed";
 /* Connection Status Events */
@@ -35,6 +40,7 @@ export const LIVE_TRANSCRIPTION_STATUS_CHANGED = "live-transcription:status-chan
 /* Connection Error Events */
 export const CONNECTION_ERROR_CHANGED = "connection:error-changed";
 export const CONNECTION_JOIN_STAGE_CHANGED = "connection:join-stage-changed";
+export const CONNECTION_KNOCK_RESPONSE_CHANGED = "connection:knock-response-changed";
 /* Audio-only Mode Events */
 export const AUDIO_ONLY_MODE_CHANGED = "audio-only-mode:changed";
 /* Call Quality Events */
@@ -47,6 +53,8 @@ export const LOCAL_SCREENSHARE_STATUS_CHANGED = "local-screenshare:status-change
 export const LOCAL_SCREENSHARE_CHANGED = "local-screenshare:state-changed";
 /* Remote participant events */
 export const REMOTE_PARTICIPANTS_CHANGED = "remote-participants:changed";
+/* Room integration events */
+export const ROOM_INTEGRATIONS_CHANGED = "room-integrations:changed";
 /* Room session events */
 export const ROOM_SESSION_ID_CHANGED = "room-session-id:changed";
 /* Screen share events */
@@ -90,12 +98,15 @@ export type RoomConnectionEvents = {
     [BREAKOUT_CONFIG_CHANGED]: [config: BreakoutState];
     [CAMERA_STATE_CHANGED]: [isCameraEnabled: boolean];
     [CHAT_NEW_MESSAGE]: [message: ChatMessage];
+    [CHAT_MESSAGES_CHANGED]: [messages: RoomConnectionState["chatMessages"]];
     [CLOUD_RECORDING_STATUS_CHANGED]: [status: CloudRecordingState | undefined];
     [CONNECTION_STATUS_CHANGED]: [status: ConnectionStatus];
     [LIVE_CAPTIONS_STATUS_CHANGED]: [status: LiveCaptionsState | undefined];
     [LIVE_TRANSCRIPTION_STATUS_CHANGED]: [status: LiveTranscriptionState | undefined];
     [CONNECTION_ERROR_CHANGED]: [error: string | null];
     [CONNECTION_JOIN_STAGE_CHANGED]: [joinStage: JoinRoomStage | null];
+    [CONNECTION_KNOCK_RESPONSE_CHANGED]: [knockResponse: RoomConnectionState["knockResponse"]];
+    [FILE_UPLOADS_CHANGED]: [uploads: RoomConnectionState["fileUploads"]];
     [AUDIO_ONLY_MODE_CHANGED]: [isEnabled: boolean];
     [REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED]: [report: RemoteParticipantQualityReport];
     [LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED]: [report: LocalParticipantQualityReport];
@@ -109,6 +120,7 @@ export type RoomConnectionEvents = {
     [ROOM_JOINED]: [room: RoomJoinedEvent];
     [ROOM_JOINED_ERROR]: [error: RoomJoinedErrors | string];
     [ROOM_REJOINED]: [room: RoomRejoinedEvent];
+    [ROOM_INTEGRATIONS_CHANGED]: [roomIntegrations: RoomIntegrationsState];
     [ROOM_SESSION_ID_CHANGED]: [roomSessionId: string | null];
     [WAITING_PARTICIPANT_JOINED]: [participant: WaitingParticipant];
     [WAITING_PARTICIPANT_LEFT]: [participantId: string];
