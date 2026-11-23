@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 1.31.6
+
+### Patch Changes
+
+- 774fa9d: Hand over a new camera or microphone track to the RtcManager also when there was no track of that kind before
+- Updated dependencies [7a5bee1]
+  - @whereby.com/media@11.4.1
+  - @whereby.com/audio-denoiser@1.0.35
+
 ## 1.31.5
 
 ### Patch Changes
