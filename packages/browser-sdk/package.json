@@ -63,6 +63,8 @@
         "@storybook/addon-links": "^10.6.7",
         "@storybook/react-vite": "^10.6.7",
         "@testing-library/react": "^14.0.0",
+        "@types/react": "catalog:react19",
+        "@types/react-dom": "catalog:react19",
         "@types/runes": "^0.4.3",
         "@vitejs/plugin-react": "^4.2.1",
         "deep-object-diff": "^1.1.9",
