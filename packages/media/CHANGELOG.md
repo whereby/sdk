@@ -1,5 +1,12 @@
 # @whereby.com/media
 
+## 11.4.2
+
+### Patch Changes
+
+- 45f872c: Remove the `stopresumevideo` event on the camera stream, camera toggles go through `stopOrResumeVideo` and `replaceTrack`
+- 60c43f3: Keep JSDoc comments in the published types
+
 ## 11.4.1
 
 ### Patch Changes
