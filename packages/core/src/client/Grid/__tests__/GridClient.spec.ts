@@ -53,12 +53,13 @@ describe("GridClient", () => {
     });
 
     describe("setClientViewOrder", () => {
-        it("sets the order", () => {
+        it("moves the listed client views to the front, keeping the rest in their current order", () => {
             const { client, order } = setup();
+            client.reorderClientViews({ id: "local", targetId: "r2" });
 
-            client.setClientViewOrder(["r2"]);
+            client.setClientViewOrder(["r1"]);
 
-            expect(order()).toEqual(["r2", "local", "r1"]);
+            expect(order()).toEqual(["r1", "r2", "local"]);
         });
 
         it("throws on anything but an array of ids", () => {

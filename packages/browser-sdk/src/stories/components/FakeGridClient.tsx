@@ -212,7 +212,7 @@ export class FakeGridClient {
     }
 
     public setClientViewOrder(ids: string[]) {
-        this.sortedClientIds = ids;
+        this.sortedClientIds = [...ids, ...this.clientViews.map((c) => c.id).filter((id) => !ids.includes(id))];
         this.clientViews = this.sort(this.clientViews);
         this.emit();
     }

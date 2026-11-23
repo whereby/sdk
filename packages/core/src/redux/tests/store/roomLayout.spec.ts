@@ -1,5 +1,10 @@
 import { createStore } from "../store.setup";
-import { doReorderClientViews, selectSortedClientViews, setSortedClientIds } from "../../slices/roomLayout";
+import {
+    doReorderClientViews,
+    doSetClientViewOrder,
+    selectSortedClientViews,
+    setSortedClientIds,
+} from "../../slices/roomLayout";
 import { selectAllClientViews } from "../../slices/room";
 import { randomLocalParticipant, randomRemoteParticipant, randomSignalClient } from "../../../__mocks__/appMocks";
 import { signalEvents } from "../../slices/signalConnection/actions";
@@ -85,6 +90,24 @@ describe("roomLayout", () => {
 
             expect(store.getState().roomLayout).toBe(before);
             expect(order()).toEqual(["local", "r1", "r2", "r3"]);
+        });
+    });
+
+    describe("doSetClientViewOrder", () => {
+        it("should move the listed client views to the front and keep the rest in their current order", () => {
+            const { store, order } = setup(["r2", "r1", "local", "r3"]);
+
+            store.dispatch(doSetClientViewOrder(["r3"]));
+
+            expect(order()).toEqual(["r3", "r2", "r1", "local"]);
+        });
+
+        it("should keep the current order with an empty list", () => {
+            const { store, order } = setup(["r2", "r1", "local", "r3"]);
+
+            store.dispatch(doSetClientViewOrder([]));
+
+            expect(order()).toEqual(["r2", "r1", "local", "r3"]);
         });
     });
 

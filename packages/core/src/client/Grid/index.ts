@@ -9,7 +9,7 @@ import {
 import { selectGridState } from "./selector";
 import { GridState } from "./types";
 import { doRemoveSpotlight, doSpotlightParticipant, doSwapSpotlightOrder } from "../../redux/slices/spotlights";
-import { doReorderClientViews, setSortedClientIds } from "../../redux/slices/roomLayout";
+import { doReorderClientViews, doSetClientViewOrder } from "../../redux/slices/roomLayout";
 import { BaseClient } from "../BaseClient";
 import { ClientView, RoomIntegrationSessionView } from "../../redux";
 
@@ -89,12 +89,12 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
         this.store.dispatch(doReorderClientViews({ id, targetId }));
     }
 
-    /** Only for this participant. Unlisted client views follow in their current order. */
+    /** Only for this participant. Puts the listed client views first; the rest keep their current order. */
     public setClientViewOrder(ids: string[]) {
         if (!Array.isArray(ids) || ids.some((id) => typeof id !== "string")) {
             throw new TypeError("setClientViewOrder expects an array of client view ids");
         }
-        this.store.dispatch(setSortedClientIds(ids));
+        this.store.dispatch(doSetClientViewOrder(ids));
     }
 
     /** For everyone in the room. Needs `canSpotlight`. */

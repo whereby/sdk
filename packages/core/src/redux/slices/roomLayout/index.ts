@@ -51,6 +51,15 @@ export const doReorderClientViews = createAppThunk(
         },
 );
 
+export const doSetClientViewOrder = createAppThunk((ids: string[]) => (dispatch, getState) => {
+    const listed = new Set(ids);
+    const unlisted = selectSortedClientViews(getState())
+        .map((c) => c.id)
+        .filter((id) => !listed.has(id));
+
+    dispatch(setSortedClientIds([...ids, ...unlisted]));
+});
+
 /**
  * Selectors
  */
