@@ -102,6 +102,7 @@ export default function VideoExperience({
         isCameraEnabled,
         isMicrophoneEnabled,
         roomSessionId,
+        isLocked,
     } = state;
     const {
         knock,
@@ -456,8 +457,15 @@ export default function VideoExperience({
         <div>
             <div>Room connection status: {connectionStatus}</div>
             <div>Room session id: {roomSessionId ?? "none"}</div>
+            <div>Room locked: {isLocked === null ? "unknown" : isLocked ? "yes" : "no"}</div>
             <hr />
-            {!joinRoomOnLoad && connectionStatus === "ready" && <button onClick={() => joinRoom()}>Join room</button>}
+            {!joinRoomOnLoad && connectionStatus === "ready" && (
+                <button onClick={() => joinRoom()}>
+                    {isLocked && !roomKey && !roomName.includes("roomKey=")
+                        ? "Join room (locked: you'll need to knock)"
+                        : "Join room"}
+                </button>
+            )}
             {connectionStatus === "connecting" && <span>Connecting...</span>}
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>

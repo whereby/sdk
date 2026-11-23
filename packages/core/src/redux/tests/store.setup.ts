@@ -79,6 +79,7 @@ export const mockServices = {
         fetchOrganization: jest.fn(),
     },
     fetchOrganizationFromRoomUrl: jest.fn(),
+    fetchRoomFromRoomUrl: jest.fn(),
     signalBaseUrl: "wss://signal.example.test",
 };
 

@@ -1,6 +1,7 @@
 import { createStore, mockSignalEmit } from "../store.setup";
 import { randomLocalParticipant, randomRemoteParticipant } from "../../../__mocks__/appMocks";
 import { signalEvents } from "../../slices/signalConnection/actions";
+import { roomSliceInitialState } from "../../slices/room";
 import {
     doBreakoutJoin,
     doStartBreakoutSession,
@@ -35,7 +36,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: {
                         authorization: { roomKey: null, roleName: "host" },
-                        room: { isLocked: false, mode: "group" },
+                        room: { ...roomSliceInitialState, mode: "group" },
                     },
                     withSignalConnection: true,
                 });
@@ -57,7 +58,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: {
                         authorization: { roomKey: null, roleName: "host" },
-                        room: { isLocked: false, mode: "group" },
+                        room: { ...roomSliceInitialState, mode: "group" },
                     },
                     withSignalConnection: true,
                 });
@@ -80,7 +81,7 @@ describe("actions", () => {
                 const store = createStore({
                     initialState: {
                         authorization: { roomKey: null, roleName: "host" },
-                        room: { isLocked: false, mode: "normal" },
+                        room: { ...roomSliceInitialState, mode: "normal" },
                     },
                     withSignalConnection: true,
                 });

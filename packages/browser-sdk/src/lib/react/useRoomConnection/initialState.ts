@@ -30,6 +30,7 @@ export const initialState: RoomConnectionState = {
     isAudioOnlyModeEnabled: false,
     isCameraEnabled: false,
     isMicrophoneEnabled: false,
+    isLocked: null,
     localParticipant: undefined,
     remoteParticipants: [],
     roomIntegrations: {

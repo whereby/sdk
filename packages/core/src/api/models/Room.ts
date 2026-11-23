@@ -2,6 +2,8 @@
 import { assert } from "@whereby.com/media";
 
 export default class Room {
+    public readonly isClaimed: boolean;
+    public readonly isBanned: boolean;
     public readonly isLocked: boolean;
 
     constructor(properties = {}) {

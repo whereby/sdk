@@ -5,6 +5,7 @@ import {
     REMOTE_PARTICIPANT_QUALITY_REPORT_CHANGED,
     LOCAL_PARTICIPANT_QUALITY_REPORT_CHANGED,
     ROOM_SESSION_ID_CHANGED,
+    ROOM_LOCK_CHANGED,
     CONNECTION_JOIN_STAGE_CHANGED,
 } from "../events";
 import { doAppStart, roomRejoined, Store, RootState } from "../../../redux";
@@ -206,6 +207,70 @@ describe("RoomConnectionClient", () => {
             });
             storeSubscriber();
             expect(callback).toHaveBeenCalledWith("session-1");
+        });
+    });
+
+    describe("subscribeToRoomLock", () => {
+        it("is null until the lock state is known", () => {
+            expect(client.getState().isLocked).toEqual(null);
+        });
+
+        it("triggers the room lock listener", () => {
+            const callback = jest.fn();
+            const unsubscribe = client.subscribeToRoomLock(callback);
+
+            storeSubscriber();
+            expect(callback).not.toHaveBeenCalled();
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                room: { ...initialState.room, isLocked: true, lockStateSource: "fetch" },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(true);
+            expect(client.getState().isLocked).toEqual(true);
+
+            unsubscribe();
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                room: { ...initialState.room, isLocked: false, lockStateSource: "signal" },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it("emits room-lock:changed", () => {
+            const callback = jest.fn();
+            client.on(ROOM_LOCK_CHANGED, callback);
+
+            (mockStore.getState as jest.Mock).mockReturnValue({
+                ...initialState,
+                room: { ...initialState.room, isLocked: false, lockStateSource: "fetch" },
+            });
+            storeSubscriber();
+            expect(callback).toHaveBeenCalledWith(false);
+        });
+    });
+
+    describe("initialize", () => {
+        it("requests the room url, so the room is fetched before joining", () => {
+            mockServices.fetchRoomFromRoomUrl.mockResolvedValue({ isClaimed: true, isBanned: false, isLocked: false });
+
+            client.initialize({ roomUrl: "https://example.whereby.com/test" });
+
+            expect(mockStore.getState().room.requestedRoomUrl).toEqual("https://example.whereby.com/test");
+            expect(mockServices.fetchRoomFromRoomUrl).toHaveBeenCalledWith("https://example.whereby.com/test");
+        });
+
+        it.each`
+            participant    | options
+            ${"assistant"} | ${{ assistantKey: "assistant-key" }}
+            ${"Node.js"}   | ${{ isNodeSdk: true }}
+        `("doesn't fetch the room for an $participant participant", ({ options }) => {
+            client.initialize({ roomUrl: "https://example.whereby.com/test", ...options });
+
+            expect(mockStore.getState().room.requestedRoomUrl).toEqual(null);
+            expect(mockServices.fetchRoomFromRoomUrl).not.toHaveBeenCalled();
         });
     });
 

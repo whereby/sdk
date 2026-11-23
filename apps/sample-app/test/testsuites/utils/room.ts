@@ -123,6 +123,9 @@ async function joinRoom({
         await page.getByTestId("toggleFakeAudio").click();
         await expect(page.getByTestId("fakeAudioTrackStatus")).toContainText("ready");
     }
+    if (expectLockScreen) {
+        await expect(page.getByTestId("roomLockStateBeforeEntering")).toContainText("true");
+    }
     await page.getByRole("button", { name: "Enter" }).click();
 
     if (expectLockScreen) {
