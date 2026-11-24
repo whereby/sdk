@@ -545,6 +545,16 @@ describe("VegaRtcManager", () => {
 
             expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         });
+
+        it("sends a mic handed over when no mic is being sent", () => {
+            const micTrack = helpers.createMockedMediaStreamTrack({ kind: "audio" });
+            jest.spyOn(mockSendTransport, "produce");
+            rtcManager._sendTransport = mockSendTransport as any;
+
+            rtcManager.replaceTrack(null, micTrack);
+
+            expect(mockSendTransport.produce).toHaveBeenCalledWith(expect.objectContaining({ track: micTrack }));
+        });
     });
 
     describe("_onChangedHighestPreferredLayer", () => {
