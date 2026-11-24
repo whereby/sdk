@@ -1,5 +1,22 @@
 # @whereby.com/core
 
+## 1.33.0
+
+### Minor Changes
+
+- 7a954c6: Add tile ordering to `GridClient`. `reorderClientViews({ id, targetId })` swaps two client views and
+  `setClientViewOrder(ids)` puts the listed client views first, for this participant only. `allClientViews` follows the
+  order: unlisted client views keep their current order, and new ones go at the end. The views keep their ids, so video
+  elements don't remount. Hosts can also swap two
+  spotlighted client views for the whole room with `swapSpotlightOrder({ id, targetId })`, and the grid state has a new
+  `canSpotlight` field.
+
+### Patch Changes
+
+- Updated dependencies [9c755ea]
+  - @whereby.com/media@11.5.0
+  - @whereby.com/audio-denoiser@1.0.38
+
 ## 1.32.1
 
 ### Patch Changes

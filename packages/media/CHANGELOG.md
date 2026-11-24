@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.5.0
+
+### Minor Changes
+
+- 9c755ea: Add the `swap_spotlight_order` signal request and the `spotlight_order_swapped` signal event to the signal types
+
 ## 11.4.3
 
 ### Patch Changes
