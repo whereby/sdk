@@ -448,6 +448,32 @@ describe("actions", () => {
         });
     });
 
+    describe("toggleMicrophoneEnabled", () => {
+        it("should pause audio in the rtc manager on mute", () => {
+            const stream = new MockMediaStream([new MockMediaStreamTrack("audio")]);
+            const store = createStore({
+                withRtcManager: true,
+                initialState: startedLocalMedia({ stream, devices: [audioDevice] }),
+            });
+
+            store.dispatch(localMediaSlice.toggleMicrophoneEnabled({ enabled: false }));
+
+            expect(mockRtcManager.stopOrResumeAudio).toHaveBeenCalledWith({ enable: false });
+        });
+
+        it("should resume audio in the rtc manager on unmute", () => {
+            const stream = new MockMediaStream([new MockMediaStreamTrack("audio")]);
+            const store = createStore({
+                withRtcManager: true,
+                initialState: startedLocalMedia({ stream, devices: [audioDevice], microphoneEnabled: false }),
+            });
+
+            store.dispatch(localMediaSlice.toggleMicrophoneEnabled({ enabled: true }));
+
+            expect(mockRtcManager.stopOrResumeAudio).toHaveBeenCalledWith({ enable: true });
+        });
+    });
+
     describe("toggleHdModeEnabled", () => {
         describe("when video hd mode is disabled", () => {
             let initialState: Partial<RootState>;

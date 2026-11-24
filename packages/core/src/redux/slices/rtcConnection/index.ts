@@ -398,6 +398,15 @@ startAppListening({
 });
 
 startAppListening({
+    predicate: (_action, currentState, previousState) =>
+        selectIsMicrophoneEnabled(currentState) !== selectIsMicrophoneEnabled(previousState),
+    effect: (_action, { getState }) => {
+        const { rtcManager } = selectRtcConnectionRaw(getState());
+        rtcManager?.stopOrResumeAudio({ enable: selectIsMicrophoneEnabled(getState()) });
+    },
+});
+
+startAppListening({
     actionCreator: doStartScreenshare.fulfilled,
     effect: ({ payload }, { getState }) => {
         const { stream } = payload;
