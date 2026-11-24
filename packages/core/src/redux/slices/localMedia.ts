@@ -424,11 +424,15 @@ export const doSetDevice = createAppAsyncThunk(
                 { replaceStream: stream },
             );
 
-            const isAudioEnabled = selectIsMicrophoneEnabled(state);
+            const isAudioEnabled = selectIsMicrophoneEnabled(getState());
             stream.getAudioTracks().forEach((track) => (track.enabled = isAudioEnabled));
 
-            const isVideoEnabled = selectIsCameraEnabled(state);
-            stream.getVideoTracks().forEach((track) => (track.enabled = isVideoEnabled));
+            if (!selectIsCameraEnabled(getState())) {
+                stream.getVideoTracks().forEach((track) => {
+                    track.stop();
+                    stream.removeTrack(track);
+                });
+            }
 
             return {
                 /** @deprecated Use changedTracks */
@@ -556,6 +560,15 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                         deviceId,
                     }),
                 );
+            }
+            const isAudioEnabled = selectIsMicrophoneEnabled(getState());
+            replaceStream.getAudioTracks().forEach((track) => (track.enabled = isAudioEnabled));
+
+            if (!selectIsCameraEnabled(getState())) {
+                replaceStream.getVideoTracks().forEach((track) => {
+                    track.stop();
+                    replaceStream.removeTrack(track);
+                });
             }
             return {
                 /** @deprecated Use changedTracks */

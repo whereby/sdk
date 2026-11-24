@@ -104,6 +104,20 @@ const waitForToggleCamera = (store: ReturnType<typeof createStore>) =>
         });
     });
 
+// The next getUserMedia stays pending until resolve() is called with the stream it should return
+const holdGetUserMedia = () => {
+    let resolveStream: (stream: MediaStream) => void = () => {};
+    const called = new Promise<void>((markCalled) => {
+        mockedGetUserMedia.mockImplementationOnce(() => {
+            markCalled();
+            return new Promise<MediaStream>((resolve) => {
+                resolveStream = resolve;
+            });
+        });
+    });
+    return { called, resolve: (stream: MediaStream) => resolveStream(stream) };
+};
+
 const videoModeChanges: [
     string,
     () => PayloadAction<{ enabled?: boolean }>,
@@ -625,6 +639,30 @@ describe("actions", () => {
             expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
             expect(mockedGetUserMedia).toHaveBeenCalledWith({ video: expect.any(Object) });
         });
+
+        it("should drop the camera when it's turned off during a video mode switch", async () => {
+            const switchedTrack = createLiveTrack("video", videoDevice.deviceId);
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", videoDevice.deviceId),
+            ]);
+            const store = createStore({
+                withRtcManager: true,
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, videoDevice] }),
+            });
+            const getUserMedia = holdGetUserMedia();
+
+            store.dispatch(localMediaSlice.toggleLowDataModeEnabled({ enabled: true }));
+            await getUserMedia.called;
+            store.dispatch(localMediaSlice.toggleCameraEnabled({ enabled: false }));
+            await waitForToggleCamera(store);
+            getUserMedia.resolve(new MockMediaStream([switchedTrack]));
+            await waitForSwitch(store);
+
+            expect(stream.getVideoTracks()).toEqual([]);
+            expect(switchedTrack.stop).toHaveBeenCalled();
+            expect(mockRtcManager.replaceTrack).not.toHaveBeenCalledWith(expect.anything(), switchedTrack);
+        });
     });
 
     describe("doUpdateDeviceList", () => {
@@ -895,6 +933,28 @@ describe("actions", () => {
             expect(constraints?.audio).toEqual(expect.objectContaining({ deviceId: { exact: otherMic.deviceId } }));
             expect(stream.getAudioTracks()).toEqual([pickedTrack]);
             expect(store.getState().localMedia.currentMicrophoneDeviceId).toBe(otherMic.deviceId);
+        });
+
+        it("should apply microphone mute when muted during a pick", async () => {
+            const otherMic = { ...audioDevice, deviceId: "otherAudioDeviceId", label: "Other microphone" };
+            const pickedTrack = createLiveTrack("audio", otherMic.deviceId);
+            const stream = new MockMediaStream([
+                createLiveTrack("audio", audioDevice.deviceId),
+                createLiveTrack("video", videoDevice.deviceId),
+            ]);
+            const store = createStore({
+                initialState: startedLocalMedia({ stream, devices: [audioDevice, otherMic, videoDevice] }),
+            });
+            const getUserMedia = holdGetUserMedia();
+
+            store.dispatch(localMediaSlice.setCurrentMicrophoneDeviceId({ deviceId: otherMic.deviceId }));
+            await getUserMedia.called;
+            store.dispatch(localMediaSlice.toggleMicrophoneEnabled({ enabled: false }));
+            getUserMedia.resolve(new MockMediaStream([pickedTrack]));
+            await waitForSetDevice(store);
+
+            expect(stream.getAudioTracks()).toEqual([pickedTrack]);
+            expect(pickedTrack.enabled).toBe(false);
         });
 
         it("should show the camera we got when the pick lands on another one", async () => {
