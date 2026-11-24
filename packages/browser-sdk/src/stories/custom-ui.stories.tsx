@@ -1,7 +1,8 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useContext, useState, useEffect } from "react";
 import {
     useLocalMedia,
     UseLocalMediaResult,
+    DevicePermissionState,
     useRoomConnection,
     VideoView,
     getUsableCameraEffectPresets,
@@ -11,7 +12,7 @@ import VideoExperience from "./components/VideoExperience";
 import { getFakeMediaStream, InitialMuteStates } from "@whereby.com/core";
 import "./styles.css";
 import Grid from "./components/Grid";
-import { Provider as WherebyProvider } from "../lib/react/Provider";
+import { Provider as WherebyProvider, WherebyContext } from "../lib/react/Provider";
 import { StoryObj } from "@storybook/react-vite";
 
 const defaultArgs: StoryObj = {
@@ -168,6 +169,57 @@ export const LocalMediaOnly = () => {
     return (
         <div>
             <PrecallExperience {...localMedia} />
+        </div>
+    );
+};
+
+const formatPermission = (permission: DevicePermissionState | null) => permission ?? "unknown";
+
+function StartedLocalMedia() {
+    const localMedia = useLocalMedia({ audio: true, video: true });
+
+    return <PrecallExperience {...localMedia} />;
+}
+
+export const DevicePermissionsBeforeMedia = () => {
+    const localMediaClient = useContext(WherebyContext)?.getLocalMedia();
+    const [permissions, setPermissions] = useState(() => {
+        const state = localMediaClient?.getState();
+        return { camera: state?.cameraPermission ?? null, microphone: state?.microphonePermission ?? null };
+    });
+    const [isMediaStarted, setIsMediaStarted] = useState(false);
+
+    useEffect(() => {
+        if (!localMediaClient) {
+            return;
+        }
+
+        const { cameraPermission, microphonePermission } = localMediaClient.getState();
+        setPermissions({ camera: cameraPermission, microphone: microphonePermission });
+
+        const unsubscribeCamera = localMediaClient.subscribeCameraPermission((camera) =>
+            setPermissions((previous) => ({ ...previous, camera })),
+        );
+        const unsubscribeMicrophone = localMediaClient.subscribeMicrophonePermission((microphone) =>
+            setPermissions((previous) => ({ ...previous, microphone })),
+        );
+
+        return () => {
+            unsubscribeCamera();
+            unsubscribeMicrophone();
+        };
+    }, [localMediaClient]);
+
+    return (
+        <div>
+            <div>Camera permission: {formatPermission(permissions.camera)}</div>
+            <div>Microphone permission: {formatPermission(permissions.microphone)}</div>
+            <hr />
+            {isMediaStarted ? (
+                <StartedLocalMedia />
+            ) : (
+                <button onClick={() => setIsMediaStarted(true)}>Start camera and microphone</button>
+            )}
         </div>
     );
 };
