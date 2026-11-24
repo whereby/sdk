@@ -20,6 +20,7 @@ import { organizationSlice } from "./slices/organization";
 import { remoteParticipantsSlice } from "./slices/remoteParticipants";
 import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
+import { roomLayoutSlice } from "./slices/roomLayout";
 import { roomIntegrationsSlice } from "./slices/roomIntegrations";
 import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcAnalyticsSlice } from "./slices/rtcAnalytics";
@@ -54,6 +55,7 @@ const appReducer = combineReducers({
     room: roomSlice.reducer,
     roomConnection: roomConnectionSlice.reducer,
     roomIntegrations: roomIntegrationsSlice.reducer,
+    roomLayout: roomLayoutSlice.reducer,
     rtcAnalytics: rtcAnalyticsSlice.reducer,
     rtcConnection: rtcConnectionSlice.reducer,
     signalConnection: signalConnectionSlice.reducer,

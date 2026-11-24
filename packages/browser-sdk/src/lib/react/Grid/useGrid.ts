@@ -5,6 +5,7 @@ import { calculateLayout } from "./layout/stageLayout";
 import { makeIntegrationCellView, makeVideoCellView } from "./layout/cellView";
 import { STAGE_PARTICIPANT_LIMIT } from "./contants";
 import { useGridParticipants } from "./useGridParticipants";
+import { WherebyContext } from "../Provider";
 
 interface Props {
     activeVideosSubgridTrigger?: number;
@@ -37,6 +38,7 @@ function useGrid({
     const [clientAspectRatios, setClientAspectRatios] = React.useState<{ [key: string]: number }>({});
     const [maximizedCellId, setMaximizedCellId] = React.useState<string | null>(null);
     const [floatingCellId, setFloatingCellId] = React.useState<string | null>(null);
+    const gridClient = React.useContext(WherebyContext)?.getGrid();
     const {
         clientViewsInGrid,
         clientViewsInPresentationGrid,
@@ -161,6 +163,73 @@ function useGrid({
         videoGridGap,
     ]);
 
+    const moveCell = React.useCallback(
+        (id: string, targetId: string) => {
+            if (!gridClient || id === targetId) {
+                return;
+            }
+
+            const isFloatingOrInSubgrid = (cellId: string) =>
+                [...cellViewsFloating, ...cellViewsInSubgrid].some((cell) => cell.cellId === cellId);
+
+            if (isFloatingOrInSubgrid(id) || isFloatingOrInSubgrid(targetId)) {
+                return;
+            }
+
+            const allCells = [
+                ...cellViewsFloating,
+                ...cellViewsVideoGrid,
+                ...cellViewsInPresentationGrid,
+                ...cellViewsInSubgrid,
+                ...cellViewsHidden,
+            ];
+            const isVideoCell = (cellId: string) =>
+                allCells.some((cell) => cell.type === "video" && cell.cellId === cellId);
+            const isIntegrationCell = (cellId: string) =>
+                allCells.some((cell) => cell.type === "integration" && cell.cellId === cellId);
+            const stagedIntegration = cellViewsInPresentationGrid.find((cell) => cell.type === "integration");
+
+            if (isIntegrationCell(id) || isIntegrationCell(targetId)) {
+                if (id === stagedIntegration?.cellId && isVideoCell(targetId)) {
+                    setMaximizedCellId(targetId);
+                } else if (targetId === stagedIntegration?.cellId && isVideoCell(id)) {
+                    setMaximizedCellId(id);
+                }
+                return;
+            }
+
+            if (!maximizedClientView) {
+                const isOnStage = (cellId: string) =>
+                    cellViewsInPresentationGrid.some((cell) => cell.type === "video" && cell.cellId === cellId);
+
+                // No drop between stage and grid.
+                if (isOnStage(id) || isOnStage(targetId)) {
+                    if (isOnStage(id) && isOnStage(targetId) && gridClient.getState().canSpotlight) {
+                        gridClient.swapSpotlightOrder({ id, targetId });
+                    }
+                    return;
+                }
+            }
+
+            if (maximizedClientView?.id === id && isVideoCell(targetId)) {
+                setMaximizedCellId(targetId);
+            } else if (maximizedClientView?.id === targetId && isVideoCell(id)) {
+                setMaximizedCellId(id);
+            }
+
+            gridClient.reorderClientViews({ id, targetId });
+        },
+        [
+            gridClient,
+            cellViewsFloating,
+            cellViewsVideoGrid,
+            cellViewsInPresentationGrid,
+            cellViewsInSubgrid,
+            cellViewsHidden,
+            maximizedClientView,
+        ],
+    );
+
     return {
         containerFrame,
         cellViewsFloating,
@@ -179,6 +248,7 @@ function useGrid({
         setFloatingCellId,
         floatingParticipant: floatingClientView,
         isConstrained,
+        moveCell,
     };
 }
 
