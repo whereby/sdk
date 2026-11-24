@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.5.1
+
+### Patch Changes
+
+- a71a4f1: Report offer glare and failed negotiation steps in P2P
+
 ## 11.5.0
 
 ### Minor Changes
