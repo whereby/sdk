@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.4.3
+
+### Patch Changes
+
+- 876a803: Add `stopOrResumeAudio` to the `RtcManager` interface
+
 ## 11.4.2
 
 ### Patch Changes

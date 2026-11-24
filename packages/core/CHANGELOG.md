@@ -1,5 +1,32 @@
 # @whereby.com/core
 
+## 1.32.0
+
+### Minor Changes
+
+- d0085f2: Add `isLocked` to the room connection state, with `subscribeToRoomLock` and the `room-lock:changed` event, so an app
+  knows before `joinRoom()` whether it will have to knock. It's `null` until known, and for a room that doesn't exist,
+  is banned or couldn't be fetched.
+  
+  `RoomConnectionClient.initialize()` now fetches the room from the Whereby API when given a new room URL, or the same
+  URL after a failed fetch. While in a room it waits until leaving, and assistants and Node.js participants skip it.
+  In a room, the signal server keeps `isLocked` current, and it keeps its last value after leaving.
+  `createServices()` returns the new `fetchRoomFromRoomUrl` it uses, and `@whereby.com/core/redux` exports
+  `selectRoomLockState`.
+  
+  `RoomConnectionState.isLocked` and the new `RoomState` fields are required, so code that builds these objects by hand,
+  such as test mocks or a preloaded store state, needs them added. `selectRoomIsLocked` can now be `true` before joining,
+  from the fetched room.
+
+### Patch Changes
+
+- 329d182: Pause and resume audio in the RtcManager when the microphone is toggled, so unmuting after joining muted works in SFU
+- 90793df: `createServices().fetchOrganizationFromRoomUrl` reuses an organization it has already fetched for the subdomain.
+  A failed lookup isn't kept, so the next call tries again.
+- Updated dependencies [876a803]
+  - @whereby.com/media@11.4.3
+  - @whereby.com/audio-denoiser@1.0.37
+
 ## 1.31.7
 
 ### Patch Changes

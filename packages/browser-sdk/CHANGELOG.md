@@ -1,5 +1,23 @@
 # @whereby.com/browser-sdk
 
+## 3.41.0
+
+### Minor Changes
+
+- 2c68fcf: `useRoomConnection` has a new `state.isLocked`, whether the room is locked, so an app can show Knock or Join before
+  `joinRoom()`. It's `null` until known. The hook initializes the client when it mounts, and again when the room URL
+  changes, so the room is fetched before joining. This means mounting the hook now makes requests to the Whereby API
+  (registering the device, and fetching the organization and the room) before the user joins.
+
+### Patch Changes
+
+- Updated dependencies [329d182]
+- Updated dependencies [d0085f2]
+- Updated dependencies [90793df]
+- Updated dependencies [876a803]
+  - @whereby.com/core@1.32.0
+  - @whereby.com/media@11.4.3
+
 ## 3.40.7
 
 ### Patch Changes
