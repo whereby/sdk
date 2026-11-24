@@ -1,5 +1,23 @@
 # @whereby.com/browser-sdk
 
+## 3.42.0
+
+### Minor Changes
+
+- 485a562: Add `moveCell(id, targetId)` to `useGrid` and `useGridCell`, for building drag-to-reorder on `VideoGrid`. It does what
+  dropping one tile on another does in the Whereby room: two tiles in the grid swap places for you, two spotlighted tiles
+  on the stage swap for everyone (hosts only), swapping with the maximized tile moves the maximize, and dropping a tile on
+  the room integration on the stage (or the integration on a tile) maximizes that tile. Drops on or from the subgrid or
+  the floating tile do nothing. `GridCell` now always has a `data-cell-id` attribute, defaulting to the participant's id,
+  for finding the tile under the pointer.
+
+### Patch Changes
+
+- Updated dependencies [7a954c6]
+- Updated dependencies [9c755ea]
+  - @whereby.com/core@1.33.0
+  - @whereby.com/media@11.5.0
+
 ## 3.41.1
 
 ### Patch Changes
