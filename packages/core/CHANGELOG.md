@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.32.1
+
+### Patch Changes
+
+- f87becb: Keep the microphone muted and the camera off when they are turned off while a device switch is running
+
 ## 1.32.0
 
 ### Minor Changes
