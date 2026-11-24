@@ -44,6 +44,39 @@ describe("actions", () => {
                     streamId: CAMERA_STREAM_ID,
                 });
             });
+
+            it("should spotlight a screenshare by its client view id", () => {
+                const presentationStream = Object.assign(randomMediaStream(), { id: "pres-stream", active: true });
+                const participant = randomRemoteParticipant({ id: "b", presentationStream });
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        remoteParticipants: { remoteParticipants: [participant] },
+                    },
+                    withSignalConnection: true,
+                });
+
+                store.dispatch(doSpotlightParticipant({ id: "pres-b" }));
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("add_spotlight", {
+                    clientId: "b",
+                    streamId: "pres-stream",
+                });
+            });
+
+            it("should not send anything for an unknown client view id", () => {
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        remoteParticipants: { remoteParticipants: [randomRemoteParticipant({ id: "b" })] },
+                    },
+                    withSignalConnection: true,
+                });
+
+                store.dispatch(doSpotlightParticipant({ id: "pres-b" }));
+
+                expect(mockSignalEmit).not.toHaveBeenCalled();
+            });
         });
 
         describe("when not authorized", () => {
@@ -81,6 +114,27 @@ describe("actions", () => {
                 expect(mockSignalEmit).toHaveBeenCalledWith("remove_spotlight", {
                     clientId: participantId,
                     streamId: CAMERA_STREAM_ID,
+                });
+            });
+
+            it("should remove the spotlight from a screenshare by its client view id", () => {
+                const presentationStream = Object.assign(randomMediaStream(), { id: "pres-stream", active: true });
+                const participant = randomRemoteParticipant({ id: "b", presentationStream });
+                const store = createStore({
+                    initialState: {
+                        authorization: { roomKey: null, roleName: "host" },
+                        remoteParticipants: { remoteParticipants: [participant] },
+                        roomLayout: { sortedClientIds: ["pres-b", "b"] },
+                        spotlights: { sorted: [{ clientId: "b", streamId: "pres-stream" }] },
+                    },
+                    withSignalConnection: true,
+                });
+
+                store.dispatch(doRemoveSpotlight({ id: "pres-b" }));
+
+                expect(mockSignalEmit).toHaveBeenCalledWith("remove_spotlight", {
+                    clientId: "b",
+                    streamId: "pres-stream",
                 });
             });
         });

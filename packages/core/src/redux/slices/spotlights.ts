@@ -64,6 +64,14 @@ function swapSpotlights(spotlights: Spotlight[], source: Spotlight, target: Spot
     return swapped;
 }
 
+function spotlightForClientView(clientViews: ClientView[], clientViewId: string): Spotlight | null {
+    const clientView = clientViews.find((c) => c.id === clientViewId);
+    if (!clientView) {
+        return null;
+    }
+    return { clientId: clientView.clientId, streamId: streamIdForClient(clientView) ?? CAMERA_STREAM_ID };
+}
+
 function mapSpotlightsToClientViews(spotlights: Spotlight[], clientViews: ClientView[]) {
     return spotlights.reduce((acc, s) => {
         const clientView = clientViews.find((c) => s.clientId === c.clientId && s.streamId === streamIdForClient(c));
@@ -168,14 +176,13 @@ export const doSpotlightParticipant = createAppAuthorizedThunk(
     ({ id }: { id: string }) =>
         (_, getState) => {
             const state = getState();
-            const clientView = selectAllClientViews(state).find((c) => c.clientId === id);
+            const spotlight = spotlightForClientView(selectAllClientViews(state), id);
 
-            if (!clientView) {
+            if (!spotlight) {
                 return;
             }
             const { socket } = selectSignalConnectionRaw(state);
-            const streamId = streamIdForClient(clientView);
-            const payload: AddSpotlightRequest = { clientId: clientView.id, streamId: streamId ?? CAMERA_STREAM_ID };
+            const payload: AddSpotlightRequest = spotlight;
             socket?.emit("add_spotlight", payload);
         },
 );
@@ -185,15 +192,13 @@ export const doRemoveSpotlight = createAppAuthorizedThunk(
     ({ id }: { id: string }) =>
         (_, getState) => {
             const state = getState();
-            const clientView = selectAllClientViews(state).find((c) => c.clientId === id);
+            const spotlight = spotlightForClientView(selectAllClientViews(state), id);
 
-            if (!clientView) {
+            if (!spotlight) {
                 return;
             }
             const { socket } = selectSignalConnectionRaw(state);
-            const streamId = streamIdForClient(clientView);
-            const payload: RemoveSpotlightRequest = { clientId: clientView.id, streamId: streamId ?? CAMERA_STREAM_ID };
-
+            const payload: RemoveSpotlightRequest = spotlight;
             socket?.emit("remove_spotlight", payload);
         },
 );
@@ -207,15 +212,8 @@ export const doSwapSpotlightOrder = createAppAuthorizedThunk(
             const clientViews = selectAllClientViews(state);
             const spotlights = selectSpotlights(state);
             const toSpotlight = (clientViewId: string): Spotlight | null => {
-                const clientView = clientViews.find((c) => c.id === clientViewId);
-                if (!clientView) {
-                    return null;
-                }
-                const spotlight = {
-                    clientId: clientView.clientId,
-                    streamId: streamIdForClient(clientView) ?? CAMERA_STREAM_ID,
-                };
-                return spotlights.some((s) => isSameSpotlight(s, spotlight)) ? spotlight : null;
+                const spotlight = spotlightForClientView(clientViews, clientViewId);
+                return spotlight && spotlights.some((s) => isSameSpotlight(s, spotlight)) ? spotlight : null;
             };
 
             const source = toSpotlight(id);

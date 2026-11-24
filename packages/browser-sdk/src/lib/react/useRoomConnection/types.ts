@@ -65,8 +65,8 @@ export interface RoomConnectionActions {
     toggleLowDataMode: (enabled?: boolean) => void;
     toggleAudioOnlyMode: (enabled?: boolean, options?: ToggleAudioOnlyModeOptions) => void;
     toggleWidescreenMode: (enabled?: boolean) => void;
-    spotlightParticipant: (clientId: string) => void;
-    removeSpotlight: (clientId: string) => void;
+    spotlightParticipant: (id: string) => void;
+    removeSpotlight: (id: string) => void;
     joinBreakoutGroup: (group: string) => void;
     joinBreakoutMainRoom: () => void;
     startRoomIntegration: (options: {

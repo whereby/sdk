@@ -904,16 +904,17 @@ export class RoomConnectionClient extends BaseClient<RoomConnectionState, RoomCo
     }
 
     /**
-     * Spotlight a participant.
-     * @param participantId - The ID of the participant to spotlight.
+     * Spotlight a participant's camera or screenshare.
+     * @param participantId - The client view id: the participant's id for their camera, or the screenshare's view id
+     * (`pres-<participantId>`) for their screenshare.
      */
     public spotlightParticipant(participantId: string) {
         this.store.dispatch(doSpotlightParticipant({ id: participantId }));
     }
 
     /**
-     * Remove spotlight from a participant.
-     * @param participantId - The ID of the participant to remove spotlight from.
+     * Remove the spotlight from a participant's camera or screenshare.
+     * @param participantId - The client view id, as for `spotlightParticipant`.
      */
     public removeSpotlight(participantId: string) {
         this.store.dispatch(doRemoveSpotlight({ id: participantId }));
