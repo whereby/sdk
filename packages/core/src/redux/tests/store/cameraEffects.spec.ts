@@ -52,6 +52,8 @@ const flushMicrotasks = async () => {
 
 const startedLocalMedia = (overrides: Partial<RootState["localMedia"]>): RootState["localMedia"] => ({
     busyDeviceIds: [],
+    cameraPermission: null,
+    microphonePermission: null,
     cameraEnabled: true,
     devices: [],
     hdMode: true,
