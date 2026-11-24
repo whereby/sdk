@@ -296,7 +296,6 @@ export default class VegaRtcManager implements RtcManager {
             vegaJoinWithoutVegaConnection: 0,
             vegaMicProducerClosed: 0,
             vegaMicProducerFailed: 0,
-            vegaReplaceTrackNoProducerNoEnabledTrack: 0,
             vegaRequestTimeout: 0,
             vegaScreenAudioProducerFailed: 0,
             vegaScreenVideoProducerFailed: 0,
@@ -1254,16 +1253,9 @@ export default class VegaRtcManager implements RtcManager {
 
         // if we attempted to produce an ended track earlier no producer would have been made
         // so here, later, it will be replaced with a working track, and the producer needs to be created
-        if (!this._webcamProducer && this._webcamTrack.enabled) {
+        if (!this._webcamProducer) {
             await this._internalSendWebcam();
             return;
-        }
-
-        if (!this._webcamProducer && (!this._webcamTrack || !this._webcamTrack.enabled)) {
-            this.analytics.vegaReplaceTrackNoProducerNoEnabledTrack++;
-            rtcStats.sendEvent("VegaReplaceTrackNoProducerNoEnabledTrack", {
-                hasWebcamTrack: !!this._webcamTrack,
-            });
         }
 
         if (this._webcamProducer.track !== this._webcamTrack) {

@@ -102,7 +102,6 @@ type VegaAnalytics = {
     vegaJoinWithoutVegaConnection: number;
     vegaMicProducerClosed: number;
     vegaMicProducerFailed: number;
-    vegaReplaceTrackNoProducerNoEnabledTrack: number;
     vegaRequestTimeout: number;
     vegaScreenAudioProducerFailed: number;
     vegaScreenVideoProducerFailed: number;
