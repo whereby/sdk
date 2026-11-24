@@ -107,6 +107,37 @@ function MyPreCallUX() {
 }
 ```
 
+##### Camera and microphone permission
+
+`cameraPermission` and `microphonePermission` in the local media state say
+whether the browser allows each device:
+
+- `"granted"`: allowed. Starting media won't show the browser's prompt.
+- `"denied"`: refused.
+- `"prompt"`: not asked yet, so starting media shows the browser's prompt.
+  Browsers that can't report the permission for a device (no Permissions API
+  for camera or microphone) read as `"prompt"`.
+- `null`: the browser hasn't answered yet, which takes a few milliseconds
+  after the client is created.
+
+The state is known before media starts. `useLocalMedia` starts media when it
+mounts, so to check first (for example to explain the browser's prompt before
+showing it), read it from the client you pass to `WherebyProvider`:
+
+```js
+const localMedia = client.getLocalMedia();
+
+const { cameraPermission, microphonePermission } = localMedia.getState();
+
+const unsubscribe = localMedia.subscribeCameraPermission((permission) => {
+    // Called when the camera permission changes
+});
+```
+
+`subscribeMicrophonePermission` does the same for the microphone, and the
+client also emits `local-media:camera-permission-changed` and
+`local-media:microphone-permission-changed`.
+
 #### useRoomConnection
 
 The `useRoomConnection` hook provides a way to connect participants in a given
