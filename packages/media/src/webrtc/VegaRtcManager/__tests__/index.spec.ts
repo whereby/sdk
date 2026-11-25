@@ -59,6 +59,7 @@ describe("VegaRtcManager", () => {
 
     let mockSendTransport: MockTransport;
 
+    // Uses internals, we have no other signal for when the join and its producers are done
     const waitForSfuJoin = () =>
         new Promise<void>((resolve) => {
             const join = rtcManager._join.bind(rtcManager);
@@ -276,6 +277,21 @@ describe("VegaRtcManager", () => {
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(2);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledWith({ track: newTrack });
+            sfuWebsocketServer.close();
+        });
+
+        it("sends a mic handed over when no mic is being sent", async () => {
+            const micTrack = helpers.createMockedMediaStreamTrack({ kind: "audio" });
+            stream.getAudioTracks().forEach((t) => stream.removeTrack(t));
+            jest.spyOn(mockSendTransport, "produce");
+            const joined = waitForSfuJoin();
+            rtcManager.setupSocketListeners();
+            rtcManager.addCameraStream(stream);
+            await joined;
+
+            rtcManager.replaceTrack(null, micTrack);
+
+            expect(mockSendTransport.produce).toHaveBeenCalledWith(expect.objectContaining({ track: micTrack }));
             sfuWebsocketServer.close();
         });
     });
@@ -560,15 +576,6 @@ describe("VegaRtcManager", () => {
             expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         });
 
-        it("sends a mic handed over when no mic is being sent", () => {
-            const micTrack = helpers.createMockedMediaStreamTrack({ kind: "audio" });
-            jest.spyOn(mockSendTransport, "produce");
-            rtcManager._sendTransport = mockSendTransport as any;
-
-            rtcManager.replaceTrack(null, micTrack);
-
-            expect(mockSendTransport.produce).toHaveBeenCalledWith(expect.objectContaining({ track: micTrack }));
-        });
     });
 
     describe("_onChangedHighestPreferredLayer", () => {
