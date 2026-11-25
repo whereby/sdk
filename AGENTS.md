@@ -88,6 +88,11 @@ output from some existing tests. That doesn't fail the run.
 - Prettier (`tooling/prettier`: 4 spaces, 120 columns) isn't checked in CI. Run `prettier --write` on files you
   change. 5 existing files aren't formatted, so check the diff stays yours.
 - TypeScript is `strict`. Type errors fail `pnpm build` (rollup-plugin-typescript2) and ts-jest.
+- Comment only what the code can't say: why something non-obvious is done, a workaround and what it's for, a
+  constraint from outside (a browser bug, the backend, the wire protocol). Don't restate the code, or repeat AGENTS.md
+  or the docs in `docs/agents/`; point to them if needed. On public API (hooks, client methods, exported types), a
+  short TSDoc is fine when the name doesn't say what it's for, since customers read it in their editor. The one kind
+  of label comment is the slice section headers ([docs/agents/state.md](docs/agents/state.md)).
 - Room logic belongs in core, not in browser-sdk hooks or the apps. browser-sdk only adapts core's clients to React.
 - Every change to a published package's behaviour or API needs a changeset ([docs/agents/ci.md](docs/agents/ci.md)).
   Don't hand-edit `version` fields, `CHANGELOG.md` files or internal dependency pins. The release PR does that.
