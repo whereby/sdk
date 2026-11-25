@@ -1,8 +1,9 @@
 import { createStore, mockRtcManager } from "../store.setup";
 import { doRtcAnalyticsCustomEventsInitialize, rtcAnalyticsState } from "../../slices/rtcAnalytics";
 import { diff } from "deep-object-diff";
-import { randomOrganization } from "../../../__mocks__/appMocks";
+import { randomOrganization, randomSignalClient } from "../../../__mocks__/appMocks";
 import { setDisplayName } from "../../slices/localParticipant";
+import { signalEvents } from "../../slices/signalConnection/actions";
 
 describe("actions", () => {
     it("doRtcAnalyticsCustomEventsInitialize", async () => {
@@ -84,6 +85,38 @@ describe("middleware", () => {
                 "displayName",
                 expect.objectContaining({ displayName: "[[redacted]]" }),
             );
+        });
+    });
+    describe("actions", () => {
+        it("sends roomSessionId on newClient, which recording and transcribing also list", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.newClient({
+                    client: randomSignalClient(),
+                    room: { session: { id: "new-session-id", createdAt: "2026-11-11T00:00:00Z" } },
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "roomSessionId",
+                expect.objectContaining({ roomSessionId: "new-session-id" }),
+            );
+        });
+    });
+
+    describe("values with actions", () => {
+        it("doesn't send an object value again when it hasn't changed", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.newClient({ client: randomSignalClient() }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
+            expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("transcribing", expect.anything());
         });
     });
 });
