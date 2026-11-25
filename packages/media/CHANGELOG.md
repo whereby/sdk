@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.5.3
+
+### Patch Changes
+
+- 2e1e325: Stop watching local camera and microphone tracks for ended in P2P and SFU
+
 ## 11.5.2
 
 ### Patch Changes
