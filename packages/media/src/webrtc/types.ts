@@ -244,7 +244,6 @@ export type SignalSFUServer = {
 export interface AddCameraStreamOptions {
     audioPaused?: boolean;
     videoPaused?: boolean;
-    beforeEffectTracks?: MediaStreamTrack[];
 }
 
 export interface RemoveScreenshareStreamOptions {

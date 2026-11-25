@@ -78,8 +78,6 @@ type VegaAnalytics = {
     avgCamPreferredSpatialLayerSwitchLatencyMs: number | undefined;
     camOutboundCongestedFraction: number | undefined;
     camOutboundRttInflationMs: number | undefined;
-    camTrackEndedCount: number;
-    micTrackEndedCount: number;
     numCamHighestPreferredSpatialLayerChanges: number;
     numCamHighestPreferredSpatialLayerChanges0To1: number;
     numCamHighestPreferredSpatialLayerChanges0To2: number;

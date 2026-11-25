@@ -12,7 +12,6 @@ import validate from "uuid-validate";
 import rtcManagerEvents from "./rtcManagerEvents";
 import Logger from "../utils/Logger";
 import {
-    AddCameraStreamOptions,
     RemoveScreenshareStreamOptions,
     RtcManager,
     RtcManagerOptions,
@@ -24,7 +23,7 @@ import {
     SignalIceEndOfCandidatesMessage,
     MediaPrefs,
 } from "./types";
-import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs, trackAnnotations } from "../utils";
+import { ClearableTimeout, ScreenshareStoppedEvent, ServerSocket, sortCodecs } from "../utils";
 import { maybeTurnOnly, external_stun_servers, turnServerOverride } from "../utils/iceServers";
 import { updateRenderedDimensions } from "./stats/StatsMonitor";
 
@@ -50,16 +49,7 @@ export const ICE_RESTART_DELAY = 2 * 1000;
 const browserName = adapter.browserDetails?.browser;
 const browserVersion = adapter.browserDetails.version;
 
-let unloading = false;
-if (browserName === "chrome") {
-    window.document.addEventListener("beforeunload", () => {
-        unloading = true;
-    });
-}
-
 type P2PAnalytics = {
-    camTrackEndedCount: number;
-    micTrackEndedCount: number;
     numIceConnected: number;
     numIceDisconnected: number;
     numIceFailed: number;
@@ -111,15 +101,11 @@ export default class P2pRtcManager implements RtcManager {
         offerToReceiveAudio: boolean;
         offerToReceiveVideo: boolean;
     };
-    _audioTrackOnEnded: () => void;
-    _videoTrackOnEnded: () => void;
     _iceServers: any;
     _turnServers: any;
     _mediaserverConfigTtlSeconds: any;
     _fetchMediaServersTimer: ClearableTimeout | null;
     _icePublicIPGatheringTimeoutID: ClearableTimeout | null;
-    _videoTrackBeingMonitored?: MediaStreamTrack;
-    _audioTrackBeingMonitored?: MediaStreamTrack;
     _closed: boolean;
     analytics: P2PAnalytics;
     _rtcStatsDisconnectTimeout?: ReturnType<typeof setTimeout>;
@@ -148,22 +134,6 @@ export default class P2pRtcManager implements RtcManager {
 
         this.offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
 
-        this._audioTrackOnEnded = () => {
-            // There are a couple of reasons the microphone could stop working.
-            // One of them is getting unplugged. The other is the Chrome audio
-            // process crashing. The third is the tab being closed.
-            // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
-            rtcStats.sendEvent("audio_ended", { unloading });
-            this._emit(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
-            this.analytics.micTrackEndedCount++;
-        };
-
-        this._videoTrackOnEnded = () => {
-            rtcStats.sendEvent("video_ended", { unloading });
-            this._emit(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
-            this.analytics.camTrackEndedCount++;
-        };
-
         this._updateAndScheduleMediaServersRefresh({
             iceServers: iceServers?.iceServers || [],
             turnServers: turnServers || [],
@@ -171,8 +141,6 @@ export default class P2pRtcManager implements RtcManager {
         });
 
         this.analytics = {
-            camTrackEndedCount: 0,
-            micTrackEndedCount: 0,
             numIceConnected: 0,
             numIceDisconnected: 0,
             numIceFailed: 0,
@@ -210,10 +178,7 @@ export default class P2pRtcManager implements RtcManager {
         return this._selfId === selfId && this._roomName === roomName && !isSfu;
     }
 
-    addCameraStream(
-        stream: MediaStream,
-        { beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
-    ) {
+    addCameraStream(stream: MediaStream) {
         logger.info("addCameraStream: [stream.id: %s]", stream.id);
 
         if (stream === this._localCameraStream) {
@@ -224,30 +189,6 @@ export default class P2pRtcManager implements RtcManager {
 
         this._localCameraStream = stream;
         this._addStreamToPeerConnections(stream);
-
-        const videoTrack = stream.getVideoTracks()[0];
-        const audioTrack = stream.getAudioTracks()[0];
-
-        if (audioTrack) {
-            if (!trackAnnotations(audioTrack).isEffectTrack) {
-                this._monitorAudioTrack(audioTrack);
-            }
-            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
-            if (beforeEffectTrack) {
-                this._monitorAudioTrack(beforeEffectTrack);
-            }
-        }
-
-        if (videoTrack) {
-            if (!trackAnnotations(videoTrack).isEffectTrack) {
-                this._monitorVideoTrack(videoTrack);
-            }
-
-            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
-            if (beforeEffectTrack) {
-                this._monitorVideoTrack(beforeEffectTrack);
-            }
-        }
     }
 
     addScreenshareStream(stream: MediaStream) {
@@ -274,12 +215,6 @@ export default class P2pRtcManager implements RtcManager {
             oldTrack?.id,
             newTrack.id,
         );
-        if (newTrack.kind === "audio" && !trackAnnotations(newTrack).isEffectTrack) {
-            this._monitorAudioTrack(newTrack);
-        }
-        if (newTrack.kind === "video" && !trackAnnotations(newTrack).isEffectTrack) {
-            this._monitorVideoTrack(newTrack);
-        }
         return this._replaceTrackToPeerConnections(oldTrack, newTrack);
     }
 
@@ -922,22 +857,6 @@ export default class P2pRtcManager implements RtcManager {
         if (!this._fetchMediaServersTimer) return;
         clearTimeout(this._fetchMediaServersTimer);
         this._fetchMediaServersTimer = null;
-    }
-
-    _monitorAudioTrack(track: MediaStreamTrack) {
-        if (this._audioTrackBeingMonitored?.id === track.id) return;
-
-        this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded);
-        track.addEventListener("ended", this._audioTrackOnEnded);
-        this._audioTrackBeingMonitored = track;
-    }
-
-    _monitorVideoTrack(track: MediaStreamTrack) {
-        if (this._videoTrackBeingMonitored?.id === track.id) return;
-
-        this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
-        track.addEventListener("ended", this._videoTrackOnEnded);
-        this._videoTrackBeingMonitored = track;
     }
 
     /**
