@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.33.3
+
+### Patch Changes
+
+- c95afe1: Check every rtcstats value that an action triggers, not only the first one, so roomSessionId is sent when a participant joins, and don't send unchanged object values, such as recording and transcribing, to rtcstats again
+
 ## 1.33.2
 
 ### Patch Changes
