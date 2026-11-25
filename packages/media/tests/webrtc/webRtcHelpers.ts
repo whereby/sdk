@@ -156,9 +156,9 @@ export function createMockedMediaStreamTrack({ id = randomString("track"), kind 
         },
         getConstraints: () => ({ deviceId: { exact: id } }), // not really correct
         getSettings: () => ({ deviceId: id }),
-        stop: jest.fn(() => {
-            result.enabled = false;
-            result.readyState = "ended";
+        stop: jest.fn(function (this: { enabled: boolean; readyState: string }) {
+            this.enabled = false;
+            this.readyState = "ended";
         }),
     };
     return Object.assign(new EventTarget(), result) as unknown as MediaStreamTrack;
@@ -231,22 +231,27 @@ export class MockTransport {
 
 export class MockProducer {
     kind: string;
+    track: any;
 
-    constructor({ kind }: { kind: string }) {
+    constructor({ kind, track }: { kind: string; track?: MediaStreamTrack }) {
         this.kind = kind;
+        this.track = track;
     }
 
     id = "id";
-    resume = jest.fn();
-    pause = jest.fn();
+    resume = jest.fn(() => {
+        this.paused = false;
+    });
+    pause = jest.fn(() => {
+        this.paused = true;
+    });
     observer = {
         once: jest.fn(),
     };
     paused = false;
-    replaceTrack = ({ track }: { track: any }) => {
+    replaceTrack = jest.fn(({ track }: { track: any }) => {
         this.track = track;
-    };
-    track = undefined;
+    });
 }
 
 export const createSfuWebsocketServer = (): {

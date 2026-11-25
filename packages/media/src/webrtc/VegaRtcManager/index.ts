@@ -121,7 +121,7 @@ export default class VegaRtcManager implements RtcManager {
     _screenVideoTrack: any;
     _screenAudioTrack: any;
     _micProducer: any;
-    _micProducerPromise: any;
+    _isCreatingMicProducer: boolean;
     _micPaused: any;
     _micScoreProducer: any;
     _micScoreProducerPromise: any;
@@ -213,7 +213,7 @@ export default class VegaRtcManager implements RtcManager {
         this._screenAudioTrack = null;
 
         this._micProducer = null;
-        this._micProducerPromise = null;
+        this._isCreatingMicProducer = false;
         this._micPaused = false;
         this._micScoreProducer = null;
         this._micScoreProducerPromise = null;
@@ -618,10 +618,10 @@ export default class VegaRtcManager implements RtcManager {
 
             await Promise.all([this._createTransport(true), this._createTransport(false)]);
 
+            this._sendMic();
+
             const mediaPromises = [];
 
-            if (this._micTrack && !this._micProducer && !this._micProducerPromise)
-                mediaPromises.push(this._internalSendMic());
             if (this._webcamTrack && !this._webcamProducer && !this._webcamProducerPromise)
                 mediaPromises.push(this._internalSendWebcam());
             if (this._screenVideoTrack && !this._screenVideoProducer && !this._screenVideoProducerPromise)
@@ -899,67 +899,68 @@ export default class VegaRtcManager implements RtcManager {
         }
     }
 
-    async _internalSendMic() {
-        logger.info("_internalSendMic()");
+    async _sendMic(track?: MediaStreamTrack) {
+        logger.info("_sendMic() [track:%o]", track);
+        if (track) this._micTrack = track;
 
-        this._micProducerPromise = (async () => {
-            try {
-                // Have any of our resources disappeared while we were waiting to be executed?
-                if (!this._micTrack || !this._sendTransport || this._micProducer) {
-                    this._micProducerPromise = null;
-                    return;
-                }
+        if (this._micProducer) {
+            await this._replaceMicTrack();
+            return;
+        }
+        if (!this._sendTransport || this._isCreatingMicProducer || this._micTrack?.readyState !== "live") {
+            return;
+        }
 
-                const currentPaused = this._micPaused;
+        this._isCreatingMicProducer = true;
+        try {
+            const currentPaused = this._micPaused;
 
-                const producer: Producer<ProducerAppData> = await this._sendTransport.produce({
-                    track: this._micTrack,
-                    disableTrackOnPause: false,
-                    stopTracks: false,
-                    ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On }),
-                    appData: {
-                        streamId: OUTBOUND_CAM_OUTBOUND_STREAM_ID,
-                        sourceClientId: this._selfId,
-                        screenShare: false,
-                        source: "mic",
-                        paused: currentPaused,
-                    },
-                });
+            const producer: Producer<ProducerAppData> = await this._sendTransport.produce({
+                track: this._micTrack,
+                disableTrackOnPause: false,
+                stopTracks: false,
+                ...getMediaSettings("audio", false, { ...this._features, vp9On: this._features.sfuVp9On }),
+                appData: {
+                    streamId: OUTBOUND_CAM_OUTBOUND_STREAM_ID,
+                    sourceClientId: this._selfId,
+                    screenShare: false,
+                    source: "mic",
+                    paused: currentPaused,
+                },
+            });
 
-                currentPaused ? producer.pause() : producer.resume();
+            currentPaused ? producer.pause() : producer.resume();
 
-                this._micProducer = producer;
-                this._qualityMonitor.addProducer(this._selfId, producer.id);
+            this._micProducer = producer;
+            this._qualityMonitor.addProducer(this._selfId, producer.id);
 
-                producer.observer.once("close", () => {
-                    logger.info('micProducer "close" event');
+            producer.observer.once("close", () => {
+                logger.info('micProducer "close" event');
 
-                    if (producer.appData.localClosed)
-                        this._vegaConnection?.message("closeProducers", { producerIds: [producer.id] });
+                if (producer.appData.localClosed)
+                    this._vegaConnection?.message("closeProducers", { producerIds: [producer.id] });
 
-                    this._micProducer = null;
-                    this._micProducerPromise = null;
-                    this._qualityMonitor.removeProducer(this._selfId, producer.id);
-                });
+                this._micProducer = null;
+                this._qualityMonitor.removeProducer(this._selfId, producer.id);
+            });
 
-                if (this._micTrack !== this._micProducer.track) await this._replaceMicTrack();
-                if (this._micPaused !== this._micProducer.paused) this._pauseResumeMic();
-            } catch (error) {
-                this.analytics.vegaMicProducerFailed++;
-                rtcStats.sendEvent("VegaMicProducerFailed", { error });
-                logger.error("micProducer failed:%o", error);
-            } finally {
-                this._micProducerPromise = null;
+            if (this._micTrack !== this._micProducer.track) await this._replaceMicTrack();
+            if (this._micPaused !== this._micProducer.paused) this._pauseResumeMic();
+        } catch (error) {
+            this.analytics.vegaMicProducerFailed++;
+            rtcStats.sendEvent("VegaMicProducerFailed", { error });
+            logger.error("micProducer failed:%o", error);
+        } finally {
+            this._isCreatingMicProducer = false;
 
-                // Has the track disappeared while we were waiting to be executed?
-                if (!this._micTrack) {
-                    this.analytics.vegaMicProducerClosed++;
-                    rtcStats.sendEvent("VegaMicProducerClosed", {});
-                    this._stopProducer(this._micProducer);
-                    this._micProducer = null;
-                }
+            // Has the track disappeared while we were waiting to be executed?
+            if (!this._micTrack) {
+                this.analytics.vegaMicProducerClosed++;
+                rtcStats.sendEvent("VegaMicProducerClosed", {});
+                this._stopProducer(this._micProducer);
+                this._micProducer = null;
             }
-        })();
+        }
     }
 
     async _internalSetupMicScore() {
@@ -1056,24 +1057,6 @@ export default class VegaRtcManager implements RtcManager {
             // were waiting for the new paused state to be used.
             this._pauseResumeMic();
         }
-    }
-
-    async _sendMic(track: MediaStreamTrack) {
-        logger.info("_sendMic() [track:%o]", track);
-
-        this._micTrack = track;
-
-        if (this._micProducer) {
-            return await this._replaceMicTrack();
-        } else if (this._micProducerPromise) {
-            // This promise will make sure to call replaceMicTrack() once the
-            // previous _sendMic() promise is resolved, so we can simply return.
-            return;
-        }
-
-        // We don't do anything if we don't have a sendTransport yet.
-        // The join logic will call _internalSendMic() again once the sendTransport is ready.
-        if (this._sendTransport) return await this._internalSendMic();
     }
 
     _sendMicScore(score: number) {
@@ -1602,7 +1585,7 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         if (track.kind === "audio") {
-            this._sendMic(track);
+            return this._sendMic(track);
         }
 
         if (track.kind === "video") {

@@ -64,7 +64,6 @@ describe("VegaRtcManager", () => {
             const join = rtcManager._join.bind(rtcManager);
             jest.spyOn(rtcManager, "_join").mockImplementation(async () => {
                 await join();
-                await rtcManager._micProducerPromise;
                 await rtcManager._webcamProducerPromise;
                 resolve();
             });
@@ -292,6 +291,181 @@ describe("VegaRtcManager", () => {
 
             expect(mockSendTransport.produce).toHaveBeenCalledWith(expect.objectContaining({ track: micTrack }));
             sfuWebsocketServer.close();
+        });
+    });
+
+    describe("mic", () => {
+        let produce: jest.SpyInstance;
+        let micProducers: MockProducer[];
+
+        const produceMic = ({ track }: { track: MediaStreamTrack }) => {
+            const producer = new MockProducer({ kind: track.kind, track });
+            if (track.kind === "audio") micProducers.push(producer);
+            return producer;
+        };
+
+        // track ids, since Jest can't print the mocked tracks in a failure message
+        const producedMicTrackIds = () =>
+            produce.mock.calls
+                .map(([{ track }]) => track)
+                .filter((track) => track.kind === "audio")
+                .map((track) => track.id);
+
+        const holdNextProduce = () => {
+            let finish: () => void = () => {};
+            produce.mockImplementationOnce(
+                (options: { track: MediaStreamTrack }) =>
+                    new Promise((resolve) => {
+                        finish = () => resolve(produceMic(options));
+                    }),
+            );
+            return () => finish();
+        };
+
+        const joinRoom = async (micTrack?: MediaStreamTrack) => {
+            const videoTrack = helpers.createMockedMediaStreamTrack({ kind: "video" });
+            const stream = helpers.createMockedMediaStream(micTrack ? [videoTrack, micTrack] : [videoTrack]);
+            const joined = waitForSfuJoin();
+            rtcManager.setupSocketListeners();
+            rtcManager.addCameraStream(stream);
+            await joined;
+        };
+
+        const createMicTrack = () => helpers.createMockedMediaStreamTrack({ kind: "audio" });
+
+        beforeEach(() => {
+            micProducers = [];
+            produce = jest.spyOn(mockSendTransport, "produce").mockImplementation(produceMic);
+        });
+
+        afterEach(() => {
+            sfuWebsocketServer.close();
+        });
+
+        it("sends a live mic when joining", async () => {
+            const micTrack = createMicTrack();
+
+            await joinRoom(micTrack);
+
+            expect(producedMicTrackIds()).toEqual([micTrack.id]);
+        });
+
+        it("doesn't send an ended mic when joining", async () => {
+            const micTrack = createMicTrack();
+            micTrack.stop();
+
+            await joinRoom(micTrack);
+
+            expect(producedMicTrackIds()).toEqual([]);
+        });
+
+        it("sends a live mic handed over after an ended one", async () => {
+            const endedTrack = createMicTrack();
+            endedTrack.stop();
+            const liveTrack = createMicTrack();
+            await joinRoom(endedTrack);
+
+            await rtcManager.replaceTrack(null, liveTrack);
+
+            expect(producedMicTrackIds()).toEqual([liveTrack.id]);
+        });
+
+        it("replaces the track on the mic producer instead of creating another one", async () => {
+            const firstTrack = createMicTrack();
+            const secondTrack = createMicTrack();
+            await joinRoom();
+            await rtcManager.replaceTrack(null, firstTrack);
+
+            await rtcManager.replaceTrack(firstTrack, secondTrack);
+
+            expect(producedMicTrackIds()).toEqual([firstTrack.id]);
+            expect(micProducers[0].track.id).toBe(secondTrack.id);
+        });
+
+        it("swaps in a mic handed over while the mic producer is being created", async () => {
+            const firstTrack = createMicTrack();
+            const secondTrack = createMicTrack();
+            await joinRoom();
+            const finishProduce = holdNextProduce();
+            const sending = rtcManager.replaceTrack(null, firstTrack);
+
+            await rtcManager.replaceTrack(firstTrack, secondTrack);
+            finishProduce();
+            await sending;
+
+            expect(producedMicTrackIds()).toEqual([firstTrack.id]);
+            expect(micProducers[0].track.id).toBe(secondTrack.id);
+        });
+
+        it("creates the mic producer paused when the mic was muted before", async () => {
+            const micTrack = createMicTrack();
+            await joinRoom();
+            rtcManager.stopOrResumeAudio({ enable: false });
+
+            await rtcManager.replaceTrack(null, micTrack);
+
+            expect(produce.mock.calls.at(-1)[0].appData.paused).toBe(true);
+            expect(micProducers[0].paused).toBe(true);
+        });
+
+        it("pauses the mic producer when the mic is muted while it is being created", async () => {
+            const micTrack = createMicTrack();
+            await joinRoom();
+            const message = jest.spyOn(rtcManager._vegaConnection!, "message");
+            const finishProduce = holdNextProduce();
+            const sending = rtcManager.replaceTrack(null, micTrack);
+
+            rtcManager.stopOrResumeAudio({ enable: false });
+            finishProduce();
+            await sending;
+
+            expect(micProducers[0].paused).toBe(true);
+            expect(message).toHaveBeenCalledWith("pauseProducers", { producerIds: [micProducers[0].id] });
+        });
+
+        it("resumes the mic producer when the mic is unmuted while it is being created", async () => {
+            const micTrack = createMicTrack();
+            await joinRoom();
+            rtcManager.stopOrResumeAudio({ enable: false });
+            const message = jest.spyOn(rtcManager._vegaConnection!, "message");
+            const finishProduce = holdNextProduce();
+            const sending = rtcManager.replaceTrack(null, micTrack);
+
+            rtcManager.stopOrResumeAudio({ enable: true });
+            finishProduce();
+            await sending;
+
+            expect(micProducers[0].paused).toBe(false);
+            expect(message).toHaveBeenCalledWith("resumeProducers", { producerIds: [micProducers[0].id] });
+        });
+
+        it("pauses and resumes the mic producer when the mic is muted and unmuted", async () => {
+            const micTrack = createMicTrack();
+            await joinRoom();
+            await rtcManager.replaceTrack(null, micTrack);
+            const message = jest.spyOn(rtcManager._vegaConnection!, "message");
+
+            rtcManager.stopOrResumeAudio({ enable: false });
+            rtcManager.stopOrResumeAudio({ enable: true });
+
+            expect(message.mock.calls).toEqual([
+                ["pauseProducers", { producerIds: [micProducers[0].id] }],
+                ["resumeProducers", { producerIds: [micProducers[0].id] }],
+            ]);
+            expect(micProducers[0].paused).toBe(false);
+        });
+
+        it("sends a new mic after creating the mic producer failed", async () => {
+            const firstTrack = createMicTrack();
+            const secondTrack = createMicTrack();
+            await joinRoom();
+            produce.mockImplementationOnce(() => Promise.reject(new Error("InvalidStateError")));
+            await rtcManager.replaceTrack(null, firstTrack);
+
+            await rtcManager.replaceTrack(firstTrack, secondTrack);
+
+            expect(producedMicTrackIds()).toEqual([firstTrack.id, secondTrack.id]);
+            expect(micProducers).toHaveLength(1);
         });
     });
 
