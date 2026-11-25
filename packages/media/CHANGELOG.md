@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.5.4
+
+### Patch Changes
+
+- 4cebeb6: Create the webcam producer also for a camera track handed over while the camera is off in SFU
+
 ## 11.5.3
 
 ### Patch Changes
