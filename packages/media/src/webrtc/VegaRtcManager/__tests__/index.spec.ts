@@ -13,7 +13,6 @@ import rtcManagerEvents from "../../rtcManagerEvents";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
 import WS from "jest-websocket-mock";
-import { setTimeout } from "timers/promises";
 import { GetConstraintsOptions, WebRTCProvider } from "../../types";
 
 // mimics mediasoup's Producer.setMaxSpatialLayer() / setRtpEncodingParameters() applying to the rtpSender's encodings
@@ -59,6 +58,18 @@ describe("VegaRtcManager", () => {
     let sfuWebsocketServerUrl: string;
 
     let mockSendTransport: MockTransport;
+
+    // Uses internals, we have no other signal for when the join and its producers are done
+    const waitForSfuJoin = () =>
+        new Promise<void>((resolve) => {
+            const join = rtcManager._join.bind(rtcManager);
+            jest.spyOn(rtcManager, "_join").mockImplementation(async () => {
+                await join();
+                await rtcManager._micProducerPromise;
+                await rtcManager._webcamProducerPromise;
+                resolve();
+            });
+        });
 
     beforeEach(() => {
         mediaConstraints = {
@@ -205,9 +216,10 @@ describe("VegaRtcManager", () => {
                 if (t.kind === "video") t.readyState = "ended";
                 else stream.removeTrack(t);
             });
+            const joined = waitForSfuJoin();
             rtcManager.setupSocketListeners();
             rtcManager.addCameraStream(stream);
-            await setTimeout(100);
+            await joined;
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(0);
             sfuWebsocketServer.close();
@@ -235,10 +247,11 @@ describe("VegaRtcManager", () => {
                 else return new MockProducer({ kind: "audio" });
             });
 
+            const joined = waitForSfuJoin();
             rtcManager.setupSocketListeners();
             rtcManager.addCameraStream(stream);
             rtcManager.replaceTrack(oldTrack, newTrack);
-            await setTimeout(250);
+            await joined;
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(2);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1);
@@ -255,15 +268,30 @@ describe("VegaRtcManager", () => {
                 else return new MockProducer({ kind: "audio" });
             });
 
+            const joined = waitForSfuJoin();
             rtcManager.addCameraStream(stream);
             rtcManager.replaceTrack(oldTrack, newTrack);
-            await setTimeout(100);
             rtcManager.setupSocketListeners();
-            await setTimeout(250);
+            await joined;
 
             expect(mockSendTransport.produce).toHaveBeenCalledTimes(2);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledTimes(1);
             expect(mockVideoProducer.replaceTrack).toHaveBeenCalledWith({ track: newTrack });
+            sfuWebsocketServer.close();
+        });
+
+        it("sends a mic handed over when no mic is being sent", async () => {
+            const micTrack = helpers.createMockedMediaStreamTrack({ kind: "audio" });
+            stream.getAudioTracks().forEach((t) => stream.removeTrack(t));
+            jest.spyOn(mockSendTransport, "produce");
+            const joined = waitForSfuJoin();
+            rtcManager.setupSocketListeners();
+            rtcManager.addCameraStream(stream);
+            await joined;
+
+            rtcManager.replaceTrack(null, micTrack);
+
+            expect(mockSendTransport.produce).toHaveBeenCalledWith(expect.objectContaining({ track: micTrack }));
             sfuWebsocketServer.close();
         });
     });
@@ -288,9 +316,10 @@ describe("VegaRtcManager", () => {
                 return new MockProducer({ kind: "audio" });
             });
 
+            const joined = waitForSfuJoin();
             rtcManager.setupSocketListeners();
             rtcManager.addCameraStream(helpers.createMockedMediaStream());
-            await setTimeout(250);
+            await joined;
             sfuWebsocketServer.close();
 
             return mockVideoProducer;
@@ -348,9 +377,10 @@ describe("VegaRtcManager", () => {
                 return new MockProducer({ kind: "audio" });
             });
 
+            const joined = waitForSfuJoin();
             rtcManager.setupSocketListeners();
             rtcManager.addCameraStream(helpers.createMockedMediaStream());
-            await setTimeout(250);
+            await joined;
             sfuWebsocketServer.close();
         };
 
@@ -545,6 +575,7 @@ describe("VegaRtcManager", () => {
 
             expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
         });
+
     });
 
     describe("_onChangedHighestPreferredLayer", () => {

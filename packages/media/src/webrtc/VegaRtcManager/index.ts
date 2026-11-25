@@ -1637,8 +1637,7 @@ export default class VegaRtcManager implements RtcManager {
             if (!trackAnnotations(track).isEffectTrack) {
                 this._monitorAudioTrack(track);
             }
-            this._micTrack = track;
-            this._replaceMicTrack();
+            this._sendMic(track);
         }
 
         if (track.kind === "video") {
