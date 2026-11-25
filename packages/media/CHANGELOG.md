@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.5.2
+
+### Patch Changes
+
+- 30905d4: Send a newly picked mic in SFU when no mic is being sent
+
 ## 11.5.1
 
 ### Patch Changes
