@@ -45,7 +45,7 @@ import {
     MetricStats,
     recordMetricSample,
 } from "./utils";
-import { ServerSocket, trackAnnotations } from "../../utils";
+import { ServerSocket } from "../../utils";
 import { createVegaConnectionManager, HostListEntryOptionalDC } from "../VegaConnectionManager";
 import { RtpCapabilities } from "mediasoup-client/lib/RtpParameters";
 import { subscribeStats, updateRenderedDimensions } from "../stats/StatsMonitor";
@@ -84,7 +84,6 @@ const adapter = adapterRaw.default ?? adapterRaw;
 const logger = new Logger();
 
 const browserName = adapter.browserDetails.browser;
-let unloading = false;
 
 type RtpEncodingParametersWithScalabilityMode = RTCRtpEncodingParameters & { scalabilityMode?: string };
 
@@ -95,8 +94,6 @@ const OUTBOUND_SCREEN_OUTBOUND_STREAM_ID = uuidv4();
 
 const getFrameArea = (frameSize?: { width?: number; height?: number }) =>
     (frameSize?.width ?? 0) * (frameSize?.height ?? 0);
-
-if (browserName === "chrome") window.document.addEventListener("beforeunload", () => (unloading = true));
 
 export default class VegaRtcManager implements RtcManager {
     _selfId: string;
@@ -153,8 +150,6 @@ export default class VegaRtcManager implements RtcManager {
     _rcvTransportIceRestartPromise: any;
     _colocation: any;
     _isAudioOnlyMode: boolean;
-    _audioTrackOnEnded: any;
-    _videoTrackOnEnded: any;
     _socketListenerDeregisterFunctions: any;
     _reconnect: any;
     _reconnectTimeOut: any;
@@ -165,8 +160,6 @@ export default class VegaRtcManager implements RtcManager {
     _sfuServer?: SignalSFUServer;
     _sfuServers?: HostListEntryOptionalDC[];
     _mediaserverConfigTtlSeconds: any;
-    _videoTrackBeingMonitored?: MediaStreamTrack;
-    _audioTrackBeingMonitored?: MediaStreamTrack;
     _isConnectingOrConnected: boolean;
     _vegaConnectionManager?: ReturnType<typeof createVegaConnectionManager>;
     _networkIsDetectedUpBySignal: boolean;
@@ -243,21 +236,6 @@ export default class VegaRtcManager implements RtcManager {
         this._colocation = null;
         this._isAudioOnlyMode = false;
 
-        this._audioTrackOnEnded = () => {
-            // There are a couple of reasons the microphone could stop working.
-            // One of them is getting unplugged. The other is the Chrome audio
-            // process crashing. The third is the tab being closed.
-            // https://bugs.chromium.org/p/chromium/issues/detail?id=1050008
-            rtcStats.sendEvent("audio_ended", { unloading });
-            this._emitToPWA(rtcManagerEvents.MICROPHONE_STOPPED_WORKING, {});
-            this.analytics.micTrackEndedCount++;
-        };
-        this._videoTrackOnEnded = () => {
-            rtcStats.sendEvent("video_ended", { unloading });
-            this._emitToPWA(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
-            this.analytics.camTrackEndedCount++;
-        };
-
         this._updateAndScheduleMediaServersRefresh({
             sfuServer,
             iceServers: iceServers?.iceServers || [],
@@ -294,8 +272,6 @@ export default class VegaRtcManager implements RtcManager {
             avgCamPreferredSpatialLayerSwitchLatencyMs: undefined,
             camOutboundCongestedFraction: undefined,
             camOutboundRttInflationMs: undefined,
-            camTrackEndedCount: 0,
-            micTrackEndedCount: 0,
             numCamHighestPreferredSpatialLayerChanges: 0,
             numCamHighestPreferredSpatialLayerChanges0To1: 0,
             numCamHighestPreferredSpatialLayerChanges0To2: 0,
@@ -1634,16 +1610,10 @@ export default class VegaRtcManager implements RtcManager {
         }
 
         if (track.kind === "audio") {
-            if (!trackAnnotations(track).isEffectTrack) {
-                this._monitorAudioTrack(track);
-            }
             this._sendMic(track);
         }
 
         if (track.kind === "video") {
-            if (!trackAnnotations(track).isEffectTrack) {
-                this._monitorVideoTrack(track);
-            }
             this._webcamTrack = track;
             this._replaceWebcamTrack();
         }
@@ -1673,10 +1643,7 @@ export default class VegaRtcManager implements RtcManager {
         this._sendMicScore(this._micPaused ? 0 : data.out);
     }
 
-    addCameraStream(
-        stream: MediaStream,
-        { audioPaused, videoPaused, beforeEffectTracks = [] }: AddCameraStreamOptions = { beforeEffectTracks: [] },
-    ) {
+    addCameraStream(stream: MediaStream, { audioPaused, videoPaused }: AddCameraStreamOptions = {}) {
         this._micPaused = audioPaused;
         this._webcamPaused = videoPaused;
 
@@ -1685,24 +1652,10 @@ export default class VegaRtcManager implements RtcManager {
 
         if (videoTrack) {
             this._sendWebcam(videoTrack);
-            if (!trackAnnotations(videoTrack).isEffectTrack) {
-                this._monitorVideoTrack(videoTrack);
-            }
-            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "video");
-            if (beforeEffectTrack) {
-                this._monitorVideoTrack(beforeEffectTrack);
-            }
         }
         if (audioTrack) {
             this._sendMic(audioTrack);
             this._syncMicAnalyser();
-            if (!trackAnnotations(audioTrack).isEffectTrack) {
-                this._monitorAudioTrack(audioTrack);
-            }
-            const beforeEffectTrack = beforeEffectTracks.find((t) => t.kind === "audio");
-            if (beforeEffectTrack) {
-                this._monitorAudioTrack(beforeEffectTrack);
-            }
         }
     }
 
@@ -2138,22 +2091,6 @@ export default class VegaRtcManager implements RtcManager {
         if (!rtcStats.server.connected && rtcStats.server.attemptedConnectedAtLeastOnce) {
             rtcStats.server.connect();
         }
-    }
-
-    _monitorAudioTrack(track: any) {
-        if (this._audioTrackBeingMonitored?.id === track.id) return;
-
-        this._audioTrackBeingMonitored?.removeEventListener("ended", this._audioTrackOnEnded);
-        track.addEventListener("ended", this._audioTrackOnEnded);
-        this._audioTrackBeingMonitored = track;
-    }
-
-    _monitorVideoTrack(track: MediaStreamTrack) {
-        if (this._videoTrackBeingMonitored?.id === track.id) return;
-
-        this._videoTrackBeingMonitored?.removeEventListener("ended", this._videoTrackOnEnded);
-        track.addEventListener("ended", this._videoTrackOnEnded);
-        this._videoTrackBeingMonitored = track;
     }
 
     async _onMessage(message: any) {

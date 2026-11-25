@@ -1201,14 +1201,5 @@ describe("P2pRtcManager", () => {
 
             expect(track.stop).not.toHaveBeenCalled();
         });
-
-        it("reports a handed over track that ends", () => {
-            const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-            rtcManager.replaceTrack(null, track);
-            track.dispatchEvent(new Event("ended"));
-
-            expect(emitterStub.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
-        });
     });
 });

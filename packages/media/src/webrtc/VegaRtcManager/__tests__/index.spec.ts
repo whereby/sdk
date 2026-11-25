@@ -9,7 +9,6 @@ import * as StatsMonitor from "../../stats/StatsMonitor";
 import * as peerConnectionTracker from "../../stats/StatsMonitor/peerConnectionTracker";
 
 import * as CONNECTION_STATUS from "../../../model/connectionStatusConstants";
-import rtcManagerEvents from "../../rtcManagerEvents";
 import * as helpers from "../../../../tests/webrtc/webRtcHelpers";
 import { MockTransport, MockProducer } from "../../../../tests/webrtc/webRtcHelpers";
 import WS from "jest-websocket-mock";
@@ -566,16 +565,6 @@ describe("VegaRtcManager", () => {
 
             expect(track.stop).not.toHaveBeenCalled();
         });
-
-        it("reports a handed over track that ends", () => {
-            const track = helpers.createMockedMediaStreamTrack({ kind: "video" });
-
-            rtcManager.replaceTrack(null, track);
-            track.dispatchEvent(new Event("ended"));
-
-            expect(emitter.emit).toHaveBeenCalledWith(rtcManagerEvents.CAMERA_STOPPED_WORKING, {});
-        });
-
     });
 
     describe("_onChangedHighestPreferredLayer", () => {
