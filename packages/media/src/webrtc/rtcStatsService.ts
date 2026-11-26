@@ -53,6 +53,8 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
     let roomMode: string;
     let sfuServer: string;
     let featureFlags: string;
+    let audioEnabled: any;
+    let videoEnabled: any;
 
     const connection = {
         connected: false,
@@ -93,6 +95,10 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                 sfuServer = args;
             } else if (args[0] === "customEvent" && args[2].type === "featureFlags") {
                 featureFlags = args;
+            } else if (args[0] === "customEvent" && args[2].type === "audioEnabled") {
+                audioEnabled = args;
+            } else if (args[0] === "customEvent" && args[2].type === "videoEnabled") {
+                videoEnabled = args;
             }
 
             if (ws?.readyState === WebSocket.OPEN) {
@@ -191,6 +197,12 @@ function rtcStatsConnection(wsURL: string, logger: any = console) {
                     }
                     if (featureFlags) {
                         ws.send(JSON.stringify(featureFlags));
+                    }
+                    if (audioEnabled) {
+                        ws.send(JSON.stringify(audioEnabled));
+                    }
+                    if (videoEnabled) {
+                        ws.send(JSON.stringify(videoEnabled));
                     }
                 }
                 // send buffered events
