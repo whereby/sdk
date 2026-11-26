@@ -617,7 +617,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
         }
 
         try {
-            // then update devices
+            // Only has ids and labels if the site is already allowed camera or mic
             await dispatch(doUpdateDeviceList());
             // then get new state
             const state = getState();
@@ -629,6 +629,9 @@ export const doStartLocalMedia = createAppAsyncThunk(
                 audioId: payload.audio,
                 videoId: payload.video,
             });
+
+            // Before permission the device list has no ids or labels
+            await dispatch(doUpdateDeviceList());
 
             return { stream, onDeviceChange };
         } catch (error) {
