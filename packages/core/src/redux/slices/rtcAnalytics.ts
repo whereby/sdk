@@ -2,17 +2,30 @@ import { AsyncThunk, ActionCreatorWithPayload, PayloadAction, createSlice, isAny
 import { RootState } from "../store";
 import { ThunkConfig, createAppThunk } from "../thunk";
 import { createReactor, startAppListening } from "../listenerMiddleware";
-import { selectRtcConnectionRaw, selectRtcManagerInitialized, selectRtcStatus } from "./rtcConnection";
+import {
+    rtcDisconnected,
+    rtcManagerCreated,
+    selectRtcConnectionRaw,
+    selectRtcManagerInitialized,
+    selectRtcStatus,
+} from "./rtcConnection";
 import { selectAppExternalId } from "./app";
 import { selectOrganizationId, selectOrganizationPreferences } from "./organization";
 import { doEnableAudio, doEnableVideo, setDisplayName } from "./localParticipant";
 import { selectLocalParticipantDisplayName, selectSelfId } from "./localParticipant/selectors";
 import { selectAuthorizationRoleName } from "./authorization";
-import { selectSignalStatus } from "./signalConnection";
+import {
+    selectSignalStatus,
+    socketConnected,
+    socketConnecting,
+    socketDisconnected,
+    socketReconnecting,
+} from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
 import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
 import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "./localScreenshare";
 import { selectRoomConnectionSessionId } from "./roomConnection/selectors";
+import { selectRoomMode } from "./room";
 import { signalEvents } from "./signalConnection/actions";
 import { selectCloudRecordingIsInitiator, selectIsCloudRecording } from "./cloudRecording";
 import { selectLiveTranscriptionIsInitiator, selectIsLiveTranscription } from "./liveTranscription";
@@ -103,13 +116,14 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => ({ organizationId: value }),
     }),
     signalConnectionStatus: createRtcAnalyticsCustomEvent({
-        actions: null,
+        actions: [socketConnecting, socketConnected, socketDisconnected, socketReconnecting, signalEvents.disconnect],
         rtcEventName: "signalConnectionStatus",
         getValue: (state: RootState) => selectSignalStatus(state),
         getOutput: (value) => ({ status: value }),
     }),
     recording: createRtcAnalyticsCustomEvent({
-        actions: [signalEvents.newClient],
+        // the recording starts when the recorder joins as a client
+        actions: [signalEvents.newClient, signalEvents.cloudRecordingStopped],
         rtcEventName: "recording",
         getValue: (state: RootState) => ({
             local: false,
@@ -118,7 +132,8 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => value,
     }),
     transcribing: createRtcAnalyticsCustomEvent({
-        actions: [signalEvents.newClient],
+        // the captioner joins as a client before live transcription has started
+        actions: [signalEvents.liveTranscriptionStarted, signalEvents.liveTranscriptionStopped],
         rtcEventName: "transcribing",
         getValue: (state: RootState) => ({
             local: false,
@@ -138,7 +153,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => ({ roomSessionId: value }),
     }),
     rtcConnectionStatus: createRtcAnalyticsCustomEvent({
-        actions: null,
+        actions: [rtcManagerCreated, socketReconnecting, signalEvents.roomJoined, rtcDisconnected],
         rtcEventName: "rtcConnectionStatus",
         getValue: (state: RootState) => selectRtcStatus(state),
         getOutput: (value) => ({ status: value }),
@@ -148,6 +163,12 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         rtcEventName: "userRole",
         getValue: (state: RootState) => selectAuthorizationRoleName(state),
         getOutput: (value) => ({ userRole: value }),
+    }),
+    roomMode: createRtcAnalyticsCustomEvent({
+        actions: null,
+        rtcEventName: "roomMode",
+        getValue: (state: RootState) => selectRoomMode(state),
+        getOutput: (value) => ({ roomMode: value }),
     }),
 };
 

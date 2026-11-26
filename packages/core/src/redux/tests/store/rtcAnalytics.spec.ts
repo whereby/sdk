@@ -4,6 +4,11 @@ import { diff } from "deep-object-diff";
 import { randomOrganization, randomSignalClient } from "../../../__mocks__/appMocks";
 import { setDisplayName } from "../../slices/localParticipant";
 import { signalEvents } from "../../slices/signalConnection/actions";
+import { socketDisconnected, socketReconnecting } from "../../slices/signalConnection";
+import { rtcManagerInitialized } from "../../slices/rtcConnection";
+import { RootState } from "../../store";
+import { transcribingRequestStarted } from "../../slices/liveTranscription";
+import { recordingRequestStarted } from "../../slices/cloudRecording";
 
 describe("actions", () => {
     it("doRtcAnalyticsCustomEventsInitialize", async () => {
@@ -28,6 +33,7 @@ describe("actions", () => {
                 "signalConnectionStatus",
                 "rtcConnectionStatus",
                 "userRole",
+                "roomMode",
             ]),
         );
         expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("insightsStats", expect.any(Object));
@@ -106,6 +112,64 @@ describe("middleware", () => {
             );
         });
     });
+    describe("connection statuses", () => {
+        it("sends signalConnectionStatus on every change after initialization", () => {
+            const store = createStore({ withRtcManager: true, withSignalConnection: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(socketReconnecting());
+            store.dispatch(socketDisconnected());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "disconnected" }),
+            );
+        });
+
+        it("sends rtcConnectionStatus when it changes", () => {
+            const store = createStore({ withRtcManager: true, withSignalConnection: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(socketReconnecting());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "rtcConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+        });
+    });
+
+    describe("before the RtcManager is initialized", () => {
+        it("sends changes, and initialization doesn't send them again", () => {
+            const store = createStore({
+                withRtcManager: true,
+                withSignalConnection: true,
+                initialState: {
+                    rtcConnection: { rtcManagerInitialized: false } as RootState["rtcConnection"],
+                },
+            });
+
+            store.dispatch(socketReconnecting());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "signalConnectionStatus",
+                expect.objectContaining({ status: "reconnecting" }),
+            );
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(rtcManagerInitialized());
+
+            const sentEvents = mockRtcManager.sendStatsCustomEvent.mock.calls.map(([type]) => type);
+            expect(sentEvents).toContain("insightsStats");
+            expect(sentEvents).not.toContain("signalConnectionStatus");
+        });
+    });
 
     describe("values with actions", () => {
         it("doesn't send an object value again when it hasn't changed", () => {
@@ -117,6 +181,55 @@ describe("middleware", () => {
 
             expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("recording", expect.anything());
             expect(mockRtcManager.sendStatsCustomEvent).not.toHaveBeenCalledWith("transcribing", expect.anything());
+        });
+
+        it("sends transcribing when live transcription starts and stops", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            store.dispatch(transcribingRequestStarted());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.liveTranscriptionStarted({ transcriptionId: "transcription-id" }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "transcribing",
+                expect.objectContaining({ local: false, cloud: true }),
+            );
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(
+                signalEvents.liveTranscriptionStopped({
+                    transcriptionId: "transcription-id",
+                    endedAt: "2026-11-11T00:00:00Z",
+                }),
+            );
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "transcribing",
+                expect.objectContaining({ local: false, cloud: false }),
+            );
+        });
+
+        it("sends recording when the cloud recording starts and stops", () => {
+            const store = createStore({ withRtcManager: true });
+            store.dispatch(doRtcAnalyticsCustomEventsInitialize());
+            store.dispatch(recordingRequestStarted());
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.newClient({ client: randomSignalClient({ role: { roleName: "recorder" } }) }));
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "recording",
+                expect.objectContaining({ local: false, cloud: true }),
+            );
+            mockRtcManager.sendStatsCustomEvent.mockClear();
+
+            store.dispatch(signalEvents.cloudRecordingStopped());
+
+            expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith(
+                "recording",
+                expect.objectContaining({ local: false, cloud: false }),
+            );
         });
     });
 });
