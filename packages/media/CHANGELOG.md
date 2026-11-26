@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.5.5
+
+### Patch Changes
+
+- f213029: Don't create the mic producer from an ended track in SFU
+
 ## 11.5.4
 
 ### Patch Changes
