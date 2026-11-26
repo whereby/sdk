@@ -21,6 +21,7 @@ export interface LocalMediaState {
         audio?: MediaStreamTrack;
         video?: MediaStreamTrack;
     };
+    /** @deprecated */
     busyDeviceIds: string[];
     cameraDeviceError?: unknown;
     cameraEnabled: boolean;
@@ -308,8 +309,10 @@ const findChangedTracks = (stream: MediaStream, before: ReturnType<typeof snapsh
  * Action creators
  */
 
+/** @deprecated */
+export const deviceBusy = localMediaSlice.actions.deviceBusy;
+
 export const {
-    deviceBusy,
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
     setCurrentSpeakerDeviceId,
@@ -721,6 +724,7 @@ export const doLocalStreamEffect = createAppAsyncThunk(
  * Selectors
  */
 
+/** @deprecated */
 export const selectBusyDeviceIds = (state: RootState) => state.localMedia.busyDeviceIds;
 export const selectCameraDeviceError = (state: RootState) => state.localMedia.cameraDeviceError;
 export const selectCurrentCameraDeviceId = (state: RootState) => state.localMedia.currentCameraDeviceId;
@@ -767,17 +771,11 @@ export const selectLocalMediaConstraintsOptions = createSelector(
     }),
 );
 export const selectIsLocalMediaStarting = createSelector(selectLocalMediaStatus, (status) => status === "starting");
-export const selectCameraDevices = createSelector(
-    selectLocalMediaDevices,
-    selectBusyDeviceIds,
-    (devices, busyDeviceIds) =>
-        devices.filter((d) => d.kind === "videoinput").filter((d) => !busyDeviceIds.includes(d.deviceId)),
+export const selectCameraDevices = createSelector(selectLocalMediaDevices, (devices) =>
+    devices.filter((d) => d.kind === "videoinput"),
 );
-export const selectMicrophoneDevices = createSelector(
-    selectLocalMediaDevices,
-    selectBusyDeviceIds,
-    (devices, busyDeviceIds) =>
-        devices.filter((d) => d.kind === "audioinput").filter((d) => !busyDeviceIds.includes(d.deviceId)),
+export const selectMicrophoneDevices = createSelector(selectLocalMediaDevices, (devices) =>
+    devices.filter((d) => d.kind === "audioinput"),
 );
 export const selectSpeakerDevices = createSelector(selectLocalMediaDevices, (devices) =>
     devices.filter((d) => d.kind === "audiooutput"),
