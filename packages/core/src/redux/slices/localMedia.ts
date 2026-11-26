@@ -517,12 +517,11 @@ export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
     async (
         { audioId, videoId }: { audioId?: string | null; videoId?: string | null },
-        { dispatch, getState, rejectWithValue },
+        { getState, rejectWithValue },
     ) => {
         const state = getState();
         const replaceStream = selectLocalMediaStream(state);
         const constraintsOptions = selectLocalMediaConstraintsOptions(state);
-        const onlySwitchingOne = !!(videoId && !audioId) || !!(!videoId && audioId);
         if (!replaceStream) {
             // Switching no stream makes no sense
             return;
@@ -538,11 +537,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             beforeEffectTracks.video = undefined;
         }
 
-        const hasLiveTrackFromDevice = (deviceId: string) =>
-            (audioId ? replaceStream.getAudioTracks() : replaceStream.getVideoTracks()).some(
-                (track) => track.readyState === "live" && track.getSettings().deviceId === deviceId,
-            );
-
         const before = snapshotTracks(replaceStream);
 
         try {
@@ -556,14 +550,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                 { replaceStream },
             );
 
-            const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId && !hasLiveTrackFromDevice(deviceId)) {
-                dispatch(
-                    deviceBusy({
-                        deviceId,
-                    }),
-                );
-            }
             const isAudioEnabled = selectIsMicrophoneEnabled(getState());
             replaceStream.getAudioTracks().forEach((track) => (track.enabled = isAudioEnabled));
 
@@ -581,14 +567,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             };
         } catch (error) {
             console.error(error);
-            const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId && !hasLiveTrackFromDevice(deviceId)) {
-                dispatch(
-                    deviceBusy({
-                        deviceId,
-                    }),
-                );
-            }
             return rejectWithValue(error);
         }
     },
