@@ -278,7 +278,7 @@ export const localMediaSlice = createSlice({
                 ...state,
                 isSwitchingStream: false,
                 microphoneDeviceError:
-                    action.meta.arg.audioId !== undefined ? action.error : state.microphoneDeviceError,
+                    action.meta.arg.audioId !== undefined ? action.payload : state.microphoneDeviceError,
             };
         });
         builder.addCase(doLocalStreamEffect.fulfilled, (state, { payload }) => {
