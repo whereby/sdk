@@ -1,5 +1,11 @@
 # @whereby.com/media
 
+## 11.5.6
+
+### Patch Changes
+
+- 855e36b: media: Resends audioEnabled, videoEnabled on rtcstats reconnect
+
 ## 11.5.5
 
 ### Patch Changes
