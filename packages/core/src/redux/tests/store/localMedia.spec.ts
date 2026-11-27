@@ -188,7 +188,6 @@ describe("actions", () => {
                     stream: existingStream,
                     onDeviceChange: expect.any(Function),
                     microphoneEnabled: true,
-                    currentCameraDeviceId: null,
                     currentMicrophoneDeviceId: audioDevice.deviceId,
                 });
             });
@@ -747,7 +746,7 @@ describe("actions", () => {
                 },
             });
             mockedGetUserMedia.mockReturnValueOnce(new Promise<MediaStream>(() => {}));
-            store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: videoDevice.deviceId }));
+            store.dispatch(localMediaSlice.doSwitchLocalStream({ audioId: false, videoId: videoDevice.deviceId }));
             mockedEnumerateDevices.mockResolvedValueOnce([audioDevice, videoDevice]);
 
             await store.dispatch(localMediaSlice.doUpdateDeviceList());
@@ -787,7 +786,7 @@ describe("actions", () => {
             mockedGetUserMedia.mockReturnValueOnce(new Promise<MediaStream>(() => {}));
             const updatingDeviceList = store.dispatch(localMediaSlice.doUpdateDeviceList());
 
-            store.dispatch(localMediaSlice.doSwitchLocalStream({ videoId: videoDevice.deviceId }));
+            store.dispatch(localMediaSlice.doSwitchLocalStream({ audioId: false, videoId: videoDevice.deviceId }));
             resolveDevices([audioDevice, videoDevice]);
             await updatingDeviceList;
 

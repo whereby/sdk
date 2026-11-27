@@ -1,5 +1,5 @@
 import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
-import { getStream, getUpdatedDevices, getDeviceData, replaceTracksInStream } from "@whereby.com/media";
+import { getStream, getUpdatedDevices, getTrackDeviceIds, replaceTracksInStream } from "@whereby.com/media";
 import { createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
@@ -152,13 +152,13 @@ export const localMediaSlice = createSlice({
                 stream: undefined,
             };
         },
-        localStreamMetadataUpdated(state, action: PayloadAction<ReturnType<typeof getDeviceData>>) {
-            const { audio, video } = action.payload;
+        localStreamMetadataUpdated(state, action: PayloadAction<ReturnType<typeof getTrackDeviceIds>>) {
+            const { audioId, videoId } = action.payload;
             return {
                 ...state,
-                currentCameraDeviceId: video.deviceId,
-                currentMicrophoneDeviceId: audio.deviceId,
-                busyDeviceIds: state.busyDeviceIds.filter((id) => id !== audio.deviceId && id !== video.deviceId),
+                currentCameraDeviceId: videoId,
+                currentMicrophoneDeviceId: audioId,
+                busyDeviceIds: state.busyDeviceIds.filter((id) => id !== audioId && id !== videoId),
             };
         },
     },
@@ -279,7 +279,7 @@ export const localMediaSlice = createSlice({
                 ...state,
                 isSwitchingStream: false,
                 microphoneDeviceError:
-                    action.meta.arg.audioId !== undefined ? action.payload : state.microphoneDeviceError,
+                    action.meta.arg.audioId !== false ? action.payload : state.microphoneDeviceError,
             };
         });
         builder.addCase(doLocalStreamEffect.fulfilled, (state, { payload }) => {
@@ -298,6 +298,9 @@ const snapshotTracks = (stream: MediaStream) => ({
     audio: stream.getAudioTracks()[0] || null,
     video: stream.getVideoTracks()[0] || null,
 });
+
+// getUpdatedDevices: no entry means unchanged, a null deviceId means removed, so use the default.
+const readSwitchId = (device?: { deviceId?: string | null }) => (device ? (device.deviceId ?? undefined) : false);
 
 const findChangedTracks = (stream: MediaStream, before: ReturnType<typeof snapshotTracks>) => {
     const after = snapshotTracks(stream);
@@ -386,7 +389,7 @@ const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", 
     const enabled = selectIsMicrophoneEnabled(state);
     const audioTrack = stream.getAudioTracks()?.[0];
     if (enabled && audioTrack?.readyState !== "live") {
-        dispatch(doSwitchLocalStream({ audioId: selectCurrentMicrophoneDeviceId(state) }));
+        dispatch(doSwitchLocalStream({ audioId: selectCurrentMicrophoneDeviceId(state), videoId: false }));
         return;
     }
     if (!audioTrack) {
@@ -485,30 +488,30 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 currentVideoId: selectCurrentCameraDeviceId(state),
             });
 
-            let autoSwitchAudioId = changedDevices.audioinput?.deviceId;
-            let autoSwitchVideoId = changedDevices.videoinput?.deviceId;
+            let autoSwitchAudioId = readSwitchId(changedDevices.audioinput);
+            let autoSwitchVideoId = readSwitchId(changedDevices.videoinput);
 
             const hasJoinedRoom =
                 JOINED_ROOM_STATUSES.has(selectRoomConnectionStatus(state)) || selectRoomConnectionIsRejoining(state);
 
             // Handle added devices
             if (!hasJoinedRoom) {
-                if (autoSwitchAudioId === undefined) {
-                    autoSwitchAudioId = addedDevices.audioinput?.deviceId;
+                if (autoSwitchAudioId === false) {
+                    autoSwitchAudioId = readSwitchId(addedDevices.audioinput);
                 }
-                if (autoSwitchVideoId === undefined) {
-                    autoSwitchVideoId = addedDevices.videoinput?.deviceId;
+                if (autoSwitchVideoId === false) {
+                    autoSwitchVideoId = readSwitchId(addedDevices.videoinput);
                 }
             }
 
             if (!selectIsMicrophoneEnabled(getState())) {
-                autoSwitchAudioId = undefined;
+                autoSwitchAudioId = false;
             }
             if (!selectIsCameraEnabled(getState())) {
-                autoSwitchVideoId = undefined;
+                autoSwitchVideoId = false;
             }
 
-            if (autoSwitchAudioId !== undefined || autoSwitchVideoId !== undefined) {
+            if (autoSwitchAudioId !== false || autoSwitchVideoId !== false) {
                 dispatch(doSwitchLocalStream({ audioId: autoSwitchAudioId, videoId: autoSwitchVideoId }));
             }
 
@@ -522,7 +525,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
     async (
-        { audioId, videoId }: { audioId?: string | null; videoId?: string | null },
+        { audioId, videoId }: { audioId: string | false | undefined; videoId: string | false | undefined },
         { getState, rejectWithValue },
     ) => {
         const state = getState();
@@ -534,11 +537,11 @@ export const doSwitchLocalStream = createAppAsyncThunk(
         }
 
         const beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
-        if (audioId !== undefined && beforeEffectTracks?.audio) {
+        if (audioId !== false && beforeEffectTracks?.audio) {
             beforeEffectTracks.audio.stop();
             beforeEffectTracks.audio = undefined;
         }
-        if (videoId !== undefined && beforeEffectTracks?.video) {
+        if (videoId !== false && beforeEffectTracks?.video) {
             beforeEffectTracks.video.stop();
             beforeEffectTracks.video = undefined;
         }
@@ -549,8 +552,8 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             const { replacedTracks } = await getStream(
                 {
                     ...constraintsOptions,
-                    audioId: audioId === undefined ? false : audioId,
-                    videoId: videoId === undefined ? false : videoId,
+                    audioId,
+                    videoId,
                     type: "exact",
                 },
                 { replaceStream },
@@ -866,7 +869,7 @@ startAppListening({
         return hasLowDataModeChanged || hasHDModeChanged || hasWidescreenModeChanged;
     },
     effect: (_action, { dispatch, getState }) => {
-        dispatch(doSwitchLocalStream({ videoId: selectCurrentCameraDeviceId(getState()) }));
+        dispatch(doSwitchLocalStream({ audioId: false, videoId: selectCurrentCameraDeviceId(getState()) }));
     },
 });
 
@@ -931,14 +934,14 @@ startAppListening({
         if (!stream) return;
 
         const beforeEffectTracks = selectLocalMediaBeforeEffectTracks(state);
-        const deviceData = getDeviceData({
+        const deviceIds = getTrackDeviceIds({
             audioTrack: beforeEffectTracks?.audio || stream.getAudioTracks()[0],
             videoTrack: beforeEffectTracks?.video || stream.getVideoTracks()[0],
             devices,
             lastVideoId: selectIsCameraEnabled(state) ? undefined : selectCurrentCameraDeviceId(state),
         });
 
-        dispatch(localStreamMetadataUpdated(deviceData));
+        dispatch(localStreamMetadataUpdated(deviceIds));
     },
 });
 

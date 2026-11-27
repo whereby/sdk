@@ -22,7 +22,7 @@ jest.mock("@whereby.com/media", () => ({
     __esModule: true,
     getStream: jest.fn(() => Promise.resolve()),
     getUpdatedDevices: jest.fn(() => Promise.resolve({ addedDevices: {}, changedDevices: {} })),
-    getDeviceData: jest.fn(() => ({})),
+    getTrackDeviceIds: jest.fn(() => ({})),
     replaceTracksInStream: jest.fn((stream: MediaStream, newStream: MediaStream, only: "audio" | "video") => {
         const kind = only === "audio" ? "audio" : "video";
         const replaced = stream.getTracks().filter((t) => t.kind === kind);
