@@ -245,7 +245,12 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
 export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
     const { rtcManager } = selectRtcConnectionRaw(getState());
     if (rtcManager) {
-        rtcManager.disconnectAll();
+        try {
+            rtcManager.disconnectAll();
+        } finally {
+            // after the teardown, so its events still go to this room's rtcstats session
+            rtcManager.rtcStatsDisconnect();
+        }
     }
     dispatch(rtcDisconnected());
 });
@@ -427,10 +432,7 @@ startAppListening({
 
 startAppListening({
     actionCreator: doAppStop,
-    effect: (_, { getState }) => {
-        const rtcManager = selectRtcManager(getState());
-
-        rtcManager?.rtcStatsDisconnect();
+    effect: () => {
         rtcStats.setRoomUrl(null);
     },
 });
