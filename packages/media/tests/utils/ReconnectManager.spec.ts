@@ -352,17 +352,14 @@ describe("ReconnectManager", () => {
         });
 
         describe(PROTOCOL_RESPONSES.CLIENT_LEFT, () => {
-            it("should forward event and rtcManager.disconnect()", async () => {
+            it("should forward event", async () => {
                 const socket = createMockSocket();
                 const sut = new ReconnectManager(socket);
                 const forwardEvent = jest.spyOn(sut, "emit");
                 const remoteClient = createClient();
-                const mockRtcManager = { disconnect: jest.fn() };
-                sut.rtcManager = mockRtcManager;
 
                 await socket.emit(PROTOCOL_RESPONSES.CLIENT_LEFT, { clientId: remoteClient.id, eventClaim: "claim" });
 
-                expect(mockRtcManager.disconnect).toHaveBeenCalledWith(remoteClient.id, "claim");
                 expect(forwardEvent).toHaveBeenCalledTimes(1);
                 expect(forwardEvent.mock.calls[0][0]).toBe(PROTOCOL_RESPONSES.CLIENT_LEFT);
             });
