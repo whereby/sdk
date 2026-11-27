@@ -72,15 +72,15 @@
         "@whereby.com/jest-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
-        "@react-native/eslint-config": "^0.80.1",
+        "@react-native/eslint-config": "^0.88.1",
         "@types/jest": "catalog:jest29",
         "@types/react": "catalog:react19",
         "jest": "catalog:jest29",
         "eslint": "catalog:",
         "prettier": "catalog:",
         "react": "catalog:react19",
-        "react-native": "0.79.5",
-        "react-native-builder-bob": "^0.30.0",
+        "react-native": "0.88.1",
+        "react-native-builder-bob": "^0.44.1",
         "typescript": "catalog:"
     },
     "peerDependencies": {

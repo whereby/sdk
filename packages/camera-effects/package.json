@@ -43,13 +43,13 @@
         "@whereby.com/rollup-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
         "rimraf": "^5.0.5",
-        "rollup": "^4.22.4",
+        "rollup": "^4.68.7",
         "rollup-plugin-web-worker-loader": "^1.7.0"
     },
     "dependencies": {
         "events": "^3.3.0",
-        "wasm-feature-detect": "^1.8.0",
-        "webrtc-adapter": "9.0.4"
+        "wasm-feature-detect": "^1.10.1",
+        "webrtc-adapter": "9.0.6"
     },
     "prettier": "@whereby.com/prettier-config"
 }

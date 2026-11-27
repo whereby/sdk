@@ -34,17 +34,17 @@ overrides:
 
 catalog:
     eslint: ^9.29.0
-    prettier: ^3.5.3
+    prettier: ^3.10.1
     typescript: ^5.8.3
 
 catalogs:
     jest29:
         jest: ^29.7.0
-        ts-jest: ^29.1.0
+        ts-jest: ^29.4.15
         jest-environment-jsdom: ^29.7.0
         "@types/jest": ^29.5.0
     react19:
-        react: 19.1.0
-        react-dom: 19.1.0
-        "@types/react": ^19.1.6
-        "@types/react-dom": ^19.1.5
+        react: 19.3.1
+        react-dom: 19.3.1
+        "@types/react": ^19.3.0
+        "@types/react-dom": ^19.3.0
