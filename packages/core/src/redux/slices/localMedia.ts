@@ -191,8 +191,8 @@ export const localMediaSlice = createSlice({
                 ...state,
                 isSettingCameraDevice: video ? false : state.isSettingCameraDevice,
                 isSettingMicrophoneDevice: audio ? false : state.isSettingMicrophoneDevice,
-                cameraDeviceError: video ? action.error : state.cameraDeviceError,
-                microphoneDeviceError: audio ? action.error : state.microphoneDeviceError,
+                cameraDeviceError: video ? action.payload : state.cameraDeviceError,
+                microphoneDeviceError: audio ? action.payload : state.microphoneDeviceError,
             };
         });
         builder.addCase(doToggleCamera.pending, (state) => {
@@ -207,10 +207,11 @@ export const localMediaSlice = createSlice({
                 isTogglingCamera: false,
             };
         });
-        builder.addCase(doToggleCamera.rejected, (state) => {
+        builder.addCase(doToggleCamera.rejected, (state, action) => {
             return {
                 ...state,
                 isTogglingCamera: false,
+                cameraDeviceError: action.payload,
             };
         });
         builder.addCase(doUpdateDeviceList.fulfilled, (state, action) => {
@@ -259,7 +260,7 @@ export const localMediaSlice = createSlice({
             return {
                 ...state,
                 status: "error",
-                startError: action.error,
+                startError: action.payload,
             };
         });
         builder.addCase(doSwitchLocalStream.pending, (state) => {
@@ -278,6 +279,7 @@ export const localMediaSlice = createSlice({
             return {
                 ...state,
                 isSwitchingStream: false,
+                cameraDeviceError: action.meta.arg.videoId !== undefined ? action.payload : state.cameraDeviceError,
                 microphoneDeviceError:
                     action.meta.arg.audioId !== undefined ? action.payload : state.microphoneDeviceError,
             };
