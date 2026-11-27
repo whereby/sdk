@@ -8,10 +8,10 @@
         "@whereby.com/core": "workspace:*",
         "react": "catalog:react19",
         "react-dom": "catalog:react19",
-        "react-hot-toast": "^2.4.1"
+        "react-hot-toast": "^2.6.1"
     },
     "devDependencies": {
-        "@playwright/test": "^1.60.0",
+        "@playwright/test": "^1.65.1",
         "@vitejs/plugin-react": "^4.2.1",
         "@whereby.com/assistant-sdk": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
