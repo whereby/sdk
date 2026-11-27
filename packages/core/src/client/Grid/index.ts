@@ -73,10 +73,19 @@ export class GridClient extends BaseClient<GridState, GridEvents> {
 
     /* Actions */
 
+    /**
+     * Spotlight a client view.
+     * @param id - The client view id: the participant's id for their camera, or the screenshare's view id
+     * (`pres-<participantId>`) for their screenshare.
+     */
     public spotlightParticipant(id: string) {
         this.store.dispatch(doSpotlightParticipant({ id }));
     }
 
+    /**
+     * Remove the spotlight from a client view.
+     * @param id - The client view id, as for `spotlightParticipant`.
+     */
     public removeSpotlight(id: string) {
         this.store.dispatch(doRemoveSpotlight({ id }));
     }
