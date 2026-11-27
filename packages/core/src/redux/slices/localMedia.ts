@@ -274,10 +274,12 @@ export const localMediaSlice = createSlice({
                 isSwitchingStream: false,
             };
         });
-        builder.addCase(doSwitchLocalStream.rejected, (state) => {
+        builder.addCase(doSwitchLocalStream.rejected, (state, action) => {
             return {
                 ...state,
                 isSwitchingStream: false,
+                microphoneDeviceError:
+                    action.meta.arg.audioId !== undefined ? action.payload : state.microphoneDeviceError,
             };
         });
         builder.addCase(doLocalStreamEffect.fulfilled, (state, { payload }) => {
@@ -375,7 +377,7 @@ export const doToggleCamera = createAppAsyncThunk(
     },
 );
 
-const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState }) => {
+const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState, dispatch }) => {
     const state = getState();
     const stream = selectLocalMediaStream(state);
     if (!stream) {
@@ -383,6 +385,10 @@ const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", 
     }
     const enabled = selectIsMicrophoneEnabled(state);
     const audioTrack = stream.getAudioTracks()?.[0];
+    if (enabled && audioTrack?.readyState !== "live") {
+        dispatch(doSwitchLocalStream({ audioId: selectCurrentMicrophoneDeviceId(state) }));
+        return;
+    }
     if (!audioTrack) {
         return;
     }
