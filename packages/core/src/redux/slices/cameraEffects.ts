@@ -1,12 +1,15 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
 import { createAppAsyncThunk } from "../thunk";
 import { RootState } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { doAppStop } from "./app";
 import {
     doLocalStreamEffect,
+    doSetDevice,
+    doSwitchLocalStream,
     doToggleCamera,
     selectIsCameraEnabled,
+    selectIsSettingCameraDevice,
     selectLocalMediaIsSwitchingStream,
     selectLocalMediaStream,
 } from "./localMedia";
@@ -232,6 +235,18 @@ export const doCameraEffectsPause = createAppAsyncThunk("cameraEffects/pause", a
     dispatch(cameraEffectsPaused());
 });
 
+const doCameraEffectsPauseForSwitch = createAppAsyncThunk(
+    "cameraEffects/pauseForSwitch",
+    async (_, { dispatch, getState }) => {
+        const raw = selectCameraEffectsRaw(getState());
+
+        raw.stop?.();
+        await dispatch(doLocalStreamEffect({ effectStream: undefined, only: "video" }));
+
+        dispatch(cameraEffectsPaused());
+    },
+);
+
 export const doCameraEffectsResume = createAppAsyncThunk("cameraEffects/resume", async (_, { dispatch, getState }) => {
     const state = getState();
     const effectId = selectCameraEffectId(state);
@@ -248,6 +263,42 @@ startAppListening({
     effect: (_, { dispatch, getState }) => {
         if (selectCameraEffectsRaw(getState()).stop) {
             dispatch(doCameraEffectsClear());
+        }
+    },
+});
+
+// Keep the effect out of camera switches: pause it before, apply it again on the track the switch ends with.
+startAppListening({
+    matcher: isAnyOf(doSwitchLocalStream.pending, doSetDevice.pending),
+    effect: (action, { dispatch, getState }) => {
+        const switchesCamera =
+            (doSetDevice.pending.match(action) && action.meta.arg.video) ||
+            (doSwitchLocalStream.pending.match(action) && action.meta.arg.videoId !== undefined);
+
+        if (switchesCamera && selectCameraEffectsRaw(getState()).stop) {
+            dispatch(doCameraEffectsPauseForSwitch());
+        }
+    },
+});
+
+startAppListening({
+    matcher: isAnyOf(
+        doSwitchLocalStream.fulfilled,
+        doSwitchLocalStream.rejected,
+        doSetDevice.fulfilled,
+        doSetDevice.rejected,
+    ),
+    effect: (_, { dispatch, getState }) => {
+        const state = getState();
+
+        if (
+            selectCameraEffectId(state) &&
+            selectIsCameraEffectPaused(state) &&
+            selectIsCameraEnabled(state) &&
+            !selectIsSettingCameraDevice(state) &&
+            selectLocalMediaStream(state)?.getVideoTracks()[0]?.readyState === "live"
+        ) {
+            dispatch(doCameraEffectsResume());
         }
     },
 });

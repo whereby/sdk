@@ -1,12 +1,14 @@
 import * as cameraEffectsSlice from "../../slices/cameraEffects";
 import * as localMediaSlice from "../../slices/localMedia";
-import * as MediaDevices from "@whereby.com/media";
+import { createEffectStream } from "@whereby.com/camera-effects";
 import { doAppStart, doAppStop } from "../../slices/app";
 import { createStore } from "../store.setup";
+import { audioDevice, createLiveTrack, videoDevice, waitForSetDevice, waitForSwitch } from "../localMedia.setup";
 import { RootState } from "../../store";
 
 import MockMediaStream from "../../../__mocks__/MediaStream";
 import MockMediaStreamTrack from "../../../__mocks__/MediaStreamTrack";
+import mockMediaDevices from "../../../__mocks__/mediaDevices";
 
 Object.defineProperty(window, "MediaStream", {
     writable: true,
@@ -18,19 +20,12 @@ Object.defineProperty(window, "MediaStreamTrack", {
     value: MockMediaStreamTrack,
 });
 
-jest.mock("@whereby.com/media", () => ({
-    __esModule: true,
-    getStream: jest.fn(() => Promise.resolve()),
-    getUpdatedDevices: jest.fn(() => Promise.resolve({ addedDevices: {}, changedDevices: {} })),
-    getDeviceData: jest.fn(() => ({})),
-    replaceTracksInStream: jest.fn((stream: MediaStream, newStream: MediaStream, only: "audio" | "video") => {
-        const kind = only === "audio" ? "audio" : "video";
-        const replaced = stream.getTracks().filter((t) => t.kind === kind);
-        newStream.getTracks().forEach((t) => stream.addTrack(t));
-        replaced.forEach((t) => stream.removeTrack(t));
-        return replaced;
-    }),
-}));
+Object.defineProperty(navigator, "mediaDevices", {
+    writable: true,
+    value: mockMediaDevices,
+});
+
+const mockedGetUserMedia = jest.mocked(navigator.mediaDevices.getUserMedia);
 
 const mockEffectStop = jest.fn();
 jest.mock("@whereby.com/camera-effects", () => ({
@@ -253,7 +248,8 @@ describe("cameraEffectsSlice", () => {
                 initialState: {
                     localMedia: startedLocalMedia({
                         cameraEnabled: true,
-                        currentCameraDeviceId: "camera-1",
+                        currentCameraDeviceId: videoDevice.deviceId,
+                        devices: [audioDevice, videoDevice],
                         stream,
                         beforeEffectTracks: { video: sourceTrack },
                     }),
@@ -272,11 +268,9 @@ describe("cameraEffectsSlice", () => {
             expect(store.getState().cameraEffects.isPaused).toBe(true);
 
             // When the camera is turned on, doToggleCamera acquires a fresh raw track.
-            jest.mocked(MediaDevices.getStream).mockImplementationOnce(async (_opts, options) => {
-                const newRawTrack = new MockMediaStreamTrack("video");
-                options?.replaceStream?.addTrack(newRawTrack);
-                return { stream: options?.replaceStream as MediaStream, attempts: [] };
-            });
+            mockedGetUserMedia.mockResolvedValueOnce(
+                new MockMediaStream([createLiveTrack("video", videoDevice.deviceId)]),
+            );
 
             // Turn the camera back on -> effect should be re-applied to the new track.
             store.dispatch(localMediaSlice.toggleCameraEnabled({ enabled: true }));
@@ -327,6 +321,108 @@ describe("cameraEffectsSlice", () => {
             expect(state.isPaused).toBe(true);
             expect(state.currentEffectId).toBe("image-blur");
             expect(state.raw).toEqual({});
+        });
+    });
+
+    describe("camera switches", () => {
+        const otherCamera = { ...videoDevice, deviceId: "otherVideoDeviceId", label: "Other camera" };
+
+        const createStoreWithEffect = () => {
+            const rawTrack = createLiveTrack("video", videoDevice.deviceId);
+            const effectTrack = new MockMediaStreamTrack("video");
+            const stopEffect = jest.fn();
+            const stream = new MockMediaStream([createLiveTrack("audio", audioDevice.deviceId), effectTrack]);
+            const store = createStore({
+                initialState: {
+                    localMedia: startedLocalMedia({
+                        currentCameraDeviceId: videoDevice.deviceId,
+                        devices: [audioDevice, videoDevice, otherCamera],
+                        stream,
+                        beforeEffectTracks: { video: rawTrack },
+                    }),
+                    cameraEffects: {
+                        currentEffectId: "image-blur",
+                        isPaused: false,
+                        isSwitching: false,
+                        raw: { stop: stopEffect, effectStream: new MockMediaStream([effectTrack]) },
+                    },
+                },
+            });
+            return { store, stream, rawTrack, stopEffect };
+        };
+
+        const mockNextEffectTrack = () => {
+            const effectTrack = new MockMediaStreamTrack("video");
+            jest.mocked(createEffectStream).mockResolvedValueOnce({
+                stream: new MockMediaStream([effectTrack]),
+                stop: jest.fn(),
+                tryUpdate: jest.fn(async () => true),
+            });
+            return effectTrack;
+        };
+
+        const waitForEffect = (store: ReturnType<typeof createStore>) =>
+            new Promise<void>((resolve) => {
+                const isApplied = () => {
+                    const { isPaused, isSwitching, raw } = store.getState().cameraEffects;
+                    return !isPaused && !isSwitching && !!raw.stop;
+                };
+                if (isApplied()) {
+                    return resolve();
+                }
+                const unsubscribe = store.subscribe(() => {
+                    if (isApplied()) {
+                        unsubscribe();
+                        resolve();
+                    }
+                });
+            });
+
+        it("applies the effect again on the new track after a low data mode change", async () => {
+            const { store, stream, rawTrack, stopEffect } = createStoreWithEffect();
+            const switchedTrack = createLiveTrack("video", videoDevice.deviceId);
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([switchedTrack]));
+            const newEffectTrack = mockNextEffectTrack();
+
+            store.dispatch(localMediaSlice.toggleLowDataModeEnabled({ enabled: true }));
+            await waitForSwitch(store);
+            await waitForEffect(store);
+
+            expect(mockedGetUserMedia).toHaveBeenCalledTimes(1);
+            expect(stopEffect).toHaveBeenCalled();
+            expect(rawTrack.stop).toHaveBeenCalled();
+            expect(store.getState().localMedia.beforeEffectTracks?.video).toBe(switchedTrack);
+            expect(stream.getVideoTracks()).toEqual([newEffectTrack]);
+        });
+
+        it("holds only the picked camera after a pick", async () => {
+            const { store, stream, rawTrack } = createStoreWithEffect();
+            const pickedTrack = createLiveTrack("video", otherCamera.deviceId);
+            mockedGetUserMedia.mockResolvedValueOnce(new MockMediaStream([pickedTrack]));
+            const newEffectTrack = mockNextEffectTrack();
+
+            store.dispatch(localMediaSlice.setCurrentCameraDeviceId({ deviceId: otherCamera.deviceId }));
+            await waitForSetDevice(store);
+            await waitForEffect(store);
+
+            expect(rawTrack.stop).toHaveBeenCalled();
+            expect(store.getState().localMedia.beforeEffectTracks?.video).toBe(pickedTrack);
+            expect(store.getState().localMedia.currentCameraDeviceId).toBe(otherCamera.deviceId);
+            expect(stream.getVideoTracks()).toEqual([newEffectTrack]);
+        });
+
+        it("keeps the effect on the camera we hold after a failed pick", async () => {
+            const { store, stream, rawTrack } = createStoreWithEffect();
+            mockedGetUserMedia.mockRejectedValueOnce(new DOMException("Requested device not found", "NotFoundError"));
+
+            store.dispatch(localMediaSlice.setCurrentCameraDeviceId({ deviceId: otherCamera.deviceId }));
+            await waitForSetDevice(store);
+            await waitForEffect(store);
+
+            expect(rawTrack.stop).not.toHaveBeenCalled();
+            expect(store.getState().localMedia.beforeEffectTracks?.video).toBe(rawTrack);
+            expect(stream.getVideoTracks()).toHaveLength(1);
+            expect(stream.getVideoTracks()).not.toContain(rawTrack);
         });
     });
 });
