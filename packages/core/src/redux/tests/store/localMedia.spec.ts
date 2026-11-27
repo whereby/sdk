@@ -2,6 +2,7 @@ import * as localMediaSlice from "../../slices/localMedia";
 import { doAppStart, doAppStop, initialState as appInitialState, InitialMuteStates } from "../../slices/app";
 import { signalEvents } from "../../slices/signalConnection/actions";
 import { createStore, mockRtcManager, mockSignalEmit } from "../store.setup";
+import { audioDevice, createLiveTrack, videoDevice, waitForSetDevice, waitForSwitch } from "../localMedia.setup";
 import { diff } from "deep-object-diff";
 import { PayloadAction } from "@reduxjs/toolkit";
 
@@ -29,67 +30,14 @@ Object.defineProperty(navigator, "mediaDevices", {
 const mockedEnumerateDevices = jest.mocked(navigator.mediaDevices.enumerateDevices);
 const mockedGetUserMedia = jest.mocked(navigator.mediaDevices.getUserMedia);
 
-const audioDevice = {
-    deviceId: "audioDeviceId",
-    kind: "audioinput" as const,
-    label: "Microphone",
-    groupId: "a",
-    toJSON: () => ({}),
-};
-const videoDevice = {
-    deviceId: "videoDeviceId",
-    kind: "videoinput" as const,
-    label: "Camera",
-    groupId: "b",
-    toJSON: () => ({}),
-};
-
 const addedCamera = { ...videoDevice, deviceId: "addedVideoDeviceId", label: "Added camera" };
 const addedMic = { ...audioDevice, deviceId: "addedAudioDeviceId", label: "Added microphone" };
-
-const createLiveTrack = (kind: "audio" | "video", deviceId: string) => {
-    const track: MediaStreamTrack & { readyState: MediaStreamTrackState } = new MockMediaStreamTrack(kind);
-    track.readyState = "live";
-    track.getSettings = () => ({ deviceId });
-    return track;
-};
 
 const createLiveStream = () =>
     new MockMediaStream([
         createLiveTrack("audio", audioDevice.deviceId),
         createLiveTrack("video", videoDevice.deviceId),
     ]);
-
-const waitForSwitch = (store: ReturnType<typeof createStore>) =>
-    new Promise<void>((resolve) => {
-        if (!store.getState().localMedia.isSwitchingStream) {
-            return resolve();
-        }
-        const unsubscribe = store.subscribe(() => {
-            if (!store.getState().localMedia.isSwitchingStream) {
-                unsubscribe();
-                resolve();
-            }
-        });
-    });
-
-const isSettingDevice = (store: ReturnType<typeof createStore>) => {
-    const { isSettingCameraDevice, isSettingMicrophoneDevice } = store.getState().localMedia;
-    return isSettingCameraDevice || isSettingMicrophoneDevice;
-};
-
-const waitForSetDevice = (store: ReturnType<typeof createStore>) =>
-    new Promise<void>((resolve) => {
-        if (!isSettingDevice(store)) {
-            return resolve();
-        }
-        const unsubscribe = store.subscribe(() => {
-            if (!isSettingDevice(store)) {
-                unsubscribe();
-                resolve();
-            }
-        });
-    });
 
 const waitForToggleCamera = (store: ReturnType<typeof createStore>) =>
     new Promise<void>((resolve) => {

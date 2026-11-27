@@ -538,10 +538,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             beforeEffectTracks.audio.stop();
             beforeEffectTracks.audio = undefined;
         }
-        if (videoId !== undefined && beforeEffectTracks?.video) {
-            beforeEffectTracks.video.stop();
-            beforeEffectTracks.video = undefined;
-        }
 
         const before = snapshotTracks(replaceStream);
 
