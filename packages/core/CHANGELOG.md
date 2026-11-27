@@ -1,5 +1,14 @@
 # @whereby.com/core
 
+## 1.33.8
+
+### Patch Changes
+
+- 699c1f0: Get a new microphone on unmute when the muted one was unplugged
+- a854607: Keep busy devices in the camera and microphone device lists, and deprecate busy device state
+- a854607: Stop marking devices as busy when a stream switch fails
+- 7e94ab3: Update the device list after local media has started, so devices show up when permission was given at start
+
 ## 1.33.7
 
 ### Patch Changes
