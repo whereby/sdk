@@ -144,6 +144,32 @@ export function getDeviceData({
 }
 
 /**
+ * Device ids of the live local tracks. Without a live track, the last used device if it's still connected.
+ */
+export function getTrackDeviceIds({
+    audioTrack,
+    videoTrack,
+    devices,
+    lastAudioId,
+    lastVideoId,
+}: {
+    audioTrack?: MediaStreamTrack | null;
+    videoTrack?: MediaStreamTrack | null;
+    devices: MediaDeviceInfo[];
+    lastAudioId?: string;
+    lastVideoId?: string;
+}): { audioId?: string; videoId?: string } {
+    const findDeviceId = (kind: MediaDeviceKind, track?: MediaStreamTrack | null, lastId?: string) => {
+        if (track?.readyState === "live") return track.getSettings().deviceId || undefined;
+        return devices.find((d) => d.kind === kind && d.deviceId === lastId)?.deviceId;
+    };
+    return {
+        audioId: findDeviceId("audioinput", audioTrack, lastAudioId),
+        videoId: findDeviceId("videoinput", videoTrack, lastVideoId),
+    };
+}
+
+/**
  * Stops all tracks in a media stream.
  */
 export function stopStreamTracks(stream: MediaStream, only?: "audio" | "video" | false) {
