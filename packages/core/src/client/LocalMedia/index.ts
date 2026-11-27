@@ -9,14 +9,18 @@ import {
     setCurrentMicrophoneDeviceId,
     setCurrentSpeakerDeviceId,
     doStopLocalMedia,
+    doWatchDevicePermissions,
 } from "../../redux";
+import type { DevicePermissionState } from "../../redux";
 import type { Store as AppStore } from "../../redux/store";
 import { selectLocalMediaState } from "./selector";
 import {
     CAMERA_DEVICE_ERROR_CHANGED,
     CAMERA_DEVICES_CHANGED,
     CAMERA_ENABLED_CHANGED,
+    CAMERA_PERMISSION_CHANGED,
     MICROPHONE_ENABLED_CHANGED,
+    MICROPHONE_PERMISSION_CHANGED,
     CURRENT_CAMERA_CHANGED,
     CURRENT_MICROPHONE_CHANGED,
     CURRENT_SPEAKER_CHANGED,
@@ -50,9 +54,13 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
     private localMediaStartingSubscribers = new Set<(starting: boolean) => void>();
     private localStreamSubscribers = new Set<(stream?: MediaStream) => void>();
     private localMediaStartErrorSubscribers = new Set<(error: unknown | null) => void>();
+    private cameraPermissionSubscribers = new Set<(permission: DevicePermissionState | null) => void>();
+    private microphonePermissionSubscribers = new Set<(permission: DevicePermissionState | null) => void>();
+    private stopWatchingDevicePermissions: () => void;
 
     constructor(store: AppStore) {
         super(store);
+        this.stopWatchingDevicePermissions = this.store.dispatch(doWatchDevicePermissions());
     }
 
     protected handleStateChanges(state: LocalMediaState, previousState: LocalMediaState): void {
@@ -114,6 +122,16 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         if (state.currentSpeakerDeviceId !== previousState.currentSpeakerDeviceId) {
             this.currentSpeakerSubscribers.forEach((cb) => cb(state.currentSpeakerDeviceId));
             this.emit(CURRENT_SPEAKER_CHANGED, state.currentSpeakerDeviceId);
+        }
+
+        if (state.cameraPermission !== previousState.cameraPermission) {
+            this.cameraPermissionSubscribers.forEach((cb) => cb(state.cameraPermission));
+            this.emit(CAMERA_PERMISSION_CHANGED, state.cameraPermission);
+        }
+
+        if (state.microphonePermission !== previousState.microphonePermission) {
+            this.microphonePermissionSubscribers.forEach((cb) => cb(state.microphonePermission));
+            this.emit(MICROPHONE_PERMISSION_CHANGED, state.microphonePermission);
         }
 
         if (state.isStarting !== previousState.isStarting) {
@@ -228,6 +246,18 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         return () => this.localMediaStartErrorSubscribers.delete(callback);
     }
 
+    public subscribeCameraPermission(callback: (permission: DevicePermissionState | null) => void): () => void {
+        this.cameraPermissionSubscribers.add(callback);
+
+        return () => this.cameraPermissionSubscribers.delete(callback);
+    }
+
+    public subscribeMicrophonePermission(callback: (permission: DevicePermissionState | null) => void): () => void {
+        this.microphonePermissionSubscribers.add(callback);
+
+        return () => this.microphonePermissionSubscribers.delete(callback);
+    }
+
     /* Actions */
 
     public async startMedia(options: LocalMediaOptions | MediaStream = { audio: true, video: true }) {
@@ -293,5 +323,8 @@ export class LocalMediaClient extends BaseClient<LocalMediaState, LocalMediaEven
         this.localMediaStartingSubscribers.clear();
         this.localStreamSubscribers.clear();
         this.localMediaStartErrorSubscribers.clear();
+        this.cameraPermissionSubscribers.clear();
+        this.microphonePermissionSubscribers.clear();
+        this.stopWatchingDevicePermissions();
     }
 }

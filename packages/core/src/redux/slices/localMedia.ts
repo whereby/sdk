@@ -1,6 +1,6 @@
 import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
 import { getStream, getUpdatedDevices, getDeviceData, replaceTracksInStream } from "@whereby.com/media";
-import { createAppAsyncThunk, createAppThunk } from "../thunk";
+import { AppThunk, createAppAsyncThunk, createAppThunk } from "../thunk";
 import { RootState } from "../store";
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { doAppStart, selectAppInitialMuteStates, selectAppIsActive } from "./app";
@@ -12,6 +12,10 @@ export type LocalMediaOptions = {
     audio: boolean;
     video: boolean;
 };
+
+export type DevicePermissionState = "granted" | "denied" | "prompt";
+
+export type DevicePermissionKind = "camera" | "microphone";
 
 /**
  * Reducer
@@ -25,6 +29,7 @@ export interface LocalMediaState {
     busyDeviceIds: string[];
     cameraDeviceError?: unknown;
     cameraEnabled: boolean;
+    cameraPermission: DevicePermissionState | null;
     currentCameraDeviceId?: string;
     currentMicrophoneDeviceId?: string;
     currentSpeakerDeviceId?: string;
@@ -38,6 +43,7 @@ export interface LocalMediaState {
     lowDataMode: boolean;
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
+    microphonePermission: DevicePermissionState | null;
     onDeviceChange?: () => void;
     options?: LocalMediaOptions;
     speakerDeviceError?: unknown;
@@ -50,6 +56,7 @@ export interface LocalMediaState {
 export const initialLocalMediaState: LocalMediaState = {
     busyDeviceIds: [],
     cameraEnabled: false,
+    cameraPermission: null,
     currentSpeakerDeviceId: "default",
     devices: [],
     hdMode: true,
@@ -60,6 +67,7 @@ export const initialLocalMediaState: LocalMediaState = {
     isTogglingCamera: false,
     lowDataMode: false,
     microphoneEnabled: false,
+    microphonePermission: null,
     status: "inactive",
     stream: undefined,
     widescreenMode: true,
@@ -152,6 +160,16 @@ export const localMediaSlice = createSlice({
                 stream: undefined,
             };
         },
+        devicePermissionChanged(
+            state,
+            action: PayloadAction<{ kind: DevicePermissionKind; permission: DevicePermissionState }>,
+        ) {
+            const { kind, permission } = action.payload;
+            return {
+                ...state,
+                [kind === "camera" ? "cameraPermission" : "microphonePermission"]: permission,
+            };
+        },
         localStreamMetadataUpdated(state, action: PayloadAction<ReturnType<typeof getDeviceData>>) {
             const { audio, video } = action.payload;
             return {
@@ -225,7 +243,7 @@ export const localMediaSlice = createSlice({
                 status: "starting",
             };
         });
-        builder.addCase(doStartLocalMedia.fulfilled, (state, { payload: { stream, onDeviceChange } }) => {
+        builder.addCase(doStartLocalMedia.fulfilled, (state, { payload: { stream, onDeviceChange }, meta }) => {
             let cameraDeviceId = undefined;
             let cameraEnabled = false;
             let microphoneDeviceId = undefined;
@@ -244,6 +262,8 @@ export const localMediaSlice = createSlice({
                 cameraDeviceId = videoTrack.getSettings().deviceId;
             }
 
+            const acquiredStream = !("getTracks" in meta.arg);
+
             return {
                 ...state,
                 stream,
@@ -253,6 +273,8 @@ export const localMediaSlice = createSlice({
                 cameraEnabled,
                 microphoneEnabled,
                 onDeviceChange,
+                cameraPermission: acquiredStream && videoTrack ? "granted" : state.cameraPermission,
+                microphonePermission: acquiredStream && audioTrack ? "granted" : state.microphonePermission,
             };
         });
         builder.addCase(doStartLocalMedia.rejected, (state, action) => {
@@ -327,7 +349,52 @@ export const {
     setLocalMediaStream,
     localMediaStopped,
     localStreamMetadataUpdated,
+    devicePermissionChanged,
 } = localMediaSlice.actions;
+
+const toDevicePermissionState = (state: PermissionState): DevicePermissionState =>
+    state === "granted" || state === "denied" ? state : "prompt";
+
+async function queryDevicePermission(kind: DevicePermissionKind): Promise<PermissionStatus | null> {
+    if (typeof navigator === "undefined" || typeof navigator.permissions?.query !== "function") {
+        return null;
+    }
+
+    try {
+        return await navigator.permissions.query({ name: kind });
+    } catch {
+        return null;
+    }
+}
+
+export const doWatchDevicePermissions = (): AppThunk<() => void> => (dispatch) => {
+    let isWatching = true;
+    const stopListeners: (() => void)[] = [];
+
+    (["camera", "microphone"] as const).forEach(async (kind) => {
+        const status = await queryDevicePermission(kind);
+
+        if (!isWatching) {
+            return;
+        }
+
+        dispatch(
+            devicePermissionChanged({ kind, permission: status ? toDevicePermissionState(status.state) : "prompt" }),
+        );
+
+        if (status) {
+            const onChange = () =>
+                dispatch(devicePermissionChanged({ kind, permission: toDevicePermissionState(status.state) }));
+            status.addEventListener("change", onChange);
+            stopListeners.push(() => status.removeEventListener("change", onChange));
+        }
+    });
+
+    return () => {
+        isWatching = false;
+        stopListeners.forEach((stop) => stop());
+    };
+};
 
 export const doToggleCamera = createAppAsyncThunk(
     "localMedia/doToggleCamera",
@@ -714,6 +781,8 @@ export const doLocalStreamEffect = createAppAsyncThunk(
 /** @deprecated */
 export const selectBusyDeviceIds = (state: RootState) => state.localMedia.busyDeviceIds;
 export const selectCameraDeviceError = (state: RootState) => state.localMedia.cameraDeviceError;
+export const selectCameraPermission = (state: RootState) => state.localMedia.cameraPermission;
+export const selectMicrophonePermission = (state: RootState) => state.localMedia.microphonePermission;
 export const selectCurrentCameraDeviceId = (state: RootState) => state.localMedia.currentCameraDeviceId;
 export const selectCurrentMicrophoneDeviceId = (state: RootState) => state.localMedia.currentMicrophoneDeviceId;
 export const selectCurrentSpeakerDeviceId = (state: RootState) => state.localMedia.currentSpeakerDeviceId;

@@ -2,7 +2,9 @@
 export const CAMERA_DEVICE_ERROR_CHANGED = "local-media:camera-device-error-changed";
 export const CAMERA_DEVICES_CHANGED = "local-media:camera-devices-changed";
 export const CAMERA_ENABLED_CHANGED = "local-media:camera-enabled-changed";
+export const CAMERA_PERMISSION_CHANGED = "local-media:camera-permission-changed";
 export const MICROPHONE_ENABLED_CHANGED = "local-media:microphone-enabled-changed";
+export const MICROPHONE_PERMISSION_CHANGED = "local-media:microphone-permission-changed";
 export const IS_SETTING_CAMERA_DEVICE = "local-media:is-setting-camera-device";
 export const IS_SETTING_MICROPHONE_DEVICE = "local-media:is-setting-microphone-device";
 export const MICROPHONE_DEVICE_ERROR_CHANGED = "local-media:microphone-device-error-changed";
@@ -15,11 +17,15 @@ export const LOCAL_MEDIA_STARTING = "local-media:starting";
 export const LOCAL_STREAM_CHANGED = "local-media:local-stream-changed";
 export const LOCAL_MEDIA_START_ERROR_CHANGED = "local-media:start-error-changed";
 
+import type { DevicePermissionState } from "../../redux";
+
 export type LocalMediaEvents = {
     [CAMERA_DEVICE_ERROR_CHANGED]: [error: unknown | null];
     [CAMERA_DEVICES_CHANGED]: [devices: MediaDeviceInfo[]];
     [CAMERA_ENABLED_CHANGED]: [isCameraEnabled: boolean];
+    [CAMERA_PERMISSION_CHANGED]: [permission: DevicePermissionState | null];
     [MICROPHONE_ENABLED_CHANGED]: [isMicrophoneEnabled: boolean];
+    [MICROPHONE_PERMISSION_CHANGED]: [permission: DevicePermissionState | null];
     [IS_SETTING_CAMERA_DEVICE]: [isSetting: boolean];
     [IS_SETTING_MICROPHONE_DEVICE]: [isSetting: boolean];
     [MICROPHONE_DEVICE_ERROR_CHANGED]: [error: unknown | null];

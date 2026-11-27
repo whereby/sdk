@@ -60,6 +60,12 @@ const createLiveStream = () =>
         createLiveTrack("video", videoDevice.deviceId),
     ]);
 
+const flushPromises = async () => {
+    for (let i = 0; i < 5; i++) {
+        await Promise.resolve();
+    }
+};
+
 const waitForSwitch = (store: ReturnType<typeof createStore>) =>
     new Promise<void>((resolve) => {
         if (!store.getState().localMedia.isSwitchingStream) {
@@ -138,6 +144,8 @@ const startedLocalMedia = ({
 } & Partial<RootState["localMedia"]>): Partial<RootState> => ({
     localMedia: {
         busyDeviceIds: [],
+        cameraPermission: null,
+        microphonePermission: null,
         currentCameraDeviceId: videoDevice.deviceId,
         currentMicrophoneDeviceId: audioDevice.deviceId,
         cameraEnabled: true,
@@ -259,9 +267,142 @@ describe("actions", () => {
                         microphoneEnabled: true,
                         currentCameraDeviceId: videoDevice.deviceId,
                         currentMicrophoneDeviceId: audioDevice.deviceId,
+                        cameraPermission: "granted",
+                        microphonePermission: "granted",
                     });
                 });
             });
+
+            it("marks only the devices it got a track for as allowed", async () => {
+                mockedGetUserMedia.mockResolvedValueOnce(
+                    new MockMediaStream([createLiveTrack("video", videoDevice.deviceId)]),
+                );
+                const store = createStore({
+                    initialState: {
+                        localMedia: { ...localMediaSlice.initialLocalMediaState, microphonePermission: "denied" },
+                    },
+                });
+
+                await store.dispatch(localMediaSlice.doStartLocalMedia({ audio: false, video: true }));
+
+                expect(store.getState().localMedia).toEqual(
+                    expect.objectContaining({ cameraPermission: "granted", microphonePermission: "denied" }),
+                );
+            });
+        });
+    });
+
+    describe("doWatchDevicePermissions", () => {
+        class MockPermissionStatus extends EventTarget {
+            constructor(public state: PermissionState) {
+                super();
+            }
+
+            change(state: PermissionState) {
+                this.state = state;
+                this.dispatchEvent(new Event("change"));
+            }
+        }
+
+        const mockedQuery = jest.fn();
+
+        const setPermissionsApi = (value: unknown) =>
+            Object.defineProperty(navigator, "permissions", { configurable: true, writable: true, value });
+
+        const permissions = (store: ReturnType<typeof createStore>) => {
+            const { cameraPermission, microphonePermission } = store.getState().localMedia;
+            return { cameraPermission, microphonePermission };
+        };
+
+        beforeEach(() => {
+            setPermissionsApi({ query: mockedQuery });
+        });
+
+        afterEach(() => {
+            setPermissionsApi(undefined);
+        });
+
+        it("is null until the browser has answered", () => {
+            mockedQuery.mockReturnValue(new Promise(() => undefined));
+            const store = createStore();
+
+            store.dispatch(localMediaSlice.doWatchDevicePermissions());
+
+            expect(permissions(store)).toEqual({ cameraPermission: null, microphonePermission: null });
+        });
+
+        it("reads the camera and microphone permission separately", async () => {
+            mockedQuery.mockImplementation(async ({ name }: PermissionDescriptor) =>
+                name === "camera" ? new MockPermissionStatus("granted") : new MockPermissionStatus("denied"),
+            );
+            const store = createStore();
+
+            store.dispatch(localMediaSlice.doWatchDevicePermissions());
+            await flushPromises();
+
+            expect(mockedQuery).toHaveBeenCalledWith({ name: "camera" });
+            expect(mockedQuery).toHaveBeenCalledWith({ name: "microphone" });
+            expect(permissions(store)).toEqual({ cameraPermission: "granted", microphonePermission: "denied" });
+        });
+
+        it("follows changes", async () => {
+            const camera = new MockPermissionStatus("prompt");
+            mockedQuery.mockImplementation(async ({ name }: PermissionDescriptor) =>
+                name === "camera" ? camera : new MockPermissionStatus("prompt"),
+            );
+            const store = createStore();
+
+            store.dispatch(localMediaSlice.doWatchDevicePermissions());
+            await flushPromises();
+            camera.change("granted");
+
+            expect(permissions(store)).toEqual({ cameraPermission: "granted", microphonePermission: "prompt" });
+        });
+
+        it("stops following changes once stopped", async () => {
+            const camera = new MockPermissionStatus("prompt");
+            mockedQuery.mockImplementation(async ({ name }: PermissionDescriptor) =>
+                name === "camera" ? camera : new MockPermissionStatus("prompt"),
+            );
+            const store = createStore();
+
+            const stop = store.dispatch(localMediaSlice.doWatchDevicePermissions());
+            await flushPromises();
+            stop();
+            camera.change("denied");
+
+            expect(permissions(store).cameraPermission).toEqual("prompt");
+        });
+
+        it("ignores an answer that comes after it was stopped", async () => {
+            let resolveQuery: (status: MockPermissionStatus) => void = () => undefined;
+            mockedQuery.mockReturnValue(
+                new Promise((resolve) => {
+                    resolveQuery = resolve;
+                }),
+            );
+            const store = createStore();
+
+            const stop = store.dispatch(localMediaSlice.doWatchDevicePermissions());
+            stop();
+            resolveQuery(new MockPermissionStatus("granted"));
+            await flushPromises();
+
+            expect(permissions(store)).toEqual({ cameraPermission: null, microphonePermission: null });
+        });
+
+        it.each`
+            browser                               | permissionsApi
+            ${"has no Permissions API"}           | ${() => undefined}
+            ${"rejects the query for the device"} | ${() => ({ query: jest.fn().mockRejectedValue(new TypeError("Unsupported")) })}
+        `("reads as not asked yet when the browser $browser", async ({ permissionsApi }) => {
+            setPermissionsApi(permissionsApi());
+            const store = createStore();
+
+            store.dispatch(localMediaSlice.doWatchDevicePermissions());
+            await flushPromises();
+
+            expect(permissions(store)).toEqual({ cameraPermission: "prompt", microphonePermission: "prompt" });
         });
     });
 
@@ -278,6 +419,8 @@ describe("actions", () => {
                 initialState = {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         cameraEnabled: true,
                         devices: [],
                         hdMode: true,
@@ -355,6 +498,8 @@ describe("actions", () => {
                 initialState = {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         cameraEnabled: true,
                         devices: [audioDevice, videoDevice],
                         hdMode: true,
@@ -410,6 +555,8 @@ describe("actions", () => {
                 initialState = {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         cameraEnabled: false,
                         devices: [],
                         hdMode: true,
@@ -495,6 +642,8 @@ describe("actions", () => {
                 initialState = {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         cameraEnabled: true,
                         currentCameraDeviceId: videoDevice.deviceId,
                         currentMicrophoneDeviceId: audioDevice.deviceId,
@@ -539,6 +688,8 @@ describe("actions", () => {
                 initialState = {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         cameraEnabled: true,
                         currentCameraDeviceId: videoDevice.deviceId,
                         currentMicrophoneDeviceId: audioDevice.deviceId,
@@ -583,6 +734,8 @@ describe("actions", () => {
                 initialState = {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         cameraEnabled: true,
                         currentCameraDeviceId: videoDevice.deviceId,
                         currentMicrophoneDeviceId: audioDevice.deviceId,
@@ -689,6 +842,8 @@ describe("actions", () => {
                 initialState: {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         currentCameraDeviceId: dev2.deviceId,
                         cameraEnabled: true,
                         devices: [dev1, dev2],
@@ -725,6 +880,8 @@ describe("actions", () => {
                 initialState: {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         currentCameraDeviceId: otherCamera.deviceId,
                         currentMicrophoneDeviceId: audioDevice.deviceId,
                         cameraEnabled: true,
@@ -761,6 +918,8 @@ describe("actions", () => {
                 initialState: {
                     localMedia: {
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         currentCameraDeviceId: otherCamera.deviceId,
                         currentMicrophoneDeviceId: audioDevice.deviceId,
                         cameraEnabled: true,
@@ -1198,6 +1357,8 @@ describe("actions", () => {
                     localMedia: {
                         beforeEffectTracks,
                         busyDeviceIds: [],
+                        cameraPermission: null,
+                        microphonePermission: null,
                         cameraEnabled: true,
                         devices: [],
                         hdMode: true,

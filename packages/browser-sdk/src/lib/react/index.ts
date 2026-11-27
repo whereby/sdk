@@ -39,6 +39,7 @@ export type { RoomConnectionActions, RoomConnectionOptions } from "./useRoomConn
 export type {
     CallQualityLevel,
     CPUQualityLevel,
+    DevicePermissionState,
     RemoteParticipantQualityReport,
     LocalParticipantQualityReport,
     ChatMessageState as ChatMessage,

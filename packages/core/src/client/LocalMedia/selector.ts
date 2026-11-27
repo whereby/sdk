@@ -15,6 +15,8 @@ import {
     selectMicrophoneDeviceError,
     selectMicrophoneDevices,
     selectSpeakerDevices,
+    selectCameraPermission,
+    selectMicrophonePermission,
 } from "../../redux";
 import { LocalMediaState } from "./types";
 
@@ -34,6 +36,8 @@ export const selectLocalMediaState = createSelector(
     selectMicrophoneDevices,
     selectSpeakerDevices,
     selectLocalMediaStartError,
+    selectCameraPermission,
+    selectMicrophonePermission,
     (
         cameraDeviceError,
         cameraDevices,
@@ -50,10 +54,13 @@ export const selectLocalMediaState = createSelector(
         microphoneDevices,
         speakerDevices,
         startError,
+        cameraPermission,
+        microphonePermission,
     ) => {
         const state: LocalMediaState = {
             cameraDeviceError,
             cameraDevices,
+            cameraPermission,
             currentCameraDeviceId,
             currentMicrophoneDeviceId,
             currentSpeakerDeviceId,
@@ -65,6 +72,7 @@ export const selectLocalMediaState = createSelector(
             localStream,
             microphoneDeviceError,
             microphoneDevices,
+            microphonePermission,
             speakerDevices,
             startError,
         };
