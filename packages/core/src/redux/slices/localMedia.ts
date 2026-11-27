@@ -21,6 +21,7 @@ export interface LocalMediaState {
         audio?: MediaStreamTrack;
         video?: MediaStreamTrack;
     };
+    /** @deprecated */
     busyDeviceIds: string[];
     cameraDeviceError?: unknown;
     cameraEnabled: boolean;
@@ -308,8 +309,10 @@ const findChangedTracks = (stream: MediaStream, before: ReturnType<typeof snapsh
  * Action creators
  */
 
+/** @deprecated */
+export const deviceBusy = localMediaSlice.actions.deviceBusy;
+
 export const {
-    deviceBusy,
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
     setCurrentSpeakerDeviceId,
@@ -514,12 +517,11 @@ export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
     async (
         { audioId, videoId }: { audioId?: string | null; videoId?: string | null },
-        { dispatch, getState, rejectWithValue },
+        { getState, rejectWithValue },
     ) => {
         const state = getState();
         const replaceStream = selectLocalMediaStream(state);
         const constraintsOptions = selectLocalMediaConstraintsOptions(state);
-        const onlySwitchingOne = !!(videoId && !audioId) || !!(!videoId && audioId);
         if (!replaceStream) {
             // Switching no stream makes no sense
             return;
@@ -535,11 +537,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             beforeEffectTracks.video = undefined;
         }
 
-        const hasLiveTrackFromDevice = (deviceId: string) =>
-            (audioId ? replaceStream.getAudioTracks() : replaceStream.getVideoTracks()).some(
-                (track) => track.readyState === "live" && track.getSettings().deviceId === deviceId,
-            );
-
         const before = snapshotTracks(replaceStream);
 
         try {
@@ -553,14 +550,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                 { replaceStream },
             );
 
-            const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId && !hasLiveTrackFromDevice(deviceId)) {
-                dispatch(
-                    deviceBusy({
-                        deviceId,
-                    }),
-                );
-            }
             const isAudioEnabled = selectIsMicrophoneEnabled(getState());
             replaceStream.getAudioTracks().forEach((track) => (track.enabled = isAudioEnabled));
 
@@ -578,14 +567,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
             };
         } catch (error) {
             console.error(error);
-            const deviceId = audioId || videoId;
-            if (onlySwitchingOne && deviceId && !hasLiveTrackFromDevice(deviceId)) {
-                dispatch(
-                    deviceBusy({
-                        deviceId,
-                    }),
-                );
-            }
             return rejectWithValue(error);
         }
     },
@@ -724,6 +705,7 @@ export const doLocalStreamEffect = createAppAsyncThunk(
  * Selectors
  */
 
+/** @deprecated */
 export const selectBusyDeviceIds = (state: RootState) => state.localMedia.busyDeviceIds;
 export const selectCameraDeviceError = (state: RootState) => state.localMedia.cameraDeviceError;
 export const selectCurrentCameraDeviceId = (state: RootState) => state.localMedia.currentCameraDeviceId;
@@ -770,17 +752,11 @@ export const selectLocalMediaConstraintsOptions = createSelector(
     }),
 );
 export const selectIsLocalMediaStarting = createSelector(selectLocalMediaStatus, (status) => status === "starting");
-export const selectCameraDevices = createSelector(
-    selectLocalMediaDevices,
-    selectBusyDeviceIds,
-    (devices, busyDeviceIds) =>
-        devices.filter((d) => d.kind === "videoinput").filter((d) => !busyDeviceIds.includes(d.deviceId)),
+export const selectCameraDevices = createSelector(selectLocalMediaDevices, (devices) =>
+    devices.filter((d) => d.kind === "videoinput"),
 );
-export const selectMicrophoneDevices = createSelector(
-    selectLocalMediaDevices,
-    selectBusyDeviceIds,
-    (devices, busyDeviceIds) =>
-        devices.filter((d) => d.kind === "audioinput").filter((d) => !busyDeviceIds.includes(d.deviceId)),
+export const selectMicrophoneDevices = createSelector(selectLocalMediaDevices, (devices) =>
+    devices.filter((d) => d.kind === "audioinput"),
 );
 export const selectSpeakerDevices = createSelector(selectLocalMediaDevices, (devices) =>
     devices.filter((d) => d.kind === "audiooutput"),
