@@ -88,6 +88,10 @@ export function getPacketWeightedFractionLost(reports: { fractionLost?: number; 
     );
 }
 
+export function isDocumentHidden() {
+    return typeof document !== "undefined" && document.visibilityState === "hidden";
+}
+
 export function getNumberOfActiveVideos(consumers: any) {
     let numberOfActiveVideos = 0;
     consumers.forEach((c: any) => {
