@@ -1,5 +1,11 @@
 # @whereby.com/core
 
+## 1.33.9
+
+### Patch Changes
+
+- 46386c4: Send changes of the signal and RTC connection status to rtcstats, not only their values when the RtcManager is initialized
+
 ## 1.33.8
 
 ### Patch Changes
