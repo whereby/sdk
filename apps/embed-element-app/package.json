@@ -4,7 +4,7 @@
     "private": true,
     "type": "module",
     "dependencies": {
-        "@coreui/icons": "^3.0.1",
+        "@coreui/icons": "^3.1.0",
         "@coreui/icons-react": "^2.2.1",
         "@whereby.com/browser-sdk": "workspace:*",
         "react": "catalog:react19",

@@ -16,7 +16,7 @@
         "@whereby.com/eslint-config": "workspace:*",
         "@whereby.com/prettier-config": "workspace:*",
         "@whereby.com/tsconfig": "workspace:*",
-        "tsx": "4.20.3",
+        "tsx": "4.23.15",
         "typescript": "catalog:"
     },
     "scripts": {
